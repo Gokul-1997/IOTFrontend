@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -7,4 +7,15 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   templateUrl: './machine-card.component.html'
 })
-export class MachineCardComponent {}
+export class MachineCardComponent {
+
+    @Input() machine!: any;
+
+  statusClass() {
+    switch (this.machine?.status) {
+      case 'RUN': return 'text-green-500';
+      case 'IDLE': return 'text-yellow-500';
+      default: return 'text-red-500';
+    }
+  }
+}

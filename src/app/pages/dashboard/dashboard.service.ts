@@ -3,16 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
-export class MachineService {
-  private api = environment.apiUrl + '/machines';
-
+export class DashboardService {
+  private api = environment.apiUrl + '/dashboard';
   constructor(private http: HttpClient) {}
 
-  getAll() {
-    return this.http.get<any[]>(this.api);
-  }
-
-  create(data: any) {
-    return this.http.post(this.api, data);
+  getLive() {
+    return this.http.get<any[]>(`${this.api}/live`);
   }
 }

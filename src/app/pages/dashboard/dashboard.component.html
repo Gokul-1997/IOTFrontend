@@ -1,9 +1,7 @@
-<div class="p-8 min-h-screen
-            bg-gray-100
-            dark:bg-[#0b1628]">
+<div class="p-8 min-h-screen bg-gray-100 dark:bg-[#0b1628]">
 
   <!-- TOP BAR -->
-  <div class="flex justify-between mb-6">
+    <div class="flex justify-between mb-6">
     <h2 class="text-xl font-semibold">Dashboard</h2>
 
     <div class="flex gap-3 px-4 py-2 rounded-full
@@ -18,6 +16,10 @@
 
   <!-- GRID -->
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-    <app-machine-card *ngFor="let m of machines"></app-machine-card>
+    <app-machine-card
+      *ngFor="let m of machines"
+      [machine]="m">
+    </app-machine-card>
   </div>
+
 </div>

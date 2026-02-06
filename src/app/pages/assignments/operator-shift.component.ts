@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, Validators, ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { OperatorService } from '../operators/operator.service';
-import { ShiftService } from '../shifts/shift.service';
+import { ShiftsService } from '../shifts/shifts.service';
 import { AssignmentService } from './assignment.service';
 
 @Component({
@@ -23,7 +23,7 @@ export class OperatorShiftComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private operatorService: OperatorService,
-    private shiftService: ShiftService,
+    private shiftService: ShiftsService,
     private assignmentService: AssignmentService
   ) { }
 
@@ -34,7 +34,7 @@ export class OperatorShiftComponent implements OnInit {
       effective_from: ['', Validators.required]
     });
     this.operatorService.getAll().subscribe(d => this.operators = d);
-    this.shiftService.getAll().subscribe(d => this.shifts = d);
+    this.shiftService.getShifts().subscribe(d => this.shifts = d);
   }
 
   submit() {

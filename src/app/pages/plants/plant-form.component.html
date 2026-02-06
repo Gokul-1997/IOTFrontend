@@ -1,9 +1,34 @@
-<h2>Create Plant</h2>
+<div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+  <div class="bg-white dark:bg-[#0f1c33] w-96 rounded-xl p-6">
 
-<form [formGroup]="form" (ngSubmit)="save()">
-  <input placeholder="Plant Code" formControlName="plant_code" />
-  <input placeholder="Plant Name" formControlName="plant_name" />
-  <input placeholder="Location" formControlName="location" />
+    <h3 class="text-lg font-semibold mb-4">
+      {{ data ? 'Edit Plant' : 'Create Plant' }}
+    </h3>
 
-  <button>Create</button>
-</form>
+    <input
+      [(ngModel)]="form.plant_code"
+      placeholder="Plant Code"
+      [disabled]="data"
+      class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+
+    <input
+      [(ngModel)]="form.plant_name"
+      placeholder="Plant Name"
+      class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+
+    <input
+      [(ngModel)]="form.location"
+      placeholder="Location"
+      class="w-full mb-4 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+
+    <div class="flex justify-end gap-3">
+      <button (click)="close.emit()" class="px-4 py-2 rounded bg-gray-300">
+        Cancel
+      </button>
+      <button (click)="save()" class="px-4 py-2 rounded bg-blue-600 text-white">
+        Save
+      </button>
+    </div>
+
+  </div>
+</div>

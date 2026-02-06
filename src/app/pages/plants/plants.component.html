@@ -1,0 +1,79 @@
+<div class="p-6 bg-gray-100 dark:bg-[#0b1628] min-h-screen">
+
+  <!-- HEADER -->
+  <div class="flex justify-between mb-4">
+    <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+      Plants
+    </h2>
+
+    <button (click)="openCreate()" class="px-4 py-2 rounded-lg bg-blue-600 text-white">
+      + New Plant
+    </button>
+  </div>
+
+  <!-- SEARCH -->
+  <input [(ngModel)]="search" (ngModelChange)="page=1; load()" placeholder="Search plant..." class="mb-4 px-4 py-2 rounded-lg w-64
+           bg-white dark:bg-[#12203a]" />
+
+  <!-- TABLE -->
+  <div class="bg-white dark:bg-[#0f1c33] rounded-xl overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 dark:bg-[#12203a]">
+        <tr>
+          <th class="p-3 text-left">Code</th>
+          <th class="p-3 text-left">Name</th>
+          <th class="p-3 text-left">Location</th>
+          <th class="p-3">Status</th>
+          <th class="p-3">Action</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let r of rows" class="border-t dark:border-white/10">
+          <td class="p-3">{{ r.plant_code }}</td>
+          <td class="p-3">{{ r.plant_name }}</td>
+          <td class="p-3">{{ r.location }}</td>
+
+          <td class="p-3 text-center">
+            <button (click)="toggle(r)" [class.bg-green-600]="r.is_active" [class.bg-gray-400]="!r.is_active"
+              class="px-3 py-1 rounded-full text-white text-xs">
+              {{ r.is_active ? 'Active' : 'Inactive' }}
+            </button>
+          </td>
+
+          <td class="p-3 text-center">
+            <button (click)="openEdit(r)" class="text-blue-600 hover:underline">
+              Edit
+            </button>
+          </td>
+        </tr>
+
+        <tr *ngIf="rows.length === 0">
+          <td colspan="5" class="p-6 text-center text-gray-400">
+            No plants found
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGINATION -->
+  <div class="flex justify-end gap-3 mt-4 text-sm">
+    <button (click)="prevPage()" [disabled]="page === 1" class="px-3 py-1 rounded bg-gray-200 dark:bg-[#12203a]">
+      Prev
+    </button>
+
+    <span>{{ page }} / {{ totalPages() }}</span>
+
+    <button (click)="nextPage()" [disabled]="page >= totalPages()"
+      class="px-3 py-1 rounded bg-gray-200 dark:bg-[#12203a]">
+      Next
+    </button>
+
+  </div>
+
+  <!-- MODAL -->
+  <app-plant-form *ngIf="showForm" [data]="editData" (close)="showForm=false" (saved)="onSaved()">
+  </app-plant-form>
+
+</div>

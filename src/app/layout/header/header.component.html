@@ -7,19 +7,70 @@
   <div class="flex items-center gap-8">
     <img src="/images/logo/STM_logo.png" class="h-8" />
 
-    <nav class="flex gap-2">
+<nav class="flex gap-2">
+
+  <ng-container *ngFor="let menu of menus"> 
+
+    <!-- NORMAL MENU -->
+    <button
+      *ngIf="!menu.children"
+      (click)="navigate(menu)"
+      class="px-4 py-2 rounded-full text-sm transition"
+      [ngClass]="{
+        'bg-blue-600 text-white': isActive(menu.path),
+        'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-[#12203a] dark:text-gray-300 dark:hover:text-white':
+          !isActive(menu.path)
+      }">
+      {{ menu.label }}
+    </button>
+
+    <!-- MASTER MENU -->
+    <div *ngIf="menu.children" class="relative group">
+
       <button
-        *ngFor="let menu of menus"
-        (click)="navigate(menu)"
-        class="px-4 py-2 rounded-full text-sm transition"
+        class="px-4 py-2 rounded-full text-sm transition flex items-center gap-1"
         [ngClass]="{
-          'bg-blue-600 text-white': isActive(menu.path),
+          'bg-blue-600 text-white': isChildActive(menu.children),
           'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-[#12203a] dark:text-gray-300 dark:hover:text-white':
-            !isActive(menu.path)
+            !isChildActive(menu.children)
         }">
         {{ menu.label }}
+        <span class="text-xs">▾</span>
       </button>
-    </nav>
+
+      <!-- DROPDOWN -->
+      <div
+        class="absolute top-full left-0 mt-2 w-48
+               opacity-0 scale-95 translate-y-1
+               pointer-events-none
+               group-hover:opacity-100
+               group-hover:scale-100
+               group-hover:translate-y-0
+               group-hover:pointer-events-auto
+               transition-all duration-150 ease-out
+               rounded-xl shadow-xl
+               bg-white dark:bg-[#0f1c33]
+               border dark:border-white/10 z-50">
+
+        <button
+          *ngFor="let child of menu.children"
+          (click)="navigate(child)"
+          class="w-full text-left px-4 py-2 text-sm transition
+                 hover:bg-blue-600 hover:text-white
+                 dark:hover:bg-blue-500"
+          [ngClass]="{
+            'bg-blue-600 text-white': isActive(child.path)
+          }">
+          {{ child.label }}
+        </button>
+
+      </div>
+    </div>
+
+  </ng-container>
+</nav>
+
+
   </div>
 
   <!-- RIGHT -->

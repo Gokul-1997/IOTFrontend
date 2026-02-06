@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OperatorService } from './operator.service';
+import { RouterModule } from '@angular/router';
 
 @Component({
   standalone: true,
   selector: 'app-operator-list',
-  imports: [CommonModule],
+  imports: [CommonModule,RouterModule],
   templateUrl: './operator-list.component.html',
   styleUrls: ['./operator-list.component.scss']
 })

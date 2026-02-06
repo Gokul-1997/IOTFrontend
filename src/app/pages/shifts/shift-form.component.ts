@@ -1,46 +1,59 @@
-import { Component } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, Validators, ReactiveFormsModule, FormGroup } from '@angular/forms';
-import { Router } from '@angular/router';
-import { ShiftService } from './shift.service';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ShiftsService } from './shifts.service';
 
 @Component({
   standalone: true,
   selector: 'app-shift-form',
-  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './shift-form.component.html',
-  styleUrls: ['./shift-form.component.scss']
+  imports: [CommonModule, ReactiveFormsModule]
 })
-export class ShiftFormComponent {
+export class ShiftFormComponent implements OnInit {
 
-  saving = false;
+  @Input() data: any = null;
+  @Output() saved = new EventEmitter<void>();
+  @Output() close = new EventEmitter<void>();
+
   form!: FormGroup;
-  
+  saving = false;
+
   constructor(
     private fb: FormBuilder,
-    private service: ShiftService,
-    private router: Router
-  ) { }
-  ngOnInit(): void {
+    private service: ShiftsService
+  ) {}
+
+  ngOnInit() {
     this.form = this.fb.group({
       shift_code: ['', Validators.required],
-      shift_name: ['', Validators.required],
-      start_time: ['', Validators.required], // HH:mm
-      end_time: ['', Validators.required],   // HH:mm
-      break_minutes: [0]
+      shift_name: [''],
+      start_time: ['', Validators.required],
+      end_time: ['', Validators.required],
+      break_minutes: [0, [Validators.required, Validators.min(0)]],
+      is_active: [true]
     });
+
+    if (this.data) {
+      this.form.patchValue(this.data);
+    }
   }
+
   submit() {
     if (this.form.invalid) return;
 
     this.saving = true;
 
-    this.service.create(this.form.value).subscribe({
-      next: () => this.router.navigate(['/shifts']),
-      error: () => {
-        this.saving = false;
-        alert('Failed to create shift');
-      }
+    const req$ = this.data
+      ? this.service.update(this.data.id, this.form.value)
+      : this.service.create(this.form.value);
+
+    req$.subscribe(() => {
+      this.saving = false;
+      this.saved.emit();
     });
+  }
+
+  cancel() {
+    this.close.emit();
   }
 }

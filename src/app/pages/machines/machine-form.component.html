@@ -1,22 +1,40 @@
-<h2>Create Machine</h2>
+<div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+  <div class="bg-white dark:bg-[#0f1c33] w-96 rounded-xl p-6">
 
-<form [formGroup]="form" (ngSubmit)="submit()" class="form">
-  <label>Machine Code</label>
-  <input formControlName="machine_code" />
+    <h3 class="text-lg font-semibold mb-4">
+      {{ data ? 'Edit Machine' : 'Create Machine' }}
+    </h3>
 
-  <label>Machine Name</label>
-  <input formControlName="machine_name" />
 
-  <label>Axis Model</label>
-  <input formControlName="axis_model" />
+    <input
+      [(ngModel)]="form.machine_name"
+      placeholder="Machine Name"
+      class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
 
-  <label>Controller Model</label>
-  <input formControlName="controller_model" />
+          <input
+      [(ngModel)]="form.axis_model"
+      placeholder="Machine Axis Model"
+      class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
 
-  <label>Machine Year</label>
-  <input type="number" formControlName="machine_year" />
+          <input
+      [(ngModel)]="form.controller_model"
+      placeholder="Controller Model"
+      class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
 
-  <button type="submit" [disabled]="saving">
-    {{ saving ? 'Saving...' : 'Create Machine' }}
-  </button>
-</form>
+          <input
+      [(ngModel)]="form.machine_year"
+      placeholder="Machine Year"
+      class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+
+
+    <div class="flex justify-end gap-3">
+      <button (click)="close.emit()" class="px-4 py-2 bg-gray-300 rounded">
+        Cancel
+      </button>
+      <button (click)="save()" class="px-4 py-2 bg-blue-600 text-white rounded">
+        Save
+      </button>
+    </div>
+
+  </div>
+</div>

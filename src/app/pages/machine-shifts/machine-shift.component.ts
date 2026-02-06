@@ -3,17 +3,18 @@ import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
   FormGroup,
+  FormsModule,
   ReactiveFormsModule
 } from '@angular/forms';
 
-import { MachineService } from '../machines/machine.service';
-import { ShiftService } from '../shifts/shift.service';
+import { MachinesService } from '../machines/machines.service';
+import { ShiftsService } from '../shifts/shifts.service';
 import { MachineShiftService } from './machine-shift.service';
 
 @Component({
   standalone: true,
   selector: 'app-machine-shift',
-  imports: [CommonModule, ReactiveFormsModule], // ✅ NO FormsModule
+  imports: [CommonModule, ReactiveFormsModule,FormsModule], // ✅ NO FormsModule
   templateUrl: './machine-shift.component.html',
   styleUrls: ['./machine-shift.component.scss']
 })
@@ -27,8 +28,8 @@ export class MachineShiftComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private machineService: MachineService,
-    private shiftService: ShiftService,
+    private machineService: MachinesService,
+    private shiftService: ShiftsService,
     private machineShiftService: MachineShiftService
   ) {}
 
@@ -37,8 +38,8 @@ export class MachineShiftComponent implements OnInit {
       machine_id: ['']
     });
 
-    this.machineService.getAll().subscribe(d => this.machines = d);
-    this.shiftService.getAll().subscribe(d => this.shifts = d);
+    // this.machineService.getAll().subscribe(d => this.machines = d);
+    this.shiftService.getShifts().subscribe(d => this.shifts = d);
   }
 
   loadConfig() {

@@ -9,16 +9,31 @@ import { Router, RouterModule } from '@angular/router';
   templateUrl: './header.component.html',
 })
 export class HeaderComponent {
+  openMenu: string | null = null;
 
+  showMenu(label: string) { }
+  hideMenu() { }
   isDark = false;
 
   // 🔹 MENU CONFIG (label + route)
   menus = [
     { label: 'Dashboard', path: '/dashboard' },
-    { label: 'OEE', path: '/oee/hourly' },
+    { label: 'OEE', path: '/oee-reports' },
     { label: 'Reports', path: '/reports' },
-    { label: 'Master', path: '/machines' }
+    { label: 'Charts', path: '/charts' },
+    { label: 'Quality', path: '/quality' },
+
+    {
+      label: 'Master',
+      children: [
+        { label: 'Machines', path: '/machines' },
+        { label: 'Shifts', path: '/shifts' },
+        { label: 'Operators', path: '/operators' },
+        { label: 'Plants', path: '/plants' }
+      ]
+    }
   ];
+
 
   constructor(private router: Router) { }
 
@@ -36,5 +51,10 @@ export class HeaderComponent {
   toggleTheme() {
     this.isDark = !this.isDark;
     document.documentElement.classList.toggle('dark', this.isDark);
+  }
+
+
+  isChildActive(children: any[]): boolean {
+    return children?.some(c => this.router.url.startsWith(c.path));
   }
 }

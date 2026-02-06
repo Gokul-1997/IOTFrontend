@@ -1,50 +1,40 @@
-import { Component } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormGroup, FormsModule } from '@angular/forms';   // ✅ ADD THIS
-import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { MachineService } from './machine.service';
+import { FormsModule } from '@angular/forms';
+import { MachinesService } from './machines.service';
 
 @Component({
   standalone: true,
   selector: 'app-machine-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './machine-form.component.html',
-  styleUrls: ['./machine-form.component.scss']
+  imports: [CommonModule, FormsModule],
+  templateUrl: './machine-form.component.html'
 })
-export class MachineFormComponent {
+export class MachineFormComponent implements OnInit {
 
-  saving = false;
+@Input() data: any;
+@Output() saved = new EventEmitter<void>();
+@Output() close = new EventEmitter<void>();
 
-  form!: FormGroup;
+  form: any = {
+    machine_code: '',
+    axis_model : '',
+    machine_name: '',
+    machine_year: '',
+    controller_model: ''
+  };
 
-  constructor(
-    private fb: FormBuilder,
-    private service: MachineService,
-    private router: Router
-  ) { }
-  ngOnInit(): void {
-    this.form = this.fb.group({
-      machine_code: ['', Validators.required],
-      machine_name: ['', Validators.required],
-      axis_model: [''],
-      controller_model: [''],
-      machine_year: ['']
-    });
+  constructor(private service: MachinesService) {}
+
+  ngOnInit() {
+
+    if (this.data) this.form = { ...this.data };
   }
-  submit() {
-    if (this.form.invalid) return;
 
-    this.saving = true;
+  save() {
+    const req = this.data
+      ? this.service.update(this.data.id, this.form)
+      : this.service.create(this.form);
 
-    this.service.create(this.form.value).subscribe({
-      next: () => {
-        this.router.navigate(['/machines']);
-      },
-      error: () => {
-        this.saving = false;
-        alert('Failed to create machine');
-      }
-    });
+    req.subscribe(() => this.saved.emit());
   }
 }

@@ -1,0 +1,95 @@
+<div class="p-6 bg-gray-100 dark:bg-[#0b1628] min-h-screen">
+
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-xl font-semibold">Shifts</h2>
+
+    <button mat-raised-button color="primary" (click)="openCreate()">
+      <mat-icon>add</mat-icon>
+      New Shift
+    </button>
+  </div>
+
+  <!-- 🔍 Search -->
+  <mat-form-field appearance="outline" class="w-72 mb-4">
+    <mat-label>Search shift</mat-label>
+    <input
+      matInput
+      [(ngModel)]="search"
+      (ngModelChange)="applyFilter()"
+      placeholder="Shift code / name" />
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+
+  <!-- 📋 Table -->
+  <div class="mat-elevation-z2 rounded-lg bg-white dark:bg-[#0f1c33]">
+
+    <table mat-table [dataSource]="filteredRows" matSort>
+
+      <!-- Shift Code -->
+      <ng-container matColumnDef="shift_code">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Code</th>
+        <td mat-cell *matCellDef="let r">{{ r.shift_code }}</td>
+      </ng-container>
+
+      <!-- Shift Name -->
+      <ng-container matColumnDef="shift_name">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+        <td mat-cell *matCellDef="let r">{{ r.shift_name }}</td>
+      </ng-container>
+
+      <!-- Time -->
+      <ng-container matColumnDef="time">
+        <th mat-header-cell *matHeaderCellDef>Time</th>
+        <td mat-cell *matCellDef="let r">
+          {{ r.start_time }} – {{ r.end_time }}
+        </td>
+      </ng-container>
+
+      <!-- Break -->
+      <ng-container matColumnDef="break_minutes">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Break (min)</th>
+        <td mat-cell *matCellDef="let r">{{ r.break_minutes }}</td>
+      </ng-container>
+
+      <!-- Status -->
+      <ng-container matColumnDef="is_active">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <td mat-cell *matCellDef="let r">
+          <mat-slide-toggle
+            color="primary"
+            [checked]="r.is_active"
+            (change)="toggle(r)">
+          </mat-slide-toggle>
+        </td>
+      </ng-container>
+
+      <!-- Action -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Action</th>
+        <td mat-cell *matCellDef="let r">
+          <button mat-icon-button color="primary" (click)="openEdit(r)">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+    <div *ngIf="filteredRows.length === 0"
+         class="p-6 text-center text-gray-400">
+      No shifts found
+    </div>
+
+  </div>
+
+<!-- Shift Form -->
+  <app-shift-form
+  *ngIf="showForm"
+    [data]="editData"
+    (close)="showForm=false"
+    (saved)="onSaved()">
+  </app-shift-form>
+
+</div>

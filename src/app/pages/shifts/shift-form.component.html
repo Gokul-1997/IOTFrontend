@@ -1,22 +1,44 @@
-<h2>Create Shift</h2>
+<form [formGroup]="form" (ngSubmit)="submit()" class="p-6 space-y-4 bg-white rounded-lg">
 
-<form [formGroup]="form" (ngSubmit)="submit()" class="form">
-  <label>Shift Code</label>
-  <input formControlName="shift_code" />
+  <h3 class="text-lg font-semibold">
+    {{ data ? 'Edit Shift' : 'Create Shift' }}
+  </h3>
 
-  <label>Shift Name</label>
-  <input formControlName="shift_name" />
+  <div>
+    <label class="block text-sm font-medium">Shift Code *</label>
+    <input type="text" formControlName="shift_code" class="input" />
+  </div>
 
-  <label>Start Time</label>
-  <input type="time" formControlName="start_time" />
+  <div>
+    <label class="block text-sm font-medium">Shift Name</label>
+    <input type="text" formControlName="shift_name" class="input" />
+  </div>
 
-  <label>End Time</label>
-  <input type="time" formControlName="end_time" />
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-medium">Start Time *</label>
+      <input type="time" formControlName="start_time" class="input" />
+    </div>
 
-  <label>Break Minutes</label>
-  <input type="number" formControlName="break_minutes" />
+    <div>
+      <label class="block text-sm font-medium">End Time *</label>
+      <input type="time" formControlName="end_time" class="input" />
+    </div>
+  </div>
 
-  <button type="submit" [disabled]="saving">
-    {{ saving ? 'Saving...' : 'Create Shift' }}
-  </button>
+  <div>
+    <label class="block text-sm font-medium">Break Minutes</label>
+    <input type="number" formControlName="break_minutes" class="input" />
+  </div>
+
+  <div class="flex justify-end gap-3 pt-4">
+    <button type="button" class="btn-secondary" (click)="cancel()">
+      Cancel
+    </button>
+
+    <button type="submit" class="btn-primary" [disabled]="saving">
+      {{ saving ? 'Saving...' : (data ? 'Update Shift' : 'Create Shift') }}
+    </button>
+  </div>
+
 </form>

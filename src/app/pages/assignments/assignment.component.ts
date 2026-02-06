@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { OperatorService } from '../operators/operator.service';
-import { MachineService } from '../machines/machine.service';
+import { MachinesService } from '../machines/machines.service';
 import { AssignmentService } from './assignment.service';
 
 @Component({
@@ -23,7 +23,7 @@ export class AssignmentComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private operatorService: OperatorService,
-    private machineService: MachineService,
+    private machineService: MachinesService,
     private assignmentService: AssignmentService
   ) { }
 
@@ -34,7 +34,6 @@ export class AssignmentComponent implements OnInit {
       assigned_from: ['', Validators.required]
     });
     this.operatorService.getAll().subscribe(d => this.operators = d);
-    this.machineService.getAll().subscribe(d => this.machines = d);
   }
 
   submit() {

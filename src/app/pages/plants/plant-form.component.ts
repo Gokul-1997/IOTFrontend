@@ -1,36 +1,37 @@
-import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { PlantService } from './plant.service';
+import { FormsModule } from '@angular/forms';
+import { PlantsService } from './plants.service';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './plant-form.component.html',
-  styleUrls: ['./plant-form.component.scss']
+  selector: 'app-plant-form',
+  imports: [CommonModule, FormsModule],
+  templateUrl: './plant-form.component.html'
 })
 export class PlantFormComponent {
-  form!: FormGroup;
 
-  constructor(
-    private fb: FormBuilder,
-    private service: PlantService,
-    private router: Router
-  ) { }
+  @Input() data: any;
+  @Output() close = new EventEmitter();
+  @Output() saved = new EventEmitter();
 
-  ngOnInit(): void {
-    this.form = this.fb.group({
-      plant_code: ['', Validators.required],
-      plant_name: ['', Validators.required],
-      location: ['']
-    });
+  form: any = {
+    plant_code: '',
+    plant_name: '',
+    location: ''
+  };
+
+  constructor(private service: PlantsService) {}
+
+  ngOnInit() {
+    if (this.data) this.form = { ...this.data };
   }
-  save() {
-    if (this.form.invalid) return;
 
-    this.service.create(this.form.value).subscribe(() => {
-      this.router.navigate(['/plants']);
-    });
+  save() {
+    const req = this.data
+      ? this.service.updatePlant(this.data.id, this.form)
+      : this.service.createPlant(this.form);
+
+    req.subscribe(() => this.saved.emit());
   }
 }
