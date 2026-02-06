@@ -1,0 +1,25 @@
+<app-header></app-header>
+
+<div class="p-8 min-h-screen
+            bg-gray-100
+            dark:bg-[#0b1628]">
+
+  <!-- TOP BAR -->
+  <div class="flex justify-between mb-6">
+    <h2 class="text-xl font-semibold">Dashboard</h2>
+
+    <div class="flex gap-3 px-4 py-2 rounded-full
+                bg-gray-200
+                dark:bg-[#12203a]">
+      <span>🕒 20 Jan 2026 | 3:45 PM</span>
+      <span class="px-3 py-1 bg-green-600 rounded-full text-white text-sm">03 Running</span>
+      <span class="px-3 py-1 bg-yellow-500 rounded-full text-white text-sm">01 Idle</span>
+      <span class="px-3 py-1 bg-red-600 rounded-full text-white text-sm">01 Stop</span>
+    </div>
+  </div>
+
+  <!-- GRID -->
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <app-machine-card *ngFor="let m of machines"></app-machine-card>
+  </div>
+</div>

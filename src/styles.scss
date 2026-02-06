@@ -1,1 +1,30 @@
-/* You can add global styles to this file, and also import other style files */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-gray-100 text-gray-900
+         dark:bg-[#0b1628] dark:text-white
+         transition-colors duration-300;
+}
+
+.icon-btn {
+  @apply bg-[#12203a] rounded-full p-2 text-white;
+}
+
+.status {
+  @apply px-3 py-1 rounded-full text-xs;
+}
+.status.green { @apply bg-green-600; }
+.status.yellow { @apply bg-yellow-500; }
+.status.red { @apply bg-red-600; }
+
+.badge {
+  @apply bg-green-600 px-3 py-1 rounded-full text-xs;
+}
+
+.circle {
+  @apply h-16 w-16 rounded-full border-4 border-blue-500
+         flex items-center justify-center text-sm;
+}
+
