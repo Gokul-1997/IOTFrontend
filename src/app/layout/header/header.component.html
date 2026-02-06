@@ -5,24 +5,26 @@
 
   <!-- LEFT -->
   <div class="flex items-center gap-8">
-    <img src="/images/logo/stm-logo.svg" class="h-8" />
+    <img src="/images/logo/STM_logo.png" class="h-8" />
 
     <nav class="flex gap-2">
       <button
         *ngFor="let menu of menus"
-        (click)="setActive(menu)"
+        (click)="navigate(menu)"
         class="px-4 py-2 rounded-full text-sm transition"
         [ngClass]="{
-          'bg-blue-600 text-white': activeMenu === menu,
-          'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-[#12203a] dark:text-gray-300 dark:hover:text-white': activeMenu !== menu
+          'bg-blue-600 text-white': isActive(menu.path),
+          'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-[#12203a] dark:text-gray-300 dark:hover:text-white':
+            !isActive(menu.path)
         }">
-        {{ menu }}
+        {{ menu.label }}
       </button>
     </nav>
   </div>
 
   <!-- RIGHT -->
   <div class="flex items-center gap-4">
+    <!-- THEME -->
     <button
       (click)="toggleTheme()"
       class="h-9 w-9 rounded-full flex items-center justify-center
@@ -30,9 +32,10 @@
       {{ isDark ? '☀️' : '🌙' }}
     </button>
 
+    <!-- PROFILE -->
     <div class="flex items-center gap-2 rounded-full px-3 py-1
                 bg-gray-200 dark:bg-[#12203a]">
-      <img src="/images/user/avatar.png" class="h-8 w-8 rounded-full" />
+      <img src="/images/user/owner.png" class="h-8 w-8 rounded-full" />
       <span class="text-sm font-medium">Admin</span>
     </div>
   </div>

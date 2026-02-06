@@ -1,0 +1,23 @@
+<h2>Operators</h2>
+
+<table>
+  <tr>
+    <th>Code</th>
+    <th>Name</th>
+    <th>Skill Level</th>
+    <th>Status</th>
+  </tr>
+
+  <tr *ngFor="let o of operators">
+    <td>{{ o.operator_code }}</td>
+    <td>{{ o.operator_name }}</td>
+    <td>{{ o.skill_level || '-' }}</td>
+    <td>
+      <span [class.active]="o.is_active">
+        {{ o.is_active ? 'Active' : 'Inactive' }}
+      </span>
+    </td>
+  </tr>
+</table>
+
+<a routerLink="/operators/create">+ Create Operator</a>

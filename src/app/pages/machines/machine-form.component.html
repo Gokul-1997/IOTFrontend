@@ -1,0 +1,22 @@
+<h2>Create Machine</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()" class="form">
+  <label>Machine Code</label>
+  <input formControlName="machine_code" />
+
+  <label>Machine Name</label>
+  <input formControlName="machine_name" />
+
+  <label>Axis Model</label>
+  <input formControlName="axis_model" />
+
+  <label>Controller Model</label>
+  <input formControlName="controller_model" />
+
+  <label>Machine Year</label>
+  <input type="number" formControlName="machine_year" />
+
+  <button type="submit" [disabled]="saving">
+    {{ saving ? 'Saving...' : 'Create Machine' }}
+  </button>
+</form>

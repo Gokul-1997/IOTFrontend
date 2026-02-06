@@ -1,0 +1,16 @@
+<h2>Create Operator</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()" class="form">
+  <label>Operator Code</label>
+  <input formControlName="operator_code" />
+
+  <label>Operator Name</label>
+  <input formControlName="operator_name" />
+
+  <label>Skill Level</label>
+  <input formControlName="skill_level" placeholder="Beginner / Expert" />
+
+  <button type="submit" [disabled]="saving">
+    {{ saving ? 'Saving...' : 'Create Operator' }}
+  </button>
+</form>

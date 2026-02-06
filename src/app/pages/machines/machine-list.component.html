@@ -1,0 +1,21 @@
+<h2>Machines</h2>
+
+<table>
+  <tr>
+    <th>Code</th>
+    <th>Name</th>
+    <th>Axis</th>
+    <th>Controller</th>
+    <th>Year</th>
+  </tr>
+
+  <tr *ngFor="let m of machines">
+    <td>{{ m.machine_code }}</td>
+    <td>{{ m.machine_name }}</td>
+    <td>{{ m.axis_model }}</td>
+    <td>{{ m.controller_model }}</td>
+    <td>{{ m.machine_year }}</td>
+  </tr>
+</table>
+
+<a routerLink="/machines/create">+ Create Machine</a>

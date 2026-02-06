@@ -1,0 +1,9 @@
+<h2>Create Plant</h2>
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <input placeholder="Plant Code" formControlName="plant_code" />
+  <input placeholder="Plant Name" formControlName="plant_name" />
+  <input placeholder="Location" formControlName="location" />
+
+  <button>Create</button>
+</form>

@@ -1,0 +1,22 @@
+<h2>Create Shift</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()" class="form">
+  <label>Shift Code</label>
+  <input formControlName="shift_code" />
+
+  <label>Shift Name</label>
+  <input formControlName="shift_name" />
+
+  <label>Start Time</label>
+  <input type="time" formControlName="start_time" />
+
+  <label>End Time</label>
+  <input type="time" formControlName="end_time" />
+
+  <label>Break Minutes</label>
+  <input type="number" formControlName="break_minutes" />
+
+  <button type="submit" [disabled]="saving">
+    {{ saving ? 'Saving...' : 'Create Shift' }}
+  </button>
+</form>

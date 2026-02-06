@@ -1,0 +1,32 @@
+<div class="login-container">
+  <div class="login-card">
+    <h2>Factory MES Login</h2>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <input
+        type="text"
+        placeholder="Email"
+        formControlName="email"
+      />
+
+      <input
+        type="password"
+        placeholder="Password"
+        formControlName="password"
+      />
+
+      <!-- ✅ FORGOT PASSWORD LINK -->
+      <div class="forgot-link">
+        <a routerLink="/forgot-password">
+          Forgot Password?
+        </a>
+      </div>
+
+      <button type="submit" [disabled]="loading">
+        {{ loading ? 'Logging in...' : 'Login' }}
+      </button>
+    </form>
+
+    <p class="error" *ngIf="error">{{ error }}</p>
+  </div>
+</div>
