@@ -4,15 +4,34 @@ import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class OperatorService {
-  private api = environment.apiUrl + '/operators';
+
+  private api = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
+  // ------------------------
+  // OPERATORS
+  // ------------------------
   getAll() {
-    return this.http.get<any[]>(this.api);
+    return this.http.get<any[]>(`${this.api}/operators`);
   }
 
   create(data: any) {
-    return this.http.post(this.api, data);
+    return this.http.post(`${this.api}/operators`, data);
+  }
+
+  // ------------------------
+  // SHIFTS (for dropdown)
+  // ------------------------
+  getShifts() {
+    return this.http.get<any[]>(`${this.api}/shifts`);
+  }
+
+  // ------------------------
+  // MACHINES (for assignment)
+  // ------------------------
+  getMachines() {
+    return this.http.get<any[]>(`${this.api}/machines`);
   }
 }
+

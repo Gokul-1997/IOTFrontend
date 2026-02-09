@@ -9,7 +9,7 @@ export class ShiftsService {
   constructor(private http: HttpClient) { }
 
   getShifts() {
-    return this.http.get<any>(`${this.api}/list`);
+    return this.http.get<any>(`${this.api}`);
   }
   create(data: any) {
     return this.http.post(this.api, data);

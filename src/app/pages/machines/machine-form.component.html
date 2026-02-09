@@ -6,27 +6,29 @@
     </h3>
 
 
-    <input
-      [(ngModel)]="form.machine_name"
-      placeholder="Machine Name"
+    <input [(ngModel)]="form.machine_name" placeholder="Machine Name"
       class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
 
-          <input
-      [(ngModel)]="form.axis_model"
-      placeholder="Machine Axis Model"
+    <input [(ngModel)]="form.axis_model" placeholder="Machine Axis Model"
       class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
 
-          <input
-      [(ngModel)]="form.controller_model"
-      placeholder="Controller Model"
+    <input [(ngModel)]="form.controller_model" placeholder="Controller Model"
       class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
 
-          <input
-      [(ngModel)]="form.machine_year"
-      placeholder="Machine Year"
+    <input [(ngModel)]="form.machine_year" placeholder="Machine Year"
       class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
 
+    <div class="mb-3">
+      <label class="block text-sm mb-1 font-medium">Machine Image</label>
 
+      <input type="file" accept="image/*" (change)="onFileSelect($event)" class="w-full text-sm" />
+
+      <!-- Preview -->
+      <!-- Preview priority -->
+      <img *ngIf="previewUrl || form?.image_url" [src]="previewUrl || form.image_url"
+        class="mt-2 h-32 w-full object-cover rounded border" />
+
+    </div>
     <div class="flex justify-end gap-3">
       <button (click)="close.emit()" class="px-4 py-2 bg-gray-300 rounded">
         Cancel

@@ -28,4 +28,10 @@ export class MachinesService {
   getPlants() {
     return this.http.get<any>(this.plantsApi);
   }
+    uploadToS3(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post(`${environment.apiUrl}/upload`, formData);
+  }
 }

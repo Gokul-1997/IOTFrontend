@@ -1,27 +1,37 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, Inject, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { ShiftsService } from './shifts.service';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   standalone: true,
   selector: 'app-shift-form',
   templateUrl: './shift-form.component.html',
-  imports: [CommonModule, ReactiveFormsModule]
+  imports: [
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule
+  ]
 })
 export class ShiftFormComponent implements OnInit {
 
-  @Input() data: any = null;
-  @Output() saved = new EventEmitter<void>();
-  @Output() close = new EventEmitter<void>();
-
-  form!: FormGroup;
   saving = false;
+  form!: FormGroup;
+
 
   constructor(
     private fb: FormBuilder,
-    private service: ShiftsService
-  ) {}
+    private service: ShiftsService,
+    private dialogRef: MatDialogRef<ShiftFormComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: any
+  ) { }
 
   ngOnInit() {
     this.form = this.fb.group({
@@ -29,10 +39,8 @@ export class ShiftFormComponent implements OnInit {
       shift_name: [''],
       start_time: ['', Validators.required],
       end_time: ['', Validators.required],
-      break_minutes: [0, [Validators.required, Validators.min(0)]],
-      is_active: [true]
+      break_minutes: [0, [Validators.min(0)]]
     });
-
     if (this.data) {
       this.form.patchValue(this.data);
     }
@@ -49,11 +57,19 @@ export class ShiftFormComponent implements OnInit {
 
     req$.subscribe(() => {
       this.saving = false;
-      this.saved.emit();
+      this.dialogRef.close(true);
     });
   }
 
   cancel() {
-    this.close.emit();
+    this.dialogRef.close();
   }
+
+  openTimePicker(event: Event) {
+  const input = event.target as HTMLInputElement;
+  if (input.showPicker) {
+    input.showPicker();
+  }
+}
+
 }

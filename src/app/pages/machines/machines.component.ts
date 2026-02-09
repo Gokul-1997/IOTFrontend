@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MachinesService } from './machines.service';
@@ -43,7 +43,7 @@ export class MachinesComponent implements OnInit {
   showForm = false;
   editData: any = null;
 
-  constructor(private service: MachinesService) {}
+  constructor(private service: MachinesService,private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.load();
@@ -59,6 +59,7 @@ export class MachinesComponent implements OnInit {
     }).subscribe(res => {
       this.rows = res.data;
       this.total = res.total;
+       this.cdr.markForCheck(); 
     });
   }
 

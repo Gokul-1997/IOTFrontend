@@ -7,75 +7,57 @@
   <div class="flex items-center gap-8">
     <img src="/images/logo/STM_logo.png" class="h-8" />
 
-<nav class="flex gap-2">
+    <nav class="flex gap-2">
 
-  <ng-container *ngFor="let menu of menus"> 
+      <ng-container *ngFor="let menu of menus">
 
-    <!-- NORMAL MENU -->
-    <button
-      *ngIf="!menu.children"
-      (click)="navigate(menu)"
-      class="px-4 py-2 rounded-full text-sm transition"
-      [ngClass]="{
-        'bg-blue-600 text-white': isActive(menu.path),
-        'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-[#12203a] dark:text-gray-300 dark:hover:text-white':
-          !isActive(menu.path)
-      }">
-      {{ menu.label }}
-    </button>
-
-    <!-- MASTER MENU -->
-    <div *ngIf="menu.children" class="relative group">
-
-      <button
-        class="px-4 py-2 rounded-full text-sm transition flex items-center gap-1"
-        [ngClass]="{
-          'bg-blue-600 text-white': isChildActive(menu.children),
-          'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-[#12203a] dark:text-gray-300 dark:hover:text-white':
-            !isChildActive(menu.children)
-        }">
-        {{ menu.label }}
-        <span class="text-xs">▾</span>
-      </button>
-
-      <!-- DROPDOWN -->
-      <div
-        class="absolute top-full left-0 mt-2 w-48
-               opacity-0 scale-95 translate-y-1
-               pointer-events-none
-               group-hover:opacity-100
-               group-hover:scale-100
-               group-hover:translate-y-0
-               group-hover:pointer-events-auto
-               transition-all duration-150 ease-out
-               rounded-xl shadow-xl
-               bg-white dark:bg-[#0f1c33]
-               border dark:border-white/10 z-50">
-
+        <!-- NORMAL MENU -->
         <button
-          *ngFor="let child of menu.children"
-          (click)="navigate(child)"
-          class="w-full text-left px-4 py-2 text-sm transition
-                 hover:bg-blue-600 hover:text-white
-                 dark:hover:bg-blue-500"
-          [ngClass]="{
-            'bg-blue-600 text-white': isActive(child.path)
-          }">
-          {{ child.label }}
+          *ngIf="!menu.children"
+          (click)="navigate(menu)"
+          class="nav-btn"
+          [class.active]="isActive(menu.path)">
+          {{ menu.label }}
         </button>
 
-      </div>
-    </div>
+        <!-- MASTER MENU -->
+        <div *ngIf="menu.children" class="relative">
 
-  </ng-container>
-</nav>
+          <button
+            (click)="toggleMenu(menu.label)"
+            class="nav-btn flex items-center gap-1"
+            [class.active]="isChildActive(menu.children)">
+            {{ menu.label }}
+            <svg class="w-3 h-3 transition-transform"
+                 [class.rotate-180]="openMenu === menu.label"
+                 viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.7a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"/>
+            </svg>
+          </button>
 
+          <!-- DROPDOWN -->
+          <div
+            *ngIf="openMenu === menu.label"
+            class="submenu-card">
 
+            <button
+              *ngFor="let child of menu.children"
+              (click)="navigate(child); closeMenu()"
+              class="submenu-item"
+              [class.active]="isActive(child.path)">
+              {{ child.label }}
+            </button>
+
+          </div>
+        </div>
+
+      </ng-container>
+    </nav>
   </div>
 
   <!-- RIGHT -->
   <div class="flex items-center gap-4">
-    <!-- THEME -->
     <button
       (click)="toggleTheme()"
       class="h-9 w-9 rounded-full flex items-center justify-center
@@ -83,7 +65,6 @@
       {{ isDark ? '☀️' : '🌙' }}
     </button>
 
-    <!-- PROFILE -->
     <div class="flex items-center gap-2 rounded-full px-3 py-1
                 bg-gray-200 dark:bg-[#12203a]">
       <img src="/images/user/owner.png" class="h-8 w-8 rounded-full" />

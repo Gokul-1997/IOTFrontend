@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 
@@ -9,20 +9,16 @@ import { Router, RouterModule } from '@angular/router';
   templateUrl: './header.component.html',
 })
 export class HeaderComponent {
-  openMenu: string | null = null;
 
-  showMenu(label: string) { }
-  hideMenu() { }
+  openMenu: string | null = null;
   isDark = false;
 
-  // 🔹 MENU CONFIG (label + route)
   menus = [
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'OEE', path: '/oee-reports' },
     { label: 'Reports', path: '/reports' },
     { label: 'Charts', path: '/charts' },
     { label: 'Quality', path: '/quality' },
-
     {
       label: 'Master',
       children: [
@@ -34,27 +30,46 @@ export class HeaderComponent {
     }
   ];
 
+  constructor(private router: Router) {}
 
-  constructor(private router: Router) { }
-
-  // 🔹 NAVIGATION
-  navigate(menu: any) {
-    this.router.navigate([menu.path]);
+  toggleMenu(label: string) {
+    this.openMenu = this.openMenu === label ? null : label;
   }
 
-  // 🔹 ACTIVE MENU CHECK
-  isActive(path: string): boolean {
+  closeMenu() {
+    this.openMenu = null;
+  }
+
+  navigate(menu: any) {
+    this.router.navigate([menu.path]);
+    this.closeMenu();
+  }
+
+  isActive(path: string) {
     return this.router.url.startsWith(path);
   }
 
-  // 🌙 THEME
+  isChildActive(children: any[]) {
+    return children?.some(c => this.router.url.startsWith(c.path));
+  }
+
   toggleTheme() {
     this.isDark = !this.isDark;
     document.documentElement.classList.toggle('dark', this.isDark);
   }
 
+  // 🔒 CLOSE ON OUTSIDE CLICK
+  @HostListener('document:click', ['$event'])
+  onClickOutside(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('nav')) {
+      this.openMenu = null;
+    }
+  }
 
-  isChildActive(children: any[]): boolean {
-    return children?.some(c => this.router.url.startsWith(c.path));
+  // ⌨ ESC KEY CLOSE
+  @HostListener('document:keydown.escape')
+  onEsc() {
+    this.openMenu = null;
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PlantsService } from './plants.service';
@@ -21,7 +21,7 @@ export class PlantsComponent implements OnInit {
   showForm = false;
   editData: any = null;
 
-  constructor(private service: PlantsService) { }
+  constructor(private service: PlantsService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit() {
     this.load();
@@ -35,6 +35,8 @@ export class PlantsComponent implements OnInit {
     }).subscribe(res => {
       this.rows = res.data;
       this.total = res.total;
+      this.cdr.markForCheck();
+
     });
   }
 

@@ -8,7 +8,7 @@ import { MachineFormComponent } from './pages/machines/machine-form.component';
 import { ShiftsComponent } from './pages/shifts/shifts.component';
 import { ShiftFormComponent } from './pages/shifts/shift-form.component';
 
-import { OperatorListComponent } from './pages/operators/operator-list.component';
+import { OperatorsComponent } from './pages/operators/operators.component';
 import { OperatorFormComponent } from './pages/operators/operator-form.component';
 
 import { AssignmentComponent } from './pages/assignments/assignment.component';
@@ -48,7 +48,7 @@ export const routes: Routes = [
       { path: 'shifts', component: ShiftsComponent },
       { path: 'shifts/create', component: ShiftFormComponent },
 
-      { path: 'operators', component: OperatorListComponent },
+      { path: 'operators', component: OperatorsComponent },
       { path: 'operators/create', component: OperatorFormComponent },
 
       { path: 'assignments', component: AssignmentComponent },

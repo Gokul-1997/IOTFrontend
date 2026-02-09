@@ -1,44 +1,55 @@
-<form [formGroup]="form" (ngSubmit)="submit()" class="p-6 space-y-4 bg-white rounded-lg">
+<h2 mat-dialog-title>
+  {{ data ? 'Edit Shift' : 'Create Shift' }}
+</h2>
 
-  <h3 class="text-lg font-semibold">
-    {{ data ? 'Edit Shift' : 'Create Shift' }}
-  </h3>
+<form [formGroup]="form" (ngSubmit)="submit()">
 
-  <div>
-    <label class="block text-sm font-medium">Shift Code *</label>
-    <input type="text" formControlName="shift_code" class="input" />
-  </div>
+  <mat-dialog-content class="dialog-body">
 
-  <div>
-    <label class="block text-sm font-medium">Shift Name</label>
-    <input type="text" formControlName="shift_name" class="input" />
-  </div>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Shift Code</mat-label>
+      <input matInput formControlName="shift_code" placeholder="e.g. SHIFT-A">
+    </mat-form-field>
 
-  <div class="grid grid-cols-2 gap-4">
-    <div>
-      <label class="block text-sm font-medium">Start Time *</label>
-      <input type="time" formControlName="start_time" class="input" />
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Shift Name</mat-label>
+      <input matInput formControlName="shift_name" placeholder="Morning Shift">
+    </mat-form-field>
+
+    <div class="time-row">
+  <mat-form-field appearance="outline" class="full-width">
+  <mat-label>Start Time</mat-label>
+  <input
+    matInput
+    type="time"
+    formControlName="start_time"
+    (click)="openTimePicker($event)">
+</mat-form-field>
+
+<mat-form-field appearance="outline" class="full-width">
+  <mat-label>End Time</mat-label>
+  <input
+    matInput
+    type="time"
+    formControlName="end_time"
+    (click)="openTimePicker($event)">
+</mat-form-field>
+
+
     </div>
 
-    <div>
-      <label class="block text-sm font-medium">End Time *</label>
-      <input type="time" formControlName="end_time" class="input" />
-    </div>
-  </div>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Break (Minutes)</mat-label>
+      <input matInput type="number" min="0" formControlName="break_minutes">
+    </mat-form-field>
 
-  <div>
-    <label class="block text-sm font-medium">Break Minutes</label>
-    <input type="number" formControlName="break_minutes" class="input" />
-  </div>
+  </mat-dialog-content>
 
-  <div class="flex justify-end gap-3 pt-4">
-    <button type="button" class="btn-secondary" (click)="cancel()">
-      Cancel
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="saving">
+      {{ saving ? 'Saving…' : 'Save' }}
     </button>
-
-    <button type="submit" class="btn-primary" [disabled]="saving">
-      {{ saving ? 'Saving...' : (data ? 'Update Shift' : 'Create Shift') }}
-    </button>
-  </div>
+  </mat-dialog-actions>
 
 </form>

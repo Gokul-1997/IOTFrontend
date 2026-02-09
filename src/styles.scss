@@ -65,3 +65,106 @@ body {
          flex items-center justify-center text-sm;
 }
 
+.full-width {
+  width: 100%;
+}
+
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 360px;
+}
+
+.time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.mat-mdc-dialog-container {
+  padding: 0 !important;
+}
+
+.mat-mdc-form-field-icon-suffix {
+  pointer-events: none;
+}
+
+/* MAIN NAV BUTTON */
+.nav-btn {
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 14px;
+  transition: all 0.15s ease;
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.dark .nav-btn {
+  background: #12203a;
+  color: #9ca3af;
+}
+
+.nav-btn:hover {
+  background: #d1d5db;
+}
+
+.dark .nav-btn:hover {
+  color: white;
+}
+
+.nav-btn.active {
+  background: #2563eb;
+  color: white;
+}
+
+/* SUBMENU */
+.submenu-card {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 200px;
+  border-radius: 12px;
+  padding: 6px;
+  background: white;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+  animation: dropdown 120ms ease-out;
+  z-index: 50;
+}
+
+.dark .submenu-card {
+  background: #0f1c33;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* SUBMENU ITEM */
+.submenu-item {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: background 0.15s ease;
+}
+
+.submenu-item:hover {
+  background: #2563eb;
+  color: white;
+}
+
+.submenu-item.active {
+  background: #2563eb;
+  color: white;
+}
+
+/* ANIMATION */
+@keyframes dropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

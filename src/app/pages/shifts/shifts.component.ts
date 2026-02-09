@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 import { ShiftsService } from './shifts.service';
+import { MatDialog } from '@angular/material/dialog';
 import { ShiftFormComponent } from './shift-form.component';
 
 @Component({
@@ -25,10 +26,7 @@ import { ShiftFormComponent } from './shift-form.component';
     MatButtonModule,
     MatIconModule,
     MatInputModule,
-    MatSlideToggleModule,
-
-    ShiftFormComponent
-  ]
+    MatSlideToggleModule,]
 })
 export class ShiftsComponent implements OnInit {
 
@@ -46,19 +44,47 @@ export class ShiftsComponent implements OnInit {
 
   search = '';
 
-  showForm = false;
   editData: any = null;
 
-  constructor(private service: ShiftsService) {}
+  constructor(private service: ShiftsService, private dialog: MatDialog,private cdr: ChangeDetectorRef) { }
 
   ngOnInit() {
     this.load();
+  }
+
+  openCreate() {
+    const dialogRef = this.dialog.open(ShiftFormComponent, {
+      width: '420px',
+      maxWidth: '95vw',
+      autoFocus: false,        // ✅ VERY IMPORTANT
+      restoreFocus: false,
+      disableClose: true,
+      data: null
+    });
+
+    dialogRef.afterClosed().subscribe(saved => {
+      if (saved) this.load();
+    });
+  }
+
+  openEdit(row: any) {
+    const dialogRef = this.dialog.open(ShiftFormComponent, {
+      width: '420px',
+      disableClose: true,
+      data: row
+    });
+
+    dialogRef.afterClosed().subscribe(saved => {
+      if (saved) this.load();
+    });
   }
 
   load() {
     this.service.getShifts().subscribe(res => {
       this.rows = res.data;
       this.filteredRows = [...this.rows];
+             this.cdr.markForCheck(); 
+
     });
   }
 
@@ -71,23 +97,11 @@ export class ShiftsComponent implements OnInit {
     );
   }
 
-openCreate() {
-  this.editData = null;
-  this.showForm = true;
-  window.scrollTo({ top: 0, behavior: 'smooth' });  }
 
-  openEdit(row: any) {
-    this.editData = row;
-    this.showForm = true;
-  }
 
   toggle(row: any) {
     this.service.toggle(row.id, !row.is_active)
       .subscribe(() => row.is_active = !row.is_active);
   }
 
-  onSaved() {
-    this.showForm = false;
-    this.load();
-  }
 }

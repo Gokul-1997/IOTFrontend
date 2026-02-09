@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardService } from './dashboard.service';
 import { MachineCardComponent } from './machine-card.component';
@@ -14,11 +14,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   machines: any[] = [];
   timer!: any;
 
-  constructor(private service: DashboardService) {}
+  constructor(private service: DashboardService,private cdr: ChangeDetectorRef) { }
 
   ngOnInit() {
     this.load();
-    this.timer = setInterval(() => this.load(), 15000);
+    // this.timer = setInterval(() => this.load(), 15000);
   }
 
   ngOnDestroy() {
@@ -28,8 +28,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   load() {
     this.service.getLive().subscribe({
       next: res => {
-        console.log('Machines:', res);
         this.machines = res;
+        this.cdr.markForCheck();
+
       },
       error: err => console.error(err)
     });
