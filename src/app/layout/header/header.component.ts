@@ -60,6 +60,13 @@ export class HeaderComponent {
     document.documentElement.classList.toggle('dark', this.isDark);
   }
 
+  // Responsive Menu
+
+  isMobileMenuOpen = false;
+  toggleMobileMenu() {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+  }
+  
   // 🔒 CLOSE ON OUTSIDE CLICK
   @HostListener('document:click', ['$event'])
   onClickOutside(event: MouseEvent) {

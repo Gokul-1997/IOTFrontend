@@ -1,14 +1,16 @@
 <header
-  class="sticky top-0 flex w-full z-99999 border-[#e5e5e5] dark:border-black dark:bg-black xl:border-b">
+  class="sticky top-0 w-full z-50 border-b ">
 
-  <div class="flex flex-col items-center justify-between grow xl:flex-row xl:px-6 mx-auto max-w-screen-2xl">
-  <!-- LEFT -->
-  <div class="flex items-center gap-8">
-    <img src="/images/logo/STM_logo.png" class="dark:hidden w-3/4" />
-    <img src="/images/logo/STM_logo.png" class="hidden dark:block w-3/4" alt="Logo" />
+  <div class="flex items-center justify-between px-4 xl:px-6 mx-auto max-w-screen-2xl h-16">
+
+    <!-- LEFT -->
+    <div class="flex items-center gap-4">
+      <img src="/images/logo/STM_logo.png" class="w-32 dark:hidden" />
+      <img src="/images/logo/STM_logo.png" class="w-32 hidden dark:block" alt="Logo" />
     </div>
-    <div class="flex items-center gap-8 p-4">
-    <nav class="flex gap-2">
+
+    <!-- DESKTOP MENU -->
+    <nav class="hidden lg:flex items-center gap-2">
 
       <ng-container *ngFor="let menu of menus">
 
@@ -18,7 +20,7 @@
           (click)="navigate(menu)"
           class="nav-btn flex items-center gap-1"
           [class.active]="isActive(menu.path)">
-         <app-icon [name]="menu.icon" [size]="24" class="text-black dark:text-white"></app-icon>
+          <app-icon [name]="menu.icon" [size]="20" class="text-black dark:text-white"></app-icon>
           {{ menu.label }}
         </button>
 
@@ -29,8 +31,9 @@
             (click)="toggleMenu(menu.label)"
             class="nav-btn flex items-center gap-1"
             [class.active]="isChildActive(menu.children)">
-            <app-icon name="settings" [size]="24" class="text-black dark:text-white"></app-icon>
+            <app-icon name="settings" [size]="20" class="text-black dark:text-white"></app-icon>
             {{ menu.label }}
+
             <svg class="w-3 h-3 transition-transform"
                  [class.rotate-180]="openMenu === menu.label"
                  viewBox="0 0 20 20" fill="currentColor">
@@ -39,41 +42,101 @@
             </svg>
           </button>
 
-          <!-- DROPDOWN -->
-          <div
-            *ngIf="openMenu === menu.label"
-            class="submenu-card">
+          <!-- DESKTOP DROPDOWN -->
+          <div *ngIf="openMenu === menu.label"
+               class="absolute mt-2 bg-white dark:bg-[#111] shadow-lg rounded-lg p-2 w-48">
 
             <button
               *ngFor="let child of menu.children"
               (click)="navigate(child); closeMenu()"
-              class="submenu-item"
+              class="block w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
               [class.active]="isActive(child.path)">
               {{ child.label }}
             </button>
-
           </div>
         </div>
 
       </ng-container>
     </nav>
-  </div>
 
-  <!-- RIGHT -->
-  <div class="flex items-center bg-white dark:bg-[#111111] rounded-full p-1">
-    <button (click)="toggleTheme()" class="p-2 rounded-lg">
-      <app-icon
-        [name]="isDark ? 'sun' : 'moon'"
-        [size]="24"
-        class="text-gray-700 dark:text-white"
-      ></app-icon>
-    </button>
+    <!-- RIGHT SECTION -->
+    <div class="flex items-center gap-3">
 
-    <div class="flex items-center gap-2 rounded-full px-3 py-1
-               ">
-      <img src="/images/user/owner.png" class="h-8 w-8 rounded-full" />
-      <span class="text-sm font-medium">Admin</span>
+      <!-- THEME TOGGLE -->
+      <button (click)="toggleTheme()" class="p-2 rounded-lg">
+        <app-icon
+          [name]="isDark ? 'sun' : 'moon'"
+          [size]="22"
+          class="text-gray-700 dark:text-white">
+        </app-icon>
+      </button>
+
+      <!-- USER (hidden on small screens) -->
+      <div class="hidden lg:flex items-center gap-2">
+        <img src="/images/user/owner.png" class="h-8 w-8 rounded-full" />
+        <span class="text-sm font-medium dark:text-white">Admin</span>
+      </div>
+
+      <!-- HAMBURGER (Mobile Only) -->
+      <button
+        class="lg:hidden p-2"
+        (click)="toggleMobileMenu()">
+
+        <svg *ngIf="!isMobileMenuOpen"
+             class="w-6 h-6 text-black dark:text-white"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+
+        <svg *ngIf="isMobileMenuOpen"
+             class="w-6 h-6 text-black dark:text-white"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M6 18L18 6M6 6l12 12" />
+        </svg>
+
+      </button>
+
     </div>
   </div>
+
+  <!-- MOBILE MENU -->
+  <div *ngIf="isMobileMenuOpen"
+       class="lg:hidden bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 px-4 py-4 space-y-3">
+
+    <ng-container *ngFor="let menu of menus">
+
+      <!-- NORMAL MENU -->
+      <button
+        *ngIf="!menu.children"
+        (click)="navigate(menu); toggleMobileMenu()"
+        class="block w-full text-left py-2 dark:text-white">
+        {{ menu.label }}
+      </button>
+
+      <!-- MASTER MENU -->
+      <div *ngIf="menu.children" class="space-y-2">
+
+        <div class="font-medium dark:text-white">
+          {{ menu.label }}
+        </div>
+
+        <button
+          *ngFor="let child of menu.children"
+          (click)="navigate(child); toggleMobileMenu()"
+          class="block w-full text-left pl-4 py-1 text-sm text-gray-600 dark:text-gray-300">
+          {{ child.label }}
+        </button>
+
+      </div>
+
+    </ng-container>
+
   </div>
+
 </header>
