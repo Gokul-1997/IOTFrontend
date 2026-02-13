@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { DashboardService } from './dashboard.service';
 import { MachineCardComponent } from './machine-card.component';
 
+
+
 @Component({
   standalone: true,
   selector: 'app-dashboard',

@@ -27,7 +27,7 @@ body {
   // Set a default background, font and text colors for the application using
   // Angular Material's system-level CSS variables. Learn more about these
   // variables at https://material.angular.dev/guide/system-variables
-  background-color: var(--mat-sys-surface);
+  background-color: #000;
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
 
@@ -40,8 +40,8 @@ body {
 @tailwind utilities;
 
 body {
-  @apply bg-gray-100 text-gray-900
-         dark:bg-[#0b1628] dark:text-white
+  @apply bg-[#E5E5E5] text-gray-900
+         dark:bg-[#000] dark:text-white
          transition-colors duration-300;
 }
 
@@ -96,13 +96,15 @@ body {
   border-radius: 9999px;
   font-size: 14px;
   transition: all 0.15s ease;
-  background: #e5e7eb;
+  background: #fff;
+  border:1px solid #d0d5dd;
   color: #374151;
 }
 
 .dark .nav-btn {
-  background: #12203a;
-  color: #9ca3af;
+  background: #111111;
+  color: #AEAEAE;
+  border: 1px solid #2D2D2D;
 }
 
 .nav-btn:hover {
@@ -110,14 +112,21 @@ body {
 }
 
 .dark .nav-btn:hover {
+  background: #222222;
+}
+
+.dark .nav-btn:hover {
   color: white;
 }
 
 .nav-btn.active {
-  background: #2563eb;
+  background: #D91C23;
   color: white;
 }
 
+.nav-btn.active svg{
+  color: white;
+}
 /* SUBMENU */
 .submenu-card {
   position: absolute;
@@ -145,6 +154,7 @@ body {
   border-radius: 8px;
   font-size: 14px;
   transition: background 0.15s ease;
+  
 }
 
 .submenu-item:hover {
@@ -157,6 +167,7 @@ body {
   color: white;
 }
 
+
 /* ANIMATION */
 @keyframes dropdown {
   from {
@@ -168,3 +179,43 @@ body {
     transform: translateY(0) scale(1);
   }
 }
+
+
+// Custom Styles
+
+@layer components {
+  .menu-btn {
+    @apply rounded-full px-3 py-2 text-sm font-medium
+           bg-white
+           text-[var(--color-stm-primary)]
+           hover:bg-[var(--color-stm-primary)]
+           hover:text-white
+           flex items-center gap-1
+           transition-colors
+           dark:bg-gray-800 dark:text-gray-400
+           dark:hover:bg-white/[0.03] dark:hover:text-gray-200
+           border border-gray-300
+           dark:border-gray-700;
+  }
+
+  .menu-icon {
+    @apply w-5 h-5
+           text-[var(--color-stm-primary)]
+           dark:text-gray-400
+           group-hover:text-white
+           dark:group-hover:text-gray-200
+           transition-colors;
+  }
+
+
+}
+
+:root {
+  --color-stm-primary: #1C3D6F;
+  --color-bg-light-gray: #F6F6F6;
+}
+
+.dark {
+  --color-stm-primary: #4F7FD9;
+}
+

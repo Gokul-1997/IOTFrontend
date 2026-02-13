@@ -1,11 +1,13 @@
 import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { IconComponent } from '../../shared/icon/icon';
+
 
 @Component({
   standalone: true,
   selector: 'app-header',
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, IconComponent],
   templateUrl: './header.component.html',
 })
 export class HeaderComponent {
@@ -14,13 +16,13 @@ export class HeaderComponent {
   isDark = false;
 
   menus = [
-    { label: 'Dashboard', path: '/dashboard' },
-    { label: 'OEE', path: '/oee-reports' },
-    { label: 'Reports', path: '/reports' },
-    { label: 'Charts', path: '/charts' },
-    { label: 'Quality', path: '/quality' },
+    { label: 'Dashboard', path: '/dashboard', icon: 'gauge'},
+    { label: 'OEE', path: '/oee-reports', icon: 'oee' },
+    { label: 'Reports', path: '/reports', icon: 'reports' },
+    { label: 'Charts', path: '/charts', icon: 'chart' },
+    { label: 'Quality', path: '/quality', icon: 'quality' },
     {
-      label: 'Master',
+      label: 'Master', icon: 'settings',
       children: [
         { label: 'Machines', path: '/machines' },
         { label: 'Shifts', path: '/shifts' },

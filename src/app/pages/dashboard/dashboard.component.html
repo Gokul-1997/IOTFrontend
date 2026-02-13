@@ -1,25 +1,1049 @@
-<div class="p-8 min-h-screen bg-gray-100 dark:bg-[#0b1628]">
+<div class="p-4 mx-auto max-w-screen-2xl md:p-6">
 
-  <!-- TOP BAR -->
-    <div class="flex justify-between mb-6">
-    <h2 class="text-xl font-semibold">Dashboard</h2>
-
-    <div class="flex gap-3 px-4 py-2 rounded-full
-                bg-gray-200
-                dark:bg-[#12203a]">
-      <span>🕒 20 Jan 2026 | 3:45 PM</span>
-      <span class="px-3 py-1 bg-green-600 rounded-full text-white text-sm">03 Running</span>
-      <span class="px-3 py-1 bg-yellow-500 rounded-full text-white text-sm">01 Idle</span>
-      <span class="px-3 py-1 bg-red-600 rounded-full text-white text-sm">01 Stop</span>
-    </div>
+<!-- Title Section -->
+<div class="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90"> Dashboard </h2>
   </div>
 
+
+  <div class="flex items-center gap-3">
+    <div class="flex items-center gap-4 rounded-full bg-white px-4 py-2 shadow-sm 
+            dark:bg-gray-800">
+
+  <!-- Date & Time -->
+  <div class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
+      🕒
+    </span>
+    <span>20 Jan 2026 | 3:45 PM</span>
+  </div>
+
+
+
+
+  </div>
+  <div class="flex items-center gap-4 rounded-full bg-white px-4 py-2 shadow-sm 
+            dark:bg-gray-800">
+  <!-- Machine Running -->
+  <div class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-green-500 text-white text-xs">
+      03
+    </span>
+    Machine Running
+  </div>
+
+  <!-- Machine Idle -->
+  <div class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-yellow-400 text-white text-xs">
+      01
+    </span>
+    Machine Idle
+  </div>
+
+  <!-- Machine Stopped -->
+  <div class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white text-xs">
+      01
+    </span>
+    Machine Stopped
+  </div>
+
+</div>
+  </div>
+
+
+</div>
+
   <!-- GRID -->
-  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+  <!-- <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
     <app-machine-card
       *ngFor="let m of machines"
       [machine]="m">
     </app-machine-card>
+  </div> -->
+
+  <div class="grid grid-cols-3 gap-4 md:gap-6">
+  <!-- Machine Card Starts Here-->
+  <div
+  class="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm 
+         dark:border-gray-800 dark:bg-gray-900 md:flex-row md:p-6"
+>
+
+  <!-- LEFT -->
+  <div class="flex flex-col gap-4 justify-between">
+
+    <!-- Title -->
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+      CNC136
+    </h3>
+
+    <!-- Image -->
+    <div class="flex items-center justify-center">
+      <img
+        src="/images/product/machine_01.png"
+        alt="Machine"
+        class="object-contain"
+      />
+    </div>
+
+    <!-- Status Times -->
+    <div class="grid grid-cols-3 gap-4 text-center">
+
+      <!-- Run -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-green-600">
+          ▶
+          <span class="text-sm font-medium">Run</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          08h
+        </p>
+        <p class="text-xs text-gray-500">7m 10s</p>
+      </div>
+
+      <!-- Idle -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-yellow-500">
+          ❚❚
+          <span class="text-sm font-medium">Idle</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          00h
+        </p>
+        <p class="text-xs text-gray-500">10min</p>
+      </div>
+
+      <!-- Off -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-red-500">
+          ■
+          <span class="text-sm font-medium">Off</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          01h
+        </p>
+        <p class="text-xs text-gray-500">5min</p>
+      </div>
+
+    </div>
   </div>
+
+  <!-- MIDDLE -->
+  <div
+    class="flex flex-1 flex-col gap-4 rounded-xl bg-[var(--color-bg-light-gray)] p-4
+           dark:bg-gray-800"
+  >
+
+    <div>
+      <p class="text-sm text-gray-500">Machine Name</p>
+      <p class="font-medium text-gray-900 dark:text-white">CNC136</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Machine Type</p>
+      <p class="font-medium text-gray-900 dark:text-white">Vertical Mill</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Location</p>
+      <p class="font-medium text-gray-900 dark:text-white">Bay 02</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Status</p>
+      <span
+        class="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700
+               dark:bg-green-500/20 dark:text-green-400"
+      >
+        Running
+      </span>
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="flex flex-col items-center justify-center gap-4">
+
+    <!-- Circular Progress -->
+    <div class="relative h-24 w-24">
+      <svg viewBox="0 0 36 36" class="h-full w-full">
+        <!-- Track -->
+        <path
+          class="stroke-gray-200 dark:stroke-gray-700"
+          stroke-width="3"
+          fill="none"
+          d="M18 2.0845
+             a 15.9155 15.9155 0 0 1 0 31.831
+             a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
+        <!-- Progress -->
+        <path
+          class="stroke-[var(--color-primary)]"
+          stroke-width="3"
+          stroke-linecap="round"
+          fill="none"
+          stroke-dasharray="63, 100"
+          d="M18 2.0845
+            a 15.9155 15.9155 0 0 1 0 31.831
+            a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
+      </svg>
+
+      <div
+        class="absolute inset-0 flex flex-col items-center justify-center"
+      >
+        <p class="text-lg font-semibold text-gray-900 dark:text-white">
+          63%
+        </p>
+        <p class="text-xs text-gray-500">Utilization</p>
+      </div>
+    </div>
+
+    <!-- Target / Achieved -->
+    <div class="space-y-2 text-center ">
+      <div class="mb-5">
+      <div class="flex gap-1">
+        <span class="inline-flex items-center px-2 py-2 justify-center gap-1 rounded-lg font-medium text-sm bg-red-600 text-success-600 dark:bg-success-500/15 dark:text-success-500">
+            <img class="dark:hidden w-3" src="/images/icons/arrow-bend-top.svg" alt="arrow" />
+        </span>
+        <p class="text-sm text-gray-500">Target</p>
+        </div>
+        <p class="font-semibold text-gray-900 dark:text-white">35,000</p>
+      </div>
+      <div>
+        <div class="flex gap-1">
+        <span class="inline-flex items-center px-2 py-2 justify-center gap-1 rounded-lg font-medium text-sm bg-green-600 text-success-600 dark:bg-success-500/15 dark:text-success-500">
+            <img class="dark:hidden w-3" src="/images/icons/arrow-bend-top.svg" alt="arrow" />
+        </span>
+        <p class="text-sm text-gray-500">Achieved</p>
+        </div>
+        <p class="font-semibold text-gray-900 dark:text-white">32,000</p>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+<!-- Machine Card Ends Here-->
+  
+  
+<!-- Machine Card Starts Here-->
+  <div
+  class="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm 
+         dark:border-gray-800 dark:bg-gray-900 md:flex-row md:p-6"
+>
+
+  <!-- LEFT -->
+  <div class="flex flex-col gap-4 justify-between">
+
+    <!-- Title -->
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+      CNC136
+    </h3>
+
+    <!-- Image -->
+    <div class="flex items-center justify-center">
+      <img
+        src="/images/product/machine_01.png"
+        alt="Machine"
+        class="object-contain"
+      />
+    </div>
+
+    <!-- Status Times -->
+    <div class="grid grid-cols-3 gap-4 text-center">
+
+      <!-- Run -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-green-600">
+          ▶
+          <span class="text-sm font-medium">Run</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          08h
+        </p>
+        <p class="text-xs text-gray-500">7m 10s</p>
+      </div>
+
+      <!-- Idle -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-yellow-500">
+          ❚❚
+          <span class="text-sm font-medium">Idle</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          00h
+        </p>
+        <p class="text-xs text-gray-500">10min</p>
+      </div>
+
+      <!-- Off -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-red-500">
+          ■
+          <span class="text-sm font-medium">Off</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          01h
+        </p>
+        <p class="text-xs text-gray-500">5min</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MIDDLE -->
+  <div
+    class="flex flex-1 flex-col gap-4 rounded-xl bg-[var(--color-bg-light-gray)] p-4
+           dark:bg-gray-800"
+  >
+
+    <div>
+      <p class="text-sm text-gray-500">Machine Name</p>
+      <p class="font-medium text-gray-900 dark:text-white">CNC136</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Machine Type</p>
+      <p class="font-medium text-gray-900 dark:text-white">Vertical Mill</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Location</p>
+      <p class="font-medium text-gray-900 dark:text-white">Bay 02</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Status</p>
+      <span
+        class="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700
+               dark:bg-green-500/20 dark:text-green-400"
+      >
+        Running
+      </span>
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="flex flex-col items-center justify-center gap-4">
+
+    <!-- Circular Progress -->
+    <div class="relative h-24 w-24">
+      <svg viewBox="0 0 36 36" class="h-full w-full">
+        <!-- Track -->
+        <path
+          class="stroke-gray-200 dark:stroke-gray-700"
+          stroke-width="3"
+          fill="none"
+          d="M18 2.0845
+             a 15.9155 15.9155 0 0 1 0 31.831
+             a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
+        <!-- Progress -->
+        <path
+          class="stroke-[var(--color-primary)]"
+          stroke-width="3"
+          stroke-linecap="round"
+          fill="none"
+          stroke-dasharray="63, 100"
+          d="M18 2.0845
+            a 15.9155 15.9155 0 0 1 0 31.831
+            a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
+      </svg>
+
+      <div
+        class="absolute inset-0 flex flex-col items-center justify-center"
+      >
+        <p class="text-lg font-semibold text-gray-900 dark:text-white">
+          63%
+        </p>
+        <p class="text-xs text-gray-500">Utilization</p>
+      </div>
+    </div>
+
+    <!-- Target / Achieved -->
+    <div class="space-y-2 text-center ">
+      <div class="mb-5">
+      <div class="flex gap-1">
+        <span class="inline-flex items-center px-2 py-2 justify-center gap-1 rounded-lg font-medium text-sm bg-red-600 text-success-600 dark:bg-success-500/15 dark:text-success-500">
+            <img class="dark:hidden w-3" src="/images/icons/arrow-bend-top.svg" alt="arrow" />
+        </span>
+        <p class="text-sm text-gray-500">Target</p>
+        </div>
+        <p class="font-semibold text-gray-900 dark:text-white">35,000</p>
+      </div>
+      <div>
+        <div class="flex gap-1">
+        <span class="inline-flex items-center px-2 py-2 justify-center gap-1 rounded-lg font-medium text-sm bg-green-600 text-success-600 dark:bg-success-500/15 dark:text-success-500">
+            <img class="dark:hidden w-3" src="/images/icons/arrow-bend-top.svg" alt="arrow" />
+        </span>
+        <p class="text-sm text-gray-500">Achieved</p>
+        </div>
+        <p class="font-semibold text-gray-900 dark:text-white">32,000</p>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+<!-- Machine Card Ends Here-->
+
+
+<!-- Machine Card Starts Here-->
+  <div
+  class="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm 
+         dark:border-gray-800 dark:bg-gray-900 md:flex-row md:p-6"
+>
+
+  <!-- LEFT -->
+  <div class="flex flex-col gap-4 justify-between">
+
+    <!-- Title -->
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+      CNC136
+    </h3>
+
+    <!-- Image -->
+    <div class="flex items-center justify-center">
+      <img
+        src="/images/product/machine_01.png"
+        alt="Machine"
+        class="object-contain"
+      />
+    </div>
+
+    <!-- Status Times -->
+    <div class="grid grid-cols-3 gap-4 text-center">
+
+      <!-- Run -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-green-600">
+          ▶
+          <span class="text-sm font-medium">Run</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          08h
+        </p>
+        <p class="text-xs text-gray-500">7m 10s</p>
+      </div>
+
+      <!-- Idle -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-yellow-500">
+          ❚❚
+          <span class="text-sm font-medium">Idle</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          00h
+        </p>
+        <p class="text-xs text-gray-500">10min</p>
+      </div>
+
+      <!-- Off -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-red-500">
+          ■
+          <span class="text-sm font-medium">Off</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          01h
+        </p>
+        <p class="text-xs text-gray-500">5min</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MIDDLE -->
+  <div
+    class="flex flex-1 flex-col gap-4 rounded-xl bg-[var(--color-bg-light-gray)] p-4
+           dark:bg-gray-800"
+  >
+
+    <div>
+      <p class="text-sm text-gray-500">Machine Name</p>
+      <p class="font-medium text-gray-900 dark:text-white">CNC136</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Machine Type</p>
+      <p class="font-medium text-gray-900 dark:text-white">Vertical Mill</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Location</p>
+      <p class="font-medium text-gray-900 dark:text-white">Bay 02</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Status</p>
+      <span
+        class="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700
+               dark:bg-green-500/20 dark:text-green-400"
+      >
+        Running
+      </span>
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="flex flex-col items-center justify-center gap-4">
+
+    <!-- Circular Progress -->
+    <div class="relative h-24 w-24">
+      <svg viewBox="0 0 36 36" class="h-full w-full">
+        <!-- Track -->
+        <path
+          class="stroke-gray-200 dark:stroke-gray-700"
+          stroke-width="3"
+          fill="none"
+          d="M18 2.0845
+             a 15.9155 15.9155 0 0 1 0 31.831
+             a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
+        <!-- Progress -->
+        <path
+          class="stroke-[var(--color-primary)]"
+          stroke-width="3"
+          stroke-linecap="round"
+          fill="none"
+          stroke-dasharray="63, 100"
+          d="M18 2.0845
+            a 15.9155 15.9155 0 0 1 0 31.831
+            a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
+      </svg>
+
+      <div
+        class="absolute inset-0 flex flex-col items-center justify-center"
+      >
+        <p class="text-lg font-semibold text-gray-900 dark:text-white">
+          63%
+        </p>
+        <p class="text-xs text-gray-500">Utilization</p>
+      </div>
+    </div>
+
+    <!-- Target / Achieved -->
+    <div class="space-y-2 text-center ">
+      <div class="mb-5">
+      <div class="flex gap-1">
+        <span class="inline-flex items-center px-2 py-2 justify-center gap-1 rounded-lg font-medium text-sm bg-red-600 text-success-600 dark:bg-success-500/15 dark:text-success-500">
+            <img class="dark:hidden w-3" src="/images/icons/arrow-bend-top.svg" alt="arrow" />
+        </span>
+        <p class="text-sm text-gray-500">Target</p>
+        </div>
+        <p class="font-semibold text-gray-900 dark:text-white">35,000</p>
+      </div>
+      <div>
+        <div class="flex gap-1">
+        <span class="inline-flex items-center px-2 py-2 justify-center gap-1 rounded-lg font-medium text-sm bg-green-600 text-success-600 dark:bg-success-500/15 dark:text-success-500">
+            <img class="dark:hidden w-3" src="/images/icons/arrow-bend-top.svg" alt="arrow" />
+        </span>
+        <p class="text-sm text-gray-500">Achieved</p>
+        </div>
+        <p class="font-semibold text-gray-900 dark:text-white">32,000</p>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+<!-- Machine Card Ends Here-->
+
+<!-- Machine Card Starts Here-->
+  <div
+  class="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm 
+         dark:border-gray-800 dark:bg-gray-900 md:flex-row md:p-6"
+>
+
+  <!-- LEFT -->
+  <div class="flex flex-col gap-4 justify-between">
+
+    <!-- Title -->
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+      CNC136
+    </h3>
+
+    <!-- Image -->
+    <div class="flex items-center justify-center">
+      <img
+        src="/images/product/machine_01.png"
+        alt="Machine"
+        class="object-contain"
+      />
+    </div>
+
+    <!-- Status Times -->
+    <div class="grid grid-cols-3 gap-4 text-center">
+
+      <!-- Run -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-green-600">
+          ▶
+          <span class="text-sm font-medium">Run</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          08h
+        </p>
+        <p class="text-xs text-gray-500">7m 10s</p>
+      </div>
+
+      <!-- Idle -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-yellow-500">
+          ❚❚
+          <span class="text-sm font-medium">Idle</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          00h
+        </p>
+        <p class="text-xs text-gray-500">10min</p>
+      </div>
+
+      <!-- Off -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-red-500">
+          ■
+          <span class="text-sm font-medium">Off</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          01h
+        </p>
+        <p class="text-xs text-gray-500">5min</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MIDDLE -->
+  <div
+    class="flex flex-1 flex-col gap-4 rounded-xl bg-[var(--color-bg-light-gray)] p-4
+           dark:bg-gray-800"
+  >
+
+    <div>
+      <p class="text-sm text-gray-500">Machine Name</p>
+      <p class="font-medium text-gray-900 dark:text-white">CNC136</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Machine Type</p>
+      <p class="font-medium text-gray-900 dark:text-white">Vertical Mill</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Location</p>
+      <p class="font-medium text-gray-900 dark:text-white">Bay 02</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Status</p>
+      <span
+        class="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700
+               dark:bg-green-500/20 dark:text-green-400"
+      >
+        Running
+      </span>
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="flex flex-col items-center justify-center gap-4">
+
+    <!-- Circular Progress -->
+    <div class="relative h-24 w-24">
+      <svg viewBox="0 0 36 36" class="h-full w-full">
+        <!-- Track -->
+        <path
+          class="stroke-gray-200 dark:stroke-gray-700"
+          stroke-width="3"
+          fill="none"
+          d="M18 2.0845
+             a 15.9155 15.9155 0 0 1 0 31.831
+             a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
+        <!-- Progress -->
+        <path
+          class="stroke-[var(--color-primary)]"
+          stroke-width="3"
+          stroke-linecap="round"
+          fill="none"
+          stroke-dasharray="63, 100"
+          d="M18 2.0845
+            a 15.9155 15.9155 0 0 1 0 31.831
+            a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
+      </svg>
+
+      <div
+        class="absolute inset-0 flex flex-col items-center justify-center"
+      >
+        <p class="text-lg font-semibold text-gray-900 dark:text-white">
+          63%
+        </p>
+        <p class="text-xs text-gray-500">Utilization</p>
+      </div>
+    </div>
+
+    <!-- Target / Achieved -->
+    <div class="space-y-2 text-center ">
+      <div class="mb-5">
+      <div class="flex gap-1">
+        <span class="inline-flex items-center px-2 py-2 justify-center gap-1 rounded-lg font-medium text-sm bg-red-600 text-success-600 dark:bg-success-500/15 dark:text-success-500">
+            <img class="dark:hidden w-3" src="/images/icons/arrow-bend-top.svg" alt="arrow" />
+        </span>
+        <p class="text-sm text-gray-500">Target</p>
+        </div>
+        <p class="font-semibold text-gray-900 dark:text-white">35,000</p>
+      </div>
+      <div>
+        <div class="flex gap-1">
+        <span class="inline-flex items-center px-2 py-2 justify-center gap-1 rounded-lg font-medium text-sm bg-green-600 text-success-600 dark:bg-success-500/15 dark:text-success-500">
+            <img class="dark:hidden w-3" src="/images/icons/arrow-bend-top.svg" alt="arrow" />
+        </span>
+        <p class="text-sm text-gray-500">Achieved</p>
+        </div>
+        <p class="font-semibold text-gray-900 dark:text-white">32,000</p>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+<!-- Machine Card Ends Here-->
+
+<!-- Machine Card Starts Here-->
+  <div
+  class="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm 
+         dark:border-gray-800 dark:bg-gray-900 md:flex-row md:p-6"
+>
+
+  <!-- LEFT -->
+  <div class="flex flex-col gap-4 justify-between">
+
+    <!-- Title -->
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+      CNC136
+    </h3>
+
+    <!-- Image -->
+    <div class="flex items-center justify-center">
+      <img
+        src="/images/product/machine_01.png"
+        alt="Machine"
+        class="object-contain"
+      />
+    </div>
+
+    <!-- Status Times -->
+    <div class="grid grid-cols-3 gap-4 text-center">
+
+      <!-- Run -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-green-600">
+          ▶
+          <span class="text-sm font-medium">Run</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          08h
+        </p>
+        <p class="text-xs text-gray-500">7m 10s</p>
+      </div>
+
+      <!-- Idle -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-yellow-500">
+          ❚❚
+          <span class="text-sm font-medium">Idle</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          00h
+        </p>
+        <p class="text-xs text-gray-500">10min</p>
+      </div>
+
+      <!-- Off -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-red-500">
+          ■
+          <span class="text-sm font-medium">Off</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          01h
+        </p>
+        <p class="text-xs text-gray-500">5min</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MIDDLE -->
+  <div
+    class="flex flex-1 flex-col gap-4 rounded-xl bg-[var(--color-bg-light-gray)] p-4
+           dark:bg-gray-800"
+  >
+
+    <div>
+      <p class="text-sm text-gray-500">Machine Name</p>
+      <p class="font-medium text-gray-900 dark:text-white">CNC136</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Machine Type</p>
+      <p class="font-medium text-gray-900 dark:text-white">Vertical Mill</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Location</p>
+      <p class="font-medium text-gray-900 dark:text-white">Bay 02</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Status</p>
+      <span
+        class="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700
+               dark:bg-green-500/20 dark:text-green-400"
+      >
+        Running
+      </span>
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="flex flex-col items-center justify-center gap-4">
+
+    <!-- Circular Progress -->
+    <div class="relative h-24 w-24">
+      <svg viewBox="0 0 36 36" class="h-full w-full">
+        <!-- Track -->
+        <path
+          class="stroke-gray-200 dark:stroke-gray-700"
+          stroke-width="3"
+          fill="none"
+          d="M18 2.0845
+             a 15.9155 15.9155 0 0 1 0 31.831
+             a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
+        <!-- Progress -->
+        <path
+          class="stroke-[var(--color-primary)]"
+          stroke-width="3"
+          stroke-linecap="round"
+          fill="none"
+          stroke-dasharray="63, 100"
+          d="M18 2.0845
+            a 15.9155 15.9155 0 0 1 0 31.831
+            a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
+      </svg>
+
+      <div
+        class="absolute inset-0 flex flex-col items-center justify-center"
+      >
+        <p class="text-lg font-semibold text-gray-900 dark:text-white">
+          63%
+        </p>
+        <p class="text-xs text-gray-500">Utilization</p>
+      </div>
+    </div>
+
+    <!-- Target / Achieved -->
+    <div class="space-y-2 text-center ">
+      <div class="mb-5">
+      <div class="flex gap-1">
+        <span class="inline-flex items-center px-2 py-2 justify-center gap-1 rounded-lg font-medium text-sm bg-red-600 text-success-600 dark:bg-success-500/15 dark:text-success-500">
+            <img class="dark:hidden w-3" src="/images/icons/arrow-bend-top.svg" alt="arrow" />
+        </span>
+        <p class="text-sm text-gray-500">Target</p>
+        </div>
+        <p class="font-semibold text-gray-900 dark:text-white">35,000</p>
+      </div>
+      <div>
+        <div class="flex gap-1">
+        <span class="inline-flex items-center px-2 py-2 justify-center gap-1 rounded-lg font-medium text-sm bg-green-600 text-success-600 dark:bg-success-500/15 dark:text-success-500">
+            <img class="dark:hidden w-3" src="/images/icons/arrow-bend-top.svg" alt="arrow" />
+        </span>
+        <p class="text-sm text-gray-500">Achieved</p>
+        </div>
+        <p class="font-semibold text-gray-900 dark:text-white">32,000</p>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+<!-- Machine Card Ends Here-->
+
+<!-- Machine Card Starts Here-->
+  <div
+  class="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm 
+         dark:border-gray-800 dark:bg-gray-900 md:flex-row md:p-6"
+>
+
+  <!-- LEFT -->
+  <div class="flex flex-col gap-4 justify-between">
+
+    <!-- Title -->
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+      CNC136
+    </h3>
+
+    <!-- Image -->
+    <div class="flex items-center justify-center">
+      <img
+        src="/images/product/machine_01.png"
+        alt="Machine"
+        class="object-contain"
+      />
+    </div>
+
+    <!-- Status Times -->
+    <div class="grid grid-cols-3 gap-4 text-center">
+
+      <!-- Run -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-green-600">
+          ▶
+          <span class="text-sm font-medium">Run</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          08h
+        </p>
+        <p class="text-xs text-gray-500">7m 10s</p>
+      </div>
+
+      <!-- Idle -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-yellow-500">
+          ❚❚
+          <span class="text-sm font-medium">Idle</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          00h
+        </p>
+        <p class="text-xs text-gray-500">10min</p>
+      </div>
+
+      <!-- Off -->
+      <div>
+        <div class="flex items-center justify-center gap-1 text-red-500">
+          ■
+          <span class="text-sm font-medium">Off</span>
+        </div>
+        <p class="text-xl font-semibold text-gray-900 dark:text-white">
+          01h
+        </p>
+        <p class="text-xs text-gray-500">5min</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MIDDLE -->
+  <div
+    class="flex flex-1 flex-col gap-4 rounded-xl bg-bg-light-gray p-4
+           dark:bg-gray-800"
+  >
+
+    <div>
+      <p class="text-sm text-gray-500">Machine Name</p>
+      <p class="font-medium text-gray-900 dark:text-white">CNC136</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Machine Type</p>
+      <p class="font-medium text-gray-900 dark:text-white">Vertical Mill</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Location</p>
+      <p class="font-medium text-gray-900 dark:text-white">Bay 02</p>
+    </div>
+
+    <div>
+      <p class="text-sm text-gray-500">Status</p>
+      <span
+        class="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700
+               dark:bg-green-500/20 dark:text-green-400"
+      >
+        Running
+      </span>
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="flex flex-col items-center justify-center gap-4">
+
+    <!-- Circular Progress -->
+    <div class="relative h-24 w-24">
+      <svg viewBox="0 0 36 36" class="h-full w-full">
+        <!-- Track -->
+        <path
+          class="stroke-gray-200 dark:stroke-gray-700"
+          stroke-width="3"
+          fill="none"
+          d="M18 2.0845
+             a 15.9155 15.9155 0 0 1 0 31.831
+             a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
+        <!-- Progress -->
+        <path
+          class="stroke-[var(--color-primary)]"
+          stroke-width="3"
+          stroke-linecap="round"
+          fill="none"
+          stroke-dasharray="63, 100"
+          d="M18 2.0845
+            a 15.9155 15.9155 0 0 1 0 31.831
+            a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
+      </svg>
+
+      <div
+        class="absolute inset-0 flex flex-col items-center justify-center"
+      >
+        <p class="text-lg font-semibold text-gray-900 dark:text-white">
+          63%
+        </p>
+        <p class="text-xs text-gray-500">Utilization</p>
+      </div>
+    </div>
+
+    <!-- Target / Achieved -->
+    <div class="space-y-2 text-center ">
+      <div class="mb-5">
+      <div class="flex gap-1">
+        <span class="inline-flex items-center px-2 py-2 justify-center gap-1 rounded-lg font-medium text-sm bg-red-600 text-success-600 dark:bg-success-500/15 dark:text-success-500">
+            <img class="dark:hidden w-3" src="/images/icons/arrow-bend-top.svg" alt="arrow" />
+        </span>
+        <p class="text-sm text-gray-500">Target</p>
+        </div>
+        <p class="font-semibold text-gray-900 dark:text-white">35,000</p>
+      </div>
+      <div>
+        <div class="flex gap-1">
+        <span class="inline-flex items-center px-2 py-2 justify-center gap-1 rounded-lg font-medium text-sm bg-green-600 text-success-600 dark:bg-success-500/15 dark:text-success-500">
+            <img class="dark:hidden w-3" src="/images/icons/arrow-bend-top.svg" alt="arrow" />
+        </span>
+        <p class="text-sm text-gray-500">Achieved</p>
+        </div>
+        <p class="font-semibold text-gray-900 dark:text-white">32,000</p>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+<!-- Machine Card Ends Here-->
+
+</div>
 
 </div>

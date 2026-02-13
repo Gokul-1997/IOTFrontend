@@ -1,12 +1,13 @@
 <header
-  class="flex items-center justify-between px-6 py-4 border-b
-         bg-white text-gray-900
-         dark:bg-[#0b1628] dark:text-white dark:border-white/10">
+  class="sticky top-0 flex w-full z-99999 border-[#e5e5e5] dark:border-black dark:bg-black xl:border-b">
 
+  <div class="flex flex-col items-center justify-between grow xl:flex-row xl:px-6 mx-auto max-w-screen-2xl">
   <!-- LEFT -->
   <div class="flex items-center gap-8">
-    <img src="/images/logo/STM_logo.png" class="h-8" />
-
+    <img src="/images/logo/STM_logo.png" class="dark:hidden w-3/4" />
+    <img src="/images/logo/STM_logo.png" class="hidden dark:block w-3/4" alt="Logo" />
+    </div>
+    <div class="flex items-center gap-8 p-4">
     <nav class="flex gap-2">
 
       <ng-container *ngFor="let menu of menus">
@@ -15,8 +16,9 @@
         <button
           *ngIf="!menu.children"
           (click)="navigate(menu)"
-          class="nav-btn"
+          class="nav-btn flex items-center gap-1"
           [class.active]="isActive(menu.path)">
+         <app-icon [name]="menu.icon" [size]="24" class="text-black dark:text-white"></app-icon>
           {{ menu.label }}
         </button>
 
@@ -27,6 +29,7 @@
             (click)="toggleMenu(menu.label)"
             class="nav-btn flex items-center gap-1"
             [class.active]="isChildActive(menu.children)">
+            <app-icon name="settings" [size]="24" class="text-black dark:text-white"></app-icon>
             {{ menu.label }}
             <svg class="w-3 h-3 transition-transform"
                  [class.rotate-180]="openMenu === menu.label"
@@ -57,18 +60,20 @@
   </div>
 
   <!-- RIGHT -->
-  <div class="flex items-center gap-4">
-    <button
-      (click)="toggleTheme()"
-      class="h-9 w-9 rounded-full flex items-center justify-center
-             bg-gray-200 dark:bg-[#12203a]">
-      {{ isDark ? '☀️' : '🌙' }}
+  <div class="flex items-center bg-white dark:bg-[#111111] rounded-full p-1">
+    <button (click)="toggleTheme()" class="p-2 rounded-lg">
+      <app-icon
+        [name]="isDark ? 'sun' : 'moon'"
+        [size]="24"
+        class="text-gray-700 dark:text-white"
+      ></app-icon>
     </button>
 
     <div class="flex items-center gap-2 rounded-full px-3 py-1
-                bg-gray-200 dark:bg-[#12203a]">
+               ">
       <img src="/images/user/owner.png" class="h-8 w-8 rounded-full" />
       <span class="text-sm font-medium">Admin</span>
     </div>
+  </div>
   </div>
 </header>
