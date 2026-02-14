@@ -18,7 +18,6 @@ export class MachineFormComponent implements OnInit {
   previewUrl: string | null = null;
 
   form: any = {
-    machine_code: '',
     axis_model: '',
     machine_name: '',
     machine_year: '',
@@ -42,11 +41,8 @@ export class MachineFormComponent implements OnInit {
 
     this.service.uploadToS3(file).subscribe({
       next: (res: any) => {
-        this.form.image_url = res.url;
-
-        // ✅ FIX HERE
+        this.form.image_url = res.fileUrl;
         this.cdr.detectChanges();
-
         this.uploading = false;
       },
       error: () => {

@@ -1,14 +1,11 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardService } from './dashboard.service';
-import { MachineCardComponent } from './machine-card.component';
-
-
 
 @Component({
   standalone: true,
   selector: 'app-dashboard',
-  imports: [CommonModule, MachineCardComponent],
+  imports: [CommonModule],
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit, OnDestroy {

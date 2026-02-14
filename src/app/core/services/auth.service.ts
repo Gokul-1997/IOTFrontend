@@ -14,7 +14,19 @@ export class AuthService {
     return this.http.post<any>(`${this.api}/login`, data).pipe(
       tap(res => {
         localStorage.setItem('token', res.accessToken);
+        localStorage.setItem('refreshToken', res.refreshToken);
         localStorage.setItem('user', JSON.stringify(res.user));
+      })
+    );
+  }
+  refreshToken() {
+    const refreshToken = localStorage.getItem('refreshToken');
+
+    return this.http.post<any>(`${this.api}/refresh`, {
+      refreshToken
+    }).pipe(
+      tap(res => {
+        localStorage.setItem('token', res.accessToken);
       })
     );
   }
