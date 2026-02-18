@@ -1,12 +1,12 @@
 <header
-  class="sticky top-0 w-full z-50 border-b ">
+  class="sticky top-0 w-full z-50 py-4 bg-white dark:bg-black">
 
-  <div class="flex items-center justify-between px-4 xl:px-6 mx-auto max-w-screen-2xl h-16">
+  <div class="flex items-center justify-between px-4 xl:px-16 mx-auto h-16">
 
     <!-- LEFT -->
     <div class="flex items-center gap-4">
-      <img src="/images/logo/STM_logo.png" class="w-32 dark:hidden" />
-      <img src="/images/logo/STM_logo.png" class="w-32 hidden dark:block" alt="Logo" />
+      <img src="/images/logo/STM_Mexa_logo.svg" class="w-40 dark:hidden" />
+      <img src="/images/logo/STM_Mexa_logo.svg" class="w-40 hidden dark:block" alt="Logo" />
     </div>
 
     <!-- DESKTOP MENU -->
@@ -20,7 +20,7 @@
           (click)="navigate(menu)"
           class="nav-btn flex items-center gap-1"
           [class.active]="isActive(menu.path)">
-          <app-icon [name]="menu.icon" [size]="20" class="text-black dark:text-white"></app-icon>
+          <app-icon [name]="menu.icon" [size]="24" class="text-black dark:text-white"></app-icon>
           {{ menu.label }}
         </button>
 
@@ -31,7 +31,7 @@
             (click)="toggleMenu(menu.label)"
             class="nav-btn flex items-center gap-1"
             [class.active]="isChildActive(menu.children)">
-            <app-icon name="settings" [size]="20" class="text-black dark:text-white"></app-icon>
+            <app-icon name="settings" [size]="24" class="text-black dark:text-white"></app-icon>
             {{ menu.label }}
 
             <svg class="w-3 h-3 transition-transform"
@@ -63,21 +63,21 @@
     <div class="flex items-center gap-3">
 
       <!-- THEME TOGGLE -->
-      <button (click)="toggleTheme()" class="p-2 rounded-lg">
+      <button (click)="toggleTheme()" class="p-3 rounded-full bg-[#FFF0F8]">
         <app-icon
           [name]="isDark ? 'sun' : 'moon'"
-          [size]="22"
+          [size]="20"
           class="text-gray-700 dark:text-white">
         </app-icon>
       </button>
 
-      <!-- USER (hidden on small screens) -->
+      <!-- USER  -->
       <div class="hidden lg:flex items-center gap-2">
-        <img src="/images/user/owner.png" class="h-8 w-8 rounded-full" />
+        <img src="/images/user/owner.png" class="h-9 w-9 rounded-full" />
         <span class="text-sm font-medium dark:text-white">Admin</span>
       </div>
 
-      <!-- HAMBURGER (Mobile Only) -->
+      <!-- HAMBURGER  -->
       <button
         class="lg:hidden p-2"
         (click)="toggleMobileMenu()">

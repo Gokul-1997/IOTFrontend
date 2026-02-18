@@ -40,7 +40,7 @@ body {
 @tailwind utilities;
 
 body {
-  @apply bg-[#E5E5E5] text-gray-900
+  @apply bg-gradient-to-bl from-[#C5404A] via-[#5E3C79] to-[#4A2FA0] text-gray-900
          dark:bg-[#000] dark:text-white
          transition-colors duration-300;
 }
@@ -94,23 +94,26 @@ body {
 .nav-btn {
   padding: 8px 16px;
   border-radius: 9999px;
-  font-size: 14px;
+  font-size: 16px;
   transition: all 0.15s ease;
-  background: #fff;
-  border:1px solid #d0d5dd;
+  background: #EAEDFF;
+  // border:1px solid #d0d5dd;
   color: #374151;
 }
 
 .dark .nav-btn {
   background: #111111;
   color: #AEAEAE;
-  border: 1px solid #2D2D2D;
+  // border: 1px solid #2D2D2D;
 }
 
 .nav-btn:hover {
-  background: #d1d5db;
+  background: #2B3990;
+  color: #fff;
 }
-
+.nav-btn:hover svg{
+  color: white;
+}
 .dark .nav-btn:hover {
   background: #222222;
 }
@@ -120,7 +123,7 @@ body {
 }
 
 .nav-btn.active {
-  background: #D91C23;
+  background: #2B3990;
   color: white;
 }
 
