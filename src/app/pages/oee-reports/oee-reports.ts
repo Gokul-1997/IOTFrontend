@@ -2,11 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OeeReportsService } from './oee.service';
+import { IconComponent } from '../../shared/icon/icon';
 
 @Component({
   standalone: true,
   selector: 'app-oee-reports',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, IconComponent],
   templateUrl: './oee-reports.html'
 })
 export class OeeReportsComponent implements OnInit {
