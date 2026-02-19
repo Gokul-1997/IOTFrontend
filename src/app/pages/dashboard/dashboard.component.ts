@@ -2,11 +2,13 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardService } from './dashboard.service';
 import { IconComponent } from '../../shared/icon/icon';
+import { Router } from '@angular/router';
+import { RouterModule } from '@angular/router';
 
 @Component({
   standalone: true,
   selector: 'app-dashboard',
-  imports: [CommonModule, IconComponent],
+  imports: [CommonModule, IconComponent,RouterModule],
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -15,7 +17,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   timer!: any;
   progress = 63;
 
-  constructor(private service: DashboardService,private cdr: ChangeDetectorRef) { }
+  constructor(private service: DashboardService,private cdr: ChangeDetectorRef,private router: Router) { }
 
   ngOnInit() {
     this.load();
@@ -36,4 +38,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       error: err => console.error(err)
     });
   }
+
+  goToLive(machineCode: string) {
+  this.router.navigate(['dashboard', 'live', machineCode]);
+}
 }

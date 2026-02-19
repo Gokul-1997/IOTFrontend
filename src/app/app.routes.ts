@@ -41,6 +41,7 @@ export const routes: Routes = [
     children: [
 
       { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
+      { path: 'dashboard/live/:id', loadComponent: () => import('./pages/dashboard/live/live.component').then(m => m.LiveComponent) },
 
       { path: 'machines', component: MachinesComponent },
       { path: 'machines/create', component: MachineFormComponent },
