@@ -95,9 +95,9 @@ h1, h2, h3, h4 {
 
 /* MAIN NAV BUTTON */
 .nav-btn {
-  padding: 8px 16px;
+  padding: 4px 10px;
   border-radius: 9999px;
-  font-size: 16px;
+  font-size: 13px;
   transition: all 0.15s ease;
   background: #EAEDFF;
   // border:1px solid #d0d5dd;
@@ -202,7 +202,13 @@ h1, h2, h3, h4 {
   dark:text-gray-300 rounded-md px-3 py-2
 }
 .white-card{
-  @apply flex flex-col items-center bg-white border border-gray-300 p-3 rounded-lg
+  @apply flex flex-col items-center bg-white border border-gray-300 py-2 px-3 rounded-lg
+}
+.card-title{
+  @apply text-lg font-semibold mb-2 text-center
+}
+.body-pad{
+  @apply p-4 mx-auto md:px-6 md:py-3 xl:px-16
 }
 // Custom Styles
 
@@ -240,9 +246,64 @@ h1, h2, h3, h4 {
   --light-blue:#F3F4FF;
   --green:#0CAD5D;
   --red:#FF5966;
+  --yellow:#C38E18;
+  --blue:#3B4CCA;
 }
 
 .dark {
   --color-stm-primary: #4F7FD9;
 }
+.apexcharts-canvas,
+.apexcharts-inner,
+.apexcharts-tooltip,
+.apexcharts-xaxistooltip {
+  overflow: visible !important;
+}
+
+.apexcharts-tooltip {
+  z-index: 9999 !important;
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  transform: translateY(-30px);
+}
+
+.spindle-gauge-wrapper {
+  position: relative;
+  width: 250px;
+}
+
+/* NEEDLE */
+.needle {
+  position: absolute;
+  width: 4px;
+  height: 50px;
+  background: red;
+  bottom: 42px;
+  left: 50%;
+  transform-origin: bottom center;
+  transition: transform 0.5s ease-in-out;
+  z-index: 10;
+}
+
+/* CENTER DOT */
+.needle-center {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: black;
+  border-radius: 50%;
+  bottom: 35px;
+  left: calc(50% - 7px);
+  z-index: 11;
+}
+.gauge-scale {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  font-size: 10px;
+  fill: #475569;
+}
+
 
