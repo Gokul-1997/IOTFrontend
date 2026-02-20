@@ -60,24 +60,25 @@
     </app-machine-card>
   </div> -->
 
-  <div class="grid grid-cols-3 gap-4 md:gap-6">
-  <!-- Machine Card Starts Here-->
+<div class="grid grid-cols-3 gap-4 md:gap-6">
+
   <div
-  class="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm 
-         dark:border-gray-800 dark:bg-gray-900 md:flex-row md:p-6 cursor-pointer" (click)="goToLive('CNC136')"
->
+    *ngFor="let m of machines"
+    class="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm 
+           dark:border-gray-800 dark:bg-gray-900 md:flex-row md:p-6 cursor-pointer"
+    (click)="goToLive(m.machine_id)"
+  >
 
   <!-- LEFT -->
   <div class="flex flex-col gap-4 justify-between">
 
     <!-- Title -->
     <p class="text-lg font-semibold text-gray-900 dark:text-white">
-      CNC136
+      {{ m.machine_name }}
     </p>
 
     <!-- Image -->
     <div class="flex items-center justify-center">
-      
       <img
         src="/images/product/machine_01.png"
         alt="Machine"
@@ -91,70 +92,50 @@
       <!-- Run -->
       <div>
         <div class="flex items-center justify-center gap-1 text-green-600">
-          ▶
-          <span class="text-sm font-medium">Run</span>
+          ▶ <span class="text-sm font-medium">Run</span>
         </div>
         <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          08h
+          {{ m.production?.run_minutes || 0 }}m
         </p>
-        <p class="text-xs text-gray-500">7m 10s</p>
       </div>
 
       <!-- Idle -->
       <div>
         <div class="flex items-center justify-center gap-1 text-yellow-500">
-          ❚❚
-          <span class="text-sm font-medium">Idle</span>
+          ❚❚ <span class="text-sm font-medium">Idle</span>
         </div>
         <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          00h
+          {{ m.production?.idle_minutes || 0 }}m
         </p>
-        <p class="text-xs text-gray-500">10min</p>
       </div>
 
       <!-- Off -->
       <div>
         <div class="flex items-center justify-center gap-1 text-red-500">
-          ■
-          <span class="text-sm font-medium">Off</span>
+          ■ <span class="text-sm font-medium">Off</span>
         </div>
         <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          01h
+          {{ m.production?.off_minutes || 0 }}m
         </p>
-        <p class="text-xs text-gray-500">5min</p>
       </div>
 
     </div>
   </div>
 
   <!-- MIDDLE -->
-  <div
-    class="flex flex-1 flex-col gap-4 rounded-xl bg-[var(--light-blue)] p-4
-           dark:bg-gray-800"
-  >
-
-    <div>
-      <p class="text-sm text-gray-500">Operator</p>
-      <p class="font-medium text-gray-900 dark:text-white">Aryan</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Part Name</p>
-      <p class="font-medium text-gray-900 dark:text-white">Valve I</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Component ID</p>
-      <p class="font-medium text-gray-900 dark:text-white">602005</p>
-    </div>
+  <div class="flex flex-1 flex-col gap-4 rounded-xl bg-[var(--light-blue)] p-4 dark:bg-gray-800">
 
     <div>
       <p class="text-sm text-gray-500">Status</p>
       <span
-        class="inline-flex rounded-full bg-[#0CAD5D] px-3 py-1 text-sm font-medium text-white
-               dark:bg-green-500/20 dark:text-green-400"
+        class="inline-flex rounded-full px-3 py-1 text-sm font-medium text-white"
+        [ngClass]="{
+          'bg-[#0CAD5D]': m.live?.machine_status === 'RUN',
+          'bg-[#F4B122]': m.live?.machine_status === 'IDLE',
+          'bg-red-500': m.live?.machine_status === 'STOP'
+        }"
       >
-        Running
+        {{ m.live?.machine_status || 'OFFLINE' }}
       </span>
     </div>
 
@@ -163,951 +144,61 @@
   <!-- RIGHT -->
   <div class="flex flex-col items-center justify-center gap-4">
 
-    <!-- Circular Progress -->
     <div class="relative h-24 w-24">
       <svg viewBox="0 0 36 36" class="h-full w-full -rotate-60">
 
-      <path
-        class="stroke-gray-200 dark:stroke-gray-700"
-        stroke-width="3"
-        fill="none"
-        pathLength="100"
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
-      />
+        <path
+          class="stroke-gray-200"
+          stroke-width="3"
+          fill="none"
+          pathLength="100"
+          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
 
-      <path
-        class="stroke-[#2B3990] transition-all duration-500"
-        stroke-width="3"
-        stroke-linecap="round"
-        fill="none"
-        pathLength="100"
-        [attr.stroke-dasharray]="progress + ' 100'"
-        stroke-dashoffset="100 - progress"
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
-      />
+        <path
+          class="stroke-[#2B3990]"
+          stroke-width="3"
+          stroke-linecap="round"
+          fill="none"
+          pathLength="100"
+          [attr.stroke-dasharray]="(m.oee || 0) + ' 100'"
+          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
 
-    </svg>
+      </svg>
 
-      <div
-        class="absolute inset-0 flex flex-col items-center justify-center"
-      >
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
         <p class="text-lg font-semibold text-gray-900 dark:text-white">
-          63%
+          {{ m.oee || 0 }}%
         </p>
         <p class="text-xs text-gray-500">Utilization</p>
       </div>
-      
-    </div>
-
-    <!-- Target / Achieved -->
-    <div class="space-y-2 text-center ">
-      <div class="flex mb-2 items-center gap-2">
-      
-        <span class="inline-flex items-center p-1 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--green)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
-            <app-icon name="arrowTrendingTop" [size]="18" class="text-white"></app-icon>
-        </span>
-        <div class="gap-2 text-left">
-        <p class="text-sm text-gray-500">Target</p>
-        <p class="font-semibold text-gray-900 dark:text-white text-lg">35,000</p>
-        </div>
-        
-      </div>
-      <div class="w-full h-0.5 bg-gray-200"></div>
-      <div class="flex mb-5 items-center gap-2">
-        
-        <span class="inline-flex items-center w-6 h-6 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--red)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
-            <app-icon name="arrowTrendingBottom" [size]="18" class="text-white"></app-icon>
-        </span>
-        <div class="gap-2 text-left">
-        <p class="text-sm text-gray-500">Achieved</p>
-        <p class="font-semibold text-gray-900 dark:text-white text-lg">32,000</p>
-        </div>
-        
-      </div>
     </div>
 
   </div>
 
 </div>
-<!-- Machine Card Ends Here-->
-  
-  
-<!-- Machine Card Starts Here-->
-  <div
-  class="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm 
-         dark:border-gray-800 dark:bg-gray-900 md:flex-row md:p-6"
->
-
-  <!-- LEFT -->
-  <div class="flex flex-col gap-4 justify-between">
-
-    <!-- Title -->
-    <p class="text-lg font-semibold text-gray-900 dark:text-white">
-      CNC136
-    </p>
-
-    <!-- Image -->
-    <div class="flex items-center justify-center">
-      
-      <img
-        src="/images/product/machine_01.png"
-        alt="Machine"
-        class="object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.4)]"
-      />
-    </div>
-
-    <!-- Status Times -->
-    <div class="grid grid-cols-3 gap-4 text-center">
-
-      <!-- Run -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-green-600">
-          ▶
-          <span class="text-sm font-medium">Run</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          08h
-        </p>
-        <p class="text-xs text-gray-500">7m 10s</p>
-      </div>
-
-      <!-- Idle -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-yellow-500">
-          ❚❚
-          <span class="text-sm font-medium">Idle</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          00h
-        </p>
-        <p class="text-xs text-gray-500">10min</p>
-      </div>
-
-      <!-- Off -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-red-500">
-          ■
-          <span class="text-sm font-medium">Off</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          01h
-        </p>
-        <p class="text-xs text-gray-500">5min</p>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- MIDDLE -->
-  <div
-    class="flex flex-1 flex-col gap-4 rounded-xl bg-[var(--light-blue)] p-4
-           dark:bg-gray-800"
-  >
-
-    <div>
-      <p class="text-sm text-gray-500">Operator</p>
-      <p class="font-medium text-gray-900 dark:text-white">Aryan</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Part Name</p>
-      <p class="font-medium text-gray-900 dark:text-white">Valve I</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Component ID</p>
-      <p class="font-medium text-gray-900 dark:text-white">602005</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Status</p>
-      <span
-        class="inline-flex rounded-full bg-[#0CAD5D] px-3 py-1 text-sm font-medium text-white
-               dark:bg-green-500/20 dark:text-green-400"
-      >
-        Running
-      </span>
-    </div>
-
-  </div>
-
-  <!-- RIGHT -->
-  <div class="flex flex-col items-center justify-center gap-4">
-
-    <!-- Circular Progress -->
-    <div class="relative h-24 w-24">
-      <svg viewBox="0 0 36 36" class="h-full w-full -rotate-60">
-
-      <path
-        class="stroke-gray-200 dark:stroke-gray-700"
-        stroke-width="3"
-        fill="none"
-        pathLength="100"
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
-      />
-
-      <path
-        class="stroke-[#2B3990] transition-all duration-500"
-        stroke-width="3"
-        stroke-linecap="round"
-        fill="none"
-        pathLength="100"
-        [attr.stroke-dasharray]="progress + ' 100'"
-        stroke-dashoffset="100 - progress"
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
-      />
-
-    </svg>
-
-      <div
-        class="absolute inset-0 flex flex-col items-center justify-center"
-      >
-        <p class="text-lg font-semibold text-gray-900 dark:text-white">
-          63%
-        </p>
-        <p class="text-xs text-gray-500">Utilization</p>
-      </div>
-      
-    </div>
-
-    <!-- Target / Achieved -->
-    <div class="space-y-2 text-center ">
-      <div class="flex mb-2 items-center gap-2">
-      
-        <span class="inline-flex items-center p-1 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--green)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
-            <app-icon name="arrowTrendingTop" [size]="18" class="text-white"></app-icon>
-        </span>
-        <div class="gap-2 text-left">
-        <p class="text-sm text-gray-500">Target</p>
-        <p class="font-semibold text-gray-900 dark:text-white text-lg">35,000</p>
-        </div>
-        
-      </div>
-      <div class="w-full h-0.5 bg-gray-200"></div>
-      <div class="flex mb-5 items-center gap-2">
-        
-        <span class="inline-flex items-center w-6 h-6 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--red)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
-            <app-icon name="arrowTrendingBottom" [size]="18" class="text-white"></app-icon>
-        </span>
-        <div class="gap-2 text-left">
-        <p class="text-sm text-gray-500">Achieved</p>
-        <p class="font-semibold text-gray-900 dark:text-white text-lg">32,000</p>
-        </div>
-        
-      </div>
-    </div>
-
-  </div>
 
 </div>
-<!-- Machine Card Ends Here-->
-
-
-<!-- Machine Card Starts Here-->
-  <div
-  class="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm 
-         dark:border-gray-800 dark:bg-gray-900 md:flex-row md:p-6"
->
-
-  <!-- LEFT -->
-  <div class="flex flex-col gap-4 justify-between">
-
-    <!-- Title -->
-    <p class="text-lg font-semibold text-gray-900 dark:text-white">
-      CNC136
-    </p>
-
-    <!-- Image -->
-    <div class="flex items-center justify-center">
-      
-      <img
-        src="/images/product/machine_01.png"
-        alt="Machine"
-        class="object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.4)]"
-      />
-    </div>
-
-    <!-- Status Times -->
-    <div class="grid grid-cols-3 gap-4 text-center">
-
-      <!-- Run -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-green-600">
-          ▶
-          <span class="text-sm font-medium">Run</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          08h
-        </p>
-        <p class="text-xs text-gray-500">7m 10s</p>
-      </div>
-
-      <!-- Idle -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-yellow-500">
-          ❚❚
-          <span class="text-sm font-medium">Idle</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          00h
-        </p>
-        <p class="text-xs text-gray-500">10min</p>
-      </div>
-
-      <!-- Off -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-red-500">
-          ■
-          <span class="text-sm font-medium">Off</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          01h
-        </p>
-        <p class="text-xs text-gray-500">5min</p>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- MIDDLE -->
-  <div
-    class="flex flex-1 flex-col gap-4 rounded-xl bg-[var(--light-blue)] p-4
-           dark:bg-gray-800"
-  >
-
-    <div>
-      <p class="text-sm text-gray-500">Operator</p>
-      <p class="font-medium text-gray-900 dark:text-white">Aryan</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Part Name</p>
-      <p class="font-medium text-gray-900 dark:text-white">Valve I</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Component ID</p>
-      <p class="font-medium text-gray-900 dark:text-white">602005</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Status</p>
-      <span
-        class="inline-flex rounded-full bg-[#0CAD5D] px-3 py-1 text-sm font-medium text-white
-               dark:bg-green-500/20 dark:text-green-400"
-      >
-        Running
-      </span>
-    </div>
-
-  </div>
-
-  <!-- RIGHT -->
-  <div class="flex flex-col items-center justify-center gap-4">
-
-    <!-- Circular Progress -->
-    <div class="relative h-24 w-24">
-      <svg viewBox="0 0 36 36" class="h-full w-full -rotate-60">
-
-      <path
-        class="stroke-gray-200 dark:stroke-gray-700"
-        stroke-width="3"
-        fill="none"
-        pathLength="100"
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
-      />
-
-      <path
-        class="stroke-[#2B3990] transition-all duration-500"
-        stroke-width="3"
-        stroke-linecap="round"
-        fill="none"
-        pathLength="100"
-        [attr.stroke-dasharray]="progress + ' 100'"
-        stroke-dashoffset="100 - progress"
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
-      />
-
-    </svg>
-
-      <div
-        class="absolute inset-0 flex flex-col items-center justify-center"
-      >
-        <p class="text-lg font-semibold text-gray-900 dark:text-white">
-          63%
-        </p>
-        <p class="text-xs text-gray-500">Utilization</p>
-      </div>
-      
-    </div>
-
-    <!-- Target / Achieved -->
-    <div class="space-y-2 text-center ">
-      <div class="flex mb-2 items-center gap-2">
-      
-        <span class="inline-flex items-center p-1 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--green)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
-            <app-icon name="arrowTrendingTop" [size]="18" class="text-white"></app-icon>
-        </span>
-        <div class="gap-2 text-left">
-        <p class="text-sm text-gray-500">Target</p>
-        <p class="font-semibold text-gray-900 dark:text-white text-lg">35,000</p>
-        </div>
-        
-      </div>
-      <div class="w-full h-0.5 bg-gray-200"></div>
-      <div class="flex mb-5 items-center gap-2">
-        
-        <span class="inline-flex items-center w-6 h-6 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--red)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
-            <app-icon name="arrowTrendingBottom" [size]="18" class="text-white"></app-icon>
-        </span>
-        <div class="gap-2 text-left">
-        <p class="text-sm text-gray-500">Achieved</p>
-        <p class="font-semibold text-gray-900 dark:text-white text-lg">32,000</p>
-        </div>
-        
-      </div>
-    </div>
-
-  </div>
-
-</div>
-<!-- Machine Card Ends Here-->
-
-<!-- Machine Card Starts Here-->
-  <div
-  class="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm 
-         dark:border-gray-800 dark:bg-gray-900 md:flex-row md:p-6"
->
-
-  <!-- LEFT -->
-  <div class="flex flex-col gap-4 justify-between">
-
-    <!-- Title -->
-    <p class="text-lg font-semibold text-gray-900 dark:text-white">
-      CNC136
-    </p>
-
-    <!-- Image -->
-    <div class="flex items-center justify-center">
-      
-      <img
-        src="/images/product/machine_01.png"
-        alt="Machine"
-        class="object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.4)]"
-      />
-    </div>
-
-    <!-- Status Times -->
-    <div class="grid grid-cols-3 gap-4 text-center">
-
-      <!-- Run -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-green-600">
-          ▶
-          <span class="text-sm font-medium">Run</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          08h
-        </p>
-        <p class="text-xs text-gray-500">7m 10s</p>
-      </div>
-
-      <!-- Idle -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-yellow-500">
-          ❚❚
-          <span class="text-sm font-medium">Idle</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          00h
-        </p>
-        <p class="text-xs text-gray-500">10min</p>
-      </div>
-
-      <!-- Off -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-red-500">
-          ■
-          <span class="text-sm font-medium">Off</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          01h
-        </p>
-        <p class="text-xs text-gray-500">5min</p>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- MIDDLE -->
-  <div
-    class="flex flex-1 flex-col gap-4 rounded-xl bg-[var(--light-blue)] p-4
-           dark:bg-gray-800"
-  >
-
-    <div>
-      <p class="text-sm text-gray-500">Operator</p>
-      <p class="font-medium text-gray-900 dark:text-white">Aryan</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Part Name</p>
-      <p class="font-medium text-gray-900 dark:text-white">Valve I</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Component ID</p>
-      <p class="font-medium text-gray-900 dark:text-white">602005</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Status</p>
-      <span
-        class="inline-flex rounded-full bg-[#0CAD5D] px-3 py-1 text-sm font-medium text-white
-               dark:bg-green-500/20 dark:text-green-400"
-      >
-        Running
-      </span>
-    </div>
-
-  </div>
-
-  <!-- RIGHT -->
-  <div class="flex flex-col items-center justify-center gap-4">
-
-    <!-- Circular Progress -->
-    <div class="relative h-24 w-24">
-      <svg viewBox="0 0 36 36" class="h-full w-full -rotate-60">
-
-      <path
-        class="stroke-gray-200 dark:stroke-gray-700"
-        stroke-width="3"
-        fill="none"
-        pathLength="100"
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
-      />
-
-      <path
-        class="stroke-[#2B3990] transition-all duration-500"
-        stroke-width="3"
-        stroke-linecap="round"
-        fill="none"
-        pathLength="100"
-        [attr.stroke-dasharray]="progress + ' 100'"
-        stroke-dashoffset="100 - progress"
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
-      />
-
-    </svg>
-
-      <div
-        class="absolute inset-0 flex flex-col items-center justify-center"
-      >
-        <p class="text-lg font-semibold text-gray-900 dark:text-white">
-          63%
-        </p>
-        <p class="text-xs text-gray-500">Utilization</p>
-      </div>
-      
-    </div>
-
-    <!-- Target / Achieved -->
-    <div class="space-y-2 text-center ">
-      <div class="flex mb-2 items-center gap-2">
-      
-        <span class="inline-flex items-center p-1 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--green)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
-            <app-icon name="arrowTrendingTop" [size]="18" class="text-white"></app-icon>
-        </span>
-        <div class="gap-2 text-left">
-        <p class="text-sm text-gray-500">Target</p>
-        <p class="font-semibold text-gray-900 dark:text-white text-lg">35,000</p>
-        </div>
-        
-      </div>
-      <div class="w-full h-0.5 bg-gray-200"></div>
-      <div class="flex mb-5 items-center gap-2">
-        
-        <span class="inline-flex items-center w-6 h-6 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--red)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
-            <app-icon name="arrowTrendingBottom" [size]="18" class="text-white"></app-icon>
-        </span>
-        <div class="gap-2 text-left">
-        <p class="text-sm text-gray-500">Achieved</p>
-        <p class="font-semibold text-gray-900 dark:text-white text-lg">32,000</p>
-        </div>
-        
-      </div>
-    </div>
-
-  </div>
-
-</div>
-<!-- Machine Card Ends Here-->
-
-<!-- Machine Card Starts Here-->
-  <div
-  class="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm 
-         dark:border-gray-800 dark:bg-gray-900 md:flex-row md:p-6"
->
-
-  <!-- LEFT -->
-  <div class="flex flex-col gap-4 justify-between">
-
-    <!-- Title -->
-    <p class="text-lg font-semibold text-gray-900 dark:text-white">
-      CNC136
-    </p>
-
-    <!-- Image -->
-    <div class="flex items-center justify-center">
-      
-      <img
-        src="/images/product/machine_01.png"
-        alt="Machine"
-        class="object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.4)]"
-      />
-    </div>
-
-    <!-- Status Times -->
-    <div class="grid grid-cols-3 gap-4 text-center">
-
-      <!-- Run -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-green-600">
-          ▶
-          <span class="text-sm font-medium">Run</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          08h
-        </p>
-        <p class="text-xs text-gray-500">7m 10s</p>
-      </div>
-
-      <!-- Idle -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-yellow-500">
-          ❚❚
-          <span class="text-sm font-medium">Idle</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          00h
-        </p>
-        <p class="text-xs text-gray-500">10min</p>
-      </div>
-
-      <!-- Off -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-red-500">
-          ■
-          <span class="text-sm font-medium">Off</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          01h
-        </p>
-        <p class="text-xs text-gray-500">5min</p>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- MIDDLE -->
-  <div
-    class="flex flex-1 flex-col gap-4 rounded-xl bg-[var(--light-blue)] p-4
-           dark:bg-gray-800"
-  >
-
-    <div>
-      <p class="text-sm text-gray-500">Operator</p>
-      <p class="font-medium text-gray-900 dark:text-white">Aryan</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Part Name</p>
-      <p class="font-medium text-gray-900 dark:text-white">Valve I</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Component ID</p>
-      <p class="font-medium text-gray-900 dark:text-white">602005</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Status</p>
-      <span
-        class="inline-flex rounded-full bg-[#0CAD5D] px-3 py-1 text-sm font-medium text-white
-               dark:bg-green-500/20 dark:text-green-400"
-      >
-        Running
-      </span>
-    </div>
-
-  </div>
-
-  <!-- RIGHT -->
-  <div class="flex flex-col items-center justify-center gap-4">
-
-    <!-- Circular Progress -->
-    <div class="relative h-24 w-24">
-      <svg viewBox="0 0 36 36" class="h-full w-full -rotate-60">
-
-      <path
-        class="stroke-gray-200 dark:stroke-gray-700"
-        stroke-width="3"
-        fill="none"
-        pathLength="100"
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
-      />
-
-      <path
-        class="stroke-[#2B3990] transition-all duration-500"
-        stroke-width="3"
-        stroke-linecap="round"
-        fill="none"
-        pathLength="100"
-        [attr.stroke-dasharray]="progress + ' 100'"
-        stroke-dashoffset="100 - progress"
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
-      />
-
-    </svg>
-
-      <div
-        class="absolute inset-0 flex flex-col items-center justify-center"
-      >
-        <p class="text-lg font-semibold text-gray-900 dark:text-white">
-          63%
-        </p>
-        <p class="text-xs text-gray-500">Utilization</p>
-      </div>
-      
-    </div>
-
-    <!-- Target / Achieved -->
-    <div class="space-y-2 text-center ">
-      <div class="flex mb-2 items-center gap-2">
-      
-        <span class="inline-flex items-center p-1 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--green)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
-            <app-icon name="arrowTrendingTop" [size]="18" class="text-white"></app-icon>
-        </span>
-        <div class="gap-2 text-left">
-        <p class="text-sm text-gray-500">Target</p>
-        <p class="font-semibold text-gray-900 dark:text-white text-lg">35,000</p>
-        </div>
-        
-      </div>
-      <div class="w-full h-0.5 bg-gray-200"></div>
-      <div class="flex mb-5 items-center gap-2">
-        
-        <span class="inline-flex items-center w-6 h-6 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--red)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
-            <app-icon name="arrowTrendingBottom" [size]="18" class="text-white"></app-icon>
-        </span>
-        <div class="gap-2 text-left">
-        <p class="text-sm text-gray-500">Achieved</p>
-        <p class="font-semibold text-gray-900 dark:text-white text-lg">32,000</p>
-        </div>
-        
-      </div>
-    </div>
-
-  </div>
-
-</div>
-<!-- Machine Card Ends Here-->
-
-<!-- Machine Card Starts Here-->
-  <div
-  class="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm 
-         dark:border-gray-800 dark:bg-gray-900 md:flex-row md:p-6"
->
-
-  <!-- LEFT -->
-  <div class="flex flex-col gap-4 justify-between">
-
-    <!-- Title -->
-    <p class="text-lg font-semibold text-gray-900 dark:text-white">
-      CNC136
-    </p>
-
-    <!-- Image -->
-    <div class="flex items-center justify-center">
-      
-      <img
-        src="/images/product/machine_01.png"
-        alt="Machine"
-        class="object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.4)]"
-      />
-    </div>
-
-    <!-- Status Times -->
-    <div class="grid grid-cols-3 gap-4 text-center">
-
-      <!-- Run -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-green-600">
-          ▶
-          <span class="text-sm font-medium">Run</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          08h
-        </p>
-        <p class="text-xs text-gray-500">7m 10s</p>
-      </div>
-
-      <!-- Idle -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-yellow-500">
-          ❚❚
-          <span class="text-sm font-medium">Idle</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          00h
-        </p>
-        <p class="text-xs text-gray-500">10min</p>
-      </div>
-
-      <!-- Off -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-red-500">
-          ■
-          <span class="text-sm font-medium">Off</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          01h
-        </p>
-        <p class="text-xs text-gray-500">5min</p>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- MIDDLE -->
-  <div
-    class="flex flex-1 flex-col gap-4 rounded-xl bg-[var(--light-blue)] p-4
-           dark:bg-gray-800"
-  >
-
-    <div>
-      <p class="text-sm text-gray-500">Operator</p>
-      <p class="font-medium text-gray-900 dark:text-white">Aryan</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Part Name</p>
-      <p class="font-medium text-gray-900 dark:text-white">Valve I</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Component ID</p>
-      <p class="font-medium text-gray-900 dark:text-white">602005</p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">Status</p>
-      <span
-        class="inline-flex rounded-full bg-[#0CAD5D] px-3 py-1 text-sm font-medium text-white
-               dark:bg-green-500/20 dark:text-green-400"
-      >
-        Running
-      </span>
-    </div>
-
-  </div>
-
-  <!-- RIGHT -->
-  <div class="flex flex-col items-center justify-center gap-4">
-
-    <!-- Circular Progress -->
-    <div class="relative h-24 w-24">
-      <svg viewBox="0 0 36 36" class="h-full w-full -rotate-60">
-
-      <path
-        class="stroke-gray-200 dark:stroke-gray-700"
-        stroke-width="3"
-        fill="none"
-        pathLength="100"
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
-      />
-
-      <path
-        class="stroke-[#2B3990] transition-all duration-500"
-        stroke-width="3"
-        stroke-linecap="round"
-        fill="none"
-        pathLength="100"
-        [attr.stroke-dasharray]="progress + ' 100'"
-        stroke-dashoffset="100 - progress"
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
-      />
-
-    </svg>
-
-      <div
-        class="absolute inset-0 flex flex-col items-center justify-center"
-      >
-        <p class="text-lg font-semibold text-gray-900 dark:text-white">
-          63%
-        </p>
-        <p class="text-xs text-gray-500">Utilization</p>
-      </div>
-      
-    </div>
-
-    <!-- Target / Achieved -->
-    <div class="space-y-2 text-center ">
-      <div class="flex mb-2 items-center gap-2">
-      
-        <span class="inline-flex items-center p-1 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--green)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
-            <app-icon name="arrowTrendingTop" [size]="18" class="text-white"></app-icon>
-        </span>
-        <div class="gap-2 text-left">
-        <p class="text-sm text-gray-500">Target</p>
-        <p class="font-semibold text-gray-900 dark:text-white text-lg">35,000</p>
-        </div>
-        
-      </div>
-      <div class="w-full h-0.5 bg-gray-200"></div>
-      <div class="flex mb-5 items-center gap-2">
-        
-        <span class="inline-flex items-center w-6 h-6 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--red)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
-            <app-icon name="arrowTrendingBottom" [size]="18" class="text-white"></app-icon>
-        </span>
-        <div class="gap-2 text-left">
-        <p class="text-sm text-gray-500">Achieved</p>
-        <p class="font-semibold text-gray-900 dark:text-white text-lg">32,000</p>
-        </div>
-        
-      </div>
-    </div>
-
-  </div>
-
-</div>
-<!-- Machine Card Ends Here-->
-
+<div class="flex justify-center gap-4 mt-6">
+  <button 
+    class="px-4 py-2 bg-gray-200 rounded"
+    (click)="prev()"
+    [disabled]="page === 1">
+    Prev
+  </button>
+
+  <span class="px-4 py-2 font-semibold">
+    Page {{ page }}
+  </span>
+
+  <button 
+    class="px-4 py-2 bg-gray-200 rounded"
+    (click)="next()"
+    [disabled]="page * perPage >= total">
+    Next
+  </button>
 </div>
 
+
 </div>
-<router-outlet></router-outlet>
