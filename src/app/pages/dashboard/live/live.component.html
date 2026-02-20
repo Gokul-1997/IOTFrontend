@@ -1,44 +1,16 @@
-<div class="p-4 mx-auto md:p-6 xl:px-16">
+<div class="body-pad">
    <!-- HEADER -->
    <!-- Title Section -->
-   <div class="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between bg-gradient-to-l from-[#C5404A] via-[#5E3C79] to-[#4A2FA0] rounded-lg ps-5 py-0.5 pe-3">
+   <div class="flex flex-col gap-4 mb-3 sm:flex-row sm:items-center sm:justify-between bg-gradient-to-l from-[#C5404A] via-[#5E3C79] to-[#4A2FA0] rounded-lg ps-3 py-1 pe-1">
    <div>
-      <h2 class="text-2xl font-ubuntu font-bold text-white dark:text-white/90"> OEE Reports </h2>
+      <h2 class="text-xl font-ubuntu font-bold text-white dark:text-white/90 text-center sm:text-left"> Line1 - CNC136 </h2>
    </div>
-   <div class="flex items-center gap-3">
+   <div class="flex flex-col sm:flx-row items-center gap-3">
       
-      <div class="flex items-center gap-4 rounded-full px-4 py-2 shadow-sm 
-         ">
-         <!-- All Machine -->
-         <button class="btn-status active">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-[#5D5BCD] text-white text-sm">
-            18
-            </span>
-            All Machines
+      <button class="bg-[var(--green)] px-4 py-2 rounded-md text-white ">
+            Machine Status :   Running
          </button>
-         <!-- Machine Running -->
-         <button class="btn-status">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-[#0CAD5D] text-white text-sm">
-            03
-            </span>
-            Machine Running
-          </button>
-         <!-- Machine Idle -->
-         <button class="btn-status">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-[#F4B122] text-white text-sm">
-            01
-            </span>
-            Machine Idle
-         </button>
-         <!-- Machine Stopped -->
-         <button class="btn-status">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white text-sm">
-            01
-            </span>
-            Machine Stopped
-         </button>
-      </div>
-      <div class="flex items-center gap-4 rounded-lg bg-gradient-to-r from-[#2D388E]  to-[#792953] px-4 py-2 shadow-sm 
+      <div class="flex items-center gap-4 rounded-lg bg-gradient-to-r from-[#2D388E]  to-[#792953] px-2 py-1 shadow-sm 
          dark:bg-gray-800">
          <!-- Date & Time -->
          <div class="flex items-center gap-2 text-sm text-white dark:text-gray-300">            
@@ -49,6 +21,10 @@
             </span>
          </div>
       </div>
+       <button class="btn-status active">
+            <app-icon name="arrowBack" [size]="18" class="text-white dark:text-white py-0.5"></app-icon>
+            Back
+         </button>
    </div>
 </div>
 
@@ -56,31 +32,31 @@
     <div class="space-y-6">
 
     <!-- TOP SECTION -->
-     <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+     <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
 
       <!-- MACHINE CARD -->
-      <div class="flex xl:col-span-6 bg-white dark:bg-neutral-900 border rounded-xl p-6">
+      <div class="flex flex-col sm:flex-row xl:col-span-6 bg-white dark:bg-neutral-900 border rounded-xl p-4 gap-6">
          <div class="w-full">
         <img src="/images/product/machine_login_02.png"
-             class="rounded-lg mb-4 w-full"
+             class="rounded-lg mb-4 "
              alt="Machine Image">
              </div>
-         <div class="bg-[var(--light-blue)] p-6 rounded-2xl">
-        <div class="flex gap-3 mb-4">
+         <div class="bg-[var(--light-blue)] p-3 rounded-2xl w-full">
+        <div class="flex gap-3 mb-2 w-full">
          <img src="/images/user/owner.png" class="h-12 w-12 rounded-full" />
           <div class="flex flex-col gap-0"><span class="text-base">Operator</span> <p class="font-medium  text-xl">Suresh Babu</p></div>
         </div>
-        <div class="flex gap-2">
-          <div class="white-card"><span class="font-medium">Shift:</span> <span>01</span></div>
-          <div class="white-card"><span class="font-medium">Part:</span> 8274</div>
-          <div class="white-card"><span class="font-medium">Comp&nbsp;ID:</span> 22356</div>
+        <div class="flex gap-2 w-full">
+          <div class="white-card w-full"><span class="font-medium">Shift:</span> <span>01</span></div>
+          <div class="white-card w-full"><span class="font-medium">Part:</span> 8274</div>
+          <div class="white-card w-full"><span class="font-medium">Comp&nbsp;ID:</span> 22356</div>
         </div>
 
-        <div class="mt-4 pt-4 border-t dark:border-gray-700">
+        <div class="mt-2 pt-2 border-t dark:border-gray-700 w-full">
           <p class="font-medium mb-2">Part Produced</p>
           <!-- Target / Achieved -->
-            <div class="flex text-center gap-4 bg-white border border-gray-300 rounded-lg p-3">
-               <div class="flex  items-center gap-2">
+            <div class="flex text-center gap-4 bg-white border border-gray-300 rounded-lg p-3 w-full">
+               <div class="flex  items-center gap-2 w-full">
                
                <span class="inline-flex items-center p-1 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--green)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
                      <app-icon name="arrowTrendingTop" [size]="18" class="text-white"></app-icon>
@@ -91,7 +67,7 @@
                </div>
                
                </div>
-               <div class="flex  items-center gap-2">
+               <div class="flex  items-center gap-2 w-full">
                
                <span class="inline-flex items-center w-6 h-6 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--red)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
                      <app-icon name="arrowTrendingBottom" [size]="18" class="text-white"></app-icon>
@@ -109,69 +85,219 @@
       </div>
 
       <!-- TIME INFO -->
-      <div class="xl:col-span-3 bg-white dark:bg-neutral-900 border rounded-xl p-6">
-         <h2 class="text-lg font-semibold mb-4">Time Info</h2>
+      <div class="xl:col-span-3 bg-white dark:bg-neutral-900 border rounded-xl p-4">
+         <p class="card-title">Time Info</p>
 
-        <div class="space-y-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Running Time</p>
-              <p class="text-xl font-bold">8h 7m 0s</p>
+        <div class="space-y-2">
+          <!-- Running Time -->
+          <div class="flex items-center justify-between bg-[var(--light-blue)] py-2 ps-2 pe-2 rounded-xl">
+            <div class="">
+              <p class="text-sm text-gray-500 dark:text-gray-400">Machine Running Time</p>
+              <p class="text-2xl font-bold">8h 7m 0s</p>
             </div>
-            <img src="https://via.placeholder.com/80"
-                 alt="Chart"
-                 class="w-20 h-20">
+            <!-- Running time Circular Progress -->
+            <div class="relative h-16 w-16">
+              <svg viewBox="0 0 36 36" class="h-full w-full -rotate-60">
+
+              <path
+                class="stroke-gray-200 dark:stroke-gray-700"
+                stroke-width="3"
+                fill="none"
+                pathLength="100"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+
+              <path
+                class="stroke-[var(--green)] transition-all duration-500"
+                stroke-width="3"
+                stroke-linecap="round"
+                fill="none"
+                pathLength="100"
+                [attr.stroke-dasharray]="runningprogress + ' 100'"
+                stroke-dashoffset="100 - runningprogress"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+
+            </svg>
+
+              <div
+                class="absolute inset-0 flex flex-col items-center justify-center"
+              >
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                  63%
+                </p>
+                 </div>
+              
+            </div>
           </div>
 
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Down Time</p>
-              <p class="text-xl font-bold">20m 10s</p>
+          <!-- Down Time -->
+          <div class="flex items-center justify-between bg-[var(--light-blue)] py-2 ps-2 pe-2 rounded-xl">
+            <div class="">
+              <p class="text-sm text-gray-500 dark:text-gray-400">Machine Down Time</p>
+              <p class="text-2xl font-bold">20m 10s</p>
             </div>
-            <img src="https://via.placeholder.com/80"
-                 alt="Chart"
-                 class="w-20 h-20">
+            <!-- Running time Circular Progress -->
+            <div class="relative h-16 w-16">
+              <svg viewBox="0 0 36 36" class="h-full w-full -rotate-60">
+
+              <path
+                class="stroke-gray-200 dark:stroke-gray-700"
+                stroke-width="3"
+                fill="none"
+                pathLength="100"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+
+              <path
+                class="stroke-[var(--yellow)] transition-all duration-500"
+                stroke-width="3"
+                stroke-linecap="round"
+                fill="none"
+                pathLength="100"
+                [attr.stroke-dasharray]="runningprogress + ' 100'"
+                stroke-dashoffset="100 - runningprogress"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+
+            </svg>
+
+              <div
+                class="absolute inset-0 flex flex-col items-center justify-center"
+              >
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                  63%
+                </p>
+                 </div>
+              
+            </div>
           </div>
 
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Off Time</p>
-              <p class="text-xl font-bold">10m 1s</p>
+          <!-- Off Time -->
+          <div class="flex items-center justify-between bg-[var(--light-blue)] py-2 ps-2 pe-2 rounded-xl">
+            <div class="">
+              <p class="text-sm text-gray-500 dark:text-gray-400">Machine Off Time</p>
+              <p class="text-2xl font-bold">10m 1s</p>
             </div>
-            <img src="https://via.placeholder.com/80"
-                 alt="Chart"
-                 class="w-20 h-20">
+            <!-- Running time Circular Progress -->
+            <div class="relative h-16 w-16">
+              <svg viewBox="0 0 36 36" class="h-full w-full -rotate-60">
+
+              <path
+                class="stroke-gray-200 dark:stroke-gray-700"
+                stroke-width="3"
+                fill="none"
+                pathLength="100"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+
+              <path
+                class="stroke-[var(--red)] transition-all duration-500"
+                stroke-width="3"
+                stroke-linecap="round"
+                fill="none"
+                pathLength="100"
+                [attr.stroke-dasharray]="runningprogress + ' 100'"
+                stroke-dashoffset="100 - runningprogress"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+
+            </svg>
+
+              <div
+                class="absolute inset-0 flex flex-col items-center justify-center"
+              >
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                  63%
+                </p>
+                 </div>
+              
+            </div>
           </div>
+
         </div>
       </div>
 
       <!-- MACHINE STATUS -->
-      <div class="xl:col-span-3 bg-white dark:bg-neutral-900 border rounded-xl p-6">
-         <h2 class="text-lg font-semibold mb-4">Machine Status</h2>
-
-        <div class="text-center mb-4">
-          <img src="https://via.placeholder.com/200"
-               alt="Utilization Chart"
-               class="mx-auto">
-          <p class="mt-2 font-bold text-xl">63% Utilization</p>
+      <div class="xl:col-span-3 bg-white dark:bg-neutral-900 border rounded-xl p-4">
+         <p class="card-title">Machine Status</p>
+        <div class="flex justify-center">
+        <div class="text-center">
+          <div class="-ms-10 -mt-10">
+          <apx-chart
+          #chart
+          [series]="radialOptions.series"
+          [chart]="radialOptions.chart"
+          [plotOptions]="radialOptions.plotOptions"
+          [fill]="radialOptions.fill"
+          [stroke]="radialOptions.stroke"
+          [labels]="radialOptions.labels">
+        </apx-chart>
+        </div>
         </div>
 
-        <div class="flex justify-between text-sm mt-4">
-          <span>Accepted: 34,800</span>
-          <span>Rejected: 200</span>
+        <div class="flex flex-col gap-4 text-sm mt-1">
+          <!-- Target / Achieved -->
+
+               <div class="flex  items-center gap-2 w-full ">
+               
+               <span class="inline-flex items-center p-1 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--green)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
+                     <app-icon name="arrowTrendingTop" [size]="18" class="text-white"></app-icon>
+               </span>
+               <div class="gap-2 text-left">
+               <p class="text-sm text-gray-500">Target</p>
+               <p class="font-semibold text-gray-900 dark:text-white text-lg">35,000</p>
+               </div>
+               
+               </div>
+               <div class="flex  items-center gap-2 w-full">
+               
+               <span class="inline-flex items-center w-6 h-6 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--red)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
+                     <app-icon name="arrowTrendingBottom" [size]="18" class="text-white"></app-icon>
+               </span>
+               <div class="gap-2 text-left">
+               <p class="text-sm text-gray-500">Achieved</p>
+               <p class="font-semibold text-gray-900 dark:text-white text-lg">32,000</p>
+               </div>
+               
+               </div>
+
+        </div>
         </div>
 
-        <div class="mt-6 pt-4 border-t dark:border-gray-700">
-          <p class="font-medium mb-2">Power Consumption</p>
-          <div class="flex justify-between text-sm">
-            <span>Shift: 54 KWH</span>
-            <span>Total: 54 KWH</span>
+        <div class="flex flex-col pt-2 border-t dark:border-gray-700 justify-center">
+          <p class="flex gap-2 items-center card-title justify-center mb-4"><span class="inline-flex items-center w-6 h-6 justify-center gap-1 rounded-lg font-medium text-sm bg-[var(--red)] text-success-600 dark:bg-success-500/15 dark:text-success-500">
+                     <app-icon name="bolt" [size]="18" class="text-white"></app-icon>
+               </span> Power Consumption</p>
+          <div class="flex text-sm gap-4 justify-center">
+            <div class="bg-[var(--light-blue)] flex items-center gap-1 py-1 px-4 rounded-lg">
+            <span class="flex flex-col justify-center font-medium"><span>Shift</span> o1</span>
+            <span><app-icon name="chevronright" [size]="18" class="text-gray-600"></app-icon></span>
+            <span class="flex flex-col items-center gap-0"><span class="text-2xl">54</span> KWH</span>
+            </div>
+            <div class="bg-[var(--light-blue)] flex items-center gap-1 py-1 px-4 rounded-lg">
+            <span class="flex flex-col justify-center font-medium"><span>Shift</span> o1</span>
+            <span><app-icon name="chevronright" [size]="18" class="text-gray-600"></app-icon></span>
+            <span class="flex flex-col items-center gap-0"><span class="text-2xl">54</span> KWH</span>
+            </div>
           </div>
         </div>
       </div>
 
    </div>
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 xl:grid-cols-1 gap-6">
 
 
       
@@ -180,18 +306,86 @@
 
       <!-- Machine Status -->
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow p-6">
-        
+        <!-- LAST 8 HOURS STATUS -->
+         <div class="flex flex-col sm:flex-row justify-between">
+      <p class="text-lg font-semibold">Last 8 Hours Machine Status</p>
+      <div class="flex gap-2">
+        <p class="flex flex-col sm:flex-row">Total Duration : <span>7h 15m 20s</span></p>
+        <span>|</span>
+        <p class="flex flex-col sm:flex-row">Break : <span>1h 15m 10s</span></p>
+      </div>
+      </div>
+
+      <apx-chart
+[series]="timelineOptions.series"
+[chart]="timelineOptions.chart"
+[plotOptions]="timelineOptions.plotOptions"
+[xaxis]="timelineOptions.xaxis"
+[tooltip]="timelineOptions.tooltip">
+</apx-chart>
       </div>
 
     </div>
 
-    <!-- LAST 8 HOURS STATUS -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow p-6">
-      <h2 class="text-lg font-semibold mb-4">Last 8 Hours Machine Status</h2>
-
-      <img src="https://via.placeholder.com/1200x120"
-           alt="Timeline Chart"
-           class="w-full rounded-lg">
+    
+    <div class="grid grid-cols-12 gap-4">
+      <div class="flex col-span-6 bg-white dark:bg-neutral-900 border rounded-xl p-4 ">
+        <div>
+          <p class="text-lg font-semibold text-center">OEE</p>
+          <div class="-ms-5 -mt-5">
+          <apx-chart
+            #chart
+            [series]="oeeOptions.series"
+            [chart]="oeeOptions.chart"
+            [plotOptions]="oeeOptions.plotOptions"
+            [fill]="oeeOptions.fill"
+            [stroke]="oeeOptions.stroke"
+            [labels]="oeeOptions.labels">
+          </apx-chart>
+          </div>
+        </div>
+        <div>
+          <p class="text-lg font-semibold text-center">Actual Production</p>
+          <div class="flex items-center">
+          <apx-chart
+          [series]="apOptions.series"
+          [chart]="apOptions.chart"
+          [dataLabels]="apOptions.dataLabels"
+          [plotOptions]="apOptions.plotOptions"
+          [yaxis]="apOptions.yaxis"
+          [xaxis]="apOptions.xaxis"
+          [legend]="apOptions.legend"
+          [colors]="apOptions.colors"
+          [grid]="apOptions.grid"
+        ></apx-chart>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 bg-[var(--blue)] rounded-full"></span>
+            <div class="flex flex-col">
+              Expected
+            <span class="text-base font-semibold">26</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 bg-[var(--green)] rounded-full"></span>
+            <div class="flex flex-col">
+              Good
+            <span class="text-base font-semibold">26</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 bg-[var(--red)] rounded-full"></span>
+            <div class="flex flex-col">
+              Bad
+            <span class="text-base font-semibold">26</span>
+            </div>
+          </div>
+        </div>
+        </div>
+        </div>
+      </div>
+      <div class="flex col-span-3 bg-white dark:bg-neutral-900 border rounded-xl p-4 gap-6">2</div>
+      <div class="flex col-span-3 bg-white dark:bg-neutral-900 border rounded-xl p-4 gap-6">3</div>
     </div>
 
     <!-- BOTTOM SECTION -->
@@ -209,9 +403,40 @@
       <!-- Spindle Speed -->
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow p-6 text-center">
         <h2 class="text-lg font-semibold mb-4">Spindle Speed</h2>
-        <img src="https://via.placeholder.com/200"
-             alt="Speed Chart"
-             class="mx-auto mb-4">
+        <div class="spindle-gauge-wrapper" *ngIf="spindleOptions">
+
+  <apx-chart
+    #spindleChart
+    [series]="spindleOptions.series"
+    [chart]="spindleOptions.chart"
+    [plotOptions]="spindleOptions.plotOptions"
+    [labels]="spindleOptions.labels"
+    [fill]="spindleOptions.fill">
+  </apx-chart>
+  <svg class="gauge-scale" viewBox="0 0 200 120">
+
+  <text x="0" y="110">0</text>
+  <text x="25" y="40">25</text>
+  <text x="60" y="15">50</text>
+  <text x="100" y="5">75</text>
+  <text x="140" y="15">100</text>
+  <text x="170" y="40">125</text>
+  <text x="195" y="110">150</text>
+
+</svg>
+
+
+  <!-- NEEDLE -->
+  <div 
+    class="needle" 
+    [style.transform]="'rotate(' + spindleNeedleAngle + 'deg)'">
+  </div>
+
+  <!-- CENTER DOT -->
+  <div class="needle-center"></div>
+
+</div>
+
         <p class="text-xl font-bold">2200 RPM</p>
       </div>
 
