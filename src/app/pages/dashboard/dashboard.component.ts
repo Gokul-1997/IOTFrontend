@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardService } from './dashboard.service';
 import { RouterModule, Router } from '@angular/router';
@@ -7,7 +7,7 @@ import { IconComponent } from '../../shared/icon/icon';  // adjust path if neede
 @Component({
   standalone: true,
   selector: 'app-dashboard',
-  imports: [CommonModule, RouterModule,IconComponent],
+  imports: [CommonModule, RouterModule, IconComponent],
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -20,8 +20,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private service: DashboardService,
-    private router: Router
-  ) {}
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) { }
 
   ngOnInit() {
     this.load(this.page);
@@ -46,15 +47,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.page = page;
         this.total = res.total || 0;
 
-        if (!res.machines || res.machines.length === 0) {
-          this.machines = this.getDummyData();
-          return;
-        }
-
         this.machines = res.machines;
+        this.cdr.detectChanges();
+
       },
       error: () => {
-        this.machines = this.getDummyData();
       }
     });
   }
@@ -76,22 +73,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.router.navigate(['dashboard/live', id]);
   }
 
-  // ===== Dummy fallback =====
-  getDummyData() {
-    return Array(6).fill(null).map((_, i) => ({
-      machine_id: i + 1,
-      machine_name: 'CNC136',
-      oee: 63,
-      production: {
-        run_minutes: 480,
-        idle_minutes: 30,
-        off_minutes: 60
-      },
-      live: {
-        machine_status: 'RUN'
-      }
-    }));
-  }
 
   // ===== Counts (Top Stats) =====
   get totalMachines() {
@@ -106,7 +87,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   get stoppedCount() {
     return this.machines.filter(
-      m => ['STOP','ALARM','EMERGENCY'].includes(m.live?.machine_status)
+      m => ['STOP', 'ALARM', 'EMERGENCY'].includes(m.live?.machine_status)
     ).length;
   }
 

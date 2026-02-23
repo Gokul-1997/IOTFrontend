@@ -6,6 +6,7 @@ import { environment } from '../../../environments/environment';
 export class MachinesService {
   private api = `${environment.apiUrl}/machines`;
   private plantsApi = `${environment.apiUrl}/plants`;
+  private linesApi = `${environment.apiUrl}/lines`;
 
   constructor(private http: HttpClient) {}
 
@@ -34,4 +35,8 @@ export class MachinesService {
 
     return this.http.post(`${environment.apiUrl}/upload`, formData);
   }
+
+  getLines() {
+  return this.http.get<any>(this.linesApi);
+}
 }

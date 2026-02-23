@@ -5,38 +5,91 @@
       {{ data ? 'Edit Machine' : 'Create Machine' }}
     </h3>
 
+    <form [formGroup]="form">
 
-    <input [(ngModel)]="form.machine_name" placeholder="Machine Name"
-      class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+      <!-- Machine Name -->
+      <input
+        formControlName="machine_name"
+        placeholder="Machine Name"
+        class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]"
+      />
+      <div *ngIf="form.get('machine_name')?.touched && form.get('machine_name')?.invalid"
+           class="text-red-500 text-sm mb-2">
+        Machine Name is required
+      </div>
 
-    <input [(ngModel)]="form.axis_model" placeholder="Machine Axis Model"
-      class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+      <!-- Axis -->
+      <input
+        formControlName="axis_model"
+        placeholder="Machine Axis Model"
+        class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]"
+      />
 
-    <input [(ngModel)]="form.controller_model" placeholder="Controller Model"
-      class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+      <!-- Controller -->
+      <input
+        formControlName="controller_model"
+        placeholder="Controller Model"
+        class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]"
+      />
 
-    <input [(ngModel)]="form.machine_year" placeholder="Machine Year"
-      class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+      <!-- Year -->
+      <input
+        formControlName="machine_year"
+        placeholder="Machine Year"
+        class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]"
+      />
 
-    <div class="mb-3">
-      <label class="block text-sm mb-1 font-medium">Machine Image</label>
+      <!-- Line Dropdown -->
+      <div class="mb-3">
+        <label class="block text-sm mb-1 font-medium">Line</label>
 
-      <input type="file" accept="image/*" (change)="onFileSelect($event)" class="w-full text-sm" />
+<select formControlName="line_id"
+  class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]">
 
-      <!-- Preview -->
-      <!-- Preview priority -->
-      <img *ngIf="previewUrl || form?.image_url" [src]="previewUrl || form.image_url"
-        class="mt-2 h-32 w-full object-cover rounded border" />
+  <option [ngValue]="null">Select Line</option>
 
-    </div>
-    <div class="flex justify-end gap-3">
-      <button (click)="close.emit()" class="px-4 py-2 bg-gray-300 rounded">
-        Cancel
-      </button>
-      <button (click)="save()" class="px-4 py-2 bg-blue-600 text-white rounded">
-        Save
-      </button>
-    </div>
+  <option *ngFor="let l of lines" [ngValue]="l.id">
+    {{ l.name }}
+  </option>
+
+</select>
+        <div *ngIf="form.get('line_id')?.touched && form.get('line_id')?.invalid"
+             class="text-red-500 text-sm mt-1">
+          Line is required
+        </div>
+      </div>
+
+      <!-- Image Upload -->
+      <div class="mb-3">
+        <label class="block text-sm mb-1 font-medium">Machine Image</label>
+
+        <input type="file"
+               accept="image/*"
+               (change)="onFileSelect($event)"
+               class="w-full text-sm" />
+
+        <img *ngIf="previewUrl"
+             [src]="previewUrl"
+             class="mt-2 h-32 w-full object-cover rounded border" />
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex justify-end gap-3">
+        <button type="button"
+                (click)="close.emit()"
+                class="px-4 py-2 bg-gray-300 rounded">
+          Cancel
+        </button>
+
+        <button type="button"
+                (click)="save()"
+                class="px-4 py-2 bg-blue-600 text-white rounded"
+                [disabled]="uploading">
+          {{ uploading ? 'Uploading...' : 'Save' }}
+        </button>
+      </div>
+
+    </form>
 
   </div>
 </div>

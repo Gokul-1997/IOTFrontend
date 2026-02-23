@@ -28,6 +28,7 @@ export class MachinesComponent implements OnInit {
     'axis_model',
     'controller_model',
     'machine_year',
+    'line_name',
     'is_active',
     'actions'
   ];
