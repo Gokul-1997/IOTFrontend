@@ -46,21 +46,57 @@ export class ShiftFormComponent implements OnInit {
     }
   }
 
-  submit() {
-    if (this.form.invalid) return;
+submit() {
+  if (this.form.invalid) return;
 
-    this.saving = true;
+  this.saving = true;
 
-    const req$ = this.data
-      ? this.service.update(this.data.id, this.form.value)
-      : this.service.create(this.form.value);
+  if (this.data) {
 
-    req$.subscribe(() => {
-      this.saving = false;
-      this.dialogRef.close(true);
+    const changed: any = {};
+
+    Object.keys(this.form.controls).forEach(key => {
+      const newValue = this.form.get(key)?.value;
+      const oldValue = this.data[key];
+
+      // Compare values (stringify handles time comparison safely)
+      if (JSON.stringify(newValue) !== JSON.stringify(oldValue)) {
+        changed[key] = newValue;
+      }
     });
-  }
 
+    // Nothing changed → just close
+    if (Object.keys(changed).length === 0) {
+      this.saving = false;
+      this.dialogRef.close();
+      return;
+    }
+
+    this.service.update(this.data.id, changed)
+      .subscribe({
+        next: () => {
+          this.saving = false;
+          this.dialogRef.close(true);
+        },
+        error: () => {
+          this.saving = false;
+        }
+      });
+
+  } else {
+
+    this.service.create(this.form.value)
+      .subscribe({
+        next: () => {
+          this.saving = false;
+          this.dialogRef.close(true);
+        },
+        error: () => {
+          this.saving = false;
+        }
+      });
+  }
+}
   cancel() {
     this.dialogRef.close();
   }

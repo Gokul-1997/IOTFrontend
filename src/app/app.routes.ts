@@ -25,6 +25,7 @@ import { Reports } from './pages/reports/reports';
 import { OeeReportsComponent } from './pages/oee-reports/oee-reports';
 import { Charts } from './pages/charts/charts';
 import { Quality } from './pages/quality/quality';
+import { ComponentList } from './pages/component/component_list.component';
 
 export const routes: Routes = [
 
@@ -42,6 +43,8 @@ export const routes: Routes = [
 
       { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'dashboard/live/:id', loadComponent: () => import('./pages/dashboard/live/live.component').then(m => m.LiveComponent) },
+
+      { path: 'component', component: ComponentList },
 
       { path: 'machines', component: MachinesComponent },
       { path: 'machines/create', component: MachineFormComponent },

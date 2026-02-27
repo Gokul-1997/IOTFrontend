@@ -1,4 +1,6 @@
-<h2 mat-dialog-title>Create Operator</h2>
+<h2 mat-dialog-title>
+  {{ data ? 'Edit Operator' : 'Create Operator' }}
+</h2>
 
 <form [formGroup]="form" (ngSubmit)="submit()">
 
@@ -14,23 +16,28 @@
       <input matInput formControlName="operator_name">
     </mat-form-field>
 
-  <mat-form-field appearance="outline" class="full-width">
-  <mat-label>Shift</mat-label>
-  <mat-select formControlName="shift_id">
-    <mat-option *ngFor="let s of shifts" [value]="s.id">
-      {{ s.shift_name }} ({{ s.start_time }} - {{ s.end_time }})
-    </mat-option>
-  </mat-select>
-</mat-form-field>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Skill Level</mat-label>
+      <input matInput formControlName="skill_level">
+    </mat-form-field>
 
-<mat-form-field appearance="outline" class="full-width">
-  <mat-label>Machines</mat-label>
-  <mat-select multiple formControlName="machine_ids">
-    <mat-option *ngFor="let m of machines" [value]="m.id">
-      {{ m.machine_name }}
-    </mat-option>
-  </mat-select>
-</mat-form-field>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Shift</mat-label>
+      <mat-select formControlName="shift_id">
+        <mat-option *ngFor="let s of shifts" [value]="s.id">
+          {{ s.shift_name }} ({{ s.start_time }} - {{ s.end_time }})
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Machines</mat-label>
+      <mat-select multiple formControlName="machine_ids">
+        <mat-option *ngFor="let m of machines" [value]="m.id">
+          {{ m.machine_name }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
 
     <mat-slide-toggle formControlName="is_active">
       Active
@@ -40,8 +47,9 @@
 
   <mat-dialog-actions align="end">
     <button mat-button type="button" (click)="cancel()">Cancel</button>
+
     <button mat-flat-button color="primary" type="submit" [disabled]="saving">
-      Create Operator
+      {{ data ? 'Update Operator' : 'Create Operator' }}
     </button>
   </mat-dialog-actions>
 

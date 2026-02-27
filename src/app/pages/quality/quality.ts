@@ -1,177 +1,168 @@
-import { Component, ViewChild } from '@angular/core';
-import { IconComponent } from '../../shared/icon/icon';
-
-import {
-  NgApexchartsModule,  
-  ChartComponent,
-  ApexAxisChartSeries,
-  ApexChart,
-  ApexXAxis,
-  ApexYAxis,
-  ApexDataLabels,
-  ApexTooltip,
-  ApexStroke,
-  ApexFill,
-  ApexLegend
-  
-} from "ng-apexcharts";
-
-
-
-export type hourWisePerformChartOptions = {
-  series: ApexAxisChartSeries;
-  chart: ApexChart;
-  xaxis: ApexXAxis;
-  yaxis: ApexYAxis;
-  stroke: ApexStroke;
-  tooltip: ApexTooltip;
-  dataLabels: ApexDataLabels;
-  fill: ApexFill;
-  legend: ApexLegend;
-  colors: string[];
-};
+import { Component, ViewChild, OnInit, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { NgApexchartsModule, ChartComponent } from "ng-apexcharts";
+import { QualityService } from './quality.service';
 
 @Component({
   selector: 'app-quality',
   standalone: true,
-  imports: [IconComponent, NgApexchartsModule],
+  imports: [CommonModule, FormsModule, NgApexchartsModule],
   templateUrl: './quality.html',
-  styleUrl: './quality.scss',
+  styleUrl: './quality.scss'
 })
-export class Quality {
+export class Quality implements OnInit {
 
-    @ViewChild("hourwiseperformChart") hourwiseperformChart!: ChartComponent;  
-    public hourPerformOptions!: hourWisePerformChartOptions;
+  @ViewChild("chart") chart!: ChartComponent;
 
-    constructor() {
+  lines: any[] = [];
+  machines: any[] = [];
+  shifts: any[] = [];
 
-////////////////////////////////////////////////
-// Hour Perform Chart
-////////////////////////////////////////////////
+  selectedLine!: number;
+  selectedMachine!: number;
+  selectedShift!: number;
 
-    this.hourPerformOptions = {
+  fromDate!: string;
+  toDate!: string;
 
-series: [
-  {
-    name: "OEE",
-    data: [5, 85, 92, 78, 60, 58, 68, 50, 55]
-  },
-  {
-    name: "Availability",
-    data: [3, 30, 38, 30, 25, 30, 28, 30, 32]
-  },
-  {
-    name: "Performance",
-    data: [2, 35, 48, 45, 47, 52, 57, 58, 48]
-  },
-  {
-    name: "Quality",
-    data: [4, 55, 63, 35, 23, 35, 33, 15, 25]
-  }
-],
+  dashboardData: any = null;
 
-chart: {
-  type: "area",
-  height: 350,
-  toolbar: { show: false }
-},
+  public hourPerformOptions: any = {
+    series: [],
+    chart: {
+      type: "area",
+      height: 350,
+      toolbar: { show: false }
+    },
+    stroke: { curve: "smooth", width: 3 },
+    dataLabels: { enabled: false },
+    xaxis: { categories: [] }
+  };
 
-colors: [
-  "#1E3A5F", // OEE dark blue
-  "#22C55E", // Availability green
-  "#0EA5E9", // Performance blue
-  "#8B5CF6"  // Quality purple
-],
+  constructor(private service: QualityService,
+    private cdr: ChangeDetectorRef
 
-dataLabels: {
-  enabled: false
-},
+  ) { }
 
-stroke: {
-  curve: "smooth",
-  width: 3
-},
+  ngOnInit() {
+    const today = new Date().toISOString().split('T')[0];
+    this.fromDate = today;
+    this.toDate = today;
 
-// ✅ KEEP YOUR GRADIENT EFFECT
-fill: {
-  type: "gradient",
-  gradient: {
-    shadeIntensity: 1,
-    opacityFrom: 0.45,
-    opacityTo: 0.1,
-    stops: [0, 90, 100]
-  }
-},
+    this.loadInitialData();
 
-xaxis: {
-
-  title: {
-    text: "Hour"
-  },
-
-  categories: [
-    "09:00 AM",
-    "10:00 AM",
-    "11:00 AM",
-    "12:00 PM",
-    "01:00 PM",
-    "02:00 PM",
-    "03:00 PM",
-    "04:00 PM",
-    "05:00 PM"
-  ]
-
-},
-
-yaxis: {
-
-  min: 0,
-  max: 100,
-
-  title: {
-    text: "Percentage"
-  },
-
-  labels: {
-    formatter: (val) => val + "%"
   }
 
-},
+  ////////////////////////////////////////////////////
+  // INITIAL LOAD FLOW
+  ////////////////////////////////////////////////////
 
-tooltip: {
+  loadInitialData() {
+    this.service.getLines().subscribe(res => {
+      this.lines = res.data;
 
-  y: {
-    formatter: (val) => val + "%"
+      if (this.lines.length > 0) {
+        this.selectedLine = this.lines[0].id;
+
+        this.loadMachinesAndContinue();
+      }
+      this.cdr.detectChanges();
+
+    });
   }
 
-},
+  loadMachinesAndContinue() {
+    this.service.getMachinesByLine(this.selectedLine).subscribe(res => {
+      this.machines = res.data;
 
-legend: {
-  position: "bottom"
-}
+      if (this.machines.length > 0) {
+        this.selectedMachine = this.machines[0].id;
 
-};
+        this.loadShiftsAndContinue();
+      }
+      this.cdr.detectChanges();
+
+    });
   }
 
-  public generateData(
-  baseval: number,
-  count: number,
-  yrange: { min: number; max: number }
-): number[][] {
-    var i = 0;
-    var series = [];
-    while (i < count) {
-      var x = Math.floor(Math.random() * (750 - 1 + 1)) + 1;
-      var y =
-        Math.floor(Math.random() * (yrange.max - yrange.min + 1)) + yrange.min;
-      var z = Math.floor(Math.random() * (75 - 15 + 1)) + 15;
+  loadShiftsAndContinue() {
+    this.service.getShifts().subscribe(res => {
+      this.shifts = res.data;
 
-      series.push([x, y, z]);
-      baseval += 86400000;
-      i++;
-    }
-    return series;
+      if (this.shifts.length > 0) {
+        this.selectedShift = this.shifts[0].id;
+
+        // Finally call dashboard
+        this.loadDashboard();
+      }
+      this.cdr.detectChanges();
+
+    });
   }
 
+  ////////////////////////////////////////////////////
+  // MANUAL SUBMIT
+  ////////////////////////////////////////////////////
 
+  submit() {
+    this.loadDashboard();
+  }
+
+  ////////////////////////////////////////////////////
+  // DASHBOARD API
+  ////////////////////////////////////////////////////
+
+  loadDashboard() {
+
+    this.service.getDashboard({
+      machine_id: this.selectedMachine,
+      shift_id: this.selectedShift,
+      from: this.fromDate,
+      to: this.toDate
+    }).subscribe(res => {
+
+      if (!res.success) return;
+
+      this.dashboardData = res.data;
+
+      this.updateChart(res.data.hourly || []);
+      this.cdr.detectChanges();
+
+    });
+  }
+
+  ////////////////////////////////////////////////////
+  // CHART UPDATE
+  ////////////////////////////////////////////////////
+
+  updateChart(hourly: any[]) {
+
+    const categories = hourly.map(h =>
+      new Date(h.hour_start)
+        .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    );
+
+    this.hourPerformOptions.series = [
+      { name: "OEE", data: hourly.map(h => Number(h.oee)) },
+      { name: "Availability", data: hourly.map(h => Number(h.availability)) },
+      { name: "Performance", data: hourly.map(h => Number(h.performance)) },
+      { name: "Quality", data: hourly.map(h => Number(h.quality)) }
+    ];
+
+    this.hourPerformOptions.xaxis = { categories };
+  }
+
+  ////////////////////////////////////////////////////
+  // WHEN LINE CHANGED MANUALLY
+  ////////////////////////////////////////////////////
+
+  onLineChange() {
+    this.service.getMachines(this.selectedLine).subscribe(res => {
+      this.machines = res.data;
+      this.selectedMachine = this.machines[0]?.id;
+
+      this.loadDashboard();
+    });
+  }
 }

@@ -1,204 +1,200 @@
-<div class="p-4 mx-auto md:p-6 xl:px-16 ">
+<div class="p-4 mx-auto md:p-6 xl:px-16">
 
-<!-- Title Section -->
-<div class="flex flex-col sm:flex-col xl:flex-row gap-0 sm:gap-4 mb-6 sm:items-center sm:justify-between bg-gradient-to-l from-[#C5404A] via-[#5E3C79] to-[#4A2FA0] rounded-lg ps-3 sm:ps-2 py-0.5 pe-3">
-   <div>
-      <h2 class="text-2xl font-ubuntu font-bold text-white dark:text-white/90"> Dashboard </h2>
-   </div>
-   <div class="flex flex-col sm:flex-row md:flex-col xl:flex-row items-center gap-0 sm:gap-4 md:gap-0">
-      
-      <div class="flex items-center gap-0 sm:gap-4 rounded-full px-4 py-2 shadow-sm 
-         ">
-         <!-- All Machine -->
-         <button class="btn-status active flex-col sm:flex-row">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-[#5D5BCD] text-white text-sm">
-            18
-            </span>
-            All <span class="hidden sm:block">Machines</span>
-         </button>
-         <!-- Machine Running -->
-         <button class="btn-status flex-col sm:flex-row">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-[#0CAD5D] text-white text-sm">
-            03
-            </span>
-            <span class="hidden sm:block">Machine</span> Running
-          </button>
-         <!-- Machine Idle -->
-         <button class="btn-status flex-col sm:flex-row">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-[#F4B122] text-white text-sm">
-            01
-            </span>
-            <span class="hidden sm:block">Machine</span> Idle
-         </button>
-         <!-- Machine Stopped -->
-         <button class="btn-status flex-col sm:flex-row">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white text-sm">
-            01
-            </span>
-            <span class="hidden sm:block">Machine</span> Stopped
-         </button>
-      </div>
-      <div class="flex items-center gap-4 rounded-lg bg-gradient-to-r from-[#2D388E]  to-[#792953] px-2 py-2 shadow-sm 
-         dark:bg-gray-800">
-         <!-- Date & Time -->
-         <div class="flex items-center gap-2 text-sm text-white dark:text-gray-300">            
-            <span>Today: Shift - 01 |  20 Jan 2026  |  3:45 PM</span>
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-white dark:bg-blue-900/40 dark:text-blue-400">
-            <app-icon name="calendar" [size]="18" class="text-black dark:text-white"></app-icon>
-
-            </span>
-         </div>
-      </div>
-   </div>
-</div>
-
-  <!-- GRID -->
-  <!-- <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-    <app-machine-card
-      *ngFor="let m of machines"
-      [machine]="m">
-    </app-machine-card>
-  </div> -->
-
-  <div class="grid  sm:grid-cols-1 md:grid-cols-1  xl:grid-cols-3 gap-4 md:gap-6">
-  <!-- Machine Card Starts Here-->
-  <div
-    *ngFor="let m of machines"
-    class="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm 
-           dark:border-gray-800 dark:bg-gray-900 md:flex-row md:p-6 cursor-pointer"
-    (click)="goToLive(m.machine_id)"
-  >
-
-  <!-- LEFT -->
-  <div class="flex flex-col gap-4 justify-between">
-
-    <!-- Title -->
-    <p class="text-lg font-semibold text-gray-900 dark:text-white">
-      {{ m.machine_name }}
-    </p>
-
-    <!-- Image -->
-    <div class="flex items-center justify-center">
-      <img
-        src="/images/product/machine_01.png"
-        alt="Machine"
-        class="object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.4)]"
-      />
-    </div>
-
-    <!-- Status Times -->
-    <div class="grid grid-cols-3 gap-3 text-center">
-
-      <!-- Run -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-green-600">
-          ▶ <span class="text-sm font-medium">Run</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          {{ m.production?.run_minutes || 0 }}m
-        </p>
-      </div>
-
-      <!-- Idle -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-yellow-500">
-          ❚❚ <span class="text-sm font-medium">Idle</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          {{ m.production?.idle_minutes || 0 }}m
-        </p>
-      </div>
-
-      <!-- Off -->
-      <div>
-        <div class="flex items-center justify-center gap-1 text-red-500">
-          ■ <span class="text-sm font-medium">Off</span>
-        </div>
-        <p class="text-xl font-semibold text-gray-900 dark:text-white">
-          {{ m.production?.off_minutes || 0 }}m
-        </p>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- MIDDLE -->
-  <div class="flex flex-1 flex-col gap-4 rounded-xl bg-[var(--light-blue)] p-4 dark:bg-gray-800">
+  <!-- ================= HEADER ================= -->
+  <div class="flex flex-col sm:flex-col xl:flex-row gap-0 sm:gap-4 mb-6 
+              sm:items-center sm:justify-between 
+              bg-gradient-to-l from-[#C5404A] via-[#5E3C79] to-[#4A2FA0] 
+              rounded-lg ps-3 sm:ps-2 py-0.5 pe-3">
 
     <div>
-      <p class="text-sm text-gray-500">Status</p>
-      <span
-        class="inline-flex rounded-full px-3 py-1 text-sm font-medium text-white"
-        [ngClass]="{
-          'bg-[#0CAD5D]': m.live?.machine_status === 'RUN',
-          'bg-[#F4B122]': m.live?.machine_status === 'IDLE',
-          'bg-red-500': m.live?.machine_status === 'STOP'
-        }"
-      >
-        {{ m.live?.machine_status || 'OFFLINE' }}
-      </span>
+      <h2 class="text-2xl font-ubuntu font-bold text-white">
+        Dashboard
+      </h2>
     </div>
 
-  </div>
+    <div class="flex flex-col sm:flex-row md:flex-col xl:flex-row items-center gap-0 sm:gap-4 md:gap-0">
 
-  <!-- RIGHT -->
-  <div class="flex flex-row sm:flex-col items-center justify-center gap-4">
+      <!-- ===== SUMMARY COUNTS ===== -->
+      <div class="flex gap-4">
 
-    <div class="relative h-24 w-24">
-      <svg viewBox="0 0 36 36" class="h-full w-full -rotate-60">
+        <div class="status-btn active">
+          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-[#5D5BCD] text-white text-sm">
+            {{ summary?.total || 0 }}
+          </span>
+          All Machines
+        </div>
 
-        <path
-          class="stroke-gray-200"
-          stroke-width="3"
-          fill="none"
-          pathLength="100"
-          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-        />
+        <div class="status-btn">
+          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-[#0CAD5D] text-white text-sm">
+            {{ summary?.running || 0 }}
+          </span>
+          Machine Running
+        </div>
 
-        <path
-          class="stroke-[#2B3990]"
-          stroke-width="3"
-          stroke-linecap="round"
-          fill="none"
-          pathLength="100"
-          [attr.stroke-dasharray]="(m.oee || 0) + ' 100'"
-          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-        />
+        <div class="status-btn">
+          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-[#F4B122] text-white text-sm">
+            {{ summary?.idle || 0 }}
+          </span>
+          Machine Idle
+        </div>
 
-      </svg>
+        <div class="status-btn">
+          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white text-sm">
+            {{ summary?.stopped || 0 }}
+          </span>
+          Machine Stopped
+        </div>
 
-      <div class="absolute inset-0 flex flex-col items-center justify-center">
-        <p class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ m.oee || 0 }}%
-        </p>
-        <p class="text-xs text-gray-500">Utilization</p>
       </div>
-    </div>
 
+      <!-- ===== DATE ===== -->
+      <div class="flex items-center gap-4 rounded-lg 
+                  bg-gradient-to-r from-[#2D388E] to-[#792953] 
+                  px-2 py-2 shadow-sm">
+
+        <div class="flex items-center gap-2 text-sm text-white">
+          <span>
+            Today: {{ today | date:'dd MMM yyyy | hh:mm a' }}
+          </span>
+
+          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-white">
+            <app-icon name="calendar" [size]="18" class="text-black"></app-icon>
+          </span>
+        </div>
+
+      </div>
+
+    </div>
   </div>
 
-</div>
+  <!-- ================= MACHINE GRID ================= -->
+  <div class="grid sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
 
-</div>
-<div class="flex justify-center gap-4 mt-6">
-  <button 
-    class="px-4 py-2 bg-gray-200 rounded"
-    (click)="prev()"
-    [disabled]="page === 1">
-    Prev
-  </button>
+    <div *ngFor="let m of machines; trackBy: trackByMachine" class="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm 
+                dark:border-gray-800 dark:bg-gray-900 md:flex-row md:p-6 cursor-pointer"
+      (click)="goToLive(m.machine_id)">
 
-  <span class="px-4 py-2 font-semibold">
-    Page {{ page }}
-  </span>
+      <!-- LEFT -->
+      <div class="flex flex-col gap-4 justify-between">
 
-  <button 
-    class="px-4 py-2 bg-gray-200 rounded"
-    (click)="next()"
-    [disabled]="page * perPage >= total">
-    Next
-  </button>
-</div>
+        <p class="text-lg font-semibold text-gray-900">
+          {{ m.machine_name }}
+        </p>
 
+        <div class="flex items-center justify-center">
+          <img [src]="m.image_url || '/images/product/machine_01.png'"
+            class="object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.4)]" />
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 text-center">
+
+          <div>
+            <div class="flex items-center justify-center gap-1 text-green-600">
+              ▶ <span class="text-sm font-medium">Run</span>
+            </div>
+            <p class="text-xl font-semibold text-gray-900">
+              {{ m.production?.run_minutes || 0 }}m
+            </p>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-center gap-1 text-yellow-500">
+              ❚❚ <span class="text-sm font-medium">Idle</span>
+            </div>
+            <p class="text-xl font-semibold text-gray-900">
+              {{ m.production?.idle_minutes || 0 }}m
+            </p>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-center gap-1 text-red-500">
+              ■ <span class="text-sm font-medium">Off</span>
+            </div>
+            <p class="text-xl font-semibold text-gray-900">
+              {{ m.production?.off_minutes || 0 }}m
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- MIDDLE -->
+      <div class="flex flex-1 flex-col gap-4 rounded-xl bg-[var(--light-blue)] p-4">
+
+        <div>
+          <p class="text-sm text-gray-500">Operator</p>
+          <p class="font-medium">{{ m.job?.operator_name || '--' }}</p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500">Part Name</p>
+          <p class="font-medium">{{ m.job?.part_name || '--' }}</p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500">Component ID</p>
+          <p class="font-medium">{{ m.job?.component_id || '--' }}</p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500">Status</p>
+          <span class="inline-flex rounded-full px-3 py-1 text-sm font-medium text-white" [ngClass]="{
+    'bg-[#0CAD5D]': m.live?.machine_status === 'RUN' || m.live?.machine_status === 'CUTTING',
+    'bg-[#F4B122]': m.live?.machine_status === 'READY' || m.live?.machine_status === 'HOLD',
+    'bg-red-500': m.live?.machine_status === 'STOP' || 
+                  m.live?.machine_status === 'ALARM' || 
+                  m.live?.machine_status === 'EMERGENCY',
+    'bg-gray-500': !m.live?.machine_status
+  }">
+            {{ m.live?.machine_status || 'OFFLINE' }}
+          </span>
+        </div>
+
+      </div>
+
+      <!-- RIGHT -->
+      <div class="flex flex-col items-center justify-center gap-4">
+
+        <div class="relative h-24 w-24">
+          <svg viewBox="0 0 36 36" class="h-full w-full -rotate-60">
+            <path stroke="#E5E7EB" stroke-width="3" fill="none" pathLength="100"
+              d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32" />
+            <path stroke="#2B3990" stroke-width="3" stroke-linecap="round" fill="none" pathLength="100"
+              [attr.stroke-dasharray]="(m.oee || 0) + ' 100'" d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32" />
+          </svg>
+
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <p class="text-lg font-semibold">{{ m.oee || 0 }}%</p>
+            <p class="text-xs text-gray-500">Utilization</p>
+          </div>
+        </div>
+
+        <div class="text-center">
+          <p class="text-sm text-gray-500">Target</p>
+          <p class="font-semibold">{{ m.job?.target_qty | number }}</p>
+
+          <p class="text-sm text-gray-500 mt-2">Achieved</p>
+          <p class="font-semibold">{{ m.job?.achieved_qty | number }}</p>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= PAGINATION ================= -->
+  <div class="flex justify-center gap-4 mt-6">
+    <button class="px-4 py-2 bg-gray-200 rounded" (click)="prev()" [disabled]="page === 1">
+      Prev
+    </button>
+
+    <span class="px-4 py-2 font-semibold">
+      Page {{ page }}
+    </span>
+
+    <button class="px-4 py-2 bg-gray-200 rounded" (click)="next()" [disabled]="page * perPage >= total">
+      Next
+    </button>
+  </div>
 
 </div>

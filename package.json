@@ -38,6 +38,7 @@
     "lucide-angular": "^0.563.0",
     "ng-apexcharts": "^2.0.4",
     "rxjs": "~7.8.0",
+    "socket.io-client": "^4.8.3",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

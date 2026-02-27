@@ -34,7 +34,6 @@ export class OperatorsComponent implements OnInit {
     'operator_name',
     'shift',
     'machines',
-    'is_active',
     'actions'
   ];
 
@@ -82,8 +81,18 @@ export class OperatorsComponent implements OnInit {
     });
   }
 
-  toggle(row: any) {
-    row.is_active = !row.is_active;
-    // optional API call here
-  }
+openEdit(row: any) {
+  this.service.getById(row.id).subscribe(res => {
+
+    const ref = this.dialog.open(OperatorFormComponent, {
+      width: '520px',
+      autoFocus: false,
+      data: res.data  
+    });
+
+    ref.afterClosed().subscribe(saved => {
+      if (saved) this.load();
+    });
+  });
+}
 }

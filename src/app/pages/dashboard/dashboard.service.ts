@@ -29,4 +29,7 @@ export class DashboardService {
   getTrend(machineId: number): Observable<any> {
     return this.http.get(`${this.api}/trend/${machineId}`);
   }
+  getSummary(): Observable<any> {
+  return this.http.get(`${this.api}/summary`);
+}
 }

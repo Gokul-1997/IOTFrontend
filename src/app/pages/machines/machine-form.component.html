@@ -13,10 +13,7 @@
         placeholder="Machine Name"
         class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]"
       />
-      <div *ngIf="form.get('machine_name')?.touched && form.get('machine_name')?.invalid"
-           class="text-red-500 text-sm mb-2">
-        Machine Name is required
-      </div>
+
 
       <!-- Axis -->
       <input
@@ -39,52 +36,55 @@
         class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]"
       />
 
-      <!-- Line Dropdown -->
+      <!-- Line -->
       <div class="mb-3">
         <label class="block text-sm mb-1 font-medium">Line</label>
 
-<select formControlName="line_id"
-  class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]">
+        <select
+          formControlName="line_id"
+          class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]">
 
-  <option [ngValue]="null">Select Line</option>
+          <option [ngValue]="null">Select Line</option>
 
-  <option *ngFor="let l of lines" [ngValue]="l.id">
-    {{ l.name }}
-  </option>
+          <option *ngFor="let l of lines" [ngValue]="l.id">
+            {{ l.name }}
+          </option>
 
-</select>
-        <div *ngIf="form.get('line_id')?.touched && form.get('line_id')?.invalid"
-             class="text-red-500 text-sm mt-1">
-          Line is required
-        </div>
+        </select>
       </div>
 
-      <!-- Image Upload -->
+      <!-- Image -->
       <div class="mb-3">
         <label class="block text-sm mb-1 font-medium">Machine Image</label>
 
-        <input type="file"
-               accept="image/*"
-               (change)="onFileSelect($event)"
-               class="w-full text-sm" />
+        <input
+          type="file"
+          accept="image/*"
+          (change)="onFileSelect($event)"
+          class="w-full text-sm"
+        />
 
-        <img *ngIf="previewUrl"
-             [src]="previewUrl"
-             class="mt-2 h-32 w-full object-cover rounded border" />
+        <img
+          *ngIf="previewUrl || form.get('image_url')?.value"
+          [src]="previewUrl || form.get('image_url')?.value"
+          class="mt-2 h-32 w-full object-cover rounded border"
+        />
       </div>
 
       <!-- Buttons -->
       <div class="flex justify-end gap-3">
-        <button type="button"
-                (click)="close.emit()"
-                class="px-4 py-2 bg-gray-300 rounded">
+        <button
+          type="button"
+          (click)="close.emit()"
+          class="px-4 py-2 bg-gray-300 rounded">
           Cancel
         </button>
 
-        <button type="button"
-                (click)="save()"
-                class="px-4 py-2 bg-blue-600 text-white rounded"
-                [disabled]="uploading">
+        <button
+          type="button"
+          (click)="save()"
+          [disabled]="uploading || isUnchanged"
+          class="px-4 py-2 bg-blue-600 text-white rounded">
           {{ uploading ? 'Uploading...' : 'Save' }}
         </button>
       </div>

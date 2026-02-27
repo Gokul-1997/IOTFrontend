@@ -33,5 +33,15 @@ export class OperatorService {
   getMachines() {
     return this.http.get<any[]>(`${this.api}/machines`);
   }
+
+  // operator.service.ts
+
+update(id: number, data: any) {
+  return this.http.put(`${this.api}/operators/${id}`, data);
+}
+
+getById(id: number) {
+  return this.http.get<any>(`${this.api}/operators/${id}`);
+}
 }
 

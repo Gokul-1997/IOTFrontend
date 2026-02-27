@@ -1,0 +1,204 @@
+<div class="p-6 bg-gray-50 min-h-screen">
+
+  <!-- ================= HEADER ================= -->
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-semibold text-gray-800">
+      Component Management
+    </h2>
+
+    <button (click)="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg shadow">
+      + Add Component
+    </button>
+  </div>
+
+  <!-- ================= SEARCH ================= -->
+  <div class="flex justify-between items-center mb-4">
+
+    <input type="text" placeholder="Search Part / Machine..." [(ngModel)]="search" (keyup)="searchData()"
+      class="border px-4 py-2 rounded-lg w-72 focus:ring-2 focus:ring-indigo-400 outline-none" />
+
+    <div class="text-gray-600 text-sm">
+      Showing {{ components.length }} of {{ total }}
+    </div>
+
+  </div>
+
+  <!-- ================= TABLE ================= -->
+  <div class="bg-white rounded-xl shadow overflow-hidden">
+
+    <table class="w-full text-sm">
+
+      <thead class="bg-gray-100 text-gray-700">
+        <tr>
+          <th class="p-3 text-left">#</th>
+          <th class="p-3 text-left">Machine</th>
+          <th class="p-3 text-left">Part Name</th>
+          <th class="p-3 text-left">Part Number</th>
+          <th class="p-3 text-left">Operation</th>
+          <th class="p-3 text-left">Cycle Time</th>
+          <th class="p-3 text-left">Target</th>
+          <th class="p-3 text-left">Factor</th>
+          <th class="p-3 text-left">From Date</th>
+          <th class="p-3 text-left">To Date</th>
+          <th class="p-3 text-center">Action</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        <tr *ngFor="let c of components; let i = index" class="border-t hover:bg-gray-50 transition">
+
+          <td class="p-3">{{ (page - 1) * limit + i + 1 }}</td>
+          <td class="p-3">{{ c.machine_name }}</td>
+          <td class="p-3">{{ c.part_name }}</td>
+          <td class="p-3">{{ c.part_number }}</td>
+          <td class="p-3">{{ c.operation_number }}</td>
+          <td class="p-3">{{ c.cycle_time }}</td>
+          <td class="p-3">{{ c.target }}</td>
+          <td class="p-3">{{ c.multiplication_factor }}</td>
+          <td class="p-3">{{ c.from_date | date:'dd-MM-yyyy' }}</td>
+          <td class="p-3">{{ c.to_date | date:'dd-MM-yyyy' }}</td>
+
+          <td class="p-3 text-center space-x-2">
+            <button (click)="edit(c)" class="bg-blue-600 text-white px-3 py-1 rounded">
+              Edit
+            </button>
+
+            <button (click)="delete(c.id)" class="bg-red-600 text-white px-3 py-1 rounded">
+              Delete
+            </button>
+          </td>
+
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ================= PAGINATION ================= -->
+  <div class="flex justify-center items-center gap-4 mt-6">
+
+    <button (click)="prev()" [disabled]="page === 1" class="px-4 py-2 bg-gray-200 rounded disabled:opacity-50">
+      Previous
+    </button>
+
+    <span class="font-medium text-gray-700">
+      Page {{ page }}
+    </span>
+
+    <button (click)="next()" [disabled]="page * limit >= total"
+      class="px-4 py-2 bg-gray-200 rounded disabled:opacity-50">
+      Next
+    </button>
+
+  </div>
+
+</div>
+
+
+
+<!-- ================= MODAL ================= -->
+<div *ngIf="showModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+  <div class="bg-white w-full max-w-3xl rounded-2xl shadow-lg p-6 relative">
+
+    <!-- Close -->
+    <button (click)="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-black">
+      ✕
+    </button>
+
+    <h3 class="text-xl font-semibold mb-6">
+      {{ editing ? 'Edit Component' : 'Component Registration' }}
+    </h3>
+
+    <!-- ================= FORM ================= -->
+    <form [formGroup]="form" (ngSubmit)="submit()" class="grid grid-cols-2 gap-5">
+
+      <div>
+        <label class="block mb-1 text-sm">Select Machine</label>
+
+        <select formControlName="machine_id" class="w-full border p-2 rounded">
+
+          <option value="">Select Machine</option>
+
+          <option *ngFor="let m of machines" [value]="m.id">
+            {{ m.machine_name }}
+          </option>
+
+        </select>
+
+        <div *ngIf="form.get('machine_id')?.invalid && form.get('machine_id')?.touched"
+          class="text-red-500 text-xs mt-1">
+          Machine is required
+        </div>
+      </div>
+      <!-- Part Name -->
+      <div>
+        <label class="block mb-1 text-sm">Part Name</label>
+        <input formControlName="part_name" type="text" class="w-full border p-2 rounded" />
+      </div>
+
+      <!-- Part Number -->
+      <div>
+        <label class="block mb-1 text-sm">Part Number</label>
+        <input formControlName="part_number" type="text" class="w-full border p-2 rounded" />
+      </div>
+
+      <!-- Operation -->
+      <div>
+        <label class="block mb-1 text-sm">Operation Number</label>
+        <input formControlName="operation_number" type="text" class="w-full border p-2 rounded" />
+      </div>
+
+      <!-- Cycle Time -->
+<div>
+  <label class="block mb-1 text-sm">Cycle Time (HH:MM:SS)</label>
+
+  <input type="text"
+         formControlName="cycle_time"
+         maxlength="8"
+         (input)="formatCycleTime($event)"
+         placeholder="00:00:00"
+         class="w-full border p-2 rounded" />
+
+  <div *ngIf="form.get('cycle_time')?.invalid && form.get('cycle_time')?.touched"
+       class="text-red-500 text-xs mt-1">
+    Format must be HH:MM:SS
+  </div>
+</div>
+      <!-- Target -->
+      <div>
+        <label class="block mb-1 text-sm">Target</label>
+        <input type="number" formControlName="target" class="w-full border p-2 rounded" />
+      </div>
+
+      <!-- Factor -->
+      <div>
+        <label class="block mb-1 text-sm">Multiplication Factor</label>
+        <input type="number" formControlName="multiplication_factor" class="w-full border p-2 rounded" />
+      </div>
+
+      <!-- From Date -->
+      <div>
+        <label class="block mb-1 text-sm">From Date</label>
+        <input type="date" formControlName="from_date" class="w-full border p-2 rounded" />
+      </div>
+
+      <!-- To Date -->
+      <div>
+        <label class="block mb-1 text-sm">To Date</label>
+        <input type="date" formControlName="to_date" class="w-full border p-2 rounded" />
+      </div>
+
+      <!-- Submit -->
+      <div class="col-span-2 text-right mt-4">
+        <button type="submit" [disabled]="form.invalid"
+          class="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow hover:bg-indigo-700 disabled:opacity-50">
+          Submit
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+</div>

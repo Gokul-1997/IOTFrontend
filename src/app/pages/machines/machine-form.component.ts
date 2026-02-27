@@ -7,7 +7,13 @@ import {
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  Validators,
+  FormGroup
+} from '@angular/forms';
+
 import { MachinesService } from './machines.service';
 
 @Component({
@@ -30,8 +36,7 @@ export class MachineFormComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private service: MachinesService
-  ) { }
-
+  ) {}
 
   ngOnInit() {
 
@@ -44,27 +49,31 @@ export class MachineFormComponent implements OnInit {
       line_id: [null, Validators.required]
     });
 
-    if (this.data) {
-      this.form.patchValue(this.data);
-      this.previewUrl = this.data.image_url;
-    }
-
     this.loadLines();
   }
 
-  loadLines() {
-  this.service.getLines().subscribe(res => {
-    this.lines = res.data;
-    if (this.data) {
-      this.form.patchValue({
-        ...this.data,
-        line_id: Number(this.data.line_id) 
-      });
+  ////////////////////////////////////////////
+  // LOAD LINES + PATCH DATA
+  ////////////////////////////////////////////
 
-      this.previewUrl = this.data.image_url;
-    }
-  });
-}
+  loadLines() {
+    this.service.getLines().subscribe(res => {
+      this.lines = res.data;
+
+      if (this.data) {
+        this.form.patchValue({
+          ...this.data,
+          line_id: Number(this.data.line_id)
+        });
+
+        this.previewUrl = this.data.image_url;
+      }
+    });
+  }
+
+  ////////////////////////////////////////////
+  // IMAGE UPLOAD
+  ////////////////////////////////////////////
 
   onFileSelect(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
@@ -76,6 +85,10 @@ export class MachineFormComponent implements OnInit {
     this.service.uploadToS3(file).subscribe({
       next: (res: any) => {
         this.form.patchValue({ image_url: res.fileUrl });
+
+        // ✅ ensure change detection for update
+        this.form.get('image_url')?.markAsDirty();
+
         this.uploading = false;
       },
       error: () => {
@@ -85,16 +98,53 @@ export class MachineFormComponent implements OnInit {
     });
   }
 
+  ////////////////////////////////////////////
+  // SAVE (PRODUCTION SAFE)
+  ////////////////////////////////////////////
+
   save() {
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    const req = this.data
-      ? this.service.update(this.data.id, this.form.value)
-      : this.service.create(this.form.value);
+    if (this.data) {
 
-    req.subscribe(() => this.saved.emit());
+      // 🔥 Compare values instead of dirty
+      const changed: any = {};
+
+      Object.keys(this.form.controls).forEach(key => {
+        if (this.form.get(key)?.value !== this.data[key]) {
+          changed[key] = this.form.get(key)?.value;
+        }
+      });
+
+      // Nothing changed → close modal
+      if (Object.keys(changed).length === 0) {
+        this.close.emit();
+        return;
+      }
+
+      this.service.update(this.data.id, changed)
+        .subscribe(() => this.saved.emit());
+
+    } else {
+
+      // Create → full form
+      this.service.create(this.form.value)
+        .subscribe(() => this.saved.emit());
+    }
+  }
+
+  ////////////////////////////////////////////
+  // OPTIONAL: DISABLE SAVE IF NO CHANGES
+  ////////////////////////////////////////////
+
+  get isUnchanged(): boolean {
+    if (!this.data) return false;
+
+    return Object.keys(this.form.controls)
+      .every(key => this.form.get(key)?.value === this.data[key]);
   }
 }

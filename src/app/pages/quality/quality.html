@@ -1,369 +1,249 @@
 <div class="body-pad">
-   <!-- HEADER -->
-   <!-- Title Section -->
-   <div class="flex flex-col gap-4 mb-3 sm:flex-row sm:items-center sm:justify-between bg-gradient-to-l from-[#C5404A] via-[#5E3C79] to-[#4A2FA0] rounded-lg ps-3 py-1 pe-1">
-   <div>
-      <h2 class="text-xl font-ubuntu font-bold text-white dark:text-white/90"> Quality </h2>
-   </div>
-   <div class="flex items-center gap-3">
-      
-     <div class="w-full">
-  <div class="flex flex-wrap items-end gap-4">
-   <!-- Line Name -->
-    <div class="flex gap-2 items-center">
-      <label class="text-sm font-medium text-white mb-1">
-        Line Name
-      </label>
 
-      <select
-        class="bg-gray-100 border border-gray-200 text-gray-800 text-sm rounded-lg px-4 py-2.5 min-w-[160px] focus:outline-none focus:ring-2 focus:ring-indigo-500">
+  <!-- HEADER -->
+  <div
+    class="flex flex-col gap-4 mb-3 sm:flex-row sm:items-center sm:justify-between
+           bg-gradient-to-l from-[#C5404A] via-[#5E3C79] to-[#4A2FA0]
+           rounded-lg ps-3 py-1 pe-1">
 
-        <option>Line1</option>
-        <option>Line2</option>
-        <option>Line3</option>
-
-      </select>
+    <div>
+      <h2 class="text-xl font-ubuntu font-bold text-white">
+        Quality
+      </h2>
     </div>
 
-    <!-- Machine Name -->
-    <div class="flex gap-2 items-center">
-      <label class="text-sm font-medium text-white mb-1">
-        Machine Name
-      </label>
+    <!-- FILTERS -->
+    <div class="flex items-center gap-3 w-full">
+      <div class="flex flex-wrap items-end gap-4 w-full">
 
-      <select
-        class="bg-gray-100 border border-gray-200 text-gray-800 text-sm rounded-lg px-4 py-2.5 min-w-[160px] focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <!-- LINE -->
+        <div class="flex gap-2 items-center">
+          <label class="text-sm font-medium text-white">
+            Line Name
+          </label>
 
-        <option>CNC136</option>
-        <option>CNC137</option>
-        <option>CNC138</option>
+          <select
+            [(ngModel)]="selectedLine"
+            (change)="onLineChange()"
+            class="bg-gray-100 border border-gray-200 text-gray-800 text-sm
+                   rounded-lg px-4 py-2.5 min-w-[150px]">
 
-      </select>
-    </div>
+            <option *ngFor="let l of lines" [ngValue]="l.id">
+              {{ l.name }}
+            </option>
 
-
-    <!-- Shift -->
-    <div class="flex gap-2 items-center">
-      <label class="text-sm font-medium text-white mb-1">
-        Shift
-      </label>
-
-      <select
-        class="bg-gray-100 border border-gray-200 text-gray-800 text-sm rounded-lg px-4 py-2.5 min-w-[100px] focus:outline-none focus:ring-2 focus:ring-indigo-500">
-
-        <option>01</option>
-        <option>02</option>
-        <option>03</option>
-
-      </select>
-    </div>
-
-
-
-    <!-- Date Range -->
-    <div class="flex gap-2 items-center">
-      <label class="text-sm font-medium text-white mb-1">
-        Date Range
-      </label>
-
-      <div class="relative">
-
-        <input
-          type="text"
-          placeholder="30/01/2026 - 28/02/2026"
-          class="bg-gray-100 border border-gray-200 text-gray-800 text-sm rounded-lg px-4 py-2.5 pr-10 min-w-[240px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-
-        <!-- Calendar Icon -->
-        <svg
-          class="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          viewBox="0 0 24 24">
-
-          <rect x="3" y="4" width="18" height="18" rx="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="3" y1="10" x2="21" y2="10"/>
-
-        </svg>
-
-      </div>
-    </div>
-
-
-
-    <!-- Submit Button -->
-    <button
-      class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg">
-
-      Submit
-
-      <!-- Check Icon -->
-      <svg
-        class="w-4 h-4"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="3"
-        viewBox="0 0 24 24">
-
-        <path d="M5 13l4 4L19 7"/>
-
-      </svg>
-
-    </button>
-
-
-  </div>
-</div>
-   </div>
-</div>
-<!-- Body Section -->
-<div class="space-y-6">
-  <!-- Main Card -->
-  <div class="rounded-2xl border border-gray-200 dark:border-gray-700
-              bg-gray-100 dark:bg-gray-800
-              p-4 md:p-6">
-
-    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center">
-
-      <!-- Machine Image -->
-      <div class="xl:col-span-3 flex justify-center">
-        
-             <img src="/images/product/machine_login_02.png"
-             class="rounded-lg object-contain "
-             alt="Machine Image">
-      </div>
-
-
-      <!-- Machine Details -->
-      <div class="xl:col-span-3">
-
-        <div class="bg-gray-200 dark:bg-gray-700
-                    rounded-xl p-3 space-y-2">
-
-          <div>
-            <p class="text-gray-500 dark:text-gray-400 text-sm">Machine Name</p>
-            <p class="font-semibold text-gray-800 dark:text-white">CNC136</p>
-          </div>
-
-          <div>
-            <p class="text-gray-500 dark:text-gray-400 text-sm">Operator</p>
-            <p class="font-semibold text-gray-800 dark:text-white">Suresh Babu</p>
-          </div>
-
-          <div>
-            <p class="text-gray-500 dark:text-gray-400 text-sm">Part Number</p>
-            <p class="font-semibold text-gray-800 dark:text-white">10025</p>
-          </div>
-
-          <div>
-            <p class="text-gray-500 dark:text-gray-400 text-sm">Component ID</p>
-            <p class="font-semibold text-gray-800 dark:text-white">
-              602004, 602004.1
-            </p>
-          </div>
-
-          <div>
-            <p class="text-gray-500 dark:text-gray-400 text-sm">Operation Number</p>
-            <p class="font-semibold text-gray-800 dark:text-white">
-              30, 335, 235
-            </p>
-          </div>
-
+          </select>
         </div>
 
-      </div>
+        <!-- MACHINE -->
+        <div class="flex gap-2 items-center">
+          <label class="text-sm font-medium text-white">
+            Machine Name
+          </label>
 
+          <select
+            [(ngModel)]="selectedMachine"
+            class="bg-gray-100 border border-gray-200 text-gray-800 text-sm
+                   rounded-lg px-4 py-2.5 min-w-[150px]">
 
+            <option *ngFor="let m of machines" [ngValue]="m.id">
+              {{ m.machine_name }}
+            </option>
 
-      <!-- Right Section -->
-      <div class="xl:col-span-6 space-y-6">
-
-
-        <!-- Top Metrics -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-
-
-          <!-- OEE -->
-          <div class="relative rounded-xl p-5 text-white
-                      bg-gradient-to-br from-indigo-600 to-indigo-500">
-
-            <!-- Icon -->
-            <div class="absolute top-3 right-3
-                        bg-white/30 rounded-full pt-1.5 ps-2.5 pe-1.5 pb-2.5">
-
-              <!-- Dummy Icon -->
-              <app-icon name="oeefill" [size]="24" class="text-white"></app-icon>
-
-            </div>
-
-            <p class="text-2xl font-bold mt-4">80%</p>
-            <p class="text-sm opacity-90">OEE Achieved</p>
-
-          </div>
-
-
-
-          <!-- Availability -->
-          <div class="relative rounded-xl p-5 text-white
-                      bg-gradient-to-br from-green-600 to-green-500">
-
-
-            <div class="absolute top-3 right-3
-                        bg-white/30 rounded-full pt-1.5 px-2 pb-2.5">
-
-              <app-icon name="clockfill" [size]="24" class="text-white"></app-icon>
-
-            </div>
-
-            <p class="text-2xl font-bold mt-4">78%</p>
-            <p class="text-sm opacity-90">Availability</p>
-
-          </div>
-
-
-
-
-          <!-- Performance -->
-          <div class="relative rounded-xl p-5 text-white
-                      bg-gradient-to-br from-sky-600 to-sky-500">
-
-
-            <div class="absolute top-3 right-3
-                        bg-white/30 rounded-full p-2">
-
-              <app-icon name="chartfill" [size]="24" class="text-white"></app-icon>
-
-            </div>
-
-            <p class="text-2xl font-bold mt-4">82%</p>
-            <p class="text-sm opacity-90">Performance</p>
-
-          </div>
-
-
-
-
-          <!-- Quality -->
-          <div class="relative rounded-xl p-5 text-white
-                      bg-gradient-to-br from-purple-600 to-purple-500">
-
-
-            <div class="absolute top-3 right-3
-                        bg-white/30 rounded-full p-2">
-
-              <app-icon name="shield" [size]="24" class="text-white"></app-icon>
-
-
-            </div>
-
-            <p class="text-2xl font-bold mt-4">95%</p>
-            <p class="text-sm opacity-90">Quality</p>
-
-          </div>
-
-
+          </select>
         </div>
 
+        <!-- SHIFT -->
+        <div class="flex gap-2 items-center">
+          <label class="text-sm font-medium text-white">
+            Shift
+          </label>
 
+          <select
+            [(ngModel)]="selectedShift"
+            class="bg-gray-100 border border-gray-200 text-gray-800 text-sm
+                   rounded-lg px-4 py-2.5 min-w-[120px]">
 
-        <!-- Bottom Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <option *ngFor="let s of shifts" [ngValue]="s.id">
+              {{ s.shift_name }}
+            </option>
 
-
-          <!-- Parts Produced -->
-          <div class="rounded-xl border border-gray-300 dark:border-gray-600
-                      bg-gray-200 dark:bg-gray-700
-                      p-6 text-center">
-
-            <p class="text-gray-600 dark:text-gray-300">
-              Parts Produced
-            </p>
-
-            <p class="text-5xl font-bold
-                      text-gray-800 dark:text-white mt-2">
-              12
-            </p>
-
-          </div>
-
-
-
-          <!-- Good -->
-          <div class="rounded-xl border border-gray-300 dark:border-gray-600
-                      bg-gray-200 dark:bg-gray-700
-                      p-6 text-center relative">
-                  <!-- Icon -->
-            <div class="absolute top-3 right-3
-                        bg-white/30 rounded-full p-2">
-
-              <!-- Dummy Icon -->
-              <app-icon name="smile" [size]="24" class="text-[var(--green)]"></app-icon>
-
-            </div>    
-
-            <p class="text-green-600 font-medium">Good</p>
-
-            <p class="text-5xl font-bold text-green-600 mt-2">
-              10
-            </p>
-
-          </div>
-
-
-
-          <!-- Not Good -->
-          <div class="rounded-xl border border-gray-300 dark:border-gray-600
-                      bg-gray-200 dark:bg-gray-700
-                      p-6 text-center relative">
-                      <!-- Icon -->
-            <div class="absolute top-3 right-3
-                        bg-white/30 rounded-full p-2">
-
-              <!-- Dummy Icon -->
-              <app-icon name="sad" [size]="24" class="text-[var(--red)]"></app-icon>
-
-            </div>
-
-            <p class="text-red-500 font-medium">Not Good</p>
-
-            <p class="text-5xl font-bold text-red-500 mt-2">
-              2
-            </p>
-
-            <div class="absolute bottom-3 right-3
-                        bg-white/30 rounded-full p-2">
-
-              <!-- Dummy Icon -->
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
-  <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
-  <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
-</svg>
-
-
-            </div>
-          </div>
+          </select>
         </div>
+
+        <!-- DATE RANGE -->
+        <div class="flex gap-2 items-center">
+          <label class="text-sm font-medium text-white">
+            Date Range
+          </label>
+
+          <input
+            type="date"
+            [(ngModel)]="fromDate"
+            class="bg-gray-100 border rounded-lg px-3 py-2.5" />
+
+          <span class="text-white">to</span>
+
+          <input
+            type="date"
+            [(ngModel)]="toDate"
+            class="bg-gray-100 border rounded-lg px-3 py-2.5" />
+        </div>
+
+        <!-- SUBMIT -->
+        <button
+          (click)="submit()"
+          class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700
+                 text-white text-sm font-medium px-5 py-2.5 rounded-lg">
+
+          Submit
+
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+            viewBox="0 0 24 24">
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+
+        </button>
+
       </div>
     </div>
   </div>
-  <!-- Hourwise paerformace card -->
-  <div class="bg-white dark:bg-neutral-900 border rounded-xl p-4 gap-6">
+
+  <!-- BODY -->
+  <div class="space-y-6">
+
+    <!-- MAIN DASHBOARD CARD -->
+    <div class="rounded-2xl border border-gray-200 dark:border-gray-700
+                bg-gray-100 dark:bg-gray-800 p-4 md:p-6">
+
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center">
+
+        <!-- MACHINE IMAGE -->
+        <div class="xl:col-span-3 flex justify-center">
+          <img
+            [src]="dashboardData?.machine?.image_url || '/images/product/machine_login_02.png'"
+            class="rounded-lg object-contain max-h-60"
+            alt="Machine Image">
+        </div>
+
+        <!-- MACHINE DETAILS -->
+        <div class="xl:col-span-3">
+          <div class="bg-gray-200 dark:bg-gray-700 rounded-xl p-3 space-y-2">
+
+            <div>
+              <p class="text-gray-500 text-sm">Machine Name</p>
+              <p class="font-semibold">
+                {{ dashboardData?.machine?.machine_name || '-' }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-gray-500 text-sm">Operator</p>
+              <p class="font-semibold">
+                {{ dashboardData?.machine?.operator_name || '-' }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-gray-500 text-sm">Part Name</p>
+              <p class="font-semibold">
+                {{ dashboardData?.machine?.part_name || '-' }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-gray-500 text-sm">Component ID</p>
+              <p class="font-semibold">
+                {{ dashboardData?.machine?.component_id || '-' }}
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- METRICS -->
+        <div class="xl:col-span-6 space-y-6">
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+            <div class="rounded-xl p-5 text-white bg-indigo-600">
+              <p class="text-2xl font-bold">
+                {{ dashboardData?.oee?.oee || 0 }}%
+              </p>
+              <p class="text-sm opacity-90">OEE</p>
+            </div>
+
+            <div class="rounded-xl p-5 text-white bg-green-600">
+              <p class="text-2xl font-bold">
+                {{ dashboardData?.oee?.availability || 0 }}%
+              </p>
+              <p class="text-sm opacity-90">Availability</p>
+            </div>
+
+            <div class="rounded-xl p-5 text-white bg-sky-600">
+              <p class="text-2xl font-bold">
+                {{ dashboardData?.oee?.performance || 0 }}%
+              </p>
+              <p class="text-sm opacity-90">Performance</p>
+            </div>
+
+            <div class="rounded-xl p-5 text-white bg-purple-600">
+              <p class="text-2xl font-bold">
+                {{ dashboardData?.oee?.quality || 0 }}%
+              </p>
+              <p class="text-sm opacity-90">Quality</p>
+            </div>
+
+          </div>
+
+          <!-- PRODUCTION -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <div class="rounded-xl bg-gray-200 dark:bg-gray-700 p-6 text-center">
+              <p class="text-gray-600">Parts Produced</p>
+              <p class="text-5xl font-bold">
+                {{ dashboardData?.production?.total || 0 }}
+              </p>
+            </div>
+
+            <div class="rounded-xl bg-gray-200 dark:bg-gray-700 p-6 text-center">
+              <p class="text-green-600 font-medium">Good</p>
+              <p class="text-5xl font-bold text-green-600">
+                {{ dashboardData?.production?.good || 0 }}
+              </p>
+            </div>
+
+            <div class="rounded-xl bg-gray-200 dark:bg-gray-700 p-6 text-center">
+              <p class="text-red-500 font-medium">Not Good</p>
+              <p class="text-5xl font-bold text-red-500">
+                {{ dashboardData?.production?.not_good || 0 }}
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="bg-white dark:bg-neutral-900 border rounded-xl p-4">
       <p class="font-medium mb-2">Overall Performance Hour Wise</p>
+
       <apx-chart
-    [series]="hourPerformOptions.series"
-    [chart]="hourPerformOptions.chart"
-    [xaxis]="hourPerformOptions.xaxis"
-    [stroke]="hourPerformOptions.stroke"
-    [tooltip]="hourPerformOptions.tooltip"
-    [dataLabels]="hourPerformOptions.dataLabels"
-  ></apx-chart>
-   </div>
-</div>
+        [series]="hourPerformOptions.series"
+        [chart]="hourPerformOptions.chart"
+        [xaxis]="hourPerformOptions.xaxis"
+        [stroke]="hourPerformOptions.stroke"
+        [tooltip]="hourPerformOptions.tooltip"
+        [dataLabels]="hourPerformOptions.dataLabels">
+      </apx-chart>
 
+    </div>
 
-
-
+  </div>
 </div>
