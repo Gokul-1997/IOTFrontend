@@ -1,18 +1,25 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  NgZone,
+  ChangeDetectorRef
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardService } from './dashboard.service';
 import { RouterModule, Router } from '@angular/router';
-import { IconComponent } from '../../shared/icon/icon';
 import { SocketService } from '../../core/services/socket.service';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   standalone: true,
   selector: 'app-dashboard',
-  imports: [CommonModule, RouterModule, IconComponent],
-  templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.scss']
+  imports: [CommonModule, RouterModule],
+  templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+
+  private destroy$ = new Subject<void>();
 
   machines: any[] = [];
   summary: any = {};
@@ -25,86 +32,127 @@ export class DashboardComponent implements OnInit, OnDestroy {
   constructor(
     private service: DashboardService,
     private router: Router,
-    private socketService: SocketService
+    private socketService: SocketService,
+    private zone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {}
 
-async ngOnInit(): Promise<void> {
+  /* ================= INIT ================= */
 
-  this.loadSummary();
-  this.load(this.page);
+  async ngOnInit(): Promise<void> {
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const plantId = user?.plant_id;
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.router.navigate(['/login']);
+      return;
+    }
 
-  await this.socketService.connect();   // 🔥 WAIT UNTIL CONNECTED
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const plantId = user?.plant_id;
 
-  if (plantId) {
-    this.socketService.joinPlant(plantId);
+    await this.initializeSocket(plantId);
+
+    this.loadSummary();
+    this.load(this.page);
   }
 
-  this.socketService.onMachineUpdate((data: any) => {
-    console.log('🔥 LIVE UPDATE:', data);
-    this.handleLiveUpdate(data);
-  });
-}
+  /* ================= SOCKET ================= */
 
-  ngOnDestroy(): void {
-    this.socketService.disconnect();
+  private async initializeSocket(plantId: number): Promise<void> {
+
+    await this.socketService.connect();
+
+    if (plantId) {
+      this.socketService.joinPlant(plantId);
+    }
+
+    this.socketService.onMachineUpdate((data: any) => {
+      this.zone.run(() => {
+        console.log('🔥 LIVE UPDATE:', data);
+        this.handleLiveUpdate(data);
+        this.cdr.markForCheck();
+      });
+    });
   }
 
-  /* ================= HTTP LOAD ================= */
+  /* ================= API LOAD ================= */
 
   load(page: number = 1): void {
-    this.service.getLive(page).subscribe((res: any) => {
-      this.page = page;
-      this.total = res.total || 0;
-      this.machines = res.machines || [];
-    });
+
+    this.service.getLive(page, this.perPage)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: any) => {
+          this.page = page;
+          this.total = res.total || 0;
+          this.machines = res.machines || [];
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          console.error('Failed to load machines');
+        }
+      });
   }
 
   loadSummary(): void {
-    this.service.getSummary().subscribe((res: any) => {
-      this.summary = res.data || {};
-    });
+    this.service.getSummary()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: any) => {
+          this.summary = res || {};
+        },
+        error: () => {
+          console.error('Failed to load summary');
+        }
+      });
   }
 
   /* ================= LIVE UPDATE ================= */
 
   private handleLiveUpdate(data: any): void {
 
-    // Update machine live state immutably
-    this.machines = this.machines.map(machine =>
-      machine.machine_id === data.machine_id
-        ? { ...machine, live: data }
-        : machine
+    const index = this.machines.findIndex(
+      m => m.machine_id === data.machine_id
     );
 
-    // Optional: live summary adjustment
-    this.recalculateSummary();
-  }
+    if (index === -1) return;
 
-  private recalculateSummary(): void {
+    const rawStatus = data.machine_status;
 
-    const total = this.machines.length;
+    let status = 'IDLE';
+    let alarm = false;
 
-    let running = 0;
-    let idle = 0;
-    let stopped = 0;
+    switch (rawStatus) {
+      case 'RUN':
+      case 'RUNNING':
+      case 'CUTTING':
+        status = 'RUNNING';
+        break;
 
-    this.machines.forEach(m => {
-      const status = m.live?.machine_status;
+      case 'ALARM':
+        status = 'IDLE';
+        alarm = true;
+        break;
 
-      if (status === 'RUN' || status === 'CUTTING') running++;
-      else if (status === 'READY' || status === 'HOLD') idle++;
-      else if (status) stopped++;
-    });
+      default:
+        status = 'IDLE';
+    }
 
-    this.summary = {
-      total,
-      running,
-      idle,
-      stopped
+    const updatedMachine = {
+      ...this.machines[index],
+      status,
+      alarm,
+      rpm: data.rpm,
+      feed_rate: data.feed_rate,
+      parts_count: data.parts_count
     };
+
+    // Immutable update for change detection
+    this.machines = [
+      ...this.machines.slice(0, index),
+      updatedMachine,
+      ...this.machines.slice(index + 1)
+    ];
   }
 
   /* ================= PAGINATION ================= */
@@ -125,7 +173,14 @@ async ngOnInit(): Promise<void> {
     this.router.navigate(['dashboard/live', id]);
   }
 
-  trackByMachine(index: number, item: any) {
+  trackByMachine(index: number, item: any): number {
     return item.machine_id;
+  }
+
+  /* ================= DESTROY ================= */
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

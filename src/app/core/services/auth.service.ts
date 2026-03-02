@@ -2,13 +2,16 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { jwtDecode } from 'jwt-decode';
+import { Router } from '@angular/router';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
   private api = environment.apiUrl + '/auth';
+  private refreshTimer: any;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient,private router: Router) { }
 
   login(data: any) {
     return this.http.post<any>(`${this.api}/login`, data).pipe(
@@ -31,8 +34,37 @@ export class AuthService {
     );
   }
 
-  logout() {
+  logout(): void {
+    clearTimeout(this.refreshTimer);
     localStorage.clear();
+    this.router.navigate(['/login']);
+  }
+
+  private setSession(res: any): void {
+    localStorage.setItem('token', res.accessToken);
+    localStorage.setItem('refreshToken', res.refreshToken);
+    localStorage.setItem('user', JSON.stringify(res.user));
+    this.scheduleRefresh(res.accessToken);
+  }
+
+  scheduleRefresh(token: string): void {
+    clearTimeout(this.refreshTimer);
+
+    try {
+      const decoded: any = jwtDecode(token);
+      const expiry = decoded.exp * 1000;
+      const now = Date.now();
+      const refreshTime = expiry - now - 60_000;
+
+      if (refreshTime <= 0) return;
+
+      this.refreshTimer = setTimeout(() => {
+        this.refreshToken().subscribe();
+      }, refreshTime);
+
+    } catch {
+      this.logout();
+    }
   }
 
   isLoggedIn(): boolean {

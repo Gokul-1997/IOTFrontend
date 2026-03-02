@@ -10,8 +10,10 @@ export class DashboardService {
 
   constructor(private http: HttpClient) {}
 
-    getLive(page: number = 1): Observable<any> {
-    return this.http.get<any>(`${this.api}?page=${page}&per_page=6`);
+  getLive(page: number = 1, perPage: number = 6): Observable<any> {
+    return this.http.get<any>(
+      `${this.api}?page=${page}&per_page=${perPage}`
+    );
   }
 
   getMachineDetail(machineId: number): Observable<any> {
@@ -29,7 +31,8 @@ export class DashboardService {
   getTrend(machineId: number): Observable<any> {
     return this.http.get(`${this.api}/trend/${machineId}`);
   }
+
   getSummary(): Observable<any> {
-  return this.http.get(`${this.api}/summary`);
-}
+    return this.http.get(`${this.api}/summary`);
+  }
 }
