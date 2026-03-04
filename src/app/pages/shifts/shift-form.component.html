@@ -17,23 +17,23 @@
     </mat-form-field>
 
     <div class="time-row">
-  <mat-form-field appearance="outline" class="full-width">
-  <mat-label>Start Time</mat-label>
-  <input
-    matInput
-    type="time"
-    formControlName="start_time"
-    (click)="openTimePicker($event)">
-</mat-form-field>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Start Time</mat-label>
+        <input matInput type="time" formControlName="start_time" (click)="openTimePicker($event)">
+      </mat-form-field>
 
-<mat-form-field appearance="outline" class="full-width">
-  <mat-label>End Time</mat-label>
-  <input
-    matInput
-    type="time"
-    formControlName="end_time"
-    (click)="openTimePicker($event)">
-</mat-form-field>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>End Time</mat-label>
+        <input matInput type="time" formControlName="end_time" (click)="openTimePicker($event)">
+      </mat-form-field>
+
+      <div *ngIf="form.errors?.['invalidDuration']" class="error-text">
+        Invalid shift duration.
+      </div>
+
+      <div *ngIf="form.errors?.['invalidBreak']" class="error-text">
+        Break cannot be greater than shift duration.
+      </div>
 
 
     </div>

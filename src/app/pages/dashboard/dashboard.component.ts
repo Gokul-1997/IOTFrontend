@@ -3,171 +3,135 @@ import {
   OnInit,
   OnDestroy,
   NgZone,
-  ChangeDetectorRef
+  ChangeDetectorRef,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { DashboardService } from './dashboard.service';
-import { RouterModule, Router } from '@angular/router';
 import { SocketService } from '../../core/services/socket.service';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject } from 'rxjs';
 
 @Component({
   standalone: true,
   selector: 'app-dashboard',
-  imports: [CommonModule, RouterModule],
-  templateUrl: './dashboard.component.html'
+  imports: [CommonModule],
+  templateUrl: './dashboard.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  machines: any[] = [];
+  lines: any[] = [];
   summary: any = {};
+  shift: any = {};
 
-  page = 1;
-  total = 0;
-  perPage = 6;
-  today: Date = new Date();
+  /* ===== SOCKET FLOOD PROTECTION ===== */
+  private updateQueue: any[] = [];
+  private updateScheduled = false;
 
   constructor(
     private service: DashboardService,
-    private router: Router,
     private socketService: SocketService,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {}
 
   /* ================= INIT ================= */
 
   async ngOnInit(): Promise<void> {
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      this.router.navigate(['/login']);
-      return;
-    }
-
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const plantId = user?.plant_id;
-
-    await this.initializeSocket(plantId);
-
-    this.loadSummary();
-    this.load(this.page);
-  }
-
-  /* ================= SOCKET ================= */
-
-  private async initializeSocket(plantId: number): Promise<void> {
 
     await this.socketService.connect();
 
     if (plantId) {
-      this.socketService.joinPlant(plantId);
+      this.socketService.joinPlant(plantId);  // 🔥 VERY IMPORTANT
     }
 
+    this.load();
+
+    /* ===== SOCKET LISTENER ===== */
     this.socketService.onMachineUpdate((data: any) => {
-      this.zone.run(() => {
-        console.log('🔥 LIVE UPDATE:', data);
-        this.handleLiveUpdate(data);
-        this.cdr.markForCheck();
-      });
+      this.handleSocketUpdate(data);
     });
   }
 
-  /* ================= API LOAD ================= */
+  /* ================= LOAD API ================= */
 
-  load(page: number = 1): void {
+  load(): void {
+    this.service.getLive()
+      .subscribe((res: any) => {
+        this.lines = res.lines || [];
+        this.summary = res.summary || {};
+        this.shift = res.shift || {};
+        this.cdr.markForCheck();
+      });
+  }
 
-    this.service.getLive(page, this.perPage)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res: any) => {
-          this.page = page;
-          this.total = res.total || 0;
-          this.machines = res.machines || [];
+  /* ================= SOCKET HANDLING ================= */
+
+  private handleSocketUpdate(data: any): void {
+
+    this.updateQueue.push(data);
+
+    if (!this.updateScheduled) {
+
+      this.updateScheduled = true;
+
+      requestAnimationFrame(() => {
+
+        const updates = [...this.updateQueue];
+        this.updateQueue = [];
+
+        this.zone.run(() => {
+
+          for (const u of updates) {
+            this.applyLiveUpdate(u);
+          }
+
           this.cdr.markForCheck();
-        },
-        error: () => {
-          console.error('Failed to load machines');
-        }
+        });
+
+        this.updateScheduled = false;
       });
+    }
   }
 
-  loadSummary(): void {
-    this.service.getSummary()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res: any) => {
-          this.summary = res || {};
-        },
-        error: () => {
-          console.error('Failed to load summary');
+  private applyLiveUpdate(data: any): void {
+
+    for (const line of this.lines) {
+
+      const index = line.machines.findIndex(
+        (m: any) => m.machine_id === data.machine_id
+      );
+
+      if (index !== -1) {
+
+        const rawStatus = data.machine_status;
+
+        let status = 'STOPPED';
+
+        if (['RUN','RUNNING','CUTTING'].includes(rawStatus)) {
+          status = 'RUNNING';
+        } else if (['READY','HOLD'].includes(rawStatus)) {
+          status = 'IDLE';
         }
-      });
-  }
 
-  /* ================= LIVE UPDATE ================= */
+        line.machines[index] = {
+          ...line.machines[index],
+          status
+        };
 
-  private handleLiveUpdate(data: any): void {
-
-    const index = this.machines.findIndex(
-      m => m.machine_id === data.machine_id
-    );
-
-    if (index === -1) return;
-
-    const rawStatus = data.machine_status;
-
-    let status = 'IDLE';
-    let alarm = false;
-
-    switch (rawStatus) {
-      case 'RUN':
-      case 'RUNNING':
-      case 'CUTTING':
-        status = 'RUNNING';
         break;
-
-      case 'ALARM':
-        status = 'IDLE';
-        alarm = true;
-        break;
-
-      default:
-        status = 'IDLE';
-    }
-
-    const updatedMachine = {
-      ...this.machines[index],
-      status,
-      alarm,
-      rpm: data.rpm,
-      feed_rate: data.feed_rate,
-      parts_count: data.parts_count
-    };
-
-    // Immutable update for change detection
-    this.machines = [
-      ...this.machines.slice(0, index),
-      updatedMachine,
-      ...this.machines.slice(index + 1)
-    ];
-  }
-
-  /* ================= PAGINATION ================= */
-
-  next(): void {
-    if (this.page * this.perPage < this.total) {
-      this.load(this.page + 1);
+      }
     }
   }
 
-  prev(): void {
-    if (this.page > 1) {
-      this.load(this.page - 1);
-    }
-  }
+  /* ================= NAVIGATION ================= */
 
   goToLive(id: number): void {
     this.router.navigate(['dashboard/live', id]);
@@ -180,7 +144,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /* ================= DESTROY ================= */
 
   ngOnDestroy(): void {
+
     this.destroy$.next();
     this.destroy$.complete();
+
+    this.socketService.disconnect();  // 🔥 Prevent memory leak
   }
 }

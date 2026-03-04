@@ -1,110 +1,109 @@
-<div class="p-4 mx-auto md:p-6 xl:px-16">
+<div class="p-6">
 
   <!-- ================= HEADER ================= -->
   <div class="flex justify-between items-center mb-6">
 
-    <h2 class="text-2xl font-bold">Dashboard</h2>
+    <div>
+      <h2 class="text-2xl font-bold">Dashboard</h2>
+      <p class="text-sm text-gray-500">
+        Shift: {{ shift?.shift_code }}
+      </p>
+    </div>
 
     <div class="flex gap-6 text-sm font-medium">
 
       <div>
-        <span class="font-bold">{{ summary?.total || 0 }}</span> All
+        <span class="font-bold">{{ summary?.total || 0 }}</span> Total
       </div>
 
-      <div>
-        <span class="text-green-600 font-bold">{{ summary?.running || 0 }}</span> Running
+      <div class="text-green-600">
+        <span class="font-bold">{{ summary?.running || 0 }}</span> Running
       </div>
 
-      <div>
-        <span class="text-yellow-500 font-bold">{{ summary?.idle || 0 }}</span> Idle
+      <div class="text-yellow-500">
+        <span class="font-bold">{{ summary?.idle || 0 }}</span> Idle
       </div>
-
-
 
     </div>
   </div>
 
-  <!-- ================= MACHINE GRID ================= -->
-  <div class="grid sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 
-    <div *ngFor="let m of machines; trackBy: trackByMachine"
-         class="border rounded-xl p-5 shadow-sm cursor-pointer"
-         (click)="goToLive(m.machine_id)">
+  <!-- ================= BAY / LINE LOOP ================= -->
 
-      <!-- Machine Name -->
-      <h3 class="text-lg font-semibold mb-3">
-        {{ m.machine_name }}
+  <div *ngFor="let line of lines" class="mb-10">
+
+    <!-- Bay Header -->
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-semibold">
+        {{ line.line_name }}
       </h3>
 
-      <!-- Machine Image -->
-      <div class="flex justify-center mb-4">
-        <img [src]="m.image_url || '/images/product/machine_01.png'"
-             class="h-24 object-contain" />
+      <div class="text-sm text-gray-500">
+        Machines: {{ line.total }}
       </div>
+    </div>
 
-      <!-- Status -->
-      <div class="mb-4">
-        <span
-          class="inline-flex px-3 py-1 rounded text-sm text-white"
-          [ngClass]="{
-            'bg-green-600': m.status === 'RUNNING',
-            'bg-yellow-500': m.status === 'IDLE' && !m.alarm,
-            'bg-red-600': m.alarm
-          }"
-        >
-          {{ m.alarm ? 'ALARM' : (m.status || 'OFFLINE') }}
-        </span>
-      </div>
+    <!-- Machine Grid -->
+    <div class="grid sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
 
-      <!-- Production Info -->
-      <div class="grid grid-cols-2 gap-2 text-sm mb-4">
-        <div>Run: <b>{{ m.total_run_minutes || 0 }}m</b></div>
-        <div>Idle: <b>{{ m.total_idle_minutes || 0 }}m</b></div>
-        <div>Target: <b>{{ m.target || 0 }}</b></div>
-        <div>Achieved: <b>{{ m.achieved || 0 }}</b></div>
-      </div>
+      <div *ngFor="let m of line.machines; trackBy: trackByMachine"
+           class="border rounded-xl p-5 shadow hover:shadow-lg transition cursor-pointer"
+           (click)="goToLive(m.machine_id)">
 
-      <!-- Utilization Circle -->
-      <div class="flex justify-center">
-        <div class="relative h-20 w-20">
-          <svg viewBox="0 0 36 36" class="h-full w-full -rotate-90">
-            <path stroke="#E5E7EB" stroke-width="3" fill="none" pathLength="100"
-              d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32" />
-            <path stroke="#2B3990" stroke-width="3"
-              stroke-linecap="round"
-              fill="none"
-              pathLength="100"
-              [attr.stroke-dasharray]="(m.utilization || 0) + ' 100'"
-              d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32" />
-          </svg>
-          <div class="absolute inset-0 flex items-center justify-center text-sm font-semibold">
-            {{ m.utilization || 0 }}%
+        <!-- Machine Name -->
+        <h4 class="text-lg font-semibold mb-3">
+          {{ m.machine_name }}
+        </h4>
+
+        <!-- Image -->
+        <div class="flex justify-center mb-4">
+          <img [src]="m.image_url || '/images/product/machine_01.png'"
+               class="h-24 object-contain" />
+        </div>
+
+        <!-- Status -->
+        <div class="mb-4 text-center">
+          <span
+            class="inline-flex px-3 py-1 rounded text-sm text-white"
+            [ngClass]="{
+              'bg-green-600': m.status === 'RUNNING',
+              'bg-yellow-500': m.status === 'IDLE',
+              'bg-red-600': m.status === 'STOPPED'
+            }"
+          >
+            {{ m.status }}
+          </span>
+        </div>
+
+        <!-- Production Info -->
+        <div class="grid grid-cols-2 gap-2 text-sm mb-4">
+          <div>Run: <b>{{ m.run_minutes || 0 }}m</b></div>
+          <div>Idle: <b>{{ m.idle_minutes || 0 }}m</b></div>
+          <div>Parts: <b>{{ m.produced_qty || 0 }}</b></div>
+        </div>
+
+        <!-- Utilization Circle -->
+        <div class="flex justify-center">
+          <div class="relative h-20 w-20">
+            <svg viewBox="0 0 36 36" class="h-full w-full -rotate-90">
+              <path stroke="#E5E7EB" stroke-width="3" fill="none" pathLength="100"
+                d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32" />
+              <path stroke="#2B3990" stroke-width="3"
+                stroke-linecap="round"
+                fill="none"
+                pathLength="100"
+                [attr.stroke-dasharray]="(m.utilization || 0) + ' 100'"
+                d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32" />
+            </svg>
+            <div class="absolute inset-0 flex items-center justify-center text-sm font-semibold">
+              {{ m.utilization || 0 }}%
+            </div>
           </div>
         </div>
+
       </div>
 
     </div>
-
-  </div>
-
-  <!-- ================= PAGINATION ================= -->
-  <div class="flex justify-center gap-4 mt-6">
-
-    <button class="px-4 py-2 bg-gray-200 rounded"
-            (click)="prev()"
-            [disabled]="page === 1">
-      Prev
-    </button>
-
-    <span class="px-4 py-2 font-semibold">
-      Page {{ page }}
-    </span>
-
-    <button class="px-4 py-2 bg-gray-200 rounded"
-            (click)="next()"
-            [disabled]="page * perPage >= total">
-      Next
-    </button>
 
   </div>
 
