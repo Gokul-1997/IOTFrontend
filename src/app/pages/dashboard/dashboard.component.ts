@@ -6,11 +6,12 @@ import {
   ChangeDetectorRef,
   ChangeDetectionStrategy
 } from '@angular/core';
+
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { DashboardService } from './dashboard.service';
 import { SocketService } from '../../core/services/socket.service';
-import { Subject } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -27,9 +28,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
   summary: any = {};
   shift: any = {};
 
+  /* ===== MACHINE INDEX MAP (O(1) updates) ===== */
+  private machineMap = new Map<number, any>();
+
   /* ===== SOCKET FLOOD PROTECTION ===== */
   private updateQueue: any[] = [];
   private updateScheduled = false;
+
+  /* ===== VISIBILITY HANDLER ===== */
+  private visibilityHandler = () => {
+    if (document.hidden) {
+      this.socketService.pauseUpdates();
+    } else {
+      this.socketService.resumeUpdates();
+    }
+  };
 
   constructor(
     private service: DashboardService,
@@ -49,27 +62,47 @@ export class DashboardComponent implements OnInit, OnDestroy {
     await this.socketService.connect();
 
     if (plantId) {
-      this.socketService.joinPlant(plantId);  // 🔥 VERY IMPORTANT
+      this.socketService.joinPlant(plantId);
     }
 
     this.load();
 
-    /* ===== SOCKET LISTENER ===== */
+    /* SOCKET LISTENER */
     this.socketService.onMachineUpdate((data: any) => {
       this.handleSocketUpdate(data);
     });
+
+    /* TAB VISIBILITY OPTIMIZATION */
+    document.addEventListener(
+      'visibilitychange',
+      this.visibilityHandler
+    );
   }
 
   /* ================= LOAD API ================= */
 
   load(): void {
+
     this.service.getLive()
+      .pipe(takeUntil(this.destroy$))
       .subscribe((res: any) => {
+
         this.lines = res.lines || [];
         this.summary = res.summary || {};
         this.shift = res.shift || {};
+
+        /* BUILD MACHINE MAP */
+        this.machineMap.clear();
+
+        for (const line of this.lines) {
+          for (const machine of line.machines) {
+            this.machineMap.set(machine.machine_id, machine);
+          }
+        }
+
         this.cdr.markForCheck();
       });
+
   }
 
   /* ================= SOCKET HANDLING ================= */
@@ -99,36 +132,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.updateScheduled = false;
       });
     }
+
   }
+
+  /* ================= APPLY MACHINE UPDATE ================= */
 
   private applyLiveUpdate(data: any): void {
 
-    for (const line of this.lines) {
+    const machine = this.machineMap.get(data.machine_id);
 
-      const index = line.machines.findIndex(
-        (m: any) => m.machine_id === data.machine_id
-      );
+    if (!machine) return;
 
-      if (index !== -1) {
+    const rawStatus = data.machine_status;
 
-        const rawStatus = data.machine_status;
+    let status = 'STOPPED';
 
-        let status = 'STOPPED';
-
-        if (['RUN','RUNNING','CUTTING'].includes(rawStatus)) {
-          status = 'RUNNING';
-        } else if (['READY','HOLD'].includes(rawStatus)) {
-          status = 'IDLE';
-        }
-
-        line.machines[index] = {
-          ...line.machines[index],
-          status
-        };
-
-        break;
-      }
+    if (['RUN','RUNNING','CUTTING'].includes(rawStatus)) {
+      status = 'RUNNING';
     }
+    else if (['READY','HOLD'].includes(rawStatus)) {
+      status = 'IDLE';
+    }
+
+    machine.status = status;
+
   }
 
   /* ================= NAVIGATION ================= */
@@ -137,8 +164,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.router.navigate(['dashboard/live', id]);
   }
 
+  /* ================= TRACKBY ================= */
+
   trackByMachine(index: number, item: any): number {
     return item.machine_id;
+  }
+
+  trackByLine(index: number, item: any): number {
+    return item.line_id;
   }
 
   /* ================= DESTROY ================= */
@@ -148,6 +181,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
 
-    this.socketService.disconnect();  // 🔥 Prevent memory leak
+    document.removeEventListener(
+      'visibilitychange',
+      this.visibilityHandler
+    );
+
+    this.socketService.disconnect();
+
   }
+
 }

@@ -10,18 +10,23 @@ export class AuthService {
 
   private api = environment.apiUrl + '/auth';
   private refreshTimer: any;
+  private setSession(res: any): void {
+    localStorage.setItem('token', res.accessToken);
+    localStorage.setItem('refreshToken', res.refreshToken);
+    localStorage.setItem('user', JSON.stringify(res.user));
 
-  constructor(private http: HttpClient,private router: Router) { }
+    this.scheduleRefresh(res.accessToken);  // start auto refresh
+  }
+  constructor(private http: HttpClient, private router: Router) { }
 
   login(data: any) {
     return this.http.post<any>(`${this.api}/login`, data).pipe(
       tap(res => {
-        localStorage.setItem('token', res.accessToken);
-        localStorage.setItem('refreshToken', res.refreshToken);
-        localStorage.setItem('user', JSON.stringify(res.user));
+        this.setSession(res);   
       })
     );
   }
+
   refreshToken() {
     const refreshToken = localStorage.getItem('refreshToken');
 
@@ -30,6 +35,7 @@ export class AuthService {
     }).pipe(
       tap(res => {
         localStorage.setItem('token', res.accessToken);
+        this.scheduleRefresh(res.accessToken);   
       })
     );
   }
@@ -40,12 +46,6 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
-  private setSession(res: any): void {
-    localStorage.setItem('token', res.accessToken);
-    localStorage.setItem('refreshToken', res.refreshToken);
-    localStorage.setItem('user', JSON.stringify(res.user));
-    this.scheduleRefresh(res.accessToken);
-  }
 
   scheduleRefresh(token: string): void {
     clearTimeout(this.refreshTimer);
