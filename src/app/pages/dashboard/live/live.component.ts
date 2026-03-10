@@ -1,225 +1,295 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  NgZone,
+  ChangeDetectorRef,
+  ChangeDetectionStrategy
+} from '@angular/core';
+
 import { ActivatedRoute } from '@angular/router';
-import { interval, Subscription } from 'rxjs';
-import { DashboardService } from '../dashboard.service';
-import { ChartComponent } from "ng-apexcharts";
 import { CommonModule } from '@angular/common';
 import { NgApexchartsModule } from 'ng-apexcharts';
+
+import { DashboardService } from '../dashboard.service';
+import { SocketService } from '../../../core/services/socket.service';
+
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   standalone: true,
   selector: 'app-live',
   imports: [
     CommonModule,
-    NgApexchartsModule         
+    NgApexchartsModule
   ],
   templateUrl: './live.component.html',
-  styleUrls: ['./live.component.scss']
+  styleUrls: ['./live.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LiveComponent implements OnInit, OnDestroy {
 
+  private destroy$ = new Subject<void>();
+
   machineId!: number;
-  liveSub!: Subscription;
 
   machine: any = {};
-  shift: any = null;
+  operator: any = {};
   job: any = {};
-  production: any = {};
+  time: any = {};
+  quality: any = {};
   oee: any = {};
+  shift: any = {};
 
-  liveStatus: string = '';
-  liveRPM: number = 0;
-  liveFeed: number = 0;
-  currentDate: Date = new Date();
+  liveStatus = 'UNKNOWN';
+  liveRPM = 0;
+  liveFeed = 0;
 
-  runningprogress = 0;
-  spindleValue = 0;
-  spindleNeedleAngle = 0;
+  currentDate = new Date();
 
-
-  timelineOptions: any;
-  spindleOptions: any;
   radialOptions: any;
   oeeOptions: any;
+  timelineOptions: any;
+  spindleOptions: any;
+
+  spindleNeedleAngle = 0;
+
+  /* ===== SOCKET FLOOD PROTECTION ===== */
+
+  private updateQueue: any[] = [];
+  private updateScheduled = false;
+  feedSeries: any[] = [
+    {
+      name: 'Feed Rate',
+      data: []
+    }
+  ];
+
+  feedChart: any;
+
+  private feedBuffer: any[] = [];
+
+  spindleSeries: number[] = [0];
+  feedGaugeSeries: number[] = [0];
+
+  spindleChart: any;
+  feedGaugeChart: any;
 
   constructor(
     private route: ActivatedRoute,
     private dashboardService: DashboardService,
-     private cdr: ChangeDetectorRef
+    private socketService: SocketService,
+    private zone: NgZone,
+    private cdr: ChangeDetectorRef
   ) { }
 
-  ngOnInit(): void {
+  /* =====================================================
+     INIT
+  ===================================================== */
 
-    const idParam = this.route.snapshot.paramMap.get('id');
+  async ngOnInit(): Promise<void> {
 
-    if (!idParam) {
-      console.error("Machine ID missing in route");
-      return;
-    }
-
-    this.machineId = Number(idParam);
-
-    if (!this.machineId) {
-      console.error("Invalid machine ID:", idParam);
-      return;
-    }
-
-    console.log("Machine ID:", this.machineId);
+    const id = this.route.snapshot.paramMap.get('id');
+    this.machineId = Number(id);
 
     this.initCharts();
+
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const plantId = user?.plant_id;
+
+    await this.socketService.connect();
+
+    if (plantId) {
+      this.socketService.joinPlant(plantId);
+    }
+
     this.loadMachineDetail();
-    this.loadTimeline();
-    this.loadTrend();
-    this.loadLive();
+
+    this.socketService.onMachineUpdate((data: any) => {
+      this.handleSocketUpdate(data);
+    });
 
   }
 
   ngOnDestroy(): void {
-    if (this.liveSub) this.liveSub.unsubscribe();
+
+    this.destroy$.next();
+    this.destroy$.complete();
+
   }
 
-  /* ---------------- MACHINE DETAIL ---------------- */
+  /* =====================================================
+     LOAD MACHINE DETAIL
+  ===================================================== */
 
-  loadMachineDetail() {
-    this.dashboardService.getMachineDetail(this.machineId)
+  loadMachineDetail(): void {
+
+    this.dashboardService
+      .getMachineDetail(this.machineId)
+      .pipe(takeUntil(this.destroy$))
       .subscribe((res: any) => {
 
-        const data = res.data;
+        const d = res.data;
 
-        this.machine = data.machine;
-        this.shift = data.shift;
-        this.job = data.job;
-        this.production = data.production;
-        this.oee = data.oee;
+        this.machine = d.machine;
+        this.operator = d.operator;
+        this.job = d.job;
+        this.time = d.production;
+        this.oee = d.oee;
+        this.shift = d.shift;
 
-        const run = this.production?.run_minutes || 0;
-        const idle = this.production?.idle_minutes || 0;
-        const off = this.production?.off_minutes || 0;
-        const total = run + idle + off;
+        this.liveStatus = d.live.machine_status;
+        this.liveRPM = d.live.rpm;
+        this.liveFeed = d.live.feed_rate;
 
-        this.runningprogress = total > 0
-          ? Math.round((run / total) * 100)
-          : 0;
+        /* OEE chart */
 
-        if (this.oee?.oee) {
-          this.oeeOptions.series = [Number(this.oee.oee)];
-        }
+        this.oeeOptions.series = [
+          Number(this.oee.oee || 0)
+        ];
 
-        if (this.job?.target_qty) {
-          const percent =
-            (this.job.achieved_qty / this.job.target_qty) * 100;
-          this.radialOptions.series = [Math.round(percent)];
-        }
-    this.cdr.markForCheck();
+        /* production progress */
+
+        const percent =
+          this.job.target_qty > 0
+            ? (this.job.achieved_qty / this.job.target_qty) * 100
+            : 0;
+
+        this.radialOptions.series = [
+          Math.round(percent)
+        ];
+
+        this.updateSpindleGauge(this.liveRPM);
+
+        this.cdr.markForCheck();
 
       });
+
   }
 
-  /* ---------------- LIVE ---------------- */
+  /* =====================================================
+     SOCKET LIVE UPDATE
+  ===================================================== */
 
-  /* ---------------- LIVE ---------------- */
+  private handleSocketUpdate(data: any): void {
 
-  loadLive() {
-    this.dashboardService.getMachineLive(this.machineId)
-      .subscribe((res: any) => {
+    if (data.machine_id !== this.machineId) return;
 
-        const live = res.data;
-        if (!live) return;
+    this.updateQueue.push(data);
 
-        // 🔹 Update machine status
-        this.liveStatus = live.machine_status || 'UNKNOWN';
+    if (!this.updateScheduled) {
 
-        // 🔹 Update RPM
-        if (live.rpm !== undefined && live.rpm !== null) {
-          this.liveRPM = live.rpm;
+      this.updateScheduled = true;
 
-          const percent = Math.min((live.rpm / 3000) * 100, 100);
-          this.spindleOptions.series = [percent];
-          this.updateSpindleNeedle(percent);
-        }
+      requestAnimationFrame(() => {
 
-        // 🔹 Update Feed Rate
-        if (live.feed_rate !== undefined && live.feed_rate !== null) {
-          this.liveFeed = live.feed_rate;
-        }
+        const updates = [...this.updateQueue];
+        this.updateQueue = [];
 
-        // 🔹 Optional: Live part counter update
-        if (live.parts_count !== undefined) {
-          this.job.achieved_qty = live.parts_count;
-        }
+        this.zone.run(() => {
 
-        // 🔹 Update current time
-        this.currentDate = new Date();
+          for (const update of updates) {
 
-      }, (err) => {
-        console.error('Live API error:', err);
-      });
+            this.liveStatus = update.machine_status;
+
+            if (update.rpm !== undefined) {
+              this.liveRPM = update.rpm;
+              this.updateSpindleGauge(update.rpm);
+            }
+
+            if (update.feed_rate !== undefined) {
+              this.liveFeed = update.feed_rate;
+            }
+            if (update.parts_count !== undefined) {
+              this.job.achieved_qty = update.parts_count;
+            }
+            if (update.rpm !== undefined) {
+
+              this.liveRPM = update.rpm;
+
+              const percent = Math.min((update.rpm / 3000) * 100, 100);
+
+              this.spindleSeries = [percent];
+
+            }
+
+if (update.feed_rate !== undefined) {
+
+  this.liveFeed = update.feed_rate;
+
+  const point = {
+    x: new Date().getTime(),
+    y: update.feed_rate
+  };
+
+  this.feedBuffer.push(point);
+
+  if (this.feedBuffer.length > 60) {
+    this.feedBuffer.shift();
   }
 
-  /* ---------------- TIMELINE ---------------- */
+  this.feedSeries = [
+    {
+      name: 'Feed Rate',
+      data: [...this.feedBuffer]
+    }
+  ];
 
-  loadTimeline() {
-    this.dashboardService.getTimeline(this.machineId)
-      .subscribe((res: any) => {
+}
 
-        const rows = res.data;
-        const formatted = this.convertTimeline(rows);
+          }
 
-        this.timelineOptions.series = [{
-          name: "Machine",
-          data: formatted
-        }];
+          this.currentDate = new Date();
+
+          this.cdr.markForCheck();
+
+        });
+
+        this.updateScheduled = false;
+
       });
-  }
 
-  convertTimeline(rows: any[]) {
-
-    const blocks: any[] = [];
-
-    for (let i = 0; i < rows.length - 1; i++) {
-
-      const start = new Date(rows[i].bucket).getTime();
-      const end = new Date(rows[i + 1].bucket).getTime();
-
-      const status = rows[i].machine_status;
-
-      let color = "#16a34a";
-
-      if (['READY', 'HOLD'].includes(status)) color = "#f59e0b";
-      if (['STOP', 'ALARM', 'EMERGENCY'].includes(status)) color = "#ef4444";
-
-      blocks.push({
-        x: "Machine",
-        y: [start, end],
-        fillColor: color,
-        status: status
-      });
     }
 
-    return blocks;
   }
 
-  /* ---------------- TREND ---------------- */
+  /* =====================================================
+     SPINDLE GAUGE
+  ===================================================== */
 
-  loadTrend() {
-    this.dashboardService.getTrend(this.machineId)
-      .subscribe();
+updateSpindleGauge(rpm: number) {
+
+  if (!this.spindleOptions) return;
+
+  const percent = Math.min((rpm / 3000) * 100, 100);
+
+  this.spindleOptions.series = [percent];
+
+  this.updateSpindleNeedle(percent);
+
+}
+  updateSpindleNeedle(value: number) {
+
+    this.spindleNeedleAngle = (value * 180) / 100 - 90;
+
   }
 
-  /* ---------------- CHART INIT ---------------- */
+  /* =====================================================
+     CHART INIT
+  ===================================================== */
 
   initCharts() {
 
     this.radialOptions = {
       series: [0],
-      chart: { type: "radialBar", height: 200 },
+      chart: { type: 'radialBar', height: 220 },
       plotOptions: {
         radialBar: {
           startAngle: -135,
           endAngle: 135,
           dataLabels: {
             value: {
-              formatter: (val: any) => val + "%"
+              formatter: (v: any) => `${v}%`
             }
           }
         }
@@ -228,7 +298,7 @@ export class LiveComponent implements OnInit, OnDestroy {
 
     this.oeeOptions = {
       series: [0],
-      chart: { type: "radialBar", height: 250 },
+      chart: { type: 'radialBar', height: 250 },
       plotOptions: {
         radialBar: {
           startAngle: -135,
@@ -239,24 +309,80 @@ export class LiveComponent implements OnInit, OnDestroy {
 
     this.timelineOptions = {
       series: [],
-      chart: { type: "rangeBar", height: 130 },
+      chart: { type: 'rangeBar', height: 140 },
       plotOptions: { bar: { horizontal: true } },
-      xaxis: { type: "datetime" }
+      xaxis: { type: 'datetime' }
     };
 
-    this.spindleOptions = {
-      series: [0],
-      chart: { type: "radialBar", height: 200 },
-      plotOptions: {
-        radialBar: {
-          startAngle: -90,
-          endAngle: 90
-        }
-      }
-    };
+    /* SPINDLE GAUGE */
+
+this.spindleOptions = {
+
+  series: [0],
+
+  chart: {
+    type: 'radialBar',
+    height: 200
+  },
+
+  plotOptions: {
+    radialBar: {
+      startAngle: -90,
+      endAngle: 90
+    }
   }
 
-  updateSpindleNeedle(value: number) {
-    this.spindleNeedleAngle = (value * 180) / 100 - 90;
+};
+
+
+/* ================= FEED RATE REALTIME ================= */
+
+this.feedChart = {
+
+  chart: {
+    type: 'line',
+    height: 220,
+    toolbar: { show: false },
+    animations: {
+      enabled: true,
+      easing: 'linear',
+      dynamicAnimation: {
+        speed: 300
+      }
+    }
+  },
+
+  stroke: {
+    curve: 'smooth',
+    width: 3
+  },
+
+  dataLabels: {
+    enabled: false
+  },
+
+  xaxis: {
+    type: 'datetime',
+    range: 60000, // last 60 seconds
+    labels: {
+      datetimeFormatter: {
+        second: 'HH:mm:ss'
+      }
+    }
+  },
+
+  yaxis: {
+    min: 0,
+    max: 30000,
+    tickAmount: 5
+  },
+
+  tooltip: {
+    x: {
+      format: 'HH:mm:ss'
+    }
+  }
+
+};
   }
 }

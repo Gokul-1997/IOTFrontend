@@ -16,7 +16,7 @@ export class HeaderComponent {
   isDark = false;
 
   menus = [
-    { label: 'Dashboard', path: '/dashboard', icon: 'gauge'},
+    { label: 'Dashboard', path: '/dashboard', icon: 'gauge' },
     { label: 'OEE', path: '/oee-reports', icon: 'oee' },
     { label: 'Reports', path: '/reports', icon: 'reports' },
     { label: 'Charts', path: '/charts', icon: 'chart' },
@@ -25,13 +25,14 @@ export class HeaderComponent {
       label: 'Master', icon: 'settings',
       children: [
         { label: 'Machines', path: '/machines' },
+        { label: 'Component', path: '/component' },
         { label: 'Shifts', path: '/shifts' },
         { label: 'Operators', path: '/operators' }
       ]
     }
   ];
 
-  constructor(private router: Router) {}
+  constructor(private router: Router) { }
 
   toggleMenu(label: string) {
     this.openMenu = this.openMenu === label ? null : label;
@@ -65,7 +66,7 @@ export class HeaderComponent {
   toggleMobileMenu() {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
   }
-  
+
   // 🔒 CLOSE ON OUTSIDE CLICK
   @HostListener('document:click', ['$event'])
   onClickOutside(event: MouseEvent) {

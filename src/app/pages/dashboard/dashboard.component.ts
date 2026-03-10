@@ -24,7 +24,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  lines: any[] = [];
+  machines: any[] = [];
   summary: any = {};
   shift: any = {};
 
@@ -50,7 +50,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private zone: NgZone,
     private cdr: ChangeDetectorRef,
     private router: Router
-  ) {}
+  ) { }
 
   /* ================= INIT ================= */
 
@@ -87,18 +87,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((res: any) => {
 
-        this.lines = res.lines || [];
+        this.machines = res.machines || [];
         this.summary = res.summary || {};
         this.shift = res.shift || {};
-
-        /* BUILD MACHINE MAP */
-        this.machineMap.clear();
-
-        for (const line of this.lines) {
-          for (const machine of line.machines) {
-            this.machineMap.set(machine.machine_id, machine);
-          }
-        }
 
         this.cdr.markForCheck();
       });
@@ -122,48 +113,54 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
         this.zone.run(() => {
 
-          for (const u of updates) {
-            this.applyLiveUpdate(u);
+          for (const update of updates) {
+
+            const machine = this.machines.find(
+              m => m.machine_id === update.machine_id
+            );
+
+            if (!machine) continue;
+
+            if (update.machine_status === 'RUNNING') {
+              machine.status = 'RUNNING';
+            } else {
+              machine.status = 'IDLE';
+            }
+
+            machine.alarm = update.alarm === true;
           }
 
+          /* ===== update summary ===== */
+
+          let running = 0;
+          let idle = 0;
+
+          for (const m of this.machines) {
+            if (m.status === 'RUNNING') running++;
+            else idle++;
+          }
+
+          this.summary.running = running;
+          this.summary.idle = idle;
+          this.summary.total = this.machines.length;
+
           this.cdr.markForCheck();
+
         });
 
         this.updateScheduled = false;
+
       });
     }
 
   }
 
-  /* ================= APPLY MACHINE UPDATE ================= */
-
-  private applyLiveUpdate(data: any): void {
-
-    const machine = this.machineMap.get(data.machine_id);
-
-    if (!machine) return;
-
-    const rawStatus = data.machine_status;
-
-    let status = 'STOPPED';
-
-    if (['RUN','RUNNING','CUTTING'].includes(rawStatus)) {
-      status = 'RUNNING';
-    }
-    else if (['READY','HOLD'].includes(rawStatus)) {
-      status = 'IDLE';
-    }
-
-    machine.status = status;
-
-  }
 
   /* ================= NAVIGATION ================= */
 
-  goToLive(id: number): void {
-    this.router.navigate(['dashboard/live', id]);
-  }
-
+goToLive(id: number): void {
+  this.router.navigate(['/dashboard/live', id]);
+}
   /* ================= TRACKBY ================= */
 
   trackByMachine(index: number, item: any): number {

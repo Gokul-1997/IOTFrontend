@@ -36,19 +36,27 @@ export class MachineFormComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private service: MachinesService
-  ) {}
+  ) { }
 
   ngOnInit() {
 
     this.form = this.fb.group({
-      machine_name: ['', Validators.required],
-      axis_model: [''],
-      controller_model: [''],
-      machine_year: [''],
+      machine_serial_no: ['', Validators.required],
+      model: [''],
+      controller: [''],
+      mmc_no: [''],
+      spindle_rpm: [''],
+      x_axis: [''],
+      y_axis: [''],
+      z_axis: [''],
+      fourth_axis: [''],
+      twin_spindle: [false],
+      twin_table: [false],
+      atc_tool_capacity: [''],
       image_url: [''],
       line_id: [null, Validators.required]
-    });
 
+    });
     this.loadLines();
   }
 

@@ -17,22 +17,7 @@ export class DashboardService {
   }
 
   getMachineDetail(machineId: number): Observable<any> {
-    return this.http.get(`${this.api}/detail/${machineId}`);
-  }
-
-  getMachineLive(machineId: number): Observable<any> {
     return this.http.get(`${this.api}/live/${machineId}`);
   }
 
-  getTimeline(machineId: number): Observable<any> {
-    return this.http.get(`${this.api}/timeline/${machineId}`);
-  }
-
-  getTrend(machineId: number): Observable<any> {
-    return this.http.get(`${this.api}/trend/${machineId}`);
-  }
-
-  getSummary(): Observable<any> {
-    return this.http.get(`${this.api}/summary`);
-  }
 }

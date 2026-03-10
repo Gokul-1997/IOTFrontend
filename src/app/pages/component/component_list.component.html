@@ -53,7 +53,7 @@
           <td class="p-3">{{ c.part_name }}</td>
           <td class="p-3">{{ c.part_number }}</td>
           <td class="p-3">{{ c.operation_number }}</td>
-          <td class="p-3">{{ c.cycle_time }}</td>
+          <td class="p-3">{{ formatCycleTimeTable(c.cycle_time) }}</td>
           <td class="p-3">{{ c.target }}</td>
           <td class="p-3">{{ c.multiplication_factor }}</td>
           <td class="p-3">{{ c.from_date | date:'dd-MM-yyyy' }}</td>
@@ -151,21 +151,17 @@
       </div>
 
       <!-- Cycle Time -->
-<div>
-  <label class="block mb-1 text-sm">Cycle Time (HH:MM:SS)</label>
+      <div>
+        <label class="block mb-1 text-sm">Cycle Time (HH:MM:SS)</label>
 
-  <input type="text"
-         formControlName="cycle_time"
-         maxlength="8"
-         (input)="formatCycleTime($event)"
-         placeholder="00:00:00"
-         class="w-full border p-2 rounded" />
+        <input type="text" formControlName="cycle_time" maxlength="8" (input)="formatCycleTime($event)"
+          placeholder="00:00:00" class="w-full border p-2 rounded" />
 
-  <div *ngIf="form.get('cycle_time')?.invalid && form.get('cycle_time')?.touched"
-       class="text-red-500 text-xs mt-1">
-    Format must be HH:MM:SS
-  </div>
-</div>
+        <div *ngIf="form.get('cycle_time')?.invalid && form.get('cycle_time')?.touched"
+          class="text-red-500 text-xs mt-1">
+          Format must be HH:MM:SS
+        </div>
+      </div>
       <!-- Target -->
       <div>
         <label class="block mb-1 text-sm">Target</label>

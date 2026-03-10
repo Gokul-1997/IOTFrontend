@@ -1,110 +1,97 @@
-<div class="p-6">
+<div class="p-6 bg-[#e7b2b2] min-h-screen">
 
-  <!-- ================= HEADER ================= -->
-  <div class="flex justify-between items-center mb-6">
+  <!-- ================= TOP BAR ================= -->
 
-    <div>
-      <h2 class="text-2xl font-bold">Dashboard</h2>
-      <p class="text-sm text-gray-500">
-        Shift: {{ shift?.shift_code }}
-      </p>
+  <div
+    class="bg-gradient-to-r from-[#2B3990] to-[#9B3F70] text-white rounded-xl px-6 py-3 mb-6 flex justify-between items-center">
+
+    <div class="text-lg font-semibold">
+      Dashboard
     </div>
 
-    <div class="flex gap-6 text-sm font-medium">
+    <div class="text-sm flex gap-6 items-center">
 
       <div>
-        <span class="font-bold">{{ summary?.total || 0 }}</span> Total
+        Shift : <b>{{ shift?.shift_code }}</b>
       </div>
 
-      <div class="text-green-600">
-        <span class="font-bold">{{ summary?.running || 0 }}</span> Running
+      <div>
+        Total Machines : <b>{{ summary?.total || 0 }}</b>
       </div>
 
-      <div class="text-yellow-500">
-        <span class="font-bold">{{ summary?.idle || 0 }}</span> Idle
-      </div>
+      <div class="flex gap-4">
 
-    </div>
-  </div>
+        <span class="bg-green-600 px-2 py-1 rounded text-xs">
+          Running {{ summary?.running || 0 }}
+        </span>
 
-
-  <!-- ================= BAY / LINE LOOP ================= -->
-
-  <div *ngFor="let line of lines" class="mb-10">
-
-    <!-- Bay Header -->
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-xl font-semibold">
-        {{ line.line_name }}
-      </h3>
-
-      <div class="text-sm text-gray-500">
-        Machines: {{ line.total }}
-      </div>
-    </div>
-
-    <!-- Machine Grid -->
-    <div class="grid sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-
-      <div *ngFor="let m of line.machines; trackBy: trackByMachine"
-           class="border rounded-xl p-5 shadow hover:shadow-lg transition cursor-pointer"
-           (click)="goToLive(m.machine_id)">
-
-        <!-- Machine Name -->
-        <h4 class="text-lg font-semibold mb-3">
-          {{ m.machine_name }}
-        </h4>
-
-        <!-- Image -->
-        <div class="flex justify-center mb-4">
-          <img [src]="m.image_url || '/images/product/machine_01.png'"
-               class="h-24 object-contain" />
-        </div>
-
-        <!-- Status -->
-        <div class="mb-4 text-center">
-          <span
-            class="inline-flex px-3 py-1 rounded text-sm text-white"
-            [ngClass]="{
-              'bg-green-600': m.status === 'RUNNING',
-              'bg-yellow-500': m.status === 'IDLE',
-              'bg-red-600': m.status === 'STOPPED'
-            }"
-          >
-            {{ m.status }}
-          </span>
-        </div>
-
-        <!-- Production Info -->
-        <div class="grid grid-cols-2 gap-2 text-sm mb-4">
-          <div>Run: <b>{{ m.run_minutes || 0 }}m</b></div>
-          <div>Idle: <b>{{ m.idle_minutes || 0 }}m</b></div>
-          <div>Parts: <b>{{ m.produced_qty || 0 }}</b></div>
-        </div>
-
-        <!-- Utilization Circle -->
-        <div class="flex justify-center">
-          <div class="relative h-20 w-20">
-            <svg viewBox="0 0 36 36" class="h-full w-full -rotate-90">
-              <path stroke="#E5E7EB" stroke-width="3" fill="none" pathLength="100"
-                d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32" />
-              <path stroke="#2B3990" stroke-width="3"
-                stroke-linecap="round"
-                fill="none"
-                pathLength="100"
-                [attr.stroke-dasharray]="(m.utilization || 0) + ' 100'"
-                d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32" />
-            </svg>
-            <div class="absolute inset-0 flex items-center justify-center text-sm font-semibold">
-              {{ m.utilization || 0 }}%
-            </div>
-          </div>
-        </div>
+        <span class="bg-yellow-500 px-2 py-1 rounded text-xs">
+          Idle {{ summary?.idle || 0 }}
+        </span>
 
       </div>
 
     </div>
 
   </div>
+
+
+  <!-- ================= BAY LOOP ================= -->
+
+<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+
+  <div *ngFor="let m of machines; trackBy: trackByMachine"
+       (click)="goToLive(m.machine_id)"
+       class="rounded-xl p-4 text-white cursor-pointer shadow-md transition hover:scale-105"
+
+       [ngClass]="{
+         'bg-green-600': m.status === 'RUNNING',
+         'bg-yellow-600': m.status === 'IDLE' && !m.alarm,
+         'bg-red-500': m.alarm
+       }">
+
+    <div class="text-lg font-bold text-center mb-1">
+      {{ m.machine_name }}
+    </div>
+
+    <div class="text-xs text-center mb-2">
+      PN: Valve | Utl: {{ m.utilization || 0 }}%
+    </div>
+
+    <div class="text-xs text-center mb-3">
+      Setup time: 06h 00m 00s
+    </div>
+
+    <div class="flex justify-center gap-2 mb-3">
+
+      <div class="bg-white text-black rounded px-3 py-1 text-xs text-center">
+        <div class="font-semibold">Run</div>
+        <div>{{ m.run_minutes || 0 }}m</div>
+      </div>
+
+      <div class="bg-white text-black rounded px-3 py-1 text-xs text-center">
+        <div class="font-semibold">Idle</div>
+        <div>{{ m.idle_minutes || 0 }}m</div>
+      </div>
+
+    </div>
+
+    <div class="flex justify-between text-xs mt-2">
+
+      <div>
+        Plan
+        <div class="font-bold">{{ m.target_qty || 0 }}</div>
+      </div>
+
+      <div>
+        Actual
+        <div class="font-bold">{{ m.achieved_qty || 0 }}</div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
 
 </div>

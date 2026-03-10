@@ -24,15 +24,23 @@ export class MachinesComponent implements OnInit {
 
   rows: any[] = [];
   displayedColumns = [
-    'machine_name',
-    'axis_model',
-    'controller_model',
-    'machine_year',
-    'line_name',
+    'name',
+    'machine_serial_no',
+    'x_axis',
+    'y_axis',
+    'z_axis',
+    'fourth_axis',
+    'twin_spindle',
+    'twin_table',
+    'atc_tool_capacity',
+    'model',
+    'mmc_no',
+    'controller',
+    'spindle_rpm',
+    'image_url',
     'is_active',
     'actions'
   ];
-
   search = '';
   page = 1;
   limit = 10;
@@ -44,7 +52,7 @@ export class MachinesComponent implements OnInit {
   showForm = false;
   editData: any = null;
 
-  constructor(private service: MachinesService,private cdr: ChangeDetectorRef) {}
+  constructor(private service: MachinesService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit() {
     this.load();
@@ -60,7 +68,7 @@ export class MachinesComponent implements OnInit {
     }).subscribe(res => {
       this.rows = res.data;
       this.total = res.total;
-       this.cdr.markForCheck(); 
+      this.cdr.markForCheck();
     });
   }
 

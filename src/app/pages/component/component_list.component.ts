@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -29,6 +29,7 @@ export class ComponentList implements OnInit {
     private fb: FormBuilder,
     private api: ComponentApi,
     private socketService: SocketService,
+    private cdr: ChangeDetectorRef,
   ) { }
 
   ngOnInit() {
@@ -68,9 +69,20 @@ export class ComponentList implements OnInit {
       .subscribe(res => {
         this.components = res.data;
         this.total = res.meta.total;
+                this.cdr.markForCheck();
+
       });
   }
+formatCycleTimeTable(t: any): string {
 
+  if (!t) return '00:00:00';
+
+  const h = String(t.hours ?? 0).padStart(2,'0');
+  const m = String(t.minutes ?? 0).padStart(2,'0');
+  const s = String(t.seconds ?? 0).padStart(2,'0');
+
+  return `${h}:${m}:${s}`;
+}
   formatCycleTime(event: any) {
 
     let value = event.target.value.replace(/\D/g, ''); // remove letters

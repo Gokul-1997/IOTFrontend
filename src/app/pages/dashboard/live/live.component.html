@@ -1,38 +1,42 @@
+
+
 <div class="body-pad">
 
-  <!-- ================= HEADER ================= -->
-  <div class="flex flex-col gap-4 mb-3 sm:flex-row sm:items-center sm:justify-between
+  <!-- =====================================================
+  HEADER
+  ===================================================== -->
+
+  <div class="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between
               bg-gradient-to-l from-[#C5404A] via-[#5E3C79] to-[#4A2FA0]
-              rounded-lg ps-3 py-1 pe-1">
+              rounded-xl px-4 py-2">
 
-    <div>
-      <h2 class="text-xl font-ubuntu font-bold text-white text-center sm:text-left">
-        {{ machine?.machine_name }}
-      </h2>
-    </div>
+    <!-- MACHINE NAME -->
+    <h2 class="text-xl font-bold text-white">
+      {{ machine?.name || 'Machine' }}
+    </h2>
 
-    <div class="flex flex-col sm:flex-row items-center gap-3">
+    <div class="flex flex-wrap items-center gap-3 text-white">
 
-      <button class="bg-[var(--green)] px-4 py-2 rounded-md text-white">
-        Machine Status :
-        {{ liveStatus || 'UNKNOWN' }}
-      </button>
-
-      <div class="flex items-center gap-4 rounded-lg
-                  bg-gradient-to-r from-[#2D388E] to-[#792953]
-                  px-2 py-1 shadow-sm text-white">
-
-        <span>
-          Today:
-          {{ shift?.shift_code ?? '--' }} |
-          {{ currentDate | date:'dd MMM yyyy' }}
-          |
-          {{ currentDate | date:'hh:mm a' }}
-        </span>
-
+      <!-- MACHINE STATUS -->
+      <div class="px-4 py-1 rounded-md font-medium" [ngClass]="{
+          'bg-green-600': liveStatus === 'RUNNING',
+          'bg-yellow-500': liveStatus === 'IDLE',
+          'bg-red-600': liveStatus === 'ALARM'
+        }">
+        {{ liveStatus }}
       </div>
 
-      <button class="btn-status active" routerLink="/dashboard">
+      <!-- SHIFT INFO -->
+      <div class="bg-[#2D388E] px-3 py-1 rounded-md text-sm">
+        {{ shift?.shift_code || '--' }}
+        |
+        {{ currentDate | date:'dd MMM yyyy' }}
+        |
+        {{ currentDate | date:'hh:mm a' }}
+      </div>
+
+      <!-- BACK BUTTON -->
+      <button routerLink="/dashboard" class="bg-white text-gray-700 px-3 py-1 rounded-md font-medium hover:bg-gray-100">
         Back
       </button>
 
@@ -40,204 +44,225 @@
   </div>
 
 
-  <!-- ================= BODY ================= -->
-  <div class="space-y-6">
+  <!-- =====================================================
+  TOP SECTION
+  ===================================================== -->
 
-    <!-- ================= TOP GRID ================= -->
-    <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
+  <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
 
-      <!-- MACHINE CARD -->
-      <div class="flex flex-col sm:flex-row xl:col-span-6
-                  bg-white border rounded-xl p-4 gap-6">
+    <!-- MACHINE CARD -->
 
-        <div class="w-full">
-          <img [src]="machine?.image_url || '/images/product/machine_login_02.png'" class="rounded-lg mb-4 w-full"
-            alt="Machine Image">
+    <div class="xl:col-span-6 bg-white rounded-xl border p-4 flex flex-col md:flex-row gap-6">
+
+      <!-- MACHINE IMAGE -->
+
+      <div class="w-full md:w-1/2">
+        <img [src]="machine?.image || '/images/product/machine_login_02.png'" class="rounded-lg w-full">
+      </div>
+
+      <!-- MACHINE DETAILS -->
+
+      <div class="w-full md:w-1/2 bg-blue-50 rounded-xl p-4">
+
+        <!-- OPERATOR -->
+
+        <div class="flex items-center gap-3 mb-4">
+
+          <img src="/images/user/owner.png" class="h-12 w-12 rounded-full">
+
+          <div>
+            <p class="text-sm text-gray-500">Operator</p>
+            <p class="text-lg font-semibold">
+              {{ operator?.operator_name || '--' }}
+            </p>
+          </div>
+
         </div>
 
-        <div class="bg-[var(--light-blue)] p-3 rounded-2xl w-full">
+        <!-- JOB INFO -->
 
-          <div class="flex gap-3 mb-2 w-full">
-            <img src="/images/user/owner.png" class="h-12 w-12 rounded-full" />
+        <div class="grid grid-cols-3 gap-2 text-sm mb-4">
+
+          <div class="white-card">
+            <span class="font-medium">Shift</span>
+            <p>{{ shift?.shift_code || '--' }}</p>
+          </div>
+
+          <div class="white-card">
+            <span class="font-medium">Part</span>
+            <p>{{ job?.part_name || '--' }}</p>
+          </div>
+
+          <div class="white-card">
+            <span class="font-medium">Comp ID</span>
+            <p>{{ job?.component_id || '--' }}</p>
+          </div>
+
+        </div>
+
+        <!-- PRODUCTION -->
+
+        <div class="border-t pt-3">
+
+          <p class="text-sm font-semibold mb-2">Part Produced</p>
+
+          <div class="grid grid-cols-2 gap-3 text-center bg-white border rounded-lg p-3">
 
             <div>
-              <span class="text-base">Operator</span>
-              <p class="font-medium text-xl">
-                {{ job?.operator_name || '--' }}
+              <p class="text-gray-500 text-sm">Target</p>
+              <p class="font-semibold text-lg">
+                {{ job?.target_qty || 0 }}
               </p>
             </div>
+
+            <div>
+              <p class="text-gray-500 text-sm">Achieved</p>
+              <p class="font-semibold text-lg">
+                {{ job?.achieved_qty || 0 }}
+              </p>
+            </div>
+
           </div>
 
-          <div class="flex gap-2 w-full">
-            <div class="white-card w-full">
-              <span class="font-medium">Shift:</span>
-              {{ shift?.shift_code || '--' }}
-            </div>
-
-            <div class="white-card w-full">
-              <span class="font-medium">Part:</span>
-              {{ job?.part_name || '--' }}
-            </div>
-
-            <div class="white-card w-full">
-              <span class="font-medium">Comp ID:</span>
-              {{ job?.component_id || '--' }}
-            </div>
-          </div>
-
-          <!-- Production -->
-          <div class="mt-2 pt-2 border-t w-full">
-            <p class="font-medium mb-2">Part Produced</p>
-
-            <div class="flex text-center gap-4 bg-white border rounded-lg p-3 w-full">
-
-              <div class="flex items-center gap-2 w-full">
-                <div>
-                  <p class="text-sm text-gray-500">Target</p>
-                  <p class="font-semibold text-lg">
-                    {{ job?.target_qty | number }}
-                  </p>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-2 w-full">
-                <div>
-                  <p class="text-sm text-gray-500">Achieved</p>
-                  <p class="font-semibold text-lg">
-                    {{ job?.achieved_qty | number }}
-                  </p>
-                </div>
-              </div>
-
-            </div>
-
-            <div class="mt-2">
-              Total Duration:
-              <span class="font-medium">
-                {{ production?.run_minutes || 0 }} min
-              </span>
-            </div>
-          </div>
         </div>
+
       </div>
 
-
-      <!-- ================= TIME INFO ================= -->
-      <div class="xl:col-span-3 bg-white border rounded-xl p-4">
-        <p class="card-title">Time Info</p>
-
-        <div class="space-y-3">
-
-          <div class="bg-[var(--light-blue)] p-3 rounded-xl">
-            <p class="text-sm text-gray-500">Machine Running Time</p>
-            <p class="text-2xl font-bold">
-              {{ production?.run_minutes || 0 }} min
-            </p>
-          </div>
-
-          <div class="bg-[var(--light-blue)] p-3 rounded-xl">
-            <p class="text-sm text-gray-500">Machine Idle Time</p>
-            <p class="text-2xl font-bold">
-              {{ production?.idle_minutes || 0 }} min
-            </p>
-          </div>
-
-          <div class="bg-[var(--light-blue)] p-3 rounded-xl">
-            <p class="text-sm text-gray-500">Machine Off Time</p>
-            <p class="text-2xl font-bold">
-              {{ production?.off_minutes || 0 }} min
-            </p>
-          </div>
-
-        </div>
-      </div>
+    </div>
 
 
-      <!-- ================= UTILIZATION ================= -->
-      <div class="xl:col-span-3 bg-white border rounded-xl p-4">
-        <p class="card-title">Machine Status</p>
+    <!-- =====================================================
+    TIME INFO
+    ===================================================== -->
 
-        <div class="flex justify-center">
-          <apx-chart [series]="radialOptions.series" [chart]="radialOptions.chart"
-            [plotOptions]="radialOptions.plotOptions" [labels]="radialOptions.labels">
-          </apx-chart>
-        </div>
+    <div class="xl:col-span-3 bg-white rounded-xl border p-4">
 
-        <div class="pt-4 text-center">
-          <p class="text-sm text-gray-500">OEE</p>
-          <p class="text-2xl font-bold">
-            {{ oee?.oee || 0 }}%
+      <h3 class="card-title mb-3">Time Info</h3>
+
+      <div class="space-y-3">
+
+        <div class="info-card">
+          <p class="label">Running Time</p>
+          <p class="value">
+            {{ time?.run_minutes || 0 }} min
           </p>
         </div>
 
+        <div class="info-card">
+          <p class="label">Idle Time</p>
+          <p class="value">
+            {{ time?.idle_minutes || 0 }} min
+          </p>
+        </div>
+        
       </div>
 
     </div>
 
 
-    <!-- ================= TIMELINE ================= -->
-    <div class="bg-white rounded-2xl shadow p-6">
+    <!-- =====================================================
+    MACHINE STATUS (UTILIZATION)
+    ===================================================== -->
 
-      <div class="flex justify-between">
-        <p class="text-lg font-semibold">
-          Last 8 Hours Machine Status
-        </p>
-      </div>
+    <div class="xl:col-span-3 bg-white rounded-xl border p-4 text-center">
 
-      <apx-chart [series]="timelineOptions.series" [chart]="timelineOptions.chart"
-        [plotOptions]="timelineOptions.plotOptions" [xaxis]="timelineOptions.xaxis" [tooltip]="timelineOptions.tooltip">
+      <h3 class="card-title mb-4">Machine Status</h3>
+
+      <apx-chart [series]="radialOptions.series" [chart]="radialOptions.chart" [plotOptions]="radialOptions.plotOptions"
+        [labels]="radialOptions.labels">
       </apx-chart>
 
-    </div>
-
-
-    <!-- ================= BOTTOM SECTION ================= -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-      <!-- OEE -->
-      <div class="bg-white rounded-2xl shadow p-6 text-center">
-        <h2 class="text-lg font-semibold mb-4">OEE</h2>
-
-        <apx-chart [series]="oeeOptions.series" [chart]="oeeOptions.chart" [plotOptions]="oeeOptions.plotOptions"
-          [labels]="oeeOptions.labels">
-        </apx-chart>
-
-        <p class="text-2xl font-bold mt-2">
-          {{ oee?.oee || 0 }}%
-        </p>
-      </div>
-
-
-      <!-- Spindle -->
-      <div class="bg-white rounded-2xl shadow p-6 text-center">
-        <h2 class="text-lg font-semibold mb-4">Spindle Speed</h2>
-
-        <div class="relative">
-          <apx-chart [series]="spindleOptions.series" [chart]="spindleOptions.chart"
-            [plotOptions]="spindleOptions.plotOptions">
-          </apx-chart>
-
-          <div class="needle" [style.transform]="'rotate(' + spindleNeedleAngle + 'deg)'">
-          </div>
-
-          <div class="needle-center"></div>
-        </div>
-
-        <p class="text-xl font-bold">
-          {{ liveRPM || 0 }} RPM
-        </p>
-      </div>
-
-
-      <!-- Feed Rate -->
-      <div class="bg-white rounded-2xl shadow p-6 text-center">
-        <h2 class="text-lg font-semibold mb-4">Feed Rate</h2>
-        <p class="text-xl font-bold">
-          {{ liveFeed || 0 }}
+      <div class="mt-4">
+        <p class="text-sm text-gray-500">OEE</p>
+        <p class="text-2xl font-bold">
+          {{ oee?.oee || 0 }} %
         </p>
       </div>
 
     </div>
 
   </div>
+
+
+  <!-- =====================================================
+  BOTTOM SECTION
+  ===================================================== -->
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+
+    <!-- OEE -->
+
+    <div class="bg-white rounded-xl border p-6 text-center">
+
+      <h3 class="text-lg font-semibold mb-4">OEE</h3>
+
+      <apx-chart [series]="oeeOptions.series" [chart]="oeeOptions.chart" [plotOptions]="oeeOptions.plotOptions">
+      </apx-chart>
+
+      <p class="text-2xl font-bold mt-3">
+        {{ oee?.oee || 0 }}%
+      </p>
+
+    </div>
+
+
+
+    <!-- SPINDLE LOAD -->
+
+    <div class="bg-white rounded-xl border p-6 text-center">
+
+      <h3 class="text-lg font-semibold mb-4">
+        Spindle Load
+      </h3>
+
+      <div class="relative">
+
+        <apx-chart [series]="spindleOptions.series" [chart]="spindleOptions.chart"
+          [plotOptions]="spindleOptions.plotOptions">
+        </apx-chart>
+
+        <div class="needle" [style.transform]="'rotate(' + spindleNeedleAngle + 'deg)'">
+        </div>
+
+        <div class="needle-center"></div>
+
+      </div>
+
+      <p class="text-xl font-bold mt-2">
+        {{ liveRPM || 0 }} RPM
+      </p>
+
+    </div>
+
+
+
+
+
+<!-- FEED RATE REALTIME -->
+
+<div class="bg-white rounded-xl border p-6 text-center">
+
+  <h3 class="text-lg font-semibold mb-4">
+    Feed Rate (Realtime)
+  </h3>
+
+  <apx-chart
+    [series]="feedSeries"
+    [chart]="feedChart.chart"
+    [xaxis]="feedChart.xaxis"
+    [stroke]="feedChart.stroke"
+    [dataLabels]="feedChart.dataLabels"
+    [tooltip]="feedChart.tooltip"
+    [yaxis]="feedChart.yaxis">
+  </apx-chart>
+
+  <p class="text-2xl font-bold mt-3">
+    {{ liveFeed || 0 }}
+  </p>
+
 </div>
+
+  </div>
+
+</div>
+
