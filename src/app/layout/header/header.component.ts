@@ -26,6 +26,7 @@ export class HeaderComponent {
       children: [
         { label: 'Machines', path: '/machines' },
         { label: 'Component', path: '/component' },
+        { label: 'Job', path: '/job' },
         { label: 'Shifts', path: '/shifts' },
         { label: 'Operators', path: '/operators' }
       ]

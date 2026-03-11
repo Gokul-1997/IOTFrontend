@@ -1,34 +1,32 @@
-<div class="p-6 bg-[#e7b2b2] min-h-screen">
+<div class="p-6 bg-[#f4f6fa] min-h-screen">
 
-  <!-- ================= TOP BAR ================= -->
+  <!-- TOP BAR -->
 
-  <div
-    class="bg-gradient-to-r from-[#2B3990] to-[#9B3F70] text-white rounded-xl px-6 py-3 mb-6 flex justify-between items-center">
+  <div class="bg-gradient-to-r from-[#2B3990] to-[#9B3F70]
+            text-white rounded-xl px-6 py-4 mb-6
+            flex items-center justify-between">
 
-    <div class="text-lg font-semibold">
+    <div class="text-xl font-semibold">
       Dashboard
     </div>
 
-    <div class="text-sm flex gap-6 items-center">
+    <div class="flex items-center gap-4 text-sm">
 
-      <div>
-        Shift : <b>{{ shift?.shift_code }}</b>
+      <div class="bg-white/20 px-4 py-2 rounded-full">
+        {{ summary.total }} All Machines
       </div>
 
-      <div>
-        Total Machines : <b>{{ summary?.total || 0 }}</b>
+      <div class="bg-green-500/20 px-4 py-2 rounded-full">
+        {{ summary.running }} Machine Running
       </div>
 
-      <div class="flex gap-4">
+      <div class="bg-yellow-400/20 px-4 py-2 rounded-full">
+        {{ summary.idle }} Machine Idle
+      </div>
 
-        <span class="bg-green-600 px-2 py-1 rounded text-xs">
-          Running {{ summary?.running || 0 }}
-        </span>
 
-        <span class="bg-yellow-500 px-2 py-1 rounded text-xs">
-          Idle {{ summary?.idle || 0 }}
-        </span>
-
+      <div class="ml-6">
+        Today: {{ shift.shift_code }}
       </div>
 
     </div>
@@ -36,62 +34,182 @@
   </div>
 
 
-  <!-- ================= BAY LOOP ================= -->
+  <!-- MACHINE GRID -->
 
-<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
 
-  <div *ngFor="let m of machines; trackBy: trackByMachine"
-       (click)="goToLive(m.machine_id)"
-       class="rounded-xl p-4 text-white cursor-pointer shadow-md transition hover:scale-105"
+    <div *ngFor="let m of machines; trackBy: trackByMachine" (click)="goToLive(m.machine_id)"
+      class="bg-white rounded-2xl shadow-md p-5 hover:shadow-xl transition cursor-pointer">
 
-       [ngClass]="{
-         'bg-green-600': m.status === 'RUNNING',
-         'bg-yellow-600': m.status === 'IDLE' && !m.alarm,
-         'bg-red-500': m.alarm
-       }">
+      <!-- HEADER -->
 
-    <div class="text-lg font-bold text-center mb-1">
-      {{ m.machine_name }}
-    </div>
+      <div class="flex justify-between items-center">
 
-    <div class="text-xs text-center mb-2">
-      PN: Valve | Utl: {{ m.utilization || 0 }}%
-    </div>
+        <div class="text-lg font-bold">
+          {{ m.machine_serial_no }}
+        </div>
 
-    <div class="text-xs text-center mb-3">
-      Setup time: 06h 00m 00s
-    </div>
 
-    <div class="flex justify-center gap-2 mb-3">
-
-      <div class="bg-white text-black rounded px-3 py-1 text-xs text-center">
-        <div class="font-semibold">Run</div>
-        <div>{{ m.run_minutes || 0 }}m</div>
       </div>
 
-      <div class="bg-white text-black rounded px-3 py-1 text-xs text-center">
-        <div class="font-semibold">Idle</div>
-        <div>{{ m.idle_minutes || 0 }}m</div>
+
+      <!-- TOP SECTION -->
+
+      <div class="grid grid-cols-3 gap-4 items-center">
+
+        <!-- MACHINE IMAGE -->
+
+        <div>
+          <img [src]="m.image_url || 'assets/machine.png'" class="w-full h-28 object-contain" />
+          <!-- RUN / IDLE -->
+
+          <div class="flex justify-center gap-12 mt-6 text-sm">
+
+            <!-- RUN -->
+            <div class="text-center">
+
+              <div class="flex items-center justify-center gap-1 text-green-600 font-semibold">
+                ▶ Run
+              </div>
+
+              <div class="text-lg font-bold">
+                {{ (m.run_time || '00:00:00').split(':')[0] }}h
+              </div>
+
+              <div class="text-xs text-gray-500">
+                {{ (m.run_time || '00:00:00').split(':')[1] }}m
+                {{ (m.run_time || '00:00:00').split(':')[2] }}s
+              </div>
+
+            </div>
+
+            <!-- IDLE -->
+
+            <div class="text-center">
+
+              <div class="flex items-center justify-center gap-1 text-yellow-600 font-semibold">
+                ⏸ Idle
+              </div>
+
+              <div class="text-lg font-bold">
+                {{ (m.idle_time || '00:00:00').split(':')[0] }}h
+              </div>
+
+              <div class="text-xs text-gray-500">
+                {{ (m.idle_time || '00:00:00').split(':')[1] }}m
+                {{ (m.idle_time || '00:00:00').split(':')[2] }}s
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- OPERATOR PANEL -->
+
+        <div class="bg-gray-100 rounded-xl p-6 text-sm">
+
+          <div>
+            <span class="text-gray-500">Operator</span><br>
+            <b>{{ m.operator_name || '--' }}</b>
+          </div>
+
+          <div>
+            <span class="text-gray-500">Part Name</span><br>
+            <b>{{ m.part_name || '--' }}</b>
+          </div>
+
+          <div>
+            <span class="text-gray-500">Component ID</span><br>
+            <b>{{ m.component_id || '--' }}</b>
+          </div>
+
+          <div class="pt-2 border-t mt-2">
+            <span class="text-gray-500 text-xs">Status</span><br>
+
+            <div class="text-xs font-semibold px-3 py-1 rounded-full" [ngClass]="{
+'bg-green-100 text-green-700': m.status==='RUNNING',
+'bg-yellow-100 text-yellow-700': m.status==='IDLE',
+'bg-red-100 text-red-700': m.status==='STOPPED'
+}">
+              {{ m.status }}
+            </div>
+
+
+          </div>
+
+        </div>
+
+
+        <!-- UTILIZATION -->
+
+        <div class="flex flex-col items-center">
+
+          <div class="relative w-20 h-20">
+
+            <svg viewBox="0 0 36 36" class="w-full h-full">
+
+              <path d="M18 2.0845
+a 15.9155 15.9155 0 0 1 0 31.831
+a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e5e7eb" stroke-width="3" />
+
+              <path d="M18 2.0845
+a 15.9155 15.9155 0 0 1 0 31.831" fill="none" stroke="#2B3990" stroke-width="3"
+                [attr.stroke-dasharray]="m.utilization + ',100'" />
+
+            </svg>
+
+            <div class="absolute inset-0 flex items-center justify-center text-sm font-bold">
+              {{ m.utilization || 0 }}%
+            </div>
+
+          </div>
+
+          <div class="text-xs mt-1">
+            Utilization
+          </div>
+
+          <div class="flex justify-center gap-12 mt-6 text-sm">
+
+
+            <div class="text-center">
+
+              <div class="flex items-center justify-center gap-1 text-yellow-600 font-semibold">
+                Target
+              </div>
+
+              <div class="text-xs text-gray-500">
+                {{ m.target_qty}}
+              </div>
+
+            </div>
+
+            <div class="text-center">
+
+              <div class="flex items-center justify-center gap-1 text-green-600 font-semibold">
+                Achieved
+              </div>
+
+
+              <div class="text-xs text-gray-500">
+                {{ m.achieved_qty}}
+              </div>
+
+            </div>
+
+          </div>
+
+
+        </div>
+
       </div>
 
-    </div>
 
-    <div class="flex justify-between text-xs mt-2">
-
-      <div>
-        Plan
-        <div class="font-bold">{{ m.target_qty || 0 }}</div>
-      </div>
-
-      <div>
-        Actual
-        <div class="font-bold">{{ m.achieved_qty || 0 }}</div>
-      </div>
 
     </div>
 
   </div>
-
-</div>
 
 </div>

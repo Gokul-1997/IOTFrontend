@@ -26,6 +26,7 @@ import { OeeReportsComponent } from './pages/oee-reports/oee-reports';
 import { Charts } from './pages/charts/charts';
 import { Quality } from './pages/quality/quality';
 import { ComponentList } from './pages/component/component_list.component';
+import { JobListComponent } from './pages/job/job-list.component';
 
 export const routes: Routes = [
 
@@ -67,7 +68,7 @@ export const routes: Routes = [
       { path: 'oee-reports', component: OeeReportsComponent },
       { path: 'charts', component: Charts },
       { path: 'quality', component: Quality },
-
+      { path: 'job', component: JobListComponent }, 
       // DEFAULT
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]

@@ -1,0 +1,90 @@
+<div class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+
+<div class="bg-white p-6 rounded-xl shadow-lg w-96">
+
+<h2 class="text-lg font-bold mb-4">
+Start Job
+</h2>
+
+<!-- MACHINE -->
+
+<label class="text-sm">Machine</label>
+
+<select
+ class="border p-2 w-full mb-3"
+ [(ngModel)]="form.machine_id">
+
+<option value="">Select Machine</option>
+
+<option
+ *ngFor="let m of machines"
+ [ngValue]="m.id">
+
+{{m.machine_serial_no}}
+
+</option>
+
+</select>
+
+
+<!-- OPERATOR -->
+
+<label class="text-sm">Operator</label>
+
+<select
+ class="border p-2 w-full mb-3"
+ [(ngModel)]="form.operator_id">
+
+<option value="">Select Operator</option>
+
+<option
+ *ngFor="let o of operators"
+ [ngValue]="o.id">
+
+{{o.operator_name}}
+
+</option>
+
+</select>
+
+
+<!-- COMPONENT -->
+
+<label class="text-sm">Component</label>
+
+<select
+ class="border p-2 w-full mb-4"
+ [(ngModel)]="form.component_id">
+
+<option value="">Select Component</option>
+
+<option
+ *ngFor="let c of components"
+ [ngValue]="c.id">
+
+{{c.part_name}}
+
+</option>
+
+</select>
+
+
+<div class="flex justify-end gap-2">
+
+<button
+ class="bg-gray-400 px-3 py-1 rounded"
+ (click)="cancel()">
+Cancel
+</button>
+
+<button
+ class="bg-green-600 text-white px-3 py-1 rounded"
+ (click)="save()">
+Start Job
+</button>
+
+</div>
+
+</div>
+
+</div>

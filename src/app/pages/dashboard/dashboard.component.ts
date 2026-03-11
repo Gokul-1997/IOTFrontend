@@ -28,14 +28,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   summary: any = {};
   shift: any = {};
 
-  /* ===== MACHINE INDEX MAP (O(1) updates) ===== */
+  /* ===== MACHINE INDEX MAP ===== */
   private machineMap = new Map<number, any>();
 
   /* ===== SOCKET FLOOD PROTECTION ===== */
   private updateQueue: any[] = [];
   private updateScheduled = false;
 
-  /* ===== VISIBILITY HANDLER ===== */
+  /* ===== TAB VISIBILITY ===== */
   private visibilityHandler = () => {
     if (document.hidden) {
       this.socketService.pauseUpdates();
@@ -50,7 +50,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private zone: NgZone,
     private cdr: ChangeDetectorRef,
     private router: Router
-  ) { }
+  ) {}
 
   /* ================= INIT ================= */
 
@@ -67,12 +67,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.load();
 
-    /* SOCKET LISTENER */
     this.socketService.onMachineUpdate((data: any) => {
       this.handleSocketUpdate(data);
     });
 
-    /* TAB VISIBILITY OPTIMIZATION */
     document.addEventListener(
       'visibilitychange',
       this.visibilityHandler
@@ -91,9 +89,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.summary = res.summary || {};
         this.shift = res.shift || {};
 
+        /* build machine map for fast socket updates */
+        this.machineMap.clear();
+        for (const m of this.machines) {
+          this.machineMap.set(m.machine_id, m);
+        }
+
         this.cdr.markForCheck();
       });
-
   }
 
   /* ================= SOCKET HANDLING ================= */
@@ -115,22 +118,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
           for (const update of updates) {
 
-            const machine = this.machines.find(
-              m => m.machine_id === update.machine_id
-            );
-
+            const machine = this.machineMap.get(update.machine_id);
             if (!machine) continue;
 
+            /* status update */
             if (update.machine_status === 'RUNNING') {
               machine.status = 'RUNNING';
-            } else {
+            } 
+            else if (update.alarm) {
+              machine.status = 'STOPPED';
+            } 
+            else {
               machine.status = 'IDLE';
             }
 
             machine.alarm = update.alarm === true;
           }
 
-          /* ===== update summary ===== */
+          /* summary recalculation */
 
           let running = 0;
           let idle = 0;
@@ -152,23 +157,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
       });
     }
-
   }
-
 
   /* ================= NAVIGATION ================= */
 
-goToLive(id: number): void {
-  this.router.navigate(['/dashboard/live', id]);
-}
+  goToLive(id: number): void {
+    this.router.navigate(['/dashboard/live', id]);
+  }
+
   /* ================= TRACKBY ================= */
 
   trackByMachine(index: number, item: any): number {
     return item.machine_id;
-  }
-
-  trackByLine(index: number, item: any): number {
-    return item.line_id;
   }
 
   /* ================= DESTROY ================= */
@@ -184,7 +184,5 @@ goToLive(id: number): void {
     );
 
     this.socketService.disconnect();
-
   }
-
 }

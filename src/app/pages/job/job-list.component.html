@@ -1,0 +1,63 @@
+<div class="p-6">
+
+<div class="flex justify-between mb-4">
+
+<h2 class="text-xl font-bold">
+Supervisor Jobs
+</h2>
+
+<button
+ class="bg-green-600 text-white px-4 py-2 rounded"
+ (click)="openCreate()">
+Create Job
+</button>
+
+</div>
+
+<table class="w-full border">
+
+<thead class="bg-gray-200">
+<tr>
+<th class="p-2">Machine</th>
+<th class="p-2">Operator</th>
+<th class="p-2">Part</th>
+<th class="p-2">Target</th>
+<th class="p-2">Actual</th>
+<th class="p-2">Action</th>
+</tr>
+</thead>
+
+<tbody>
+
+<tr *ngFor="let j of jobs" class="border-t">
+
+<td class="p-2">{{j.machine_serial_no}}</td>
+<td class="p-2">{{j.operator_name}}</td>
+<td class="p-2">{{j.part_name}}</td>
+<td class="p-2">{{j.target_qty}}</td>
+<td class="p-2">{{j.achieved_qty}}</td>
+
+<td class="p-2">
+
+<button
+ class="bg-yellow-500 text-white px-3 py-1 rounded"
+ (click)="stop(j.machine_id)">
+Stop
+</button>
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+<!-- MODAL -->
+
+<app-job-create-modal
+ *ngIf="showModal"
+ (close)="closeModal()">
+</app-job-create-modal>
+
+</div>
