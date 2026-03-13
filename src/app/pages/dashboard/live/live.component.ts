@@ -45,6 +45,11 @@ export class LiveComponent implements OnInit, OnDestroy {
   liveRPM = 0;
   liveFeed = 0;
 
+  runTime = '00:00:00';
+  idleTime = '00:00:00';
+  utilization = 0;
+  cuttingSpeed = 0;
+
   currentDate = new Date();
 
   radialOptions: any;
@@ -54,10 +59,9 @@ export class LiveComponent implements OnInit, OnDestroy {
 
   spindleNeedleAngle = 0;
 
-  /* ===== SOCKET FLOOD PROTECTION ===== */
-
   private updateQueue: any[] = [];
   private updateScheduled = false;
+
   feedSeries: any[] = [
     {
       name: 'Feed Rate',
@@ -66,14 +70,7 @@ export class LiveComponent implements OnInit, OnDestroy {
   ];
 
   feedChart: any;
-
   private feedBuffer: any[] = [];
-
-  spindleSeries: number[] = [0];
-  feedGaugeSeries: number[] = [0];
-
-  spindleChart: any;
-  feedGaugeChart: any;
 
   constructor(
     private route: ActivatedRoute,
@@ -81,7 +78,7 @@ export class LiveComponent implements OnInit, OnDestroy {
     private socketService: SocketService,
     private zone: NgZone,
     private cdr: ChangeDetectorRef
-  ) { }
+  ) {}
 
   /* =====================================================
      INIT
@@ -138,17 +135,16 @@ export class LiveComponent implements OnInit, OnDestroy {
         this.oee = d.oee;
         this.shift = d.shift;
 
+        this.runTime = d.production.run_time;
+        this.idleTime = d.production.idle_time;
+
         this.liveStatus = d.live.machine_status;
         this.liveRPM = d.live.rpm;
         this.liveFeed = d.live.feed_rate;
 
-        /* OEE chart */
-
         this.oeeOptions.series = [
           Number(this.oee.oee || 0)
         ];
-
-        /* production progress */
 
         const percent =
           this.job.target_qty > 0
@@ -190,52 +186,69 @@ export class LiveComponent implements OnInit, OnDestroy {
 
           for (const update of updates) {
 
-            this.liveStatus = update.machine_status;
-
-            if (update.rpm !== undefined) {
-              this.liveRPM = update.rpm;
-              this.updateSpindleGauge(update.rpm);
+            if (update.machine_status !== undefined) {
+              this.liveStatus = update.machine_status;
             }
 
-            if (update.feed_rate !== undefined) {
-              this.liveFeed = update.feed_rate;
-            }
-            if (update.parts_count !== undefined) {
-              this.job.achieved_qty = update.parts_count;
-            }
             if (update.rpm !== undefined) {
 
               this.liveRPM = update.rpm;
 
               const percent = Math.min((update.rpm / 3000) * 100, 100);
 
-              this.spindleSeries = [percent];
+              this.spindleOptions.series = [percent];
+
+              this.updateSpindleNeedle(percent);
+            }
+
+            if (update.feed_rate !== undefined) {
+
+              this.liveFeed = update.feed_rate;
+
+              const point = {
+                x: new Date().getTime(),
+                y: update.feed_rate
+              };
+
+              this.feedBuffer.push(point);
+
+              if (this.feedBuffer.length > 60) {
+                this.feedBuffer.shift();
+              }
+
+              this.feedSeries = [
+                {
+                  name: 'Feed Rate',
+                  data: [...this.feedBuffer]
+                }
+              ];
 
             }
 
-if (update.feed_rate !== undefined) {
+            if (update.run_time !== undefined) {
+              this.runTime = update.run_time;
+            }
 
-  this.liveFeed = update.feed_rate;
+            if (update.idle_time !== undefined) {
+              this.idleTime = update.idle_time;
+            }
 
-  const point = {
-    x: new Date().getTime(),
-    y: update.feed_rate
-  };
+            if (update.achieved_qty !== undefined) {
+              this.job.achieved_qty = update.achieved_qty;
+            }
 
-  this.feedBuffer.push(point);
+            if (update.utilization !== undefined) {
 
-  if (this.feedBuffer.length > 60) {
-    this.feedBuffer.shift();
-  }
+              this.utilization = update.utilization;
 
-  this.feedSeries = [
-    {
-      name: 'Feed Rate',
-      data: [...this.feedBuffer]
-    }
-  ];
+              this.radialOptions.series = [
+                Math.round(update.utilization)
+              ];
+            }
 
-}
+            if (update.cutting_speed !== undefined) {
+              this.cuttingSpeed = update.cutting_speed;
+            }
 
           }
 
@@ -257,17 +270,18 @@ if (update.feed_rate !== undefined) {
      SPINDLE GAUGE
   ===================================================== */
 
-updateSpindleGauge(rpm: number) {
+  updateSpindleGauge(rpm: number) {
 
-  if (!this.spindleOptions) return;
+    if (!this.spindleOptions) return;
 
-  const percent = Math.min((rpm / 3000) * 100, 100);
+    const percent = Math.min((rpm / 3000) * 100, 100);
 
-  this.spindleOptions.series = [percent];
+    this.spindleOptions.series = [percent];
 
-  this.updateSpindleNeedle(percent);
+    this.updateSpindleNeedle(percent);
 
-}
+  }
+
   updateSpindleNeedle(value: number) {
 
     this.spindleNeedleAngle = (value * 180) / 100 - 90;
@@ -307,82 +321,51 @@ updateSpindleGauge(rpm: number) {
       }
     };
 
-    this.timelineOptions = {
-      series: [],
-      chart: { type: 'rangeBar', height: 140 },
-      plotOptions: { bar: { horizontal: true } },
-      xaxis: { type: 'datetime' }
+    this.spindleOptions = {
+      series: [0],
+      chart: { type: 'radialBar', height: 200 },
+      plotOptions: {
+        radialBar: {
+          startAngle: -90,
+          endAngle: 90
+        }
+      }
     };
 
-    /* SPINDLE GAUGE */
+    this.feedChart = {
 
-this.spindleOptions = {
+      chart: {
+        type: 'line',
+        height: 220,
+        toolbar: { show: false },
+        animations: {
+          enabled: true,
+          easing: 'linear',
+          dynamicAnimation: { speed: 300 }
+        }
+      },
 
-  series: [0],
+      stroke: { curve: 'smooth', width: 3 },
 
-  chart: {
-    type: 'radialBar',
-    height: 200
-  },
+      dataLabels: { enabled: false },
 
-  plotOptions: {
-    radialBar: {
-      startAngle: -90,
-      endAngle: 90
-    }
-  }
+      xaxis: {
+        type: 'datetime',
+        range: 60000
+      },
 
-};
+      yaxis: {
+        min: 0,
+        max: 500,
+        tickAmount: 5
+      },
 
-
-/* ================= FEED RATE REALTIME ================= */
-
-this.feedChart = {
-
-  chart: {
-    type: 'line',
-    height: 220,
-    toolbar: { show: false },
-    animations: {
-      enabled: true,
-      easing: 'linear',
-      dynamicAnimation: {
-        speed: 300
+      tooltip: {
+        x: { format: 'HH:mm:ss' }
       }
-    }
-  },
 
-  stroke: {
-    curve: 'smooth',
-    width: 3
-  },
+    };
 
-  dataLabels: {
-    enabled: false
-  },
-
-  xaxis: {
-    type: 'datetime',
-    range: 60000, // last 60 seconds
-    labels: {
-      datetimeFormatter: {
-        second: 'HH:mm:ss'
-      }
-    }
-  },
-
-  yaxis: {
-    min: 0,
-    max: 30000,
-    tickAmount: 5
-  },
-
-  tooltip: {
-    x: {
-      format: 'HH:mm:ss'
-    }
   }
 
-};
-  }
 }

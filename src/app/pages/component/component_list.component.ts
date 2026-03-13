@@ -56,9 +56,7 @@ export class ComponentList implements OnInit {
         Validators.pattern(/^([0-1]\d|2[0-3]):([0-5]\d):([0-5]\d)$/)
       ]],
       target: ['', Validators.required],
-      multiplication_factor: [1],
-      from_date: ['', Validators.required],
-      to_date: ['', Validators.required]
+      multiplication_factor: [1]
     });
   }
 

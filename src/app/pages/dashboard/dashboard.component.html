@@ -38,8 +38,13 @@
 
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
 
-    <div *ngFor="let m of machines; trackBy: trackByMachine" (click)="goToLive(m.machine_id)"
-      class="bg-white rounded-2xl shadow-md p-5 hover:shadow-xl transition cursor-pointer">
+<div *ngFor="let m of machines; trackBy: trackByMachine"
+     (click)="goToLive(m.machine_id)"
+     class="rounded-2xl shadow-md p-5 hover:shadow-xl transition cursor-pointer"
+     [ngClass]="{
+       'bg-white': !m.alarm,
+       'alarm-blink': m.alarm
+     }">
 
       <!-- HEADER -->
 
@@ -131,9 +136,7 @@
 
             <div class="text-xs font-semibold px-3 py-1 rounded-full" [ngClass]="{
 'bg-green-100 text-green-700': m.status==='RUNNING',
-'bg-yellow-100 text-yellow-700': m.status==='IDLE',
-'bg-red-100 text-red-700': m.status==='STOPPED'
-}">
+'bg-yellow-100 text-yellow-700': m.status==='IDLE'}">
               {{ m.status }}
             </div>
 

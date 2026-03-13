@@ -19,10 +19,8 @@ Create Job
 <thead class="bg-gray-200">
 <tr>
 <th class="p-2">Machine</th>
-<th class="p-2">Operator</th>
 <th class="p-2">Part</th>
 <th class="p-2">Target</th>
-<th class="p-2">Actual</th>
 <th class="p-2">Action</th>
 </tr>
 </thead>
@@ -32,10 +30,8 @@ Create Job
 <tr *ngFor="let j of jobs" class="border-t">
 
 <td class="p-2">{{j.machine_serial_no}}</td>
-<td class="p-2">{{j.operator_name}}</td>
 <td class="p-2">{{j.part_name}}</td>
 <td class="p-2">{{j.target_qty}}</td>
-<td class="p-2">{{j.achieved_qty}}</td>
 
 <td class="p-2">
 

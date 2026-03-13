@@ -306,4 +306,21 @@ h1, h2, h3, h4 {
   fill: #475569;
 }
 
+@keyframes alarmBlink {
+  0% {
+    background-color: #fee2e2;
+  }
+  50% {
+    background-color: #ef4444;
+  }
+  100% {
+    background-color: #fee2e2;
+  }
+}
+
+.alarm-blink {
+  animation: alarmBlink 1s infinite;
+  border: 2px solid #dc2626;
+}
+
 

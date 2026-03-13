@@ -16,7 +16,7 @@ export class JobCreateModalComponent implements OnInit{
  form:any={};
 
  machines:any[]=[];
- operators:any[]=[];
+//  operators:any[]=[];
  components:any[]=[];
 
  constructor(private service:JobService){}
@@ -31,9 +31,9 @@ export class JobCreateModalComponent implements OnInit{
      this.machines = res.data;
    });
 
-   this.service.getOperators().subscribe((res:any)=>{
-     this.operators = res.data;
-   });
+  //  this.service.getOperators().subscribe((res:any)=>{
+  //    this.operators = res.data;
+  //  });
 
    this.service.getComponents().subscribe((res:any)=>{
      this.components = res.data;

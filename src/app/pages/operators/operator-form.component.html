@@ -34,7 +34,7 @@
       <mat-label>Machines</mat-label>
       <mat-select multiple formControlName="machine_ids">
         <mat-option *ngFor="let m of machines" [value]="m.id">
-          {{ m.machine_name }}
+          {{ m.machine_serial_no }}
         </mat-option>
       </mat-select>
     </mat-form-field>

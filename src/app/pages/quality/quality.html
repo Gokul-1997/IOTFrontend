@@ -47,7 +47,7 @@
                    rounded-lg px-4 py-2.5 min-w-[150px]">
 
             <option *ngFor="let m of machines" [ngValue]="m.id">
-              {{ m.machine_name }}
+              {{ m.machine_serial_no }}
             </option>
 
           </select>
@@ -137,7 +137,7 @@
             <div>
               <p class="text-gray-500 text-sm">Machine Name</p>
               <p class="font-semibold">
-                {{ dashboardData?.machine?.machine_name || '-' }}
+                {{ dashboardData?.machine?.machine_serial_no || '-' }}
               </p>
             </div>
 

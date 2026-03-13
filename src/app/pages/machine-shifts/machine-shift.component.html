@@ -6,7 +6,7 @@
   <select formControlName="machine_id" (change)="loadConfig()">
     <option value="">Select Machine</option>
     <option *ngFor="let m of machines" [value]="m.id">
-      {{ m.machine_name }}
+      {{ m.machine_serial_no }}
     </option>
   </select>
 </form>
