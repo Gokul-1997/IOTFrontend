@@ -52,6 +52,22 @@ export class ShiftsComponent implements OnInit {
     this.load();
   }
 
+  formatTime(time: string): string {
+
+  if (!time) return '--';
+
+  const [hour, minute] = time.split(':').map(Number);
+
+  let h = hour % 12 || 12;
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+
+  const hh = String(h).padStart(2, '0');
+  const mm = String(minute).padStart(2, '0');
+
+  return `${hh}:${mm} ${ampm}`;
+}
+
+
   openCreate() {
     const dialogRef = this.dialog.open(ShiftFormComponent, {
       width: '420px',

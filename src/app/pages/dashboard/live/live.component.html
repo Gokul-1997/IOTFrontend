@@ -1,269 +1,268 @@
 <div class="body-pad">
 
-<!-- HEADER -->
-
-<div class="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between
+  <!-- HEADER -->
+  <div class="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between
             bg-gradient-to-l from-[#C5404A] via-[#5E3C79] to-[#4A2FA0]
             rounded-xl px-4 py-2">
 
-  <h2 class="text-xl font-bold text-white">
-    {{ machine?.name || 'Machine' }}
-  </h2>
+    <h2 class="text-xl font-bold text-white">
+      {{ machine?.name || 'Machine' }}
+    </h2>
 
-  <div class="flex flex-wrap items-center gap-3 text-white">
+    <div class="flex flex-wrap items-center gap-3 text-white">
 
-    <div class="px-4 py-1 rounded-md font-medium"
-         [ngClass]="{
+      <div class="px-4 py-1 rounded-md font-medium" [ngClass]="{
            'bg-green-600': liveStatus === 'RUNNING',
            'bg-yellow-500': liveStatus === 'IDLE',
            'bg-red-600': liveStatus === 'ALARM',
            'bg-gray-500': liveStatus === 'OFFLINE'
          }">
 
-      {{ liveStatus }}
+        {{ liveStatus }}
+
+      </div>
+
+      <div class="bg-[#2D388E] px-3 py-1 rounded-md text-sm">
+
+        {{ shift?.shift_code || '--' }}
+        |
+        {{ currentDate | date:'dd MMM yyyy' }}
+        |
+        {{ currentDate | date:'hh:mm a' }}
+
+      </div>
+
+      <button routerLink="/dashboard" class="bg-white text-gray-700 px-3 py-1 rounded-md font-medium">
+        Back
+      </button>
 
     </div>
-
-    <div class="bg-[#2D388E] px-3 py-1 rounded-md text-sm">
-
-      {{ shift?.shift_code || '--' }}
-      |
-      {{ currentDate | date:'dd MMM yyyy' }}
-      |
-      {{ currentDate | date:'hh:mm a' }}
-
-    </div>
-
-    <button routerLink="/dashboard"
-            class="bg-white text-gray-700 px-3 py-1 rounded-md font-medium">
-
-      Back
-
-    </button>
 
   </div>
 
-</div>
+  <!-- TOP GRID -->
 
+  <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
 
-<!-- TOP SECTION -->
+    <!-- MACHINE CARD -->
 
-<div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
+    <div class="xl:col-span-6 bg-white rounded-xl border p-4 flex flex-col md:flex-row gap-6">
 
-<!-- MACHINE CARD -->
-
-<div class="xl:col-span-6 bg-white rounded-xl border p-4 flex flex-col md:flex-row gap-6">
-
-  <div class="w-full md:w-1/2">
-    <img [src]="machine?.image || '/images/product/machine_login_02.png'"
-         class="rounded-lg w-full">
-  </div>
-
-  <div class="w-full md:w-1/2 bg-blue-50 rounded-xl p-4">
-
-    <div class="flex items-center gap-3 mb-4">
-
-      <img src="/images/user/owner.png"
-           class="h-12 w-12 rounded-full">
-
-      <div>
-        <p class="text-sm text-gray-500">Operator</p>
-        <p class="text-lg font-semibold">
-          {{ operator?.operator_name || '--' }}
-        </p>
+      <div class="w-full md:w-1/2">
+        <img [src]="machine?.image || '/images/product/machine_login_02.png'" class="rounded-lg w-full">
       </div>
 
-    </div>
+      <div class="w-full md:w-1/2 bg-blue-50 rounded-xl p-4">
 
+        <div class="flex items-center gap-3 mb-4">
 
-    <!-- JOB INFO -->
+          <img src="/images/user/owner.png" class="h-12 w-12 rounded-full">
 
-    <div class="grid grid-cols-3 gap-2 text-sm mb-4">
+          <div>
+            <p class="text-sm text-gray-500">Operator</p>
+            <p class="text-lg font-semibold">
+              {{ operator?.operator_name || '--' }}
+            </p>
+          </div>
 
-      <div class="white-card">
-        <span class="font-medium">Shift</span>
-        <p>{{ shift?.shift_code || '--' }}</p>
-      </div>
+        </div>
 
-      <div class="white-card">
-        <span class="font-medium">Part</span>
-        <p>{{ job?.part_name || '--' }}</p>
-      </div>
+        <div class="grid grid-cols-3 gap-2 text-sm mb-4">
 
-      <div class="white-card">
-        <span class="font-medium">Comp ID</span>
-        <p>{{ job?.component_id || '--' }}</p>
-      </div>
+          <div class="white-card">
+            <span class="font-medium">Shift</span>
+            <p>{{ shift?.shift_code || '--' }}</p>
+          </div>
 
-    </div>
+          <div class="white-card">
+            <span class="font-medium">Part</span>
+            <p>{{ job?.part_name || '--' }}</p>
+          </div>
 
+          <div class="white-card">
+            <span class="font-medium">Comp ID</span>
+            <p>{{ job?.component_id || '--' }}</p>
+          </div>
 
-    <!-- PRODUCTION -->
+        </div>
 
-    <div class="border-t pt-3">
+        <div class="border-t pt-3">
 
-      <p class="text-sm font-semibold mb-2">
-        Part Produced
-      </p>
+          <p class="text-sm font-semibold mb-2">
+            Part Produced
+          </p>
 
-      <div class="grid grid-cols-2 gap-3 text-center
+          <div class="grid grid-cols-2 gap-3 text-center
                   bg-white border rounded-lg p-3">
 
-        <div>
-          <p class="text-gray-500 text-sm">Target</p>
-          <p class="font-semibold text-lg">
-            {{ job?.target_qty || 0 }}
-          </p>
-        </div>
+            <div>
+              <p class="text-gray-500 text-sm">Target</p>
+              <p class="font-semibold text-lg">
+                {{ job?.target_qty || 0 }}
+              </p>
+            </div>
 
-        <div>
-          <p class="text-gray-500 text-sm">Achieved</p>
-          <p class="font-semibold text-lg">
-            {{ job?.achieved_qty || 0 }}
-          </p>
+            <div>
+              <p class="text-gray-500 text-sm">Achieved</p>
+              <p class="font-semibold text-lg">
+                {{ job?.achieved_qty || 0 }}
+              </p>
+            </div>
+
+          </div>
+
         </div>
 
       </div>
 
     </div>
 
+
+    <!-- TIME INFO -->
+
+    <div class="xl:col-span-3 bg-white rounded-xl border p-4">
+
+      <h3 class="card-title mb-3">Time Info</h3>
+
+      <apx-chart [series]="timePieSeries" [chart]="timePieChart.chart" [labels]="timePieChart.labels"
+        [colors]="timePieChart.colors" [legend]="timePieChart.legend" [dataLabels]="timePieChart.dataLabels">
+      </apx-chart>
+
+      <div class="space-y-2 mt-3 text-sm">
+
+        <div class="flex justify-between">
+          <span>Running Time</span>
+          <span>{{ runTime }}</span>
+        </div>
+
+        <div class="flex justify-between">
+          <span>Idle Time</span>
+          <span>{{ idleTime }}</span>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- UTILIZATION -->
+
+    <div class="xl:col-span-3 bg-white rounded-xl border p-4 text-center">
+
+      <h3 class="card-title mb-3">Machine Status</h3>
+
+      <div class="grid grid-cols-2 gap-3 mb-4">
+
+        <div class="bg-green-50 rounded-lg p-2">
+          <p class="text-xs text-gray-500">Accepted</p>
+          <p class="font-bold text-green-600">
+            {{ quality?.accepted || 0 }}
+          </p>
+        </div>
+
+        <div class="bg-red-50 rounded-lg p-2">
+          <p class="text-xs text-gray-500">Rejected</p>
+          <p class="font-bold text-red-600">
+            {{ quality?.rejected || 0 }}
+          </p>
+        </div>
+
+      </div>
+
+      <apx-chart [series]="utilSeries" [chart]="utilChart.chart" [plotOptions]="utilChart.plotOptions">
+      </apx-chart>
+
+      <p class="text-lg font-bold mt-2">
+        {{ utilization }} %
+      </p>
+
+      <div class="border-t mt-4 pt-3">
+
+        <p class="text-sm font-semibold mb-2">
+          Power Consumption
+        </p>
+
+        <div class="grid grid-cols-2 gap-3 text-center">
+
+          <div class="bg-gray-100 rounded-lg p-2">
+            <p class="text-xs text-gray-500">Shift</p>
+            <p class="font-semibold">
+              {{ power?.shift_kwh || 0 }} KWH
+            </p>
+          </div>
+
+          <div class="bg-gray-100 rounded-lg p-2">
+            <p class="text-xs text-gray-500">Total</p>
+            <p class="font-semibold">
+              {{ power?.total_kwh || 0 }} KWH
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
   </div>
 
-</div>
 
+  <!-- BOTTOM GRID -->
 
-<!-- TIME INFO -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
 
-<div class="xl:col-span-3 bg-white rounded-xl border p-4">
+    <!-- OEE -->
 
-  <h3 class="card-title mb-3">Time Info</h3>
+    <div class="bg-white rounded-xl border p-6 text-center">
 
-  <div class="space-y-3">
+      <h3 class="text-lg font-semibold mb-4">
+        OEE
+      </h3>
 
-    <div class="info-card">
+      <apx-chart [series]="oeeSeries" [chart]="oeeChart.chart" [plotOptions]="oeeChart.plotOptions">
+      </apx-chart>
 
-      <p class="label">Running Time</p>
-
-      <p class="value">
-        {{ runTime }}
+      <p class="text-2xl font-bold mt-3">
+        {{ oee?.oee || 0 }}%
       </p>
 
     </div>
 
-    <div class="info-card">
 
-      <p class="label">Idle Time</p>
+    <!-- SPINDLE -->
 
-      <p class="value">
-        {{ idleTime }}
+    <div class="bg-white rounded-xl border p-6 text-center">
+
+      <h3 class="text-lg font-semibold mb-4">
+        Spindle Load
+      </h3>
+
+      <apx-chart [series]="spindleSeries" [chart]="spindleChart.chart" [plotOptions]="spindleChart.plotOptions">
+      </apx-chart>
+
+      <p class="text-xl font-bold mt-2">
+        {{ liveRPM }} RPM
+      </p>
+
+    </div>
+
+
+    <!-- FEED OVERRIDE -->
+
+    <div class="bg-white rounded-xl border p-6 text-center">
+
+      <h3 class="text-lg font-semibold mb-4">
+        Feed Override
+      </h3>
+
+      <apx-chart [series]="feedSeries" [chart]="feedChart.chart" [plotOptions]="feedChart.plotOptions">
+      </apx-chart>
+
+      <p class="text-xl font-bold mt-2">
+        {{ liveFeed }}
       </p>
 
     </div>
 
   </div>
-
-</div>
-
-
-<!-- UTILIZATION -->
-
-<div class="xl:col-span-3 bg-white rounded-xl border p-4 text-center">
-
-  <h3 class="card-title mb-4">Machine Status</h3>
-
-  <apx-chart
-      [series]="radialOptions.series"
-      [chart]="radialOptions.chart"
-      [plotOptions]="radialOptions.plotOptions">
-  </apx-chart>
-
-  <div class="mt-4">
-
-    <p class="text-sm text-gray-500">
-      OEE
-    </p>
-
-    <p class="text-2xl font-bold">
-      {{ oee?.oee || 0 }} %
-    </p>
-
-  </div>
-
-</div>
-
-</div>
-
-
-<!-- BOTTOM SECTION -->
-
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-
-<!-- OEE -->
-
-<div class="bg-white rounded-xl border p-6 text-center">
-
-  <h3 class="text-lg font-semibold mb-4">
-    OEE
-  </h3>
-
-  <apx-chart
-      [series]="oeeOptions.series"
-      [chart]="oeeOptions.chart"
-      [plotOptions]="oeeOptions.plotOptions">
-  </apx-chart>
-
-  <p class="text-2xl font-bold mt-3">
-    {{ oee?.oee || 0 }}%
-  </p>
-
-</div>
-
-
-<!-- SPINDLE -->
-
-<div class="bg-white rounded-xl border p-6 text-center">
-
-  <h3 class="text-lg font-semibold mb-4">
-    Spindle Load
-  </h3>
-
-  <apx-chart
-      [series]="spindleOptions.series"
-      [chart]="spindleOptions.chart"
-      [plotOptions]="spindleOptions.plotOptions">
-  </apx-chart>
-
-  <p class="text-xl font-bold mt-2">
-    {{ liveRPM }} RPM
-  </p>
-
-</div>
-
-
-<!-- FEED RATE -->
-
-<div class="bg-white rounded-xl border p-6 text-center">
-
-  <h3 class="text-lg font-semibold mb-4">
-    Feed Rate
-  </h3>
-
-  <apx-chart
-      [series]="feedSeries"
-      [chart]="feedChart.chart"
-      [xaxis]="feedChart.xaxis"
-      [stroke]="feedChart.stroke"
-      [dataLabels]="feedChart.dataLabels"
-      [tooltip]="feedChart.tooltip"
-      [yaxis]="feedChart.yaxis">
-  </apx-chart>
-
-  <p class="text-2xl font-bold mt-3">
-    {{ liveFeed }}
-  </p>
-
-</div>
-
-</div>
 
 </div>

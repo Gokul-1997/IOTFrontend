@@ -1,44 +1,96 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+
+import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
+
+import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatSortModule } from '@angular/material/sort';
+import { MatButtonModule } from '@angular/material/button';
+
 import { JobService } from './job.service';
 import { JobCreateModalComponent } from './job-create-modal.component';
 
 @Component({
   standalone: true,
   selector: 'app-job-list',
-  imports: [CommonModule, JobCreateModalComponent],
+  imports: [
+    CommonModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatSortModule,
+    MatButtonModule,
+    JobCreateModalComponent
+  ],
   templateUrl: './job-list.component.html'
 })
 export class JobListComponent implements OnInit {
 
-  jobs:any[]=[];
-  showModal=false;
+  displayedColumns: string[] = [
+    'machine',
+    'part',
+    'target',
+    'action'
+  ];
 
-  constructor(private service:JobService){}
+  dataSource = new MatTableDataSource<any>();
 
-  ngOnInit(){
+  showModal = false;
+
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
+
+  constructor(private service: JobService) {}
+
+  ngOnInit() {
     this.load();
   }
 
-  load(){
-    this.service.getJobs().subscribe((res:any)=>{
-      this.jobs = res.data || [];
+  /* LOAD JOBS */
+
+  load() {
+
+    this.service.getJobs().subscribe((res: any) => {
+
+      const data = res.data || [];
+
+      this.dataSource.data = data;
+
+      if (this.paginator) {
+        this.dataSource.paginator = this.paginator;
+      }
+
+      if (this.sort) {
+        this.dataSource.sort = this.sort;
+      }
+
     });
+
   }
 
-  openCreate(){
-    this.showModal=true;
+  /* CREATE JOB */
+
+  openCreate() {
+    this.showModal = true;
   }
 
-  closeModal(){
-    this.showModal=false;
+  closeModal() {
+    this.showModal = false;
     this.load();
   }
 
-  stop(machine_id:number){
-    this.service.stopJob(machine_id).subscribe(()=>{
+  /* STOP JOB */
+
+  stop(machine_id: number) {
+
+    this.service.stopJob(machine_id).subscribe(() => {
+
       this.load();
+
     });
+
   }
 
 }

@@ -54,6 +54,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     return Number(util.toFixed(2));
   }
+
+  getLastSeen(last: string | null): string {
+
+  if (!last) return 'No Data';
+
+  const diff =
+    (Date.now() - new Date(last).getTime()) / 1000;
+
+  if (diff < 60) return `${Math.floor(diff)} sec ago`;
+
+  if (diff < 3600) return `${Math.floor(diff/60)} min ago`;
+
+  return `${Math.floor(diff/3600)} hr ago`;
+}
+
   
   constructor(
     private service: DashboardService,

@@ -38,10 +38,8 @@
 
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
 
-<div *ngFor="let m of machines; trackBy: trackByMachine"
-     (click)="goToLive(m.machine_id)"
-     class="rounded-2xl shadow-md p-5 hover:shadow-xl transition cursor-pointer"
-     [ngClass]="{
+    <div *ngFor="let m of machines; trackBy: trackByMachine" (click)="goToLive(m.machine_id)"
+      class="rounded-2xl shadow-md p-5 hover:shadow-xl transition cursor-pointer" [ngClass]="{
        'bg-white': !m.alarm,
        'alarm-blink': m.alarm
      }">
@@ -54,6 +52,13 @@
           {{ m.machine_serial_no }}
         </div>
 
+        <div class="text-xs" [ngClass]="{
+ 'text-green-600': getLastSeen(m.last_updated_time).includes('sec'),
+ 'text-yellow-600': getLastSeen(m.last_updated_time).includes('min'),
+ 'text-red-600': m.status === 'OFFLINE'
+}">
+          Last update: {{ getLastSeen(m.last_updated_time) }}
+        </div>
 
       </div>
 
