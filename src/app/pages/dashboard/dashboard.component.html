@@ -24,7 +24,6 @@
         {{ summary.idle }} Machine Idle
       </div>
 
-
       <div class="ml-6">
         Today: {{ shift.shift_code }}
       </div>
@@ -36,30 +35,21 @@
 
   <!-- MACHINE GRID -->
 
-  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
 
-    <div *ngFor="let m of machines; trackBy: trackByMachine" (click)="goToLive(m.machine_id)"
-      class="rounded-2xl shadow-md p-5 hover:shadow-xl transition cursor-pointer" [ngClass]="{
-       'bg-white': !m.alarm,
-       'alarm-blink': m.alarm
-     }">
+    <div
+      *ngFor="let m of machines; trackBy: trackByMachine"
+      (click)="goToLive(m.machine_id)"
+      class="rounded-2xl shadow-md p-5 hover:shadow-xl transition cursor-pointer"
+      [ngClass]="{
+        'bg-white':      !m.alarm,
+        'alarm-blink':    m.alarm
+      }">
 
       <!-- HEADER -->
 
-      <div class="flex justify-between items-center">
-
-        <div class="text-lg font-bold">
-          {{ m.machine_serial_no }}
-        </div>
-
-        <div class="text-xs" [ngClass]="{
- 'text-green-600': getLastSeen(m.last_updated_time).includes('sec'),
- 'text-yellow-600': getLastSeen(m.last_updated_time).includes('min'),
- 'text-red-600': m.status === 'OFFLINE'
-}">
-          Last update: {{ getLastSeen(m.last_updated_time) }}
-        </div>
-
+      <div class="flex justify-between items-center mb-3">
+        <div class="text-lg font-bold">{{ m.machine_serial_no }}</div>
       </div>
 
 
@@ -67,49 +57,41 @@
 
       <div class="grid grid-cols-3 gap-4 items-center">
 
-        <!-- MACHINE IMAGE -->
+        <!-- MACHINE IMAGE + RUN/IDLE -->
 
         <div>
-          <img [src]="m.image_url || 'assets/machine.png'" class="w-full h-28 object-contain" />
-          <!-- RUN / IDLE -->
+
+          <img [src]="m.image_url || 'assets/machine.png'"
+               class="w-full h-28 object-contain" />
 
           <div class="flex justify-center gap-12 mt-6 text-sm">
 
             <!-- RUN -->
             <div class="text-center">
-
               <div class="flex items-center justify-center gap-1 text-green-600 font-semibold">
                 ▶ Run
               </div>
-
               <div class="text-lg font-bold">
                 {{ (m.run_time || '00:00:00').split(':')[0] }}h
               </div>
-
               <div class="text-xs text-gray-500">
                 {{ (m.run_time || '00:00:00').split(':')[1] }}m
                 {{ (m.run_time || '00:00:00').split(':')[2] }}s
               </div>
-
             </div>
 
             <!-- IDLE -->
-
             <div class="text-center">
-
               <div class="flex items-center justify-center gap-1 text-yellow-600 font-semibold">
                 ⏸ Idle
               </div>
-
               <div class="text-lg font-bold">
                 {{ (m.idle_time || '00:00:00').split(':')[0] }}h
               </div>
-
               <div class="text-xs text-gray-500">
                 {{ (m.idle_time || '00:00:00').split(':')[1] }}m
                 {{ (m.idle_time || '00:00:00').split(':')[2] }}s
               </div>
-
             </div>
 
           </div>
@@ -119,7 +101,7 @@
 
         <!-- OPERATOR PANEL -->
 
-        <div class="bg-gray-100 rounded-xl p-6 text-sm">
+        <div class="bg-gray-100 rounded-xl p-4 text-sm space-y-2">
 
           <div>
             <span class="text-gray-500">Operator</span><br>
@@ -139,82 +121,83 @@
           <div class="pt-2 border-t mt-2">
             <span class="text-gray-500 text-xs">Status</span><br>
 
-            <div class="text-xs font-semibold px-3 py-1 rounded-full" [ngClass]="{
-'bg-green-100 text-green-700': m.status==='RUNNING',
-'bg-yellow-100 text-yellow-700': m.status==='IDLE'}">
+            <!--
+              FIX: added 'bg-red-100 text-red-700' for OFFLINE
+              previously OFFLINE had no ngClass match → showed unstyled
+            -->
+            <span class="inline-block text-xs font-semibold px-3 py-1 rounded-full mt-1"
+              [ngClass]="{
+                'bg-green-100 text-green-700':  m.status === 'RUNNING',
+                'bg-yellow-100 text-yellow-700': m.status === 'IDLE',
+                'bg-red-100 text-red-600':       m.status === 'OFFLINE'
+              }">
               {{ m.status }}
-            </div>
-
+            </span>
 
           </div>
 
         </div>
 
 
-        <!-- UTILIZATION -->
+        <!-- UTILIZATION DONUT -->
 
         <div class="flex flex-col items-center">
 
           <div class="relative w-20 h-20">
 
-            <svg viewBox="0 0 36 36" class="w-full h-full">
+            <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
 
-              <path d="M18 2.0845
-a 15.9155 15.9155 0 0 1 0 31.831
-a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e5e7eb" stroke-width="3" />
+              <!-- Background track -->
+              <path
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="#e5e7eb"
+                stroke-width="3" />
 
-              <path d="M18 2.0845
-a 15.9155 15.9155 0 0 1 0 31.831" fill="none" stroke="#2B3990" stroke-width="3"
-                [attr.stroke-dasharray]="m.utilization + ',100'" />
+              <!--
+                FIX: cap stroke-dasharray at 100 in the template.
+                The backend already caps at 100, but this guard
+                ensures the SVG circle never overflows even if
+                stale data arrives before the next API poll.
+                0 utilization → no stroke shown (dasharray "0,100")
+              -->
+              <path
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="#2B3990"
+                stroke-width="3"
+                stroke-linecap="round"
+                [attr.stroke-dasharray]="(m.utilization > 100 ? 100 : (m.utilization || 0)) + ',100'" />
 
             </svg>
 
+            <!-- Label centred inside donut -->
             <div class="absolute inset-0 flex items-center justify-center text-sm font-bold">
               {{ m.utilization || 0 }}%
             </div>
 
           </div>
 
-          <div class="text-xs mt-1">
-            Utilization
-          </div>
+          <div class="text-xs mt-1 text-gray-500">Utilization</div>
 
-          <div class="flex justify-center gap-12 mt-6 text-sm">
-
+          <!-- Target / Achieved -->
+          <div class="flex justify-center gap-8 mt-4 text-sm">
 
             <div class="text-center">
-
-              <div class="flex items-center justify-center gap-1 text-yellow-600 font-semibold">
-                Target
-              </div>
-
-              <div class="text-xs text-gray-500">
-                {{ m.target_qty}}
-              </div>
-
+              <div class="text-yellow-600 font-semibold text-xs">Target</div>
+              <div class="text-gray-700 font-bold">{{ m.target_qty || 0 }}</div>
             </div>
 
             <div class="text-center">
-
-              <div class="flex items-center justify-center gap-1 text-green-600 font-semibold">
-                Achieved
-              </div>
-
-
-              <div class="text-xs text-gray-500">
-                {{ m.achieved_qty}}
-              </div>
-
+              <div class="text-green-600 font-semibold text-xs">Achieved</div>
+              <div class="text-gray-700 font-bold">{{ m.achieved_qty || 0 }}</div>
             </div>
 
           </div>
-
 
         </div>
 
       </div>
-
-
 
     </div>
 

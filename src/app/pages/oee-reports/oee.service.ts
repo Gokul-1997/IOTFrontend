@@ -10,19 +10,45 @@ export class OeeReportsService {
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * GET /oee/meta
+   * Get metadata: machines, shifts, lines
+   */
   getMeta(): Observable<any> {
     return this.http.get(`${this.baseUrl}/meta`);
   }
 
+  /**
+   * GET /oee/reports
+   * Get OEE reports with filters and pagination
+   */
   getReports(filters: any): Observable<any> {
     let params = new HttpParams();
 
+    // Add all filter parameters
     Object.keys(filters).forEach(key => {
-      if (filters[key] !== null && filters[key] !== undefined) {
+      if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
         params = params.set(key, filters[key]);
       }
     });
 
     return this.http.get(`${this.baseUrl}/reports`, { params });
   }
+
+  /**
+   * GET /oee/export
+   * Export OEE data to CSV
+   */
+  exportCSV(filters: any): void {
+    let params = new HttpParams();
+
+    Object.keys(filters).forEach(key => {
+      if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
+        params = params.set(key, filters[key]);
+      }
+    });
+
+    window.location.href = `${this.baseUrl}/export?${params.toString()}`;
+  }
+
 }

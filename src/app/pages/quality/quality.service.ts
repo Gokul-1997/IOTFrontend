@@ -33,4 +33,8 @@ export class QualityService {
             params: { line_id }
         });
     }
+
+    saveQuality(payload: { machine_id: number; shift_id: number; date: string; reject_qty: number; rework_qty: number }) {
+        return this.http.post<any>(`${this.api}/quality/entry`, payload);
+    }
 }

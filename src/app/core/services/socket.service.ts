@@ -1,6 +1,7 @@
 import { Injectable, NgZone } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class SocketService {
@@ -12,7 +13,7 @@ export class SocketService {
 
   private plantId?: number;
 
-  constructor(private zone: NgZone) {}
+  constructor(private zone: NgZone, private auth: AuthService) { }
 
   /* ================= CONNECT ================= */
 
@@ -25,14 +26,8 @@ export class SocketService {
       this.socket = io(environment.socketUrl, {
         transports: ['websocket'],
         autoConnect: false,
-
-        reconnection: true,
-        reconnectionAttempts: Infinity,
-        reconnectionDelay: 2000,
-        reconnectionDelayMax: 10000,
-
-        auth: (cb) => {
-          cb({ token: localStorage.getItem('token') });
+        auth: {
+          token: localStorage.getItem('token')
         }
       });
 
@@ -52,6 +47,13 @@ export class SocketService {
 
       this.socket.on('connect_error', (err) => {
         console.error('❌ Socket connect error:', err.message);
+
+        if (err.message === 'TOKEN_EXPIRED') {
+          this.auth.refreshToken().subscribe(res => {
+            (this.socket.auth as any).token = res.accessToken;
+            this.socket.connect();
+          });
+        }
       });
 
     }

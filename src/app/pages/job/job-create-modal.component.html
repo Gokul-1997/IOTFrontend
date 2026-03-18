@@ -53,7 +53,7 @@ Start Job
 <label class="text-sm">Component</label>
 
 <select
- class="border p-2 w-full mb-4"
+ class="border p-2 w-full mb-3"
  [(ngModel)]="form.component_id">
 
 <option value="">Select Component</option>
@@ -67,6 +67,36 @@ Start Job
 </option>
 
 </select>
+
+
+<!-- JOB START -->
+
+<label class="text-sm">Job Start</label>
+
+<input
+ type="datetime-local"
+ class="border p-2 w-full mb-3"
+ [(ngModel)]="form.job_start">
+
+
+<!-- SETTING TIME START -->
+
+<label class="text-sm">Setting Time Start</label>
+
+<input
+ type="datetime-local"
+ class="border p-2 w-full mb-3"
+ [(ngModel)]="form.setting_time_start">
+
+
+<!-- SETTING TIME END -->
+
+<label class="text-sm">Setting Time End</label>
+
+<input
+ type="datetime-local"
+ class="border p-2 w-full mb-4"
+ [(ngModel)]="form.setting_time_end">
 
 
 <div class="flex justify-end gap-2">

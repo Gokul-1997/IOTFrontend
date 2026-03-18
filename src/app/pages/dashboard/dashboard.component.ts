@@ -11,7 +11,27 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { DashboardService } from './dashboard.service';
 import { SocketService } from '../../core/services/socket.service';
-import { Subject, takeUntil } from 'rxjs';
+import {
+  Subject,
+  interval,
+  switchMap,
+  startWith,
+  takeUntil
+} from 'rxjs';
+
+/* ─────────────────────────────────────────
+   SOCKET  → status (RUNNING / IDLE / OFFLINE)
+             + alarm ONLY
+             instant visual feedback, no calc
+
+   API 30s → run_time, idle_time,
+             utilization, achieved_qty,
+             operator, part_name, target_qty
+             smooth field-level patch only
+───────────────────────────────────────── */
+
+const POLL_MS              = 30_000;
+const OFFLINE_THRESHOLD_SEC = 10;
 
 @Component({
   standalone: true,
@@ -22,67 +42,40 @@ import { Subject, takeUntil } from 'rxjs';
 })
 export class DashboardComponent implements OnInit, OnDestroy {
 
-  private destroy$ = new Subject<void>();
-
+  /* ── public state ── */
   machines: any[] = [];
-  summary: any = {};
-  shift: any = {};
+  summary:  any   = {};
+  shift:    any   = {};
 
-  private machineMap = new Map<number, any>();
-
-  private updateQueue: any[] = [];
-  private updateScheduled = false;
-
-  private runtimeTimer!: any;
+  /* ── private ── */
+  private destroy$         = new Subject<void>();
+  private machineMap       = new Map<number, any>();
+  private updateQueue:     any[]  = [];
+  private updateScheduled         = false;
 
   private visibilityHandler = () => {
     if (document.hidden) {
       this.socketService.pauseUpdates();
     } else {
       this.socketService.resumeUpdates();
+      this.fetchMetrics(); // immediate re-fetch on tab restore
     }
   };
-  private calculateUtilization(runTime: string): number {
 
-    if (!runTime || !this.shift?.plannedMinutes) return 0;
-
-    const [h, m, s] = runTime.split(':').map(Number);
-
-    const runMinutes = (h * 60) + m + (s / 60);
-
-    const util = (runMinutes * 100) / this.shift.plannedMinutes;
-
-    return Number(util.toFixed(2));
-  }
-
-  getLastSeen(last: string | null): string {
-
-  if (!last) return 'No Data';
-
-  const diff =
-    (Date.now() - new Date(last).getTime()) / 1000;
-
-  if (diff < 60) return `${Math.floor(diff)} sec ago`;
-
-  if (diff < 3600) return `${Math.floor(diff/60)} min ago`;
-
-  return `${Math.floor(diff/3600)} hr ago`;
-}
-
-  
   constructor(
-    private service: DashboardService,
+    private service:       DashboardService,
     private socketService: SocketService,
-    private zone: NgZone,
-    private cdr: ChangeDetectorRef,
-    private router: Router
-  ) { }
+    private zone:          NgZone,
+    private cdr:           ChangeDetectorRef,
+    private router:        Router
+  ) {}
 
-  /* ================= INIT ================= */
-
+  /* ════════════════════════════════════════
+     INIT
+  ════════════════════════════════════════ */
   async ngOnInit(): Promise<void> {
 
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user    = JSON.parse(localStorage.getItem('user') || '{}');
     const plantId = user?.plant_id;
 
     await this.socketService.connect();
@@ -91,178 +84,225 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.socketService.joinPlant(plantId);
     }
 
-    this.load();
+    /* ── 30s API poll ──────────────────────
+       startWith(0) → fires instantly on init
+       switchMap    → cancels stale request
+    ──────────────────────────────────────── */
+    interval(POLL_MS)
+      .pipe(
+        startWith(0),
+        switchMap(() => this.service.getLive()),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((res: any) => this.applyApiResponse(res));
 
-
+    /* ── Socket → status + alarm ONLY ─── */
     this.socketService.onMachineUpdate((data: any) => {
       this.handleSocketUpdate(data);
     });
 
-    document.addEventListener(
-      'visibilitychange',
-      this.visibilityHandler
-    );
+    document.addEventListener('visibilitychange', this.visibilityHandler);
   }
 
-  /* ================= LOAD API ================= */
+  /* ════════════════════════════════════════
+     API RESPONSE
+     ✅ Owns: run_time, idle_time, utilization,
+              achieved_qty, target_qty,
+              operator_name, part_name
+     ❌ Never touches: status, alarm
+  ════════════════════════════════════════ */
+  private applyApiResponse(res: any): void {
 
-  load(): void {
+    const incoming: any[] = res.machines || [];
+    this.shift = res.shift || this.shift;
 
+    /* First load — set everything directly */
+    if (this.machines.length === 0) {
+      this.machines = incoming;
+      this.summary  = res.summary || {};
+      this.machineMap.clear();
+      for (const m of this.machines) {
+        this.machineMap.set(m.machine_id, m);
+      }
+      this.cdr.markForCheck();
+      return;
+    }
+
+    /* Subsequent polls — patch metric fields only */
+    for (const fresh of incoming) {
+      const existing = this.machineMap.get(fresh.machine_id);
+      if (!existing) {
+        this.machines.push(fresh);
+        this.machineMap.set(fresh.machine_id, fresh);
+        continue;
+      }
+      this.patchMetrics(existing, fresh);
+    }
+
+    // Remove machines that no longer exist
+    const freshIds = new Set(incoming.map((m: any) => m.machine_id));
+    this.machines  = this.machines.filter(m => freshIds.has(m.machine_id));
+
+    this.summary = res.summary || this.summary;
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Patch ONLY the fields the API owns.
+   * status and alarm are deliberately excluded —
+   * the socket owns those and updates them in real-time.
+   */
+  private patchMetrics(target: any, source: any): void {
+    if (source.run_time      !== undefined) target.run_time      = source.run_time;
+    if (source.idle_time     !== undefined) target.idle_time     = source.idle_time;
+    if (source.run_minutes   !== undefined) target.run_minutes   = source.run_minutes;
+    if (source.idle_minutes  !== undefined) target.idle_minutes  = source.idle_minutes;
+    if (source.utilization   !== undefined) target.utilization   = source.utilization;
+    if (source.achieved_qty  !== undefined) target.achieved_qty  = source.achieved_qty;
+    if (source.target_qty    !== undefined) target.target_qty    = source.target_qty;
+    if (source.produced_qty  !== undefined) target.produced_qty  = source.produced_qty;
+    if (source.operator_name !== undefined) target.operator_name = source.operator_name;
+    if (source.part_name     !== undefined) target.part_name     = source.part_name;
+    if (source.component_id  !== undefined) target.component_id  = source.component_id;
+    // ❌ status  → socket owns this
+    // ❌ alarm   → socket owns this
+  }
+
+  /* ════════════════════════════════════════
+     MANUAL FETCH  (called on tab restore)
+  ════════════════════════════════════════ */
+  private fetchMetrics(): void {
     this.service.getLive()
       .pipe(takeUntil(this.destroy$))
-      .subscribe((res: any) => {
-
-        this.machines = res.machines || [];
-        this.summary = res.summary || {};
-        this.shift = res.shift || {};
-
-        this.machineMap.clear();
-
-        for (const m of this.machines) {
-
-          if (!m.run_time) m.run_time = '00:00:00';
-          if (!m.idle_time) m.idle_time = '00:00:00';
-
-          m.received_at = 0;
-
-          /* flag for socket-based updates */
-          m.active = false;
-
-          this.machineMap.set(m.machine_id, m);
-        }
-
-        this.cdr.markForCheck();
-      });
+      .subscribe((res: any) => this.applyApiResponse(res));
   }
 
-  /* ================= SOCKET ================= */
+  /* ════════════════════════════════════════
+     SOCKET → status + alarm ONLY
 
+     ❌ achieved_qty  → NOT touched (API owns)
+     ❌ run_time      → NOT touched (API owns)
+     ❌ utilization   → NOT touched (API owns)
+  ════════════════════════════════════════ */
   private handleSocketUpdate(data: any): void {
 
     this.updateQueue.push(data);
 
     if (!this.updateScheduled) {
-
       this.updateScheduled = true;
 
       requestAnimationFrame(() => {
 
-        const updates = [...this.updateQueue];
-        this.updateQueue = [];
+        const updates        = [...this.updateQueue];
+        this.updateQueue     = [];
+        this.updateScheduled = false;
 
         this.zone.run(() => {
+
+          let changed = false;
 
           for (const update of updates) {
 
             const machine = this.machineMap.get(update.machine_id);
             if (!machine) continue;
 
-            machine.received_at = update.received_at;
+            /* ── Resolve status from socket payload ── */
+            const nowSec         = Math.floor(Date.now() / 1000);
+            const receivedAtSec  = Number(update.received_at || 0);
+            const freshDiff      = receivedAtSec
+              ? (nowSec - receivedAtSec)
+              : null;
 
-            machine.status =
-              update.machine_status === 'RUNNING'
-                ? 'RUNNING'
-                : 'IDLE';
+            let newStatus: string;
 
-            machine.alarm = update.alarm === true;
-
-            if (update.run_time) {
-              machine.run_time = update.run_time;
-
-              /* 🔥 calculate utilization */
-              machine.utilization =
-                this.calculateUtilization(update.run_time);
+            if (
+              !receivedAtSec ||
+              (freshDiff !== null && freshDiff > OFFLINE_THRESHOLD_SEC)
+            ) {
+              newStatus = 'OFFLINE';
+            } else if (
+              ['RUN', 'RUNNING', 'CUTTING'].includes(
+                (update.machine_status || '').toUpperCase()
+              )
+            ) {
+              newStatus = 'RUNNING';
+            } else {
+              newStatus = 'IDLE';
             }
 
-            if (update.idle_time) {
-              machine.idle_time = update.idle_time;
+            /* ── Only mark changed if value actually differs ── */
+            if (machine.status !== newStatus) {
+              machine.status      = newStatus;
+              machine.received_at = update.received_at ?? machine.received_at;
+              changed = true;
             }
 
-            if (update.achieved_qty !== undefined) {
-              machine.achieved_qty = update.achieved_qty;
+            const newAlarm = update.alarm === true;
+            if (machine.alarm !== newAlarm) {
+              machine.alarm = newAlarm;
+              changed       = true;
             }
           }
 
-          this.recalculateSummary();
-
-          this.cdr.markForCheck();
-
+          if (changed) {
+            this.recalculateSummaryStatus();
+            this.cdr.markForCheck();
+          }
         });
-
-        this.updateScheduled = false;
-
       });
     }
   }
-  /* ================= TIME HELPER ================= */
 
-  private incrementTime(time: string): string {
-
-    const parts = time.split(':').map(Number);
-
-    let h = parts[0];
-    let m = parts[1];
-    let s = parts[2];
-
-    s++;
-
-    if (s >= 60) {
-      s = 0;
-      m++;
-    }
-
-    if (m >= 60) {
-      m = 0;
-      h++;
-    }
-
-    const hh = String(h).padStart(2, '0');
-    const mm = String(m).padStart(2, '0');
-    const ss = String(s).padStart(2, '0');
-
-    return `${hh}:${mm}:${ss}`;
-  }
-
-  /* ================= SUMMARY ================= */
-
-  private recalculateSummary(): void {
-
+  /* ════════════════════════════════════════
+     SUMMARY — recount running/idle from live array
+     (only called after socket status updates)
+  ════════════════════════════════════════ */
+  private recalculateSummaryStatus(): void {
     let running = 0;
-    let idle = 0;
+    let idle    = 0;
 
     for (const m of this.machines) {
-      if (m.status === 'RUNNING') running++;
-      else idle++;
+      if (m.status === 'RUNNING')      running++;
+      else if (m.status === 'IDLE')    idle++;
     }
 
-    this.summary.running = running;
-    this.summary.idle = idle;
-    this.summary.total = this.machines.length;
+    this.summary = {
+      ...this.summary,
+      running,
+      idle,
+      total: this.machines.length
+    };
   }
 
-  /* ================= NAVIGATION ================= */
+  /* ════════════════════════════════════════
+     HELPERS
+  ════════════════════════════════════════ */
+  getLastSeen(last: string | null): string {
+    if (!last) return 'No Data';
+    const diff = (Date.now() - new Date(last).getTime()) / 1000;
+    if (diff < 60)   return `${Math.floor(diff)} sec ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+    return `${Math.floor(diff / 3600)} hr ago`;
+  }
 
+  /* ════════════════════════════════════════
+     NAVIGATION
+  ════════════════════════════════════════ */
   goToLive(id: number): void {
     this.router.navigate(['/dashboard/live', id]);
   }
 
-  trackByMachine(index: number, item: any): number {
+  trackByMachine(_index: number, item: any): number {
     return item.machine_id;
   }
 
-  /* ================= DESTROY ================= */
-
+  /* ════════════════════════════════════════
+     DESTROY
+  ════════════════════════════════════════ */
   ngOnDestroy(): void {
-
     this.destroy$.next();
     this.destroy$.complete();
-
-    document.removeEventListener(
-      'visibilitychange',
-      this.visibilityHandler
-    );
-
+    document.removeEventListener('visibilitychange', this.visibilityHandler);
     this.socketService.disconnect();
   }
-
 }

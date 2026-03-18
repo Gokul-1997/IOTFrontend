@@ -2,8 +2,8 @@
 
   <!-- HEADER -->
   <div class="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between
-            bg-gradient-to-l from-[#C5404A] via-[#5E3C79] to-[#4A2FA0]
-            rounded-xl px-4 py-2">
+              bg-gradient-to-l from-[#C5404A] via-[#5E3C79] to-[#4A2FA0]
+              rounded-xl px-4 py-2">
 
     <h2 class="text-xl font-bold text-white">
       {{ machine?.name || 'Machine' }}
@@ -11,256 +11,250 @@
 
     <div class="flex flex-wrap items-center gap-3 text-white">
 
-      <div class="px-4 py-1 rounded-md font-medium" [ngClass]="{
-           'bg-green-600': liveStatus === 'RUNNING',
+      <div class="px-4 py-1 rounded-md font-medium text-sm" [ngClass]="{
+           'bg-green-600':  liveStatus === 'RUNNING',
            'bg-yellow-500': liveStatus === 'IDLE',
-           'bg-red-600': liveStatus === 'ALARM',
-           'bg-gray-500': liveStatus === 'OFFLINE'
+           'bg-red-600':    liveStatus === 'ALARM',
+           'bg-gray-500':   liveStatus === 'OFFLINE' || liveStatus === 'UNKNOWN'
          }">
-
         {{ liveStatus }}
-
       </div>
 
       <div class="bg-[#2D388E] px-3 py-1 rounded-md text-sm">
-
         {{ shift?.shift_code || '--' }}
-        |
-        {{ currentDate | date:'dd MMM yyyy' }}
-        |
-        {{ currentDate | date:'hh:mm a' }}
-
+        | {{ currentDate | date:'dd MMM yyyy' }}
+        | {{ currentDate | date:'hh:mm a' }}
       </div>
 
-      <button routerLink="/dashboard" class="bg-white text-gray-700 px-3 py-1 rounded-md font-medium">
+      <button routerLink="/dashboard"
+              class="bg-white text-gray-700 px-3 py-1 rounded-md font-medium text-sm">
         Back
       </button>
 
     </div>
-
   </div>
 
-  <!-- TOP GRID -->
 
+  <!-- TOP GRID -->
   <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
 
     <!-- MACHINE CARD -->
-
     <div class="xl:col-span-6 bg-white rounded-xl border p-4 flex flex-col md:flex-row gap-6">
 
       <div class="w-full md:w-1/2">
-        <img [src]="machine?.image || '/images/product/machine_login_02.png'" class="rounded-lg w-full">
+        <img [src]="machine?.image || '/images/product/machine_login_02.png'"
+             class="rounded-lg w-full object-contain h-52">
       </div>
 
       <div class="w-full md:w-1/2 bg-blue-50 rounded-xl p-4">
 
         <div class="flex items-center gap-3 mb-4">
-
           <img src="/images/user/owner.png" class="h-12 w-12 rounded-full">
-
           <div>
             <p class="text-sm text-gray-500">Operator</p>
-            <p class="text-lg font-semibold">
-              {{ operator?.operator_name || '--' }}
-            </p>
+            <p class="text-lg font-semibold">{{ operator?.operator_name || '--' }}</p>
           </div>
-
         </div>
 
         <div class="grid grid-cols-3 gap-2 text-sm mb-4">
-
           <div class="white-card">
             <span class="font-medium">Shift</span>
             <p>{{ shift?.shift_code || '--' }}</p>
           </div>
-
           <div class="white-card">
             <span class="font-medium">Part</span>
             <p>{{ job?.part_name || '--' }}</p>
           </div>
-
           <div class="white-card">
             <span class="font-medium">Comp ID</span>
             <p>{{ job?.component_id || '--' }}</p>
           </div>
-
         </div>
 
         <div class="border-t pt-3">
-
-          <p class="text-sm font-semibold mb-2">
-            Part Produced
-          </p>
-
-          <div class="grid grid-cols-2 gap-3 text-center
-                  bg-white border rounded-lg p-3">
-
+          <p class="text-sm font-semibold mb-2">Part Produced</p>
+          <div class="grid grid-cols-2 gap-3 text-center bg-white border rounded-lg p-3">
             <div>
               <p class="text-gray-500 text-sm">Target</p>
-              <p class="font-semibold text-lg">
-                {{ job?.target_qty || 0 }}
-              </p>
+              <p class="font-semibold text-lg">{{ job?.target_qty || 0 }}</p>
             </div>
-
             <div>
               <p class="text-gray-500 text-sm">Achieved</p>
-              <p class="font-semibold text-lg">
-                {{ job?.achieved_qty || 0 }}
-              </p>
+              <p class="font-semibold text-lg">{{ livePartCount || 0 }}</p>
             </div>
-
           </div>
-
         </div>
 
       </div>
-
     </div>
 
 
     <!-- TIME INFO -->
-
     <div class="xl:col-span-3 bg-white rounded-xl border p-4">
-
       <h3 class="card-title mb-3">Time Info</h3>
-
-      <apx-chart [series]="timePieSeries" [chart]="timePieChart.chart" [labels]="timePieChart.labels"
-        [colors]="timePieChart.colors" [legend]="timePieChart.legend" [dataLabels]="timePieChart.dataLabels">
+      <apx-chart
+        [series]="timePieSeries"
+        [chart]="timePieChart.chart"
+        [labels]="timePieChart.labels"
+        [colors]="timePieChart.colors"
+        [legend]="timePieChart.legend"
+        [dataLabels]="timePieChart.dataLabels">
       </apx-chart>
-
       <div class="space-y-2 mt-3 text-sm">
-
         <div class="flex justify-between">
-          <span>Running Time</span>
-          <span>{{ runTime }}</span>
+          <span class="text-gray-500">Running Time</span>
+          <span class="font-semibold">{{ runTime }}</span>
         </div>
-
         <div class="flex justify-between">
-          <span>Idle Time</span>
-          <span>{{ idleTime }}</span>
+          <span class="text-gray-500">Idle Time</span>
+          <span class="font-semibold">{{ idleTime }}</span>
         </div>
-
       </div>
-
     </div>
 
 
-    <!-- UTILIZATION -->
-
+    <!-- MACHINE STATUS / UTILIZATION -->
     <div class="xl:col-span-3 bg-white rounded-xl border p-4 text-center">
 
       <h3 class="card-title mb-3">Machine Status</h3>
 
       <div class="grid grid-cols-2 gap-3 mb-4">
-
         <div class="bg-green-50 rounded-lg p-2">
           <p class="text-xs text-gray-500">Accepted</p>
-          <p class="font-bold text-green-600">
-            {{ quality?.accepted || 0 }}
-          </p>
+          <p class="font-bold text-green-600">{{ quality?.accepted || 0 }}</p>
         </div>
-
         <div class="bg-red-50 rounded-lg p-2">
           <p class="text-xs text-gray-500">Rejected</p>
-          <p class="font-bold text-red-600">
-            {{ quality?.rejected || 0 }}
-          </p>
+          <p class="font-bold text-red-600">{{ quality?.rejected || 0 }}</p>
         </div>
-
       </div>
 
-      <apx-chart [series]="utilSeries" [chart]="utilChart.chart" [plotOptions]="utilChart.plotOptions">
+      <apx-chart
+        [series]="utilSeries"
+        [chart]="utilChart.chart"
+        [plotOptions]="utilChart.plotOptions"
+        [colors]="utilChart.colors"
+        [fill]="utilChart.fill">
       </apx-chart>
 
-      <p class="text-lg font-bold mt-2">
-        {{ utilization }} %
-      </p>
+      <p class="text-lg font-bold mt-2">{{ utilization }} %</p>
 
       <div class="border-t mt-4 pt-3">
-
-        <p class="text-sm font-semibold mb-2">
-          Power Consumption
-        </p>
-
+        <p class="text-sm font-semibold mb-2">Power Consumption</p>
         <div class="grid grid-cols-2 gap-3 text-center">
-
           <div class="bg-gray-100 rounded-lg p-2">
             <p class="text-xs text-gray-500">Shift</p>
-            <p class="font-semibold">
-              {{ power?.shift_kwh || 0 }} KWH
-            </p>
+            <p class="font-semibold">{{ power?.shift_kwh || 0 }} KWH</p>
           </div>
-
           <div class="bg-gray-100 rounded-lg p-2">
             <p class="text-xs text-gray-500">Total</p>
-            <p class="font-semibold">
-              {{ power?.total_kwh || 0 }} KWH
-            </p>
+            <p class="font-semibold">{{ power?.total_kwh || 0 }} KWH</p>
           </div>
-
         </div>
-
       </div>
 
     </div>
   </div>
 
 
-  <!-- BOTTOM GRID -->
-
+  <!-- BOTTOM GRID — OEE + Speedometers -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
 
     <!-- OEE -->
+    <div class="bg-white rounded-xl border p-6 text-center">
+      <h3 class="text-lg font-semibold mb-1">OEE</h3>
+      <apx-chart
+        [series]="oeeSeries"
+        [chart]="oeeChart.chart"
+        [plotOptions]="oeeChart.plotOptions"
+        [colors]="oeeChart.colors"
+        [fill]="oeeChart.fill">
+      </apx-chart>
+      <p class="text-2xl font-bold mt-1">{{ oee?.oee || 0 }}%</p>
+    </div>
 
+
+    <!-- SPINDLE RPM speedometer -->
     <div class="bg-white rounded-xl border p-6 text-center">
 
-      <h3 class="text-lg font-semibold mb-4">
-        OEE
-      </h3>
+      <h3 class="text-lg font-semibold mb-1">Spindle Load</h3>
 
-      <apx-chart [series]="oeeSeries" [chart]="oeeChart.chart" [plotOptions]="oeeChart.plotOptions">
-      </apx-chart>
+      <!-- ApexCharts half-arc gauge — needle position = rpmToPercent -->
+      <div class="relative">
+        <apx-chart
+          [series]="spindleSeries"
+          [chart]="spindleChart.chart"
+          [plotOptions]="spindleChart.plotOptions"
+          [colors]="spindleChart.colors"
+          [fill]="spindleChart.fill">
+        </apx-chart>
 
+        <!-- Min / Max labels under the arc -->
+        <div class="flex justify-between px-6 -mt-4 text-xs text-gray-400 font-medium">
+          <span>0</span>
+          <span>{{ RPM_MAX / 2 | number }}</span>
+          <span>{{ RPM_MAX | number }}</span>
+        </div>
+      </div>
+
+      <!-- Live value -->
+      <p class="text-2xl font-bold mt-3">{{ liveRPM | number }} <span class="text-base font-normal text-gray-400">RPM</span></p>
+
+      <!-- Zone legend -->
+      <div class="flex justify-center gap-4 mt-2 text-xs">
+        <span class="flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span> Low
+        </span>
+        <span class="flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span> Mid
+        </span>
+        <span class="flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span> High
+        </span>
+      </div>
+    </div>
+
+
+    <!-- FEED OVERRIDE speedometer -->
+    <div class="bg-white rounded-xl border p-6 text-center">
+
+      <h3 class="text-lg font-semibold mb-1">Feed Override</h3>
+
+      <div class="relative">
+        <apx-chart
+          [series]="feedSeries"
+          [chart]="feedChart.chart"
+          [plotOptions]="feedChart.plotOptions"
+          [colors]="feedChart.colors"
+          [fill]="feedChart.fill">
+        </apx-chart>
+
+        <!-- Min / Max labels -->
+        <div class="flex justify-between px-6 -mt-4 text-xs text-gray-400 font-medium">
+          <span>0</span>
+          <span>{{ FEED_MAX / 2 | number }}</span>
+          <span>{{ FEED_MAX | number }}</span>
+        </div>
+      </div>
+
+      <!-- Live value — show in mm/min, auto-format large numbers -->
       <p class="text-2xl font-bold mt-3">
-        {{ oee?.oee || 0 }}%
+        {{ liveFeed | number }}
+        <span class="text-base font-normal text-gray-400">mm/min</span>
       </p>
 
-    </div>
-
-
-    <!-- SPINDLE -->
-
-    <div class="bg-white rounded-xl border p-6 text-center">
-
-      <h3 class="text-lg font-semibold mb-4">
-        Spindle Load
-      </h3>
-
-      <apx-chart [series]="spindleSeries" [chart]="spindleChart.chart" [plotOptions]="spindleChart.plotOptions">
-      </apx-chart>
-
-      <p class="text-xl font-bold mt-2">
-        {{ liveRPM }} RPM
-      </p>
-
-    </div>
-
-
-    <!-- FEED OVERRIDE -->
-
-    <div class="bg-white rounded-xl border p-6 text-center">
-
-      <h3 class="text-lg font-semibold mb-4">
-        Feed Override
-      </h3>
-
-      <apx-chart [series]="feedSeries" [chart]="feedChart.chart" [plotOptions]="feedChart.plotOptions">
-      </apx-chart>
-
-      <p class="text-xl font-bold mt-2">
-        {{ liveFeed }}
-      </p>
-
+      <!-- Zone legend -->
+      <div class="flex justify-center gap-4 mt-2 text-xs">
+        <span class="flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span> Low
+        </span>
+        <span class="flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span> Mid
+        </span>
+        <span class="flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span> High
+        </span>
+      </div>
     </div>
 
   </div>

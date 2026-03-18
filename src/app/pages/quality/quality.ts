@@ -23,10 +23,17 @@ export class Quality implements OnInit {
   selectedMachine!: number;
   selectedShift!: number;
 
-  fromDate!: string;
-  toDate!: string;
+  selectedDate!: string;
 
   dashboardData: any = null;
+
+  // Editable fields
+  rejectedValue: number = 0;
+  reworkValue: number = 0;
+  editingRejected = false;
+  editingRework = false;
+  private rejectedSnapshot = 0;
+  private reworkSnapshot = 0;
 
   public hourPerformOptions: any = {
     series: [],
@@ -47,8 +54,7 @@ export class Quality implements OnInit {
 
   ngOnInit() {
     const today = new Date().toISOString().split('T')[0];
-    this.fromDate = today;
-    this.toDate = today;
+    this.selectedDate = today;
 
     this.loadInitialData();
 
@@ -118,13 +124,15 @@ export class Quality implements OnInit {
     this.service.getDashboard({
       machine_id: this.selectedMachine,
       shift_id: this.selectedShift,
-      from: this.fromDate,
-      to: this.toDate
+      date: this.selectedDate
     }).subscribe(res => {
 
       if (!res.success) return;
 
       this.dashboardData = res.data;
+
+      this.rejectedValue = res.data.production?.reject ?? 0;
+      this.reworkValue = res.data.production?.rework ?? 0;
 
       this.updateChart(res.data.hourly || []);
       this.cdr.detectChanges();
@@ -136,10 +144,62 @@ export class Quality implements OnInit {
   // CHART UPDATE
   ////////////////////////////////////////////////////
 
+  ////////////////////////////////////////////////////
+  // REJECTED / REWORK EDITING
+  ////////////////////////////////////////////////////
+
+  startEditRejected() {
+    this.rejectedSnapshot = this.rejectedValue;
+    this.editingRejected = true;
+  }
+
+  saveRejected() {
+    this.editingRejected = false;
+    this.saveQuality();
+  }
+
+  cancelRejected() {
+    this.rejectedValue = this.rejectedSnapshot;
+    this.editingRejected = false;
+  }
+
+  startEditRework() {
+    this.reworkSnapshot = this.reworkValue;
+    this.editingRework = true;
+  }
+
+  saveRework() {
+    this.editingRework = false;
+    this.saveQuality();
+  }
+
+  cancelRework() {
+    this.reworkValue = this.reworkSnapshot;
+    this.editingRework = false;
+  }
+
+  private saveQuality() {
+    this.service.saveQuality({
+      machine_id: this.selectedMachine,
+      shift_id: this.selectedShift,
+      date: this.selectedDate,
+      reject_qty: this.rejectedValue,
+      rework_qty: this.reworkValue
+    }).subscribe(res => {
+      if (res?.success) {
+        this.loadDashboard();
+      }
+    });
+  }
+
+  ////////////////////////////////////////////////////
+  // CHART UPDATE
+  ////////////////////////////////////////////////////
+
   updateChart(hourly: any[]) {
 
     const categories = hourly.map(h =>
-      new Date(h.hour_start)
+      new Date(h.hour)
         .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     );
 
