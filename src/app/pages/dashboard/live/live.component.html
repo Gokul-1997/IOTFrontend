@@ -56,31 +56,39 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-2 text-sm mb-4">
-          <div class="white-card">
-            <span class="font-medium">Shift</span>
-            <p>{{ shift?.shift_code || '--' }}</p>
-          </div>
-          <div class="white-card">
-            <span class="font-medium">Part</span>
-            <p>{{ job?.part_name || '--' }}</p>
-          </div>
-          <div class="white-card">
-            <span class="font-medium">Comp ID</span>
-            <p>{{ job?.component_id || '--' }}</p>
+        <div class="gap-2 text-sm mb-4">
+          <div class="white-card text-left">
+            <span class="font-medium">Shift : {{ shift?.shift_code || '--' }}</span>
+            <span class="font-medium">Part : {{ job?.part_name || '--' }}</span>
+            <span class="font-medium">Comp ID : {{ job?.component_id || '--' }}</span>
           </div>
         </div>
 
         <div class="border-t pt-3">
-          <p class="text-sm font-semibold mb-2">Part Produced</p>
+          
           <div class="grid grid-cols-2 gap-3 text-center bg-white border rounded-lg p-3">
-            <div>
-              <p class="text-gray-500 text-sm">Target</p>
-              <p class="font-semibold text-lg">{{ job?.target_qty || 0 }}</p>
+            <div class="flex items-center gap-2">
+              <span class="font-semibold green rounded-md w-5 h-5 flex items-center justify-center text-white p-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+              <path fill-rule="evenodd" d="M15.22 6.268a.75.75 0 0 1 .968-.431l5.942 2.28a.75.75 0 0 1 .431.97l-2.28 5.94a.75.75 0 1 1-1.4-.537l1.63-4.251-1.086.484a11.2 11.2 0 0 0-5.45 5.173.75.75 0 0 1-1.199.19L9 12.312l-6.22 6.22a.75.75 0 0 1-1.06-1.061l6.75-6.75a.75.75 0 0 1 1.06 0l3.606 3.606a12.695 12.695 0 0 1 5.68-4.974l1.086-.483-4.251-1.632a.75.75 0 0 1-.432-.97Z" clip-rule="evenodd" />
+            </svg>
+            </span>
+              <div class="text-start">
+              <p class="text-gray-500 text-sm">Plan</p>
+              <p class="font-semibold text-lg -mt-2">{{ job?.target_qty || 0 }}</p>
+              </div>
             </div>
-            <div>
-              <p class="text-gray-500 text-sm">Achieved</p>
-              <p class="font-semibold text-lg">{{ livePartCount || 0 }}</p>
+            <div class="flex items-center gap-2">
+              <span class="font-semibold red rounded-md w-5 h-5 flex items-center justify-center text-white p-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+  <path fill-rule="evenodd" d="M1.72 5.47a.75.75 0 0 1 1.06 0L9 11.69l3.756-3.756a.75.75 0 0 1 .985-.066 12.698 12.698 0 0 1 4.575 6.832l.308 1.149 2.277-3.943a.75.75 0 1 1 1.299.75l-3.182 5.51a.75.75 0 0 1-1.025.275l-5.511-3.181a.75.75 0 0 1 .75-1.3l3.943 2.277-.308-1.149a11.194 11.194 0 0 0-3.528-5.617l-3.809 3.81a.75.75 0 0 1-1.06 0L1.72 6.53a.75.75 0 0 1 0-1.061Z" clip-rule="evenodd" />
+</svg>
+
+            </span>
+              <div class="text-start">
+              <p class="text-gray-500 text-sm">Actual</p>
+              <p class="font-semibold text-lg -mt-2">{{ livePartCount || 0 }}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -100,14 +108,14 @@
         [legend]="timePieChart.legend"
         [dataLabels]="timePieChart.dataLabels">
       </apx-chart>
-      <div class="space-y-2 mt-3 text-sm">
-        <div class="flex justify-between">
+      <div class="flex gap-2 justify-between mt-2">
+        <div class="flex flex-col">
           <span class="text-gray-500">Running Time</span>
-          <span class="font-semibold">{{ runTime }}</span>
+          <div class="text-3xl font-semibold ">{{ runTime }}</div>
         </div>
-        <div class="flex justify-between">
+        <div class="flex flex-col">
           <span class="text-gray-500">Idle Time</span>
-          <span class="font-semibold">{{ idleTime }}</span>
+          <div class="text-3xl font-semibold ">{{ idleTime }}</div>
         </div>
       </div>
     </div>

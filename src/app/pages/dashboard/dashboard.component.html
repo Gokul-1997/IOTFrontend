@@ -1,32 +1,50 @@
-<div class="p-6 bg-[#f4f6fa] min-h-screen">
+<div class="min-h-screen bg-wrapper xl:px-8 mx-auto">
 
   <!-- TOP BAR -->
 
   <div class="bg-gradient-to-r from-[#2B3990] to-[#9B3F70]
-            text-white rounded-xl px-6 py-4 mb-6
+            text-white rounded-xl px-4 py-2 mb-3
             flex items-center justify-between">
 
-    <div class="text-xl font-semibold">
-      Dashboard
+    <div class="flex items-center gap-4">
+      <div class="text-2xl font-bold">Dashboard</div>
+      <div class="flex gap-5">
+        <div><span class="status_dot running"></span>Running</div>
+        <div><span class="status_dot idle"></span>Idle</div>
+        <div><span class="status_dot alarm"></span>Alarm</div>
+      </div>
     </div>
 
-    <div class="flex items-center gap-4 text-sm">
+    <div class="flex items-center gap-3 text-base">
 
-      <div class="bg-white/20 px-4 py-2 rounded-full">
-        {{ summary.total }} All Machines
+      <!-- <div class="bg-white/20 px-4 py-2 rounded-full">
+        Total Machines : <div class="font-bold">{{ summary.total }} </div>
+      </div> -->
+      <div class="flex border_status ">
+        Total Machines : <div class="font-medium ml-1">{{ summary.total }} </div>
       </div>
 
-      <div class="bg-green-500/20 px-4 py-2 rounded-full">
-        {{ summary.running }} Machine Running
+      <div class="flex border-r border_status pr-4">
+        Running : <div class="font-medium ml-1">{{ summary.running }}</div>  
       </div>
 
-      <div class="bg-yellow-400/20 px-4 py-2 rounded-full">
-        {{ summary.idle }} Machine Idle
+      <div class="flex border-r border_status pr-4">
+        Idle : <div class="font-medium ml-1">{{ summary.idle }} </div> 
       </div>
 
-      <div class="ml-6">
+      <div class="flex border-r border_status pr-4">
+        <div class="font-medium ml-1"> Shift 01</div>
+      </div>
+      <div class="flex border-r border_status pr-4">
+        <div class="font-medium">06 Mar 2026</div>
+      </div>
+      <div >
+        <div class="font-medium">1:34:00 PM</div>
+      </div>
+
+      <!-- <div class="ml-6">
         Today: {{ shift.shift_code }}
-      </div>
+      </div> -->
 
     </div>
 
@@ -35,46 +53,49 @@
 
   <!-- MACHINE GRID -->
 
-  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
 
     <div
       *ngFor="let m of machines; trackBy: trackByMachine"
       (click)="goToLive(m.machine_id)"
-      class="rounded-2xl shadow-md p-5 hover:shadow-xl transition cursor-pointer"
+      class="rounded-2xl shadow-md p-3 hover:shadow-xl transition cursor-pointer border-big"
       [ngClass]="{
         'bg-white':      !m.alarm,
-        'alarm-blink':    m.alarm
+        'alarm-blink':    m.alarm,
+        'green-full':  m.status === 'RUNNING',
+        'yellow-full': m.status === 'IDLE',
+        'red-full animate-blink':       m.status === 'OFFLINE'
       }">
 
       <!-- HEADER -->
 
-      <div class="flex justify-between items-center mb-3">
-        <div class="text-lg font-bold">{{ m.machine_serial_no }}</div>
-      </div>
-
-
       <!-- TOP SECTION -->
 
-      <div class="grid grid-cols-3 gap-4 items-center">
-
+      <div class="grid grid-cols-[1.5fr_1fr_auto] gap-4 items-center">
+        
         <!-- MACHINE IMAGE + RUN/IDLE -->
 
         <div>
-
+          <div class="text-xl font-bold text-[var(--color-primary-500)]">{{ m.machine_serial_no }}</div>
           <img [src]="m.image_url || 'assets/machine.png'"
                class="w-full h-28 object-contain" />
 
-          <div class="flex justify-center gap-12 mt-6 text-sm">
+          <div class="flex justify-center gap-12 mt-2 text-sm">
 
             <!-- RUN -->
             <div class="text-center">
-              <div class="flex items-center justify-center gap-1 text-green-600 font-semibold">
-                ▶ Run
+              <div class="flex items-center justify-center">
+                <span class="text-green-600 font-semibold">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+  <path fill-rule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clip-rule="evenodd" />
+</svg>
+
+                </span> Run
               </div>
-              <div class="text-lg font-bold">
+              <div class="text-xl font-bold">
                 {{ (m.run_time || '00:00:00').split(':')[0] }}h
               </div>
-              <div class="text-xs text-gray-500">
+              <div class="text-xs text-[var(--color-primary-500)] -mt-1">
                 {{ (m.run_time || '00:00:00').split(':')[1] }}m
                 {{ (m.run_time || '00:00:00').split(':')[2] }}s
               </div>
@@ -82,13 +103,16 @@
 
             <!-- IDLE -->
             <div class="text-center">
-              <div class="flex items-center justify-center gap-1 text-yellow-600 font-semibold">
-                ⏸ Idle
+              <div class="flex items-center justify-center">
+                <span class="text-yellow-600 font-semibold"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+  <path fill-rule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clip-rule="evenodd" />
+</svg>
+</span> Idle
               </div>
-              <div class="text-lg font-bold">
+              <div class="text-xl font-bold">
                 {{ (m.idle_time || '00:00:00').split(':')[0] }}h
               </div>
-              <div class="text-xs text-gray-500">
+              <div class="text-xs text-[var(--color-primary-500)] -mt-1">
                 {{ (m.idle_time || '00:00:00').split(':')[1] }}m
                 {{ (m.idle_time || '00:00:00').split(':')[2] }}s
               </div>
@@ -101,35 +125,35 @@
 
         <!-- OPERATOR PANEL -->
 
-        <div class="bg-gray-100 rounded-xl p-4 text-sm space-y-2">
+        <div class="menu-default rounded-xl p-2 text-sm space-y-2">
 
           <div>
-            <span class="text-gray-500">Operator</span><br>
+            <span class="text-gray-700">Operator</span><br>
             <b>{{ m.operator_name || '--' }}</b>
           </div>
 
           <div>
-            <span class="text-gray-500">Part Name</span><br>
-            <b>{{ m.part_name || '--' }}</b>
+            <span class="text-gray-700">Part Name</span><br>
+            <div class="max-w-[100px] overflow-hidden whitespace-nowrap text-ellipsis font-bold">{{ m.part_name || '--' }}</div>
           </div>
 
           <div>
-            <span class="text-gray-500">Component ID</span><br>
-            <b>{{ m.component_id || '--' }}</b>
+            <span class="text-gray-700">Comp. ID</span><br>
+            <b class="whitespace-nowrap overflow-ellipsis">{{ m.component_id || '--' }}</b>
           </div>
 
-          <div class="pt-2 border-t mt-2">
-            <span class="text-gray-500 text-xs">Status</span><br>
+          <div class="">
+            <span class="text-gray-700 text-xs">Status</span><br>
 
             <!--
               FIX: added 'bg-red-100 text-red-700' for OFFLINE
               previously OFFLINE had no ngClass match → showed unstyled
             -->
-            <span class="inline-block text-xs font-semibold px-3 py-1 rounded-full mt-1"
+            <span class="text-white inline-block text-xs font-semibold px-3 py-1 rounded-full mt-1 "
               [ngClass]="{
-                'bg-green-100 text-green-700':  m.status === 'RUNNING',
-                'bg-yellow-100 text-yellow-700': m.status === 'IDLE',
-                'bg-red-100 text-red-600':       m.status === 'OFFLINE'
+                'green':  m.status === 'RUNNING',
+                'yellow': m.status === 'IDLE',
+                'red':       m.status === 'OFFLINE'
               }">
               {{ m.status }}
             </span>
@@ -178,19 +202,34 @@
 
           </div>
 
-          <div class="text-xs mt-1 text-gray-500">Utilization</div>
+          <div class="text-sm text-gray-800 font-bold">Utilization</div>
 
           <!-- Target / Achieved -->
-          <div class="flex justify-center gap-8 mt-4 text-sm">
+          <div class="flex flex-col justify-center gap-1 mt-2 text-sm">
 
-            <div class="text-center">
-              <div class="text-yellow-600 font-semibold text-xs">Target</div>
-              <div class="text-gray-700 font-bold">{{ m.target_qty || 0 }}</div>
+            <div class="text-center flex gap-2 items-center w-full">
+              <span class="font-semibold green rounded-md w-5 h-5 flex items-center justify-center text-white p-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+              <path fill-rule="evenodd" d="M15.22 6.268a.75.75 0 0 1 .968-.431l5.942 2.28a.75.75 0 0 1 .431.97l-2.28 5.94a.75.75 0 1 1-1.4-.537l1.63-4.251-1.086.484a11.2 11.2 0 0 0-5.45 5.173.75.75 0 0 1-1.199.19L9 12.312l-6.22 6.22a.75.75 0 0 1-1.06-1.061l6.75-6.75a.75.75 0 0 1 1.06 0l3.606 3.606a12.695 12.695 0 0 1 5.68-4.974l1.086-.483-4.251-1.632a.75.75 0 0 1-.432-.97Z" clip-rule="evenodd" />
+            </svg>
+            </span>
+              <div class="text-left">
+              <div class="text-xs">Target</div>
+              <div class="text-xl text-[var(--color-primary-500)] font-bold -mt-1">{{ m.target_qty || 0 }}</div>
+            </div>
             </div>
 
-            <div class="text-center">
-              <div class="text-green-600 font-semibold text-xs">Achieved</div>
-              <div class="text-gray-700 font-bold">{{ m.achieved_qty || 0 }}</div>
+            <div class="text-center flex gap-2 items-center w-full border-t pt-1">
+              <span class="font-semibold red rounded-md w-5 h-5 flex items-center justify-center text-white p-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+  <path fill-rule="evenodd" d="M1.72 5.47a.75.75 0 0 1 1.06 0L9 11.69l3.756-3.756a.75.75 0 0 1 .985-.066 12.698 12.698 0 0 1 4.575 6.832l.308 1.149 2.277-3.943a.75.75 0 1 1 1.299.75l-3.182 5.51a.75.75 0 0 1-1.025.275l-5.511-3.181a.75.75 0 0 1 .75-1.3l3.943 2.277-.308-1.149a11.194 11.194 0 0 0-3.528-5.617l-3.809 3.81a.75.75 0 0 1-1.06 0L1.72 6.53a.75.75 0 0 1 0-1.061Z" clip-rule="evenodd" />
+</svg>
+
+            </span>
+              <div class="text-left">
+              <div class="text-xs">Achieved</div>
+              <div class="text-xl text-[var(--color-primary-500)] font-bold -mt-1">{{ m.achieved_qty || 0 }}</div>
+            </div>
             </div>
 
           </div>

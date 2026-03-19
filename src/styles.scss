@@ -6,6 +6,8 @@
 // custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 @import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@100;200;300;400;500;600;700;800;900&family=Ubuntu:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Questrial&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
+
 
 html {
   height: 100%;
@@ -18,6 +20,10 @@ html {
     density: 0,
   ));
 }
+html, body {
+  height: 100%;
+}
+
 
 body {
   // Default the application to a light color theme. This can be changed to
@@ -30,7 +36,7 @@ body {
   // variables at https://material.angular.dev/guide/system-variables
   background-color: #000;
   color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
+  // font: var(--mat-sys-body-medium);
 
   // Reset the user agent margin.
   margin: 0;
@@ -42,8 +48,15 @@ body {
 
 body {
   @apply bg-gradient-to-bl from-[#C5404A] via-[#5E3C79] to-[#4A2FA0] text-gray-900
-         dark:bg-[#000] dark:text-white
+  bg-no-repeat font-ubuntu
+        dark:text-white
          transition-colors duration-300;
+}
+
+.bg-wrapper {
+  min-height: 100vh;
+  background: linear-gradient(19deg, #4A2FA0 0%, #C5404A 100%);
+  padding-top: 15px;
 }
 h1, h2, h3, h4 {
   font-family: 'ubuntu', sans-serif!important;
@@ -202,7 +215,7 @@ h1, h2, h3, h4 {
   dark:text-gray-300 rounded-md px-3 py-2
 }
 .white-card{
-  @apply flex flex-col items-center bg-white border border-gray-300 py-2 px-3 rounded-lg
+  @apply flex flex-col bg-white border border-gray-300 py-2 px-3 rounded-lg
 }
 .card-title{
   @apply text-lg font-semibold mb-2 text-center
@@ -248,6 +261,12 @@ h1, h2, h3, h4 {
   --red:#FF5966;
   --yellow:#C38E18;
   --blue:#3B4CCA;
+  --color-primary-100:#9CA5E1;
+  --color-primary-200:#6A78D2;
+  --color-primary-300:#3A4DC2;
+  --color-primary-400:#2B3990;
+  --color-primary-500:#182052;
+
 }
 
 .dark {
@@ -323,4 +342,36 @@ h1, h2, h3, h4 {
   border: 2px solid #dc2626;
 }
 
+.status_dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
 
+  &.running { background-color: #0CAD5D; }
+  &.idle { background-color: #dfb400; }
+  &.alarm { background-color: #fb3748; }
+}
+.border_status{
+  border-color: #A3A3A3;
+}
+  .green { background-color: #0CAD5D; }
+  .yellow { background-color: #dfb400; }
+  .red { background-color: #fb3748; }
+  .menu-default{background-color:#EAEDFF}
+
+  .border-big{
+    border-width: 4px;
+      &.green-full{
+        border-color: #0CAD5D;
+      }
+      &.yellow-full{
+        border-color: #dfb400;
+      }
+      &.red-full{
+        border-color: #fb3748;
+      }
+  }
+
+  
