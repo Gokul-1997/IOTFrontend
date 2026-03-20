@@ -1,9 +1,9 @@
-<div class="body-pad bg-rose-50 min-h-screen">
+<div class="min-h-screen bg-wrapper xl:px-8 mx-auto">
 
   <!-- HEADER -->
-  <div class="flex items-center justify-between
-              bg-gradient-to-l from-[#C5404A] via-[#5E3C79] to-[#4A2FA0]
-              rounded-xl px-5 py-3 mb-4">
+  <div class="bg-gradient-to-r from-[#2B3990] to-[#9B3F70]
+            text-white rounded-xl px-4 py-2 mb-3
+            flex items-center justify-between">
 
     <!-- Left: machine serial + status dot + status word -->
     <div class="flex items-center gap-3">
@@ -40,14 +40,14 @@
   <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
 
     <!-- MACHINE CARD -->
-    <div class="xl:col-span-6 bg-white rounded-xl border-2 border-green-400 p-4 flex flex-col md:flex-row gap-6">
+    <div class="xl:col-span-6 bg-white rounded-xl border-2 border-green-400 p-2 flex flex-col md:flex-row gap-6">
 
       <div class="w-full md:w-1/2">
         <img [src]="machine?.image || '/images/product/machine_login_02.png'"
-             class="rounded-lg w-full object-contain h-52">
+             class="rounded-lg w-full object-contain h-60">
       </div>
 
-      <div class="w-full md:w-1/2 bg-blue-50 rounded-xl p-4">
+      <div class="w-full md:w-1/2 bg-blue-50 rounded-xl p-2">
 
         <!-- Operator -->
         <div class="flex items-center gap-3 mb-3">
@@ -60,17 +60,17 @@
 
         <!-- Part / Comp. Id / Optn. No -->
         <div class="space-y-1 text-sm mb-3">
-          <div class="flex justify-between bg-white rounded-lg px-3 py-1.5">
-            <span class="text-gray-500">Part</span>
+          <div class=" bg-white rounded-lg px-3 py-1.5">
+            <div class="">
+            <span class="text-gray-500 mr-2">Part</span>
             <span class="font-medium">{{ job?.part_name || '--' }}</span>
-          </div>
-          <div class="flex justify-between bg-white rounded-lg px-3 py-1.5">
-            <span class="text-gray-500">Comp. Id</span>
+            </div>
+            <div class=""><span class="text-gray-500 mr-2">Comp. Id</span>
             <span class="font-medium">{{ job?.component_id || '--' }}</span>
           </div>
-          <div class="flex justify-between bg-white rounded-lg px-3 py-1.5">
-            <span class="text-gray-500">Optn. No</span>
+            <div class=""><span class="text-gray-500 mr-2">Optn. No</span>
             <span class="font-medium">{{ job?.operation_no || '--' }}</span>
+          </div>
           </div>
         </div>
 
@@ -101,8 +101,8 @@
         </div>
 
         <!-- Setup Time -->
-        <div class="bg-white rounded-lg px-3 py-2 text-sm flex justify-between">
-          <span class="text-gray-500">Setup Time</span>
+        <div class="text-sm ">
+          <span class="text-gray-500 mr-2">Setup Time</span>
           <span class="font-semibold">{{ setupTime }}</span>
         </div>
 
@@ -111,8 +111,9 @@
 
 
     <!-- TIME INFO -->
-    <div class="xl:col-span-3 bg-white rounded-xl border p-4">
-      <h3 class="card-title mb-3">Time Info</h3>
+    <div class="xl:col-span-3 bg-white rounded-xl border p-2">
+      <h3 class="card-title">Time Info</h3>
+      <div class="-mt-2">
       <apx-chart
         [series]="timePieSeries"
         [chart]="timePieChart.chart"
@@ -121,7 +122,8 @@
         [legend]="timePieChart.legend"
         [dataLabels]="timePieChart.dataLabels">
       </apx-chart>
-      <div class="mt-3 space-y-2">
+      </div>
+      <div class="flex space-y-2 justify-between">
         <div class="flex items-center gap-3">
           <span class="w-3 h-8 rounded-sm bg-green-500 flex-shrink-0"></span>
           <div>
@@ -141,21 +143,22 @@
 
 
     <!-- MACHINE STATUS / UTILIZATION -->
-    <div class="xl:col-span-3 bg-white rounded-xl border p-4">
+    <div class="xl:col-span-3 bg-white rounded-xl border p-2">
 
-      <h3 class="card-title mb-3 text-center">Machine Status</h3>
+      <h3 class="card-title text-center">Machine Status</h3>
 
       <!-- Accepted / Rejected + Radial chart -->
-      <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center justify-between gap-2 -mt-6">
 
         <!-- Left: quality metrics -->
         <div class="flex flex-col gap-3">
 
           <div class="flex items-center gap-3">
-            <span class="flex items-center justify-center w-9 h-9 rounded-full bg-green-500 flex-shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="w-5 h-5">
-                <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd"/>
-              </svg>
+            <span class="flex items-center justify-center w-9 h-9 rounded-full bg-green-500 flex-shrink-0 text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+</svg>
+
             </span>
             <div>
               <p class="text-xs text-gray-500 leading-none">Accepted</p>
@@ -164,10 +167,11 @@
           </div>
 
           <div class="flex items-center gap-3">
-            <span class="flex items-center justify-center w-9 h-9 rounded-full bg-red-500 flex-shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="w-5 h-5">
-                <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z" clip-rule="evenodd"/>
-              </svg>
+            <span class="flex items-center justify-center w-9 h-9 rounded-full bg-red-500 flex-shrink-0 text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
+</svg>
+
             </span>
             <div>
               <p class="text-xs text-gray-500 leading-none">Rejected</p>
@@ -178,7 +182,8 @@
         </div>
 
         <!-- Right: utilization radial chart -->
-        <div class="flex-shrink-0 -mt-3 -mb-3">
+        <div class="overflow-hidden">
+          <div class="chart-align-center">
           <apx-chart
             [series]="utilSeries"
             [chart]="utilChart.chart"
@@ -187,12 +192,13 @@
             [fill]="utilChart.fill"
             [labels]="['Utilization']">
           </apx-chart>
+          </div>
         </div>
 
       </div>
 
       <!-- Power Consumption -->
-      <div class="border-t mt-3 pt-3">
+      <div class="border-t pt-3">
         <p class="flex items-center gap-2 text-sm font-semibold mb-2">
           <span class="flex items-center justify-center w-6 h-6 rounded-md bg-green-500">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="w-4 h-4">
@@ -231,13 +237,13 @@
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
 
     <!-- ══════════════ OEE ══════════════ -->
-    <div class="bg-white rounded-xl border p-5 flex flex-col items-center">
+    <div class="bg-white rounded-xl border p-2 flex flex-col items-center">
       <h3 class="text-base font-semibold text-center mb-2">OEE</h3>
 
-      <div class="flex items-center justify-center gap-2 w-full">
+      <div class="flex items-center justify-center gap-4 w-full overflow-hidden">
 
         <!-- Dashed radialBar with HTML value overlay -->
-        <div class="relative flex-shrink-0" style="width:200px; height:200px; overflow:hidden">
+        <div class="relative flex-shrink-0 -mt-6" style="width:250px; height:200px; overflow:hidden">
           <apx-chart
             [series]="oeeSeries"
             [chart]="oeeChart.chart"
@@ -247,9 +253,9 @@
             [dataLabels]="oeeChart.dataLabels"
             [labels]="oeeChart.labels">
           </apx-chart>
-          <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
+          <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-24"
                style="padding-bottom:30px">
-            <span class="text-3xl font-bold" style="color:#3B4CCA">
+            <span class="text-2xl font-bold" style="color:#3B4CCA">
               {{ oee?.oee || 0 }}%
             </span>
             <span class="text-xs text-gray-400 -mt-1">OEE</span>
@@ -286,7 +292,7 @@
 
 
     <!-- ══════════════ SPINDLE LOAD ══════════════ -->
-    <div class="bg-white rounded-xl border p-4 flex flex-col items-center">
+    <div class="bg-white rounded-xl border p-2 flex flex-col items-center">
       <h3 class="text-base font-semibold mb-1">Spindle Load</h3>
 
       <svg viewBox="0 0 300 170" xmlns="http://www.w3.org/2000/svg"
@@ -340,11 +346,11 @@
         <circle [attr.cx]="GCX" [attr.cy]="GCY" r="4"  fill="white"/>
 
         <!-- Value display -->
-        <text [attr.x]="GCX" [attr.y]="GCY - 22"
+        <text [attr.x]="GCX" [attr.y]="GCY - 50"
               text-anchor="middle" font-size="26" font-weight="700" fill="#111827">
           {{ spindleSeries[0] | number:'1.0-0' }}%
         </text>
-        <text [attr.x]="GCX" [attr.y]="GCY - 8"
+        <text [attr.x]="GCX" [attr.y]="GCY - 30"
               text-anchor="middle" font-size="10" fill="#6b7280">
           {{ liveRPM | number:'1.0-0' }} RPM
         </text>
@@ -358,7 +364,7 @@
 
 
     <!-- ══════════════ FEED OVERRIDE ══════════════ -->
-    <div class="bg-white rounded-xl border p-4 flex flex-col items-center">
+    <div class="bg-white rounded-xl border p-2 flex flex-col items-center">
       <h3 class="text-base font-semibold mb-1">Feed Override</h3>
 
       <svg viewBox="0 0 300 170" xmlns="http://www.w3.org/2000/svg"
@@ -418,11 +424,11 @@
         <circle [attr.cx]="GCX" [attr.cy]="GCY" r="4"  fill="white"/>
 
         <!-- Value display -->
-        <text [attr.x]="GCX" [attr.y]="GCY - 22"
+        <text [attr.x]="GCX" [attr.y]="GCY - 50"
               text-anchor="middle" font-size="26" font-weight="700" fill="#111827">
           {{ feedSeries[0] | number:'1.0-0' }}%
         </text>
-        <text [attr.x]="GCX" [attr.y]="GCY - 8"
+        <text [attr.x]="GCX" [attr.y]="GCY - 30"
               text-anchor="middle" font-size="10" fill="#6b7280">
           {{ liveFeed | number:'1.0-0' }} mm/min
         </text>

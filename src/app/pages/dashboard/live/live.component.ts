@@ -423,7 +423,7 @@ export class LiveComponent implements OnInit, OnDestroy {
 
     /* ── Utilization ── */
     this.utilChart = {
-      chart: { type: 'radialBar', height: 200, sparkline: { enabled: true } },
+      chart: { type: 'radialBar', height: 180},
       plotOptions: {
         radialBar: {
           startAngle: -135,
@@ -433,14 +433,14 @@ export class LiveComponent implements OnInit, OnDestroy {
           dataLabels: {
             name: {
               show: true,
-              offsetY: 20,
+              offsetY: 18,
               fontSize: '11px',
               color: '#6b7280',
               fontFamily: 'inherit'
             },
             value: {
               show: true,
-              offsetY: -4,
+              offsetY: -15,
               fontSize: '24px',
               fontWeight: '700',
               color: '#3B4CCA',
@@ -462,7 +462,7 @@ export class LiveComponent implements OnInit, OnDestroy {
 
     /* ── OEE — dashed-segment radialBar ── */
     this.oeeChart = {
-      chart: { type: 'radialBar', height: 200, sparkline: { enabled: true } },
+      chart: { type: 'radialBar', height: 250, sparkline: { enabled: true } },
       labels: ['OEE'],
       plotOptions: {
         radialBar: {
@@ -474,7 +474,7 @@ export class LiveComponent implements OnInit, OnDestroy {
             background: '#e5e5e5',
             strokeWidth: '100%',
             opacity: 0.5,
-            margin: 5
+            margin: 0
           },
           dataLabels: {
             name:  { show: false },
@@ -489,10 +489,10 @@ export class LiveComponent implements OnInit, OnDestroy {
 
     /* ── Time Pie ── */
     this.timePieChart = {
-      chart:       { type: 'pie', height: 260 },
+      chart:       { type: 'pie', height: 180 },
       labels:      ['Running', 'Idle'],
       colors:      ['#16a34a', '#f59e0b'],
-      legend:      { position: 'right' },
+      legend:      { show:false},
       dataLabels:  { formatter: (v: any) => `${v.toFixed(1)}%` }
     };
   }
