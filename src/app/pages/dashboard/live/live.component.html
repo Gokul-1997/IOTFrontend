@@ -1,37 +1,38 @@
-<div class="body-pad">
+<div class="body-pad bg-rose-50 min-h-screen">
 
   <!-- HEADER -->
-  <div class="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between
+  <div class="flex items-center justify-between
               bg-gradient-to-l from-[#C5404A] via-[#5E3C79] to-[#4A2FA0]
-              rounded-xl px-4 py-2">
+              rounded-xl px-5 py-3 mb-4">
 
-    <h2 class="text-xl font-bold text-white">
-      {{ machine?.name || 'Machine' }}
-    </h2>
-
-    <div class="flex flex-wrap items-center gap-3 text-white">
-
-      <div class="px-4 py-1 rounded-md font-medium text-sm" [ngClass]="{
-           'bg-green-600':  liveStatus === 'RUNNING',
-           'bg-yellow-500': liveStatus === 'IDLE',
-           'bg-red-600':    liveStatus === 'ALARM',
-           'bg-gray-500':   liveStatus === 'OFFLINE' || liveStatus === 'UNKNOWN'
-         }">
-        {{ liveStatus }}
-      </div>
-
-      <div class="bg-[#2D388E] px-3 py-1 rounded-md text-sm">
-        {{ shift?.shift_code || '--' }}
-        | {{ currentDate | date:'dd MMM yyyy' }}
-        | {{ currentDate | date:'hh:mm a' }}
-      </div>
-
-      <button routerLink="/dashboard"
-              class="bg-white text-gray-700 px-3 py-1 rounded-md font-medium text-sm">
-        Back
-      </button>
-
+    <!-- Left: machine serial + status dot + status word -->
+    <div class="flex items-center gap-3">
+      <h2 class="text-xl font-bold text-white">
+        {{ machine?.machine_serial_no || machine?.name || 'Machine' }}
+      </h2>
+      <span class="flex items-center gap-1.5">
+        <span class="w-2.5 h-2.5 rounded-full animate-pulse"
+              [ngClass]="{
+                'bg-green-400':  liveStatus === 'RUNNING',
+                'bg-yellow-400': liveStatus === 'IDLE',
+                'bg-red-400':    liveStatus === 'ALARM',
+                'bg-gray-400':   liveStatus === 'OFFLINE' || liveStatus === 'UNKNOWN'
+              }"></span>
+        <span class="text-white font-medium text-sm">{{ liveStatus }}</span>
+      </span>
     </div>
+
+    <!-- Center: shift / date / time -->
+    <div class="text-white text-sm font-medium text-center">
+      Shift: {{ shift?.shift_code || '--' }} | {{ currentDate | date:'dd MMM yyyy' }} | {{ currentDate | date:'h:mm:ss a' }}
+    </div>
+
+    <!-- Right: Back button -->
+    <button routerLink="/dashboard"
+            class="bg-white text-gray-700 px-4 py-1.5 rounded-lg font-medium text-sm flex items-center gap-1">
+      ← Back
+    </button>
+
   </div>
 
 
@@ -39,7 +40,7 @@
   <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
 
     <!-- MACHINE CARD -->
-    <div class="xl:col-span-6 bg-white rounded-xl border p-4 flex flex-col md:flex-row gap-6">
+    <div class="xl:col-span-6 bg-white rounded-xl border-2 border-green-400 p-4 flex flex-col md:flex-row gap-6">
 
       <div class="w-full md:w-1/2">
         <img [src]="machine?.image || '/images/product/machine_login_02.png'"
@@ -48,7 +49,8 @@
 
       <div class="w-full md:w-1/2 bg-blue-50 rounded-xl p-4">
 
-        <div class="flex items-center gap-3 mb-4">
+        <!-- Operator -->
+        <div class="flex items-center gap-3 mb-3">
           <img src="/images/user/owner.png" class="h-12 w-12 rounded-full">
           <div>
             <p class="text-sm text-gray-500">Operator</p>
@@ -56,41 +58,52 @@
           </div>
         </div>
 
-        <div class="gap-2 text-sm mb-4">
-          <div class="white-card text-left">
-            <span class="font-medium">Shift : {{ shift?.shift_code || '--' }}</span>
-            <span class="font-medium">Part : {{ job?.part_name || '--' }}</span>
-            <span class="font-medium">Comp ID : {{ job?.component_id || '--' }}</span>
+        <!-- Part / Comp. Id / Optn. No -->
+        <div class="space-y-1 text-sm mb-3">
+          <div class="flex justify-between bg-white rounded-lg px-3 py-1.5">
+            <span class="text-gray-500">Part</span>
+            <span class="font-medium">{{ job?.part_name || '--' }}</span>
+          </div>
+          <div class="flex justify-between bg-white rounded-lg px-3 py-1.5">
+            <span class="text-gray-500">Comp. Id</span>
+            <span class="font-medium">{{ job?.component_id || '--' }}</span>
+          </div>
+          <div class="flex justify-between bg-white rounded-lg px-3 py-1.5">
+            <span class="text-gray-500">Optn. No</span>
+            <span class="font-medium">{{ job?.operation_no || '--' }}</span>
           </div>
         </div>
 
-        <div class="border-t pt-3">
-          
-          <div class="grid grid-cols-2 gap-3 text-center bg-white border rounded-lg p-3">
-            <div class="flex items-center gap-2">
-              <span class="font-semibold green rounded-md w-5 h-5 flex items-center justify-center text-white p-0.5">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-              <path fill-rule="evenodd" d="M15.22 6.268a.75.75 0 0 1 .968-.431l5.942 2.28a.75.75 0 0 1 .431.97l-2.28 5.94a.75.75 0 1 1-1.4-.537l1.63-4.251-1.086.484a11.2 11.2 0 0 0-5.45 5.173.75.75 0 0 1-1.199.19L9 12.312l-6.22 6.22a.75.75 0 0 1-1.06-1.061l6.75-6.75a.75.75 0 0 1 1.06 0l3.606 3.606a12.695 12.695 0 0 1 5.68-4.974l1.086-.483-4.251-1.632a.75.75 0 0 1-.432-.97Z" clip-rule="evenodd" />
-            </svg>
+        <!-- Plan / Actual -->
+        <div class="grid grid-cols-2 gap-3 text-center bg-white border rounded-lg p-3 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="font-semibold green rounded-md w-5 h-5 flex items-center justify-center text-white p-0.5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                <path fill-rule="evenodd" d="M15.22 6.268a.75.75 0 0 1 .968-.431l5.942 2.28a.75.75 0 0 1 .431.97l-2.28 5.94a.75.75 0 1 1-1.4-.537l1.63-4.251-1.086.484a11.2 11.2 0 0 0-5.45 5.173.75.75 0 0 1-1.199.19L9 12.312l-6.22 6.22a.75.75 0 0 1-1.06-1.061l6.75-6.75a.75.75 0 0 1 1.06 0l3.606 3.606a12.695 12.695 0 0 1 5.68-4.974l1.086-.483-4.251-1.632a.75.75 0 0 1-.432-.97Z" clip-rule="evenodd" />
+              </svg>
             </span>
-              <div class="text-start">
+            <div class="text-start">
               <p class="text-gray-500 text-sm">Plan</p>
               <p class="font-semibold text-lg -mt-2">{{ job?.target_qty || 0 }}</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="font-semibold red rounded-md w-5 h-5 flex items-center justify-center text-white p-0.5">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
-  <path fill-rule="evenodd" d="M1.72 5.47a.75.75 0 0 1 1.06 0L9 11.69l3.756-3.756a.75.75 0 0 1 .985-.066 12.698 12.698 0 0 1 4.575 6.832l.308 1.149 2.277-3.943a.75.75 0 1 1 1.299.75l-3.182 5.51a.75.75 0 0 1-1.025.275l-5.511-3.181a.75.75 0 0 1 .75-1.3l3.943 2.277-.308-1.149a11.194 11.194 0 0 0-3.528-5.617l-3.809 3.81a.75.75 0 0 1-1.06 0L1.72 6.53a.75.75 0 0 1 0-1.061Z" clip-rule="evenodd" />
-</svg>
-
-            </span>
-              <div class="text-start">
-              <p class="text-gray-500 text-sm">Actual</p>
-              <p class="font-semibold text-lg -mt-2">{{ livePartCount || 0 }}</p>
-              </div>
             </div>
           </div>
+          <div class="flex items-center gap-2">
+            <span class="font-semibold red rounded-md w-5 h-5 flex items-center justify-center text-white p-0.5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                <path fill-rule="evenodd" d="M1.72 5.47a.75.75 0 0 1 1.06 0L9 11.69l3.756-3.756a.75.75 0 0 1 .985-.066 12.698 12.698 0 0 1 4.575 6.832l.308 1.149 2.277-3.943a.75.75 0 1 1 1.299.75l-3.182 5.51a.75.75 0 0 1-1.025.275l-5.511-3.181a.75.75 0 0 1 .75-1.3l3.943 2.277-.308-1.149a11.194 11.194 0 0 0-3.528-5.617l-3.809 3.81a.75.75 0 0 1-1.06 0L1.72 6.53a.75.75 0 0 1 0-1.061Z" clip-rule="evenodd" />
+              </svg>
+            </span>
+            <div class="text-start">
+              <p class="text-gray-500 text-sm">Actual</p>
+              <p class="font-semibold text-lg -mt-2">{{ livePartCount || 0 }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Setup Time -->
+        <div class="bg-white rounded-lg px-3 py-2 text-sm flex justify-between">
+          <span class="text-gray-500">Setup Time</span>
+          <span class="font-semibold">{{ setupTime }}</span>
         </div>
 
       </div>
@@ -108,58 +121,104 @@
         [legend]="timePieChart.legend"
         [dataLabels]="timePieChart.dataLabels">
       </apx-chart>
-      <div class="flex gap-2 justify-between mt-2">
-        <div class="flex flex-col">
-          <span class="text-gray-500">Running Time</span>
-          <div class="text-3xl font-semibold ">{{ runTime }}</div>
+      <div class="mt-3 space-y-2">
+        <div class="flex items-center gap-3">
+          <span class="w-3 h-8 rounded-sm bg-green-500 flex-shrink-0"></span>
+          <div>
+            <p class="text-xs text-gray-500">Running Time</p>
+            <p class="font-semibold text-base leading-tight">{{ formatDuration(runTime) }}</p>
+          </div>
         </div>
-        <div class="flex flex-col">
-          <span class="text-gray-500">Idle Time</span>
-          <div class="text-3xl font-semibold ">{{ idleTime }}</div>
+        <div class="flex items-center gap-3">
+          <span class="w-3 h-8 rounded-sm bg-yellow-400 flex-shrink-0"></span>
+          <div>
+            <p class="text-xs text-gray-500">Idle Time</p>
+            <p class="font-semibold text-base leading-tight">{{ formatDuration(idleTime) }}</p>
+          </div>
         </div>
       </div>
     </div>
 
 
     <!-- MACHINE STATUS / UTILIZATION -->
-    <div class="xl:col-span-3 bg-white rounded-xl border p-4 text-center">
+    <div class="xl:col-span-3 bg-white rounded-xl border p-4">
 
-      <h3 class="card-title mb-3">Machine Status</h3>
-      <div class="flex">
-          <div class="gap-3 mb-4">
-          <div class="bg-green-50 rounded-lg p-2">
-            <p class="text-xs text-gray-500">Accepted</p>
-            <p class="font-bold text-green-600">{{ quality?.accepted || 0 }}</p>
+      <h3 class="card-title mb-3 text-center">Machine Status</h3>
+
+      <!-- Accepted / Rejected + Radial chart -->
+      <div class="flex items-center justify-between gap-2">
+
+        <!-- Left: quality metrics -->
+        <div class="flex flex-col gap-3">
+
+          <div class="flex items-center gap-3">
+            <span class="flex items-center justify-center w-9 h-9 rounded-full bg-green-500 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="w-5 h-5">
+                <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd"/>
+              </svg>
+            </span>
+            <div>
+              <p class="text-xs text-gray-500 leading-none">Accepted</p>
+              <p class="text-xl font-bold text-gray-900 leading-tight">{{ quality?.accepted || 0 }}</p>
+            </div>
           </div>
-          <div class="bg-red-50 rounded-lg p-2">
-            <p class="text-xs text-gray-500">Rejected</p>
-            <p class="font-bold text-red-600">{{ quality?.rejected || 0 }}</p>
+
+          <div class="flex items-center gap-3">
+            <span class="flex items-center justify-center w-9 h-9 rounded-full bg-red-500 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="w-5 h-5">
+                <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z" clip-rule="evenodd"/>
+              </svg>
+            </span>
+            <div>
+              <p class="text-xs text-gray-500 leading-none">Rejected</p>
+              <p class="text-xl font-bold text-gray-900 leading-tight">{{ quality?.rejected || 0 }}</p>
+            </div>
           </div>
+
         </div>
-        <apx-chart
-        [series]="utilSeries"
-        [chart]="utilChart.chart"
-        [plotOptions]="utilChart.plotOptions"
-        [colors]="utilChart.colors"
-        [fill]="utilChart.fill">
-      </apx-chart>
+
+        <!-- Right: utilization radial chart -->
+        <div class="flex-shrink-0 -mt-3 -mb-3">
+          <apx-chart
+            [series]="utilSeries"
+            [chart]="utilChart.chart"
+            [plotOptions]="utilChart.plotOptions"
+            [colors]="utilChart.colors"
+            [fill]="utilChart.fill"
+            [labels]="['Utilization']">
+          </apx-chart>
+        </div>
+
       </div>
-      
 
-      
-
-      <p class="text-lg font-bold mt-2">{{ utilization }} %</p>
-
-      <div class="border-t mt-4 pt-3">
-        <p class="text-sm font-semibold mb-2">Power Consumption</p>
-        <div class="grid grid-cols-2 gap-3 text-center">
-          <div class="bg-gray-100 rounded-lg p-2">
-            <p class="text-xs text-gray-500">Shift</p>
-            <p class="font-semibold">{{ power?.shift_kwh || 0 }} KWH</p>
+      <!-- Power Consumption -->
+      <div class="border-t mt-3 pt-3">
+        <p class="flex items-center gap-2 text-sm font-semibold mb-2">
+          <span class="flex items-center justify-center w-6 h-6 rounded-md bg-green-500">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="w-4 h-4">
+              <path fill-rule="evenodd" d="M14.615 1.595a.75.75 0 0 1 .359.852L12.982 9.75h7.268a.75.75 0 0 1 .548 1.262l-10.5 11.25a.75.75 0 0 1-1.272-.71l1.992-7.302H3.718a.75.75 0 0 1-.548-1.262l10.5-11.25a.75.75 0 0 1 .945-.143Z" clip-rule="evenodd"/>
+            </svg>
+          </span>
+          Power Consumption
+        </p>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-gray-50 border rounded-xl flex items-center gap-2 px-3 py-2">
+            <div class="text-xs text-gray-500 leading-tight">
+              <span class="font-medium">Shift</span><br>01
+            </div>
+            <span class="text-gray-400 font-medium">›</span>
+            <div>
+              <span class="text-2xl font-bold text-gray-900">{{ power?.shift_kwh || 0 }}</span>
+              <span class="text-xs text-gray-500 ml-0.5">KWH</span>
+            </div>
           </div>
-          <div class="bg-gray-100 rounded-lg p-2">
-            <p class="text-xs text-gray-500">Total</p>
-            <p class="font-semibold">{{ power?.total_kwh || 0 }} KWH</p>
+          <div class="bg-gray-50 border rounded-xl flex items-center gap-2 px-3 py-2">
+            <div class="text-xs text-gray-500 leading-tight font-medium">Total</div>
+            <span class="text-gray-400 font-medium">›</span>
+            <div>
+              <span class="text-2xl font-bold text-gray-900">{{ power?.total_kwh || 0 }}</span>
+              <span class="text-xs text-gray-500 ml-0.5">KWH</span>
+            </div>
           </div>
         </div>
       </div>
@@ -169,105 +228,189 @@
 
 
   <!-- BOTTOM GRID — OEE + Speedometers -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
 
-    <!-- OEE -->
-    <div class="bg-white rounded-xl border p-6 text-center">
-      <h3 class="text-lg font-semibold mb-1">OEE</h3>
-      <apx-chart
-        [series]="oeeSeries"
-        [chart]="oeeChart.chart"
-        [plotOptions]="oeeChart.plotOptions"
-        [colors]="oeeChart.colors"
-        [fill]="oeeChart.fill">
-      </apx-chart>
-      <p class="text-2xl font-bold mt-1">{{ oee?.oee || 0 }}%</p>
+    <!-- ══════════════ OEE ══════════════ -->
+    <div class="bg-white rounded-xl border p-5 flex flex-col items-center">
+      <h3 class="text-base font-semibold text-center mb-2">OEE</h3>
+
+      <div class="flex items-center justify-center gap-2 w-full">
+
+        <!-- Dashed radialBar with HTML value overlay -->
+        <div class="relative flex-shrink-0" style="width:190px; height:190px">
+          <apx-chart
+            [series]="oeeSeries"
+            [chart]="oeeChart.chart"
+            [plotOptions]="oeeChart.plotOptions"
+            [fill]="oeeChart.fill"
+            [stroke]="oeeChart.stroke"
+            [labels]="oeeChart.labels">
+          </apx-chart>
+          <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
+               style="padding-bottom:28px">
+            <span class="text-3xl font-bold" style="color:#3B4CCA">
+              {{ oee?.oee || 0 }}%
+            </span>
+            <span class="text-xs text-gray-400 -mt-1">OEE</span>
+          </div>
+        </div>
+
+        <!-- A / P / Q legend -->
+        <div class="flex flex-col gap-4 pl-1">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:#22c55e"></span>
+            <div>
+              <p class="text-xs text-gray-400 leading-none">Availability</p>
+              <p class="font-bold text-sm leading-tight">{{ oee?.availability || 0 }}%</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:#60a5fa"></span>
+            <div>
+              <p class="text-xs text-gray-400 leading-none">Performance</p>
+              <p class="font-bold text-sm leading-tight">{{ oee?.performance || 0 }}%</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:#a855f7"></span>
+            <div>
+              <p class="text-xs text-gray-400 leading-none">Quality</p>
+              <p class="font-bold text-sm leading-tight">{{ oee?.quality || 0 }}%</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
 
 
-    <!-- SPINDLE RPM speedometer -->
-    <div class="bg-white rounded-xl border p-6 text-center">
+    <!-- ══════════════ SPINDLE LOAD ══════════════ -->
+    <div class="bg-white rounded-xl border p-4 flex flex-col items-center">
+      <h3 class="text-base font-semibold mb-1">Spindle Load</h3>
 
-      <h3 class="text-lg font-semibold mb-1">Spindle Load</h3>
+      <svg viewBox="0 0 300 170" xmlns="http://www.w3.org/2000/svg"
+           class="w-full" style="max-width:300px">
 
-      <!-- ApexCharts half-arc gauge — needle position = rpmToPercent -->
-      <div class="relative">
-        <apx-chart
-          [series]="spindleSeries"
-          [chart]="spindleChart.chart"
-          [plotOptions]="spindleChart.plotOptions"
-          [colors]="spindleChart.colors"
-          [fill]="spindleChart.fill">
-        </apx-chart>
+        <!-- Track -->
+        <path [attr.d]="bgArc"
+              fill="none" stroke="#e5e7eb" stroke-width="24" stroke-linecap="round"/>
 
-        <!-- Min / Max labels under the arc -->
-        <div class="flex justify-between px-6 -mt-4 text-xs text-gray-400 font-medium">
-          <span>0</span>
-          <span>{{ RPM_MAX / 2 | number }}</span>
-          <span>{{ RPM_MAX | number }}</span>
-        </div>
-      </div>
+        <!-- Fill -->
+        <path [attr.d]="gaugeArc(spindleSeries[0])"
+              fill="none" stroke="#1e3a8a" stroke-width="24" stroke-linecap="round"/>
 
-      <!-- Live value -->
-      <p class="text-2xl font-bold mt-3">{{ liveRPM | number }} <span class="text-base font-normal text-gray-400">RPM</span></p>
+        <!-- Scale labels -->
+        <text [attr.x]="gaugeLabel(0).x+5"    [attr.y]="gaugeLabel(0).y+5"
+              text-anchor="start"  font-size="10" fill="#9ca3af">0</text>
+        <text [attr.x]="gaugeLabel(20).x"     [attr.y]="gaugeLabel(20).y+4"
+              text-anchor="middle" font-size="10" fill="#9ca3af">20%</text>
+        <text [attr.x]="gaugeLabel(40).x"     [attr.y]="gaugeLabel(40).y+4"
+              text-anchor="middle" font-size="10" fill="#9ca3af">40%</text>
+        <text [attr.x]="gaugeLabel(60).x"     [attr.y]="gaugeLabel(60).y+4"
+              text-anchor="middle" font-size="10" fill="#9ca3af">60%</text>
+        <text [attr.x]="gaugeLabel(80).x"     [attr.y]="gaugeLabel(80).y+4"
+              text-anchor="middle" font-size="10" fill="#9ca3af">80%</text>
+        <text [attr.x]="gaugeLabel(100).x-5"  [attr.y]="gaugeLabel(100).y+5"
+              text-anchor="end"    font-size="10" fill="#9ca3af">100%</text>
 
-      <!-- Zone legend -->
-      <div class="flex justify-center gap-4 mt-2 text-xs">
-        <span class="flex items-center gap-1">
-          <span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span> Low
-        </span>
-        <span class="flex items-center gap-1">
-          <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span> Mid
-        </span>
-        <span class="flex items-center gap-1">
-          <span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span> High
-        </span>
-      </div>
-    </div>
+        <!-- Needle -->
+        <line [attr.x1]="gaugeNeedle(spindleSeries[0]).x1"
+              [attr.y1]="gaugeNeedle(spindleSeries[0]).y1"
+              [attr.x2]="gaugeNeedle(spindleSeries[0]).x2"
+              [attr.y2]="gaugeNeedle(spindleSeries[0]).y2"
+              stroke="#374151" stroke-width="2.5" stroke-linecap="round"/>
 
+        <!-- Pivot -->
+        <circle [attr.cx]="GCX" [attr.cy]="GCY" r="9"  fill="#374151"/>
+        <circle [attr.cx]="GCX" [attr.cy]="GCY" r="4"  fill="white"/>
 
-    <!-- FEED OVERRIDE speedometer -->
-    <div class="bg-white rounded-xl border p-6 text-center">
+        <!-- Value display -->
+        <text [attr.x]="GCX" [attr.y]="GCY - 22"
+              text-anchor="middle" font-size="26" font-weight="700" fill="#111827">
+          {{ spindleSeries[0] | number:'1.0-0' }}%
+        </text>
+        <text [attr.x]="GCX" [attr.y]="GCY - 8"
+              text-anchor="middle" font-size="10" fill="#6b7280">
+          {{ liveRPM | number:'1.0-0' }} RPM
+        </text>
 
-      <h3 class="text-lg font-semibold mb-1">Feed Override</h3>
+      </svg>
 
-      <div class="relative">
-        <apx-chart
-          [series]="feedSeries"
-          [chart]="feedChart.chart"
-          [plotOptions]="feedChart.plotOptions"
-          [colors]="feedChart.colors"
-          [fill]="feedChart.fill">
-        </apx-chart>
-
-        <!-- Min / Max labels -->
-        <div class="flex justify-between px-6 -mt-4 text-xs text-gray-400 font-medium">
-          <span>0</span>
-          <span>{{ FEED_MAX / 2 | number }}</span>
-          <span>{{ FEED_MAX | number }}</span>
-        </div>
-      </div>
-
-      <!-- Live value — show in mm/min, auto-format large numbers -->
-      <p class="text-2xl font-bold mt-3">
-        {{ liveFeed | number }}
-        <span class="text-base font-normal text-gray-400">mm/min</span>
+      <p class="text-xs font-semibold mt-1" style="color:#e53935">
+        Max Spindle Load : {{ RPM_MAX | number }} RPM
       </p>
-
-      <!-- Zone legend -->
-      <div class="flex justify-center gap-4 mt-2 text-xs">
-        <span class="flex items-center gap-1">
-          <span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span> Low
-        </span>
-        <span class="flex items-center gap-1">
-          <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span> Mid
-        </span>
-        <span class="flex items-center gap-1">
-          <span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span> High
-        </span>
-      </div>
     </div>
 
+
+    <!-- ══════════════ FEED OVERRIDE ══════════════ -->
+    <div class="bg-white rounded-xl border p-4 flex flex-col items-center">
+      <h3 class="text-base font-semibold mb-1">Feed Override</h3>
+
+      <svg viewBox="0 0 300 170" xmlns="http://www.w3.org/2000/svg"
+           class="w-full" style="max-width:300px">
+
+        <!-- Track -->
+        <path [attr.d]="bgArc"
+              fill="none" stroke="#e5e7eb" stroke-width="24" stroke-linecap="round"/>
+
+        <!-- Fill -->
+        <path [attr.d]="gaugeArc(feedSeries[0])"
+              fill="none" stroke="#7b1fa2" stroke-width="24" stroke-linecap="round"/>
+
+        <!-- Red dashed marker at 100% nominal (= 66.7% of 0–150% arc) -->
+        <line [attr.x1]="GCX"                    [attr.y1]="GCY"
+              [attr.x2]="gaugeArcPt(66.7).x"      [attr.y2]="gaugeArcPt(66.7).y"
+              stroke="#e53935" stroke-width="1.5" stroke-dasharray="5,3"/>
+
+        <!-- Scale labels -->
+        <text [attr.x]="gaugeLabel(0).x+5"       [attr.y]="gaugeLabel(0).y+5"
+              text-anchor="start"  font-size="10" fill="#9ca3af">0</text>
+        <text [attr.x]="gaugeLabel(16.7).x"      [attr.y]="gaugeLabel(16.7).y+4"
+              text-anchor="middle" font-size="10" fill="#9ca3af">25%</text>
+        <text [attr.x]="gaugeLabel(33.3).x"      [attr.y]="gaugeLabel(33.3).y+4"
+              text-anchor="middle" font-size="10" fill="#9ca3af">50%</text>
+        <text [attr.x]="gaugeLabel(50).x"        [attr.y]="gaugeLabel(50).y+4"
+              text-anchor="middle" font-size="10" fill="#9ca3af">75%</text>
+        <text [attr.x]="gaugeLabel(66.7).x"      [attr.y]="gaugeLabel(66.7).y+4"
+              text-anchor="middle" font-size="10" fill="#e53935" font-weight="700">100%</text>
+        <text [attr.x]="gaugeLabel(83.3).x"      [attr.y]="gaugeLabel(83.3).y+4"
+              text-anchor="middle" font-size="10" fill="#9ca3af">125%</text>
+        <text [attr.x]="gaugeLabel(100).x-5"     [attr.y]="gaugeLabel(100).y+5"
+              text-anchor="end"    font-size="10" fill="#9ca3af">150%</text>
+
+        <!-- Needle -->
+        <line [attr.x1]="gaugeNeedle(feedSeries[0]).x1"
+              [attr.y1]="gaugeNeedle(feedSeries[0]).y1"
+              [attr.x2]="gaugeNeedle(feedSeries[0]).x2"
+              [attr.y2]="gaugeNeedle(feedSeries[0]).y2"
+              stroke="#374151" stroke-width="2.5" stroke-linecap="round"/>
+
+        <!-- Pivot -->
+        <circle [attr.cx]="GCX" [attr.cy]="GCY" r="9"  fill="#374151"/>
+        <circle [attr.cx]="GCX" [attr.cy]="GCY" r="4"  fill="white"/>
+
+        <!-- Value display -->
+        <text [attr.x]="GCX" [attr.y]="GCY - 22"
+              text-anchor="middle" font-size="26" font-weight="700" fill="#111827">
+          {{ feedSeries[0] | number:'1.0-0' }}%
+        </text>
+        <text [attr.x]="GCX" [attr.y]="GCY - 8"
+              text-anchor="middle" font-size="10" fill="#6b7280">
+          {{ liveFeed | number:'1.0-0' }} mm/min
+        </text>
+
+      </svg>
+
+      <p class="text-xs font-semibold mt-1" style="color:#e53935">
+        Max Feed Rate : {{ FEED_MAX | number }} mm/min
+      </p>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="text-center text-xs text-gray-400 mt-6 pb-4">
+    Copyright 2026. All Rights Reserved STM Mexa.
   </div>
 
 </div>

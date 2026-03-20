@@ -2,6 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
+import { Router } from '@angular/router';
 
 @Injectable({ providedIn: 'root' })
 export class SocketService {
@@ -10,10 +11,15 @@ export class SocketService {
 
   private isConnecting = false;
   private paused = false;
+  private refreshing = false;   // guard: only one token refresh at a time
 
   private plantId?: number;
 
-  constructor(private zone: NgZone, private auth: AuthService) { }
+  constructor(
+    private zone:   NgZone,
+    private auth:   AuthService,
+    private router: Router
+  ) { }
 
   /* ================= CONNECT ================= */
 
@@ -26,15 +32,19 @@ export class SocketService {
       this.socket = io(environment.socketUrl, {
         transports: ['websocket'],
         autoConnect: false,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 2000,
         auth: {
           token: localStorage.getItem('token')
         }
       });
 
-      /* ===== CONNECTION EVENTS ===== */
+      /* ===== PERSISTENT EVENT LISTENERS (set up once) ===== */
 
       this.socket.on('connect', () => {
         console.log('✅ Socket connected:', this.socket.id);
+        this.refreshing = false;
 
         if (this.plantId) {
           this.joinPlant(this.plantId);
@@ -45,14 +55,43 @@ export class SocketService {
         console.log('⚠ Socket disconnected:', reason);
       });
 
+      /*
+       * TOKEN_EXPIRED  → backend explicitly says the JWT expired.
+       *                  Refresh the access token silently, swap it
+       *                  into socket.auth, then reconnect.
+       *
+       * Unauthorized   → invalid token (tampered / wrong secret).
+       *                  Logout immediately — no point retrying.
+       *
+       * Old code sent generic 'Unauthorized' for ALL jwt errors, so
+       * 'TOKEN_EXPIRED' never matched and the page was left broken.
+       * Backend now sends distinct messages (see server.js).
+       */
       this.socket.on('connect_error', (err) => {
         console.error('❌ Socket connect error:', err.message);
 
         if (err.message === 'TOKEN_EXPIRED') {
-          this.auth.refreshToken().subscribe(res => {
-            (this.socket.auth as any).token = res.accessToken;
-            this.socket.connect();
+
+          if (this.refreshing) return;   // refresh already in progress
+          this.refreshing = true;
+
+          this.auth.refreshToken().subscribe({
+            next: (res) => {
+              (this.socket.auth as any).token = res.accessToken;
+              this.socket.connect();
+            },
+            error: () => {
+              // Refresh token also expired / revoked → force login
+              console.warn('🔒 Refresh failed — redirecting to login');
+              this.refreshing = false;
+              this.auth.logout();
+            }
           });
+
+        } else if (err.message === 'Unauthorized') {
+          // Invalid token — clear session and go to login
+          console.warn('🔒 Unauthorized socket — redirecting to login');
+          this.auth.logout();
         }
       });
 
@@ -69,9 +108,20 @@ export class SocketService {
         resolve();
       });
 
+      /*
+       * Only reject on non-recoverable errors.
+       * TOKEN_EXPIRED is recoverable (refresh is in progress above),
+       * so we resolve after the reconnect succeeds via the persistent
+       * 'connect' listener — don't reject here for that case.
+       */
       this.socket.once('connect_error', (err) => {
         this.isConnecting = false;
-        reject(err);
+        if (err.message !== 'TOKEN_EXPIRED') {
+          reject(err);
+        } else {
+          // Token refresh is underway; resolve when the socket reconnects
+          this.socket.once('connect', () => resolve());
+        }
       });
 
       this.socket.connect();

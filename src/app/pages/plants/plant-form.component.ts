@@ -1,36 +1,46 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { PlantsService } from './plants.service';
 
 @Component({
   standalone: true,
   selector: 'app-plant-form',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './plant-form.component.html'
 })
-export class PlantFormComponent {
+export class PlantFormComponent implements OnInit {
 
   @Input() data: any;
   @Output() close = new EventEmitter();
   @Output() saved = new EventEmitter();
 
-  form: any = {
-    plant_code: '',
-    plant_name: '',
-    location: ''
-  };
+  form!: FormGroup;
 
-  constructor(private service: PlantsService) {}
+  constructor(private service: PlantsService, private fb: FormBuilder) {}
 
   ngOnInit() {
-    if (this.data) this.form = { ...this.data };
+    this.form = this.fb.group({
+      plant_code: ['', Validators.required],
+      plant_name: ['', Validators.required],
+      location: ['']
+    });
+
+    if (this.data) {
+      this.form.patchValue(this.data);
+      this.form.get('plant_code')?.disable();
+    }
   }
 
   save() {
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+
+    const payload = this.form.getRawValue();
+
     const req = this.data
-      ? this.service.updatePlant(this.data.id, this.form)
-      : this.service.createPlant(this.form);
+      ? this.service.updatePlant(this.data.id, payload)
+      : this.service.createPlant(payload);
 
     req.subscribe(() => this.saved.emit());
   }

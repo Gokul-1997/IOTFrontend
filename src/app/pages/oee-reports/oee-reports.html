@@ -5,7 +5,7 @@
     <div class="header-content">
       <h1 class="header-title">OEE</h1>
       <div class="header-info">
-        <div class="current-time">Today: {{ 'now' | date: 'dd MMM yyyy | h:mm a' }}</div>
+        <div class="current-time">Today: {{ today | date: 'dd MMM yyyy | h:mm a' }}</div>
         <button class="btn-back" (click)="goBack()">
           <span>←</span> Back
         </button>

@@ -60,11 +60,11 @@
       (click)="goToLive(m.machine_id)"
       class="rounded-2xl shadow-md p-3 hover:shadow-xl transition cursor-pointer border-big"
       [ngClass]="{
-        'bg-white':      !m.alarm,
-        'alarm-blink':    m.alarm,
+        'bg-white':    !m.alarm,
+        'alarm-blink': m.alarm,
         'green-full':  m.status === 'RUNNING',
         'yellow-full': m.status === 'IDLE',
-        'red-full animate-blink':       m.status === 'OFFLINE'
+        'gray-full':   m.status === 'OFFLINE'
       }">
 
       <!-- HEADER -->
@@ -77,7 +77,7 @@
 
         <div>
           <div class="text-xl font-bold text-[var(--color-primary-500)]">{{ m.machine_serial_no }}</div>
-          <img [src]="m.image_url || 'assets/machine.png'"
+          <img [src]="m.image_url"
                class="w-full h-28 object-contain" />
 
           <div class="flex justify-center gap-12 mt-2 text-sm">
@@ -153,7 +153,7 @@
               [ngClass]="{
                 'green':  m.status === 'RUNNING',
                 'yellow': m.status === 'IDLE',
-                'red':       m.status === 'OFFLINE'
+                'gray': m.status === 'OFFLINE'
               }">
               {{ m.status }}
             </span>

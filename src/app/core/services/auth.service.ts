@@ -42,6 +42,12 @@ export class AuthService {
 
   logout(): void {
     clearTimeout(this.refreshTimer);
+    // FIX: was only clearing localStorage — refresh token remained valid on server for 7 days
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (refreshToken) {
+      // Fire-and-forget: revoke server-side session
+      this.http.post(`${this.api}/logout`, { refreshToken }).subscribe({ error: () => {} });
+    }
     localStorage.clear();
     this.router.navigate(['/login']);
   }

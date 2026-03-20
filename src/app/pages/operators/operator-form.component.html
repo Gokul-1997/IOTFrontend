@@ -7,13 +7,19 @@
   <mat-dialog-content class="dialog-body">
 
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Operator Code</mat-label>
+      <mat-label>Operator Code *</mat-label>
       <input matInput formControlName="operator_code">
+      <mat-error *ngIf="form.get('operator_code')?.errors?.['required']">
+        Operator Code is required.
+      </mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Operator Name</mat-label>
+      <mat-label>Operator Name *</mat-label>
       <input matInput formControlName="operator_name">
+      <mat-error *ngIf="form.get('operator_name')?.errors?.['required']">
+        Operator Name is required.
+      </mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
@@ -22,12 +28,15 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Shift</mat-label>
+      <mat-label>Shift *</mat-label>
       <mat-select formControlName="shift_id">
         <mat-option *ngFor="let s of shifts" [value]="s.id">
           {{ s.shift_name }} ({{ s.start_time }} - {{ s.end_time }})
         </mat-option>
       </mat-select>
+      <mat-error *ngIf="form.get('shift_id')?.errors?.['required']">
+        Please select a shift.
+      </mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">

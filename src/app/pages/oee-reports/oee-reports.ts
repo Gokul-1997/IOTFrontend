@@ -18,6 +18,9 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
   // Math for template
   Math = Math;
 
+  // Current date for header display
+  today = new Date();
+
   // Meta data
   lines: any[] = [];
   machines: any[] = [];

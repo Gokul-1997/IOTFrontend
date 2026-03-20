@@ -5,30 +5,54 @@
       {{ data ? 'Edit Plant' : 'Create Plant' }}
     </h3>
 
-    <input
-      [(ngModel)]="form.plant_code"
-      placeholder="Plant Code"
-      [disabled]="data"
-      class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+    <form [formGroup]="form">
 
-    <input
-      [(ngModel)]="form.plant_name"
-      placeholder="Plant Name"
-      class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+      <!-- Plant Code -->
+      <div class="mb-3">
+        <input
+          formControlName="plant_code"
+          placeholder="Plant Code *"
+          class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]"
+          [class.border]="true"
+          [class.border-red-500]="form.get('plant_code')?.invalid && form.get('plant_code')?.touched" />
+        <div *ngIf="form.get('plant_code')?.touched && form.get('plant_code')?.errors?.['required']"
+          class="mt-1 text-xs text-red-500">
+          Plant Code is required.
+        </div>
+      </div>
 
-    <input
-      [(ngModel)]="form.location"
-      placeholder="Location"
-      class="w-full mb-4 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+      <!-- Plant Name -->
+      <div class="mb-3">
+        <input
+          formControlName="plant_name"
+          placeholder="Plant Name *"
+          class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]"
+          [class.border]="true"
+          [class.border-red-500]="form.get('plant_name')?.invalid && form.get('plant_name')?.touched" />
+        <div *ngIf="form.get('plant_name')?.touched && form.get('plant_name')?.errors?.['required']"
+          class="mt-1 text-xs text-red-500">
+          Plant Name is required.
+        </div>
+      </div>
 
-    <div class="flex justify-end gap-3">
-      <button (click)="close.emit()" class="px-4 py-2 rounded bg-gray-300">
-        Cancel
-      </button>
-      <button (click)="save()" class="px-4 py-2 rounded bg-blue-600 text-white">
-        Save
-      </button>
-    </div>
+      <!-- Location -->
+      <div class="mb-4">
+        <input
+          formControlName="location"
+          placeholder="Location"
+          class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <button type="button" (click)="close.emit()" class="px-4 py-2 rounded bg-gray-300">
+          Cancel
+        </button>
+        <button type="button" (click)="save()" class="px-4 py-2 rounded bg-blue-600 text-white">
+          Save
+        </button>
+      </div>
+
+    </form>
 
   </div>
 </div>

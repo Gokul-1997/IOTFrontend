@@ -83,7 +83,12 @@ hover:scale-105 transition">
                    bg-white dark:bg-neutral-800
                    text-gray-800 dark:text-white
                    focus:ring-2 focus:ring-indigo-500
-                   outline-none" />
+                   outline-none"
+                   [class.border-red-500]="form.get('email')?.invalid && form.get('email')?.touched" />
+          <div *ngIf="form.get('email')?.touched && form.get('email')?.invalid" class="mt-1 text-xs text-red-500">
+            <span *ngIf="form.get('email')?.errors?.['required']">Email is required.</span>
+            <span *ngIf="form.get('email')?.errors?.['email']">Enter a valid email address.</span>
+          </div>
         </div>
         <!-- Password -->
         <div>
@@ -100,7 +105,8 @@ hover:scale-105 transition">
            bg-white dark:bg-neutral-800
            text-gray-800 dark:text-white
            focus:ring-2 focus:ring-indigo-500
-           outline-none" />
+           outline-none"
+    [class.border-red-500]="form.get('password')?.invalid && form.get('password')?.touched" />
 
   <!-- Professional Eye Toggle Button -->
   <button
@@ -153,6 +159,10 @@ hover:scale-105 transition">
   </button>
 
 </div>
+          <div *ngIf="form.get('password')?.touched && form.get('password')?.invalid" class="mt-1 text-xs text-red-500">
+            <span *ngIf="form.get('password')?.errors?.['required']">Password is required.</span>
+            <span *ngIf="form.get('password')?.errors?.['minlength']">Password must be at least 6 characters.</span>
+          </div>
         </div>
         <!-- Forgot -->
         <div class="text-right">

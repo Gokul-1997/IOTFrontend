@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy
 } from '@angular/core';
 
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { DashboardService } from '../dashboard.service';
 import { SocketService } from '../../../core/services/socket.service';
@@ -33,12 +33,12 @@ const POLL_MS = 30_000;
 
 /* Gauge max values — adjust to match your machine specs */
 const RPM_MAX      = 8000;   // max spindle RPM
-const FEED_MAX     = 50000;  // max feed rate (mm/min) — covers 30043 comfortably
+const FEED_MAX     = 30000;  // max feed rate (mm/min) — set to match your machine spec
 
 @Component({
   standalone: true,
   selector: 'app-live',
-  imports: [NgApexchartsModule, CommonModule],
+  imports: [NgApexchartsModule, CommonModule, RouterModule],
   templateUrl: './live.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -70,6 +70,7 @@ export class LiveComponent implements OnInit, OnDestroy {
   liveRPM       = 0;
   liveFeed       = 0;
   livePartCount = 0;
+
 
   /* ── UI helpers ── */
   currentDate      = new Date();
@@ -110,20 +111,20 @@ export class LiveComponent implements OnInit, OnDestroy {
     /* ── Connect socket first, then join plant room ──
        Must await connect() before joinPlant() —
        otherwise socket is not ready and join is silently ignored */
-    console.log('[SOCKET] connecting...');
+    // console.log('[SOCKET] connecting...');
     await this.socketService.connect();
-    console.log('[SOCKET] connected ✅');
+    // console.log('[SOCKET] connected ✅');
 
     const user    = JSON.parse(localStorage.getItem('user') || '{}');
     const plantId = user?.plant_id;
     if (plantId) {
       this.socketService.joinPlant(plantId);
-      console.log(`[SOCKET] joined plant room: plant:${plantId}`);
+      // console.log(`[SOCKET] joined plant room: plant:${plantId}`);
     } else {
       console.warn('[SOCKET] ⚠ no plant_id in localStorage — cannot join room');
     }
 
-    console.log(`[SOCKET] listening for machine_id: ${this.machineId}`);
+    // console.log(`[SOCKET] listening for machine_id: ${this.machineId}`);
 
     /* ── 30s API poll ── */
     interval(POLL_MS)
@@ -179,16 +180,23 @@ export class LiveComponent implements OnInit, OnDestroy {
       ? Math.min(Number(((achieved * 100) / target).toFixed(2)), 100)
       : 0;
 
-    /* Seed live values from API on first load only.
-       After first socket message arrives, socket owns these fields.
-       We use a flag so API never overwrites socket-updated values. */
-    if (d.live && !this.socketHasUpdated) {
-      this.liveStatus    = d.live.machine_status || 'UNKNOWN';
-      this.liveRPM       = Number(d.live.rpm       || 0);
-      this.liveFeed      = Number(d.live.feed_rate  || 0);
+    /* Seed live values from API.
+       status/rpm/feed: socket owns after first message (instant updates).
+       livePartCount:   API owns ALWAYS — socket sends raw counter which
+                        doesn't include reset offsets, so would show wrong
+                        values (e.g. 29 instead of 59 after a mid-shift reset).
+                        30s API refresh is accurate enough for a part counter. */
+    if (d.live) {
+      if (!this.socketHasUpdated) {
+        this.liveStatus    = d.live.machine_status || 'UNKNOWN';
+        this.liveRPM       = Number(d.live.rpm      || 0);
+        this.liveFeed      = Number(d.live.feed_rate || 0);
+        this.spindleSeries = [this.rpmToPercent(this.liveRPM)];
+        this.feedSeries    = [this.feedToPercent(this.liveFeed)];
+      }
+
+      // Always update from API — adjusted for mid-shift counter resets
       this.livePartCount = Number(d.live.parts_count || 0);
-      this.spindleSeries = [this.rpmToPercent(this.liveRPM)];
-      this.feedSeries    = [this.feedToPercent(this.liveFeed)];
     }
 
     /* Update chart series */
@@ -210,21 +218,21 @@ export class LiveComponent implements OnInit, OnDestroy {
   ════════════════════════════════════════ */
   handleSocket(data: any): void {
 
-    console.log('[SOCKET] raw message received:', data);
+    // console.log('[SOCKET] raw message received:', data);
 
     /* Ensure Number comparison — socket payload may send id as string */
     if (Number(data.machine_id) !== this.machineId) {
-      console.log(`[SOCKET] ignored — machine_id ${data.machine_id} !== current ${this.machineId}`);
+      // console.log(`[SOCKET] ignored — machine_id ${data.machine_id} !== current ${this.machineId}`);
       return;
     }
 
-    console.log(`[SOCKET] ✅ matched machine ${this.machineId} — applying:`, {
-      status:      data.machine_status,
-      rpm:         data.rpm,
-      feed_rate:   data.feed_rate,
-      parts_count: data.parts_count,
-      alarm:       data.alarm
-    });
+    // console.log(`[SOCKET] ✅ matched machine ${this.machineId} — applying:`, {
+    //   status:      data.machine_status,
+    //   rpm:         data.rpm,
+    //   feed_rate:   data.feed_rate,
+    //   parts_count: data.parts_count,
+    //   alarm:       data.alarm
+    // });
 
     this.zone.run(() => {
 
@@ -234,7 +242,7 @@ export class LiveComponent implements OnInit, OnDestroy {
 
       /* ── Status ── */
       if (data.machine_status !== undefined) {
-        console.log(`[SOCKET] status: ${this.liveStatus} → ${data.machine_status}`);
+        // console.log(`[SOCKET] status: ${this.liveStatus} → ${data.machine_status}`);
         this.liveStatus = data.machine_status;
       }
 
@@ -242,26 +250,22 @@ export class LiveComponent implements OnInit, OnDestroy {
       if (data.rpm !== undefined) {
         this.liveRPM       = Number(data.rpm);
         this.spindleSeries = [this.rpmToPercent(this.liveRPM)];
-        console.log(`[SOCKET] rpm: ${this.liveRPM} → gauge: ${this.spindleSeries[0]}%`);
+        // console.log(`[SOCKET] rpm: ${this.liveRPM} → gauge: ${this.spindleSeries[0]}%`);
       }
 
       /* ── Feed rate → gauge percent ── */
       if (data.feed_rate !== undefined) {
         this.liveFeed   = Number(data.feed_rate);
         this.feedSeries = [this.feedToPercent(this.liveFeed)];
-        console.log(`[SOCKET] feed_rate: ${this.liveFeed} → gauge: ${this.feedSeries[0]}%`);
+        // console.log(`[SOCKET] feed_rate: ${this.liveFeed} → gauge: ${this.feedSeries[0]}%`);
       }
 
-      /* ── parts_count → achieved qty (real-time counter) ── */
-      if (data.parts_count !== undefined) {
-        this.livePartCount = Number(data.parts_count);
-        console.log(`[SOCKET] parts_count (achieved): ${this.livePartCount}`);
-      }
+      /* ── parts_count: API owns this (reset-adjusted) — socket skips ── */
 
       this.currentDate = new Date();
       this.cdr.markForCheck();
 
-      console.log('[SOCKET] cdr.markForCheck() called — UI should update');
+      // console.log('[SOCKET] cdr.markForCheck() called — UI should update');
     });
   }
 
@@ -276,9 +280,84 @@ export class LiveComponent implements OnInit, OnDestroy {
     return Math.min(Number(((rpm / RPM_MAX) * 100).toFixed(1)), 100);
   }
 
-  /** Feed rate → 0–100% of FEED_MAX */
+  /** Feed rate → 0–100% of arc (scale is 0–150% of FEED_MAX).
+   *  FEED_MAX = 100% of nominal feed = 66.7% of arc. */
   private feedToPercent(feed: number): number {
-    return Math.min(Number(((feed / FEED_MAX) * 100).toFixed(1)), 100);
+    return Math.min(Number(((feed / (FEED_MAX * 1.5)) * 100).toFixed(1)), 99.9);
+  }
+
+  /* ════════════════════════════════════════
+     PURE-SVG GAUGE HELPERS
+     ViewBox "0 0 300 170", center (150,155), r=118
+     Half-circle: 0% = left (180°), 100% = right (0°)
+  ════════════════════════════════════════ */
+  readonly GCX = 150;
+  readonly GCY = 155;
+  readonly GR  = 118;
+
+  /** Feed override: 0–150% scale labels mapped to 0–100% arc positions */
+  readonly feedTicks = [
+    { pct:  0,    label: '0'    , red: false },
+    { pct: 16.7,  label: '25%'  , red: false },
+    { pct: 33.3,  label: '50%'  , red: false },
+    { pct: 50.0,  label: '75%'  , red: false },
+    { pct: 66.7,  label: '100%' , red: true  },
+    { pct: 83.3,  label: '125%' , red: false },
+    { pct: 100,   label: '150%' , red: false },
+  ];
+
+  private _gaugeAngle(pct: number): number {
+    return (180 - Math.max(0, Math.min(pct, 100)) * 1.8) * (Math.PI / 180);
+  }
+
+  /** Full background half-arc */
+  get bgArc(): string {
+    const { GCX: cx, GCY: cy, GR: r } = this;
+    return `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
+  }
+
+  /** Foreground arc 0% → valuePct. Capped at 99.9 to avoid degenerate semicircle. */
+  gaugeArc(valuePct: number): string {
+    const pct = Math.max(0, Math.min(valuePct, 99.9));
+    if (pct <= 0) return '';
+    const { GCX: cx, GCY: cy, GR: r } = this;
+    const rad = this._gaugeAngle(pct);
+    const ex  = cx + r * Math.cos(rad);
+    const ey  = cy - r * Math.sin(rad);
+    return `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${ex.toFixed(1)} ${ey.toFixed(1)}`;
+  }
+
+  /** Needle tip coords (80% of arc radius) */
+  gaugeNeedle(valuePct: number): { x1: number; y1: number; x2: number; y2: number } {
+    const { GCX: cx, GCY: cy, GR: r } = this;
+    const rad = this._gaugeAngle(Math.max(0, Math.min(valuePct, 100)));
+    const len = r * 0.82;
+    return {
+      x1: cx, y1: cy,
+      x2: parseFloat((cx + len * Math.cos(rad)).toFixed(1)),
+      y2: parseFloat((cy - len * Math.sin(rad)).toFixed(1))
+    };
+  }
+
+  /** Point on the arc edge at given pct (for exact marker lines) */
+  gaugeArcPt(pct: number): { x: number; y: number } {
+    const { GCX: cx, GCY: cy, GR: r } = this;
+    const rad = this._gaugeAngle(Math.max(0, Math.min(pct, 100)));
+    return {
+      x: parseFloat((cx + r * Math.cos(rad)).toFixed(1)),
+      y: parseFloat((cy - r * Math.sin(rad)).toFixed(1))
+    };
+  }
+
+  /** Label position outside arc (default offset=20 px beyond arc edge) */
+  gaugeLabel(pct: number, offset = 20): { x: number; y: number } {
+    const { GCX: cx, GCY: cy, GR: r } = this;
+    const rad = this._gaugeAngle(pct);
+    const lr  = r + offset;
+    return {
+      x: parseFloat((cx + lr * Math.cos(rad)).toFixed(1)),
+      y: parseFloat((cy - lr * Math.sin(rad)).toFixed(1))
+    };
   }
 
   /* ════════════════════════════════════════
@@ -307,6 +386,32 @@ export class LiveComponent implements OnInit, OnDestroy {
     return p[0] * 3600 + p[1] * 60 + (p[2] || 0);
   }
 
+  /** "HH:MM:SS" → "06h 07m 00s" */
+  formatDuration(t: string): string {
+    if (!t) return '00h 00m 00s';
+    const p = t.split(':').map(Number);
+    const h = p[0] || 0;
+    const m = p[1] || 0;
+    const s = p[2] || 0;
+    return `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+  }
+
+  get setupTime(): string {
+    const start = this.job?.setting_time_start;
+    const end   = this.job?.setting_time_end;
+    if (start && end) {
+      const diffMs = new Date(end).getTime() - new Date(start).getTime();
+      if (diffMs > 0) {
+        const totalSec = Math.floor(diffMs / 1000);
+        const h = Math.floor(totalSec / 3600);
+        const m = Math.floor((totalSec % 3600) / 60);
+        const s = totalSec % 60;
+        return `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+      }
+    }
+    return this.job?.setup_time || '--';
+  }
+
   /* ════════════════════════════════════════
      CHART INIT
      Enterprise speedometer style:
@@ -316,25 +421,36 @@ export class LiveComponent implements OnInit, OnDestroy {
   ════════════════════════════════════════ */
   private initCharts(): void {
 
-    /* Shared gauge colour stops */
-    const gaugeColors = (hex: string) => [hex];
-
     /* ── Utilization ── */
     this.utilChart = {
-      chart: { type: 'radialBar', height: 220, sparkline: { enabled: true } },
+      chart: { type: 'radialBar', height: 200, sparkline: { enabled: true } },
       plotOptions: {
         radialBar: {
           startAngle: -135,
           endAngle:    135,
-          hollow: { size: '62%' },
+          hollow: { size: '58%' },
           track: { background: '#e8eaf0', strokeWidth: '97%' },
           dataLabels: {
-            name:  { show: false },
-            value: { show: false }   // we render value in template
+            name: {
+              show: true,
+              offsetY: 20,
+              fontSize: '11px',
+              color: '#6b7280',
+              fontFamily: 'inherit'
+            },
+            value: {
+              show: true,
+              offsetY: -4,
+              fontSize: '24px',
+              fontWeight: '700',
+              color: '#3B4CCA',
+              fontFamily: 'inherit',
+              formatter: (val: number) => val + '%'
+            }
           }
         }
       },
-      colors: ['#2B3990'],
+      colors: ['#3B4CCA'],
       fill: {
         type: 'gradient',
         gradient: {
@@ -344,109 +460,37 @@ export class LiveComponent implements OnInit, OnDestroy {
       }
     };
 
-    /* ── OEE ── */
+    /* ── OEE — dashed-segment radialBar ── */
     this.oeeChart = {
-      chart: { type: 'radialBar', height: 240, sparkline: { enabled: true } },
+      chart: { type: 'radialBar', height: 200, sparkline: { enabled: true } },
+      labels: ['OEE'],
       plotOptions: {
         radialBar: {
           startAngle: -135,
           endAngle:    135,
-          hollow: { size: '62%' },
-          track: { background: '#e8eaf0', strokeWidth: '97%' },
-          dataLabels: {
-            name:  { show: false },
-            value: { show: false }
-          }
-        }
-      },
-      colors: ['#1BC98E'],
-      fill: {
-        type: 'gradient',
-        gradient: {
-          shade: 'dark', type: 'horizontal',
-          gradientToColors: ['#1E88E5'], stops: [0, 100]
-        }
-      }
-    };
-
-    /* ── Spindle RPM speedometer ──
-       Half-arc, colour zones via gradient:
-       0–50% green, 50–80% amber, 80–100% red
-       Tick marks via track offsetY
-    ── */
-    this.spindleChart = {
-      chart: { type: 'radialBar', height: 220, sparkline: { enabled: true } },
-      plotOptions: {
-        radialBar: {
-          startAngle: -90,
-          endAngle:    90,
-          hollow: { size: '60%' },
+          hollow: { size: '42%' },
           track: {
-            background: '#e8eaf0',
-            strokeWidth: '97%',
-            margin: 4
+            show: true,
+            background: '#e5e5e5',
+            strokeWidth: '100%',
+            opacity: 0.5,
+            margin: 5
           },
           dataLabels: {
             name:  { show: false },
-            value: { show: false }
+            value: { show: false }   // overlay in HTML
           }
         }
       },
-      colors: ['#1E88E5'],
-      fill: {
-        type: 'gradient',
-        gradient: {
-          shade: 'dark', type: 'horizontal',
-          gradientToColors: ['#E53935'],
-          colorStops: [
-            { offset: 0,   color: '#1BC98E', opacity: 1 },
-            { offset: 50,  color: '#FFA726', opacity: 1 },
-            { offset: 100, color: '#E53935', opacity: 1 }
-          ],
-          stops: [0, 50, 100]
-        }
-      }
-    };
-
-    /* ── Feed Override speedometer ── */
-    this.feedChart = {
-      chart: { type: 'radialBar', height: 220, sparkline: { enabled: true } },
-      plotOptions: {
-        radialBar: {
-          startAngle: -90,
-          endAngle:    90,
-          hollow: { size: '60%' },
-          track: {
-            background: '#e8eaf0',
-            strokeWidth: '97%',
-            margin: 4
-          },
-          dataLabels: {
-            name:  { show: false },
-            value: { show: false }
-          }
-        }
-      },
-      colors: ['#7B1FA2'],
-      fill: {
-        type: 'gradient',
-        gradient: {
-          shade: 'dark', type: 'horizontal',
-          colorStops: [
-            { offset: 0,   color: '#1BC98E', opacity: 1 },
-            { offset: 50,  color: '#FFA726', opacity: 1 },
-            { offset: 100, color: '#E53935', opacity: 1 }
-          ],
-          stops: [0, 50, 100]
-        }
-      }
+      fill:   { type: 'solid', colors: ['#3B4CCA'] },
+      stroke: { dashArray: 4 }
     };
 
     /* ── Time Pie ── */
     this.timePieChart = {
       chart:       { type: 'pie', height: 260 },
       labels:      ['Running', 'Idle'],
-      colors:      ['#1E88E5', '#1BC98E'],
+      colors:      ['#16a34a', '#f59e0b'],
       legend:      { position: 'right' },
       dataLabels:  { formatter: (v: any) => `${v.toFixed(1)}%` }
     };

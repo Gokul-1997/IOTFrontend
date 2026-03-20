@@ -102,6 +102,7 @@ private timeToMinutes(t: string): number {
 
   submit() {
 
+    this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
     this.saving = true;

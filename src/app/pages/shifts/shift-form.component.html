@@ -7,8 +7,11 @@
   <mat-dialog-content class="dialog-body">
 
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Shift Code</mat-label>
+      <mat-label>Shift Code *</mat-label>
       <input matInput formControlName="shift_code" placeholder="e.g. SHIFT-A">
+      <mat-error *ngIf="form.get('shift_code')?.errors?.['required']">
+        Shift Code is required.
+      </mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
@@ -18,13 +21,19 @@
 
     <div class="time-row">
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Start Time</mat-label>
+        <mat-label>Start Time *</mat-label>
         <input matInput type="time" formControlName="start_time" (click)="openTimePicker($event)">
+        <mat-error *ngIf="form.get('start_time')?.errors?.['required']">
+          Start Time is required.
+        </mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>End Time</mat-label>
+        <mat-label>End Time *</mat-label>
         <input matInput type="time" formControlName="end_time" (click)="openTimePicker($event)">
+        <mat-error *ngIf="form.get('end_time')?.errors?.['required']">
+          End Time is required.
+        </mat-error>
       </mat-form-field>
 
       <div *ngIf="form.errors?.['invalidDuration']" class="error-text">
@@ -35,12 +44,14 @@
         Break cannot be greater than shift duration.
       </div>
 
-
     </div>
 
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Break (Minutes)</mat-label>
       <input matInput type="number" min="0" formControlName="break_minutes">
+      <mat-error *ngIf="form.get('break_minutes')?.errors?.['min']">
+        Break minutes cannot be negative.
+      </mat-error>
     </mat-form-field>
 
   </mat-dialog-content>

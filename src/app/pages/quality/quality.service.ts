@@ -14,7 +14,9 @@ export class QualityService {
     }
 
     getMachines(line_id: number) {
-        return this.http.get<any>(`${this.api}/master/machines`, {
+        // FIX: was calling /master/machines (wrong endpoint, doesn't filter by line)
+        // Corrected to /master/machines-by-line which is the proper endpoint
+        return this.http.get<any>(`${this.api}/master/machines-by-line`, {
             params: { line_id }
         });
     }

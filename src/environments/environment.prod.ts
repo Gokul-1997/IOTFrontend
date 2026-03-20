@@ -1,7 +1,8 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.mes.yourdomain.com/api',
-  frontendUrl: 'https://mes.yourdomain.com',
-    socketUrl: 'http://localhost:8000'
-
+  // TODO: replace with your actual production domain before deploying
+  apiUrl: 'http://13.205.238.163:8000/api',
+  frontendUrl: 'http://13.205.238.163',
+  // FIX: was 'http://localhost:8000' — WebSocket from prod users would always fail
+  socketUrl: 'http://13.205.238.163:8000'
 };
