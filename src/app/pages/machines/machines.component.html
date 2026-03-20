@@ -185,8 +185,11 @@
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef>Action</th>
         <td mat-cell *matCellDef="let r">
-          <button mat-icon-button color="primary" (click)="openEdit(r)">
+          <button mat-icon-button color="primary" (click)="openEdit(r)" matTooltip="Edit">
             <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="confirmDelete(r)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
           </button>
         </td>
       </ng-container>
@@ -221,5 +224,45 @@
     (close)="showForm=false"
     (saved)="onSaved()">
   </app-machine-form>
+
+  <!-- DELETE CONFIRM MODAL -->
+  <div *ngIf="deleteTarget"
+       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
+
+      <!-- Icon + title -->
+      <div class="flex flex-col items-center text-center mb-4">
+        <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-3">
+          <mat-icon class="!text-red-500 !text-3xl">delete_forever</mat-icon>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800">Delete Machine</h3>
+        <p class="text-sm text-gray-500 mt-1">
+          Are you sure you want to delete
+          <span class="font-semibold text-gray-700">{{ deleteTarget.machine_serial_no }}</span>?
+          <br>This action cannot be undone.
+        </p>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="deleteError" class="mb-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2 text-center">
+        {{ deleteError }}
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex gap-3">
+        <button class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                (click)="cancelDelete()" [disabled]="deleting">
+          Cancel
+        </button>
+        <button class="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 flex items-center justify-center gap-2"
+                (click)="doDelete()" [disabled]="deleting">
+          <mat-icon *ngIf="!deleting" class="!text-base !h-4 !w-4">delete</mat-icon>
+          <span class="text-sm" *ngIf="deleting">Deleting…</span>
+          <span *ngIf="!deleting">Delete</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
 
 </div>

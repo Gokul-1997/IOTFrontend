@@ -9,6 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 import { OperatorService } from './operator.service';
+import { ToastService } from '../../core/services/toast.service';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -41,8 +42,9 @@ export class OperatorFormComponent implements OnInit {
     private fb: FormBuilder,
     private service: OperatorService,
     private dialogRef: MatDialogRef<OperatorFormComponent>,
+    private toast: ToastService,
     @Inject(MAT_DIALOG_DATA) public data: any
-  ) { }
+  ) {}
 
 ngOnInit() {
 
@@ -82,16 +84,28 @@ ngOnInit() {
         return;
       }
 
-      this.service.update(this.data.id, changed).subscribe(() => {
-        this.saving = false;
-        this.dialogRef.close(true);
+      this.service.update(this.data.id, changed).subscribe({
+        next: () => {
+          this.saving = false;
+          this.dialogRef.close(true);
+        },
+        error: (err: any) => {
+          this.saving = false;
+          this.toast.error(err?.error?.message || 'Update failed. Try again.');
+        }
       });
 
     } else {
 
-      this.service.create(this.form.value).subscribe(() => {
-        this.saving = false;
-        this.dialogRef.close(true);
+      this.service.create(this.form.value).subscribe({
+        next: () => {
+          this.saving = false;
+          this.dialogRef.close(true);
+        },
+        error: (err: any) => {
+          this.saving = false;
+          this.toast.error(err?.error?.message || 'Create failed. Try again.');
+        }
       });
     }
   }

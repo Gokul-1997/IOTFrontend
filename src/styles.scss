@@ -408,3 +408,38 @@ h4 {
     border-color: #271617;
   }
 }
+/* ==========================================
+   GLOBAL TOAST STYLES
+   ========================================== */
+.toast-success .mdc-snackbar__surface {
+  background: #16a34a !important;
+  color: #fff !important;
+  border-radius: 10px !important;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 4px 20px rgba(22, 163, 74, 0.35);
+}
+
+.toast-error .mdc-snackbar__surface {
+  background: #dc2626 !important;
+  color: #fff !important;
+  border-radius: 10px !important;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.35);
+}
+
+.toast-info .mdc-snackbar__surface {
+  background: #2563eb !important;
+  color: #fff !important;
+  border-radius: 10px !important;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.35);
+}
+
+.toast-success .mat-mdc-snack-bar-action,
+.toast-error .mat-mdc-snack-bar-action,
+.toast-info .mat-mdc-snack-bar-action {
+  color: rgba(255,255,255,0.8) !important;
+}

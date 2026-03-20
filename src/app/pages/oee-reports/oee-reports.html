@@ -3,12 +3,10 @@
   <!-- HEADER -->
   <div class="oee-header">
     <div class="header-content">
-      <h1 class="header-title">OEE</h1>
+      <h1 class="header-title">OEE Reports</h1>
       <div class="header-info">
         <div class="current-time">Today: {{ today | date: 'dd MMM yyyy | h:mm a' }}</div>
-        <button class="btn-back" (click)="goBack()">
-          <span>←</span> Back
-        </button>
+        <button class="btn-back" (click)="goBack()">← Back</button>
       </div>
     </div>
   </div>
@@ -25,85 +23,69 @@
     <!-- CARD -->
     <div class="card">
 
-      <!-- LOADING STATE -->
+      <!-- LOADING META -->
       <div *ngIf="loadingMeta" class="alert alert-info">
         ⏳ Loading metadata (Lines, Machines, Shifts)...
       </div>
 
-      <!-- FILTERS ROW 1 -->
+      <!-- FILTERS -->
       <div class="filters-container">
         <div class="filter-row">
 
-          <!-- Line Filter -->
+          <!-- Line -->
           <div class="filter-item">
             <label class="filter-label">Line</label>
-            <select 
-              [(ngModel)]="selectedLine" 
-              (change)="onLineChange()" 
-              class="filter-input select-input"
-              [disabled]="loadingMeta">
-              <option [value]="null">All Lines</option>
-              <option *ngFor="let line of lines" [value]="line.id">
-                {{ line.name }}
-              </option>
+            <select [(ngModel)]="selectedLine" (change)="onLineChange()"
+                    class="filter-input select-input" [disabled]="loadingMeta">
+              <option [ngValue]="null">All Lines</option>
+              <option *ngFor="let line of lines" [ngValue]="line.id">{{ line.name }}</option>
             </select>
           </div>
 
-          <!-- Machine Filter -->
+          <!-- Machine -->
           <div class="filter-item">
-            <label class="filter-label">Machine Name</label>
-            <select 
-              [(ngModel)]="selectedMachine" 
-              (change)="onMachineChange()" 
-              class="filter-input select-input"
-              [disabled]="loadingMeta">
-              <option [value]="null">All Machines</option>
-              <option *ngFor="let machine of machines" [value]="machine.id">
-                {{ machine.machine_serial_no }}
+            <label class="filter-label">Machine</label>
+            <select [(ngModel)]="selectedMachine" (change)="onMachineChange()"
+                    class="filter-input select-input" [disabled]="loadingMeta">
+              <option [ngValue]="null">All Machines</option>
+              <option *ngFor="let m of filteredMachines" [ngValue]="m.id">
+                {{ m.machine_serial_no }}
               </option>
             </select>
           </div>
 
-          <!-- Shift Filter -->
+          <!-- Shift -->
           <div class="filter-item">
             <label class="filter-label">Shift</label>
-            <select 
-              [(ngModel)]="selectedShift" 
-              (change)="onShiftChange()" 
-              class="filter-input select-input"
-              [disabled]="loadingMeta">
-              <option [value]="null">All Shifts</option>
-              <option *ngFor="let shift of shifts" [value]="shift.id">
-                {{ shift.shift_code }}
-              </option>
+            <select [(ngModel)]="selectedShift" (change)="onShiftChange()"
+                    class="filter-input select-input" [disabled]="loadingMeta">
+              <option [ngValue]="null">All Shifts</option>
+              <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_code }}</option>
             </select>
           </div>
 
           <!-- Date Range -->
           <div class="filter-item">
-            <label class="filter-label">Date Range</label>
-            <div class="date-range-wrapper">
-              <input 
-                type="date" 
-                [(ngModel)]="fromDate" 
-                (change)="onDateChange()" 
-                class="filter-input date-input">
-              <span class="date-separator">-</span>
-              <input 
-                type="date" 
-                [(ngModel)]="toDate" 
-                (change)="onDateChange()" 
-                class="filter-input date-input">
-            </div>
+            <label class="filter-label">From Date</label>
+            <input type="date" [(ngModel)]="fromDate" (change)="onDateChange()"
+                   class="filter-input date-input">
           </div>
 
-          <!-- Submit Button -->
-          <button 
-            class="btn btn-primary" 
-            (click)="loadReports()"
-            [disabled]="loading">
-            ✓ Submit
-          </button>
+          <div class="filter-item">
+            <label class="filter-label">To Date</label>
+            <input type="date" [(ngModel)]="toDate" (change)="onDateChange()"
+                   class="filter-input date-input">
+          </div>
+
+          <!-- Actions -->
+          <div class="filter-item filter-actions">
+            <button class="btn btn-primary" (click)="loadReports()" [disabled]="loading || loadingMeta">
+              ✓ Apply
+            </button>
+            <button class="btn btn-clear" (click)="clearFilters()" [disabled]="loading || loadingMeta">
+              ✕ Clear
+            </button>
+          </div>
 
         </div>
       </div>
@@ -112,34 +94,20 @@
       <div class="toolbar">
         <div class="toolbar-left">
           <label class="items-label">
-            Show Items Per Page
-            <select 
-              [(ngModel)]="limit" 
-              (change)="changeLimit(limit)"
-              class="items-select">
-              <option value="6">06</option>
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
+            Rows per page:
+            <select [(ngModel)]="limit" (change)="changeLimit(limit)" class="items-select">
+              <option [ngValue]="6">6</option>
+              <option [ngValue]="10">10</option>
+              <option [ngValue]="20">20</option>
+              <option [ngValue]="50">50</option>
             </select>
           </label>
         </div>
-
         <div class="toolbar-right">
-          <div class="search-wrapper">
-            <input 
-              type="text" 
-              placeholder="🔍 Search" 
-              [(ngModel)]="searchText" 
-              (keyup.enter)="onSearch()"
-              class="search-input">
-          </div>
-          <button 
-            class="btn btn-export" 
-            (click)="exportCSV()"
-            [disabled]="exporting || loading">
-            {{ exporting ? '⏳ Exporting...' : 'Export' }}
-            <span>↗</span>
+          <input type="text" placeholder="🔍 Search..." [(ngModel)]="searchText"
+                 (keyup.enter)="onSearch()" class="search-input">
+          <button class="btn btn-export" (click)="exportCSV()" [disabled]="exporting || loading">
+            {{ exporting ? '⏳ Exporting...' : '↗ Export CSV' }}
           </button>
         </div>
       </div>
@@ -150,55 +118,45 @@
           <thead>
             <tr class="header-row">
               <th class="col-num">#</th>
-              <th class="col-date sortable" (click)="changeSort('shift_date')">
-                Date
-                <span class="sort-indicator">{{ getSortIcon('shift_date') }}</span>
+              <th class="col-date" (click)="changeSort('shift_date')">
+                Date <span class="sort-icon">{{ getSortIcon('shift_date') }}</span>
               </th>
-              <th class="col-machine sortable" (click)="changeSort('machine_serial_no')">
-                Machine
-                <span class="sort-indicator">{{ getSortIcon('machine_serial_no') }}</span>
+              <th class="col-machine" (click)="changeSort('machine_serial_no')">
+                Machine <span class="sort-icon">{{ getSortIcon('machine_serial_no') }}</span>
               </th>
-              <th class="col-shift sortable" (click)="changeSort('shift_code')">
-                Shift
-                <span class="sort-indicator">{{ getSortIcon('shift_code') }}</span>
+              <th class="col-shift" (click)="changeSort('shift_code')">
+                Shift <span class="sort-icon">{{ getSortIcon('shift_code') }}</span>
               </th>
               <th class="col-operator">Operator</th>
-              <th class="col-metric sortable" (click)="changeSort('oee')">
-                OEE
-                <span class="sort-indicator">{{ getSortIcon('oee') }}</span>
+              <th class="col-metric" (click)="changeSort('oee')">
+                OEE % <span class="sort-icon">{{ getSortIcon('oee') }}</span>
               </th>
-              <th class="col-metric sortable" (click)="changeSort('availability')">
-                Availability
-                <span class="sort-indicator">{{ getSortIcon('availability') }}</span>
+              <th class="col-metric" (click)="changeSort('availability')">
+                Availability <span class="sort-icon">{{ getSortIcon('availability') }}</span>
               </th>
-              <th class="col-metric sortable" (click)="changeSort('performance')">
-                Performance
-                <span class="sort-indicator">{{ getSortIcon('performance') }}</span>
+              <th class="col-metric" (click)="changeSort('performance')">
+                Performance <span class="sort-icon">{{ getSortIcon('performance') }}</span>
               </th>
-              <th class="col-metric sortable" (click)="changeSort('quality')">
-                Quality
-                <span class="sort-indicator">{{ getSortIcon('quality') }}</span>
+              <th class="col-metric" (click)="changeSort('quality')">
+                Quality <span class="sort-icon">{{ getSortIcon('quality') }}</span>
               </th>
             </tr>
           </thead>
 
           <tbody>
-            <!-- Loading State -->
             <tr *ngIf="loading" class="state-row">
               <td colspan="9" class="state-cell">
                 <div class="spinner"></div>
-                <p>Loading...</p>
+                <p>Loading data...</p>
               </td>
             </tr>
 
-            <!-- Empty State -->
             <tr *ngIf="!loading && rows.length === 0" class="state-row">
               <td colspan="9" class="state-cell">
-                <p>No records found</p>
+                <p>No records found. Adjust filters and try again.</p>
               </td>
             </tr>
 
-            <!-- Data Rows -->
             <tr *ngFor="let row of rows; let i = index" class="data-row" [class.alt-row]="i % 2 === 1">
               <td class="col-num">{{ (page - 1) * limit + i + 1 }}</td>
               <td class="col-date">{{ formatDate(row.shift_date) }}</td>
@@ -211,9 +169,10 @@
               <td class="col-operator">{{ row.operator_name || '--' }}</td>
               <td class="col-metric">
                 <div class="metric-cell">
-                  <span class="metric-value">{{ row.oee }}%</span>
+                  <span class="metric-value" [style.color]="getOeeColor(row.oee)">{{ row.oee }}%</span>
                   <div class="metric-bar">
-                    <div class="metric-fill" [style.width]="getBarWidth(row.oee)" [style.backgroundColor]="getOeeColor(row.oee)"></div>
+                    <div class="metric-fill" [style.width]="getBarWidth(row.oee)"
+                         [style.backgroundColor]="getOeeColor(row.oee)"></div>
                   </div>
                 </div>
               </td>
@@ -221,7 +180,7 @@
                 <div class="metric-cell">
                   <span class="metric-value">{{ row.availability }}%</span>
                   <div class="metric-bar">
-                    <div class="metric-fill" [style.width]="getBarWidth(row.availability)" style="background-color: #10b981;"></div>
+                    <div class="metric-fill avail-fill" [style.width]="getBarWidth(row.availability)"></div>
                   </div>
                 </div>
               </td>
@@ -229,7 +188,7 @@
                 <div class="metric-cell">
                   <span class="metric-value">{{ row.performance }}%</span>
                   <div class="metric-bar">
-                    <div class="metric-fill" [style.width]="getBarWidth(row.performance)" style="background-color: #3b82f6;"></div>
+                    <div class="metric-fill perf-fill" [style.width]="getBarWidth(row.performance)"></div>
                   </div>
                 </div>
               </td>
@@ -237,7 +196,7 @@
                 <div class="metric-cell">
                   <span class="metric-value">{{ row.quality }}%</span>
                   <div class="metric-bar">
-                    <div class="metric-fill" [style.width]="getBarWidth(row.quality)" style="background-color: #a78bfa;"></div>
+                    <div class="metric-fill qual-fill" [style.width]="getBarWidth(row.quality)"></div>
                   </div>
                 </div>
               </td>
@@ -249,39 +208,30 @@
       <!-- PAGINATION -->
       <div class="pagination-container">
         <div class="showing-text">
-          Showing: {{ rows.length === 0 ? 0 : (page - 1) * limit + 1 }} to {{ Math.min(page * limit, total) }} of {{ total }}
+          Showing {{ rows.length === 0 ? 0 : (page - 1) * limit + 1 }}–{{ Math.min(page * limit, total) }} of {{ total }} records
         </div>
 
         <div class="pagination-buttons">
-          <button 
-            class="btn btn-nav" 
-            (click)="changePage(page - 1)"
-            [disabled]="page === 1 || totalPages === 0">
-            ← Previous
+          <button class="btn btn-nav" (click)="changePage(page - 1)" [disabled]="page === 1 || totalPages === 0">
+            ← Prev
           </button>
 
           <div class="page-numbers">
-            <button 
-              *ngFor="let p of getPageNumbers()" 
-              class="btn btn-page"
-              [class.active]="p === page"
-              (click)="changePage(p)">
+            <button *ngFor="let p of getPageNumbers()" class="btn btn-page"
+                    [class.active]="p === page" (click)="changePage(p)">
               {{ p }}
             </button>
-            <span *ngIf="getPageNumbers()[getPageNumbers().length - 1] < totalPages" class="ellipsis">...</span>
+            <span *ngIf="totalPages > 5 && getPageNumbers()[getPageNumbers().length-1] < totalPages" class="ellipsis">…</span>
           </div>
 
-          <button 
-            class="btn btn-nav" 
-            (click)="changePage(page + 1)"
-            [disabled]="page === totalPages || totalPages === 0">
+          <button class="btn btn-nav" (click)="changePage(page + 1)"
+                  [disabled]="page === totalPages || totalPages === 0">
             Next →
           </button>
         </div>
       </div>
 
     </div>
-
   </div>
 
 </div>

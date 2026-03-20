@@ -26,6 +26,10 @@ export class MachinesService {
     return this.http.patch(`${this.api}/${id}/status`, { is_active });
   }
 
+  delete(id: number) {
+    return this.http.delete(`${this.api}/${id}`);
+  }
+
   getPlants() {
     return this.http.get<any>(this.plantsApi);
   }

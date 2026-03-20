@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OeeReportsService } from './oee.service';
@@ -24,6 +24,7 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
   // Meta data
   lines: any[] = [];
   machines: any[] = [];
+  filteredMachines: any[] = [];
   shifts: any[] = [];
 
   // Report data
@@ -53,10 +54,12 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
   loadingMeta: boolean = false;
   error: string = '';
 
-  constructor(private service: OeeReportsService) {}
+  constructor(private service: OeeReportsService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     console.log('🚀 OEE Reports Component Initialized');
+    this.fromDate = this.getTodayLocal();
+    this.toDate   = this.getTodayLocal();
     this.loadMeta();
   }
 
@@ -73,19 +76,15 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (res: any) => {
 
-          this.lines = res.data.lines || [];
+          this.lines    = res.data.lines    || [];
           this.machines = res.data.machines || [];
-          this.shifts = res.data.shifts || [];
+          this.shifts   = res.data.shifts   || [];
 
-          if (this.machines.length > 0 && !this.selectedMachine) {
-            this.selectedMachine = this.machines[0].id;
-          }
-
-          if (this.shifts.length > 0 && !this.selectedShift) {
-            this.selectedShift = this.shifts[0].id;
-          }
+          // Show all machines initially (no line filter)
+          this.filteredMachines = [...this.machines];
 
           this.loadingMeta = false;
+          this.cdr.detectChanges();
           this.loadReports();
 
         },
@@ -93,6 +92,7 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
           console.error('❌ Error loading metadata:', err);
           this.error = err.error?.message || 'Failed to load metadata';
           this.loadingMeta = false;
+          this.cdr.detectChanges();
         }
       });
 
@@ -131,12 +131,14 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
           this.totalPages = res.pagination?.totalPages || 0;
 
           this.loading = false;
+          this.cdr.detectChanges();
 
         },
         error: (err: any) => {
           console.error('❌ Error loading reports:', err);
           this.error = err.error?.message || 'Failed to load reports';
           this.loading = false;
+          this.cdr.detectChanges();
         }
       });
 
@@ -148,6 +150,10 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
 
   onLineChange(): void {
     this.selectedMachine = null;
+    // Filter machines by selected line
+    this.filteredMachines = this.selectedLine
+      ? this.machines.filter(m => m.line_id === this.selectedLine || m.line_id == this.selectedLine)
+      : [...this.machines];
     this.page = 1;
     this.loadReports();
   }
@@ -173,13 +179,14 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
   }
 
   clearFilters(): void {
-    this.selectedLine = null;
+    this.selectedLine    = null;
     this.selectedMachine = null;
-    this.selectedShift = null;
-    this.searchText = '';
-    this.fromDate = '';
-    this.toDate = '';
-    this.page = 1;
+    this.selectedShift   = null;
+    this.searchText      = '';
+    this.fromDate        = this.getTodayLocal();
+    this.toDate          = this.getTodayLocal();
+    this.page            = 1;
+    this.filteredMachines = [...this.machines];
     this.loadReports();
   }
 
@@ -312,6 +319,14 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
 
     return `${Math.min(value || 0, 100)}%`;
 
+  }
+
+  getTodayLocal(): string {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
 
   goBack(): void {

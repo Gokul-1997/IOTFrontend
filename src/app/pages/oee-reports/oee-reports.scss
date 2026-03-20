@@ -263,6 +263,16 @@
   box-shadow: 0 6px 20px rgba(30, 58, 138, 0.4);
 }
 
+.btn-clear {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn-clear:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
 .btn-nav {
   background: white;
   color: #333;
@@ -394,22 +404,19 @@
   user-select: none;
 }
 
-.data-table th.sortable {
+.data-table th[class*="col-"]:not(.col-num):not(.col-operator) {
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background 0.2s ease;
+  user-select: none;
 }
 
-.data-table th.sortable:hover {
+.data-table th[class*="col-"]:not(.col-num):not(.col-operator):hover {
   background: #ede9fe;
 }
 
-.sort-indicator {
+.sort-icon {
   font-size: 11px;
-  color: #999;
-  opacity: 0.7;
+  color: #9ca3af;
+  margin-left: 4px;
 }
 
 .data-row {
@@ -506,6 +513,16 @@
   height: 100%;
   border-radius: 3px;
   transition: width 0.3s ease;
+}
+
+.avail-fill { background-color: #10b981; }
+.perf-fill  { background-color: #3b82f6; }
+.qual-fill  { background-color: #a78bfa; }
+
+.filter-actions {
+  flex-direction: row !important;
+  align-items: flex-end;
+  gap: 8px;
 }
 
 /* State rows */

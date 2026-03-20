@@ -13,11 +13,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   standalone: true,
   selector: 'app-machines',
-  imports: [CommonModule, FormsModule, MachineFormComponent, MatTableModule, MatPaginatorModule, MatSortModule, MatButtonModule, MatIconModule, MatInputModule, MatSlideToggleModule, MatProgressSpinnerModule],
+  imports: [CommonModule, FormsModule, MachineFormComponent, MatTableModule, MatPaginatorModule, MatSortModule, MatButtonModule, MatIconModule, MatInputModule, MatSlideToggleModule, MatProgressSpinnerModule, MatTooltipModule],
   templateUrl: './machines.component.html'
 })
 export class MachinesComponent implements OnInit {
@@ -52,7 +54,15 @@ export class MachinesComponent implements OnInit {
   showForm = false;
   editData: any = null;
 
-  constructor(private service: MachinesService, private cdr: ChangeDetectorRef) { }
+  deleteTarget: any = null;   // machine row pending delete confirmation
+  deleting = false;
+  deleteError = '';
+
+  constructor(
+    private service: MachinesService,
+    private cdr: ChangeDetectorRef,
+    private toast: ToastService
+  ) {}
 
   ngOnInit() {
     this.load();
@@ -107,5 +117,37 @@ export class MachinesComponent implements OnInit {
   onSaved() {
     this.showForm = false;
     this.load();
+    this.toast.success(this.editData ? 'Machine updated successfully' : 'Machine created successfully');
+  }
+
+  confirmDelete(row: any) {
+    this.deleteTarget = row;
+    this.deleteError  = '';
+  }
+
+  cancelDelete() {
+    this.deleteTarget = null;
+    this.deleteError  = '';
+    this.deleting     = false;
+  }
+
+  doDelete() {
+    if (!this.deleteTarget) return;
+    this.deleting    = true;
+    this.deleteError = '';
+
+    this.service.delete(this.deleteTarget.id).subscribe({
+      next: () => {
+        this.deleting     = false;
+        this.deleteTarget = null;
+        this.load();
+        this.toast.success('Machine deleted successfully');
+      },
+      error: (err: any) => {
+        this.deleting    = false;
+        this.deleteError = err?.error?.message || 'Delete failed. Try again.';
+        this.toast.error(this.deleteError);
+      }
+    });
   }
 }

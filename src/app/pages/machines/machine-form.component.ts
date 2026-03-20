@@ -15,6 +15,7 @@ import {
 } from '@angular/forms';
 
 import { MachinesService } from './machines.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   standalone: true,
@@ -35,8 +36,9 @@ export class MachineFormComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private service: MachinesService
-  ) { }
+    private service: MachinesService,
+    private toast: ToastService
+  ) {}
 
   ngOnInit() {
 
@@ -100,7 +102,7 @@ export class MachineFormComponent implements OnInit {
         this.uploading = false;
       },
       error: () => {
-        alert('Upload failed');
+        this.toast.error('Image upload failed. Please try again.');
         this.uploading = false;
       }
     });

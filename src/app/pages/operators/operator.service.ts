@@ -43,5 +43,9 @@ update(id: number, data: any) {
 getById(id: number) {
   return this.http.get<any>(`${this.api}/operators/${id}`);
 }
+
+delete(id: number) {
+  return this.http.delete(`${this.api}/operators/${id}`);
+}
 }
 
