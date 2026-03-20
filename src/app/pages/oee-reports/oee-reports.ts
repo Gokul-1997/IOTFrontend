@@ -15,109 +15,80 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  // Math for template
   Math = Math;
 
-  // Current date for header display
-  today = new Date();
-
-  // Meta data
   lines: any[] = [];
   machines: any[] = [];
   filteredMachines: any[] = [];
   shifts: any[] = [];
 
-  // Report data
   rows: any[] = [];
 
-  // Filters
   selectedLine: number | null = null;
   selectedMachine: number | null = null;
   selectedShift: number | null = null;
-  searchText: string = '';
-  fromDate: string = '';
-  toDate: string = '';
+  searchText = '';
+  fromDate = '';
+  toDate = '';
 
-  // Pagination
-  page: number = 1;
-  limit: number = 6;
-  total: number = 0;
-  totalPages: number = 0;
+  page = 1;
+  limit = 6;
+  total = 0;
+  totalPages = 0;
 
-  // Sorting
-  sortBy: string = 'shift_date';
+  sortBy = 'shift_date';
   sortOrder: 'ASC' | 'DESC' = 'DESC';
 
-  // UI states
-  loading: boolean = false;
-  exporting: boolean = false;
-  loadingMeta: boolean = false;
-  error: string = '';
+  loading = false;
+  exporting = false;
+  loadingMeta = false;
+  error = '';
 
   constructor(private service: OeeReportsService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    console.log('🚀 OEE Reports Component Initialized');
     this.fromDate = this.getTodayLocal();
     this.toDate   = this.getTodayLocal();
     this.loadMeta();
   }
 
-  /* =======================================
-     LOAD METADATA
-  ======================================= */
   private loadMeta(): void {
-
     this.loadingMeta = true;
-    this.error = '';
-
     this.service.getMeta()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res: any) => {
-
-          this.lines    = res.data.lines    || [];
-          this.machines = res.data.machines || [];
-          this.shifts   = res.data.shifts   || [];
-
-          // Show all machines initially (no line filter)
+          this.lines            = res.data.lines    || [];
+          this.machines         = res.data.machines || [];
+          this.shifts           = res.data.shifts   || [];
           this.filteredMachines = [...this.machines];
-
           this.loadingMeta = false;
           this.cdr.detectChanges();
           this.loadReports();
-
         },
         error: (err: any) => {
-          console.error('❌ Error loading metadata:', err);
           this.error = err.error?.message || 'Failed to load metadata';
           this.loadingMeta = false;
           this.cdr.detectChanges();
         }
       });
-
   }
 
-  /* =======================================
-     LOAD REPORTS
-  ======================================= */
   loadReports(): void {
-
     if (this.loadingMeta) return;
-
     this.loading = true;
     this.error = '';
 
     const filters = {
-      line_id: this.selectedLine,
+      line_id:    this.selectedLine,
       machine_id: this.selectedMachine,
-      shift_id: this.selectedShift,
-      from_date: this.fromDate,
-      to_date: this.toDate,
-      search: this.searchText,
-      page: this.page,
-      limit: this.limit,
-      sort_by: this.sortBy,
+      shift_id:   this.selectedShift,
+      from_date:  this.fromDate,
+      to_date:    this.toDate,
+      search:     this.searchText,
+      page:       this.page,
+      limit:      this.limit,
+      sort_by:    this.sortBy,
       sort_order: this.sortOrder
     };
 
@@ -125,87 +96,61 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res: any) => {
-
-          this.rows = res.data || [];
-          this.total = res.pagination?.total || 0;
+          this.rows       = res.data || [];
+          this.total      = res.pagination?.total      || 0;
           this.totalPages = res.pagination?.totalPages || 0;
-
           this.loading = false;
           this.cdr.detectChanges();
-
         },
         error: (err: any) => {
-          console.error('❌ Error loading reports:', err);
           this.error = err.error?.message || 'Failed to load reports';
           this.loading = false;
           this.cdr.detectChanges();
         }
       });
-
   }
 
-  /* =======================================
-     FILTER HANDLERS
-  ======================================= */
-
   onLineChange(): void {
-    this.selectedMachine = null;
-    // Filter machines by selected line
+    this.selectedMachine  = null;
     this.filteredMachines = this.selectedLine
-      ? this.machines.filter(m => m.line_id === this.selectedLine || m.line_id == this.selectedLine)
+      ? this.machines.filter(m => m.line_id == this.selectedLine)
       : [...this.machines];
     this.page = 1;
     this.loadReports();
   }
 
-  onMachineChange(): void {
-    this.page = 1;
-    this.loadReports();
-  }
+  onMachineChange(): void { this.page = 1; this.loadReports(); }
+  onShiftChange():   void { this.page = 1; this.loadReports(); }
+  onDateChange():    void { this.page = 1; this.loadReports(); }
+  onSearch():        void { this.page = 1; this.loadReports(); }
 
-  onShiftChange(): void {
-    this.page = 1;
-    this.loadReports();
-  }
-
-  onDateChange(): void {
-    this.page = 1;
-    this.loadReports();
-  }
-
-  onSearch(): void {
-    this.page = 1;
+  onLimitChange(val: number | string): void {
+    this.limit = Number(val);
+    this.page  = 1;
     this.loadReports();
   }
 
   clearFilters(): void {
-    this.selectedLine    = null;
-    this.selectedMachine = null;
-    this.selectedShift   = null;
-    this.searchText      = '';
-    this.fromDate        = this.getTodayLocal();
-    this.toDate          = this.getTodayLocal();
-    this.page            = 1;
+    this.selectedLine     = null;
+    this.selectedMachine  = null;
+    this.selectedShift    = null;
+    this.searchText       = '';
+    this.fromDate         = this.getTodayLocal();
+    this.toDate           = this.getTodayLocal();
+    this.page             = 1;
     this.filteredMachines = [...this.machines];
     this.loadReports();
   }
 
-  /* =======================================
-     SORT HANDLERS
-  ======================================= */
-
   changeSort(column: string): void {
-
     if (this.sortBy === column) {
       this.sortOrder = this.sortOrder === 'ASC' ? 'DESC' : 'ASC';
     } else {
-      this.sortBy = column;
+      this.sortBy    = column;
       this.sortOrder = 'ASC';
     }
-
     this.page = 1;
     this.loadReports();
-
   }
 
   getSortIcon(column: string): string {
@@ -213,133 +158,63 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
     return this.sortOrder === 'ASC' ? '↑' : '↓';
   }
 
-  /* =======================================
-     PAGINATION HANDLERS
-  ======================================= */
-
   changePage(newPage: number): void {
-
-    if (newPage < 1 || newPage > this.totalPages) {
-      return;
-    }
-
+    if (newPage < 1 || newPage > this.totalPages) return;
     this.page = newPage;
     this.loadReports();
-
-  }
-
-  changeLimit(newLimit: number | string): void {
-
-    this.limit = Number(newLimit);
-    this.page = 1;
-    this.loadReports();
-
   }
 
   getPageNumbers(): number[] {
-
     const pages: number[] = [];
     const maxVisible = 5;
-
     if (this.totalPages <= maxVisible) {
-      for (let i = 1; i <= this.totalPages; i++) {
-        pages.push(i);
-      }
+      for (let i = 1; i <= this.totalPages; i++) pages.push(i);
     } else {
-      const halfVisible = Math.floor(maxVisible / 2);
-
-      let start = Math.max(1, this.page - halfVisible);
-      let end = Math.min(this.totalPages, start + maxVisible - 1);
-
-      if (end - start + 1 < maxVisible) {
-        start = Math.max(1, end - maxVisible + 1);
-      }
-
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
+      const half  = Math.floor(maxVisible / 2);
+      let start   = Math.max(1, this.page - half);
+      let end     = Math.min(this.totalPages, start + maxVisible - 1);
+      if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
     }
-
     return pages;
-
   }
-
-  /* =======================================
-     EXPORT
-  ======================================= */
 
   exportCSV(): void {
-
     this.exporting = true;
-
-    const filters = {
-      line_id: this.selectedLine,
+    this.service.exportCSV({
+      line_id:    this.selectedLine,
       machine_id: this.selectedMachine,
-      shift_id: this.selectedShift,
-      from_date: this.fromDate,
-      to_date: this.toDate,
-      search: this.searchText
-    };
-
-    this.service.exportCSV(filters);
-
-    setTimeout(() => {
-      this.exporting = false;
-    }, 1000);
-
-  }
-
-  /* =======================================
-     HELPERS
-  ======================================= */
-
-  formatDate(dateStr: string): string {
-
-    if (!dateStr) return '--';
-
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+      shift_id:   this.selectedShift,
+      from_date:  this.fromDate,
+      to_date:    this.toDate,
+      search:     this.searchText
     });
-
-  }
-
-  getOeeColor(oee: number): string {
-
-    if (oee >= 85) return '#10b981';
-    if (oee >= 75) return '#3b82f6';
-    if (oee >= 60) return '#f59e0b';
-    return '#ef4444';
-
-  }
-
-  getBarWidth(value: number): string {
-
-    return `${Math.min(value || 0, 100)}%`;
-
+    setTimeout(() => this.exporting = false, 1000);
   }
 
   getTodayLocal(): string {
     const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
-  goBack(): void {
-    window.history.back();
+  formatDate(dateStr: string): string {
+    if (!dateStr) return '--';
+    return new Date(dateStr).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
-  /* =======================================
-     CLEANUP
-  ======================================= */
+  getOeeColor(oee: number): string {
+    if (oee >= 85) return '#10b981';
+    if (oee >= 75) return '#3b82f6';
+    if (oee >= 60) return '#f59e0b';
+    return '#ef4444';
+  }
+
+  getBarWidth(value: number): string {
+    return `${Math.min(value || 0, 100)}%`;
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
-
 }

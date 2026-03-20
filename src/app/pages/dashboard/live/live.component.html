@@ -24,7 +24,7 @@
 
     <!-- Center: shift / date / time -->
     <div class="text-white text-sm font-medium text-center">
-      Shift: {{ shift?.shift_code || '--' }} | {{ currentDate | date:'dd MMM yyyy' }} | {{ currentDate | date:'h:mm:ss a' }}
+      {{ shift?.shift_code || '--' }} | {{ currentDate | date:'dd MMM yyyy' }} | {{ currentDate | date:'h:mm:ss a' }}
     </div>
 
     <!-- Right: Back button -->
@@ -210,7 +210,7 @@
         <div class="grid grid-cols-2 gap-2">
           <div class="bg-gray-50 border rounded-xl flex items-center gap-2 px-3 py-2">
             <div class="text-xs text-gray-500 leading-tight">
-              <span class="font-medium">Shift</span><br>01
+              <span class="font-medium">{{shift?.shift_code}}</span><br>
             </div>
             <span class="text-gray-400 font-medium">›</span>
             <div>
