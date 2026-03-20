@@ -125,25 +125,28 @@
     <div class="xl:col-span-3 bg-white rounded-xl border p-4 text-center">
 
       <h3 class="card-title mb-3">Machine Status</h3>
-
-      <div class="grid grid-cols-2 gap-3 mb-4">
-        <div class="bg-green-50 rounded-lg p-2">
-          <p class="text-xs text-gray-500">Accepted</p>
-          <p class="font-bold text-green-600">{{ quality?.accepted || 0 }}</p>
+      <div class="flex">
+          <div class="gap-3 mb-4">
+          <div class="bg-green-50 rounded-lg p-2">
+            <p class="text-xs text-gray-500">Accepted</p>
+            <p class="font-bold text-green-600">{{ quality?.accepted || 0 }}</p>
+          </div>
+          <div class="bg-red-50 rounded-lg p-2">
+            <p class="text-xs text-gray-500">Rejected</p>
+            <p class="font-bold text-red-600">{{ quality?.rejected || 0 }}</p>
+          </div>
         </div>
-        <div class="bg-red-50 rounded-lg p-2">
-          <p class="text-xs text-gray-500">Rejected</p>
-          <p class="font-bold text-red-600">{{ quality?.rejected || 0 }}</p>
-        </div>
-      </div>
-
-      <apx-chart
+        <apx-chart
         [series]="utilSeries"
         [chart]="utilChart.chart"
         [plotOptions]="utilChart.plotOptions"
         [colors]="utilChart.colors"
         [fill]="utilChart.fill">
       </apx-chart>
+      </div>
+      
+
+      
 
       <p class="text-lg font-bold mt-2">{{ utilization }} %</p>
 
