@@ -478,10 +478,11 @@ export class LiveComponent implements OnInit, OnDestroy {
           },
           dataLabels: {
             name:  { show: false },
-            value: { show: false }   // overlay in HTML
+            value: { show: false }   // value overlaid via HTML
           }
         }
       },
+      dataLabels: { enabled: false },
       fill:   { type: 'solid', colors: ['#3B4CCA'] },
       stroke: { dashArray: 4 }
     };

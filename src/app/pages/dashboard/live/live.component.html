@@ -237,17 +237,18 @@
       <div class="flex items-center justify-center gap-2 w-full">
 
         <!-- Dashed radialBar with HTML value overlay -->
-        <div class="relative flex-shrink-0" style="width:190px; height:190px">
+        <div class="relative flex-shrink-0" style="width:200px; height:200px; overflow:hidden">
           <apx-chart
             [series]="oeeSeries"
             [chart]="oeeChart.chart"
             [plotOptions]="oeeChart.plotOptions"
             [fill]="oeeChart.fill"
             [stroke]="oeeChart.stroke"
+            [dataLabels]="oeeChart.dataLabels"
             [labels]="oeeChart.labels">
           </apx-chart>
           <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
-               style="padding-bottom:28px">
+               style="padding-bottom:30px">
             <span class="text-3xl font-bold" style="color:#3B4CCA">
               {{ oee?.oee || 0 }}%
             </span>
@@ -290,14 +291,28 @@
 
       <svg viewBox="0 0 300 170" xmlns="http://www.w3.org/2000/svg"
            class="w-full" style="max-width:300px">
+        <defs>
+          <!-- Green → Yellow → Red gradient for spindle fill -->
+          <linearGradient id="spindleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#16a34a"/>
+            <stop offset="60%"  stop-color="#f59e0b"/>
+            <stop offset="100%" stop-color="#dc2626"/>
+          </linearGradient>
+          <!-- Clip path: clips gradient to the actual filled arc extent -->
+          <clipPath id="spindleClip">
+            <path [attr.d]="gaugeArc(spindleSeries[0])"
+                  fill="none" stroke="white" stroke-width="30"/>
+          </clipPath>
+        </defs>
 
-        <!-- Track -->
+        <!-- Gray track -->
         <path [attr.d]="bgArc"
               fill="none" stroke="#e5e7eb" stroke-width="24" stroke-linecap="round"/>
 
-        <!-- Fill -->
-        <path [attr.d]="gaugeArc(spindleSeries[0])"
-              fill="none" stroke="#1e3a8a" stroke-width="24" stroke-linecap="round"/>
+        <!-- Gradient fill (clipped to actual arc value) -->
+        <path [attr.d]="bgArc"
+              fill="none" stroke="url(#spindleGrad)" stroke-width="24" stroke-linecap="round"
+              clip-path="url(#spindleClip)"/>
 
         <!-- Scale labels -->
         <text [attr.x]="gaugeLabel(0).x+5"    [attr.y]="gaugeLabel(0).y+5"
@@ -348,34 +363,47 @@
 
       <svg viewBox="0 0 300 170" xmlns="http://www.w3.org/2000/svg"
            class="w-full" style="max-width:300px">
+        <defs>
+          <!-- Purple → violet gradient for feed fill -->
+          <linearGradient id="feedGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#6d28d9"/>
+            <stop offset="60%"  stop-color="#7c3aed"/>
+            <stop offset="100%" stop-color="#9333ea"/>
+          </linearGradient>
+          <clipPath id="feedClip">
+            <path [attr.d]="gaugeArc(feedSeries[0])"
+                  fill="none" stroke="white" stroke-width="30"/>
+          </clipPath>
+        </defs>
 
-        <!-- Track -->
+        <!-- Gray track -->
         <path [attr.d]="bgArc"
               fill="none" stroke="#e5e7eb" stroke-width="24" stroke-linecap="round"/>
 
-        <!-- Fill -->
-        <path [attr.d]="gaugeArc(feedSeries[0])"
-              fill="none" stroke="#7b1fa2" stroke-width="24" stroke-linecap="round"/>
+        <!-- Gradient fill clipped to arc value -->
+        <path [attr.d]="bgArc"
+              fill="none" stroke="url(#feedGrad)" stroke-width="24" stroke-linecap="round"
+              clip-path="url(#feedClip)"/>
 
         <!-- Red dashed marker at 100% nominal (= 66.7% of 0–150% arc) -->
-        <line [attr.x1]="GCX"                    [attr.y1]="GCY"
-              [attr.x2]="gaugeArcPt(66.7).x"      [attr.y2]="gaugeArcPt(66.7).y"
+        <line [attr.x1]="GCX"                [attr.y1]="GCY"
+              [attr.x2]="gaugeArcPt(66.7).x" [attr.y2]="gaugeArcPt(66.7).y"
               stroke="#e53935" stroke-width="1.5" stroke-dasharray="5,3"/>
 
         <!-- Scale labels -->
-        <text [attr.x]="gaugeLabel(0).x+5"       [attr.y]="gaugeLabel(0).y+5"
+        <text [attr.x]="gaugeLabel(0).x+5"    [attr.y]="gaugeLabel(0).y+5"
               text-anchor="start"  font-size="10" fill="#9ca3af">0</text>
-        <text [attr.x]="gaugeLabel(16.7).x"      [attr.y]="gaugeLabel(16.7).y+4"
+        <text [attr.x]="gaugeLabel(16.7).x"   [attr.y]="gaugeLabel(16.7).y+4"
               text-anchor="middle" font-size="10" fill="#9ca3af">25%</text>
-        <text [attr.x]="gaugeLabel(33.3).x"      [attr.y]="gaugeLabel(33.3).y+4"
+        <text [attr.x]="gaugeLabel(33.3).x"   [attr.y]="gaugeLabel(33.3).y+4"
               text-anchor="middle" font-size="10" fill="#9ca3af">50%</text>
-        <text [attr.x]="gaugeLabel(50).x"        [attr.y]="gaugeLabel(50).y+4"
+        <text [attr.x]="gaugeLabel(50).x"     [attr.y]="gaugeLabel(50).y+4"
               text-anchor="middle" font-size="10" fill="#9ca3af">75%</text>
-        <text [attr.x]="gaugeLabel(66.7).x"      [attr.y]="gaugeLabel(66.7).y+4"
+        <text [attr.x]="gaugeLabel(66.7).x"   [attr.y]="gaugeLabel(66.7).y+4"
               text-anchor="middle" font-size="10" fill="#e53935" font-weight="700">100%</text>
-        <text [attr.x]="gaugeLabel(83.3).x"      [attr.y]="gaugeLabel(83.3).y+4"
+        <text [attr.x]="gaugeLabel(83.3).x"   [attr.y]="gaugeLabel(83.3).y+4"
               text-anchor="middle" font-size="10" fill="#9ca3af">125%</text>
-        <text [attr.x]="gaugeLabel(100).x-5"     [attr.y]="gaugeLabel(100).y+5"
+        <text [attr.x]="gaugeLabel(100).x-5"  [attr.y]="gaugeLabel(100).y+5"
               text-anchor="end"    font-size="10" fill="#9ca3af">150%</text>
 
         <!-- Needle -->
