@@ -405,6 +405,50 @@ h4 {
   }
 
   &.gray-full {
-    border-color: #271617;
+    border-color: rgb(61, 61, 61)
   }
+}
+
+/* Overlay */
+.offline-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(200, 200, 200, 0.55);
+  backdrop-filter: blur(2px);
+  border-radius: 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 10;
+}
+
+/* Center content */
+.offline-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  color: #374151;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+/* Optional: fade animation */
+.offline-overlay {
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.apexcharts-canvas {
+  margin: 0 auto;
+}
+.chart-align-center{
+  margin-left: -2d0px;
 }

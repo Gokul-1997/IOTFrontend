@@ -58,7 +58,7 @@
     <div
       *ngFor="let m of machines; trackBy: trackByMachine"
       (click)="goToLive(m.machine_id)"
-      class="rounded-2xl shadow-md p-3 hover:shadow-xl transition cursor-pointer border-big"
+      class="relative rounded-2xl shadow-md p-3 hover:shadow-xl transition cursor-pointer border-big"
       [ngClass]="{
         'bg-white':    !m.alarm,
         'alarm-blink': m.alarm,
@@ -237,7 +237,16 @@
         </div>
 
       </div>
-
+<!-- OFFLINE OVERLAY -->
+<div *ngIf="m.status === 'OFFLINE'" class="offline-overlay">
+  <div class="offline-content">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M18.364 5.636a9 9 0 010 12.728M5.636 5.636a9 9 0 000 12.728M9.88 9.88a3 3 0 014.24 4.24" />
+    </svg>
+    <span>OFFLINE</span>
+  </div>
+</div>
     </div>
 
   </div>
