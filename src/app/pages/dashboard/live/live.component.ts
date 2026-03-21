@@ -53,13 +53,14 @@ export class LiveComponent implements OnInit, OnDestroy {
   readonly FEED_MAX    = FEED_MAX;
 
   /* ── API-owned state ── */
-  machine:  any = {};
-  operator: any = {};
-  job:      any = {};
-  oee:      any = {};
-  shift:    any = {};
-  quality:  any = {};
-  power:    any = {};
+  machine:    any = {};
+  operator:   any = {};
+  job:        any = {};
+  oee:        any = {};
+  shift:      any = {};
+  quality:    any = {};
+  power:      any = {};
+  production: any = {};
 
   runTime   = '00:00:00';
   idleTime  = '00:00:00';
@@ -67,6 +68,7 @@ export class LiveComponent implements OnInit, OnDestroy {
 
   /* ── Socket-owned state ── */
   liveStatus       = 'UNKNOWN';
+  liveMode         = '';
   liveSpindleLoad  = 0;
   liveFeed         = 0;
   livePartCount    = 0;
@@ -159,13 +161,14 @@ export class LiveComponent implements OnInit, OnDestroy {
     const d = res?.data;
     if (!d) return;
 
-    this.machine  = d.machine  || this.machine;
-    this.operator = d.operator || this.operator;
-    this.job      = d.job      || this.job;
-    this.oee      = d.oee      || this.oee;
-    this.shift    = d.shift    || this.shift;
-    this.quality  = d.quality  || this.quality;
-    this.power    = d.power    || this.power;
+    this.machine    = d.machine    || this.machine;
+    this.operator   = d.operator  || this.operator;
+    this.job        = d.job       || this.job;
+    this.oee        = d.oee       || this.oee;
+    this.shift      = d.shift     || this.shift;
+    this.quality    = d.quality   || this.quality;
+    this.power      = d.power     || this.power;
+    this.production = d.production || this.production;
 
     /* Metric fields — API is source of truth */
     if (d.production) {
@@ -189,6 +192,7 @@ export class LiveComponent implements OnInit, OnDestroy {
     if (d.live) {
       if (!this.socketHasUpdated) {
         this.liveStatus      = d.live.machine_status || 'UNKNOWN';
+        this.liveMode        = d.live.mode           || '';
         this.liveSpindleLoad = Number(d.live.spindle_load || 0);
         this.liveFeed        = Number(d.live.feed_rate    || 0);
         this.spindleSeries   = [this.spindleLoadToPercent(this.liveSpindleLoad)];
@@ -240,10 +244,12 @@ export class LiveComponent implements OnInit, OnDestroy {
          API will no longer seed live values after this point */
       this.socketHasUpdated = true;
 
-      /* ── Status ── */
+      /* ── Status + Mode ── */
       if (data.machine_status !== undefined) {
-        // console.log(`[SOCKET] status: ${this.liveStatus} → ${data.machine_status}`);
         this.liveStatus = data.machine_status;
+      }
+      if (data.mode !== undefined) {
+        this.liveMode = data.mode || '';
       }
 
       /* ── Spindle Load → gauge percent ── */
@@ -256,7 +262,14 @@ export class LiveComponent implements OnInit, OnDestroy {
       if (data.feed_rate !== undefined) {
         this.liveFeed   = Number(data.feed_rate);
         this.feedSeries = [this.feedToPercent(this.liveFeed)];
-        // console.log(`[SOCKET] feed_rate: ${this.liveFeed} → gauge: ${this.feedSeries[0]}%`);
+      }
+
+      /* ── Energy → update total_kwh in real-time ── */
+      if (data.energy != null) {
+        this.power = {
+          ...this.power,
+          total_kwh: Number(Number(data.energy).toFixed(2))
+        };
       }
 
       /* ── parts_count: API owns this (reset-adjusted) — socket skips ── */
@@ -397,19 +410,26 @@ export class LiveComponent implements OnInit, OnDestroy {
   }
 
   get setupTime(): string {
+    // Primary: MANUAL-mode seconds accumulated this shift (from production_hourly)
+    const manualSec = Number((this.production as any)?.manual_seconds || 0);
+    if (manualSec > 0) {
+      return this.formatDuration(String(manualSec));
+    }
+    // Fallback: setting_time_start/end from job
     const start = this.job?.setting_time_start;
     const end   = this.job?.setting_time_end;
     if (start && end) {
       const diffMs = new Date(end).getTime() - new Date(start).getTime();
       if (diffMs > 0) {
         const totalSec = Math.floor(diffMs / 1000);
-        const h = Math.floor(totalSec / 3600);
-        const m = Math.floor((totalSec % 3600) / 60);
-        const s = totalSec % 60;
-        return `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+        return this.formatDuration(
+          `${String(Math.floor(totalSec/3600)).padStart(2,'0')}:` +
+          `${String(Math.floor((totalSec%3600)/60)).padStart(2,'0')}:` +
+          `${String(totalSec%60).padStart(2,'0')}`
+        );
       }
     }
-    return this.job?.setup_time || '--';
+    return '--';
   }
 
   /* ════════════════════════════════════════

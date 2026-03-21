@@ -138,10 +138,21 @@
           </div>
         </div>
 
-        <!-- Setup Time -->
-        <div class="text-sm ">
-          <span class="text-gray-700 dark:text-[#939393] mr-2">Setup Time</span>
-          <span class="font-semibold">{{ setupTime }}</span>
+        <!-- Mode + Setup Time -->
+        <div class="flex items-center justify-between text-sm">
+          <div class="flex items-center gap-2">
+            <span class="text-gray-700 dark:text-[#939393]">Mode</span>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+              [ngClass]="{
+                'bg-green-100 text-green-700': liveMode === 'AUTO',
+                'bg-yellow-100 text-yellow-700': liveMode === 'MANUAL',
+                'bg-gray-100 text-gray-500': !liveMode
+              }">{{ liveMode || '--' }}</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="text-gray-700 dark:text-[#939393]">Setup</span>
+            <span class="font-semibold">{{ setupTime }}</span>
+          </div>
         </div>
 
       </div>
@@ -252,7 +263,7 @@
             </div>
             <span class="text-gray-400 font-medium">›</span>
             <div class="flex flex-col justify-center items-center gap-0">
-              <span class="text-2xl font-bold text-gray-900 dark:text-white">{{ power?.shift_kwh || 0 }}</span>
+              <span class="text-sm font-bold text-gray-900 dark:text-white">{{ power?.shift_kwh || 0 }}</span>
               <span class="text-xs text-gray-700 ml-0.5 -mt-2">KWH</span>
             </div>
           </div>
@@ -260,7 +271,7 @@
             <div class="text-sm text-gray-700 dark:text-[#939393] leading-tight font-medium">Total</div>
             <span class="text-gray-400 font-medium">›</span>
             <div class="flex flex-col justify-center items-center">
-              <span class="text-2xl font-bold text-gray-900 dark:text-white">{{ power?.total_kwh || 0 }}</span>
+              <span class="text-sm font-bold text-gray-900 dark:text-white">{{ power?.total_kwh || 0 }}</span>
               <span class="text-xs text-gray-700 ml-0.5 -mt-2">KWH</span>
             </div>
           </div>
