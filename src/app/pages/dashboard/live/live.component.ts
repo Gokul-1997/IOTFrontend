@@ -31,8 +31,8 @@ import { CommonModule } from '@angular/common';
 
 const POLL_MS = 30_000;
 
-/* Gauge max values — adjust to match your machine specs */
-const RPM_MAX      = 8000;   // max spindle RPM
+/* Gauge max values */
+const SPINDLE_MAX  = 100;    // spindle load is 0–100 %
 const FEED_MAX     = 30000;  // max feed rate (mm/min) — set to match your machine spec
 
 @Component({
@@ -49,8 +49,8 @@ export class LiveComponent implements OnInit, OnDestroy {
   machineId!: number;
 
   /* ── Gauge scale constants (exposed for template) ── */
-  readonly RPM_MAX  = RPM_MAX;
-  readonly FEED_MAX = FEED_MAX;
+  readonly SPINDLE_MAX = SPINDLE_MAX;
+  readonly FEED_MAX    = FEED_MAX;
 
   /* ── API-owned state ── */
   machine:  any = {};
@@ -66,10 +66,10 @@ export class LiveComponent implements OnInit, OnDestroy {
   utilization = 0;
 
   /* ── Socket-owned state ── */
-  liveStatus    = 'UNKNOWN';
-  liveRPM       = 0;
-  liveFeed       = 0;
-  livePartCount = 0;
+  liveStatus       = 'UNKNOWN';
+  liveSpindleLoad  = 0;
+  liveFeed         = 0;
+  livePartCount    = 0;
 
 
   /* ── UI helpers ── */
@@ -144,7 +144,7 @@ export class LiveComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    this.socketService.disconnect();
+    this.socketService.offMachineUpdate();
   }
 
   /* ════════════════════════════════════════
@@ -188,11 +188,11 @@ export class LiveComponent implements OnInit, OnDestroy {
                         30s API refresh is accurate enough for a part counter. */
     if (d.live) {
       if (!this.socketHasUpdated) {
-        this.liveStatus    = d.live.machine_status || 'UNKNOWN';
-        this.liveRPM       = Number(d.live.rpm      || 0);
-        this.liveFeed      = Number(d.live.feed_rate || 0);
-        this.spindleSeries = [this.rpmToPercent(this.liveRPM)];
-        this.feedSeries    = [this.feedToPercent(this.liveFeed)];
+        this.liveStatus      = d.live.machine_status || 'UNKNOWN';
+        this.liveSpindleLoad = Number(d.live.spindle_load || 0);
+        this.liveFeed        = Number(d.live.feed_rate    || 0);
+        this.spindleSeries   = [this.spindleLoadToPercent(this.liveSpindleLoad)];
+        this.feedSeries      = [this.feedToPercent(this.liveFeed)];
       }
 
       // Always update from API — adjusted for mid-shift counter resets
@@ -246,11 +246,10 @@ export class LiveComponent implements OnInit, OnDestroy {
         this.liveStatus = data.machine_status;
       }
 
-      /* ── RPM → gauge percent ── */
-      if (data.rpm !== undefined) {
-        this.liveRPM       = Number(data.rpm);
-        this.spindleSeries = [this.rpmToPercent(this.liveRPM)];
-        // console.log(`[SOCKET] rpm: ${this.liveRPM} → gauge: ${this.spindleSeries[0]}%`);
+      /* ── Spindle Load → gauge percent ── */
+      if (data.spindle_load !== undefined) {
+        this.liveSpindleLoad = Number(data.spindle_load);
+        this.spindleSeries   = [this.spindleLoadToPercent(this.liveSpindleLoad)];
       }
 
       /* ── Feed rate → gauge percent ── */
@@ -275,9 +274,9 @@ export class LiveComponent implements OnInit, OnDestroy {
      radialBar, while keeping true value for display
   ════════════════════════════════════════ */
 
-  /** RPM → 0–100% of RPM_MAX */
-  private rpmToPercent(rpm: number): number {
-    return Math.min(Number(((rpm / RPM_MAX) * 100).toFixed(1)), 100);
+  /** Spindle load is already 0–100 % — clamp to valid gauge range */
+  private spindleLoadToPercent(load: number): number {
+    return Math.min(Math.max(Number(load.toFixed(1)), 0), 100);
   }
 
   /** Feed rate → 0–100% of arc (scale is 0–150% of FEED_MAX).

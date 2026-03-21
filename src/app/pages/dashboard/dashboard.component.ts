@@ -303,6 +303,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
     document.removeEventListener('visibilitychange', this.visibilityHandler);
-    this.socketService.disconnect();
+    this.socketService.offMachineUpdate();
   }
 }

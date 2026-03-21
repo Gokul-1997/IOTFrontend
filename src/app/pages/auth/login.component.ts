@@ -1,7 +1,8 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { finalize } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 
 
@@ -68,7 +69,8 @@ export class LoginComponent
     constructor(
         private fb: FormBuilder,
         private auth: AuthService,
-        private router: Router
+        private router: Router,
+        private cdr: ChangeDetectorRef
     ) { }
 
     isDark = false;
@@ -228,27 +230,45 @@ export class LoginComponent
     ////////////////////////////////////////////
 
     submit() {
-        if (this.form.invalid)
-            return;
+        this.form.markAllAsTouched();
+        if (this.form.invalid) return;
+
         this.loading = true;
         this.error = '';
 
         this.auth.login(this.form.value)
+            .pipe(finalize(() => {
+                this.loading = false;
+                this.cdr.detectChanges();
+            }))
             .subscribe({
-
                 next: () => {
                     this.router.navigate(['/dashboard']);
                 },
-
                 error: err => {
-                    this.error =
-                        err.error?.message ||
-                        'Login failed';
-                    this.loading = false;
+                    this.error = this.resolveError(err);
+                    this.cdr.detectChanges();
                 }
-
             });
+    }
 
+    private resolveError(err: any): string {
+        switch (err.status) {
+            case 0:
+                return 'Unable to reach the server. Check your internet connection.';
+            case 401:
+                return err.error?.message || 'Invalid email or password.';
+            case 403:
+                return 'Your account has been deactivated. Please contact support.';
+            case 429:
+                return 'Too many login attempts. Please wait a moment and try again.';
+            case 500:
+            case 502:
+            case 503:
+                return 'Server error. Please try again later.';
+            default:
+                return err.error?.message || 'Login failed. Please try again.';
+        }
     }
 
 

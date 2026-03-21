@@ -1,5 +1,5 @@
 <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-  <div class="bg-white dark:bg-[#0f1c33] w-96 rounded-xl p-6">
+  <div class="bg-white dark:bg-[#0f1c33] w-[420px] rounded-xl p-6 max-h-[90vh] overflow-auto">
 
     <h3 class="text-lg font-semibold mb-4">
       {{ data ? 'Edit Plant' : 'Create Plant' }}
@@ -9,11 +9,11 @@
 
       <!-- Plant Code -->
       <div class="mb-3">
+        <label class="block text-sm mb-1 font-medium">Plant Code *</label>
         <input
           formControlName="plant_code"
-          placeholder="Plant Code *"
-          class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]"
-          [class.border]="true"
+          placeholder="e.g. PLT-001"
+          class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a] border"
           [class.border-red-500]="form.get('plant_code')?.invalid && form.get('plant_code')?.touched" />
         <div *ngIf="form.get('plant_code')?.touched && form.get('plant_code')?.errors?.['required']"
           class="mt-1 text-xs text-red-500">
@@ -23,11 +23,11 @@
 
       <!-- Plant Name -->
       <div class="mb-3">
+        <label class="block text-sm mb-1 font-medium">Plant Name *</label>
         <input
           formControlName="plant_name"
-          placeholder="Plant Name *"
-          class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]"
-          [class.border]="true"
+          placeholder="Plant Name"
+          class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a] border"
           [class.border-red-500]="form.get('plant_name')?.invalid && form.get('plant_name')?.touched" />
         <div *ngIf="form.get('plant_name')?.touched && form.get('plant_name')?.errors?.['required']"
           class="mt-1 text-xs text-red-500">
@@ -37,22 +37,23 @@
 
       <!-- Location -->
       <div class="mb-4">
+        <label class="block text-sm mb-1 font-medium">Location</label>
         <input
           formControlName="location"
           placeholder="Location"
-          class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+          class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a] border" />
       </div>
 
+      <!-- Buttons -->
       <div class="flex justify-end gap-3">
-        <button type="button" (click)="close.emit()" class="px-4 py-2 rounded bg-gray-300">
+        <button type="button" (click)="close.emit()" class="px-4 py-2 bg-gray-300 rounded">
           Cancel
         </button>
-        <button type="button" (click)="save()" class="px-4 py-2 rounded bg-blue-600 text-white">
+        <button type="button" (click)="save()" class="px-4 py-2 bg-blue-600 text-white rounded">
           Save
         </button>
       </div>
 
     </form>
-
   </div>
 </div>

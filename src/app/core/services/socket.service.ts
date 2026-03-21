@@ -180,8 +180,19 @@ export class SocketService {
     this.paused = false;
   }
 
+  /* ================= OFF MACHINE UPDATE ================= */
+
+  /** Unregister the machineUpdate listener without disconnecting the socket.
+   *  Call this from component ngOnDestroy instead of disconnect(). */
+  offMachineUpdate(): void {
+    if (!this.socket) return;
+    this.socket.off('machineUpdate');
+  }
+
   /* ================= DISCONNECT ================= */
 
+  /** Full disconnect — call only on logout, not on component destroy.
+   *  Nulls out the socket so the next connect() rebuilds it cleanly. */
   disconnect(): void {
 
     if (!this.socket) return;
@@ -190,6 +201,10 @@ export class SocketService {
 
     this.socket.removeAllListeners();
     this.socket.disconnect();
+    (this.socket as any) = null;
+    this.plantId       = undefined;
+    this.isConnecting  = false;
+    this.refreshing    = false;
 
   }
 

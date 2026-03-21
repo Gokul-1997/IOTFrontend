@@ -23,6 +23,7 @@ export class Quality implements OnInit {
   selectedMachine!: number;
   selectedShift!: number;
 
+  today = new Date().toISOString().split('T')[0];
   selectedDate!: string;
 
   dashboardData: any = null;

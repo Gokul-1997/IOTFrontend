@@ -168,17 +168,37 @@ hover:scale-105 transition">
         <div class="text-right">
           <a routerLink="/forgot-password" class="text-sm text-indigo-600 hover:underline"> Forgot Password? </a>
         </div>
+
+        <!-- API Error Banner -->
+        <div *ngIf="error"
+          class="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 px-4 py-3">
+          <svg class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+          </svg>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-red-700 dark:text-red-400">{{ error }}</p>
+          </div>
+          <button type="button" (click)="error = ''" class="text-red-400 hover:text-red-600 transition">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
         <!-- Button -->
-        <button type="submit" [disabled]="loading" class="w-full bg-indigo-600 hover:bg-indigo-700
-                 text-white font-medium py-3 rounded-lg
-                 transition">
+        <button type="submit" [disabled]="loading"
+          class="w-full bg-indigo-600 hover:bg-indigo-700
+                 text-white font-medium py-3 rounded-lg transition
+                 disabled:opacity-60 disabled:cursor-not-allowed
+                 flex items-center justify-center gap-2">
+          <svg *ngIf="loading" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
           {{ loading ? 'Signing in...' : 'Sign In' }}
         </button>
       </form>
-      <!-- Error -->
-      <p *ngIf="error" class="text-red-500 text-sm mt-4">
-        {{ error }}
-      </p>
     </div>
   </div>
 </div>

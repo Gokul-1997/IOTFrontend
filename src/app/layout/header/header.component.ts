@@ -1,7 +1,8 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { IconComponent } from '../../shared/icon/icon';
+import { AuthService } from '../../core/services/auth.service';
 
 
 @Component({
@@ -10,10 +11,13 @@ import { IconComponent } from '../../shared/icon/icon';
   imports: [CommonModule, RouterModule, IconComponent],
   templateUrl: './header.component.html',
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit {
 
   openMenu: string | null = null;
   isDark = false;
+  showUserMenu = false;
+  userName = 'Admin';
+  userEmail = '';
 
   menus = [
     { label: 'Dashboard', path: '/dashboard', icon: 'gauge' },
@@ -33,7 +37,24 @@ export class HeaderComponent {
     }
   ];
 
-  constructor(private router: Router) { }
+  constructor(private router: Router, private auth: AuthService) { }
+
+  ngOnInit() {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      this.userName  = user.name  || user.username || 'Admin';
+      this.userEmail = user.email || '';
+    } catch { }
+  }
+
+  toggleUserMenu() {
+    this.showUserMenu = !this.showUserMenu;
+  }
+
+  logout() {
+    this.showUserMenu = false;
+    this.auth.logout();
+  }
 
   toggleMenu(label: string) {
     this.openMenu = this.openMenu === label ? null : label;
@@ -72,9 +93,8 @@ export class HeaderComponent {
   @HostListener('document:click', ['$event'])
   onClickOutside(event: MouseEvent) {
     const target = event.target as HTMLElement;
-    if (!target.closest('nav')) {
-      this.openMenu = null;
-    }
+    if (!target.closest('nav'))      this.openMenu    = null;
+    if (!target.closest('.user-menu-wrap')) this.showUserMenu = false;
   }
 
   // ⌨ ESC KEY CLOSE

@@ -3,7 +3,8 @@ import {
   Input,
   Output,
   EventEmitter,
-  OnInit
+  OnInit,
+  ChangeDetectorRef
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
@@ -37,7 +38,8 @@ export class MachineFormComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private service: MachinesService,
-    private toast: ToastService
+    private toast: ToastService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -78,6 +80,8 @@ export class MachineFormComponent implements OnInit {
 
         this.previewUrl = this.data.image_url;
       }
+
+      this.cdr.detectChanges();
     });
   }
 

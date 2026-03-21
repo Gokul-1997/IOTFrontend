@@ -29,12 +29,12 @@
 
     <div class="filter-item">
       <label class="filter-label">FROM DATE</label>
-      <input type="date" [(ngModel)]="fromDate" (change)="onDateChange()" class="filter-date" />
+      <input type="date" [(ngModel)]="fromDate" [max]="today" (change)="onDateChange()" class="filter-date" />
     </div>
 
     <div class="filter-item">
       <label class="filter-label">TO DATE</label>
-      <input type="date" [(ngModel)]="toDate" (change)="onDateChange()" class="filter-date" />
+      <input type="date" [(ngModel)]="toDate" [max]="today" (change)="onDateChange()" class="filter-date" />
     </div>
 
     <div class="filter-actions">

@@ -39,6 +39,8 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
   sortBy = 'shift_date';
   sortOrder: 'ASC' | 'DESC' = 'DESC';
 
+  today = this.getTodayLocal();
+
   loading = false;
   exporting = false;
   loadingMeta = false;
@@ -199,7 +201,11 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
 
   formatDate(dateStr: string): string {
     if (!dateStr) return '--';
-    return new Date(dateStr).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const d = new Date(dateStr);
+    const dd   = String(d.getDate()).padStart(2, '0');
+    const mm   = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
   }
 
   getOeeColor(oee: number): string {

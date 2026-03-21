@@ -1,74 +1,48 @@
 import { Routes } from '@angular/router';
-import { LoginComponent } from './pages/auth/login.component';
 import { authGuard } from './core/guards/auth.guard';
-
-import { MachinesComponent } from './pages/machines/machines.component';
-import { MachineFormComponent } from './pages/machines/machine-form.component';
-
-import { ShiftsComponent } from './pages/shifts/shifts.component';
-import { ShiftFormComponent } from './pages/shifts/shift-form.component';
-
-import { OperatorsComponent } from './pages/operators/operators.component';
-import { OperatorFormComponent } from './pages/operators/operator-form.component';
-
-import { AssignmentComponent } from './pages/assignments/assignment.component';
-import { OperatorShiftComponent } from './pages/assignments/operator-shift.component';
-
-import { MachineShiftComponent } from './pages/machine-shifts/machine-shift.component';
-
-import { PlantsComponent } from './pages/plants/plants.component';
-import { PlantFormComponent } from './pages/plants/plant-form.component';
-import { ResetPasswordComponent } from './pages/forgot/reset-password.component';
-import { ForgotPasswordComponent } from './pages/forgot/forgot-password.component';
-import { MainLayoutComponent } from './layout/main-layout/main-layout';
-import { Reports } from './pages/reports/reports';
-import { OeeReportsComponent } from './pages/oee-reports/oee-reports';
-import { Charts } from './pages/charts/charts';
-import { Quality } from './pages/quality/quality';
-import { ComponentList } from './pages/component/component_list.component';
-import { JobListComponent } from './pages/job/job-list.component';
 
 export const routes: Routes = [
 
-  // 🔐 PUBLIC ROUTES
-  { path: 'login', component: LoginComponent },
-  { path: 'forgot-password', component: ForgotPasswordComponent },
-  { path: 'reset-password/:token', component: ResetPasswordComponent },
+  // PUBLIC ROUTES
+  { path: 'login', loadComponent: () => import('./pages/auth/login.component').then(m => m.LoginComponent) },
+  { path: 'forgot-password', loadComponent: () => import('./pages/forgot/forgot-password.component').then(m => m.ForgotPasswordComponent) },
+  { path: 'reset-password/:token', loadComponent: () => import('./pages/forgot/reset-password.component').then(m => m.ResetPasswordComponent) },
 
-  // 🔒 PROTECTED ROUTES (WITH SIDEBAR)
+  // PROTECTED ROUTES (WITH SIDEBAR)
   {
     path: '',
-    component: MainLayoutComponent,
+    loadComponent: () => import('./layout/main-layout/main-layout').then(m => m.MainLayoutComponent),
     canActivate: [authGuard],
     children: [
 
       { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'dashboard/live/:id', loadComponent: () => import('./pages/dashboard/live/live.component').then(m => m.LiveComponent) },
 
-      { path: 'component', component: ComponentList },
+      { path: 'component', loadComponent: () => import('./pages/component/component_list.component').then(m => m.ComponentList) },
 
-      { path: 'machines', component: MachinesComponent },
-      { path: 'machines/create', component: MachineFormComponent },
+      { path: 'machines', loadComponent: () => import('./pages/machines/machines.component').then(m => m.MachinesComponent) },
+      { path: 'machines/create', loadComponent: () => import('./pages/machines/machine-form.component').then(m => m.MachineFormComponent) },
 
-      { path: 'shifts', component: ShiftsComponent },
-      { path: 'shifts/create', component: ShiftFormComponent },
+      { path: 'shifts', loadComponent: () => import('./pages/shifts/shifts.component').then(m => m.ShiftsComponent) },
+      { path: 'shifts/create', loadComponent: () => import('./pages/shifts/shift-form.component').then(m => m.ShiftFormComponent) },
 
-      { path: 'operators', component: OperatorsComponent },
-      { path: 'operators/create', component: OperatorFormComponent },
+      { path: 'operators', loadComponent: () => import('./pages/operators/operators.component').then(m => m.OperatorsComponent) },
+      { path: 'operators/create', loadComponent: () => import('./pages/operators/operator-form.component').then(m => m.OperatorFormComponent) },
 
-      { path: 'assignments', component: AssignmentComponent },
-      { path: 'assignments/operator-shift', component: OperatorShiftComponent },
+      { path: 'assignments', loadComponent: () => import('./pages/assignments/assignment.component').then(m => m.AssignmentComponent) },
+      { path: 'assignments/operator-shift', loadComponent: () => import('./pages/assignments/operator-shift.component').then(m => m.OperatorShiftComponent) },
 
-      { path: 'machine-shifts', component: MachineShiftComponent },
+      { path: 'machine-shifts', loadComponent: () => import('./pages/machine-shifts/machine-shift.component').then(m => m.MachineShiftComponent) },
 
-      { path: 'plants', component: PlantsComponent },
-      { path: 'plants/create', component: PlantFormComponent },
+      { path: 'plants', loadComponent: () => import('./pages/plants/plants.component').then(m => m.PlantsComponent) },
+      { path: 'plants/create', loadComponent: () => import('./pages/plants/plant-form.component').then(m => m.PlantFormComponent) },
 
-      { path: 'reports', component: Reports },
-      { path: 'oee-reports', component: OeeReportsComponent },
-      { path: 'charts', component: Charts },
-      { path: 'quality', component: Quality },
-      { path: 'job', component: JobListComponent }, 
+      { path: 'reports', loadComponent: () => import('./pages/reports/reports').then(m => m.Reports) },
+      { path: 'oee-reports', loadComponent: () => import('./pages/oee-reports/oee-reports').then(m => m.OeeReportsComponent) },
+      { path: 'charts', loadComponent: () => import('./pages/charts/charts').then(m => m.Charts) },
+      { path: 'quality', loadComponent: () => import('./pages/quality/quality').then(m => m.Quality) },
+      { path: 'job', loadComponent: () => import('./pages/job/job-list.component').then(m => m.JobListComponent) },
+
       // DEFAULT
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
@@ -77,4 +51,3 @@ export const routes: Routes = [
   // FALLBACK
   { path: '**', redirectTo: 'login' }
 ];
-
