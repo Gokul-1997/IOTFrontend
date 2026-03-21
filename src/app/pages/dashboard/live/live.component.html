@@ -3,7 +3,7 @@
   <!-- HEADER -->
   <div class="bg-gradient-to-r from-[#2B3990] to-[#9B3F70]
             text-white rounded-xl px-4 py-2 mb-3
-            flex items-center justify-between">
+            flex items-center justify-between  shadow-xl">
 
     <!-- Left: machine serial + status dot + status word -->
     <div class="flex items-center gap-3">
@@ -22,17 +22,35 @@
       </span>
     </div>
 
+    <div class="flex gap-4 items-center">
     <!-- Center: shift / date / time -->
-    <div class="text-white text-sm font-medium text-center">
-      {{ shift?.shift_code || '--' }} | {{ currentDate | date:'dd MMM yyyy' }} | {{ currentDate | date:'h:mm:ss a' }}
+    <div class="bg-blue-900 rounded-md flex px-4 py-1 items-center">
+      <!-- {{ shift?.shift_code || '--' }} | {{ currentDate | date:'dd MMM yyyy' }} | {{ currentDate | date:'h:mm:ss a' }} -->
+    
+    <div class="flex  border_status pr-2">
+        <div class="text-sm font-medium ml-1"> {{ shift?.shift_code || '--' }}</div>
+      </div>
+      <span class="text-gray-500">|</span>
+      <div class="flex border_status px-2">
+        <div class="text-sm font-medium">{{ currentDate | date:'dd MMM yyyy' }}</div>
+      </div>
+      <span class="text-gray-500">|</span>
+      <div class="ms-2">
+        <div class="text-sm font-medium">{{ currentDate | date:'h:mm:ss a' }}</div>
+      </div>
+    
     </div>
 
     <!-- Right: Back button -->
     <button routerLink="/dashboard"
-            class="bg-white text-gray-700 px-4 py-1.5 rounded-lg font-medium text-sm flex items-center gap-1">
-      ← Back
-    </button>
+            class="bg-[var(--color-stm-primary)] text-white pr-4 ps-2 py-1.5 rounded-lg font-medium text-sm flex items-center gap-1">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+</svg>
 
+            Back
+    </button>
+</div>
   </div>
 
 
@@ -40,8 +58,20 @@
   <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
 
     <!-- MACHINE CARD -->
-    <div class="xl:col-span-6 bg-white rounded-xl border-2 border-green-400 p-2 flex flex-col md:flex-row gap-6">
-
+    <div class="xl:col-span-6 bg-white rounded-xl border-big green-full p-2 flex flex-col md:flex-row gap-6 shadow-xl"
+    [ngClass]="{
+        'green-full':  liveStatus === 'RUNNING',
+        'yellow-full': liveStatus === 'IDLE',
+        'gray-full':   liveStatus === 'OFFLINE'
+      }">
+    
+<!-- <span class="blink">This text blinks! :) </span> -->
+<span class="text-white inline-block text-sm font-semibold px-3 py-1 rounded-full mt-1 blink"
+              [ngClass]="{
+                'green':  liveStatus === 'RUNNING',
+                'yellow': liveStatus === 'IDLE',
+                'gray': liveStatus === 'OFFLINE'
+              }">{{ liveStatus }}</span>
       <div class="w-full md:w-1/2">
         <img [src]="machine?.image || '/images/product/machine_login_02.png'"
              class="rounded-lg w-full object-contain h-60">
@@ -60,49 +90,57 @@
 
         <!-- Part / Comp. Id / Optn. No -->
         <div class="space-y-1 text-sm mb-3">
-          <div class=" bg-white rounded-lg px-3 py-1.5">
-            <div class="">
-            <span class="text-gray-500 mr-2">Part</span>
-            <span class="font-medium">{{ job?.part_name || '--' }}</span>
+          <div class=" flex gap-2">
+            <div class="bg-white border rounded-lg p-3 flex flex-col flex-1">
+            <span class="text-gray-700 mr-2">Part</span>
+            <span class="font-bold">{{ job?.part_name || '--' }}</span>
             </div>
-            <div class=""><span class="text-gray-500 mr-2">Comp. Id</span>
-            <span class="font-medium">{{ job?.component_id || '--' }}</span>
+            <div class="bg-white border rounded-lg p-3 flex flex-col flex-1"><span class="text-gray-700 mr-2">Component Id</span>
+            <span class="font-bold">{{ job?.component_id || '--' }}</span>
           </div>
-            <div class=""><span class="text-gray-500 mr-2">Optn. No</span>
+            <!-- <div class=""><span class="text-gray-500 mr-2">Operation No</span>
             <span class="font-medium">{{ job?.operation_no || '--' }}</span>
-          </div>
+          </div> -->
+          <!-- <div class=""><span class="text-gray-500 mr-2">Status</span>
+            <span class="text-white inline-block text-xs font-semibold px-3 py-1 rounded-full mt-1 "
+              [ngClass]="{
+                'green':  liveStatus === 'RUNNING',
+                'yellow': liveStatus === 'IDLE',
+                'gray': liveStatus === 'OFFLINE'
+              }">{{ liveStatus }}</span>
+          </div> -->
           </div>
         </div>
 
         <!-- Plan / Actual -->
         <div class="grid grid-cols-2 gap-3 text-center bg-white border rounded-lg p-3 mb-3">
           <div class="flex items-center gap-2">
-            <span class="font-semibold green rounded-md w-5 h-5 flex items-center justify-center text-white p-0.5">
+            <span class="font-semibold green rounded-md w-7 h-7 flex items-center justify-center text-white p-0.5">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
                 <path fill-rule="evenodd" d="M15.22 6.268a.75.75 0 0 1 .968-.431l5.942 2.28a.75.75 0 0 1 .431.97l-2.28 5.94a.75.75 0 1 1-1.4-.537l1.63-4.251-1.086.484a11.2 11.2 0 0 0-5.45 5.173.75.75 0 0 1-1.199.19L9 12.312l-6.22 6.22a.75.75 0 0 1-1.06-1.061l6.75-6.75a.75.75 0 0 1 1.06 0l3.606 3.606a12.695 12.695 0 0 1 5.68-4.974l1.086-.483-4.251-1.632a.75.75 0 0 1-.432-.97Z" clip-rule="evenodd" />
               </svg>
             </span>
-            <div class="text-start">
-              <p class="text-gray-500 text-sm">Plan</p>
-              <p class="font-semibold text-lg -mt-2">{{ job?.target_qty || 0 }}</p>
+            <div class="text-start flex items-center gap-2">
+              <p class="text-gray-700 text-sm">Plan</p>
+              <p class="font-semibold text-2xl">{{ job?.target_qty || 0 }}</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <span class="font-semibold red rounded-md w-5 h-5 flex items-center justify-center text-white p-0.5">
+            <span class="font-semibold red rounded-md w-7 h-7 flex items-center justify-center text-white p-0.5">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
                 <path fill-rule="evenodd" d="M1.72 5.47a.75.75 0 0 1 1.06 0L9 11.69l3.756-3.756a.75.75 0 0 1 .985-.066 12.698 12.698 0 0 1 4.575 6.832l.308 1.149 2.277-3.943a.75.75 0 1 1 1.299.75l-3.182 5.51a.75.75 0 0 1-1.025.275l-5.511-3.181a.75.75 0 0 1 .75-1.3l3.943 2.277-.308-1.149a11.194 11.194 0 0 0-3.528-5.617l-3.809 3.81a.75.75 0 0 1-1.06 0L1.72 6.53a.75.75 0 0 1 0-1.061Z" clip-rule="evenodd" />
               </svg>
             </span>
-            <div class="text-start">
-              <p class="text-gray-500 text-sm">Actual</p>
-              <p class="font-semibold text-lg -mt-2">{{ livePartCount || 0 }}</p>
+            <div class="text-start flex items-center gap-2">
+              <p class="text-gray-700 text-sm">Actual</p>
+              <p class="font-semibold text-2xl">{{ livePartCount || 0 }}</p>
             </div>
           </div>
         </div>
 
         <!-- Setup Time -->
         <div class="text-sm ">
-          <span class="text-gray-500 mr-2">Setup Time</span>
+          <span class="text-gray-700 mr-2">Setup Time</span>
           <span class="font-semibold">{{ setupTime }}</span>
         </div>
 
@@ -111,8 +149,8 @@
 
 
     <!-- TIME INFO -->
-    <div class="xl:col-span-3 bg-white rounded-xl border p-2">
-      <h3 class="card-title">Time Info</h3>
+    <div class="xl:col-span-3 bg-white rounded-xl border p-2  shadow-xl">
+      <h3 class="text-base font-semibold text-center mb-2">Time Info</h3>
       <div class="-mt-2">
       <apx-chart
         [series]="timePieSeries"
@@ -123,19 +161,19 @@
         [dataLabels]="timePieChart.dataLabels">
       </apx-chart>
       </div>
-      <div class="flex space-y-2 justify-between">
-        <div class="flex items-center gap-3">
-          <span class="w-3 h-8 rounded-sm bg-green-500 flex-shrink-0"></span>
+      <div class="flex justify-center gap-4">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-full rounded-md bg-green-500 flex-shrink-0"></span>
           <div>
-            <p class="text-xs text-gray-500">Running Time</p>
-            <p class="font-semibold text-base leading-tight">{{ formatDuration(runTime) }}</p>
+            <p class="text-sm text-gray-700">Running Time</p>
+            <p class="font-semibold text-xl leading-tight">{{ formatDuration(runTime) }}</p>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          <span class="w-3 h-8 rounded-sm bg-yellow-400 flex-shrink-0"></span>
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-full rounded-md yellow flex-shrink-0"></span>
           <div>
-            <p class="text-xs text-gray-500">Idle Time</p>
-            <p class="font-semibold text-base leading-tight">{{ formatDuration(idleTime) }}</p>
+            <p class="text-sm text-gray-700">Idle Time</p>
+            <p class="font-semibold text-xl leading-tight">{{ formatDuration(idleTime) }}</p>
           </div>
         </div>
       </div>
@@ -143,9 +181,9 @@
 
 
     <!-- MACHINE STATUS / UTILIZATION -->
-    <div class="xl:col-span-3 bg-white rounded-xl border p-2">
+    <div class="xl:col-span-3 bg-white rounded-xl border p-2  shadow-xl">
 
-      <h3 class="card-title text-center">Machine Status</h3>
+      <h3 class="text-base font-semibold text-center mb-2">Machine Status</h3>
 
       <!-- Accepted / Rejected + Radial chart -->
       <div class="flex items-center justify-between gap-2 -mt-6">
@@ -161,7 +199,7 @@
 
             </span>
             <div>
-              <p class="text-xs text-gray-500 leading-none">Accepted</p>
+              <p class="text-sm text-gray-700 leading-none">Accepted</p>
               <p class="text-xl font-bold text-gray-900 leading-tight">{{ quality?.accepted || 0 }}</p>
             </div>
           </div>
@@ -174,7 +212,7 @@
 
             </span>
             <div>
-              <p class="text-xs text-gray-500 leading-none">Rejected</p>
+              <p class="text-sm text-gray-700 leading-none">Rejected</p>
               <p class="text-xl font-bold text-gray-900 leading-tight">{{ quality?.rejected || 0 }}</p>
             </div>
           </div>
@@ -199,7 +237,7 @@
 
       <!-- Power Consumption -->
       <div class="border-t pt-3">
-        <p class="flex items-center gap-2 text-sm font-semibold mb-2">
+        <p class="flex items-center gap-2 text-sm font-semibold mb-2 justify-center">
           <span class="flex items-center justify-center w-6 h-6 rounded-md bg-green-500">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="w-4 h-4">
               <path fill-rule="evenodd" d="M14.615 1.595a.75.75 0 0 1 .359.852L12.982 9.75h7.268a.75.75 0 0 1 .548 1.262l-10.5 11.25a.75.75 0 0 1-1.272-.71l1.992-7.302H3.718a.75.75 0 0 1-.548-1.262l10.5-11.25a.75.75 0 0 1 .945-.143Z" clip-rule="evenodd"/>
@@ -208,22 +246,22 @@
           Power Consumption
         </p>
         <div class="grid grid-cols-2 gap-2">
-          <div class="bg-gray-50 border rounded-xl flex items-center gap-2 px-3 py-2">
-            <div class="text-xs text-gray-500 leading-tight">
+          <div class="bg-gray-50 border rounded-xl flex items-center gap-2 px-3 py-1 justify-center">
+            <div class="text-sm text-gray-700 leading-tight">
               <span class="font-medium">{{shift?.shift_code}}</span><br>
             </div>
             <span class="text-gray-400 font-medium">›</span>
-            <div>
+            <div class="flex flex-col justify-center items-center gap-0">
               <span class="text-2xl font-bold text-gray-900">{{ power?.shift_kwh || 0 }}</span>
-              <span class="text-xs text-gray-500 ml-0.5">KWH</span>
+              <span class="text-xs text-gray-700 ml-0.5 -mt-2">KWH</span>
             </div>
           </div>
-          <div class="bg-gray-50 border rounded-xl flex items-center gap-2 px-3 py-2">
-            <div class="text-xs text-gray-500 leading-tight font-medium">Total</div>
+          <div class="bg-gray-50 border rounded-xl flex items-center gap-2 px-3 py-1 justify-center">
+            <div class="text-sm text-gray-700 leading-tight font-medium">Total</div>
             <span class="text-gray-400 font-medium">›</span>
-            <div>
+            <div class="flex flex-col justify-center items-center">
               <span class="text-2xl font-bold text-gray-900">{{ power?.total_kwh || 0 }}</span>
-              <span class="text-xs text-gray-500 ml-0.5">KWH</span>
+              <span class="text-xs text-gray-700 ml-0.5 -mt-2">KWH</span>
             </div>
           </div>
         </div>
@@ -234,13 +272,13 @@
 
 
   <!-- BOTTOM GRID — OEE + Speedometers -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 ">
 
     <!-- ══════════════ OEE ══════════════ -->
-    <div class="bg-white rounded-xl border p-2 flex flex-col items-center">
+    <div class="bg-white rounded-xl border p-2 flex flex-col items-center  shadow-xl">
       <h3 class="text-base font-semibold text-center mb-2">OEE</h3>
 
-      <div class="flex items-center justify-center gap-4 w-full overflow-hidden">
+      <div class="flex items-center justify-center w-full overflow-hidden">
 
         <!-- Dashed radialBar with HTML value overlay -->
         <div class="relative flex-shrink-0 -mt-6" style="width:250px; height:200px; overflow:hidden">
@@ -263,26 +301,26 @@
         </div>
 
         <!-- A / P / Q legend -->
-        <div class="flex flex-col gap-4 pl-1">
+        <div class="flex flex-col gap-4 pl-1 mr-6">
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:#22c55e"></span>
             <div>
-              <p class="text-xs text-gray-400 leading-none">Availability</p>
-              <p class="font-bold text-sm leading-tight">{{ oee?.availability || 0 }}%</p>
+              <p class="text-sm text-gray-700 leading-none">Availability</p>
+              <p class="font-bold text-xl leading-tight">{{ oee?.availability || 0 }}%</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:#60a5fa"></span>
             <div>
-              <p class="text-xs text-gray-400 leading-none">Performance</p>
-              <p class="font-bold text-sm leading-tight">{{ oee?.performance || 0 }}%</p>
+              <p class="text-sm text-gray-700 leading-none">Performance</p>
+              <p class="font-bold text-xl leading-tight">{{ oee?.performance || 0 }}%</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:#a855f7"></span>
             <div>
-              <p class="text-xs text-gray-400 leading-none">Quality</p>
-              <p class="font-bold text-sm leading-tight">{{ oee?.quality || 0 }}%</p>
+              <p class="text-sm text-gray-700 leading-none">Quality</p>
+              <p class="font-bold text-xl leading-tight">{{ oee?.quality || 0 }}%</p>
             </div>
           </div>
         </div>
@@ -292,10 +330,10 @@
 
 
     <!-- ══════════════ SPINDLE LOAD ══════════════ -->
-    <div class="bg-white rounded-xl border p-2 flex flex-col items-center">
+    <div class="bg-white rounded-xl border p-2 flex flex-col items-center shadow-xl">
       <h3 class="text-base font-semibold mb-1">Spindle Load</h3>
 
-      <svg viewBox="0 0 300 170" xmlns="http://www.w3.org/2000/svg"
+      <svg viewBox="0 0 310 170" xmlns="http://www.w3.org/2000/svg"
            class="w-full" style="max-width:300px">
         <defs>
           <!-- Green → Yellow → Red gradient for spindle fill -->
@@ -321,18 +359,18 @@
               clip-path="url(#spindleClip)"/>
 
         <!-- Scale labels -->
-        <text [attr.x]="gaugeLabel(0).x+5"    [attr.y]="gaugeLabel(0).y+5"
-              text-anchor="start"  font-size="10" fill="#9ca3af">0</text>
-        <text [attr.x]="gaugeLabel(20).x"     [attr.y]="gaugeLabel(20).y+4"
-              text-anchor="middle" font-size="10" fill="#9ca3af">20%</text>
-        <text [attr.x]="gaugeLabel(40).x"     [attr.y]="gaugeLabel(40).y+4"
-              text-anchor="middle" font-size="10" fill="#9ca3af">40%</text>
-        <text [attr.x]="gaugeLabel(60).x"     [attr.y]="gaugeLabel(60).y+4"
-              text-anchor="middle" font-size="10" fill="#9ca3af">60%</text>
-        <text [attr.x]="gaugeLabel(80).x"     [attr.y]="gaugeLabel(80).y+4"
-              text-anchor="middle" font-size="10" fill="#9ca3af">80%</text>
-        <text [attr.x]="gaugeLabel(100).x-5"  [attr.y]="gaugeLabel(100).y+5"
-              text-anchor="end"    font-size="10" fill="#9ca3af">100%</text>
+        <text [attr.x]="gaugeLabel(0, 28).x+5"    [attr.y]="gaugeLabel(0, 28).y+5"
+              text-anchor="start"  font-size="12" fill="#6b7280">0</text>
+        <text [attr.x]="gaugeLabel(20, 28).x"     [attr.y]="gaugeLabel(20, 28).y+4"
+              text-anchor="middle" font-size="12" fill="#6b7280">20%</text>
+        <text [attr.x]="gaugeLabel(40, 28).x"     [attr.y]="gaugeLabel(40, 28).y+8"
+              text-anchor="middle" font-size="12" fill="#6b7280">40%</text>
+        <text [attr.x]="gaugeLabel(60, 28).x"     [attr.y]="gaugeLabel(60, 28).y+8"
+              text-anchor="middle" font-size="12" fill="#6b7280">60%</text>
+        <text [attr.x]="gaugeLabel(80, 28).x"     [attr.y]="gaugeLabel(80, 28).y+4"
+              text-anchor="middle" font-size="12" fill="#6b7280">80%</text>
+        <text [attr.x]="gaugeLabel(100, 28).x+10"  [attr.y]="gaugeLabel(100, 28).y+5"
+              text-anchor="end"    font-size="12" fill="#6b7280">100%</text>
 
         <!-- Needle -->
         <line [attr.x1]="gaugeNeedle(spindleSeries[0]).x1"
@@ -351,7 +389,7 @@
           {{ spindleSeries[0] | number:'1.0-0' }}%
         </text>
         <text [attr.x]="GCX" [attr.y]="GCY - 30"
-              text-anchor="middle" font-size="10" fill="#6b7280">
+              text-anchor="middle" font-size="14" fill="#6b7280">
           {{ liveRPM | number:'1.0-0' }} RPM
         </text>
 
@@ -364,10 +402,10 @@
 
 
     <!-- ══════════════ FEED OVERRIDE ══════════════ -->
-    <div class="bg-white rounded-xl border p-2 flex flex-col items-center">
+    <div class="bg-white rounded-xl border p-2 flex flex-col items-center  shadow-xl">
       <h3 class="text-base font-semibold mb-1">Feed Override</h3>
 
-      <svg viewBox="0 0 300 170" xmlns="http://www.w3.org/2000/svg"
+      <svg viewBox="0 0 310 170" xmlns="http://www.w3.org/2000/svg"
            class="w-full" style="max-width:300px">
         <defs>
           <!-- Purple → violet gradient for feed fill -->
@@ -397,20 +435,20 @@
               stroke="#e53935" stroke-width="1.5" stroke-dasharray="5,3"/>
 
         <!-- Scale labels -->
-        <text [attr.x]="gaugeLabel(0).x+5"    [attr.y]="gaugeLabel(0).y+5"
-              text-anchor="start"  font-size="10" fill="#9ca3af">0</text>
-        <text [attr.x]="gaugeLabel(16.7).x"   [attr.y]="gaugeLabel(16.7).y+4"
-              text-anchor="middle" font-size="10" fill="#9ca3af">25%</text>
-        <text [attr.x]="gaugeLabel(33.3).x"   [attr.y]="gaugeLabel(33.3).y+4"
-              text-anchor="middle" font-size="10" fill="#9ca3af">50%</text>
-        <text [attr.x]="gaugeLabel(50).x"     [attr.y]="gaugeLabel(50).y+4"
-              text-anchor="middle" font-size="10" fill="#9ca3af">75%</text>
-        <text [attr.x]="gaugeLabel(66.7).x"   [attr.y]="gaugeLabel(66.7).y+4"
-              text-anchor="middle" font-size="10" fill="#e53935" font-weight="700">100%</text>
-        <text [attr.x]="gaugeLabel(83.3).x"   [attr.y]="gaugeLabel(83.3).y+4"
-              text-anchor="middle" font-size="10" fill="#9ca3af">125%</text>
-        <text [attr.x]="gaugeLabel(100).x-5"  [attr.y]="gaugeLabel(100).y+5"
-              text-anchor="end"    font-size="10" fill="#9ca3af">150%</text>
+        <text [attr.x]="gaugeLabel(0, 28).x+5"    [attr.y]="gaugeLabel(0, 28).y+10"
+              text-anchor="start"  font-size="12" fill="#6b7280">0</text>
+        <text [attr.x]="gaugeLabel(16.7, 28).x-3"   [attr.y]="gaugeLabel(16.7, 28).y+8"
+              text-anchor="middle" font-size="12" fill="#6b7280">25%</text>
+        <text [attr.x]="gaugeLabel(33.3, 28).x"   [attr.y]="gaugeLabel(33.3, 28).y+8"
+              text-anchor="middle" font-size="12" fill="#6b7280">50%</text>
+        <text [attr.x]="gaugeLabel(50, 28).x"     [attr.y]="gaugeLabel(50, 28).y+10"
+              text-anchor="middle" font-size="12" fill="#6b7280">75%</text>
+        <text [attr.x]="gaugeLabel(66.7, 28).x"   [attr.y]="gaugeLabel(66.7, 28).y+4"
+              text-anchor="middle" font-size="12" fill="#e53935" font-weight="700">100%</text>
+        <text [attr.x]="gaugeLabel(83.3, 28).x"   [attr.y]="gaugeLabel(83.3, 28).y+4"
+              text-anchor="middle" font-size="12" fill="#6b7280">125%</text>
+        <text [attr.x]="gaugeLabel(100, 28).x-1"  [attr.y]="gaugeLabel(100, 28).y"
+              text-anchor="middle"   dominant-baseline="middle" font-size="12" fill="#6b7280">150%</text>
 
         <!-- Needle -->
         <line [attr.x1]="gaugeNeedle(feedSeries[0]).x1"
@@ -429,7 +467,7 @@
           {{ feedSeries[0] | number:'1.0-0' }}%
         </text>
         <text [attr.x]="GCX" [attr.y]="GCY - 30"
-              text-anchor="middle" font-size="10" fill="#6b7280">
+              text-anchor="middle" font-size="14" fill="#6b7280">
           {{ liveFeed | number:'1.0-0' }} mm/min
         </text>
 

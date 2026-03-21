@@ -258,7 +258,7 @@ h4 {
   --light-blue: #F3F4FF;
   --green: #0CAD5D;
   --red: #FF5966;
-  --yellow: #C38E18;
+  --yellow: #FFA600;
   --blue: #3B4CCA;
   --color-primary-100: #9CA5E1;
   --color-primary-200: #6A78D2;
@@ -382,7 +382,7 @@ h4 {
 }
 
 .gray {
-  background-color: #2d1a1c;
+  background-color: #6e6e6e;
 }
 
 .menu-default {
@@ -390,7 +390,7 @@ h4 {
 }
 
 .border-big {
-  border-width: 4px;
+  border-width: 6px;
 
   &.green-full {
     border-color: #0CAD5D;
@@ -405,7 +405,7 @@ h4 {
   }
 
   &.gray-full {
-    border-color: rgb(61, 61, 61)
+    border-color: #6e6e6e
   }
 }
 
@@ -451,4 +451,18 @@ h4 {
 }
 .chart-align-center{
   margin-left: -2d0px;
+}
+
+@-webkit-keyframes blinker {
+  from {opacity: 1.0;}
+  to {opacity: 0.0;}
+}
+.blink{
+	text-decoration: blink;
+	-webkit-animation-name: blinker;
+	-webkit-animation-duration: 0.6s;
+	-webkit-animation-iteration-count:infinite;
+	-webkit-animation-timing-function:ease-in-out;
+	-webkit-animation-direction: alternate;
+  position: absolute;
 }

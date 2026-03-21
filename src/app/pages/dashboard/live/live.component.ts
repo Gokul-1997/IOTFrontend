@@ -350,7 +350,8 @@ export class LiveComponent implements OnInit, OnDestroy {
   }
 
   /** Label position outside arc (default offset=20 px beyond arc edge) */
-  gaugeLabel(pct: number, offset = 20): { x: number; y: number } {
+  gaugeLabel(pct: number, offset = 32): { x: number; y: number } {
+    
     const { GCX: cx, GCY: cy, GR: r } = this;
     const rad = this._gaugeAngle(pct);
     const lr  = r + offset;
@@ -489,11 +490,22 @@ export class LiveComponent implements OnInit, OnDestroy {
 
     /* ── Time Pie ── */
     this.timePieChart = {
-      chart:       { type: 'pie', height: 180 },
-      labels:      ['Running', 'Idle'],
-      colors:      ['#16a34a', '#f59e0b'],
-      legend:      { show:false},
-      dataLabels:  { formatter: (v: any) => `${v.toFixed(1)}%` }
-    };
+  chart: { type: 'pie', height: 180 },
+  labels: ['Running', 'Idle'],
+  colors: ['#0CAD5D', '#dfb400'],
+  legend: { show: false },
+  stroke: { width: 1 },
+  dataLabels: {
+    minAngleToShowLabel: 15,
+    formatter: (v: any) => `${v.toFixed(1)}%`,
+    offset: -25,
+    style: {
+      fontSize: '14px',
+      fontWeight: 600,
+      colors: ['#fff'],
+
+    }
+  }
+};
   }
 }
