@@ -55,7 +55,17 @@ body {
   background: linear-gradient(19deg, #4A2FA0 0%, #C5404A 100%);
   padding-top: 15px;
 }
+.dark .bg-wrapper {
+  background: #000;
+  padding-top: 15px;
+}
+.bg-top-bar{
+  @apply bg-gradient-to-r from-[#2B3990] to-[#9B3F70]
+}
 
+.dark .bg-top-bar{
+  background: #111111;
+}
 h1,
 h2,
 h3,
@@ -388,7 +398,9 @@ h4 {
 .menu-default {
   background-color: #EAEDFF
 }
-
+.dark .menu-default {
+    background-color: #000000;
+}
 .border-big {
   border-width: 6px;
 
@@ -465,4 +477,7 @@ h4 {
 	-webkit-animation-timing-function:ease-in-out;
 	-webkit-animation-direction: alternate;
   position: absolute;
+}
+.dark .gauge-text {
+  fill: #f9fafb;
 }

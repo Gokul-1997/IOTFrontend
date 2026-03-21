@@ -1,8 +1,8 @@
-<div class="min-h-screen bg-wrapper xl:px-8 mx-auto">
+<div class="min-h-screen bg-wrapper  xl:px-8 mx-auto">
 
   <!-- TOP BAR -->
 
-  <div class="bg-gradient-to-r from-[#2B3990] to-[#9B3F70]
+  <div class="bg-top-bar
             text-white rounded-xl px-4 py-2 mb-3
             flex items-center justify-between">
 
@@ -61,7 +61,7 @@
     <div
       *ngFor="let m of machines; trackBy: trackByMachine"
       (click)="goToLive(m.machine_id)"
-      class="relative rounded-2xl shadow-xl p-3 hover:shadow-2xl transition cursor-pointer border-big"
+      class="relative dark:bg-[#111111] rounded-2xl shadow-xl p-3 hover:shadow-2xl transition cursor-pointer border-big"
       [ngClass]="{
         'bg-white':    !m.alarm,
         'alarm-blink': m.alarm,
@@ -79,7 +79,7 @@
         <!-- MACHINE IMAGE + RUN/IDLE -->
 
         <div>
-          <div class="text-xl font-bold text-[var(--color-primary-500)]">{{ m.machine_serial_no }}</div>
+          <div class="text-xl font-bold text-[var(--color-primary-500)] dark:text-white">{{ m.machine_serial_no }}</div>
           <img [src]="m.image_url"
                class="w-full h-28 object-contain" />
 
@@ -98,7 +98,7 @@
               <div class="text-xl font-bold">
                 {{ (m.run_time || '00:00:00').split(':')[0] }}h
               </div>
-              <div class="text-xs text-[var(--color-primary-500)] -mt-1">
+              <div class="text-xs text-[var(--color-primary-500)] dark:text-white -mt-1">
                 {{ (m.run_time || '00:00:00').split(':')[1] }}m
                 {{ (m.run_time || '00:00:00').split(':')[2] }}s
               </div>
@@ -115,7 +115,7 @@
               <div class="text-xl font-bold">
                 {{ (m.idle_time || '00:00:00').split(':')[0] }}h
               </div>
-              <div class="text-xs text-[var(--color-primary-500)] -mt-1">
+              <div class="text-xs text-[var(--color-primary-500)] dark:text-white -mt-1">
                 {{ (m.idle_time || '00:00:00').split(':')[1] }}m
                 {{ (m.idle_time || '00:00:00').split(':')[2] }}s
               </div>
@@ -131,22 +131,22 @@
         <div class="menu-default rounded-xl p-2 text-sm space-y-2">
 
           <div>
-            <span class="text-gray-700">Operator</span><br>
+            <span class="text-gray-700 dark:text-[#939393] ">Operator</span><br>
             <b>{{ m.operator_name || '--' }}</b>
           </div>
 
           <div>
-            <span class="text-gray-700">Part Name</span><br>
+            <span class="text-gray-700 dark:text-[#939393]">Part Name</span><br>
             <div class="max-w-[100px] overflow-hidden whitespace-nowrap text-ellipsis font-bold">{{ m.part_name || '--' }}</div>
           </div>
 
           <div>
-            <span class="text-gray-700">Comp. ID</span><br>
+            <span class="text-gray-700 dark:text-[#939393]">Comp. ID</span><br>
             <b class="whitespace-nowrap overflow-ellipsis">{{ m.component_id || '--' }}</b>
           </div>
 
           <div class="">
-            <span class="text-gray-700 text-xs">Status</span><br>
+            <span class="text-gray-700 dark:text-[#939393] text-xs">Status</span><br>
 
             <!--
               FIX: added 'bg-red-100 text-red-700' for OFFLINE
@@ -205,7 +205,7 @@
 
           </div>
 
-          <div class="text-sm text-gray-800 font-bold">Utilization</div>
+          <div class="text-sm text-gray-800 dark:text-white font-bold">Utilization</div>
 
           <!-- Target / Achieved -->
           <div class="flex flex-col justify-center gap-1 mt-2 text-sm">
@@ -218,7 +218,7 @@
             </span>
               <div class="text-left">
               <div class="text-xs">Target</div>
-              <div class="text-xl text-[var(--color-primary-500)] font-bold -mt-1">{{ m.target_qty || 0 }}</div>
+              <div class="text-xl text-[var(--color-primary-500)] dark:text-white font-bold -mt-1">{{ m.target_qty || 0 }}</div>
             </div>
             </div>
 
@@ -231,7 +231,7 @@
             </span>
               <div class="text-left">
               <div class="text-xs">Achieved</div>
-              <div class="text-xl text-[var(--color-primary-500)] font-bold -mt-1">{{ m.achieved_qty || 0 }}</div>
+              <div class="text-xl text-[var(--color-primary-500)] dark:text-white font-bold -mt-1">{{ m.achieved_qty || 0 }}</div>
             </div>
             </div>
 

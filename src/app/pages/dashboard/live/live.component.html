@@ -1,7 +1,7 @@
 <div class="min-h-screen bg-wrapper xl:px-8 mx-auto">
 
   <!-- HEADER -->
-  <div class="bg-gradient-to-r from-[#2B3990] to-[#9B3F70]
+  <div class="bg-top-bar
             text-white rounded-xl px-4 py-2 mb-3
             flex items-center justify-between  shadow-xl">
 
@@ -43,7 +43,7 @@
 
     <!-- Right: Back button -->
     <button routerLink="/dashboard"
-            class="bg-[var(--color-stm-primary)] text-white pr-4 ps-2 py-1.5 rounded-lg font-medium text-sm flex items-center gap-1">
+            class="bg-[var(--color-stm-primary)] dark:bg-[#683b74] text-white pr-4 ps-2 py-1.5 rounded-lg font-medium text-sm flex items-center gap-1">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
   <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
 </svg>
@@ -58,7 +58,7 @@
   <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
 
     <!-- MACHINE CARD -->
-    <div class="xl:col-span-6 bg-white rounded-xl border-big green-full p-2 flex flex-col md:flex-row gap-6 shadow-xl"
+    <div class="xl:col-span-6 bg-white dark:bg-[#111111] rounded-xl border-big green-full p-2 flex flex-col md:flex-row gap-6 shadow-xl"
     [ngClass]="{
         'green-full':  liveStatus === 'RUNNING',
         'yellow-full': liveStatus === 'IDLE',
@@ -77,13 +77,13 @@
              class="rounded-lg w-full object-contain h-60">
       </div>
 
-      <div class="w-full md:w-1/2 bg-blue-50 rounded-xl p-2">
+      <div class="w-full md:w-1/2 bg-blue-50 dark:bg-black rounded-xl p-2">
 
         <!-- Operator -->
         <div class="flex items-center gap-3 mb-3">
           <img src="/images/user/owner.png" class="h-12 w-12 rounded-full">
           <div>
-            <p class="text-sm text-gray-500">Operator</p>
+            <p class="text-sm text-gray-500 dark:text-[#939393]">Operator</p>
             <p class="text-lg font-semibold">{{ operator?.operator_name || '--' }}</p>
           </div>
         </div>
@@ -91,11 +91,11 @@
         <!-- Part / Comp. Id / Optn. No -->
         <div class="space-y-1 text-sm mb-3">
           <div class=" flex gap-2">
-            <div class="bg-white border rounded-lg p-3 flex flex-col flex-1">
-            <span class="text-gray-700 mr-2">Part</span>
+            <div class="bg-white dark:bg-[#111111]  rounded-lg p-3 flex flex-col flex-1">
+            <span class="text-gray-700 dark:text-[#939393] mr-2">Part</span>
             <span class="font-bold">{{ job?.part_name || '--' }}</span>
             </div>
-            <div class="bg-white border rounded-lg p-3 flex flex-col flex-1"><span class="text-gray-700 mr-2">Component Id</span>
+            <div class="bg-white dark:bg-[#111111]  rounded-lg p-3 flex flex-col flex-1"><span class="text-gray-700 dark:text-[#939393] mr-2">Component Id</span>
             <span class="font-bold">{{ job?.component_id || '--' }}</span>
           </div>
             <!-- <div class=""><span class="text-gray-500 mr-2">Operation No</span>
@@ -113,7 +113,7 @@
         </div>
 
         <!-- Plan / Actual -->
-        <div class="grid grid-cols-2 gap-3 text-center bg-white border rounded-lg p-3 mb-3">
+        <div class="grid grid-cols-2 gap-3 text-center bg-white dark:bg-[#111111]  rounded-lg p-3 mb-3">
           <div class="flex items-center gap-2">
             <span class="font-semibold green rounded-md w-7 h-7 flex items-center justify-center text-white p-0.5">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
@@ -121,7 +121,7 @@
               </svg>
             </span>
             <div class="text-start flex items-center gap-2">
-              <p class="text-gray-700 text-sm">Plan</p>
+              <p class="text-gray-700 dark:text-[#939393] text-sm">Plan</p>
               <p class="font-semibold text-2xl">{{ job?.target_qty || 0 }}</p>
             </div>
           </div>
@@ -132,7 +132,7 @@
               </svg>
             </span>
             <div class="text-start flex items-center gap-2">
-              <p class="text-gray-700 text-sm">Actual</p>
+              <p class="text-gray-700 dark:text-[#939393] text-sm">Actual</p>
               <p class="font-semibold text-2xl">{{ livePartCount || 0 }}</p>
             </div>
           </div>
@@ -140,7 +140,7 @@
 
         <!-- Setup Time -->
         <div class="text-sm ">
-          <span class="text-gray-700 mr-2">Setup Time</span>
+          <span class="text-gray-700 dark:text-[#939393] mr-2">Setup Time</span>
           <span class="font-semibold">{{ setupTime }}</span>
         </div>
 
@@ -149,7 +149,7 @@
 
 
     <!-- TIME INFO -->
-    <div class="xl:col-span-3 bg-white rounded-xl border p-2  shadow-xl">
+    <div class="xl:col-span-3 bg-white dark:bg-[#111111] rounded-xl  p-2  shadow-xl">
       <h3 class="text-base font-semibold text-center mb-2">Time Info</h3>
       <div class="-mt-2">
       <apx-chart
@@ -165,14 +165,14 @@
         <div class="flex items-center gap-2">
           <span class="w-2 h-full rounded-md bg-green-500 flex-shrink-0"></span>
           <div>
-            <p class="text-sm text-gray-700">Running Time</p>
+            <p class="text-sm text-gray-700 dark:text-[#939393]">Running Time</p>
             <p class="font-semibold text-xl leading-tight">{{ formatDuration(runTime) }}</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
           <span class="w-2 h-full rounded-md yellow flex-shrink-0"></span>
           <div>
-            <p class="text-sm text-gray-700">Idle Time</p>
+            <p class="text-sm text-gray-700 dark:text-[#939393]">Idle Time</p>
             <p class="font-semibold text-xl leading-tight">{{ formatDuration(idleTime) }}</p>
           </div>
         </div>
@@ -181,7 +181,7 @@
 
 
     <!-- MACHINE STATUS / UTILIZATION -->
-    <div class="xl:col-span-3 bg-white rounded-xl border p-2  shadow-xl">
+    <div class="xl:col-span-3 bg-white dark:bg-[#111111] rounded-xl  p-2  shadow-xl">
 
       <h3 class="text-base font-semibold text-center mb-2">Machine Status</h3>
 
@@ -199,8 +199,8 @@
 
             </span>
             <div>
-              <p class="text-sm text-gray-700 leading-none">Accepted</p>
-              <p class="text-xl font-bold text-gray-900 leading-tight">{{ quality?.accepted || 0 }}</p>
+              <p class="text-sm text-gray-700 dark:text-[#939393] leading-none">Accepted</p>
+              <p class="text-xl font-bold text-gray-900 dark:text-white leading-tight">{{ quality?.accepted || 0 }}</p>
             </div>
           </div>
 
@@ -212,8 +212,8 @@
 
             </span>
             <div>
-              <p class="text-sm text-gray-700 leading-none">Rejected</p>
-              <p class="text-xl font-bold text-gray-900 leading-tight">{{ quality?.rejected || 0 }}</p>
+              <p class="text-sm text-gray-700 dark:text-[#939393] leading-none">Rejected</p>
+              <p class="text-xl font-bold text-gray-900 dark:text-white leading-tight">{{ quality?.rejected || 0 }}</p>
             </div>
           </div>
 
@@ -236,7 +236,7 @@
       </div>
 
       <!-- Power Consumption -->
-      <div class="border-t pt-3">
+      <div class="border-t pt-3 dark:border-gray-700">
         <p class="flex items-center gap-2 text-sm font-semibold mb-2 justify-center">
           <span class="flex items-center justify-center w-6 h-6 rounded-md bg-green-500">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="w-4 h-4">
@@ -246,21 +246,21 @@
           Power Consumption
         </p>
         <div class="grid grid-cols-2 gap-2">
-          <div class="bg-gray-50 border rounded-xl flex items-center gap-2 px-3 py-1 justify-center">
-            <div class="text-sm text-gray-700 leading-tight">
+          <div class="bg-gray-50 dark:bg-[#111111] border dark:border-gray-700 rounded-xl flex items-center gap-2 px-3 py-1 justify-center">
+            <div class="text-sm text-gray-700  dark:text-[#939393] leading-tight">
               <span class="font-medium">{{shift?.shift_code}}</span><br>
             </div>
             <span class="text-gray-400 font-medium">›</span>
             <div class="flex flex-col justify-center items-center gap-0">
-              <span class="text-2xl font-bold text-gray-900">{{ power?.shift_kwh || 0 }}</span>
+              <span class="text-2xl font-bold text-gray-900 dark:text-white">{{ power?.shift_kwh || 0 }}</span>
               <span class="text-xs text-gray-700 ml-0.5 -mt-2">KWH</span>
             </div>
           </div>
-          <div class="bg-gray-50 border rounded-xl flex items-center gap-2 px-3 py-1 justify-center">
-            <div class="text-sm text-gray-700 leading-tight font-medium">Total</div>
+          <div class="bg-gray-50 dark:bg-[#111111] border dark:border-gray-700 rounded-xl flex items-center gap-2 px-3 py-1 justify-center">
+            <div class="text-sm text-gray-700 dark:text-[#939393] leading-tight font-medium">Total</div>
             <span class="text-gray-400 font-medium">›</span>
             <div class="flex flex-col justify-center items-center">
-              <span class="text-2xl font-bold text-gray-900">{{ power?.total_kwh || 0 }}</span>
+              <span class="text-2xl font-bold text-gray-900 dark:text-white">{{ power?.total_kwh || 0 }}</span>
               <span class="text-xs text-gray-700 ml-0.5 -mt-2">KWH</span>
             </div>
           </div>
@@ -275,7 +275,7 @@
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 ">
 
     <!-- ══════════════ OEE ══════════════ -->
-    <div class="bg-white rounded-xl border p-2 flex flex-col items-center  shadow-xl">
+    <div class="bg-white dark:bg-[#111111] rounded-xl  p-2 flex flex-col items-center  shadow-xl">
       <h3 class="text-base font-semibold text-center mb-2">OEE</h3>
 
       <div class="flex items-center justify-center w-full overflow-hidden">
@@ -305,21 +305,21 @@
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:#22c55e"></span>
             <div>
-              <p class="text-sm text-gray-700 leading-none">Availability</p>
+              <p class="text-sm text-gray-700 dark:text-[#939393] leading-none">Availability</p>
               <p class="font-bold text-xl leading-tight">{{ oee?.availability || 0 }}%</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:#60a5fa"></span>
             <div>
-              <p class="text-sm text-gray-700 leading-none">Performance</p>
+              <p class="text-sm text-gray-700 dark:text-[#939393] leading-none">Performance</p>
               <p class="font-bold text-xl leading-tight">{{ oee?.performance || 0 }}%</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:#a855f7"></span>
             <div>
-              <p class="text-sm text-gray-700 leading-none">Quality</p>
+              <p class="text-sm text-gray-700 dark:text-[#939393] leading-none">Quality</p>
               <p class="font-bold text-xl leading-tight">{{ oee?.quality || 0 }}%</p>
             </div>
           </div>
@@ -330,7 +330,7 @@
 
 
     <!-- ══════════════ SPINDLE LOAD ══════════════ -->
-    <div class="bg-white rounded-xl border p-2 flex flex-col items-center shadow-xl">
+    <div class="bg-white dark:bg-[#111111] rounded-xl  p-2 flex flex-col items-center shadow-xl">
       <h3 class="text-base font-semibold mb-1">Spindle Load</h3>
 
       <svg viewBox="0 0 310 170" xmlns="http://www.w3.org/2000/svg"
@@ -385,7 +385,7 @@
 
         <!-- Value display -->
         <text [attr.x]="GCX" [attr.y]="GCY - 50"
-              text-anchor="middle" font-size="26" font-weight="700" fill="#111827">
+              text-anchor="middle" font-size="26" font-weight="700" class="text-[#111827] dark:text-gray-100" fill="currentColor" >
           {{ spindleSeries[0] | number:'1.0-0' }}%
         </text>
         <text [attr.x]="GCX" [attr.y]="GCY - 30"
@@ -402,7 +402,7 @@
 
 
     <!-- ══════════════ FEED OVERRIDE ══════════════ -->
-    <div class="bg-white rounded-xl border p-2 flex flex-col items-center  shadow-xl">
+    <div class="bg-white dark:bg-[#111111] rounded-xl  p-2 flex flex-col items-center  shadow-xl">
       <h3 class="text-base font-semibold mb-1">Feed Override</h3>
 
       <svg viewBox="0 0 310 170" xmlns="http://www.w3.org/2000/svg"
@@ -463,7 +463,7 @@
 
         <!-- Value display -->
         <text [attr.x]="GCX" [attr.y]="GCY - 50"
-              text-anchor="middle" font-size="26" font-weight="700" fill="#111827">
+              text-anchor="middle" font-size="26" font-weight="700" class="text-[#111827] dark:text-gray-100" fill="currentColor">
           {{ feedSeries[0] | number:'1.0-0' }}%
         </text>
         <text [attr.x]="GCX" [attr.y]="GCY - 30"
