@@ -152,14 +152,20 @@
               FIX: added 'bg-red-100 text-red-700' for OFFLINE
               previously OFFLINE had no ngClass match → showed unstyled
             -->
-            <span class="text-white inline-block text-xs font-semibold px-3 py-1 rounded-full mt-1 "
+            <!-- <span class="text-white inline-block text-xs font-semibold px-3 py-1 rounded-full mt-1 "
               [ngClass]="{
                 'green':  m.status === 'RUNNING',
                 'yellow': m.status === 'IDLE',
                 'gray': m.status === 'OFFLINE'
               }">
               {{ m.status }}
-            </span>
+            </span> -->
+            <span class="text-white inline-block text-xs font-semibold px-3 py-1 rounded-full mt-1 blink"
+              [ngClass]="{
+                'green':  m.status === 'RUNNING',
+                'yellow': m.status === 'IDLE',
+                'gray': m.status === 'OFFLINE'
+              }">{{ m.status }}</span>
 
           </div>
 
