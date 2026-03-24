@@ -481,3 +481,22 @@ h4 {
 .dark .gauge-text {
   fill: #f9fafb;
 }
+.btn-blue{
+  @apply bg-[var(--color-stm-primary)] dark:bg-[#683b74] text-white pr-4 ps-2 py-1.5 rounded-lg font-medium text-sm flex items-center gap-1
+}
+
+.mdc-switch {
+    width: 45px!important;
+}
+.mat-mdc-slide-toggle .mdc-switch__handle:has(.mdc-switch__icons) {
+    width:18px!important;
+    height:18px!important;
+}
+.mdc-switch__track {
+    height:24px!important;
+}
+.mat-mdc-icon-button{
+  background: #3b5bdb!important;
+  width: 28px!important;
+  height: 28px!important;
+}

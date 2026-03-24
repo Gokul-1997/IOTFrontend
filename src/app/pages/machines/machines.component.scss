@@ -33,19 +33,19 @@
     font-size: 32px;
     width: 32px;
     height: 32px;
-    color: #3b5bdb;
+    color: #fff;
   }
 
   h2 {
     margin: 0;
     font-size: 1.4rem;
     font-weight: 700;
-    color: #1a1a2e;
+    color: #fff;
   }
 
   .subtitle {
     font-size: 0.78rem;
-    color: #6c757d;
+    color: #aaa4cd;
   }
 }
 
@@ -54,17 +54,24 @@
   display: flex;
   align-items: center;
   background: #fff;
-  border: 1.5px solid #dee2e6;
-  border-radius: 10px;
+  border: 2px solid #fff;
+  border-radius: 8px;
   padding: 0 10px;
   gap: 6px;
-  height: 42px;
+  // height: 42px;
   min-width: 260px;
   transition: border-color 0.2s;
 
-  &:focus-within {
+
+  &:focus-within,
+  &:focus {
     border-color: #3b5bdb;
-    box-shadow: 0 0 0 3px rgba(59, 91, 219, 0.1);
+    // border-width: 2px;
+    // box-shadow: 0 0 0 3px rgba(59, 91, 219, 0.1);
+
+    outline-color: #4f46e5;
+    // outline-offset: -2px;
+    outline-width: 2px;
   }
 
   .search-icon {
@@ -87,6 +94,8 @@
     }
   }
 
+  
+
   .clear-btn {
     width: 28px;
     height: 28px;
@@ -96,6 +105,19 @@
       font-size: 16px;
     }
   }
+}
+.search-box:focus{
+  outline-color: #4f46e5;
+  outline-width: 2px;
+}
+.focus\:outline-indigo-600:focus {
+    outline-color: #4f46e5;
+}
+.focus\:-outline-offset-2:focus {
+    outline-offset: -2px;
+}
+.focus\:outline-2:focus {
+    outline-width: 2px;
 }
 
 // ── BUTTONS ────────────────────────────────────────────────────────────────
@@ -142,6 +164,7 @@
 
 .table-wrapper {
   overflow-x: auto;
+  
 }
 
 .machines-table {
@@ -149,8 +172,8 @@
 
   // Header — keep z-index low so the nav dropdown is never cut through
   .mat-mdc-header-row {
-    background: #f8f9fa;
-    border-bottom: 2px solid #e9ecef;
+    background: #DBE0FF;
+    border-bottom: 2px solid #DBE0FF;
     z-index: 1 !important;
   }
 
@@ -159,9 +182,9 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #495057;
+    color: #182052;
     white-space: nowrap;
-    padding: 0 14px;
+    padding: 0 10px;
   }
 
   // Rows
@@ -174,16 +197,17 @@
   }
 
   .mat-mdc-cell {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #343a40;
-    padding: 10px 14px;
+    padding: 0px 10px;
     white-space: nowrap;
+    border-color: #e5e7eb!important;
   }
 }
 
 // ── COLUMN SPECIFICS ───────────────────────────────────────────────────────
 .col-index {
-  width: 48px;
+  width: 40px;
   text-align: center;
   color: #adb5bd !important;
   font-size: 0.8rem !important;
@@ -194,16 +218,9 @@
   text-align: right;
 }
 
-.serial-no {
-  font-family: 'Courier New', monospace;
-  font-weight: 700;
-  color: #3b5bdb;
-  font-size: 0.82rem;
-}
-
 .machine-thumb {
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
   object-fit: cover;
   border: 1.5px solid #dee2e6;
@@ -414,4 +431,20 @@
   }
 
   .delete-modal { background: #12203a; h3 { color: #f1f3f5; } }
+}
+.mat-mdc-table tr:nth-child(odd) {
+    background: #ffffff;
+}
+
+.mat-mdc-table tr:nth-child(even) {
+  background-color: #f1f3ff; /* white */
+}
+.mat-row {
+  min-height: 48px;
+}
+.mat-mdc-table tr {
+    height: 40px;
+}
+.mdc-form-field .mdc-switch{
+      width:20px!important;
 }
