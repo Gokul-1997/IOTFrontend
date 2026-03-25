@@ -26,3 +26,14 @@
     cursor: pointer;
   }
 }
+.op-modal {
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 0px 0 0px!important;
+  border-bottom: 1px solid #e5e5e5!important;
+  border-left: 0!important;
+  border-right: 0!important;
+  border-top: 0!important;
+  h3 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #212529; }
+}
+}

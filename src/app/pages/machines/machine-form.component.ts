@@ -47,6 +47,7 @@ export class MachineFormComponent implements OnInit {
     this.form = this.fb.group({
       machine_serial_no: ['', Validators.required],
       model: [''],
+      image_url: [''],
       controller: [''],
       mmc_no: [''],
       spindle_rpm: [''],
@@ -56,8 +57,7 @@ export class MachineFormComponent implements OnInit {
       fourth_axis: [''],
       twin_spindle: [false],
       twin_table: [false],
-      atc_tool_capacity: [''],
-      image_url: [''],
+      atc_tool_capacity: [''],      
       line_id: [null, Validators.required]
 
     });

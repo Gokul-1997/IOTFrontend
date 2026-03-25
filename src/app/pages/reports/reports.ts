@@ -293,9 +293,9 @@ export class Reports implements OnInit {
   }
 
   kpiColorClass(c: string): string {
-    return ({ blue: 'bg-blue-50 border-blue-200', green: 'bg-green-50 border-green-200',
-              yellow: 'bg-amber-50 border-amber-200', purple: 'bg-purple-50 border-purple-200' } as any)[c]
-      || 'bg-gray-50 border-gray-200';
+    return ({ blue: 'bg-blue-200 border-blue-200', green: 'bg-green-200 border-green-200',
+              yellow: 'bg-amber-100 border-amber-100', purple: 'bg-purple-200 border-purple-200' } as any)[c]
+      || 'bg-gray-200 border-gray-200';
   }
 
   kpiTextClass(c: string): string {

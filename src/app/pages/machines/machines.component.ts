@@ -24,6 +24,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatBadgeModule } from '@angular/material/badge';
 import { ToastService } from '../../core/services/toast.service';
+import { Sort } from '@angular/material/sort';
 
 // Maps Material sort column names → DB prefixed column names expected by backend
 const SORT_MAP: Record<string, string> = {
@@ -142,12 +143,18 @@ export class MachinesComponent implements OnInit, OnDestroy {
     this.searchSubject.next(this.search);
   }
 
+  sortedColumn: string = '';
   onSort(e: any) {
+    this.sortedColumn = e.direction ? e.active : '';
     if (!e.active || !e.direction) return;
     this.sortBy  = SORT_MAP[e.active] ?? 'm.id';
     this.sortDir = e.direction as 'asc' | 'desc';
     this.load();
   }
+  
+    isSorted(col: string) {
+      return this.sortedColumn === col;
+    }
 
   onPage(e: any) {
     this.page  = e.pageIndex + 1;
@@ -209,6 +216,9 @@ export class MachinesComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+
+
 
   rowIndex(i: number): number {
     return (this.page - 1) * this.limit + i + 1;

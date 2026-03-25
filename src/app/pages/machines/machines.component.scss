@@ -24,47 +24,31 @@
   flex-wrap: wrap;
 }
 
-.page-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 
-  .title-icon {
-    font-size: 32px;
-    width: 32px;
-    height: 32px;
-    color: #3b5bdb;
-  }
-
-  h2 {
-    margin: 0;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #1a1a2e;
-  }
-
-  .subtitle {
-    font-size: 0.78rem;
-    color: #6c757d;
-  }
-}
 
 // ── SEARCH ─────────────────────────────────────────────────────────────────
 .search-box {
   display: flex;
   align-items: center;
   background: #fff;
-  border: 1.5px solid #dee2e6;
-  border-radius: 10px;
+  border: 2px solid #fff;
+  border-radius: 8px;
   padding: 0 10px;
   gap: 6px;
-  height: 42px;
+  // height: 42px;
   min-width: 260px;
   transition: border-color 0.2s;
 
-  &:focus-within {
+
+  &:focus-within,
+  &:focus {
     border-color: #3b5bdb;
-    box-shadow: 0 0 0 3px rgba(59, 91, 219, 0.1);
+    // border-width: 2px;
+    // box-shadow: 0 0 0 3px rgba(59, 91, 219, 0.1);
+
+    outline-color: #4f46e5;
+    // outline-offset: -2px;
+    outline-width: 2px;
   }
 
   .search-icon {
@@ -87,6 +71,8 @@
     }
   }
 
+  
+
   .clear-btn {
     width: 28px;
     height: 28px;
@@ -96,6 +82,19 @@
       font-size: 16px;
     }
   }
+}
+.search-box:focus{
+  outline-color: #4f46e5;
+  outline-width: 2px;
+}
+.focus\:outline-indigo-600:focus {
+    outline-color: #4f46e5;
+}
+.focus\:-outline-offset-2:focus {
+    outline-offset: -2px;
+}
+.focus\:outline-2:focus {
+    outline-width: 2px;
 }
 
 // ── BUTTONS ────────────────────────────────────────────────────────────────
@@ -142,76 +141,10 @@
 
 .table-wrapper {
   overflow-x: auto;
+  
 }
 
-.machines-table {
-  width: 100%;
 
-  // Header — keep z-index low so the nav dropdown is never cut through
-  .mat-mdc-header-row {
-    background: #f8f9fa;
-    border-bottom: 2px solid #e9ecef;
-    z-index: 1 !important;
-  }
-
-  .mat-mdc-header-cell {
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #495057;
-    white-space: nowrap;
-    padding: 0 14px;
-  }
-
-  // Rows
-  .mat-mdc-row.data-row {
-    transition: background 0.15s;
-
-    &:hover {
-      background: #f1f3ff;
-    }
-  }
-
-  .mat-mdc-cell {
-    font-size: 0.85rem;
-    color: #343a40;
-    padding: 10px 14px;
-    white-space: nowrap;
-  }
-}
-
-// ── COLUMN SPECIFICS ───────────────────────────────────────────────────────
-.col-index {
-  width: 48px;
-  text-align: center;
-  color: #adb5bd !important;
-  font-size: 0.8rem !important;
-}
-
-.col-actions {
-  width: 100px;
-  text-align: right;
-}
-
-.serial-no {
-  font-family: 'Courier New', monospace;
-  font-weight: 700;
-  color: #3b5bdb;
-  font-size: 0.82rem;
-}
-
-.machine-thumb {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  object-fit: cover;
-  border: 1.5px solid #dee2e6;
-}
-
-.no-image {
-  color: #ced4da;
-}
 
 // ── BADGES ─────────────────────────────────────────────────────────────────
 .badge {
@@ -398,11 +331,7 @@
 :host-context(.dark) {
   .page-title h2 { color: #f1f3f5; }
 
-  .search-box {
-    background: #1e2a3a;
-    border-color: #2d3f55;
-    .search-input { color: #f1f3f5; }
-  }
+  
 
   .table-card { background: #12203a; }
 

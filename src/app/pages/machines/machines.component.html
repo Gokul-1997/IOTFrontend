@@ -1,15 +1,14 @@
-<div class="machines-page">
+<div class="page-wrapper">
 
-  <!-- ── TOOLBAR ─────────────────────────────────────────────────────────── -->
-  <div class="page-toolbar">
-
-    <div class="toolbar-left">
+  <!-- HEADER -->
+  <div class="bg-top-bar flex-wrap">
+<div class="toolbar-left">
       <div class="page-title">
         <mat-icon class="title-icon">precision_manufacturing</mat-icon>
         <div>
-          <h2>Machines</h2>
-          <span class="subtitle">{{ total }} machine{{ total !== 1 ? 's' : '' }} total</span>
+          <h2>Machines</h2>          
         </div>
+        <span class="subtitle">{{ total }} machine{{ total !== 1 ? 's' : '' }} total</span>
       </div>
     </div>
 
@@ -17,7 +16,10 @@
 
       <!-- Search -->
       <div class="search-box">
-        <mat-icon class="search-icon">search</mat-icon>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="search-icon size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+</svg>
+
         <input
           type="text"
           [(ngModel)]="search"
@@ -28,7 +30,6 @@
           <mat-icon>close</mat-icon>
         </button>
       </div>
-
       <!-- New Machine -->
       <button class="btn-primary" (click)="openCreate()">
         <mat-icon>add</mat-icon>
@@ -36,11 +37,13 @@
       </button>
 
     </div>
+    
   </div>
 
 
+
   <!-- ── TABLE CARD ──────────────────────────────────────────────────────── -->
-  <div class="table-card mat-elevation-z2">
+  <div class="table-card mat-elevation-z2 shadow-lg">
 
     <!-- Loading overlay -->
     <div *ngIf="loading" class="loading-overlay">
@@ -61,6 +64,15 @@
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Line</th>
           <td mat-cell *matCellDef="let r">
             <span class="badge badge-line">{{ r.name || '—' }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Image -->
+        <ng-container matColumnDef="image_url">
+          <th mat-header-cell *matHeaderCellDef>Image</th>
+          <td mat-cell *matCellDef="let r">
+            <img *ngIf="r.image_url" [src]="r.image_url" class="machine-thumb" />
+            <span *ngIf="!r.image_url" class="no-image">—</span>
           </td>
         </ng-container>
 
@@ -146,14 +158,7 @@
           <td mat-cell *matCellDef="let r">{{ r.mmc_no || '—' }}</td>
         </ng-container>
 
-        <!-- Image -->
-        <ng-container matColumnDef="image_url">
-          <th mat-header-cell *matHeaderCellDef>Image</th>
-          <td mat-cell *matCellDef="let r">
-            <img *ngIf="r.image_url" [src]="r.image_url" class="machine-thumb" />
-            <span *ngIf="!r.image_url" class="no-image">—</span>
-          </td>
-        </ng-container>
+        
 
         <!-- Status -->
         <ng-container matColumnDef="is_active">

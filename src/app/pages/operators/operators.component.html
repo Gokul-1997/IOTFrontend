@@ -1,19 +1,23 @@
 <app-operator-form *ngIf="showModal" [data]="modalData" (saved)="onSaved()" (close)="onClose()">
 </app-operator-form>
 
-<div class="ent-page">
+<div class="page-wrapper">
 
-  <!-- ── TOOLBAR ──────────────────────────────────────────────────────────── -->
-  <div class="page-toolbar">
-    <div class="toolbar-left">
+  <!-- HEADER -->
+   <div class="bg-top-bar flex-wrap">
+<div class="toolbar-left">
       <div class="page-title">
         <mat-icon class="title-icon">people</mat-icon>
         <div>
           <h2>Operators</h2>
-          <span class="subtitle">{{ total }} operator{{ total !== 1 ? 's' : '' }} total</span>
+          
         </div>
+        <span class="subtitle">{{ total }} operator{{ total !== 1 ? 's' : '' }} total</span>
       </div>
     </div>
+
+    
+
     <div class="toolbar-right">
       <div class="search-box">
         <mat-icon class="search-icon">search</mat-icon>
@@ -28,7 +32,10 @@
         Add Operator
       </button>
     </div>
+    
   </div>
+
+  
 
   <!-- ── TABLE CARD ────────────────────────────────────────────────────────── -->
   <div class="table-card mat-elevation-z2">

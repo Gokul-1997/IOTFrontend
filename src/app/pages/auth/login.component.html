@@ -23,7 +23,7 @@ hover:scale-105 transition">
   <!-- LEFT SIDE CAROUSEL -->
   <!-- LEFT -->
   <!-- LEFT CAROUSEL -->
-  <div class="hidden lg:flex w-1/2 relative justify-center overflow-hidden pt-24">
+  <div class="hidden lg:flex w-1/2 relative justify-center overflow-hidden pt-24 md:pt-4">
     <!-- Fixed gradient -->
     <div class="absolute inset-0 bg-gradient-to-bl from-[#C5404A] via-[#5E3C79] to-[#4A2FA0]"></div>
     <!-- Carousel container -->
@@ -45,8 +45,8 @@ hover:scale-105 transition">
               <img [src]="slide.image" class="relative mb-10 mx-auto pointer-events-none">
             </div>
             <!-- TEXT -->
-            <div class="max-w-md mx-auto px-6 ">
-              <h1 class="text-5xl font-bold mb-4">
+            <div class="max-w-md mx-auto px-6 md:-mt-4">
+              <h1 class="text-5xl md:text-3xl font-bold mb-4">
                 {{slide.title}}
               </h1>
               <div class="w-12 h-1 bg-white mb-6 rounded "></div>
@@ -59,7 +59,7 @@ hover:scale-105 transition">
       </div>
     </div>
     <!-- Indicators -->
-    <div class="absolute bottom-32 left-40 flex gap-3">
+    <div class="absolute md:bottom-5 bottom-32 left-40 flex gap-3">
       <div *ngFor="let slide of slides; let i=index" (click)="goToSlide(i)" class="w-3 h-3 rounded-full cursor-pointer"
         [ngClass]="currentSlide === i ? 'bg-white' : 'bg-white/40'"></div>
     </div>
@@ -77,13 +77,7 @@ hover:scale-105 transition">
         <!-- Email -->
         <div>
           <label class="text-sm text-gray-600 dark:text-gray-300"> Email </label>
-          <input type="email" formControlName="email" placeholder="Enter your email" class="w-full mt-1 px-4 py-3 rounded-lg border
-                   border-gray-300
-                   dark:border-neutral-700
-                   bg-white dark:bg-neutral-800
-                   text-gray-800 dark:text-white
-                   focus:ring-2 focus:ring-indigo-500
-                   outline-none"
+          <input type="email" formControlName="email" placeholder="Enter your email" class="filter-select"
                    [class.border-red-500]="form.get('email')?.invalid && form.get('email')?.touched" />
           <div *ngIf="form.get('email')?.touched && form.get('email')?.invalid" class="mt-1 text-xs text-red-500">
             <span *ngIf="form.get('email')?.errors?.['required']">Email is required.</span>
@@ -99,13 +93,7 @@ hover:scale-105 transition">
     [type]="showPassword ? 'text' : 'password'"
     formControlName="password"
     placeholder="Enter your password"
-    class="w-full mt-1 px-4 py-3 pr-12 rounded-lg border
-           border-gray-300
-           dark:border-neutral-700
-           bg-white dark:bg-neutral-800
-           text-gray-800 dark:text-white
-           focus:ring-2 focus:ring-indigo-500
-           outline-none"
+    class="filter-select"
     [class.border-red-500]="form.get('password')?.invalid && form.get('password')?.touched" />
 
   <!-- Professional Eye Toggle Button -->
@@ -166,7 +154,7 @@ hover:scale-105 transition">
         </div>
         <!-- Forgot -->
         <div class="text-right">
-          <a routerLink="/forgot-password" class="text-sm text-indigo-600 hover:underline"> Forgot Password? </a>
+          <a routerLink="/forgot-password" class="text-sm text-[#2f4ac4] hover:underline"> Forgot Password? </a>
         </div>
 
         <!-- API Error Banner -->
@@ -188,10 +176,7 @@ hover:scale-105 transition">
 
         <!-- Button -->
         <button type="submit" [disabled]="loading"
-          class="w-full bg-indigo-600 hover:bg-indigo-700
-                 text-white font-medium py-3 rounded-lg transition
-                 disabled:opacity-60 disabled:cursor-not-allowed
-                 flex items-center justify-center gap-2">
+          class="btn-primary text-center w-full justify-center">
           <svg *ngIf="loading" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>

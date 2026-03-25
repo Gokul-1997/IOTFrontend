@@ -1,23 +1,21 @@
-<div class="body-pad">
+<div class="page-wrapper">
 
-  <!-- ── HEADER ──────────────────────────────────────────────────────────── -->
-  <div class="flex flex-col gap-4 mb-3 sm:flex-row sm:items-center sm:justify-between
-              bg-gradient-to-l from-[#C5404A] via-[#5E3C79] to-[#4A2FA0]
-              rounded-lg ps-3 py-1 pe-1">
-
-    <div>
+  <!-- HEADER -->
+   <div class="bg-top-bar flex-wrap">
+    <div class="toolbar-left">
       <h2 class="text-xl font-ubuntu font-bold text-white">Charts</h2>
     </div>
 
-    <div class="flex items-center gap-3 w-full">
-      <div class="flex flex-wrap items-end gap-4 w-full">
+    
+
+    <div class="toolbar-right">
+      <div class="flex flex-wrap items-end gap-4 w-full justify-center md:justify-end">
 
         <!-- Machine -->
-        <div class="flex gap-2 items-center">
+        <div class="flex flex-col md:flex-row gap-2 items-center">
           <label class="text-sm font-medium text-white">Machine</label>
           <select [(ngModel)]="selectedMachine"
-            class="bg-gray-100 border border-gray-200 text-gray-800 text-sm
-                   rounded-lg px-4 py-2.5 min-w-[160px]">
+            class="filter-select">
             <option [ngValue]="null">All Machines</option>
             <option *ngFor="let m of machines" [ngValue]="m.id">
               {{ m.machine_serial_no }}
@@ -26,11 +24,10 @@
         </div>
 
         <!-- Shift -->
-        <div class="flex gap-2 items-center">
+        <div class="flex flex-col md:flex-row gap-2 items-center">
           <label class="text-sm font-medium text-white">Shift</label>
           <select [(ngModel)]="selectedShift"
-            class="bg-gray-100 border border-gray-200 text-gray-800 text-sm
-                   rounded-lg px-4 py-2.5 min-w-[140px]">
+            class="filter-select">
             <option [ngValue]="null">All Shifts</option>
             <option *ngFor="let s of shifts" [ngValue]="s.id">
               {{ s.shift_name || s.shift_code }}
@@ -39,11 +36,10 @@
         </div>
 
         <!-- Date -->
-        <div class="flex gap-2 items-center">
+        <div class="flex flex-col md:flex-row gap-2 items-center">
           <label class="text-sm font-medium text-white">Date</label>
           <input type="date" [(ngModel)]="selectedDate" [max]="today"
-            class="bg-gray-100 border border-gray-200 text-gray-800 text-sm
-                   rounded-lg px-4 py-2.5" />
+            class="filter-date" />
         </div>
 
         <!-- Submit -->
@@ -58,14 +54,16 @@
 
       </div>
     </div>
+    
   </div>
 
+
+
   <!-- ── BODY ─────────────────────────────────────────────────────────────── -->
-  <div class="space-y-6">
+  <div class="space-y-4">
 
     <!-- Per-Part Running vs Idle (Stacked Bar) -->
-    <div class="rounded-2xl border border-gray-200 dark:border-gray-700
-                bg-gray-100 dark:bg-gray-800 p-4 md:p-6">
+    <div class="bg-common">
 
       <div class="flex justify-between items-center mb-2">
         <div>
@@ -106,8 +104,7 @@
     </div>
 
     <!-- Hourly Part Count (Line Chart) -->
-    <div class="rounded-2xl border border-gray-200 dark:border-gray-700
-                bg-gray-100 dark:bg-gray-800 p-4 md:p-6">
+    <div class="bg-common">
 
       <div class="flex justify-between items-center mb-2">
         <p class="font-semibold text-base">Hour Wise Part Count</p>
