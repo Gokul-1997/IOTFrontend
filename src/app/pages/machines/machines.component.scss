@@ -24,30 +24,7 @@
   flex-wrap: wrap;
 }
 
-.page-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 
-  .title-icon {
-    font-size: 32px;
-    width: 32px;
-    height: 32px;
-    color: #fff;
-  }
-
-  h2 {
-    margin: 0;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #fff;
-  }
-
-  .subtitle {
-    font-size: 0.78rem;
-    color: #aaa4cd;
-  }
-}
 
 // ── SEARCH ─────────────────────────────────────────────────────────────────
 .search-box {
@@ -167,68 +144,7 @@
   
 }
 
-.machines-table {
-  width: 100%;
 
-  // Header — keep z-index low so the nav dropdown is never cut through
-  .mat-mdc-header-row {
-    background: #DBE0FF;
-    border-bottom: 2px solid #DBE0FF;
-    z-index: 1 !important;
-  }
-
-  .mat-mdc-header-cell {
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #182052;
-    white-space: nowrap;
-    padding: 0 10px;
-  }
-
-  // Rows
-  .mat-mdc-row.data-row {
-    transition: background 0.15s;
-
-    &:hover {
-      background: #f1f3ff;
-    }
-  }
-
-  .mat-mdc-cell {
-    font-size: 0.8rem;
-    color: #343a40;
-    padding: 0px 10px;
-    white-space: nowrap;
-    border-color: #e5e7eb!important;
-  }
-}
-
-// ── COLUMN SPECIFICS ───────────────────────────────────────────────────────
-.col-index {
-  width: 40px;
-  text-align: center;
-  color: #adb5bd !important;
-  font-size: 0.8rem !important;
-}
-
-.col-actions {
-  width: 100px;
-  text-align: right;
-}
-
-.machine-thumb {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  object-fit: cover;
-  border: 1.5px solid #dee2e6;
-}
-
-.no-image {
-  color: #ced4da;
-}
 
 // ── BADGES ─────────────────────────────────────────────────────────────────
 .badge {
@@ -431,20 +347,4 @@
   }
 
   .delete-modal { background: #12203a; h3 { color: #f1f3f5; } }
-}
-.mat-mdc-table tr:nth-child(odd) {
-    background: #ffffff;
-}
-
-.mat-mdc-table tr:nth-child(even) {
-  background-color: #f1f3ff; /* white */
-}
-.mat-row {
-  min-height: 48px;
-}
-.mat-mdc-table tr {
-    height: 40px;
-}
-.mdc-form-field .mdc-switch{
-      width:20px!important;
 }

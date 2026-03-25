@@ -1,21 +1,24 @@
-<div class="p-6">
+<div class="page-wrapper">
 
   <!-- HEADER -->
-
-  <div class="flex justify-between items-center mb-4">
-
-    <h2 class="text-xl font-bold">
+   <div class="bg-top-bar">
+<div class="toolbar-left">
+  <h2 class="text-xl font-bold">
       Supervisor Jobs
     </h2>
 
-    <button
-      mat-raised-button
-      color="primary"
-      (click)="openCreate()">
+    </div>
+
+    <div class="toolbar-right">
+<button mat-raised-button color="primary"
+      (click)="openCreate()" class="btn-primary">
       Create Job
     </button>
 
+    </div>
+    
   </div>
+
 
 
   <!-- TABLE -->
@@ -73,15 +76,17 @@
 
         <td mat-cell *matCellDef="let row">
 
-          <button
+          <!-- <button
             mat-stroked-button
             color="warn"
             (click)="stop(row.machine_id)">
 
             Stop
 
-          </button>
-
+          </button> -->
+        <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-4 rounded-full" (click)="stop(row.machine_id)">
+          Stop
+        </button>
         </td>
 
       </ng-container>

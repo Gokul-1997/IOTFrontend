@@ -5,12 +5,13 @@ import { forkJoin } from 'rxjs';
 
 import { OperatorService } from './operator.service';
 import { ToastService } from '../../core/services/toast.service';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   standalone: true,
   selector: 'app-operator-form',
   templateUrl: './operator-form.component.html',
-  imports: [CommonModule, ReactiveFormsModule]
+  imports: [CommonModule, ReactiveFormsModule, MatIconModule]
 })
 export class OperatorFormComponent implements OnInit {
 

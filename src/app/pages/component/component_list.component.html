@@ -1,14 +1,15 @@
-<div class="ent-page">
+<div class="page-wrapper">
 
   <!-- ── TOOLBAR ──────────────────────────────────────────────────────────── -->
-  <div class="page-toolbar">
+  <div class="bg-top-bar">
     <div class="toolbar-left">
       <div class="page-title">
         <mat-icon class="title-icon">category</mat-icon>
         <div>
           <h2>Components</h2>
-          <span class="subtitle">{{ total }} component{{ total !== 1 ? 's' : '' }} total</span>
+          
         </div>
+        <span class="subtitle">{{ total }} component{{ total !== 1 ? 's' : '' }} total</span>
       </div>
     </div>
     <div class="toolbar-right">
@@ -131,89 +132,97 @@
   <div *ngIf="showModal" class="modal-backdrop">
     <div class="form-modal mat-elevation-z8">
 
-      <div class="modal-header">
+      <div class="modal-header border-b-red-200 border">
         <h3>{{ editing ? 'Edit Component' : 'Add Component' }}</h3>
         <button mat-icon-button (click)="closeModal()">
           <mat-icon>close</mat-icon>
         </button>
       </div>
 
-      <form [formGroup]="form" (ngSubmit)="submit()" class="modal-form">
+      <form [formGroup]="form" (ngSubmit)="submit()" class="p-6 space-y-6">
 
-        <div class="form-grid">
+  <div class="grid grid-cols-12 gap-5">
 
-          <!-- Machine -->
-          <div class="field">
-            <label>Machine *</label>
-            <select formControlName="machine_id"
-              [class.invalid]="form.get('machine_id')?.invalid && form.get('machine_id')?.touched">
-              <option value="">Select Machine</option>
-              <option *ngFor="let m of machines" [value]="m.id">{{ m.machine_serial_no }}</option>
-            </select>
-            <span class="err" *ngIf="form.get('machine_id')?.invalid && form.get('machine_id')?.touched">
-              Machine is required
-            </span>
-          </div>
+    <!-- ROW 1 (3 columns = col-span-4 each) -->
 
-          <!-- Part Name -->
-          <div class="field">
-            <label>Part Name *</label>
-            <input formControlName="part_name" type="text"
-              [class.invalid]="form.get('part_name')?.invalid && form.get('part_name')?.touched" />
-            <span class="err" *ngIf="form.get('part_name')?.invalid && form.get('part_name')?.touched">
-              Part name is required
-            </span>
-          </div>
+    <!-- Machine -->
+    <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
+      <label class="text-sm font-medium">Machine *</label>
+      <select formControlName="machine_id"
+        class="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+        [ngClass]="{'border-red-500': form.get('machine_id')?.invalid && form.get('machine_id')?.touched}">
+        <option value="">Select Machine</option>
+        <option *ngFor="let m of machines" [value]="m.id">
+          {{ m.machine_serial_no }}
+        </option>
+      </select>
+    </div>
 
-          <!-- Part Number -->
-          <div class="field">
-            <label>Part Number</label>
-            <input formControlName="part_number" type="text" />
-          </div>
+    <!-- Part Name -->
+    <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
+      <label class="text-sm font-medium">Part Name *</label>
+      <input type="text" formControlName="part_name"
+        class="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+    </div>
 
-          <!-- Operation -->
-          <div class="field">
-            <label>Operation Number</label>
-            <input formControlName="operation_number" type="text" />
-          </div>
+    <!-- Part Number -->
+    <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
+      <label class="text-sm font-medium">Part Number</label>
+      <input type="text" formControlName="part_number"
+        class="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+    </div>
 
-          <!-- Cycle Time -->
-          <div class="field">
-            <label>Cycle Time (HH:MM:SS) *</label>
-            <input type="text" formControlName="cycle_time" maxlength="8"
-              (input)="formatCycleTime($event)" placeholder="00:00:00"
-              [class.invalid]="form.get('cycle_time')?.invalid && form.get('cycle_time')?.touched" />
-            <span class="err" *ngIf="form.get('cycle_time')?.invalid && form.get('cycle_time')?.touched">
-              Format must be HH:MM:SS
-            </span>
-          </div>
 
-          <!-- Target -->
-          <div class="field">
-            <label>Target *</label>
-            <input type="number" formControlName="target"
-              [class.invalid]="form.get('target')?.invalid && form.get('target')?.touched" />
-            <span class="err" *ngIf="form.get('target')?.invalid && form.get('target')?.touched">
-              Target is required
-            </span>
-          </div>
+    <!-- ROW 2 (4 columns = col-span-3 each) -->
 
-          <!-- Factor -->
-          <div class="field">
-            <label>Multiplication Factor</label>
-            <input type="number" formControlName="multiplication_factor" />
-          </div>
+    <!-- Operation -->
+    <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
+      <label class="text-sm font-medium">Operation Number</label>
+      <input type="text" formControlName="operation_number"
+        class="border rounded-lg px-3 py-2" />
+    </div>
 
-        </div>
+    <!-- Cycle Time -->
+    <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
+      <label class="text-sm font-medium">Cycle Time *</label>
+      <input type="text" maxlength="8" placeholder="00:00:00"
+        formControlName="cycle_time"
+        (input)="formatCycleTime($event)"
+        class="border rounded-lg px-3 py-2" />
+    </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn-cancel" (click)="closeModal()">Cancel</button>
-          <button type="submit" class="btn-primary" [disabled]="form.invalid">
-            {{ editing ? 'Update' : 'Save' }}
-          </button>
-        </div>
+    <!-- Target -->
+    <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
+      <label class="text-sm font-medium">Target *</label>
+      <input type="number" formControlName="target"
+        class="border rounded-lg px-3 py-2" />
+    </div>
 
-      </form>
+    <!-- Factor -->
+    <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
+      <label class="text-sm font-medium">Multiplication Factor</label>
+      <input type="number" formControlName="multiplication_factor"
+        class="border rounded-lg px-3 py-2" />
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="flex justify-end gap-3 pt-4 border-t">
+    <button type="button"
+      (click)="closeModal()"
+      class="px-4 py-2 border rounded-lg">
+      Cancel
+    </button>
+
+    <button type="submit"
+      [disabled]="form.invalid"
+      class="px-5 py-1 bg-blue-600 text-white rounded-lg">
+      {{ editing ? 'Update' : 'Save' }}
+    </button>
+  </div>
+
+</form>
     </div>
   </div>
 

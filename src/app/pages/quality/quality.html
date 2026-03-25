@@ -1,19 +1,18 @@
-<div class="body-pad">
+<div class="page-wrapper">
 
-  <!-- HEADER -->
-  <div
-    class="flex flex-col gap-4 mb-3 sm:flex-row sm:items-center sm:justify-between
-           bg-gradient-to-l from-[#C5404A] via-[#5E3C79] to-[#4A2FA0]
-           rounded-lg ps-3 py-1 pe-1">
 
-    <div>
-      <h2 class="text-xl font-ubuntu font-bold text-white">
+<!-- HEADER -->
+   <div class="bg-top-bar">
+    <div class="toolbar-left">
+      <h2>
         Quality
       </h2>
     </div>
 
-    <!-- FILTERS -->
-    <div class="flex items-center gap-3 w-full">
+    
+
+    <div class="toolbar-right">
+      <div class="flex items-center gap-3 w-full">
       <div class="flex flex-wrap items-end gap-4 w-full">
 
         <!-- LINE -->
@@ -81,7 +80,7 @@
             type="date"
             [(ngModel)]="selectedDate"
             [max]="today"
-            class="bg-gray-100 border rounded-lg px-3 py-2.5" />
+            class="bg-gray-100 border rounded-lg px-3 py-1.5 text-gray-800" />
         </div>
 
         <!-- SUBMIT -->
@@ -105,14 +104,18 @@
 
       </div>
     </div>
+    </div>
+    
   </div>
 
+
+
   <!-- BODY -->
-  <div class="space-y-6">
+  <div class="space-y-4">
 
     <!-- MAIN DASHBOARD CARD -->
     <div class="rounded-2xl border border-gray-200 dark:border-gray-700
-                bg-gray-100 dark:bg-gray-800 p-4 md:p-6">
+                bg-gray-100 dark:bg-gray-800 p-3 md:p-3">
 
       <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center">
 
@@ -126,14 +129,14 @@
 
         <!-- MACHINE DETAILS -->
         <div class="xl:col-span-3">
-          <div class="bg-gray-200 dark:bg-gray-700 rounded-xl p-3 space-y-2">
+          <div class="bg-gray-200 dark:bg-gray-700 rounded-xl p-3 space-y-0">
 
-            <div>
+            <!-- <div>
               <p class="text-gray-500 text-sm">Machine Name</p>
-              <p class="font-semibold">
+              <p class="font-semibold -mt-1">
                 {{ dashboardData?.machine?.machine_serial_no || '-' }}
               </p>
-            </div>
+            </div> -->
 
             <div>
               <p class="text-gray-500 text-sm">Operator</p>

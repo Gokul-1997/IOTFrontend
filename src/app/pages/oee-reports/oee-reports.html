@@ -1,7 +1,21 @@
-<div class="oee-page">
+<div class="page-wrapper">
+<!-- HEADER -->
+   <div class="bg-top-bar">
+<div class="toolbar-left">
+      <div class="page-title">
 
-  <!-- FILTERS ROW -->
-  <div class="filters-bar">
+        <div>
+          <h2>OEE Reports</h2>
+          
+        </div>
+
+      </div>
+    </div>
+
+    
+  </div>
+    <!-- FILTERS ROW -->
+  <div class="filters-bar filters-bar bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-700 shadow-sm rounded-xl p-5">
 
     <div class="filter-item">
       <label class="filter-label">LINE</label>
@@ -47,6 +61,8 @@
     </div>
 
   </div>
+<div class="bg-white dark:bg-[#111] rounded-xl  dark:border-gray-700 p-4 mb-2 shadow-sm">
+
 
   <!-- ERROR -->
   <div *ngIf="error" class="error-banner">
@@ -166,7 +182,7 @@
       </tbody>
     </table>
   </div>
-
+</div>
   <!-- PAGINATION -->
   <div class="pagination-bar">
     <span class="showing-text">

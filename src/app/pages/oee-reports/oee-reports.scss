@@ -11,12 +11,15 @@
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 14px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  // background: #fff;
+  border: 0px solid #e5e7eb;
   border-radius: 12px;
   padding: 18px 20px;
   margin-bottom: 16px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.dark .filters-bar{
+  background: #111 !important;
 }
 
 .filter-item {
@@ -250,7 +253,7 @@
   padding: 14px;
   font-size: 13.5px;
   color: #374151;
-  border-bottom: 1px solid #f3f4f6;
+  // border-bottom: 1px solid #f3f4f6;
 }
 
 .data-row:last-child td { border-bottom: none; }
@@ -389,3 +392,4 @@
     font-weight: 600;
   }
 }
+

@@ -40,7 +40,7 @@ export class Quality implements OnInit {
     series: [],
     chart: {
       type: "area",
-      height: 350,
+      height: 250,
       toolbar: { show: false }
     },
     stroke: { curve: "smooth", width: 3 },

@@ -1,19 +1,21 @@
 <app-shift-form *ngIf="showModal" [data]="modalData" (saved)="onSaved()" (close)="onClose()">
 </app-shift-form>
 
-<div class="ent-page">
+<div class="page-wrapper">
 
-  <!-- ── TOOLBAR ──────────────────────────────────────────────────────────── -->
-  <div class="page-toolbar">
-    <div class="toolbar-left">
+  <!-- HEADER -->
+   <div class="bg-top-bar">
+<div class="toolbar-left">
       <div class="page-title">
         <mat-icon class="title-icon">schedule</mat-icon>
         <div>
           <h2>Shifts</h2>
-          <span class="subtitle">{{ filteredRows.length }} shift{{ filteredRows.length !== 1 ? 's' : '' }} total</span>
+          
         </div>
+        <span class="subtitle">{{ filteredRows.length }} shift{{ filteredRows.length !== 1 ? 's' : '' }} total</span>
       </div>
     </div>
+
     <div class="toolbar-right">
       <div class="search-box">
         <mat-icon class="search-icon">search</mat-icon>
@@ -28,7 +30,10 @@
         New Shift
       </button>
     </div>
+    
   </div>
+
+ 
 
   <!-- ── TABLE CARD ────────────────────────────────────────────────────────── -->
   <div class="table-card mat-elevation-z2">

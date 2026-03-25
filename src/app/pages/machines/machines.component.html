@@ -1,14 +1,12 @@
-<div class="min-h-screen bg-wrapper xl:px-8 mx-auto">
+<div class="page-wrapper">
 
   <!-- HEADER -->
-  <div class="bg-top-bar
-            text-white rounded-xl px-4 py-2 mb-3
-            flex items-center justify-between  shadow-xl">
+  <div class="bg-top-bar">
 <div class="toolbar-left">
       <div class="page-title">
         <mat-icon class="title-icon">precision_manufacturing</mat-icon>
         <div>
-          <h2 class="text-xl font-bold text-white">Machines</h2>          
+          <h2>Machines</h2>          
         </div>
         <span class="subtitle">{{ total }} machine{{ total !== 1 ? 's' : '' }} total</span>
       </div>
@@ -27,13 +25,13 @@
           [(ngModel)]="search"
           (ngModelChange)="onSearchInput()"
           placeholder="Search serial, model, line…"
-          class="search-input block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6" />
+          class="search-input" />
         <button *ngIf="search" mat-icon-button class="clear-btn" (click)="search=''; onSearchInput()">
           <mat-icon>close</mat-icon>
         </button>
       </div>
       <!-- New Machine -->
-      <button class="btn-blue" (click)="openCreate()">
+      <button class="btn-primary" (click)="openCreate()">
         <mat-icon>add</mat-icon>
         New Machine
       </button>
@@ -45,7 +43,7 @@
 
 
   <!-- ── TABLE CARD ──────────────────────────────────────────────────────── -->
-  <div class="table-card mat-elevation-z2">
+  <div class="table-card mat-elevation-z2 shadow-lg">
 
     <!-- Loading overlay -->
     <div *ngIf="loading" class="loading-overlay">
