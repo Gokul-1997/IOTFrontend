@@ -1,7 +1,7 @@
 <div class="page-wrapper">
 
   <!-- HEADER -->
-   <div class="bg-top-bar">
+   <div class="bg-top-bar flex-wrap">
 <div class="toolbar-left">
   <div class="flex items-center gap-4">
       <div>
@@ -24,7 +24,7 @@
           (click)="toggleColBuilder()"
           class="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-600
                  bg-white dark:bg-gray-800 px-3 py-2 text-sm font-medium text-gray-700
-                 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                 dark:text-white shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
@@ -117,12 +117,12 @@
       *ngFor="let tab of tabs"
       (click)="setTab(tab.id)"
       [class]="activeTab === tab.id
-        ? 'flex items-center gap-2 px-4 py-2 rounded-lg rounded-b-none bg-white dark:bg-gray-700 text-sm font-semibold text-gray-700 transition-all'
-        : 'flex items-center gap-2 px-4 py-2 rounded-lg rounded-b-none bg-blue-200/50  text-sm font-medium text-gray-800 hover:text-gray-700 transition-all'">
+        ? 'flex items-center gap-2 px-4 py-2 rounded-lg rounded-b-none bg-white dark:bg-[#111] text-sm font-semibold text-gray-700 dark:text-white transition-all'
+        : 'flex items-center gap-2 px-4 py-2 rounded-lg rounded-b-none bg-blue-200/50 dark:bg-[#222]  text-sm font-medium text-gray-800 dark:text-white hover:text-gray-700 transition-all'">
       <span>{{ tab.icon }}</span>{{ tab.label }}
     </button>
   </div>
-<div class="bg-white rounded-xl p-4 shadow-xl ">
+<div class="bg-white dark:bg-[#111] rounded-xl p-4 shadow-xl ">
   <!-- ══════════════════════════════════════════════
        FILTER BAR
   ══════════════════════════════════════════════ -->
@@ -133,24 +133,21 @@
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Date From</label>
         <input type="date" [(ngModel)]="filters.date_from"
-          class="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700
-                 px-3 py-2 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+          class="filter-date"/>
       </div>
 
       <!-- Date To -->
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Date To</label>
         <input type="date" [(ngModel)]="filters.date_to"
-          class="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700
-                 px-3 py-2 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+          class="filter-date"/>
       </div>
 
       <!-- Machine -->
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Machine</label>
         <select [(ngModel)]="filters.machine_id"
-          class="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700
-                 px-3 py-2 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400">
+          class="filter-select">
           <option value="">All Machines</option>
           <option *ngFor="let m of machines" [value]="m.id">{{ m.name }}</option>
         </select>
@@ -160,8 +157,7 @@
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Operator</label>
         <select [(ngModel)]="filters.operator_id"
-          class="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700
-                 px-3 py-2 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400">
+          class="filter-select">
           <option value="">All Operators</option>
           <option *ngFor="let o of operators" [value]="o.id">{{ o.name }}</option>
         </select>
@@ -171,8 +167,7 @@
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Shift</label>
         <select [(ngModel)]="filters.shift_id"
-          class="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700
-                 px-3 py-2 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400">
+          class="filter-select">
           <option value="">All Shifts</option>
           <option *ngFor="let s of shifts" [value]="s.id">{{ s.name }}</option>
         </select>
@@ -243,7 +238,7 @@
        TABLE CARD
   ══════════════════════════════════════════════ -->
   <div class="">
-  <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+  <div class="table-wrap">
 
     <!-- Table toolbar -->
     <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
@@ -293,8 +288,8 @@
     <div *ngIf="!loading && rows.length > 0 && selectedCount > 0" class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
-          <tr class="bg-gray-50 dark:bg-gray-700/50 text-left">
-            <th class="px-3 py-2.5 text-xs font-semibold text-gray-400 w-10">#</th>
+          <tr class="">
+            <th class="">#</th>
             <th
               *ngFor="let col of activeColumns"
               (click)="sort(col.key)"

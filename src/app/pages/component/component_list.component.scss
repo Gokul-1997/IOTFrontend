@@ -80,7 +80,7 @@ $radius: 10px;
 
 // ── FORM MODAL ────────────────────────────────────────────────────────────
 .form-modal {
-  background: #fff; border-radius: 16px; width: 100%; max-width: 680px;
+  border-radius: 16px; width: 100%; max-width: 680px;
   max-height: 90vh; overflow-y: auto;
 }
 
@@ -145,6 +145,6 @@ $radius: 10px;
     .mat-mdc-row.data-row:hover { background: #1a2d48; }
     .mat-mdc-cell { color: #c8d8ea; }
   }
-  .form-modal, .delete-modal { background: #12203a; h3 { color: #f1f3f5; } }
+  .form-modal, .delete-modal { h3 { color: #f1f3f5; } }
   .field { input, select { background: #1e2a3a; border-color: #2d3f55; color: #f1f3f5; } }
 }

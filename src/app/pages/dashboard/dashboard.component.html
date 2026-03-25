@@ -1,36 +1,38 @@
-<div class="min-h-screen bg-wrapper  xl:px-8 mx-auto">
+<div class="page-wrapper">
 
   <!-- TOP BAR -->
 
   <div class="bg-top-bar
-            text-white rounded-xl px-4 py-2 mb-3
-            flex items-center justify-between">
+            text-white rounded-xl px-1 md:px-4 py-2 mb-3
+            flex flex-col md:flex-row items-center justify-between">
 
-    <div class="flex items-center gap-4">
+    <div class="flex flex-row md:flex-row items-center gap-4">
       <div class="text-2xl font-bold">Dashboard</div>
-      <div class="flex gap-5">
+      <div class="flex gap-1 md:gap-5 hidden md:flex">
         <div><span class="status_dot running"></span>Running</div>
         <div><span class="status_dot idle"></span>Idle</div>
         <div><span class="status_dot alarm"></span>Alarm</div>
       </div>
     </div>
 
-    <div class="flex items-center gap-3 text-base">
+    <div class="flex flex-wrap items-center gap-1 md:gap-3 text-base justify-center">
 
       <!-- <div class="bg-white/20 px-4 py-2 rounded-full">
         Total Machines : <div class="font-bold">{{ summary.total }} </div>
       </div> -->
-      
+      <div class="flex flex-wrap gap-2 justify-center">
       <div class="flex border_status pr-0 ">
         Total Machines : <div class="font-medium ml-1">{{ summary.total }} </div>
       </div>
-
+      <div class="flex gap-2">
       <div class="flex border_status px-4 py-1 bg-green-600 rounded-md">
         Running : <div class="font-medium ml-1">{{ summary.running }}</div>  
       </div>
 
       <div class="flex  border_status px-4 py-1 bg-yellow-600 rounded-md">
         Idle : <div class="font-medium ml-1">{{ summary.idle }} </div> 
+      </div>
+      </div>
       </div>
 <div class="bg-blue-900 rounded-md flex px-4 py-1">
       <div class="flex  border_status pr-2">
@@ -74,16 +76,17 @@
 
       <!-- TOP SECTION -->
 
-      <div class="grid grid-cols-[1.5fr_1fr_auto] gap-4 items-center">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[1.5fr_1fr_auto] gap-4 items-center">
         
         <!-- MACHINE IMAGE + RUN/IDLE -->
 
         <div>
           <div class="text-xl font-bold text-[var(--color-primary-500)] dark:text-white">{{ m.machine_serial_no }}</div>
+          <div class="grid grid-cols-[2fr_1fr_auto] md:grid-cols-1 md:gap-2">
           <img [src]="m.image_url"
-               class="w-full h-28 object-contain" />
+               class="w-full md:h-28 object-contain" />
 
-          <div class="flex justify-center gap-3 mt-2 text-sm">
+          <div class="flex flex-col md:flex-row md:gap-4 justify-center text-sm">
 
             <!-- RUN -->
             <div class="text-center">
@@ -103,7 +106,7 @@
                 {{ (m.run_time || '00:00:00').split(':')[2] }}s
               </div>
             </div>
-            <div class="border-r border-gray-300"></div>
+            <div class="border-t md:border-r border-gray-300"></div>
             <!-- IDLE -->
             <div class="text-center">
               <div class="flex items-center justify-center">
@@ -122,13 +125,13 @@
             </div>
 
           </div>
-
+          </div>
         </div>
 
 
         <!-- OPERATOR PANEL -->
 
-        <div class="menu-default rounded-xl p-2 text-sm space-y-2">
+        <div class="menu-default rounded-xl p-4 md:p-2 text-sm space-y-2 grid grid-cols-2 md:grid-cols-1">
 
           <div>
             <span class="text-gray-700 dark:text-[#939393] ">Operator</span><br>
@@ -174,8 +177,8 @@
 
         <!-- UTILIZATION DONUT -->
 
-        <div class="flex flex-col items-center gap-1">
-
+        <div class="flex flex-row md:flex-col items-center gap-4 md:gap-0 justify-center">
+          <div>
           <div class="relative w-20 h-20">
 
             <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
@@ -208,13 +211,14 @@
             <div class="absolute inset-0 flex items-center justify-center text-sm font-bold">
               {{ m.utilization || 0 }}%
             </div>
-
+          
           </div>
-
           <div class="text-sm text-gray-800 dark:text-white font-bold">Utilization</div>
+          </div>
+          
 
           <!-- Target / Achieved -->
-          <div class="flex flex-col justify-center gap-1 mt-2 text-sm">
+          <div class="flex flex-row md:flex-col justify-center gap-1 mt-2 text-sm md:gap-2">
 
             <div class="text-center flex gap-2 items-center w-full">
               <span class="font-semibold green rounded-md w-5 h-5 flex items-center justify-center text-white p-0.5">
@@ -228,7 +232,7 @@
             </div>
             </div>
 
-            <div class="text-center flex gap-2 items-center w-full border-t pt-1">
+            <div class="text-center flex gap-2 items-center w-full md:border-t pt-1">
               <span class="font-semibold red rounded-md w-5 h-5 flex items-center justify-center text-white p-0.5">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
   <path fill-rule="evenodd" d="M1.72 5.47a.75.75 0 0 1 1.06 0L9 11.69l3.756-3.756a.75.75 0 0 1 .985-.066 12.698 12.698 0 0 1 4.575 6.832l.308 1.149 2.277-3.943a.75.75 0 1 1 1.299.75l-3.182 5.51a.75.75 0 0 1-1.025.275l-5.511-3.181a.75.75 0 0 1 .75-1.3l3.943 2.277-.308-1.149a11.194 11.194 0 0 0-3.528-5.617l-3.809 3.81a.75.75 0 0 1-1.06 0L1.72 6.53a.75.75 0 0 1 0-1.061Z" clip-rule="evenodd" />

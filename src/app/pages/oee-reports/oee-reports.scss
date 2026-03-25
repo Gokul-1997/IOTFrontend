@@ -174,7 +174,7 @@
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 13px;
-  width: 200px;
+  width: 190px;
   outline: none;
   transition: border-color 0.2s;
   background: #fff;
@@ -199,16 +199,7 @@
 }
 
 /* ── TABLE ─────────────────────────────────── */
-.table-wrap {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  overflow: hidden;
-  margin-bottom: 16px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 
-  &.loading { opacity: 0.55; pointer-events: none; }
-}
 
 .data-table {
   width: 100%;

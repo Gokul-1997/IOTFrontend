@@ -1,6 +1,6 @@
 <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
 
-  <div class="bg-white dark:bg-[#0f1c33] w-[840px] rounded-xl p-6 max-h-[90vh] overflow-auto">
+  <div class="bg-common w-[840px] rounded-xl p-6 max-h-[90vh] overflow-auto">
     <div class="flex justify-between">
       <h3 class="text-lg font-semibold mb-4">
       {{ data ? 'Edit Machine' : 'Create Machine' }}
@@ -19,7 +19,7 @@
           
           <!-- Left Image -->
           <div class="col-span-12 md:col-span-3">
-  <div class="border rounded-lg p-3 flex items-center justify-center h-48">
+  <div class="border dark:border-[#3e3e3e] rounded-lg p-3 flex items-center justify-center h-48">
 
     <!-- Placeholder -->
     <div 
@@ -56,7 +56,7 @@
             <!-- Upload -->
             <div>
               <label class="block text-sm font-medium mb-1">Machine Image</label>
-              <input type="file" accept="image/*" (change)="onFileSelect($event)" class="block w-full text-sm border rounded-lg p-2">
+              <input type="file" accept="image/*" (change)="onFileSelect($event)" class="filter-select">
             </div>
 
             <!-- Row 1 -->
@@ -65,7 +65,7 @@
                 <label class="block text-sm font-medium mb-1">Select Line <span class="text-red-600">*</span></label>
                 <select
                 formControlName="line_id"
-                class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a] border"
+                class="filter-select"
                 [class.border-red-500]="form.get('line_id')?.invalid && form.get('line_id')?.touched">
 
                 <option [ngValue]="null">Select Line</option>
@@ -84,7 +84,7 @@
               <div>
                 <label class="block text-sm font-medium mb-1">Machine Serial No <span class="text-red-600">*</span></label>
                 <input formControlName="machine_serial_no" placeholder="Machine Serial No *"
-                  class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a] border"
+                  class="filter-select"
                   [class.border-red-500]="form.get('machine_serial_no')?.invalid && form.get('machine_serial_no')?.touched" />
                 <div *ngIf="form.get('machine_serial_no')?.touched && form.get('machine_serial_no')?.errors?.['required']"
                   class="mt-1 text-xs text-red-500">
@@ -95,7 +95,7 @@
               <div>
                 <label class="block text-sm font-medium mb-1">Machine Model</label>
                 <input formControlName="model" placeholder="Machine Model"
-        class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+        class="filter-select" />
               </div>
             </div>
 
@@ -105,21 +105,21 @@
        <div class="mb-0">
         <label class="block text-sm mb-1 font-medium">Controller</label>
       <input formControlName="controller" placeholder="Controller"
-        class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+        class="filter-select" />
         </div>
 
       <!-- MMC -->
        <div class="mb-0">
         <label class="block text-sm mb-1 font-medium">MMC No</label>
       <input formControlName="mmc_no" placeholder="MMC No"
-        class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+        class="filter-select" />
         </div>
 
       <!-- Spindle RPM -->
        <div class="mb-0">
         <label class="block text-sm mb-1 font-medium">Spindle RPM</label>
       <input type="number" formControlName="spindle_rpm" placeholder="Spindle RPM"
-        class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+        class="filter-select" />
         </div>
 
       <!-- Axis -->
@@ -127,7 +127,7 @@
         <div class="mb-0">
         <label class="block text-sm mb-1 font-medium">X Axis</label>
         <input type="number" formControlName="x_axis" placeholder="X Axis"
-          class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+          class="filter-select" />
           </div>
             </div>
 
@@ -136,19 +136,19 @@
               <div class="mb-0">
         <label class="block text-sm mb-1 font-medium">X Axis</label>
         <input type="number" formControlName="y_axis" placeholder="Y Axis"
-          class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+          class="filter-select" />
           </div>
 
         <div class="mb-0">
         <label class="block text-sm mb-1 font-medium">Z Axis</label>
         <input type="number" formControlName="z_axis" placeholder="Z Axis"
-          class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+          class="filter-select" />
         </div>
 
         <div class="mb-0">
         <label class="block text-sm mb-1 font-medium">4th Axis</label>
         <input type="number" formControlName="fourth_axis" placeholder="4th Axis"
-          class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+          class="filter-select" />
         </div>
 
 
@@ -157,7 +157,7 @@
        <div class="mb-0">
         <label class="block text-sm mb-1 font-medium">ATC Tool Capacity</label>
       <input formControlName="atc_tool_capacity" placeholder="ATC Tool Capacity"
-        class="w-full mb-3 px-4 py-2 rounded bg-gray-100 dark:bg-[#12203a]" />
+        class="filter-select" />
         </div>
             </div>
 
@@ -176,10 +176,10 @@
 
             <!-- Buttons -->
             <div class="flex justify-end gap-3 pt-4">
-              <button (click)="close.emit()" class="px-4 py-1 rounded-md bg-gray-200 hover:bg-gray-300">
+              <button (click)="close.emit()" class="btn-secondary">
                 Cancel
               </button>
-              <button (click)="save()" [disabled]="uploading || isUnchanged" class="px-4 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700">
+              <button (click)="save()" [disabled]="uploading || isUnchanged" class="btn btn-default">
                 {{ uploading ? 'Uploading...' : 'Save' }}
               </button>
             </div>

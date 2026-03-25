@@ -1,7 +1,7 @@
 <div class="page-wrapper">
 
   <!-- ── TOOLBAR ──────────────────────────────────────────────────────────── -->
-  <div class="bg-top-bar">
+  <div class="bg-top-bar flex-wrap">
     <div class="toolbar-left">
       <div class="page-title">
         <mat-icon class="title-icon">category</mat-icon>
@@ -130,16 +130,17 @@
 
   <!-- ── FORM MODAL ────────────────────────────────────────────────────────── -->
   <div *ngIf="showModal" class="modal-backdrop">
-    <div class="form-modal mat-elevation-z8">
+    <div class="bg-common form-modal mat-elevation-z8">
 
-      <div class="modal-header border-b-red-200 border">
+      
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
+        <div class="modal-header border dark:border-[#222]">
         <h3>{{ editing ? 'Edit Component' : 'Add Component' }}</h3>
         <button mat-icon-button (click)="closeModal()">
           <mat-icon>close</mat-icon>
         </button>
       </div>
-
-      <form [formGroup]="form" (ngSubmit)="submit()" class="p-6 space-y-6">
 
   <div class="grid grid-cols-12 gap-5">
 
@@ -149,7 +150,7 @@
     <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
       <label class="text-sm font-medium">Machine *</label>
       <select formControlName="machine_id"
-        class="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+        class="filter-select"
         [ngClass]="{'border-red-500': form.get('machine_id')?.invalid && form.get('machine_id')?.touched}">
         <option value="">Select Machine</option>
         <option *ngFor="let m of machines" [value]="m.id">
@@ -162,14 +163,14 @@
     <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
       <label class="text-sm font-medium">Part Name *</label>
       <input type="text" formControlName="part_name"
-        class="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+        class="filter-select" />
     </div>
 
     <!-- Part Number -->
     <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
       <label class="text-sm font-medium">Part Number</label>
       <input type="text" formControlName="part_number"
-        class="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+        class="filter-select" />
     </div>
 
 
@@ -179,7 +180,7 @@
     <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
       <label class="text-sm font-medium">Operation Number</label>
       <input type="text" formControlName="operation_number"
-        class="border rounded-lg px-3 py-2" />
+        class="filter-select" />
     </div>
 
     <!-- Cycle Time -->
@@ -188,36 +189,36 @@
       <input type="text" maxlength="8" placeholder="00:00:00"
         formControlName="cycle_time"
         (input)="formatCycleTime($event)"
-        class="border rounded-lg px-3 py-2" />
+        class="filter-select" />
     </div>
 
     <!-- Target -->
     <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
       <label class="text-sm font-medium">Target *</label>
       <input type="number" formControlName="target"
-        class="border rounded-lg px-3 py-2" />
+        class="filter-select" />
     </div>
 
     <!-- Factor -->
     <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
       <label class="text-sm font-medium">Multiplication Factor</label>
       <input type="number" formControlName="multiplication_factor"
-        class="border rounded-lg px-3 py-2" />
+        class="filter-select" />
     </div>
 
   </div>
 
   <!-- Footer -->
-  <div class="flex justify-end gap-3 pt-4 border-t">
+  <div class="flex justify-end gap-3 pt-4 border-t dark:border-t-[#222]">
     <button type="button"
       (click)="closeModal()"
-      class="px-4 py-2 border rounded-lg">
+      class="btn-secondary">
       Cancel
     </button>
 
     <button type="submit"
       [disabled]="form.invalid"
-      class="px-5 py-1 bg-blue-600 text-white rounded-lg">
+      class="btn-primary">
       {{ editing ? 'Update' : 'Save' }}
     </button>
   </div>
