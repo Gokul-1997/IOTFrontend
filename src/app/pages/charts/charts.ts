@@ -44,7 +44,18 @@ export class Charts implements OnInit {
     legend: { position: 'top' },
     fill:   { opacity: 1 },
     colors: ['#51cf66', '#ff6b6b'],
-    tooltip: { y: { formatter: (val: number) => `${val} min` } }
+    tooltip: {
+      shared: true,
+      intersect: false,
+      y: {
+        formatter: (val: number) => {
+          const totalSec = Math.round(val * 60);
+          const m = Math.floor(totalSec / 60);
+          const s = totalSec % 60;
+          return `${m} min ${s} sec`;
+        }
+      }
+    }
   };
 
   // ── Hourly Part Count (line) ───────────────────────────────
@@ -116,9 +127,22 @@ export class Charts implements OnInit {
 
   buildShiftStartEpoch(): number {
     const shift = this.shifts.find(s => s.id === this.selectedShift);
-    if (!shift) return Math.floor(new Date(this.selectedDate).getTime() / 1000);
-    const dt = new Date(`${this.selectedDate}T${shift.start_time}`);
-    return Math.floor(dt.getTime() / 1000);
+    if (shift) {
+      // Use the selected shift's exact start time in IST
+      const dt = new Date(`${this.selectedDate}T${shift.start_time}+05:30`);
+      return Math.floor(dt.getTime() / 1000);
+    }
+    // No shift selected: use the earliest shift start of the day (in IST),
+    // so night-shift carry-over from the previous day is excluded.
+    if (this.shifts.length) {
+      const earliest = this.shifts.reduce((min: any, s: any) => {
+        const ep = Math.floor(new Date(`${this.selectedDate}T${s.start_time}+05:30`).getTime() / 1000);
+        return ep < min ? ep : min;
+      }, Infinity);
+      return earliest;
+    }
+    // Fallback: midnight IST of selected date
+    return Math.floor(new Date(`${this.selectedDate}T00:00:00+05:30`).getTime() / 1000);
   }
 
   // ── Hourly count ───────────────────────────────────────────

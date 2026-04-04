@@ -38,8 +38,7 @@ const COL_DEFS: Record<ReportType, ColDef[]> = {
     { key: 'idle_time',    label: 'Idle Time',     align: 'center', default: true  },
     { key: 'setup_time',   label: 'Setup Time',    align: 'center', default: false },
     { key: 'off_time',     label: 'Off Time',      align: 'center', default: false },
-    { key: 'run_seconds',  label: 'Run Sec',       align: 'right',  default: false },
-    { key: 'idle_seconds', label: 'Idle Sec',      align: 'right',  default: false },
+
     { key: 'produced_qty', label: 'Parts Made',    align: 'center', default: true  },
     { key: 'energy_kwh',   label: 'Energy (kWh)',  align: 'right',  default: true  },
   ],

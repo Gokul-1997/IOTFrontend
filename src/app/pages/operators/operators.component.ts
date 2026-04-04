@@ -92,6 +92,7 @@ export class OperatorsComponent implements OnInit, OnDestroy {
     this.service.getById(row.id).subscribe(res => {
       this.modalData = res.data;
       this.showModal = true;
+      this.cdr.detectChanges();
     });
   }
 

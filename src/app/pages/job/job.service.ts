@@ -14,6 +14,10 @@ export class JobService {
         return this.http.get(`${this.api}/jobs/current`);
     }
 
+    getJobHistory() {
+        return this.http.get(`${this.api}/jobs/history`);
+    }
+
     startJob(data: any) {
         return this.http.post(`${this.api}/jobs/start`, data);
     }
@@ -27,6 +31,10 @@ export class JobService {
     }
     getMachines() {
         return this.http.get(`${this.api}/machines`);
+    }
+
+    getAvailableMachines() {
+        return this.http.get(`${this.api}/jobs/available-machines`);
     }
 
     getOperators() {

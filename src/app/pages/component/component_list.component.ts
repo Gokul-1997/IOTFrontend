@@ -179,7 +179,10 @@ export class ComponentList implements OnInit, OnDestroy {
     this.editing   = true;
     this.editingId = data.id;
     this.showModal = true;
-    this.form.patchValue(data);
+    this.form.patchValue({
+      ...data,
+      cycle_time: this.formatCycleTimeTable(data.cycle_time)
+    });
   }
 
   confirmDelete(row: any) { this.deleteTarget = row; }

@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
-import { MatSort } from '@angular/material/sort';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
@@ -18,80 +17,95 @@ import { JobCreateModalComponent } from './job-create-modal.component';
   selector: 'app-job-list',
   imports: [
     CommonModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSortModule,
-    MatButtonModule,
-    JobCreateModalComponent,
-    MatIconModule
+    MatTableModule, MatPaginatorModule, MatSortModule,
+    MatButtonModule, MatIconModule,
+    JobCreateModalComponent
   ],
   templateUrl: './job-list.component.html'
 })
 export class JobListComponent implements OnInit {
 
-  displayedColumns: string[] = [
-    'machine',
-    'part',
-    'target',
-    'action'
-  ];
+  activeColumns  = ['machine', 'part', 'target', 'started_at', 'action'];
+  historyColumns = ['machine', 'part', 'target', 'started_at', 'ended_at', 'status'];
 
-  dataSource = new MatTableDataSource<any>();
+  activeSource  = new MatTableDataSource<any>();
+  historySource = new MatTableDataSource<any>();
 
-  showModal = false;
+  showModal     = false;
+  tab: 'active' | 'history' = 'active';
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
+  // Stop confirmation
+  confirmRow:  any    = null;
+  stopping     = false;
+  stopError    = '';
+
+  @ViewChild('activePaginator')  activePaginator!:  MatPaginator;
+  @ViewChild('historyPaginator') historyPaginator!: MatPaginator;
 
   constructor(private service: JobService) {}
 
   ngOnInit() {
-    this.load();
+    this.loadActive();
+    this.loadHistory();
   }
 
-  /* LOAD JOBS */
-
-  load() {
-
+  loadActive() {
     this.service.getJobs().subscribe((res: any) => {
-
-      const data = res.data || [];
-
-      this.dataSource.data = data;
-
-      if (this.paginator) {
-        this.dataSource.paginator = this.paginator;
-      }
-
-      if (this.sort) {
-        this.dataSource.sort = this.sort;
-      }
-
+      this.activeSource.data = res.data || [];
+      if (this.activePaginator) this.activeSource.paginator = this.activePaginator;
     });
-
   }
 
-  /* CREATE JOB */
-
-  openCreate() {
-    this.showModal = true;
+  loadHistory() {
+    this.service.getJobHistory().subscribe((res: any) => {
+      this.historySource.data = res.data || [];
+      if (this.historyPaginator) this.historySource.paginator = this.historyPaginator;
+    });
   }
+
+  openCreate() { this.showModal = true; }
 
   closeModal() {
     this.showModal = false;
-    this.load();
+    this.loadActive();
+    this.loadHistory();
   }
 
-  /* STOP JOB */
+  // Show confirmation dialog
+  requestStop(row: any) {
+    this.confirmRow = row;
+    this.stopError  = '';
+  }
 
-  stop(machine_id: number) {
+  cancelStop() {
+    this.confirmRow = null;
+    this.stopping   = false;
+    this.stopError  = '';
+  }
 
-    this.service.stopJob(machine_id).subscribe(() => {
+  confirmStop() {
+    if (!this.confirmRow) return;
+    this.stopping  = true;
+    this.stopError = '';
 
-      this.load();
-
+    this.service.stopJob(this.confirmRow.machine_id).subscribe({
+      next: () => {
+        this.stopping   = false;
+        this.confirmRow = null;
+        this.loadActive();
+        this.loadHistory();
+      },
+      error: (err: any) => {
+        this.stopping  = false;
+        this.stopError = err?.error?.message || 'Failed to stop job.';
+      }
     });
-
   }
 
+  fmt(dt: string | null): string {
+    if (!dt) return '--';
+    const d   = new Date(dt);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
 }
