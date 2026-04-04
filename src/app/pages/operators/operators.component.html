@@ -69,9 +69,11 @@
         <ng-container matColumnDef="shift">
           <th mat-header-cell *matHeaderCellDef>Shift</th>
           <td mat-cell *matCellDef="let r">
+            <div class="flex gap-2">
             <span class="badge badge-shift">{{ r.shift_name || '—' }}</span>
             <div class="sub-text" *ngIf="r.start_time">
               {{ formatTime(r.start_time) }} – {{ formatTime(r.end_time) }}
+            </div>
             </div>
           </td>
         </ng-container>
