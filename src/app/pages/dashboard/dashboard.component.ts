@@ -46,9 +46,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   machines: any[] = [];
   summary:  any   = {};
   shift:    any   = {};
+  currentTime = '';
+  currentDateStr = '';
 
   /* ── private ── */
   private destroy$         = new Subject<void>();
+  private clockInterval: any;
   private machineMap       = new Map<number, any>();
   private updateQueue:     any[]  = [];
   private updateScheduled         = false;
@@ -102,6 +105,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
 
     document.addEventListener('visibilitychange', this.visibilityHandler);
+
+    /* ── Live clock (IST) ── */
+    const tick = () => {
+      const now = new Date();
+      this.currentTime = now.toLocaleTimeString('en-IN', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: true, timeZone: 'Asia/Kolkata'
+      });
+      this.currentDateStr = now.toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        timeZone: 'Asia/Kolkata'
+      });
+      this.cdr.markForCheck();
+    };
+    tick();
+    this.clockInterval = setInterval(tick, 1000);
   }
 
   /* ════════════════════════════════════════
@@ -304,5 +323,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
     document.removeEventListener('visibilitychange', this.visibilityHandler);
     this.socketService.offMachineUpdate();
+    clearInterval(this.clockInterval);
   }
 }

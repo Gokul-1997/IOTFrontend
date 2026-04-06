@@ -76,7 +76,10 @@ export class LiveComponent implements OnInit, OnDestroy {
 
   /* ── UI helpers ── */
   currentDate      = new Date();
+  currentTime      = '';
+  currentDateStr   = '';
   socketHasUpdated = false;   // true after first socket message for this machine
+  private clockInterval: any;
 
   /* ── Chart series ── */
   utilSeries:    number[] = [0];
@@ -141,12 +144,29 @@ export class LiveComponent implements OnInit, OnDestroy {
     this.socketService.onMachineUpdate((data: any) => {
       this.handleSocket(data);
     });
+
+    /* ── Live clock (IST) ── */
+    const tick = () => {
+      const now = new Date();
+      this.currentTime = now.toLocaleTimeString('en-IN', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: true, timeZone: 'Asia/Kolkata'
+      });
+      this.currentDateStr = now.toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        timeZone: 'Asia/Kolkata'
+      });
+      this.cdr.markForCheck();
+    };
+    tick();
+    this.clockInterval = setInterval(tick, 1000);
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
     this.socketService.offMachineUpdate();
+    clearInterval(this.clockInterval);
   }
 
   /* ════════════════════════════════════════
@@ -268,7 +288,7 @@ export class LiveComponent implements OnInit, OnDestroy {
       if (data.energy != null) {
         this.power = {
           ...this.power,
-          total_kwh: Number(Number(data.energy).toFixed(2))
+          total_kwh: Number(Number(data.energy).toFixed(3))
         };
       }
 
