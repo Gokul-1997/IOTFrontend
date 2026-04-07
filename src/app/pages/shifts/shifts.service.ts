@@ -20,7 +20,10 @@ export class ShiftsService {
     });
   }
   update(id: number, data: any) {
-  return this.http.put(`${this.api}/${id}`, data);
-}
+    return this.http.put(`${this.api}/${id}`, data);
+  }
 
+  delete(id: number) {
+    return this.http.delete(`${this.api}/${id}`);
+  }
 }

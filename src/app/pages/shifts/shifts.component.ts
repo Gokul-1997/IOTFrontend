@@ -131,6 +131,17 @@ export class ShiftsComponent implements OnInit, OnDestroy {
 
   onClose() { this.showModal = false; this.modalData = null; }
 
+  delete(row: any) {
+    if (!confirm(`Delete shift "${row.shift_name}"?`)) return;
+    this.service.delete(row.id).subscribe({
+      next: () => {
+        this.toast.success('Shift deleted successfully');
+        this.load();
+      },
+      error: () => this.toast.error('Failed to delete shift')
+    });
+  }
+
   toggle(row: any) {
     this.service.toggle(row.id, !row.is_active)
       .subscribe(() => { row.is_active = !row.is_active; this.cdr.markForCheck(); });
