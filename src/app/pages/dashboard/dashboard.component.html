@@ -21,7 +21,7 @@
         Total Machines : <div class="font-bold">{{ summary.total }} </div>
       </div> -->
       <div class="flex flex-wrap gap-2 justify-center">
-      <div class="flex border_status pr-0 ">
+      <div class="flex border_status pr-0 items-center">
         Total Machines : <div class="font-medium ml-1">{{ summary.total }} </div>
       </div>
       <div class="flex gap-2">
@@ -106,7 +106,7 @@
                 {{ (m.run_time || '00:00:00').split(':')[2] }}s
               </div>
             </div>
-            <div class="border-t md:border-r border-gray-300"></div>
+            <div class="border-t md:border-r border-gray-300 dark:border-gray-700"></div>
             <!-- IDLE -->
             <div class="text-center">
               <div class="flex items-center justify-center">
@@ -187,7 +187,8 @@
               <path
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 fill="none"
-                stroke="#e5e7eb"
+                class="stroke-[#E0E0E0] dark:stroke-[#2D2D2D]"
+                stroke="currentColor"
                 stroke-width="3" />
 
               <!--
@@ -232,7 +233,7 @@
             </div>
             </div>
 
-            <div class="text-center flex gap-2 items-center w-full md:border-t pt-1">
+            <div class="text-center flex gap-2 items-center w-full md:border-t pt-1 dark:border-gray-700">
               <span class="font-semibold red rounded-md w-5 h-5 flex items-center justify-center text-white p-0.5">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
   <path fill-rule="evenodd" d="M1.72 5.47a.75.75 0 0 1 1.06 0L9 11.69l3.756-3.756a.75.75 0 0 1 .985-.066 12.698 12.698 0 0 1 4.575 6.832l.308 1.149 2.277-3.943a.75.75 0 1 1 1.299.75l-3.182 5.51a.75.75 0 0 1-1.025.275l-5.511-3.181a.75.75 0 0 1 .75-1.3l3.943 2.277-.308-1.149a11.194 11.194 0 0 0-3.528-5.617l-3.809 3.81a.75.75 0 0 1-1.06 0L1.72 6.53a.75.75 0 0 1 0-1.061Z" clip-rule="evenodd" />

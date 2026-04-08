@@ -349,24 +349,7 @@ h4 {
   fill: #475569;
 }
 
-@keyframes alarmBlink {
-  0% {
-    background-color: #fee2e2;
-  }
 
-  50% {
-    background-color: #ef4444;
-  }
-
-  100% {
-    background-color: #fee2e2;
-  }
-}
-
-.alarm-blink {
-  animation: alarmBlink 1s infinite;
-  border: 2px solid #dc2626;
-}
 
 .status_dot {
   width: 12px;
@@ -742,7 +725,7 @@ $radius: 10px;
     width: 100%;
 }
 .filter-date {
-    padding: 7px 12px;
+    padding: 7px 25px 7px 12px;
     border: 1px solid #d1d5db;
     border-radius: 8px;
     font-size: 13.5px;
@@ -846,4 +829,146 @@ $radius: 10px;
 }
 .col-index{
   text-align: center!important;
+  color: #191a1a !important
+}
+.col-num {
+    color:#191a1a !important
+}
+.dark .col-index{
+  text-align: center!important;
+  color: #bfbfbf !important
+}
+.dark .col-num {
+    color:#bfbfbf !important
+}
+.data-table .col-index{
+  text-align: center!important;
+}
+.thead-custm .mat-sort-header-content,
+.mat-mdc-header-cell{
+  font-weight: 900!important;
+}
+
+@keyframes alarmBlink {
+  0% {
+    background-color: #fff;
+  }
+
+  50% {
+    background-color: #ef4444;
+
+  }
+
+  100% {
+    background-color: #fff;
+  }
+}
+
+.alarm-blink {
+  animation: alarmBlink 1s infinite;
+  border: 6px solid #dc2626;
+
+}
+
+@keyframes alarmBlinkDark {
+  0% {
+    background-color: #111;
+  }
+
+  50% {
+    background-color: #b94d4d;
+    color: #fff;
+  }
+
+  100% {
+    background-color: #111;
+  }
+}
+
+.dark .alarm-blink {
+  animation: alarmBlinkDark 1s infinite;
+  border: 6px solid #dc2626;
+
+}
+
+
+.dark .alarm-blink .menu-default {
+   background-color: transparent;
+  border: 1px solid #121212;
+
+}
+.alarm-blink .menu-default {
+  background-color: transparent;
+  border: 1px solid #f37171;
+
+}
+.apexcharts-tooltip-series-group, .apexcharts-tooltip-title {
+    color: #000!important;
+}
+
+
+.apexcharts-yaxis-texts-g text,
+.apexcharts-xaxis-texts-g text{
+  fill: #6b7280!important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    position: absolute;
+    right: 10px;
+    cursor: pointer;
+}
+input[type="date"] {
+    position: relative;
+}
+
+input[type="date"]::after {
+    content: "📅"; /* or SVG */
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+.dark .apexcharts-grid-borders line, .dark .apexcharts-gridlines-horizontal line{
+  stroke: #373d3f !important;
+}
+.dark .table-wrap tr:hover
+ {
+    background: rgb(72 72 72)!important;
+}
+.data-row.alt:hover td { background: #f3f4f6; }
+.border-modal{
+  border: 1px solid #222;
+}
+.btn-apply {
+  padding: 9px 18px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+
+  &:hover:not(:disabled) { background: #4f46e5; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.btn-clear {
+  padding: 9px 16px;
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+
+  &:hover:not(:disabled) { background: #f3f4f6; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
