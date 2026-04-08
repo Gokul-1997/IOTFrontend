@@ -527,6 +527,8 @@ export class LiveComponent implements OnInit, OnDestroy {
       stroke: { dashArray: 4 }
     };
 
+    // const isDark = document.body.classList.contains('dark');
+    
     /* ── Time Pie ── */
     this.timePieChart = {
   chart: { type: 'pie', height: 180 },
