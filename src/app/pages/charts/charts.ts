@@ -32,6 +32,10 @@ export class Charts implements OnInit {
   // ── Per-Part Timing (stacked bar) ─────────────────────────
   partSeries:   any[] = [];
   partCategories: string[] = [];
+  partChartWidth = '100%';
+
+  private readonly MIN_BAR_PX = 24; // minimum pixels per bar before scroll kicks in
+
   partChartOptions: any = {
     chart:   { type: 'bar', height: 370, stacked: true, toolbar: { show: true } },
     plotOptions: { bar: { horizontal: false, columnWidth: '55%', borderRadius: 4 } },
@@ -114,6 +118,8 @@ export class Charts implements OnInit {
           { name: 'Idle',    data: rows.map((r: any) => r.idle_min) }
         ];
         this.partCategories  = rows.map((r: any) => `Part ${r.part_no}`);
+        const needed = rows.length * this.MIN_BAR_PX;
+        this.partChartWidth  = needed > window.innerWidth ? `${needed}px` : '100%';
         this.loadingParts    = false;
         this.partDataLoaded  = true;
         this.cdr.detectChanges();

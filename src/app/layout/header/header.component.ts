@@ -18,24 +18,30 @@ export class HeaderComponent implements OnInit {
   showUserMenu = false;
   userName = 'Admin';
   userEmail = '';
+  isAdmin = false;
+  userPermissions: string[] = [];
 
-  menus = [
-    { label: 'Dashboard', path: '/dashboard', icon: 'gauge' },
-    { label: 'OEE', path: '/oee-reports', icon: 'oee' },
-    { label: 'Reports', path: '/reports', icon: 'reports' },
-    { label: 'Charts', path: '/charts', icon: 'chart' },
-    { label: 'Quality', path: '/quality', icon: 'quality' },
+  // All menus with permission keys for filtering
+  allMenus: any[] = [
+    { label: 'Dashboard', path: '/dashboard', icon: 'gauge', permission: 'page:dashboard' },
+    { label: 'OEE', path: '/oee-reports', icon: 'oee', permission: 'page:oee-reports' },
+    { label: 'Reports', path: '/reports', icon: 'reports', permission: 'page:reports' },
+    { label: 'Charts', path: '/charts', icon: 'chart', permission: 'page:charts' },
+    { label: 'Quality', path: '/quality', icon: 'quality', permission: 'page:quality' },
     {
       label: 'Master', icon: 'settings',
       children: [
-        { label: 'Machines', path: '/machines' },
-        { label: 'Component', path: '/component' },
-        { label: 'Job', path: '/job' },
-        { label: 'Shifts', path: '/shifts' },
-        { label: 'Operators', path: '/operators' }
+        { label: 'Machines', path: '/machines', permission: 'page:machines' },
+        { label: 'Component', path: '/component', permission: 'page:component' },
+        { label: 'Job', path: '/job', permission: 'page:job' },
+        { label: 'Shifts', path: '/shifts', permission: 'page:shifts' },
+        { label: 'Operators', path: '/operators', permission: 'page:operators' }
       ]
-    }
+    },
+    { label: 'Admin', path: '/admin/users', icon: 'shield', adminOnly: true }
   ];
+
+  menus: any[] = [];
 
   constructor(private router: Router, private auth: AuthService) { }
 
@@ -44,7 +50,45 @@ export class HeaderComponent implements OnInit {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       this.userName  = user.name  || user.username || 'Admin';
       this.userEmail = user.email || '';
+      this.isAdmin = user.roles && Array.isArray(user.roles) && user.roles.includes('ADMIN');
+      this.userPermissions = user.permissions || [];
     } catch { }
+
+    this.buildMenus();
+  }
+
+  /** Filter menus based on user permissions. ADMIN sees everything. */
+  buildMenus() {
+    this.menus = this.allMenus
+      .map(menu => {
+        // Admin-only item
+        if (menu.adminOnly) {
+          return this.isAdmin ? menu : null;
+        }
+
+        // Dropdown with children
+        if (menu.children) {
+          const filteredChildren = menu.children.filter((child: any) =>
+            this.isAdmin || this.hasPermission(child.permission)
+          );
+          return filteredChildren.length > 0
+            ? { ...menu, children: filteredChildren }
+            : null;
+        }
+
+        // Normal menu item
+        if (this.isAdmin || this.hasPermission(menu.permission)) {
+          return menu;
+        }
+
+        return null;
+      })
+      .filter(m => m !== null);
+  }
+
+  hasPermission(permission: string): boolean {
+    if (!permission) return true;
+    return this.userPermissions.includes(permission);
   }
 
   toggleUserMenu() {

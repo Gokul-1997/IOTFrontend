@@ -89,18 +89,23 @@
         No part data found for the selected filters.
       </div>
 
-      <apx-chart *ngIf="!loadingParts && partDataLoaded && partSeries[0]?.data?.length > 0"
-        [series]="partSeries"
-        [chart]="partChartOptions.chart"
-        [plotOptions]="partChartOptions.plotOptions"
-        [xaxis]="{ categories: partCategories }"
-        [yaxis]="partChartOptions.yaxis"
-        [legend]="partChartOptions.legend"
-        [fill]="partChartOptions.fill"
-        [dataLabels]="partChartOptions.dataLabels"
-        [tooltip]="partChartOptions.tooltip"
-        [colors]="partChartOptions.colors">
-      </apx-chart>
+      <div *ngIf="!loadingParts && partDataLoaded && partSeries[0]?.data?.length > 0"
+           style="overflow-x: auto; overflow-y: hidden;">
+        <div [style.min-width]="partChartWidth">
+          <apx-chart
+            [series]="partSeries"
+            [chart]="partChartOptions.chart"
+            [plotOptions]="partChartOptions.plotOptions"
+            [xaxis]="{ categories: partCategories }"
+            [yaxis]="partChartOptions.yaxis"
+            [legend]="partChartOptions.legend"
+            [fill]="partChartOptions.fill"
+            [dataLabels]="partChartOptions.dataLabels"
+            [tooltip]="partChartOptions.tooltip"
+            [colors]="partChartOptions.colors">
+          </apx-chart>
+        </div>
+      </div>
     </div>
 
     <!-- Hourly Part Count (Line Chart) -->
