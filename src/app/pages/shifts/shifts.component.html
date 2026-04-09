@@ -35,8 +35,8 @@
 
  
 
-  <!-- ── TABLE CARD ────────────────────────────────────────────────────────── -->
-  <div class="table-card mat-elevation-z2">
+  <!-- ── TABLE CARD ──────────────────────────────────────────────────────────── -->
+  <div class="table-card mat-elevation-z2 shadow-lg">
 
     <div *ngIf="loading" class="loading-overlay">
       <mat-spinner diameter="40"></mat-spinner>
@@ -96,8 +96,8 @@
             <button mat-icon-button class="action-edit" (click)="openEdit(r)" matTooltip="Edit">
               <mat-icon>edit</mat-icon>
             </button>
-            <button mat-icon-button class="action-delete" (click)="delete(r)" matTooltip="Delete">
-              <mat-icon>delete</mat-icon>
+            <button mat-icon-button class="action-delete" (click)="confirmDelete(r)" matTooltip="Delete">
+              <mat-icon>delete_outline</mat-icon>
             </button>
           </td>
         </ng-container>
@@ -125,4 +125,29 @@
     </mat-paginator>
 
   </div>
+
+  <!-- ── DELETE CONFIRM ──────────────────────────────────────────────── -->
+  <div *ngIf="deleteTarget" class="modal-backdrop">
+    <div class="delete-modal mat-elevation-z8">
+      <div class="delete-icon-wrap">
+        <mat-icon>delete_forever</mat-icon>
+      </div>
+      <h3>Delete Shift</h3>
+      <p>
+        Are you sure you want to delete
+        <strong>{{ deleteTarget.shift_name }}</strong>?<br>
+        This action cannot be undone.
+      </p>
+      <div *ngIf="deleteError" class="error-banner">{{ deleteError }}</div>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="cancelDelete()" [disabled]="deleting">Cancel</button>
+        <button class="btn-danger" (click)="doDelete()" [disabled]="deleting">
+          <mat-spinner *ngIf="deleting" diameter="18"></mat-spinner>
+          <mat-icon *ngIf="!deleting">delete</mat-icon>
+          {{ deleting ? 'Deleting…' : 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
 </div>

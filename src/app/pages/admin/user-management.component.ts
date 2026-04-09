@@ -106,28 +106,12 @@ export class UserManagementComponent implements OnInit {
 
     this.loading = true;
     this.cdr.detectChanges();
-    const { role_ids, ...userData } = this.createForm;
 
-    this.adminService.createUser(userData).subscribe({
-      next: (newUser: any) => {
-        if (role_ids.length > 0) {
-          this.adminService.assignRolesToUser(newUser.id, role_ids).subscribe({
-            next: () => {
-              this.toastService.success('User created and roles assigned');
-              this.closeCreateModal();
-              this.loadUsers();
-            },
-            error: () => {
-              this.toastService.error('User created but role assignment failed');
-              this.closeCreateModal();
-              this.loadUsers();
-            }
-          });
-        } else {
-          this.toastService.success('User created successfully');
-          this.closeCreateModal();
-          this.loadUsers();
-        }
+    this.adminService.createUser(this.createForm).subscribe({
+      next: () => {
+        this.toastService.success('User created successfully');
+        this.closeCreateModal();
+        this.loadUsers();
       },
       error: err => {
         this.toastService.error(err.error?.message || 'Failed to create user');
@@ -181,23 +165,26 @@ export class UserManagementComponent implements OnInit {
 
     this.loading = true;
     this.cdr.detectChanges();
-    this.adminService.updateUser(this.selectedUser.id, updateData).subscribe({
-      next: () => {
-        this.adminService.assignRolesToUser(this.selectedUser.id, this.editForm.role_ids).subscribe({
-          next: () => {
-            this.toastService.success('User updated successfully');
-            this.closeEditModal();
-            this.loadUsers();
-          },
-          error: () => {
-            this.toastService.error('User updated but role sync failed');
-            this.closeEditModal();
-            this.loadUsers();
-          }
-        });
-      },
-      error: err => {
-        this.toastService.error(err.error?.message || 'Failed to update user');
+
+    const doUpdate = () => {
+      this.adminService.updateUser(this.selectedUser.id, updateData).subscribe({
+        next: () => {
+          this.toastService.success('User updated successfully');
+          this.closeEditModal();
+          this.loadUsers();
+        },
+        error: err => {
+          this.toastService.error(err.error?.message || 'Failed to update user');
+          this.loading = false;
+          this.cdr.detectChanges();
+        }
+      });
+    };
+
+    this.adminService.assignRolesToUser(this.selectedUser.id, this.editForm.role_ids).subscribe({
+      next: () => doUpdate(),
+      error: () => {
+        this.toastService.error('Role assignment failed');
         this.loading = false;
         this.cdr.detectChanges();
       }

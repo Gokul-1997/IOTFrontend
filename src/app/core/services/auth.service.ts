@@ -77,6 +77,36 @@ export class AuthService {
     return !!localStorage.getItem('token');
   }
 
+  /** Returns the first route the user has permission for, or /no-access if none. */
+  getFirstAccessibleRoute(): string {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.roles?.includes('ADMIN')) return '/dashboard';
+
+      const permissions: string[] = user.permissions || [];
+      const pageRoutes = [
+        { permission: 'page:dashboard',      path: '/dashboard' },
+        { permission: 'page:oee-reports',    path: '/oee-reports' },
+        { permission: 'page:reports',        path: '/reports' },
+        { permission: 'page:charts',         path: '/charts' },
+        { permission: 'page:quality',        path: '/quality' },
+        { permission: 'page:machines',       path: '/machines' },
+        { permission: 'page:component',      path: '/component' },
+        { permission: 'page:job',            path: '/job' },
+        { permission: 'page:shifts',         path: '/shifts' },
+        { permission: 'page:operators',      path: '/operators' },
+        { permission: 'page:assignments',    path: '/assignments' },
+        { permission: 'page:machine-shifts', path: '/machine-shifts' },
+        { permission: 'page:plants',         path: '/plants' },
+      ];
+
+      const first = pageRoutes.find(r => permissions.includes(r.permission));
+      return first ? first.path : '/no-access';
+    } catch {
+      return '/no-access';
+    }
+  }
+
   forgotPassword(email: string) {
     return this.http.post(`${this.api}/forgot-password`, { email });
   }

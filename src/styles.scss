@@ -972,3 +972,126 @@ input[type="date"]::after {
   &:hover:not(:disabled) { background: #f3f4f6; }
   &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
+
+// ═══════════════════════════════════════════════════════════
+// SHARED PAGE LAYOUT — used by Machines, Operators, Shifts, Plants
+// ═══════════════════════════════════════════════════════════
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+// Table card container
+.table-card {
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+}
+.dark .table-card { background: #12203a; }
+
+// Loading spinner overlay
+.loading-overlay {
+  position: absolute; inset: 0;
+  background: rgba(255, 255, 255, 0.75);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10;
+}
+.dark .loading-overlay { background: rgba(18, 32, 58, 0.75); }
+
+// Horizontal scroll wrapper for wide tables
+.table-wrapper { overflow-x: auto; }
+
+// Serial / code value
+.serial-no { color: #3b5bdb; font-size: 0.82rem; font-weight: 600; }
+
+// Sub text (e.g., shift time range)
+.sub-text { font-size: 0.72rem; font-weight: 600; color: #6c757d; }
+
+// Small badges
+.badge-shift { background: #e8f0fe; color: #3b5bdb; border-radius: 20px; padding: 2px 10px; font-size: 0.72rem; font-weight: 600; display: inline-block; }
+.badge-count { background: #f3f0ff; color: #6741d9; border-radius: 20px; padding: 2px 10px; font-size: 0.72rem; font-weight: 600; display: inline-block; min-width: 28px; text-align: center; }
+.badge-time  { background: #e8f8f0; color: #2b8a3e; border-radius: 20px; padding: 2px 10px; font-size: 0.72rem; font-weight: 600; display: inline-block; }
+
+// Row action icon buttons
+.action-edit   { color: #3b5bdb !important; &:hover { background: #e8f0fe !important; } }
+.action-delete { color: #e03131 !important; &:hover { background: #fff0f0 !important; } }
+
+// Empty state
+.empty-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 60px 20px; color: #adb5bd; gap: 8px;
+  mat-icon { font-size: 56px; width: 56px; height: 56px; opacity: 0.35; }
+  p { margin: 0; font-size: 1rem; font-weight: 600; color: #6c757d; }
+  span { font-size: 0.82rem; }
+}
+
+// Delete confirm modal
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+
+.delete-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 28px;
+  width: 100%; max-width: 400px;
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+
+  .delete-icon-wrap {
+    width: 60px; height: 60px; border-radius: 50%;
+    background: #fff5f5;
+    display: flex; align-items: center; justify-content: center;
+    mat-icon { color: #e03131; font-size: 32px; width: 32px; height: 32px; }
+  }
+
+  h3 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #212529; }
+  p  { margin: 0; font-size: 0.875rem; color: #6c757d; line-height: 1.6; }
+}
+
+.dark .delete-modal {
+  background: #12203a;
+  h3 { color: #f1f3f5; }
+  p  { color: #8da5c4; }
+  .delete-icon-wrap { background: #1e2d45; }
+}
+
+.error-banner {
+  width: 100%;
+  background: #fff0f0;
+  border: 1px solid #ffc9c9;
+  color: #c92a2a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+}
+
+.modal-actions { display: flex; gap: 12px; width: 100%; margin-top: 4px; }
+
+.btn-cancel {
+  flex: 1; height: 42px; border-radius: 10px;
+  border: 1.5px solid #dee2e6; background: #fff; color: #495057;
+  font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.15s;
+  &:hover:not(:disabled) { background: #f1f3f5; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+.dark .btn-cancel { background: #1e2d45; border-color: #2d3f55; color: #c8d8ea; }
+
+.btn-danger {
+  flex: 1; height: 42px; border-radius: 10px;
+  border: none; background: #e03131; color: #fff;
+  font-size: 0.875rem; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: background 0.15s;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  &:hover:not(:disabled) { background: #c92a2a; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}

@@ -12,8 +12,8 @@ export class OperatorService {
   // ------------------------
   // OPERATORS
   // ------------------------
-  getAll() {
-    return this.http.get<any[]>(`${this.api}/operators`);
+  getAll(params: any = {}) {
+    return this.http.get<any>(`${this.api}/operators`, { params });
   }
 
   create(data: any) {

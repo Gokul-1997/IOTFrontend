@@ -28,7 +28,7 @@ import { ToastService } from '../../core/services/toast.service';
     MatTableModule, MatPaginatorModule, MatSortModule,
     MatButtonModule, MatIconModule, MatInputModule,
     MatSlideToggleModule, MatProgressSpinnerModule, MatTooltipModule,
-    ShiftFormComponent
+    ShiftFormComponent,
   ]
 })
 export class ShiftsComponent implements OnInit, OnDestroy {
@@ -46,6 +46,10 @@ export class ShiftsComponent implements OnInit, OnDestroy {
 
   showModal = false;
   modalData: any = null;
+
+  deleteTarget: any = null;
+  deleting          = false;
+  deleteError       = '';
 
   private searchSubject = new Subject<string>();
   private destroy$      = new Subject<void>();
@@ -131,14 +135,25 @@ export class ShiftsComponent implements OnInit, OnDestroy {
 
   onClose() { this.showModal = false; this.modalData = null; }
 
-  delete(row: any) {
-    if (!confirm(`Delete shift "${row.shift_name}"?`)) return;
-    this.service.delete(row.id).subscribe({
+  confirmDelete(row: any) { this.deleteTarget = row; this.deleteError = ''; }
+  cancelDelete()          { this.deleteTarget = null; this.deleteError = ''; this.deleting = false; }
+
+  doDelete() {
+    if (!this.deleteTarget) return;
+    this.deleting    = true;
+    this.deleteError = '';
+    this.service.delete(this.deleteTarget.id).subscribe({
       next: () => {
-        this.toast.success('Shift deleted successfully');
+        this.deleting     = false;
+        this.deleteTarget = null;
         this.load();
+        this.toast.success('Shift deleted successfully');
       },
-      error: () => this.toast.error('Failed to delete shift')
+      error: (err: any) => {
+        this.deleting    = false;
+        this.deleteError = err?.error?.message || 'Failed to delete shift';
+        this.toast.error(this.deleteError);
+      }
     });
   }
 

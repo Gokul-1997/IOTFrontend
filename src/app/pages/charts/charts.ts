@@ -110,7 +110,7 @@ export class Charts implements OnInit {
     if (!this.selectedMachine) return;
     this.loadingParts = true;
 
-    this.service.getPartTiming(this.selectedMachine, this.buildShiftStartEpoch()).subscribe({
+    this.service.getPartTiming(this.selectedMachine, this.buildShiftStartEpoch(), this.buildShiftEndEpoch()).subscribe({
       next: res => {
         const rows: any[] = res.data || [];
         this.partSeries = [
@@ -149,6 +149,23 @@ export class Charts implements OnInit {
     }
     // Fallback: midnight IST of selected date
     return Math.floor(new Date(`${this.selectedDate}T00:00:00+05:30`).getTime() / 1000);
+  }
+
+  buildShiftEndEpoch(): number | undefined {
+    const shift = this.shifts.find(s => s.id === this.selectedShift);
+    if (!shift) return undefined;
+    // For overnight shifts (start > end), end is on the next day
+    const isOvernight = shift.start_time > shift.end_time;
+    const endDate = isOvernight
+      ? this.addDays(this.selectedDate, 1)
+      : this.selectedDate;
+    return Math.floor(new Date(`${endDate}T${shift.end_time}+05:30`).getTime() / 1000);
+  }
+
+  private addDays(dateStr: string, days: number): string {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m - 1, d + days);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
   }
 
   // ── Hourly count ───────────────────────────────────────────

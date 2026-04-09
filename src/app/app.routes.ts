@@ -56,6 +56,9 @@ export const routes: Routes = [
         ]
       },
 
+      // NO ACCESS
+      { path: 'no-access', loadComponent: () => import('./pages/no-access/no-access.component').then(m => m.NoAccessComponent) },
+
       // DEFAULT
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]

@@ -16,9 +16,9 @@ export class ChartsService {
     return this.http.get<any>(`${this.api}/data`, { params: params as any });
   }
 
-  getPartTiming(machineId: number, shiftStartEpoch: number) {
-    return this.http.get<any>(`${this.api}/parts`, {
-      params: { machine_id: machineId, shift_start_epoch: shiftStartEpoch }
-    });
+  getPartTiming(machineId: number, shiftStartEpoch: number, shiftEndEpoch?: number) {
+    const params: any = { machine_id: machineId, shift_start_epoch: shiftStartEpoch };
+    if (shiftEndEpoch) params.shift_end_epoch = shiftEndEpoch;
+    return this.http.get<any>(`${this.api}/parts`, { params });
   }
 }

@@ -31,8 +31,8 @@ export function permissionGuard(requiredPermission: string): CanActivateFn {
         return true;
       }
 
-      // No permission — redirect to dashboard
-      router.navigate(['/dashboard']);
+      // No permission — redirect to no-access page
+      router.navigate(['/no-access']);
       return false;
     } catch {
       router.navigate(['/login']);
