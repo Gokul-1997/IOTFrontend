@@ -16,7 +16,7 @@
       <h2 class="text-xl font-bold">Supervisor Jobs</h2>
     </div>
     <div class="toolbar-right flex gap-2 items-center">
-      <button class="btn-primary" (click)="openCreate()">
+      <button class="btn-primary" (click)="openCreate()" *ngIf="auth.hasAction('job', 'create')">
         <mat-icon>add</mat-icon>
         Create Job
       </button>
@@ -76,7 +76,7 @@
       <ng-container matColumnDef="action">
         <th mat-header-cell *matHeaderCellDef>Action</th>
         <td mat-cell *matCellDef="let row">
-          <button
+          <button *ngIf="auth.hasAction('job', 'delete')"
             class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-4 rounded-full"
             (click)="requestStop(row)">
             Stop

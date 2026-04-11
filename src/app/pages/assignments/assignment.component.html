@@ -21,7 +21,7 @@
   <label>Assigned From</label>
   <input type="date" formControlName="assigned_from" />
 
-  <button type="submit" [disabled]="saving">
+  <button type="submit" [disabled]="saving" *ngIf="auth.hasAction('assignments', 'create')">
     {{ saving ? 'Saving...' : 'Assign' }}
   </button>
 </form>

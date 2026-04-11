@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgApexchartsModule, ChartComponent } from "ng-apexcharts";
 import { QualityService } from './quality.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-quality',
@@ -49,8 +50,8 @@ export class Quality implements OnInit {
   };
 
   constructor(private service: QualityService,
-    private cdr: ChangeDetectorRef
-
+    private cdr: ChangeDetectorRef,
+    public  auth: AuthService
   ) { }
 
   ngOnInit() {

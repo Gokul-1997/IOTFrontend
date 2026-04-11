@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
+import { sntSuperGuard } from './core/guards/snt-super.guard';
+import { companyAdminGuard } from './core/guards/company-admin.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 
 export const routes: Routes = [
@@ -45,13 +47,14 @@ export const routes: Routes = [
       { path: 'quality', canActivate: [permissionGuard('page:quality')], loadComponent: () => import('./pages/quality/quality').then(m => m.Quality) },
       { path: 'job', canActivate: [permissionGuard('page:job')], loadComponent: () => import('./pages/job/job-list.component').then(m => m.JobListComponent) },
 
-      // ADMIN ROUTES (ADMIN ONLY)
+      // ADMIN ROUTES (SNT_SUPER / COMPANY_ADMIN / ADMIN)
       {
         path: 'admin',
         canActivate: [adminGuard],
         children: [
-          { path: 'users', loadComponent: () => import('./pages/admin/user-management.component').then(m => m.UserManagementComponent) },
-          { path: 'roles', loadComponent: () => import('./pages/admin/role-management.component').then(m => m.RoleManagementComponent) },
+          { path: 'companies', canActivate: [sntSuperGuard], loadComponent: () => import('./pages/admin/company-management.component').then(m => m.CompanyManagementComponent) },
+          { path: 'users', canActivate: [companyAdminGuard], loadComponent: () => import('./pages/admin/user-management.component').then(m => m.UserManagementComponent) },
+          { path: 'roles', canActivate: [companyAdminGuard], loadComponent: () => import('./pages/admin/role-management.component').then(m => m.RoleManagementComponent) },
           { path: '', redirectTo: 'users', pathMatch: 'full' }
         ]
       },

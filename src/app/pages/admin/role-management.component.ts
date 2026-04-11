@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { AdminService } from './admin.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-role-management',
@@ -14,8 +15,8 @@ import { ToastService } from '../../core/services/toast.service';
 })
 export class RoleManagementComponent implements OnInit {
   roles: any[] = [];
-  pagePermissions: any[] = [];
-  pageGroups: string[] = [];
+  permissionModules: any[] = [];  // [{module, label, group, permissions: [{id, permission_key, action}]}]
+  permissionGroups: string[] = [];
   loading = false;
   showCreateModal = false;
   showPagesModal = false;
@@ -23,17 +24,18 @@ export class RoleManagementComponent implements OnInit {
   seeding = false;
 
   createForm = { role_name: '' };
-  selectedPageIds: Set<number> = new Set();
+  selectedPermIds: Set<number> = new Set();
 
   constructor(
     private adminService: AdminService,
     private toastService: ToastService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public auth: AuthService
   ) {}
 
   ngOnInit() {
     this.loadRoles();
-    this.loadPagePermissions();
+    this.loadPermissions();
   }
 
   loadRoles() {
@@ -53,16 +55,14 @@ export class RoleManagementComponent implements OnInit {
     });
   }
 
-  loadPagePermissions() {
+  loadPermissions() {
     this.adminService.getPagePermissions().subscribe({
       next: res => {
-        this.pagePermissions = [...res];
-        this.pageGroups = [...new Set(res.map((p: any) => p.group))] as string[];
+        this.permissionModules = [...res];
+        this.permissionGroups = [...new Set(res.map((m: any) => m.group))] as string[];
         this.cdr.detectChanges();
       },
-      error: () => {
-        this.toastService.error('Failed to load page permissions');
-      }
+      error: () => this.toastService.error('Failed to load permissions')
     });
   }
 
@@ -73,7 +73,7 @@ export class RoleManagementComponent implements OnInit {
       next: () => {
         this.toastService.success('Page permissions seeded successfully');
         this.seeding = false;
-        this.loadPagePermissions();
+        this.loadPermissions();
       },
       error: () => {
         this.toastService.error('Failed to seed page permissions');
@@ -83,10 +83,11 @@ export class RoleManagementComponent implements OnInit {
     });
   }
 
-  getPagesByGroup(group: string): any[] {
-    return this.pagePermissions.filter(p => p.group === group);
+  getModulesByGroup(group: string): any[] {
+    return this.permissionModules.filter(m => m.group === group);
   }
 
+  // ── Create Role ──
   openCreateModal() {
     this.createForm = { role_name: '' };
     this.showCreateModal = true;
@@ -119,9 +120,10 @@ export class RoleManagementComponent implements OnInit {
     });
   }
 
+  // ── Permission Assignment Modal ──
   openPagesModal(role: any) {
     this.selectedRole = role;
-    this.selectedPageIds = new Set(
+    this.selectedPermIds = new Set(
       (role.permissions || [])
         .filter((p: any) => p.permission_key?.startsWith('page:'))
         .map((p: any) => p.id)
@@ -133,63 +135,83 @@ export class RoleManagementComponent implements OnInit {
   closePagesModal() {
     this.showPagesModal = false;
     this.selectedRole = null;
-    this.selectedPageIds = new Set();
+    this.selectedPermIds = new Set();
     this.cdr.detectChanges();
   }
 
-  togglePage(pageId: number) {
-    const s = new Set(this.selectedPageIds);
-    s.has(pageId) ? s.delete(pageId) : s.add(pageId);
-    this.selectedPageIds = s;
+  isPermSelected(permId: number): boolean {
+    return this.selectedPermIds.has(permId);
+  }
+
+  togglePerm(permId: number) {
+    const s = new Set(this.selectedPermIds);
+    s.has(permId) ? s.delete(permId) : s.add(permId);
+    this.selectedPermIds = s;
     this.cdr.detectChanges();
   }
 
-  isPageSelected(pageId: number): boolean {
-    return this.selectedPageIds.has(pageId);
+  toggleModule(mod: any) {
+    const s = new Set(this.selectedPermIds);
+    const allSelected = mod.permissions.every((p: any) => s.has(p.id));
+    mod.permissions.forEach((p: any) => allSelected ? s.delete(p.id) : s.add(p.id));
+    this.selectedPermIds = s;
+    this.cdr.detectChanges();
+  }
+
+  isModuleAllSelected(mod: any): boolean {
+    return mod.permissions.length > 0 && mod.permissions.every((p: any) => this.selectedPermIds.has(p.id));
+  }
+
+  isModulePartial(mod: any): boolean {
+    const count = mod.permissions.filter((p: any) => this.selectedPermIds.has(p.id)).length;
+    return count > 0 && count < mod.permissions.length;
   }
 
   toggleGroup(group: string) {
-    const pages = this.getPagesByGroup(group);
-    const s = new Set(this.selectedPageIds);
-    const allSelected = pages.every(p => s.has(p.id));
-    allSelected ? pages.forEach(p => s.delete(p.id)) : pages.forEach(p => s.add(p.id));
-    this.selectedPageIds = s;
+    const mods = this.getModulesByGroup(group);
+    const s = new Set(this.selectedPermIds);
+    const allSelected = mods.every(m => m.permissions.every((p: any) => s.has(p.id)));
+    mods.forEach(m => m.permissions.forEach((p: any) => allSelected ? s.delete(p.id) : s.add(p.id)));
+    this.selectedPermIds = s;
     this.cdr.detectChanges();
   }
 
   isGroupAllSelected(group: string): boolean {
-    const pages = this.getPagesByGroup(group);
-    return pages.length > 0 && pages.every(p => this.selectedPageIds.has(p.id));
+    const mods = this.getModulesByGroup(group);
+    return mods.every(m => m.permissions.every((p: any) => this.selectedPermIds.has(p.id)));
   }
 
-  isGroupPartialSelected(group: string): boolean {
-    const pages = this.getPagesByGroup(group);
-    const count = pages.filter(p => this.selectedPageIds.has(p.id)).length;
-    return count > 0 && count < pages.length;
+  isGroupPartial(group: string): boolean {
+    const mods = this.getModulesByGroup(group);
+    const allPerms = mods.flatMap(m => m.permissions);
+    const count = allPerms.filter((p: any) => this.selectedPermIds.has(p.id)).length;
+    return count > 0 && count < allPerms.length;
   }
 
   savePageAccess() {
     if (!this.selectedRole) return;
+    // Keep non-page permissions, add selected page permissions
     const nonPagePermIds = (this.selectedRole.permissions || [])
       .filter((p: any) => !p.permission_key?.startsWith('page:'))
       .map((p: any) => p.id);
-    const allPermIds = [...nonPagePermIds, ...Array.from(this.selectedPageIds)];
+    const allPermIds = [...nonPagePermIds, ...Array.from(this.selectedPermIds)];
     this.loading = true;
     this.cdr.detectChanges();
     this.adminService.assignPermissionsToRole(this.selectedRole.id, allPermIds).subscribe({
       next: () => {
-        this.toastService.success('Page access updated successfully');
+        this.toastService.success('Permissions updated successfully');
         this.closePagesModal();
         this.loadRoles();
       },
-      error: () => {
-        this.toastService.error('Failed to update page access');
+      error: err => {
+        this.toastService.error(err.error?.message || 'Failed to update permissions');
         this.loading = false;
         this.cdr.detectChanges();
       }
     });
   }
 
+  // ── Delete ──
   deleteRole(role: any) {
     if (!confirm(`Delete role "${role.role_name}"? This cannot be undone.`)) return;
     this.loading = true;
@@ -207,16 +229,27 @@ export class RoleManagementComponent implements OnInit {
     });
   }
 
+  // ── Helpers ──
   getPageNames(role: any): string {
     const pages = (role.permissions || []).filter((p: any) => p.permission_key?.startsWith('page:'));
-    if (!pages.length) return 'No page access';
-    return pages.map((p: any) => {
-      const key = p.permission_key.replace('page:', '');
-      return key.charAt(0).toUpperCase() + key.slice(1);
-    }).join(', ');
+    if (!pages.length) return '';
+    // Group by module and show unique module names
+    const moduleSet = new Set<string>();
+    pages.forEach((p: any) => moduleSet.add(p.permission_key.split(':')[1]));
+    return Array.from(moduleSet).map(m => m.charAt(0).toUpperCase() + m.slice(1)).join(', ');
   }
 
   getPageCount(role: any): number {
+    // Count unique modules (not individual actions)
+    const modules = new Set(
+      (role.permissions || [])
+        .filter((p: any) => p.permission_key?.startsWith('page:'))
+        .map((p: any) => p.permission_key.split(':')[1])
+    );
+    return modules.size;
+  }
+
+  getActionCount(role: any): number {
     return (role.permissions || []).filter((p: any) => p.permission_key?.startsWith('page:')).length;
   }
 }

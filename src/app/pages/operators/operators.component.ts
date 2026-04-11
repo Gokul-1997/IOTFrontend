@@ -17,6 +17,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OperatorService } from './operator.service';
 import { OperatorFormComponent } from './operator-form.component';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   standalone: true,
@@ -55,7 +56,8 @@ export class OperatorsComponent implements OnInit, OnDestroy {
   constructor(
     private service: OperatorService,
     private toast:   ToastService,
-    private cdr:     ChangeDetectorRef
+    private cdr:     ChangeDetectorRef,
+    public auth:     AuthService
   ) {}
 
   ngOnInit() {

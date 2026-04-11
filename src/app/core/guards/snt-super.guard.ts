@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
 
-export const adminGuard: CanActivateFn = (route, state) => {
+export const sntSuperGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
 
   try {
@@ -14,12 +14,11 @@ export const adminGuard: CanActivateFn = (route, state) => {
     const user = JSON.parse(userJson);
     const roles: string[] = user.roles || [];
 
-    // SNT_SUPER, COMPANY_ADMIN, or legacy ADMIN all get admin access
-    if (roles.includes('SNT_SUPER') || roles.includes('COMPANY_ADMIN') || roles.includes('ADMIN')) {
+    if (roles.includes('SNT_SUPER')) {
       return true;
     }
 
-    router.navigate(['/dashboard']);
+    router.navigate(['/admin/users']);
     return false;
   } catch {
     router.navigate(['/login']);

@@ -25,7 +25,7 @@
           <mat-icon>close</mat-icon>
         </button>
       </div>
-      <button class="btn-primary" (click)="openCreate()">
+      <button class="btn-primary" (click)="openCreate()" *ngIf="auth.hasAction('shifts', 'create')">
         <mat-icon>add</mat-icon>
         New Shift
       </button>
@@ -93,10 +93,10 @@
         <ng-container matColumnDef="actions" [stickyEnd]="true">
           <th mat-header-cell *matHeaderCellDef class="col-actions">Actions</th>
           <td mat-cell *matCellDef="let r" class="col-actions">
-            <button mat-icon-button class="action-edit" (click)="openEdit(r)" matTooltip="Edit">
+            <button mat-icon-button class="action-edit" (click)="openEdit(r)" matTooltip="Edit" *ngIf="auth.hasAction('shifts', 'edit')">
               <mat-icon>edit</mat-icon>
             </button>
-            <button mat-icon-button class="action-delete" (click)="confirmDelete(r)" matTooltip="Delete">
+            <button mat-icon-button class="action-delete" (click)="confirmDelete(r)" matTooltip="Delete" *ngIf="auth.hasAction('shifts', 'delete')">
               <mat-icon>delete_outline</mat-icon>
             </button>
           </td>

@@ -24,6 +24,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatBadgeModule } from '@angular/material/badge';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Sort } from '@angular/material/sort';
 
 // Maps Material sort column names → DB prefixed column names expected by backend
@@ -94,7 +95,8 @@ export class MachinesComponent implements OnInit, OnDestroy {
   constructor(
     private service: MachinesService,
     private cdr:     ChangeDetectorRef,
-    private toast:   ToastService
+    private toast:   ToastService,
+    public  auth:    AuthService
   ) {}
 
   ngOnInit() {

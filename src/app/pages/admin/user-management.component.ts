@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AdminService } from './admin.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-user-management',
@@ -15,6 +16,7 @@ import { ToastService } from '../../core/services/toast.service';
 export class UserManagementComponent implements OnInit {
   users: any[] = [];
   roles: any[] = [];
+  companies: any[] = [];
   loading = false;
   showCreateModal = false;
   showEditModal = false;
@@ -24,6 +26,7 @@ export class UserManagementComponent implements OnInit {
     username: '',
     email: '',
     password: '',
+    company_id: null as number | null,
     role_ids: [] as number[]
   };
 
@@ -32,6 +35,7 @@ export class UserManagementComponent implements OnInit {
     email: '',
     password: '',
     is_active: true,
+    company_id: null as number | null,
     role_ids: [] as number[]
   };
 
@@ -39,7 +43,8 @@ export class UserManagementComponent implements OnInit {
     private adminService: AdminService,
     private toastService: ToastService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public auth: AuthService
   ) {}
 
   ngOnInit() {
@@ -70,14 +75,22 @@ export class UserManagementComponent implements OnInit {
         this.roles = [...res];
         this.cdr.detectChanges();
       },
-      error: () => {
-        this.toastService.error('Failed to load roles');
-      }
+      error: () => this.toastService.error('Failed to load roles')
+    });
+  }
+
+  loadCompanies() {
+    this.adminService.getCompanies().subscribe({
+      next: res => {
+        this.companies = [...res];
+        this.cdr.detectChanges();
+      },
+      error: () => this.toastService.error('Failed to load companies')
     });
   }
 
   openCreateModal() {
-    this.createForm = { username: '', email: '', password: '', role_ids: [] };
+    this.createForm = { username: '', email: '', password: '', company_id: null, role_ids: [] };
     this.showCreateModal = true;
     this.cdr.detectChanges();
   }
@@ -128,6 +141,7 @@ export class UserManagementComponent implements OnInit {
       email: user.email,
       password: '',
       is_active: user.is_active,
+      company_id: user.company_id || null,
       role_ids: user.roles?.map((r: any) => r.id) || []
     };
     this.showEditModal = true;
@@ -224,7 +238,8 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
-  getRoleNames(user: any): string {
-    return user.roles?.map((r: any) => r.role_name).join(', ') || '—';
+  getCompanyName(companyId: number): string {
+    const c = this.companies.find(co => co.id === companyId);
+    return c ? c.company_name : '—';
   }
 }

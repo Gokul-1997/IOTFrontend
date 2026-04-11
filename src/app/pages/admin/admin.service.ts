@@ -32,6 +32,11 @@ export class AdminService {
     return this.http.delete(`${this.baseUrl}/users/${id}`);
   }
 
+  // ========== COMPANIES (for dropdown) ==========
+  getCompanies(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/companies`);
+  }
+
   // ========== ROLES ==========
   getRoles(): Observable<any> {
     return this.http.get(`${this.baseUrl}/roles`);
@@ -43,6 +48,10 @@ export class AdminService {
 
   createRole(data: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/roles`, data);
+  }
+
+  updateRole(id: string | number, data: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/roles/${id}`, data);
   }
 
   deleteRole(id: string | number): Observable<any> {

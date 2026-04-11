@@ -21,7 +21,7 @@
   <label>Effective From</label>
   <input type="date" formControlName="effective_from" />
 
-  <button type="submit" [disabled]="saving">
+  <button type="submit" [disabled]="saving" *ngIf="auth.hasAction('assignments', 'create')">
     {{ saving ? 'Saving...' : 'Assign Shift' }}
   </button>
 </form>

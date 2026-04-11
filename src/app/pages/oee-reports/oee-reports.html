@@ -21,8 +21,8 @@
           <mat-icon>close</mat-icon>
         </button>
       </div>
-      <!-- Export -->
-      <button class="btn-export" (click)="exportCSV()" [disabled]="exporting || loading">
+      <!-- Export — controlled by widget:export -->
+      <button *ngIf="auth.hasWidget('oee-reports', 'export')" class="btn-export" (click)="exportCSV()" [disabled]="exporting || loading">
         <mat-icon>download</mat-icon>
         {{ exporting ? 'Exporting…' : 'Export CSV' }}
       </button>
@@ -107,16 +107,16 @@
               SHIFT <span class="sort-icon">{{ getSortIcon('shift_code') }}</span>
             </th>
             <th>OPERATOR</th>
-            <th class="sortable" (click)="changeSort('oee')">
+            <th *ngIf="auth.hasWidget('oee-reports', 'oee')" class="sortable" (click)="changeSort('oee')">
               OEE % <span class="sort-icon">{{ getSortIcon('oee') }}</span>
             </th>
-            <th class="sortable" (click)="changeSort('availability')">
+            <th *ngIf="auth.hasWidget('oee-reports', 'availability')" class="sortable" (click)="changeSort('availability')">
               AVAIL. <span class="sort-icon">{{ getSortIcon('availability') }}</span>
             </th>
-            <th class="sortable" (click)="changeSort('performance')">
+            <th *ngIf="auth.hasWidget('oee-reports', 'performance')" class="sortable" (click)="changeSort('performance')">
               PERF. <span class="sort-icon">{{ getSortIcon('performance') }}</span>
             </th>
-            <th class="sortable" (click)="changeSort('quality')">
+            <th *ngIf="auth.hasWidget('oee-reports', 'quality')" class="sortable" (click)="changeSort('quality')">
               QUALITY <span class="sort-icon">{{ getSortIcon('quality') }}</span>
             </th>
           </tr>
@@ -141,7 +141,7 @@
             <td><span class="badge-shift-oee">{{ row.shift_code }}</span></td>
             <td>{{ row.operator_name || '--' }}</td>
 
-            <td>
+            <td *ngIf="auth.hasWidget('oee-reports', 'oee')">
               <div class="metric-cell">
                 <span class="metric-val" [style.color]="getOeeColor(row.oee)">{{ row.oee }}%</span>
                 <div class="metric-bar">
@@ -150,19 +150,19 @@
                 </div>
               </div>
             </td>
-            <td>
+            <td *ngIf="auth.hasWidget('oee-reports', 'availability')">
               <div class="metric-cell">
                 <span class="metric-val">{{ row.availability }}%</span>
                 <div class="metric-bar"><div class="metric-fill avail-fill" [style.width]="getBarWidth(row.availability)"></div></div>
               </div>
             </td>
-            <td>
+            <td *ngIf="auth.hasWidget('oee-reports', 'performance')">
               <div class="metric-cell">
                 <span class="metric-val">{{ row.performance }}%</span>
                 <div class="metric-bar"><div class="metric-fill perf-fill" [style.width]="getBarWidth(row.performance)"></div></div>
               </div>
             </td>
-            <td>
+            <td *ngIf="auth.hasWidget('oee-reports', 'quality')">
               <div class="metric-cell">
                 <span class="metric-val">{{ row.quality }}%</span>
                 <div class="metric-bar"><div class="metric-fill qual-fill" [style.width]="getBarWidth(row.quality)"></div></div>

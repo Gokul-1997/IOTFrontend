@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { DashboardService } from './dashboard.service';
 import { SocketService } from '../../core/services/socket.service';
+import { AuthService } from '../../core/services/auth.service';
 import {
   Subject,
   interval,
@@ -70,7 +71,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private socketService: SocketService,
     private zone:          NgZone,
     private cdr:           ChangeDetectorRef,
-    private router:        Router
+    private router:        Router,
+    public  auth:          AuthService
   ) {}
 
   /* ════════════════════════════════════════

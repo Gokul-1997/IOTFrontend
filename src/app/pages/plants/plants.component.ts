@@ -17,6 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { PlantsService } from './plants.service';
 import { PlantFormComponent } from './plant-form.component';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   standalone: true,
@@ -55,7 +56,8 @@ export class PlantsComponent implements OnInit, OnDestroy {
   constructor(
     private service: PlantsService,
     private toast:   ToastService,
-    private cdr:     ChangeDetectorRef
+    private cdr:     ChangeDetectorRef,
+    public auth:     AuthService
   ) {}
 
   ngOnInit() {

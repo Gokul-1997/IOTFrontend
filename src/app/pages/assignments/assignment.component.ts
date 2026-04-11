@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { OperatorService } from '../operators/operator.service';
 import { MachinesService } from '../machines/machines.service';
 import { AssignmentService } from './assignment.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   standalone: true,
@@ -24,7 +25,8 @@ export class AssignmentComponent implements OnInit {
     private fb: FormBuilder,
     private operatorService: OperatorService,
     private machineService: MachinesService,
-    private assignmentService: AssignmentService
+    private assignmentService: AssignmentService,
+    public auth: AuthService
   ) { }
 
   ngOnInit() {

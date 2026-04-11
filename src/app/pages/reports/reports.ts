@@ -10,6 +10,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule }  from '@angular/forms';
 import { ReportsService, ReportFilters, ReportType } from './reports.service';
+import { AuthService } from '../../core/services/auth.service';
 
 /* ── Column definition ── */
 interface ColDef {
@@ -126,7 +127,8 @@ export class Reports implements OnInit {
 
   constructor(
     private svc: ReportsService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public  auth: AuthService
   ) {}
 
   ngOnInit(): void {

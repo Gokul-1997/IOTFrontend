@@ -11,6 +11,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { DashboardService } from '../dashboard.service';
 import { SocketService } from '../../../core/services/socket.service';
+import { AuthService } from '../../../core/services/auth.service';
 import {
   Subject,
   interval,
@@ -100,7 +101,8 @@ export class LiveComponent implements OnInit, OnDestroy {
     private dashboardService: DashboardService,
     private socketService:    SocketService,
     private zone:             NgZone,
-    private cdr:              ChangeDetectorRef
+    private cdr:              ChangeDetectorRef,
+    public  auth:             AuthService
   ) {}
 
   /* ════════════════════════════════════════

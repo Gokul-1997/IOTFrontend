@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OeeReportsService } from './oee.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Subject, takeUntil } from 'rxjs';
 
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
@@ -54,7 +55,7 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
   loadingMeta = false;
   error       = '';
 
-  constructor(private service: OeeReportsService, private cdr: ChangeDetectorRef) {}
+  constructor(private service: OeeReportsService, private cdr: ChangeDetectorRef, public auth: AuthService) {}
 
   ngOnInit(): void {
     this.fromDate = this.getTodayLocal();

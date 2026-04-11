@@ -17,6 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ShiftsService } from './shifts.service';
 import { ShiftFormComponent } from './shift-form.component';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   standalone: true,
@@ -57,7 +58,8 @@ export class ShiftsComponent implements OnInit, OnDestroy {
   constructor(
     private service: ShiftsService,
     private toast:   ToastService,
-    private cdr:     ChangeDetectorRef
+    private cdr:     ChangeDetectorRef,
+    public auth:     AuthService
   ) {}
 
   ngOnInit() {

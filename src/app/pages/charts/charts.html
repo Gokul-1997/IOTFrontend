@@ -62,8 +62,8 @@
   <!-- ── BODY ─────────────────────────────────────────────────────────────── -->
   <div class="space-y-4">
 
-    <!-- Per-Part Running vs Idle (Stacked Bar) -->
-    <div class="bg-common">
+    <!-- Per-Part Running vs Idle (Stacked Bar) — controlled by widget:partwise-chart -->
+    <div *ngIf="auth.hasWidget('charts', 'partwise-chart')" class="bg-common">
 
       <div class="flex justify-between items-center mb-2">
         <div>
@@ -108,8 +108,8 @@
       </div>
     </div>
 
-    <!-- Hourly Part Count (Line Chart) -->
-    <div class="bg-common">
+    <!-- Hourly Part Count (Line Chart) — controlled by widget:hourly-chart -->
+    <div *ngIf="auth.hasWidget('charts', 'hourly-chart')" class="bg-common">
 
       <div class="flex justify-between items-center mb-2">
         <p class="font-semibold text-base">Hour Wise Part Count</p>

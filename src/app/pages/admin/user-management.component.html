@@ -2,11 +2,15 @@
 
   <!-- Admin Tab Navigation -->
   <div class="flex gap-1 mb-6 bg-white dark:bg-gray-800 rounded-xl shadow p-1 w-fit">
-    <a routerLink="/admin/users" routerLinkActive="bg-blue-600 text-white"
+    <a *ngIf="auth.isSntSuper()" routerLink="/admin/companies" routerLinkActive="bg-blue-600 text-white"
+       class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+      Companies
+    </a>
+    <a *ngIf="!auth.isSntSuper()" routerLink="/admin/users" routerLinkActive="bg-blue-600 text-white"
        class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
       Users
     </a>
-    <a routerLink="/admin/roles" routerLinkActive="bg-blue-600 text-white"
+    <a *ngIf="!auth.isSntSuper()" routerLink="/admin/roles" routerLinkActive="bg-blue-600 text-white"
        class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
       Roles & Permissions
     </a>
@@ -19,7 +23,7 @@
     <div class="flex justify-between items-center mb-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">User Management</h1>
-        <p class="text-sm text-gray-500 mt-1">Create users and assign roles to control their access</p>
+        <p class="text-sm text-gray-500 mt-1">Create users and assign them to companies with roles</p>
       </div>
       <button (click)="openCreateModal()"
         class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
@@ -28,7 +32,7 @@
     </div>
 
     <!-- Loading -->
-    <div *ngIf="loading" class="flex justify-center py-12">
+    <div *ngIf="loading && users.length === 0" class="flex justify-center py-12">
       <div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
     </div>
 
@@ -72,9 +76,7 @@
             <td class="px-4 py-3">
               <div class="flex flex-wrap gap-1">
                 <span *ngFor="let role of user.roles"
-                      [class]="role.role_name === 'ADMIN'
-                        ? 'px-2 py-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-xs rounded-full font-medium'
-                        : 'px-2 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs rounded-full font-medium'">
+                      class="px-2 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs rounded-full font-medium">
                   {{ role.role_name }}
                 </span>
                 <span *ngIf="!user.roles || user.roles.length === 0"
@@ -126,17 +128,18 @@
       </button>
     </div>
     <div class="p-6 space-y-4">
+
       <div>
         <label class="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">Username *</label>
         <input [(ngModel)]="createForm.username" type="text"
           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-          placeholder="e.g., gokul">
+          placeholder="e.g., john_doe">
       </div>
       <div>
         <label class="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">Email *</label>
         <input [(ngModel)]="createForm.email" type="email"
           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-          placeholder="gokul@company.com">
+          placeholder="user@company.com">
       </div>
       <div>
         <label class="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">Password *</label>
@@ -151,13 +154,17 @@
         </div>
         <div class="space-y-2 max-h-40 overflow-y-auto">
           <label *ngFor="let role of roles"
-            class="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-gray-50"
-            [class.bg-blue-50]="isRoleSelectedForCreate(role.id)">
+            class="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+            [class.bg-blue-50]="isRoleSelectedForCreate(role.id)"
+            [class.dark:bg-blue-900]="isRoleSelectedForCreate(role.id)">
             <input type="checkbox"
               [checked]="isRoleSelectedForCreate(role.id)"
               (change)="toggleRoleForCreate(role.id)"
               class="w-4 h-4 accent-blue-600">
-            <span class="text-sm text-gray-700 dark:text-gray-300">{{ role.role_name }}</span>
+            <div>
+              <span class="text-sm text-gray-700 dark:text-gray-300">{{ role.role_name }}</span>
+              <span *ngIf="role.company_name" class="ml-1 text-xs text-gray-400">({{ role.company_name }})</span>
+            </div>
           </label>
         </div>
       </div>
@@ -187,6 +194,7 @@
       </button>
     </div>
     <div class="p-6 space-y-4">
+
       <div>
         <label class="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">Username</label>
         <input [(ngModel)]="editForm.username" type="text"
@@ -215,13 +223,17 @@
         <label class="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">Roles</label>
         <div class="space-y-2 max-h-40 overflow-y-auto">
           <label *ngFor="let role of roles"
-            class="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-gray-50"
-            [class.bg-blue-50]="isRoleSelectedForEdit(role.id)">
+            class="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+            [class.bg-blue-50]="isRoleSelectedForEdit(role.id)"
+            [class.dark:bg-blue-900]="isRoleSelectedForEdit(role.id)">
             <input type="checkbox"
               [checked]="isRoleSelectedForEdit(role.id)"
               (change)="toggleRoleForEdit(role.id)"
               class="w-4 h-4 accent-blue-600">
-            <span class="text-sm text-gray-700 dark:text-gray-300">{{ role.role_name }}</span>
+            <div>
+              <span class="text-sm text-gray-700 dark:text-gray-300">{{ role.role_name }}</span>
+              <span *ngIf="role.company_name" class="ml-1 text-xs text-gray-400">({{ role.company_name }})</span>
+            </div>
           </label>
         </div>
       </div>

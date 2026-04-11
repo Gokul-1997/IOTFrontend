@@ -78,8 +78,8 @@
         </div>
       </div>
 
-      <!-- Export CSV (selected columns) -->
-      <button
+      <!-- Export CSV (selected columns) — controlled by widget:export -->
+      <button *ngIf="auth.hasWidget('reports', 'export')"
         (click)="exportCsv()"
         [disabled]="rows.length === 0 || selectedCount === 0"
         class="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium
@@ -91,8 +91,8 @@
         Export CSV
       </button>
 
-      <!-- Full Excel -->
-      <button
+      <!-- Full Excel — controlled by widget:export -->
+      <button *ngIf="auth.hasWidget('reports', 'export')"
         (click)="downloadFullExcel()"
         class="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium
                text-white shadow hover:bg-blue-700 transition-colors">
@@ -220,7 +220,8 @@
   <!-- ══════════════════════════════════════════════
        KPI CARDS
   ══════════════════════════════════════════════ -->
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 my-5">
+  <!-- KPI CARDS — controlled by widget:kpi -->
+  <div *ngIf="auth.hasWidget('reports', 'kpi')" class="grid grid-cols-2 lg:grid-cols-4 gap-4 my-5">
     <div *ngFor="let kpi of kpis"
       [class]="'rounded-xl border p-2 flex items-center gap-3 ' + kpiColorClass(kpi.color)">
       <span class="text-2xl">{{ kpi.icon }}</span>

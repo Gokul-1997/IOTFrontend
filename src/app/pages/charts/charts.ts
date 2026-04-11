@@ -1,8 +1,9 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { ChartsService } from './charts.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-charts',
@@ -11,7 +12,7 @@ import { ChartsService } from './charts.service';
   templateUrl: './charts.html',
   styleUrl: './charts.scss'
 })
-export class Charts implements OnInit {
+export class Charts implements OnInit, OnDestroy {
 
   // ── Filters ───────────────────────────────────────────────
   machines: any[] = [];
@@ -34,58 +35,94 @@ export class Charts implements OnInit {
   partCategories: string[] = [];
   partChartWidth = '100%';
 
-  private readonly MIN_BAR_PX = 24; // minimum pixels per bar before scroll kicks in
-
-  partChartOptions: any = {
-    chart:   { type: 'bar', height: 370, stacked: true, toolbar: { show: true } },
-    plotOptions: { bar: { horizontal: false, columnWidth: '55%', borderRadius: 4 } },
-    dataLabels: {
-      enabled: true,
-      formatter: (val: number) => val > 0 ? `${val}m` : '',
-      style: { fontSize: '11px', colors: ['#fff'] }
-    },
-    yaxis:  { title: { text: 'Time (minutes)' }, min: 0 },
-    legend: { position: 'top' },
-    fill:   { opacity: 1 },
-    colors: ['#51cf66', '#ff6b6b'],
-    tooltip: {
-      shared: true,
-      intersect: false,
-      y: {
-        formatter: (val: number) => {
-          const totalSec = Math.round(val * 60);
-          const m = Math.floor(totalSec / 60);
-          const s = totalSec % 60;
-          return `${m} min ${s} sec`;
-        }
-      }
-    }
-  };
-
-  // ── Hourly Part Count (line) ───────────────────────────────
+  // ── Hourly Count (line/bar chart) ─────────────────────────
   hourlySeries:     any[] = [];
   hourlyCategories: string[] = [];
-  hourlyChartOptions: any = {
-    chart: {
-      type: 'line', height: 350, toolbar: { show: false }, zoom: { enabled: false },
-      dropShadow: { enabled: true, color: '#000', top: 18, left: 7, blur: 10, opacity: 0.15 }
-    },
-    colors:     ['#3b5bdb'],
-    dataLabels: { enabled: true },
-    stroke:     { curve: 'smooth', width: 3 },
-    grid:       { borderColor: '#e9ecef' },
-    markers:    { size: 5 },
-    yaxis:      { min: 0, title: { text: 'Parts Count' } },
-    legend:     { position: 'bottom' },
-    tooltip:    { y: { formatter: (val: number) => `${val} pcs` } }
-  };
+
+  private readonly MIN_BAR_PX = 24;
+  private themeObserver!: MutationObserver;
+
+  partChartOptions:   any = {};
+  hourlyChartOptions: any = {};
+
+  private get isDark(): boolean {
+    return document.documentElement.classList.contains('dark');
+  }
+
+  private buildChartOptions(): void {
+    const dark = this.isDark;
+    const bg        = dark ? '#1f2937' : '#ffffff';
+    const textColor = dark ? '#d1d5db' : '#374151';
+    const gridColor = dark ? '#374151' : '#e9ecef';
+
+    this.partChartOptions = {
+      chart: { type: 'bar', height: 370, stacked: true, toolbar: { show: true },
+               background: bg },
+      plotOptions: { bar: { horizontal: false, columnWidth: '55%', borderRadius: 4 } },
+      dataLabels: {
+        enabled: true,
+        formatter: (val: number) => val > 0 ? `${val}m` : '',
+        style: { fontSize: '11px', colors: ['#fff'] }
+      },
+      yaxis:  { title: { text: 'Time (minutes)', style: { color: textColor } }, min: 0,
+                labels: { style: { colors: textColor } } },
+      xaxis:  { labels: { style: { colors: textColor } } },
+      legend: { position: 'top', labels: { colors: textColor } },
+      fill:   { opacity: 1 },
+      colors: ['#51cf66', '#ff6b6b'],
+      grid:   { borderColor: gridColor },
+      theme:  { mode: dark ? 'dark' : 'light' },
+      tooltip: {
+        shared: true, intersect: false, theme: dark ? 'dark' : 'light',
+        y: {
+          formatter: (val: number) => {
+            const totalSec = Math.round(val * 60);
+            const m = Math.floor(totalSec / 60);
+            const s = totalSec % 60;
+            return `${m} min ${s} sec`;
+          }
+        }
+      }
+    };
+
+    this.hourlyChartOptions = {
+      chart: {
+        type: 'line', height: 350, toolbar: { show: false }, zoom: { enabled: false },
+        background: bg,
+        dropShadow: { enabled: true, color: '#000', top: 18, left: 7, blur: 10, opacity: 0.15 }
+      },
+      colors:     ['#3b5bdb'],
+      dataLabels: { enabled: true },
+      stroke:     { curve: 'smooth', width: 3 },
+      grid:       { borderColor: gridColor },
+      markers:    { size: 5 },
+      yaxis:      { min: 0, title: { text: 'Parts Count', style: { color: textColor } },
+                    labels: { style: { colors: textColor } } },
+      xaxis:      { labels: { style: { colors: textColor } } },
+      legend:     { position: 'bottom', labels: { colors: textColor } },
+      theme:      { mode: dark ? 'dark' : 'light' },
+      tooltip:    { theme: dark ? 'dark' : 'light', y: { formatter: (val: number) => `${val} pcs` } }
+    };
+  }
 
   constructor(
     private service: ChartsService,
-    private cdr:     ChangeDetectorRef
+    private cdr:     ChangeDetectorRef,
+    public  auth:    AuthService
   ) {}
 
   ngOnInit() {
+    this.buildChartOptions();
+
+    // Re-build chart options whenever dark class toggles on <html>
+    this.themeObserver = new MutationObserver(() => {
+      this.buildChartOptions();
+      this.cdr.detectChanges();
+    });
+    this.themeObserver.observe(document.documentElement, {
+      attributes: true, attributeFilter: ['class']
+    });
+
     this.service.getMeta().subscribe({
       next: res => {
         this.machines = res.data.machines;
@@ -101,16 +138,16 @@ export class Charts implements OnInit {
   submit() { this.loadAll(); }
 
   loadAll() {
-    this.loadPartChart();
-    this.loadHourlyChart();
+    // Load hourly first to get authoritative totalProduced, then cap parts to that count
+    this.loadHourlyChart(() => this.loadPartChart(this.totalProduced));
   }
 
   // ── Per-part timing ────────────────────────────────────────
-  loadPartChart() {
+  loadPartChart(maxParts?: number) {
     if (!this.selectedMachine) return;
     this.loadingParts = true;
 
-    this.service.getPartTiming(this.selectedMachine, this.buildShiftStartEpoch(), this.buildShiftEndEpoch()).subscribe({
+    this.service.getPartTiming(this.selectedMachine, this.buildShiftStartEpoch(), this.buildShiftEndEpoch(), maxParts).subscribe({
       next: res => {
         const rows: any[] = res.data || [];
         this.partSeries = [
@@ -169,7 +206,7 @@ export class Charts implements OnInit {
   }
 
   // ── Hourly count ───────────────────────────────────────────
-  loadHourlyChart() {
+  loadHourlyChart(onComplete?: () => void) {
     const params: any = { date: this.selectedDate };
     if (this.selectedMachine) params.machine_id = this.selectedMachine;
     if (this.selectedShift)   params.shift_id   = this.selectedShift;
@@ -184,11 +221,17 @@ export class Charts implements OnInit {
         this.loadingHourly   = false;
         this.hourlyDataLoaded = true;
         this.cdr.detectChanges();
+        onComplete?.();
       },
       error: () => {
         this.loadingHourly = false;
         this.cdr.detectChanges();
+        onComplete?.();
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.themeObserver?.disconnect();
   }
 }
