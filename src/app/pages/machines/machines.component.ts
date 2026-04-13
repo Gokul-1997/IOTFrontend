@@ -69,6 +69,7 @@ export class MachinesComponent implements OnInit, OnDestroy {
     'atc_tool_capacity',
     'mmc_no',
     'image_url',
+    'api_key',
     'is_active',
     'actions'
   ];
@@ -224,5 +225,13 @@ export class MachinesComponent implements OnInit, OnDestroy {
 
   rowIndex(i: number): number {
     return (this.page - 1) * this.limit + i + 1;
+  }
+
+  copyApiKey(apiKey: string) {
+    navigator.clipboard.writeText(apiKey).then(() => {
+      this.toast.success('API Key copied to clipboard');
+    }).catch(() => {
+      this.toast.error('Failed to copy API Key');
+    });
   }
 }
