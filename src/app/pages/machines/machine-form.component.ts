@@ -57,9 +57,9 @@ export class MachineFormComponent implements OnInit {
       fourth_axis: [''],
       twin_spindle: [false],
       twin_table: [false],
-      atc_tool_capacity: [''],      
-      line_id: [null, Validators.required]
-
+      atc_tool_capacity: [''],
+      line_id: [null, Validators.required],
+      is_active: [true]
     });
     this.loadLines();
   }

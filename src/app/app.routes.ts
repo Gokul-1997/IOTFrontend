@@ -41,6 +41,8 @@ export const routes: Routes = [
       { path: 'plants', canActivate: [permissionGuard('page:plants')], loadComponent: () => import('./pages/plants/plants.component').then(m => m.PlantsComponent) },
       { path: 'plants/create', canActivate: [permissionGuard('page:plants')], loadComponent: () => import('./pages/plants/plant-form.component').then(m => m.PlantFormComponent) },
 
+      { path: 'lines', canActivate: [permissionGuard('page:lines')], loadComponent: () => import('./pages/lines/lines.component').then(m => m.LinesComponent) },
+
       { path: 'reports', canActivate: [permissionGuard('page:reports')], loadComponent: () => import('./pages/reports/reports').then(m => m.Reports) },
       { path: 'oee-reports', canActivate: [permissionGuard('page:oee-reports')], loadComponent: () => import('./pages/oee-reports/oee-reports').then(m => m.OeeReportsComponent) },
       { path: 'charts', canActivate: [permissionGuard('page:charts')], loadComponent: () => import('./pages/charts/charts').then(m => m.Charts) },

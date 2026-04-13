@@ -313,14 +313,25 @@ export class CompanyManagementComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // ── Delete ─────────────────────────────────────
-  deleteCompany(company: any) {
+  // ── Deactivate ─────────────────────────────────
+  deactivateCompany(company: any) {
     if (!confirm(`Deactivate "${company.company_name}"? This will disable all users.`)) return;
     this.loading = true;
     this.cdr.detectChanges();
     this.companyService.deleteCompany(company.id).subscribe({
       next: () => { this.toast.success('Company deactivated'); this.loadCompanies(); },
       error: () => { this.toast.error('Failed to deactivate company'); this.loading = false; this.cdr.detectChanges(); }
+    });
+  }
+
+  // ── Permanent Delete ──────────────────────────
+  permanentDeleteCompany(company: any) {
+    if (!confirm(`PERMANENTLY DELETE "${company.company_name}"?\n\nThis will delete:\n- All users in this company\n- All roles & permissions\n- All machines, shifts, operators\n- All data\n\nThis CANNOT be undone!`)) return;
+    this.loading = true;
+    this.cdr.detectChanges();
+    this.companyService.permanentDeleteCompany(company.id).subscribe({
+      next: () => { this.toast.success('Company permanently deleted'); this.loadCompanies(); },
+      error: (err: any) => { this.toast.error(err.error?.message || 'Failed to delete company'); this.loading = false; this.cdr.detectChanges(); }
     });
   }
 

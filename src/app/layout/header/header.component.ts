@@ -37,6 +37,7 @@ export class HeaderComponent implements OnInit {
         { label: 'Machines', path: '/machines', permission: 'page:machines' },
         { label: 'Component', path: '/component', permission: 'page:component' },
         { label: 'Job', path: '/job', permission: 'page:job' },
+        { label: 'Lines', path: '/lines', permission: 'page:lines' },
         { label: 'Shifts', path: '/shifts', permission: 'page:shifts' },
         { label: 'Operators', path: '/operators', permission: 'page:operators' }
       ]

@@ -114,9 +114,13 @@
                   class="px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 font-medium">
                   Edit
                 </button>
-                <button (click)="deleteCompany(c)"
-                  class="px-3 py-1.5 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600 font-medium">
+                <button (click)="deactivateCompany(c)" *ngIf="c.is_active"
+                  class="px-3 py-1.5 bg-amber-500 text-white text-xs rounded-lg hover:bg-amber-600 font-medium">
                   Deactivate
+                </button>
+                <button (click)="permanentDeleteCompany(c)"
+                  class="px-3 py-1.5 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600 font-medium">
+                  Delete
                 </button>
               </div>
             </td>

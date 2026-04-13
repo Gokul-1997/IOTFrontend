@@ -120,10 +120,20 @@ export class AuthService {
   /**
    * Check if user has a specific CRUD action on a page.
    * e.g. hasAction('machines', 'create')
+   * Company admins check company_permissions; regular users check their role permissions.
    */
   hasAction(module: string, action: string): boolean {
     if (this.isSntSuper()) return true;
-    return this.getPermissions().includes(`page:${module}:${action}`);
+    const key = `page:${module}:${action}`;
+
+    // Company admin: check company_permissions (what super user allowed)
+    if (this.isCompanyAdmin()) {
+      const companyPerms = this.getCompanyPermissions();
+      return companyPerms.length === 0 || companyPerms.includes(key);
+    }
+
+    // Regular user: check their role permissions
+    return this.getPermissions().includes(key);
   }
 
   /**

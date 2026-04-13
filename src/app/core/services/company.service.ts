@@ -30,6 +30,10 @@ export class CompanyService {
     return this.http.delete<any>(`${this.api}/companies/${id}`);
   }
 
+  permanentDeleteCompany(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.api}/companies/${id}/permanent`);
+  }
+
   assignPlan(companyId: number, data: any): Observable<any> {
     return this.http.post<any>(`${this.api}/companies/${companyId}/plan`, data);
   }

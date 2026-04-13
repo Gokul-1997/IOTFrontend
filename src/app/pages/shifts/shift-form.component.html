@@ -86,6 +86,13 @@
         </div>
       </div>
 
+      <!-- Active Status -->
+      <div class="mb-4 flex items-center gap-3">
+        <input type="checkbox" formControlName="is_active" id="is_active"
+          class="w-4 h-4 rounded" />
+        <label for="is_active" class="text-sm font-medium">Active</label>
+      </div>
+
       <!-- Buttons -->
       <div class="flex justify-end gap-3">
         <button type="button" (click)="close.emit()" class="btn-secondary">
