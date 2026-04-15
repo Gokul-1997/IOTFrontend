@@ -28,6 +28,18 @@ export class CompanyManagementComponent implements OnInit {
   selectedCompany: any = null;
   planForm = { plan_id: 0, max_users: null as number | null, max_plants: null as number | null, max_machines: null as number | null };
 
+  // ── Plants modal
+  showPlantsModal = false;
+  plantsCompany:  any    = null;
+  plants:         any[]  = [];
+  plantsLoading          = false;
+  plantsError            = '';
+  showPlantForm          = false;
+  plantFormData:  any    = null;
+  plantForm       = { plant_code: '', plant_name: '', location: '' };
+  plantFormSaving        = false;
+  plantFormError         = '';
+
   // Detail modal
   showDetailModal = false;
   detailCompany: any = null;
@@ -332,6 +344,98 @@ export class CompanyManagementComponent implements OnInit {
     this.companyService.permanentDeleteCompany(company.id).subscribe({
       next: () => { this.toast.success('Company permanently deleted'); this.loadCompanies(); },
       error: (err: any) => { this.toast.error(err.error?.message || 'Failed to delete company'); this.loading = false; this.cdr.detectChanges(); }
+    });
+  }
+
+  // ── Plants Modal ───────────────────────────────
+  openPlantsModal(company: any) {
+    this.plantsCompany  = company;
+    this.showPlantsModal = true;
+    this.showPlantForm  = false;
+    this.plantsError    = '';
+    this.loadCompanyPlants();
+    this.cdr.detectChanges();
+  }
+
+  closePlantsModal() {
+    this.showPlantsModal = false;
+    this.plantsCompany   = null;
+    this.plants          = [];
+    this.cdr.detectChanges();
+  }
+
+  loadCompanyPlants() {
+    if (!this.plantsCompany) return;
+    this.plantsLoading = true;
+    this.cdr.detectChanges();
+    this.companyService.getCompanyPlants(this.plantsCompany.id).subscribe({
+      next: res => {
+        this.plants       = res.data || [];
+        this.plantsLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.plantsError  = 'Failed to load plants';
+        this.plantsLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  openPlantCreate() {
+    this.plantFormData  = null;
+    this.plantForm      = { plant_code: '', plant_name: '', location: '' };
+    this.plantFormError = '';
+    this.showPlantForm  = true;
+    this.cdr.detectChanges();
+  }
+
+  openPlantEdit(plant: any) {
+    this.plantFormData  = plant;
+    this.plantForm      = { plant_code: plant.plant_code, plant_name: plant.plant_name, location: plant.location || '' };
+    this.plantFormError = '';
+    this.showPlantForm  = true;
+    this.cdr.detectChanges();
+  }
+
+  cancelPlantForm() {
+    this.showPlantForm  = false;
+    this.plantFormError = '';
+    this.cdr.detectChanges();
+  }
+
+  savePlant() {
+    if (!this.plantForm.plant_code?.trim() || !this.plantForm.plant_name?.trim()) {
+      this.plantFormError = 'Plant code and name are required';
+      return;
+    }
+    this.plantFormSaving = true;
+    this.plantFormError  = '';
+    this.cdr.detectChanges();
+
+    const req = this.plantFormData
+      ? this.companyService.updateCompanyPlant(this.plantsCompany.id, this.plantFormData.id, this.plantForm)
+      : this.companyService.createCompanyPlant(this.plantsCompany.id, this.plantForm);
+
+    req.subscribe({
+      next: () => {
+        this.plantFormSaving = false;
+        this.showPlantForm   = false;
+        this.loadCompanyPlants();
+        this.toast.success(this.plantFormData ? 'Plant updated' : 'Plant created');
+      },
+      error: err => {
+        this.plantFormSaving = false;
+        this.plantFormError  = err?.error?.message || 'Failed to save plant';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  togglePlantStatus(plant: any) {
+    this.companyService.toggleCompanyPlantStatus(this.plantsCompany.id, plant.id, !plant.is_active).subscribe({
+      next: () => { plant.is_active = !plant.is_active; this.cdr.detectChanges(); },
+      error: () => this.toast.error('Failed to update status')
     });
   }
 

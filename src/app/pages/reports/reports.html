@@ -146,7 +146,7 @@
       <!-- Machine -->
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium  dark:text-gray-400">Machine</label>
-        <select [(ngModel)]="filters.machine_id"
+        <select [(ngModel)]="filters.machine_id" (change)="onMachineChange()"
           class="filter-select">
           <option value="">All Machines</option>
           <option *ngFor="let m of machines" [value]="m.id">{{ m.name }}</option>
@@ -200,7 +200,7 @@
       <span *ngIf="filters.machine_id"
         class="inline-flex items-center gap-1 rounded-full bg-purple-900 border border-purple-200 px-2.5 py-1 text-sm text-white">
         🖥 {{ labelOf(machines, filters.machine_id) }}
-        <button (click)="filters.machine_id = ''" class="hover:text-yellow ml-0.5 text-sml">×</button>
+        <button (click)="filters.machine_id = ''; onMachineChange()" class="hover:text-yellow ml-0.5 text-sml">×</button>
       </span>
 
       <span *ngIf="filters.operator_id"

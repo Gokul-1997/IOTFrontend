@@ -59,6 +59,23 @@ export class CompanyService {
     return this.http.put<any>(`${this.api}/plans/${id}`, data);
   }
 
+  // ── Company Plants (SNT_SUPER manages plants per company) ──
+  getCompanyPlants(companyId: number, params?: any): Observable<any> {
+    return this.http.get<any>(`${this.api}/companies/${companyId}/plants`, { params });
+  }
+
+  createCompanyPlant(companyId: number, data: any): Observable<any> {
+    return this.http.post<any>(`${this.api}/companies/${companyId}/plants`, data);
+  }
+
+  updateCompanyPlant(companyId: number, plantId: number, data: any): Observable<any> {
+    return this.http.put<any>(`${this.api}/companies/${companyId}/plants/${plantId}`, data);
+  }
+
+  toggleCompanyPlantStatus(companyId: number, plantId: number, is_active: boolean): Observable<any> {
+    return this.http.patch<any>(`${this.api}/companies/${companyId}/plants/${plantId}/status`, { is_active });
+  }
+
   // ── Permissions ────────────────────────────────
   getGroupedPermissions(): Observable<any[]> {
     return this.http.get<any[]>(`${this.api}/plans/permissions`);

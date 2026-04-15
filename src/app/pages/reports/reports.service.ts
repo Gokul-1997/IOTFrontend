@@ -22,7 +22,11 @@ export class ReportsService {
 
   getMachines(): Observable<any>  { return this.http.get(`${this.api}/machines`);  }
   getShifts(): Observable<any>    { return this.http.get(`${this.api}/shifts`);    }
-  getOperators(): Observable<any> { return this.http.get(`${this.api}/operators`); }
+  getOperators(machine_id?: string): Observable<any> {
+    const params: Record<string, string> = {};
+    if (machine_id) params['machine_id'] = machine_id;
+    return this.http.get(`${this.api}/operators`, { params });
+  }
 
   getProductionData(f: ReportFilters): Observable<any> {
     return this.http.get(`${this.api}/production-data`, { params: this.toParams(f) });

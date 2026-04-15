@@ -16,6 +16,8 @@ export class PlantFormComponent implements OnInit {
   @Output() saved = new EventEmitter();
 
   form!: FormGroup;
+  saving   = false;
+  errorMsg = '';
 
   constructor(private service: PlantsService, private fb: FormBuilder) {}
 
@@ -36,12 +38,20 @@ export class PlantFormComponent implements OnInit {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
+    this.saving   = true;
+    this.errorMsg = '';
     const payload = this.form.getRawValue();
 
     const req = this.data
       ? this.service.updatePlant(this.data.id, payload)
       : this.service.createPlant(payload);
 
-    req.subscribe(() => this.saved.emit());
+    req.subscribe({
+      next:  () => { this.saving = false; this.saved.emit(); },
+      error: (err) => {
+        this.saving   = false;
+        this.errorMsg = err?.error?.message || 'Failed to save plant. Please try again.';
+      }
+    });
   }
 }

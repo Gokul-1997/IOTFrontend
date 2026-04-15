@@ -31,8 +31,10 @@ import {
              smooth field-level patch only
 ───────────────────────────────────────── */
 
-const POLL_MS              = 30_000;
+const POLL_MS               = 30_000;
 const OFFLINE_THRESHOLD_SEC = 10;
+const PAGE_SIZE             = 6;
+const AUTO_PAGE_MS          = 10_000;
 
 @Component({
   standalone: true,
@@ -47,12 +49,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
   machines: any[] = [];
   summary:  any   = {};
   shift:    any   = {};
-  currentTime = '';
+  currentTime    = '';
   currentDateStr = '';
+
+  /* ── pagination ── */
+  currentPage = 1;
+  readonly pageSize = PAGE_SIZE;
+
+  /* ── status filter ── */
+  statusFilter: 'all' | 'running' | 'idle' | 'alarm' = 'all';
 
   /* ── private ── */
   private destroy$         = new Subject<void>();
-  private clockInterval: any;
+  private clockInterval:   any;
+  private autoPageTimer:   any;
   private machineMap       = new Map<number, any>();
   private updateQueue:     any[]  = [];
   private updateScheduled         = false;
@@ -123,6 +133,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     };
     tick();
     this.clockInterval = setInterval(tick, 1000);
+
+    /* ── Auto page advance every 10s ── */
+    this.startAutoPageTimer();
   }
 
   /* ════════════════════════════════════════
@@ -296,6 +309,65 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   /* ════════════════════════════════════════
+     PAGINATION & FILTER
+  ════════════════════════════════════════ */
+
+  get alarmCount(): number {
+    return this.machines.filter(m => m.alarm).length;
+  }
+
+  get filteredMachines(): any[] {
+    switch (this.statusFilter) {
+      case 'running': return this.machines.filter(m => m.status === 'RUNNING');
+      case 'idle':    return this.machines.filter(m => m.status === 'IDLE');
+      case 'alarm':   return this.machines.filter(m => m.alarm);
+      default:        return this.machines;
+    }
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredMachines.length / this.pageSize));
+  }
+
+  get pagedMachines(): any[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredMachines.slice(start, start + this.pageSize);
+  }
+
+  get pageNumbers(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+  }
+
+  setFilter(f: 'all' | 'running' | 'idle' | 'alarm'): void {
+    // clicking the already-active filter OR clicking Total → reset to all
+    this.statusFilter = (f === 'all' || this.statusFilter === f) ? 'all' : f;
+    this.currentPage  = 1;
+    this.resetAutoPageTimer();
+    this.cdr.markForCheck();
+  }
+
+  goToPage(n: number): void {
+    if (n < 1 || n > this.totalPages) return;
+    this.currentPage = n;
+    this.resetAutoPageTimer();
+    this.cdr.markForCheck();
+  }
+
+  private startAutoPageTimer(): void {
+    this.autoPageTimer = setInterval(() => {
+      this.zone.run(() => {
+        this.currentPage = this.currentPage >= this.totalPages ? 1 : this.currentPage + 1;
+        this.cdr.markForCheck();
+      });
+    }, AUTO_PAGE_MS);
+  }
+
+  private resetAutoPageTimer(): void {
+    clearInterval(this.autoPageTimer);
+    this.startAutoPageTimer();
+  }
+
+  /* ════════════════════════════════════════
      HELPERS
   ════════════════════════════════════════ */
   getLastSeen(last: string | null): string {
@@ -326,5 +398,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     document.removeEventListener('visibilitychange', this.visibilityHandler);
     this.socketService.offMachineUpdate();
     clearInterval(this.clockInterval);
+    clearInterval(this.autoPageTimer);
   }
 }
