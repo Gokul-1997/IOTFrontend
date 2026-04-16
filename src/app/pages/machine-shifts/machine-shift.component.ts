@@ -38,7 +38,9 @@ export class MachineShiftComponent implements OnInit {
       machine_id: ['']
     });
 
-    // this.machineService.getAll().subscribe(d => this.machines = d);
+    this.machineService.getAllForDropdown().subscribe((res: any) => {
+      this.machines = res.data || [];
+    });
     this.shiftService.getShifts().subscribe(d => this.shifts = d);
   }
 

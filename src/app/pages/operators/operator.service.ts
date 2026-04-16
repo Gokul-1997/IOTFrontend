@@ -31,7 +31,7 @@ export class OperatorService {
   // MACHINES (for assignment)
   // ------------------------
   getMachines() {
-    return this.http.get<any[]>(`${this.api}/machines`);
+    return this.http.get<any>(`${this.api}/master/machines`);
   }
 
   // operator.service.ts

@@ -23,7 +23,7 @@
           (click)="setFilter('all')"
           class="flex border_status pr-2 items-center transition rounded-md px-2 py-1"
           [ngClass]="statusFilter === 'all' ? 'ring-2 ring-white bg-blue-700' : 'hover:bg-blue-800'">
-          Total : <span class="font-medium ml-1">{{ summary.total }}</span>
+          Total : <span class="font-medium ml-1">{{ machines.length }}</span>
         </button>
         <div class="flex gap-2">
           <!-- Running filter button -->
@@ -31,14 +31,14 @@
             (click)="setFilter('running')"
             class="flex border_status px-4 py-1 rounded-md transition-all"
             [ngClass]="statusFilter === 'running' ? 'bg-green-400 ring-2 ring-white' : 'bg-green-600 hover:bg-green-500'">
-            Running : <span class="font-medium ml-1">{{ summary.running }}</span>
+            Running : <span class="font-medium ml-1">{{ runningCount }}</span>
           </button>
           <!-- Idle filter button -->
           <button
             (click)="setFilter('idle')"
             class="flex border_status px-4 py-1 rounded-md transition-all"
             [ngClass]="statusFilter === 'idle' ? 'bg-yellow-400 ring-2 ring-white' : 'bg-yellow-600 hover:bg-yellow-500'">
-            Idle : <span class="font-medium ml-1">{{ summary.idle }}</span>
+            Idle : <span class="font-medium ml-1">{{ idleCount }}</span>
           </button>
           <!-- Alarm filter button -->
           <button

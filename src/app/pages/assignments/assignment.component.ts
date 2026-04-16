@@ -36,6 +36,9 @@ export class AssignmentComponent implements OnInit {
       assigned_from: ['', Validators.required]
     });
     this.operatorService.getAll().subscribe(d => this.operators = d);
+    this.machineService.getAllForDropdown().subscribe((res: any) => {
+      this.machines = res.data || [];
+    });
   }
 
   submit() {

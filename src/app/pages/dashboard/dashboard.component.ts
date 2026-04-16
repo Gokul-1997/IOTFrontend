@@ -32,7 +32,9 @@ import {
 ───────────────────────────────────────── */
 
 const POLL_MS               = 30_000;
-const OFFLINE_THRESHOLD_SEC = 10;
+const OFFLINE_THRESHOLD_SEC = 60;   // 60s — tolerate brief network gaps in industrial environments
+const STALE_THRESHOLD_SEC   = 60;   // staleness sweep threshold — matches OFFLINE_THRESHOLD_SEC
+const ONLINE_CONFIRM_MS     = 5_000; // require 5s of continuous data before exiting OFFLINE
 const PAGE_SIZE             = 6;
 const AUTO_PAGE_MS          = 10_000;
 
@@ -63,9 +65,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private destroy$         = new Subject<void>();
   private clockInterval:   any;
   private autoPageTimer:   any;
+  private staleCheckTimer: any;
   private machineMap       = new Map<number, any>();
   private updateQueue:     any[]  = [];
   private updateScheduled         = false;
+  // machine_id → wall-clock ms when machine first sent data after being OFFLINE
+  private pendingOnlineMs  = new Map<number, number>();
 
   private visibilityHandler = () => {
     if (document.hidden) {
@@ -136,6 +141,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     /* ── Auto page advance every 10s ── */
     this.startAutoPageTimer();
+
+    /* ── Staleness sweep every 3s ──────────────────────────
+       Catches machines that stop sending data without a final
+       socket event (e.g. network drop, power off). Marks them
+       OFFLINE when received_at is older than STALE_THRESHOLD_SEC.
+    ──────────────────────────────────────────────────────── */
+    this.staleCheckTimer = setInterval(() => {
+      this.zone.run(() => this.checkStaleStatus());
+    }, 3_000);
   }
 
   /* ════════════════════════════════════════
@@ -198,7 +212,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (source.operator_name !== undefined) target.operator_name = source.operator_name;
     if (source.part_name     !== undefined) target.part_name     = source.part_name;
     if (source.component_id  !== undefined) target.component_id  = source.component_id;
-    // ❌ status  → socket owns this
+    // ✅ received_at → copied from API so staleness timer stays accurate between socket events
+    if (source.received_at   !== undefined) target.received_at   = source.received_at;
+    // ❌ status  → socket owns this (real-time); staleness timer handles offline detection
     // ❌ alarm   → socket owns this
   }
 
@@ -209,6 +225,37 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.service.getLive()
       .pipe(takeUntil(this.destroy$))
       .subscribe((res: any) => this.applyApiResponse(res));
+  }
+
+  /* ════════════════════════════════════════
+     STALENESS SWEEP  (every 3s)
+
+     Marks machines OFFLINE when their last
+     received_at is older than STALE_THRESHOLD_SEC.
+     Handles machines that die silently (no final
+     socket event) — e.g. power cut, network drop.
+
+     received_at is epoch-seconds from deviceTime
+     (mqtt.js) or from the API poll (patchMetrics).
+  ════════════════════════════════════════ */
+  private checkStaleStatus(): void {
+    const nowSec = Math.floor(Date.now() / 1000);
+    let changed  = false;
+
+    for (const m of this.machines) {
+      if (m.status === 'OFFLINE') continue;
+
+      const lastSeen = Number(m.received_at || 0);
+      if (!lastSeen) continue; // no timestamp yet — leave as-is
+
+      if (nowSec - lastSeen > STALE_THRESHOLD_SEC) {
+        m.status = 'OFFLINE';
+        this.pendingOnlineMs.delete(m.machine_id);
+        changed = true;
+      }
+    }
+
+    if (changed) this.cdr.markForCheck();
   }
 
   /* ════════════════════════════════════════
@@ -264,7 +311,39 @@ export class DashboardComponent implements OnInit, OnDestroy {
               newStatus = 'IDLE';
             }
 
-            /* ── Only mark changed if value actually differs ── */
+            /* ── OFFLINE → RUNNING/IDLE debounce ──────────────────
+               Industrial machines can briefly reconnect (1-2 packets)
+               then drop again. Require ONLINE_CONFIRM_MS of continuous
+               data before exiting OFFLINE, preventing false flickers.
+            ──────────────────────────────────────────────────────── */
+            if (machine.status === 'OFFLINE' && newStatus !== 'OFFLINE') {
+              const now        = Date.now();
+              const firstSeen  = this.pendingOnlineMs.get(update.machine_id);
+
+              if (!firstSeen) {
+                // First packet after offline — start confirmation window
+                this.pendingOnlineMs.set(update.machine_id, now);
+                // Keep received_at fresh so staleness timer doesn't re-fire OFFLINE
+                machine.received_at = update.received_at ?? machine.received_at;
+                continue;
+              }
+
+              if (now - firstSeen < ONLINE_CONFIRM_MS) {
+                // Still in confirmation window — update staleness clock but hold status
+                machine.received_at = update.received_at ?? machine.received_at;
+                continue;
+              }
+
+              // Confirmation window passed — machine is stably back online
+              this.pendingOnlineMs.delete(update.machine_id);
+            }
+
+            /* ── Machine going offline — clear any pending confirmation ── */
+            if (newStatus === 'OFFLINE') {
+              this.pendingOnlineMs.delete(update.machine_id);
+            }
+
+            /* ── Apply status / alarm only when value actually changes ── */
             if (machine.status !== newStatus) {
               machine.status      = newStatus;
               machine.received_at = update.received_at ?? machine.received_at;
@@ -279,7 +358,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
           }
 
           if (changed) {
-            this.recalculateSummaryStatus();
             this.cdr.markForCheck();
           }
         });
@@ -288,29 +366,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   /* ════════════════════════════════════════
-     SUMMARY — recount running/idle from live array
-     (only called after socket status updates)
-  ════════════════════════════════════════ */
-  private recalculateSummaryStatus(): void {
-    let running = 0;
-    let idle    = 0;
-
-    for (const m of this.machines) {
-      if (m.status === 'RUNNING')      running++;
-      else if (m.status === 'IDLE')    idle++;
-    }
-
-    this.summary = {
-      ...this.summary,
-      running,
-      idle,
-      total: this.machines.length
-    };
-  }
-
-  /* ════════════════════════════════════════
      PAGINATION & FILTER
   ════════════════════════════════════════ */
+
+  /* ── Live counts — always derived from machines array (same source as filter)
+        so button counts ALWAYS match what the filter actually shows         ── */
+  get runningCount(): number {
+    return this.machines.filter(m => m.status === 'RUNNING').length;
+  }
+
+  get idleCount(): number {
+    return this.machines.filter(m => m.status === 'IDLE').length;
+  }
 
   get alarmCount(): number {
     return this.machines.filter(m => m.alarm).length;
@@ -399,5 +466,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.socketService.offMachineUpdate();
     clearInterval(this.clockInterval);
     clearInterval(this.autoPageTimer);
+    clearInterval(this.staleCheckTimer);
   }
 }

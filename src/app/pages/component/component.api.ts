@@ -23,6 +23,6 @@ export class ComponentApi {
         return this.http.delete<any>(`${this.api}/components/${id}`);
     }
     getMachines() {
-        return this.http.get<any>(`${this.api}/machines`);
+        return this.http.get<any>(`${this.api}/master/machines`);
     }
 }
