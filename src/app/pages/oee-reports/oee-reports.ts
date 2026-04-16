@@ -2,12 +2,23 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OeeReportsService } from './oee.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Subject, takeUntil } from 'rxjs';
+
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   standalone: true,
   selector: 'app-oee-reports',
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule, FormsModule,
+    MatPaginatorModule, MatProgressSpinnerModule,
+    MatIconModule, MatButtonModule, MatTooltipModule
+  ],
   templateUrl: './oee-reports.html',
   styleUrl: './oee-reports.scss'
 })
@@ -17,36 +28,34 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
 
   Math = Math;
 
-  lines: any[] = [];
-  machines: any[] = [];
-  filteredMachines: any[] = [];
-  shifts: any[] = [];
+  lines: any[]             = [];
+  machines: any[]          = [];
+  filteredMachines: any[]  = [];
+  shifts: any[]            = [];
+  rows: any[]              = [];
 
-  rows: any[] = [];
-
-  selectedLine: number | null = null;
+  selectedLine: number | null    = null;
   selectedMachine: number | null = null;
-  selectedShift: number | null = null;
+  selectedShift: number | null   = null;
   searchText = '';
-  fromDate = '';
-  toDate = '';
+  fromDate   = '';
+  toDate     = '';
 
-  page = 1;
-  limit = 6;
+  page  = 1;
+  limit = 10;
   total = 0;
-  totalPages = 0;
 
-  sortBy = 'shift_date';
+  sortBy    = 'shift_date';
   sortOrder: 'ASC' | 'DESC' = 'DESC';
 
   today = this.getTodayLocal();
 
-  loading = false;
-  exporting = false;
+  loading     = false;
+  exporting   = false;
   loadingMeta = false;
-  error = '';
+  error       = '';
 
-  constructor(private service: OeeReportsService, private cdr: ChangeDetectorRef) {}
+  constructor(private service: OeeReportsService, private cdr: ChangeDetectorRef, public auth: AuthService) {}
 
   ngOnInit(): void {
     this.fromDate = this.getTodayLocal();
@@ -64,12 +73,12 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
           this.machines         = res.data.machines || [];
           this.shifts           = res.data.shifts   || [];
           this.filteredMachines = [...this.machines];
-          this.loadingMeta = false;
+          this.loadingMeta      = false;
           this.cdr.detectChanges();
           this.loadReports();
         },
         error: (err: any) => {
-          this.error = err.error?.message || 'Failed to load metadata';
+          this.error       = err.error?.message || 'Failed to load metadata';
           this.loadingMeta = false;
           this.cdr.detectChanges();
         }
@@ -79,7 +88,7 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
   loadReports(): void {
     if (this.loadingMeta) return;
     this.loading = true;
-    this.error = '';
+    this.error   = '';
 
     const filters = {
       line_id:    this.selectedLine,
@@ -98,14 +107,13 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res: any) => {
-          this.rows       = res.data || [];
-          this.total      = res.pagination?.total      || 0;
-          this.totalPages = res.pagination?.totalPages || 0;
+          this.rows    = res.data || [];
+          this.total   = res.pagination?.total || 0;
           this.loading = false;
           this.cdr.detectChanges();
         },
         error: (err: any) => {
-          this.error = err.error?.message || 'Failed to load reports';
+          this.error   = err.error?.message || 'Failed to load reports';
           this.loading = false;
           this.cdr.detectChanges();
         }
@@ -126,9 +134,10 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
   onDateChange():    void { this.page = 1; this.loadReports(); }
   onSearch():        void { this.page = 1; this.loadReports(); }
 
-  onLimitChange(val: number | string): void {
-    this.limit = Number(val);
-    this.page  = 1;
+  /** mat-paginator emits PageEvent */
+  onPage(e: PageEvent): void {
+    this.page  = e.pageIndex + 1;
+    this.limit = e.pageSize;
     this.loadReports();
   }
 
@@ -160,27 +169,6 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
     return this.sortOrder === 'ASC' ? '↑' : '↓';
   }
 
-  changePage(newPage: number): void {
-    if (newPage < 1 || newPage > this.totalPages) return;
-    this.page = newPage;
-    this.loadReports();
-  }
-
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxVisible = 5;
-    if (this.totalPages <= maxVisible) {
-      for (let i = 1; i <= this.totalPages; i++) pages.push(i);
-    } else {
-      const half  = Math.floor(maxVisible / 2);
-      let start   = Math.max(1, this.page - half);
-      let end     = Math.min(this.totalPages, start + maxVisible - 1);
-      if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
-      for (let i = start; i <= end; i++) pages.push(i);
-    }
-    return pages;
-  }
-
   exportCSV(): void {
     this.exporting = true;
     this.service.exportCSV({
@@ -201,7 +189,7 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
 
   formatDate(dateStr: string): string {
     if (!dateStr) return '--';
-    const d = new Date(dateStr);
+    const d    = new Date(dateStr);
     const dd   = String(d.getDate()).padStart(2, '0');
     const mm   = String(d.getMonth() + 1).padStart(2, '0');
     const yyyy = d.getFullYear();
@@ -218,6 +206,8 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
   getBarWidth(value: number): string {
     return `${Math.min(value || 0, 100)}%`;
   }
+
+  rowIndex(i: number): number { return (this.page - 1) * this.limit + i + 1; }
 
   ngOnDestroy(): void {
     this.destroy$.next();

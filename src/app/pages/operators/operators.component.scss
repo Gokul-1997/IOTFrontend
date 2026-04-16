@@ -1,6 +1,7 @@
-$blue: #3b5bdb; $red: #e03131; $radius: 10px;
+// All shared styles (table-card, search-box, modal-backdrop, btn-primary, etc.)
+// are now in global styles.scss — no duplication needed here.
 
-.ent-page { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+// Component-specific only:
 
 .page-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
 .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -103,3 +104,6 @@ $blue: #3b5bdb; $red: #e03131; $radius: 10px;
   // }
   .delete-modal { background: #12203a; h3 { color: #f1f3f5; } }
 }
+.flex { display: flex; }
+.gap-2 { gap: 8px; }
+.items-center { align-items: center; }

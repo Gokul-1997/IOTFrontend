@@ -14,6 +14,10 @@ export class MachinesService {
     return this.http.get<any>(this.api, { params });
   }
 
+  getAllForDropdown() {
+    return this.http.get<any>(`${environment.apiUrl}/master/machines`);
+  }
+
   create(data: any) {
     return this.http.post(this.api, data);
   }

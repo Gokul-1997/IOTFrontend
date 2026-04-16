@@ -12,8 +12,8 @@ export class OperatorService {
   // ------------------------
   // OPERATORS
   // ------------------------
-  getAll() {
-    return this.http.get<any[]>(`${this.api}/operators`);
+  getAll(params: any = {}) {
+    return this.http.get<any>(`${this.api}/operators`, { params });
   }
 
   create(data: any) {
@@ -31,7 +31,7 @@ export class OperatorService {
   // MACHINES (for assignment)
   // ------------------------
   getMachines() {
-    return this.http.get<any[]>(`${this.api}/machines`);
+    return this.http.get<any>(`${this.api}/master/machines`);
   }
 
   // operator.service.ts

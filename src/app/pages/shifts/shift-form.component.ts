@@ -44,14 +44,18 @@ export class ShiftFormComponent implements OnInit {
       shift_name:    [''],
       start_time:    ['', Validators.required],
       end_time:      ['', Validators.required],
-      break_minutes: [0, [Validators.required, Validators.min(0)]]
+      break_minutes: [0, [Validators.required, Validators.min(0)]],
+      is_active:     [true]
     }, { validators: this.shiftValidator });
 
     if (this.data) {
       this.form.patchValue({
-        ...this.data,
-        start_time: this.data.start_time?.slice(0, 5),
-        end_time:   this.data.end_time?.slice(0, 5)
+        shift_code:    this.data.shift_code,
+        shift_name:    this.data.shift_name,
+        start_time:    this.data.start_time?.slice(0, 5),
+        end_time:      this.data.end_time?.slice(0, 5),
+        break_minutes: this.data.break_minutes,
+        is_active:     this.data.is_active !== false
       });
     }
   }

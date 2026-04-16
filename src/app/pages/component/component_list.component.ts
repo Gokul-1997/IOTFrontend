@@ -15,6 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-component-list',
@@ -57,7 +58,8 @@ export class ComponentList implements OnInit, OnDestroy {
     private fb:            FormBuilder,
     private api:           ComponentApi,
     private socketService: SocketService,
-    private cdr:           ChangeDetectorRef
+    private cdr:           ChangeDetectorRef,
+    public auth:           AuthService
   ) {}
 
   ngOnInit() {

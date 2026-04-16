@@ -4,6 +4,7 @@ import { FormBuilder, Validators, ReactiveFormsModule, FormGroup } from '@angula
 import { OperatorService } from '../operators/operator.service';
 import { ShiftsService } from '../shifts/shifts.service';
 import { AssignmentService } from './assignment.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   standalone: true,
@@ -24,7 +25,8 @@ export class OperatorShiftComponent implements OnInit {
     private fb: FormBuilder,
     private operatorService: OperatorService,
     private shiftService: ShiftsService,
-    private assignmentService: AssignmentService
+    private assignmentService: AssignmentService,
+    public auth: AuthService
   ) { }
 
   ngOnInit() {

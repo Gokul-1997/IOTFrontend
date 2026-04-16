@@ -10,6 +10,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule }  from '@angular/forms';
 import { ReportsService, ReportFilters, ReportType } from './reports.service';
+import { AuthService } from '../../core/services/auth.service';
 
 /* ── Column definition ── */
 interface ColDef {
@@ -126,15 +127,27 @@ export class Reports implements OnInit {
 
   constructor(
     private svc: ReportsService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public  auth: AuthService
   ) {}
 
   ngOnInit(): void {
     this.svc.getMachines().subscribe({  next: r => { this.machines  = r.data; this.cdr.markForCheck(); } });
     this.svc.getShifts().subscribe({    next: r => { this.shifts    = r.data; this.cdr.markForCheck(); } });
-    this.svc.getOperators().subscribe({ next: r => { this.operators = r.data; this.cdr.markForCheck(); } });
+    this.loadOperators();
     this.resetColSelection();
     this.loadReport();
+  }
+
+  loadOperators(machine_id?: string): void {
+    this.svc.getOperators(machine_id).subscribe({
+      next: r => { this.operators = r.data; this.cdr.markForCheck(); }
+    });
+  }
+
+  onMachineChange(): void {
+    this.filters.operator_id = '';
+    this.loadOperators(this.filters.machine_id || undefined);
   }
 
   /* ── tab switch ── */
@@ -191,6 +204,7 @@ export class Reports implements OnInit {
       machine_id: '', shift_id: '', operator_id: ''
     };
     this.page = 1;
+    this.loadOperators();
     this.loadReport();
   }
 

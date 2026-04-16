@@ -78,8 +78,8 @@
         </div>
       </div>
 
-      <!-- Export CSV (selected columns) -->
-      <button
+      <!-- Export CSV (selected columns) — controlled by widget:export -->
+      <button *ngIf="auth.hasWidget('reports', 'export')"
         (click)="exportCsv()"
         [disabled]="rows.length === 0 || selectedCount === 0"
         class="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium
@@ -91,8 +91,8 @@
         Export CSV
       </button>
 
-      <!-- Full Excel -->
-      <button
+      <!-- Full Excel — controlled by widget:export -->
+      <button *ngIf="auth.hasWidget('reports', 'export')"
         (click)="downloadFullExcel()"
         class="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium
                text-white shadow hover:bg-blue-700 transition-colors">
@@ -146,7 +146,7 @@
       <!-- Machine -->
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium  dark:text-gray-400">Machine</label>
-        <select [(ngModel)]="filters.machine_id"
+        <select [(ngModel)]="filters.machine_id" (change)="onMachineChange()"
           class="filter-select">
           <option value="">All Machines</option>
           <option *ngFor="let m of machines" [value]="m.id">{{ m.name }}</option>
@@ -200,7 +200,7 @@
       <span *ngIf="filters.machine_id"
         class="inline-flex items-center gap-1 rounded-full bg-purple-900 border border-purple-200 px-2.5 py-1 text-sm text-white">
         🖥 {{ labelOf(machines, filters.machine_id) }}
-        <button (click)="filters.machine_id = ''" class="hover:text-yellow ml-0.5 text-sml">×</button>
+        <button (click)="filters.machine_id = ''; onMachineChange()" class="hover:text-yellow ml-0.5 text-sml">×</button>
       </span>
 
       <span *ngIf="filters.operator_id"
@@ -220,7 +220,8 @@
   <!-- ══════════════════════════════════════════════
        KPI CARDS
   ══════════════════════════════════════════════ -->
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 my-5">
+  <!-- KPI CARDS — controlled by widget:kpi -->
+  <div *ngIf="auth.hasWidget('reports', 'kpi')" class="grid grid-cols-2 lg:grid-cols-4 gap-4 my-5">
     <div *ngFor="let kpi of kpis"
       [class]="'rounded-xl border p-2 flex items-center gap-3 ' + kpiColorClass(kpi.color)">
       <span class="text-2xl">{{ kpi.icon }}</span>

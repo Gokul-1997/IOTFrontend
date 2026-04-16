@@ -243,7 +243,7 @@ export class LoginComponent
             }))
             .subscribe({
                 next: () => {
-                    this.router.navigate(['/dashboard']);
+                    this.router.navigate([this.auth.getFirstAccessibleRoute()]);
                 },
                 error: err => {
                     this.error = this.resolveError(err);

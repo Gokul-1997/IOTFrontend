@@ -247,7 +247,7 @@
       </div>
 
       <!-- Power Consumption -->
-      <div class="border-t pt-3 dark:border-gray-700">
+      <div *ngIf="auth.hasWidget('dashboard:live', 'power-consume')" class="border-t pt-3 dark:border-gray-700">
         <p class="flex items-center gap-2 text-sm font-semibold mb-2 justify-center">
           <span class="flex items-center justify-center w-6 h-6 rounded-md bg-green-500">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="w-4 h-4">
@@ -341,7 +341,7 @@
 
 
     <!-- ══════════════ SPINDLE LOAD ══════════════ -->
-    <div class="bg-white dark:bg-[#111111] rounded-xl  p-2 flex flex-col items-center shadow-xl">
+    <div *ngIf="auth.hasWidget('dashboard:live', 'spindle-speed-chart')" class="bg-white dark:bg-[#111111] rounded-xl  p-2 flex flex-col items-center shadow-xl">
       <h3 class="text-base font-semibold mb-1">Spindle Load</h3>
 
       <svg viewBox="0 0 310 170" xmlns="http://www.w3.org/2000/svg"
@@ -413,7 +413,7 @@
 
 
     <!-- ══════════════ FEED OVERRIDE ══════════════ -->
-    <div class="bg-white dark:bg-[#111111] rounded-xl  p-2 flex flex-col items-center  shadow-xl">
+    <div *ngIf="auth.hasWidget('dashboard:live', 'feed-override-chart')" class="bg-white dark:bg-[#111111] rounded-xl  p-2 flex flex-col items-center  shadow-xl">
       <h3 class="text-base font-semibold mb-1">Feed Override</h3>
 
       <svg viewBox="0 0 310 170" xmlns="http://www.w3.org/2000/svg"

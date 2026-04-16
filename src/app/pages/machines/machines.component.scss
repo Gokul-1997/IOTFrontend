@@ -327,11 +327,56 @@
   &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
+// ── API KEY CELL ───────────────────────────────────────────────────────────
+.api-key-td {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  &:hover .copy-btn {
+    opacity: 1;
+  }
+}
+
+.api-key-cell {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.75rem;
+  background: #f0f2f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #495057;
+  letter-spacing: 0.5px;
+}
+
+.copy-btn {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  color: #3b5bdb !important;
+  font-size: 16px !important;
+  width: 28px !important;
+  height: 28px !important;
+  line-height: 28px !important;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    background: #e8f0fe !important;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
 // ── DARK MODE ──────────────────────────────────────────────────────────────
 :host-context(.dark) {
   .page-title h2 { color: #f1f3f5; }
 
-  
+
 
   .table-card { background: #12203a; }
 
@@ -340,6 +385,19 @@
     .mat-mdc-header-cell { color: #cbcbcb; }
     .mat-mdc-row.data-row:hover { background: #1a2d48; }
     .mat-mdc-cell { color: #cbcbcb; }
+  }
+
+  .api-key-cell {
+    background: #1e3a5f;
+    color: #aec5e0;
+  }
+
+  .copy-btn {
+    color: #6b9cde !important;
+
+    &:hover {
+      background: #1e3a5f !important;
+    }
   }
 
   .delete-modal { background: #12203a; h3 { color: #f1f3f5; } }

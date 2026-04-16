@@ -1,21 +1,36 @@
 <div class="page-wrapper">
-<!-- HEADER -->
-   <div class="bg-top-bar">
-<div class="toolbar-left">
-      <div class="page-title">
 
+  <!-- HEADER -->
+  <div class="bg-top-bar flex-wrap">
+    <div class="toolbar-left">
+      <div class="page-title">
+        <mat-icon class="title-icon">assessment</mat-icon>
         <div>
           <h2>OEE Reports</h2>
-          
         </div>
-
+        <span class="subtitle">{{ total }} record{{ total !== 1 ? 's' : '' }} found</span>
       </div>
     </div>
-
-    
+    <div class="toolbar-right">
+      <!-- Search -->
+      <div class="search-box">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input type="text" placeholder="Search…" [(ngModel)]="searchText"
+          (keyup.enter)="onSearch()" class="search-input" />
+        <button *ngIf="searchText" mat-icon-button class="clear-btn" (click)="searchText=''; onSearch()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <!-- Export — controlled by widget:export -->
+      <button *ngIf="auth.hasWidget('oee-reports', 'export')" class="btn-export" (click)="exportCSV()" [disabled]="exporting || loading">
+        <mat-icon>download</mat-icon>
+        {{ exporting ? 'Exporting…' : 'Export CSV' }}
+      </button>
+    </div>
   </div>
-    <!-- FILTERS ROW -->
-  <div class="filters-bar filters-bar bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-700 shadow-sm rounded-xl p-5">
+
+  <!-- FILTERS BAR -->
+  <div class="filters-bar bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-700 shadow-sm rounded-xl">
 
     <div class="filter-item">
       <label class="filter-label">LINE</label>
@@ -53,146 +68,120 @@
 
     <div class="filter-actions">
       <button class="btn-apply" (click)="loadReports()" [disabled]="loading || loadingMeta">
-        ✓ Apply
+        <mat-icon>check</mat-icon> Apply
       </button>
       <button class="btn-clear" (click)="clearFilters()" [disabled]="loading || loadingMeta">
-        ✕ Clear
+        <mat-icon>close</mat-icon> Clear
       </button>
     </div>
 
   </div>
-<div class="bg-white dark:bg-[#111] rounded-xl  dark:border-gray-700 p-4 mb-2 shadow-sm">
 
+  <!-- TABLE CARD -->
+  <div class="table-card mat-elevation-z2">
 
-  <!-- ERROR -->
-  <div *ngIf="error" class="error-banner">
-    <span>{{ error }}</span>
-    <button (click)="error = ''" class="close-btn">×</button>
-  </div>
-
-  <!-- TOOLBAR ROW -->
-  <div class="toolbar">
-    <div class="toolbar-left">
-      <label class="rows-label">
-        Rows per page:
-        <select [(ngModel)]="limit" (change)="onLimitChange(limit)" class="rows-select">
-          <option [ngValue]="6">6</option>
-          <option [ngValue]="10">10</option>
-          <option [ngValue]="20">20</option>
-          <option [ngValue]="50">50</option>
-        </select>
-      </label>
+    <!-- ERROR -->
+    <div *ngIf="error" class="error-banner" style="margin:12px 16px; border-radius:8px;">
+      <span>{{ error }}</span>
+      <button (click)="error = ''" style="background:none;border:none;font-size:18px;cursor:pointer;color:#c92a2a;">×</button>
     </div>
-    <div class="toolbar-right">
-      <div class="search-wrap">
-        <svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.85-5.65a7 7 0 11-14 0 7 7 0 0114 0z"/>
-        </svg>
-        <input type="text" placeholder="Search..." [(ngModel)]="searchText" (keyup.enter)="onSearch()" class="search-input" />
-      </div>
-      <button class="btn-export" (click)="exportCSV()" [disabled]="exporting || loading">
-        ↗ {{ exporting ? 'Exporting…' : 'Export CSV' }}
-      </button>
+
+    <!-- Loading overlay -->
+    <div *ngIf="loading" class="loading-overlay">
+      <mat-spinner diameter="40"></mat-spinner>
     </div>
-  </div>
 
-  <!-- TABLE -->
-  <div class="table-wrap" [class.loading]="loading">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th class="col-num text-gray-500">#</th>
-          <th class="sortable" (click)="changeSort('shift_date')">
-            DATE <span class="sort-icon">{{ getSortIcon('shift_date') }}</span>
-          </th>
-          <th class="sortable" (click)="changeSort('machine_serial_no')">
-            MACHINE <span class="sort-icon">{{ getSortIcon('machine_serial_no') }}</span>
-          </th>
-          <th class="sortable" (click)="changeSort('shift_code')">
-            SHIFT <span class="sort-icon">{{ getSortIcon('shift_code') }}</span>
-          </th>
-          <th>OPERATOR</th>
-          <th class="sortable" (click)="changeSort('oee')">
-            OEE % <span class="sort-icon">{{ getSortIcon('oee') }}</span>
-          </th>
-          <th class="sortable" (click)="changeSort('availability')">
-            AVAILABILITY <span class="sort-icon">{{ getSortIcon('availability') }}</span>
-          </th>
-          <th class="sortable" (click)="changeSort('performance')">
-            PERFORMANCE <span class="sort-icon">{{ getSortIcon('performance') }}</span>
-          </th>
-          <th class="sortable" (click)="changeSort('quality')">
-            QUALITY <span class="sort-icon">{{ getSortIcon('quality') }}</span>
-          </th>
-        </tr>
-      </thead>
+    <!-- TABLE WRAPPER -->
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-index">#</th>
+            <th class="sortable" (click)="changeSort('shift_date')">
+              DATE <span class="sort-icon">{{ getSortIcon('shift_date') }}</span>
+            </th>
+            <th class="sortable" (click)="changeSort('machine_serial_no')">
+              MACHINE <span class="sort-icon">{{ getSortIcon('machine_serial_no') }}</span>
+            </th>
+            <th class="sortable" (click)="changeSort('shift_code')">
+              SHIFT <span class="sort-icon">{{ getSortIcon('shift_code') }}</span>
+            </th>
+            <th>OPERATOR</th>
+            <th *ngIf="auth.hasWidget('oee-reports', 'oee')" class="sortable" (click)="changeSort('oee')">
+              OEE % <span class="sort-icon">{{ getSortIcon('oee') }}</span>
+            </th>
+            <th *ngIf="auth.hasWidget('oee-reports', 'availability')" class="sortable" (click)="changeSort('availability')">
+              AVAIL. <span class="sort-icon">{{ getSortIcon('availability') }}</span>
+            </th>
+            <th *ngIf="auth.hasWidget('oee-reports', 'performance')" class="sortable" (click)="changeSort('performance')">
+              PERF. <span class="sort-icon">{{ getSortIcon('performance') }}</span>
+            </th>
+            <th *ngIf="auth.hasWidget('oee-reports', 'quality')" class="sortable" (click)="changeSort('quality')">
+              QUALITY <span class="sort-icon">{{ getSortIcon('quality') }}</span>
+            </th>
+          </tr>
+        </thead>
 
-      <tbody>
-
-        <tr *ngIf="loading">
-          <td colspan="9" class="state-cell">
-            <div class="spinner"></div>
-            <p>Loading…</p>
-          </td>
-        </tr>
-
-        <tr *ngIf="!loading && rows.length === 0">
-          <td colspan="9" class="state-cell">No records found. Adjust filters and try again.</td>
-        </tr>
-
-        <tr *ngFor="let row of rows; let i = index" class="data-row" [class.alt]="i % 2 === 1">
-          <td class="col-num">{{ (page - 1) * limit + i + 1 }}</td>
-          <td>{{ formatDate(row.shift_date) }}</td>
-          <td>
-            <span class="badge-machine">{{ row.machine_serial_no }}</span>
-          </td>
-          <td>
-            <span class="badge-shift">{{ row.shift_code }}</span>
-          </td>
-          <td>{{ row.operator_name || '--' }}</td>
-          <td>
-            <div class="metric-cell">
-              <span class="metric-val" [style.color]="getOeeColor(row.oee)">{{ row.oee }}%</span>
-              <div class="metric-bar">
-                <div class="metric-fill" [style.width]="getBarWidth(row.oee)"
-                     [style.backgroundColor]="getOeeColor(row.oee)"></div>
+        <tbody>
+          <!-- Empty state -->
+          <tr *ngIf="!loading && rows.length === 0">
+            <td colspan="9">
+              <div class="empty-state">
+                <mat-icon>assessment</mat-icon>
+                <p>No records found</p>
+                <span>Adjust filters and try again.</span>
               </div>
-            </div>
-          </td>
-          <td>
-            <div class="metric-cell">
-              <span class="metric-val">{{ row.availability }}%</span>
-              <div class="metric-bar"><div class="metric-fill avail-fill" [style.width]="getBarWidth(row.availability)"></div></div>
-            </div>
-          </td>
-          <td>
-            <div class="metric-cell">
-              <span class="metric-val">{{ row.performance }}%</span>
-              <div class="metric-bar"><div class="metric-fill perf-fill" [style.width]="getBarWidth(row.performance)"></div></div>
-            </div>
-          </td>
-          <td>
-            <div class="metric-cell">
-              <span class="metric-val">{{ row.quality }}%</span>
-              <div class="metric-bar"><div class="metric-fill qual-fill" [style.width]="getBarWidth(row.quality)"></div></div>
-            </div>
-          </td>
-        </tr>
+            </td>
+          </tr>
 
-      </tbody>
-    </table>
-  </div>
-</div>
-  <!-- PAGINATION -->
-  <div class="pagination-bar">
-    <span class="showing-text">
-      Showing {{ rows.length === 0 ? 0 : (page - 1) * limit + 1 }}–{{ Math.min(page * limit, total) }} of {{ total }} records
-    </span>
-    <div class="page-btns">
-      <button class="btn-nav" (click)="changePage(page - 1)" [disabled]="page === 1 || totalPages === 0">← Prev</button>
-      <button *ngFor="let p of getPageNumbers()" class="btn-page" [class.active]="p === page" (click)="changePage(p)">{{ p }}</button>
-      <button class="btn-nav" (click)="changePage(page + 1)" [disabled]="page === totalPages || totalPages === 0">Next →</button>
+          <tr *ngFor="let row of rows; let i = index" class="data-row" [class.alt]="i % 2 === 1">
+            <td class="col-index">{{ rowIndex(i) }}</td>
+            <td>{{ formatDate(row.shift_date) }}</td>
+            <td><span class="badge-machine">{{ row.machine_serial_no }}</span></td>
+            <td><span class="badge-shift-oee">{{ row.shift_code }}</span></td>
+            <td>{{ row.operator_name || '--' }}</td>
+
+            <td *ngIf="auth.hasWidget('oee-reports', 'oee')">
+              <div class="metric-cell">
+                <span class="metric-val" [style.color]="getOeeColor(row.oee)">{{ row.oee }}%</span>
+                <div class="metric-bar">
+                  <div class="metric-fill" [style.width]="getBarWidth(row.oee)"
+                       [style.backgroundColor]="getOeeColor(row.oee)"></div>
+                </div>
+              </div>
+            </td>
+            <td *ngIf="auth.hasWidget('oee-reports', 'availability')">
+              <div class="metric-cell">
+                <span class="metric-val">{{ row.availability }}%</span>
+                <div class="metric-bar"><div class="metric-fill avail-fill" [style.width]="getBarWidth(row.availability)"></div></div>
+              </div>
+            </td>
+            <td *ngIf="auth.hasWidget('oee-reports', 'performance')">
+              <div class="metric-cell">
+                <span class="metric-val">{{ row.performance }}%</span>
+                <div class="metric-bar"><div class="metric-fill perf-fill" [style.width]="getBarWidth(row.performance)"></div></div>
+              </div>
+            </td>
+            <td *ngIf="auth.hasWidget('oee-reports', 'quality')">
+              <div class="metric-cell">
+                <span class="metric-val">{{ row.quality }}%</span>
+                <div class="metric-bar"><div class="metric-fill qual-fill" [style.width]="getBarWidth(row.quality)"></div></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+
+    <!-- PAGINATOR — uniform with all other pages -->
+    <mat-paginator
+      [length]="total"
+      [pageSize]="limit"
+      [pageSizeOptions]="[6, 10, 20, 50]"
+      showFirstLastButtons
+      (page)="onPage($event)">
+    </mat-paginator>
+
   </div>
 
 </div>

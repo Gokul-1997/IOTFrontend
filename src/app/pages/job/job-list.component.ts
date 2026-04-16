@@ -11,6 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { JobService } from './job.service';
 import { JobCreateModalComponent } from './job-create-modal.component';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   standalone: true,
@@ -42,7 +43,7 @@ export class JobListComponent implements OnInit {
   @ViewChild('activePaginator')  activePaginator!:  MatPaginator;
   @ViewChild('historyPaginator') historyPaginator!: MatPaginator;
 
-  constructor(private service: JobService) {}
+  constructor(private service: JobService, public auth: AuthService) {}
 
   ngOnInit() {
     this.loadActive();

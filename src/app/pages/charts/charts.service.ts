@@ -16,9 +16,10 @@ export class ChartsService {
     return this.http.get<any>(`${this.api}/data`, { params: params as any });
   }
 
-  getPartTiming(machineId: number, shiftStartEpoch: number) {
-    return this.http.get<any>(`${this.api}/parts`, {
-      params: { machine_id: machineId, shift_start_epoch: shiftStartEpoch }
-    });
+  getPartTiming(machineId: number, shiftStartEpoch: number, shiftEndEpoch?: number, maxParts?: number) {
+    const params: any = { machine_id: machineId, shift_start_epoch: shiftStartEpoch };
+    if (shiftEndEpoch) params.shift_end_epoch = shiftEndEpoch;
+    if (maxParts)      params.max_parts       = maxParts;
+    return this.http.get<any>(`${this.api}/parts`, { params });
   }
 }

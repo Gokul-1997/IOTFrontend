@@ -171,8 +171,8 @@
         <!-- METRICS -->
         <div class="xl:col-span-6 space-y-4">
 
-          <!-- ROW 1: OEE METRIC CARDS -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <!-- ROW 1: OEE METRIC CARDS — controlled by widget:oee-metrics -->
+          <div *ngIf="auth.hasWidget('quality', 'oee-metrics')" class="grid grid-cols-2 md:grid-cols-4 gap-3">
 
             <!-- OEE -->
             <div class="relative rounded-xl p-4 text-white overflow-hidden
@@ -224,8 +224,8 @@
 
           </div>
 
-          <!-- ROW 2: PRODUCTION CARDS -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <!-- ROW 2: PRODUCTION CARDS — controlled by widget:production-cards -->
+          <div *ngIf="auth.hasWidget('quality', 'production-cards')" class="grid grid-cols-2 md:grid-cols-4 gap-3">
 
             <!-- TARGET -->
             <div class="oee-det">
@@ -358,8 +358,8 @@
       </div>
     </div>
 
-    <!-- CHART -->
-    <div class="bg-common">
+    <!-- CHART — controlled by widget:hourly-chart -->
+    <div *ngIf="auth.hasWidget('quality', 'hourly-chart')" class="bg-common">
       <p class="font-medium mb-2">Overall Performance Hour Wise</p>
 
       <apx-chart

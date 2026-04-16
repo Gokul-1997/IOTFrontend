@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
 import { MatButtonModule } from '@angular/material/button';
@@ -17,6 +17,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OperatorService } from './operator.service';
 import { OperatorFormComponent } from './operator-form.component';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   standalone: true,
@@ -33,17 +34,21 @@ import { ToastService } from '../../core/services/toast.service';
 })
 export class OperatorsComponent implements OnInit, OnDestroy {
 
+  rows: any[] = [];
   displayedColumns = ['index', 'operator_code', 'operator_name', 'shift', 'machines', 'actions'];
-  dataSource       = new MatTableDataSource<any>([]);
 
   loading       = false;
   search        = '';
+  page          = 1;
+  limit         = 10;
   total         = 0;
 
   showModal     = false;
   modalData: any = null;
+
   deleteTarget: any = null;
-  deleting      = false;
+  deleting          = false;
+  deleteError       = '';
 
   private searchSubject = new Subject<string>();
   private destroy$      = new Subject<void>();
@@ -51,18 +56,19 @@ export class OperatorsComponent implements OnInit, OnDestroy {
   constructor(
     private service: OperatorService,
     private toast:   ToastService,
-    private cdr:     ChangeDetectorRef
+    private cdr:     ChangeDetectorRef,
+    public auth:     AuthService
   ) {}
 
   ngOnInit() {
     this.searchSubject.pipe(
-      debounceTime(300),
+      debounceTime(400),
       distinctUntilChanged(),
       takeUntil(this.destroy$)
-    ).subscribe(val => {
-      this.dataSource.filter = val.trim().toLowerCase();
+    ).subscribe(() => {
+      this.page = 1;
+      this.load();
     });
-
     this.load();
   }
 
@@ -73,18 +79,30 @@ export class OperatorsComponent implements OnInit, OnDestroy {
 
   load() {
     this.loading = true;
-    this.service.getAll().subscribe({
+    this.service.getAll({
+      page:   this.page,
+      limit:  this.limit,
+      search: this.search
+    }).subscribe({
       next: (res: any) => {
-        this.dataSource.data = res.data || res;
-        this.total           = this.dataSource.data.length;
-        this.loading         = false;
+        this.rows    = res.data || res;
+        this.total   = res.meta?.total ?? this.rows.length;
+        this.loading = false;
         this.cdr.markForCheck();
       },
-      error: () => { this.loading = false; }
+      error: () => { this.loading = false; this.cdr.markForCheck(); }
     });
   }
 
   onSearchInput() { this.searchSubject.next(this.search); }
+
+  onPage(e: any) {
+    this.page  = e.pageIndex + 1;
+    this.limit = e.pageSize;
+    this.load();
+  }
+
+  rowIndex(i: number): number { return (this.page - 1) * this.limit + i + 1; }
 
   openCreate() { this.modalData = null; this.showModal = true; }
 
@@ -114,12 +132,13 @@ export class OperatorsComponent implements OnInit, OnDestroy {
     return `${String(h).padStart(2, '0')}:${String(minute).padStart(2, '0')} ${ampm}`;
   }
 
-  confirmDelete(row: any) { this.deleteTarget = row; }
-  cancelDelete()          { this.deleteTarget = null; this.deleting = false; }
+  confirmDelete(row: any) { this.deleteTarget = row; this.deleteError = ''; }
+  cancelDelete()          { this.deleteTarget = null; this.deleteError = ''; this.deleting = false; }
 
   doDelete() {
     if (!this.deleteTarget) return;
-    this.deleting = true;
+    this.deleting    = true;
+    this.deleteError = '';
     this.service.delete(this.deleteTarget.id).subscribe({
       next: () => {
         this.deleting     = false;
@@ -128,8 +147,9 @@ export class OperatorsComponent implements OnInit, OnDestroy {
         this.toast.success('Operator deleted successfully');
       },
       error: (err: any) => {
-        this.deleting = false;
-        this.toast.error(err?.error?.message || 'Delete failed. Try again.');
+        this.deleting    = false;
+        this.deleteError = err?.error?.message || 'Delete failed. Try again.';
+        this.toast.error(this.deleteError);
       }
     });
   }
