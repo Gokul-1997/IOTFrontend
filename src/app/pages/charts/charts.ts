@@ -23,9 +23,11 @@ export class Charts implements OnInit, OnDestroy {
   selectedDate = new Date().toISOString().split('T')[0];
   today        = new Date().toISOString().split('T')[0];
 
-  totalProduced = 0;
-  loadingParts  = false;
-  loadingHourly = false;
+  totalProduced  = 0;
+  totalRunMin    = 0;
+  totalIdleMin   = 0;
+  loadingParts   = false;
+  loadingHourly  = false;
 
   partDataLoaded   = false;
   hourlyDataLoaded = false;
@@ -149,7 +151,9 @@ export class Charts implements OnInit, OnDestroy {
 
     this.service.getPartTiming(this.selectedMachine, this.buildShiftStartEpoch(), this.buildShiftEndEpoch(), maxParts).subscribe({
       next: res => {
-        const rows: any[] = res.data || [];
+        const rows: any[] = res.data?.parts || res.data || [];
+        this.totalRunMin  = res.data?.totalRunMin  ?? 0;
+        this.totalIdleMin = res.data?.totalIdleMin ?? 0;
         this.partSeries = [
           { name: 'Running', data: rows.map((r: any) => r.run_min)  },
           { name: 'Idle',    data: rows.map((r: any) => r.idle_min) }

@@ -65,14 +65,22 @@
     <!-- Per-Part Running vs Idle (Stacked Bar) — controlled by widget:partwise-chart -->
     <div *ngIf="auth.hasWidget('charts', 'partwise-chart')" class="bg-common">
 
-      <div class="flex justify-between items-center mb-2">
+      <div class="flex justify-between items-center mb-2 flex-wrap gap-2">
         <div>
           <p class="font-semibold text-base">Part-Wise Running vs Idle Time</p>
           <p class="text-xs text-gray-500 mt-0.5">Each bar = one part produced — green: machining time, red: idle time before next part</p>
         </div>
-        <p class="text-sm text-gray-500">
-          Total Produced: <span class="font-bold text-gray-800 dark:text-white">{{ totalProduced }}</span> pcs
-        </p>
+        <div class="flex items-center gap-4 flex-wrap">
+          <p class="text-sm text-gray-500">
+            Total Parts: <span class="font-bold text-gray-800 dark:text-white">{{ totalProduced }}</span> pcs
+          </p>
+          <p *ngIf="partDataLoaded" class="text-sm text-gray-500">
+            Total Run: <span class="font-bold text-green-600">{{ totalRunMin | number:'1.0-0' }} min</span>
+          </p>
+          <p *ngIf="partDataLoaded" class="text-sm text-gray-500">
+            Total Idle: <span class="font-bold text-red-500">{{ totalIdleMin | number:'1.0-0' }} min</span>
+          </p>
+        </div>
       </div>
 
       <div *ngIf="loadingParts" class="flex justify-center py-16">
