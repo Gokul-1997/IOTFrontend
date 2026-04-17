@@ -41,8 +41,9 @@ export class JobService {
         return this.http.get(`${this.api}/operators`);
     }
 
-    getComponents() {
-        return this.http.get(`${this.api}/components`);
+    getComponents(machine_id?: number) {
+        const params = machine_id ? `?machine_id=${machine_id}&limit=100` : '?limit=100';
+        return this.http.get(`${this.api}/components${params}`);
     }
 
 }

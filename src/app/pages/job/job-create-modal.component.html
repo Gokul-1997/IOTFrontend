@@ -32,7 +32,7 @@
         <!-- Machine -->
         <div class="flex flex-col gap-1">
           <label class="text-sm font-semibold">Machine <span class="text-red-500">*</span></label>
-          <select [(ngModel)]="form.machine_id" class="filter-select"
+          <select [(ngModel)]="form.machine_id" (ngModelChange)="onMachineChange()" class="filter-select"
                   [disabled]="machines.length === 0">
             <option value="">— Select Machine —</option>
             <option *ngFor="let m of machines" [ngValue]="m.id">
@@ -45,10 +45,11 @@
         <!-- Component -->
         <div class="flex flex-col gap-1">
           <label class="text-sm font-semibold">Component / Part <span class="text-red-500">*</span></label>
-          <select [(ngModel)]="form.component_id" class="filter-select">
-            <option value="">— Select Component —</option>
+          <select [(ngModel)]="form.component_id" class="filter-select"
+                  [disabled]="!form.machine_id">
+            <option value="">{{ form.machine_id ? '— Select Component —' : '— Select machine first —' }}</option>
             <option *ngFor="let c of components" [ngValue]="c.id">
-              {{ c.part_name }}
+              {{ c.part_name }} (Target: {{ c.target }})
             </option>
           </select>
         </div>
