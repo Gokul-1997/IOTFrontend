@@ -61,22 +61,19 @@ export class ReportsService {
 
   /** Full Excel download (all columns, uses backend) */
   downloadExcel(type: ReportType, date: string): void {
-    const token  = localStorage.getItem('token');
-    const urlMap: Record<ReportType, string> = {
+    const pathMap: Record<ReportType, string> = {
       'production': `${this.api}/production?date=${date}`,
       'oee-hourly': `${this.api}/hourly-oee?date=${date}`,
       'shift-oee':  `${this.api}/shift-oee?date=${date}`,
     };
-    fetch(urlMap[type], { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.blob())
-      .then(blob => {
-        const url  = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href  = url;
-        link.download = `${type}_${date}.xlsx`;
-        link.click();
-        URL.revokeObjectURL(url);
-      });
+    this.http.get(pathMap[type], { responseType: 'blob' }).subscribe(blob => {
+      const url  = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href  = url;
+      link.download = `${type}_${date}.xlsx`;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
   }
 
   private toParams(f: ReportFilters): Record<string, string> {

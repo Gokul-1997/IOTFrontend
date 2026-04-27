@@ -38,9 +38,16 @@ export class JobCreateModalComponent implements OnInit {
     this.service.getAvailableMachines().subscribe((res: any) => {
       this.machines = res.data || [];
     });
-    this.service.getComponents().subscribe((res: any) => {
-      this.components = res.data || [];
-    });
+  }
+
+  onMachineChange() {
+    this.form.component_id = '';
+    this.components = [];
+    if (this.form.machine_id) {
+      this.service.getComponents(this.form.machine_id).subscribe((res: any) => {
+        this.components = res.data || [];
+      });
+    }
   }
 
   save() {

@@ -48,7 +48,15 @@ export class OeeReportsService {
       }
     });
 
-    window.location.href = `${this.baseUrl}/export?${params.toString()}`;
+    this.http.get(`${this.baseUrl}/export`, { params, responseType: 'blob' }).subscribe(blob => {
+      const url  = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href  = url;
+      const from = filters['from_date'] || filters['date'] || 'export';
+      link.download = `oee_${from}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
   }
 
 }
