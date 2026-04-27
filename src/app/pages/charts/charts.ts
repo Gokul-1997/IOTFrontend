@@ -57,6 +57,7 @@ export class Charts implements OnInit, OnDestroy {
     const textColor = dark ? '#d1d5db' : '#374151';
     const gridColor = dark ? '#374151' : '#e9ecef';
 
+    
     this.partChartOptions = {
       chart: { type: 'bar', height: 370, stacked: true, toolbar: { show: true },
                background: bg },

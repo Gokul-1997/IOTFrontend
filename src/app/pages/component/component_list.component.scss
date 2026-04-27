@@ -139,12 +139,7 @@ $radius: 10px;
   .page-title h2 { color: #f1f3f5; }
   .search-box { background: #1e2a3a; border-color: #2d3f55; .search-input { color: #f1f3f5; } }
   .table-card { background: #12203a; }
-  .ent-table {
-    .mat-mdc-header-row { background: #0f1c33; border-bottom-color: #1e2d45; }
-    .mat-mdc-header-cell { color: #8da5c4; }
-    .mat-mdc-row.data-row:hover { background: #1a2d48; }
-    .mat-mdc-cell { color: #c8d8ea; }
-  }
+  
   .form-modal, .delete-modal { h3 { color: #f1f3f5; } }
   .field { input, select { background: #1e2a3a; border-color: #2d3f55; color: #f1f3f5; } }
 }
