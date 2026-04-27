@@ -7,7 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test:ci": "ng test --watch=false --browsers=ChromeHeadless --no-progress",
+    "test:ci": "ng test --watch=false",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:install": "playwright install --with-deps chromium"
@@ -51,6 +51,7 @@
     "@angular/cli": "^21.1.3",
     "@angular/compiler-cli": "^21.1.0",
     "@angular/material": "^21.1.3",
+    "@playwright/test": "^1.59.1",
     "autoprefixer": "^10.4.24",
     "jsdom": "^27.1.0",
     "postcss": "^8.5.6",

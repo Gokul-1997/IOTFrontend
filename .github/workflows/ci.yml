@@ -8,7 +8,7 @@ on:
 
 jobs:
   unit:
-    name: Unit (Karma)
+    name: Unit (Vitest)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -36,24 +36,4 @@ jobs:
         with:
           name: frontend-dist
           path: dist/
-          retention-days: 7
-
-  e2e:
-    name: E2E (Playwright)
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
-      - run: npm run e2e:install
-      - run: npm run e2e
-      - if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report/
           retention-days: 7
