@@ -78,7 +78,7 @@
 
         <!-- Serial No -->
         <ng-container matColumnDef="machine_serial_no">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class=" thead-custm">Serial No</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class=" thead-custm">Machine No</th>
           <td mat-cell *matCellDef="let r">
             <span class="serial-no">{{ r.machine_serial_no }}</span>
           </td>
@@ -154,7 +154,7 @@
 
         <!-- MMC -->
         <ng-container matColumnDef="mmc_no" class=" thead-custm">
-          <th mat-header-cell *matHeaderCellDef>MMC No</th>
+          <th mat-header-cell *matHeaderCellDef>Serial No</th>
           <td mat-cell *matCellDef="let r">{{ r.mmc_no || '—' }}</td>
         </ng-container>
 

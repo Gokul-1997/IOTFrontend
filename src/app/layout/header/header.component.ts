@@ -42,7 +42,7 @@ export class HeaderComponent implements OnInit {
         { label: 'Operators', path: '/operators', permission: 'page:operators' }
       ]
     },
-    // { label: 'Admin', path: '/admin/users', icon: 'shield', adminOnly: true }
+    // { label: 'Admin', path: '/admin/users', icon: 'shield', adminOnly: true } 
   ];
 
   menus: any[] = [];
