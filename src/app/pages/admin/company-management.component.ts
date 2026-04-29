@@ -336,6 +336,17 @@ export class CompanyManagementComponent implements OnInit {
     });
   }
 
+  // ── Activate ───────────────────────────────────
+  activateCompany(company: any) {
+    if (!confirm(`Activate "${company.company_name}"? This will re-enable the company and its users.`)) return;
+    this.loading = true;
+    this.cdr.detectChanges();
+    this.companyService.updateCompany(company.id, { is_active: true }).subscribe({
+      next: () => { this.toast.success('Company activated'); this.loadCompanies(); },
+      error: () => { this.toast.error('Failed to activate company'); this.loading = false; this.cdr.detectChanges(); }
+    });
+  }
+
   // ── Permanent Delete ──────────────────────────
   permanentDeleteCompany(company: any) {
     if (!confirm(`PERMANENTLY DELETE "${company.company_name}"?\n\nThis will delete:\n- All users in this company\n- All roles & permissions\n- All machines, shifts, operators\n- All data\n\nThis CANNOT be undone!`)) return;
