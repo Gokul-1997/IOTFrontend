@@ -17,6 +17,7 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   styleUrls: ['./reset-password.component.scss']
 })
+
 export class ResetPasswordComponent {
 
   token!: string;
@@ -24,6 +25,7 @@ export class ResetPasswordComponent {
   success = false;
   showPassword = false;
   showConfirm = false;
+  isDark = false;
 
   form = new FormGroup({
     password: new FormControl('', [Validators.required, Validators.minLength(8)]),
@@ -37,6 +39,20 @@ export class ResetPasswordComponent {
   ) {
     this.token = this.route.snapshot.params['token'];
   }
+
+    ngOnInit() {
+    this.isDark = document.documentElement.classList.contains('dark');
+  }
+
+  toggleDark() {
+    this.isDark = !this.isDark;
+
+    if (this.isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  } 
 
   submit() {
     this.form.markAllAsTouched();
@@ -55,3 +71,4 @@ export class ResetPasswordComponent {
       });
   }
 }
+

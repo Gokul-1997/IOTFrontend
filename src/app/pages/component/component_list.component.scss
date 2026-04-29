@@ -1,7 +1,7 @@
 @use 'sass:color';
 
 // ── shared enterprise variables ────────────────────────────────────────────
-$blue:   #3b5bdb;
+$blue:   #635BFF;
 $red:    #e03131;
 $radius: 10px;
 
@@ -58,7 +58,7 @@ $radius: 10px;
 
 
 
-.badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
 .badge-time { background: #e8f4fd; color: #1971c2; font-family: monospace; }
 
 .action-edit   { color: $blue !important; &:hover { background: #e8f0fe !important; } }

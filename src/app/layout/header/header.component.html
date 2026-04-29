@@ -1,12 +1,12 @@
 <header
-  class="sticky top-0 w-full z-50 py-0 bg-white dark:bg-black  shadow-xl">
+  class="sticky top-0 w-full z-50 py-0 bg-white dark:bg-black ">
 
   <div class="flex items-center justify-between px-4 xl:px-8 mx-auto h-16">
 
     <!-- LEFT -->
     <div class="flex items-center gap-4">
-      <img src="/images/logo/STM_Mexa_logo.svg" class="w-32 dark:hidden" />
-      <img src="/images/logo/STM_Mexa_logo.svg" class="w-32 hidden dark:block" alt="Logo" />
+      <img src="/images/logo/ms_logo.svg" class="w-48 dark:hidden" />
+      <img src="/images/logo/ms_logo.svg" class="w-48 hidden dark:block" alt="Logo" />
     </div>
 
     <!-- DESKTOP MENU -->
@@ -31,7 +31,7 @@
             (click)="toggleMenu(menu.label)"
             class="nav-btn flex items-center gap-1"
             [class.active]="isChildActive(menu.children)">
-            <app-icon name="settings" [size]="24" class="text-black dark:text-white"></app-icon>
+            <app-icon name="gearnew" [size]="24" class="text-black dark:text-white"></app-icon>
             {{ menu.label }}
 
             <svg class="w-3 h-3 transition-transform"

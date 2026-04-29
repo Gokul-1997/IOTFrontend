@@ -94,7 +94,7 @@ export class Charts implements OnInit, OnDestroy {
         background: bg,
         dropShadow: { enabled: true, color: '#000', top: 18, left: 7, blur: 10, opacity: 0.15 }
       },
-      colors:     ['#3b5bdb'],
+      colors:     ['#635BFF'],
       dataLabels: { enabled: true },
       stroke:     { curve: 'smooth', width: 3 },
       grid:       { borderColor: gridColor },

@@ -306,14 +306,14 @@ export class Reports implements OnInit {
   }
 
   kpiColorClass(c: string): string {
-    return ({ blue: 'bg-blue-200 border-blue-200', green: 'bg-green-200 border-green-200',
-              yellow: 'bg-amber-100 border-amber-100', purple: 'bg-purple-200 border-purple-200' } as any)[c]
-      || 'bg-gray-200 border-gray-200';
+    return ({ blue: 'bg-[#ECEBFF] border-[#EAF9EF]', green: 'bg-[#EAF9EF] border-[#EAF9EF]',
+              yellow: 'bg-[#FEF7E2] border-[#EAF9EF]', purple: 'bg-[#E4F9F9] border-[#EAF9EF]' } as any)[c]
+      || 'bg-gray-200 border-[#EAF9EF]';
   }
 
   kpiTextClass(c: string): string {
-    return ({ blue: 'text-blue-700', green: 'text-green-700',
-              yellow: 'text-amber-700', purple: 'text-purple-700' } as any)[c]
+    return ({ blue: 'text-[#635BFF]', green: 'text-[#36C76C]',
+              yellow: 'text-amber-700', purple: 'text-[#16CDC7]' } as any)[c]
       || 'text-gray-700';
   }
 

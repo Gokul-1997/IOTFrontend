@@ -122,7 +122,7 @@
       <span>{{ tab.icon }}</span>{{ tab.label }}
     </button>
   </div>
-<div class="bg-white dark:bg-[#111] rounded-xl p-4 shadow-xl ">
+<div class="bg-white dark:bg-[#111] rounded-xl p-4 shadowv2 ">
   <!-- ══════════════════════════════════════════════
        FILTER BAR
   ══════════════════════════════════════════════ -->
@@ -293,7 +293,7 @@
             <th
               *ngFor="let col of activeColumns"
               (click)="sort(col.key)"
-              [class]="'px-3 py-2.5 text-xs font-semibold  dark:text-gray-400
+              [class]="'px-3 py-2.5 font-semibold  dark:text-gray-400
                         cursor-pointer select-none whitespace-nowrap
                         hover:text-gray-700 dark:hover:text-gray-200 transition-colors '
                        + (col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left')">
