@@ -960,6 +960,9 @@ input[type="date"]::after {
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 
   &:hover:not(:disabled) { background: #4f46e5; }
   &:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -976,6 +979,9 @@ input[type="date"]::after {
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 
   &:hover:not(:disabled) { background: #f3f4f6; }
   &:disabled { opacity: 0.6; cursor: not-allowed; }

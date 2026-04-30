@@ -21,8 +21,8 @@
       <div *ngIf="auth.hasWidget('dashboard', 'status')" class="flex flex-wrap gap-2 justify-center">
         <button
           (click)="setFilter('all')"
-          class="flex border_status pr-2 items-center transition rounded-md px-2 py-1 badgev2 text-[#3a33c3]"
-          [ngClass]="statusFilter === 'all' ? 'ring-2 ring-white bg-[#f1f0ff]' : 'hover:bg-blue-800'">
+          class="flex border_status px-4 py-1 rounded-md transition-all badgev2 text-white"
+          [ngClass]="statusFilter === 'all' ? 'bg-blue-400 ring-2 ring-white text-blue-600' : 'bg-[#d4deff] text-blue-600'">
           Total : <span class="font-bold ml-1">{{ machines.length }}</span>
         </button>
         <div class="flex gap-2">
@@ -30,21 +30,21 @@
           <button
             (click)="setFilter('running')"
             class="flex border_status px-4 py-1 rounded-md transition-all badgev2 text-[#00a553]"
-            [ngClass]="statusFilter === 'running' ? 'bg-green-400 ring-2 ring-white' : 'bg-[#e0f5eb]'">
+            [ngClass]="statusFilter === 'running' ? 'bg-green-400 ring-2 ring-white text-white' : 'bg-[#e0f5eb]'">
             Running : <span class="font-bold ml-1">{{ runningCount }}</span>
           </button>
           <!-- Idle filter button -->
           <button
             (click)="setFilter('idle')"
             class="flex border_status px-4 py-1 rounded-md transition-all badgev2 text-[rgb(184,142,0)]"
-            [ngClass]="statusFilter === 'idle' ? 'bg-yellow-400 ring-2 ring-white' : 'bg-[rgb(255,241,196)]'">
+            [ngClass]="statusFilter === 'idle' ? 'bg-yellow-400 ring-2 ring-white text-white' : 'bg-[rgb(255,241,196)]'">
             Idle : <span class="font-bold ml-1">{{ idleCount }}</span>
           </button>
           <!-- Alarm filter button -->
           <button
             (click)="setFilter('alarm')"
             class="flex border_status px-4 py-1 rounded-lg transition-all font-sm badgev2 text-[rgb(255,102,146)]"
-            [ngClass]="statusFilter === 'alarm' ? 'bg-red-400 ring-2 ring-white' : 'bg-[#FFCCDB] '">
+            [ngClass]="statusFilter === 'alarm' ? 'bg-red-400 ring-2 ring-white text-white' : 'bg-[#FFCCDB] '">
             Alarm : <span class="font-bold ml-1">{{ alarmCount }}</span>
           </button>
         </div>
