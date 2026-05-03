@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { IconComponent } from '../../shared/icon/icon';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 
 @Component({
   standalone: true,
   selector: 'app-header',
-  imports: [CommonModule, RouterModule, IconComponent],
+  imports: [CommonModule, RouterModule, IconComponent, NotificationBellComponent],
   templateUrl: './header.component.html',
 })
 export class HeaderComponent implements OnInit {
@@ -31,6 +32,10 @@ export class HeaderComponent implements OnInit {
     { label: 'Reports', path: '/reports', icon: 'reports', permission: 'page:reports' },
     { label: 'Charts', path: '/charts', icon: 'chart', permission: 'page:charts' },
     { label: 'Quality', path: '/quality', icon: 'quality', permission: 'page:quality' },
+    { label: 'Alarms', path: '/alarms', icon: 'alerts', permission: 'page:alarms' },
+    { label: 'Downtime', path: '/downtime', icon: 'downtime', permission: 'page:downtime' },
+    { label: 'Maintenance', path: '/maintenance', icon: 'maintenance', permission: 'page:maintenance' },
+    { label: 'Production Plans', path: '/production-plans', icon: 'plans', permission: 'page:production-plans' },
     {
       label: 'Master', icon: 'settings',
       children: [
@@ -39,7 +44,8 @@ export class HeaderComponent implements OnInit {
         { label: 'Job', path: '/job', permission: 'page:job' },
         { label: 'Lines', path: '/lines', permission: 'page:lines' },
         { label: 'Shifts', path: '/shifts', permission: 'page:shifts' },
-        { label: 'Operators', path: '/operators', permission: 'page:operators' }
+        { label: 'Operators', path: '/operators', permission: 'page:operators' },
+        { label: '2FA Security', path: '/security/2fa', permission: 'page:security' }
       ]
     },
     // { label: 'Admin', path: '/admin/users', icon: 'shield', adminOnly: true } 
