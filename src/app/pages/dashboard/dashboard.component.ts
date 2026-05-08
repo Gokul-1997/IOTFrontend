@@ -35,7 +35,7 @@ const POLL_MS               = 30_000;
 const OFFLINE_THRESHOLD_SEC = 60;   // 60s — tolerate brief network gaps in industrial environments
 const STALE_THRESHOLD_SEC   = 60;   // staleness sweep threshold — matches OFFLINE_THRESHOLD_SEC
 const ONLINE_CONFIRM_MS     = 5_000; // require 5s of continuous data before exiting OFFLINE
-const PAGE_SIZE             = 8;
+const PAGE_SIZE             = 6;
 const AUTO_PAGE_MS          = 10_000;
 
 @Component({
