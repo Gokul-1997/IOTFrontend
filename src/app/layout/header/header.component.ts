@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { IconComponent } from '../../shared/icon/icon';
 import { AuthService } from '../../core/services/auth.service';
-import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
+// import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 
 @Component({
   standalone: true,
   selector: 'app-header',
-  imports: [CommonModule, RouterModule, IconComponent, NotificationBellComponent],
+  imports: [CommonModule, RouterModule, IconComponent],
   templateUrl: './header.component.html',
 })
 export class HeaderComponent implements OnInit {
