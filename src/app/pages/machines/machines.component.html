@@ -126,6 +126,12 @@
           <td mat-cell *matCellDef="let r">{{ r.fourth_axis ?? '—' }}</td>
         </ng-container>
 
+        <!-- 5th Axis -->
+        <ng-container matColumnDef="fifth_axis" class=" thead-custm">
+          <th mat-header-cell *matHeaderCellDef>5th</th>
+          <td mat-cell *matCellDef="let r">{{ r.fifth_axis ?? '—' }}</td>
+        </ng-container>
+
         <!-- Twin Spindle -->
         <ng-container matColumnDef="twin_spindle" class=" thead-custm">
           <th mat-header-cell *matHeaderCellDef>Twin Spindle</th>

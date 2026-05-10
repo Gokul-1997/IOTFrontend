@@ -55,6 +55,7 @@ export class MachineFormComponent implements OnInit {
       y_axis: [''],
       z_axis: [''],
       fourth_axis: [''],
+      fifth_axis: [''],
       twin_spindle: [false],
       twin_table: [false],
       atc_tool_capacity: [''],
