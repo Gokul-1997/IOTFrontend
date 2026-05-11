@@ -123,6 +123,8 @@ export class Quality implements OnInit {
 
   loadDashboard() {
 
+    if (!this.selectedMachine || !this.selectedShift || !this.selectedDate) return;
+
     this.service.getDashboard({
       machine_id: this.selectedMachine,
       shift_id: this.selectedShift,
@@ -221,10 +223,15 @@ export class Quality implements OnInit {
 
   onLineChange() {
     this.service.getMachines(this.selectedLine).subscribe(res => {
-      this.machines = res.data;
+      this.machines = res.data || [];
       this.selectedMachine = this.machines[0]?.id;
 
-      this.loadDashboard();
+      if (this.selectedMachine) {
+        this.loadDashboard();
+      } else {
+        this.dashboardData = null;
+        this.cdr.detectChanges();
+      }
     });
   }
 }
