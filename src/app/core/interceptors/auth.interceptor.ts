@@ -7,7 +7,7 @@ import {
 } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
-import { catchError, filter, take, switchMap } from 'rxjs/operators';
+import { catchError, filter, take, switchMap, tap } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 
 let isRefreshing = false;
@@ -58,10 +58,11 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
               })
             );
           }),
-          catchError(() => {
+          catchError((refreshErr) => {
             isRefreshing = false;
+            refreshTokenSubject.next(null); // unblock any queued requests so they can fail
             authService.logout();
-            return throwError(() => null);
+            return throwError(() => refreshErr);
           })
         );
       }

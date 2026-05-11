@@ -14,6 +14,7 @@ import {
   ValidationErrors
 } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { finalize } from 'rxjs';
 import { ShiftsService } from './shifts.service';
 import { ToastService } from '../../core/services/toast.service';
 
@@ -99,7 +100,11 @@ export class ShiftFormComponent implements OnInit {
     if (this.data) {
       const changed: any = {};
       Object.keys(payload).forEach(key => {
-        if (payload[key] !== this.data[key]) changed[key] = payload[key];
+        // DB returns times as "HH:MM:SS" — normalize to "HH:MM" before comparing
+        const dataVal = (key === 'start_time' || key === 'end_time')
+          ? (this.data[key] ?? '').toString().slice(0, 5)
+          : this.data[key];
+        if (payload[key] !== dataVal) changed[key] = payload[key];
       });
 
       if (Object.keys(changed).length === 0) {
@@ -108,21 +113,21 @@ export class ShiftFormComponent implements OnInit {
         return;
       }
 
-      this.service.update(this.data.id, changed).subscribe({
-        next: () => { this.saving = false; this.saved.emit(); },
-        error: (err: any) => {
-          this.saving = false;
-          this.toast.error(err?.error?.message || 'Update failed. Try again.');
-        }
-      });
+      this.service.update(this.data.id, changed)
+        .pipe(finalize(() => { this.saving = false; }))
+        .subscribe({
+          next: () => this.saved.emit(),
+          error: (err: any) =>
+            this.toast.error(err?.error?.message || 'Update failed. Try again.')
+        });
     } else {
-      this.service.create(payload).subscribe({
-        next: () => { this.saving = false; this.saved.emit(); },
-        error: (err: any) => {
-          this.saving = false;
-          this.toast.error(err?.error?.message || 'Create failed. Try again.');
-        }
-      });
+      this.service.create(payload)
+        .pipe(finalize(() => { this.saving = false; }))
+        .subscribe({
+          next: () => this.saved.emit(),
+          error: (err: any) =>
+            this.toast.error(err?.error?.message || 'Create failed. Try again.')
+        });
     }
   }
 
