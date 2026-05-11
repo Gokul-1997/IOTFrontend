@@ -47,7 +47,7 @@ body {
 @tailwind utilities;
 
 body {
-  @apply bg-gradient-to-bl from-[#C5404A] via-[#5E3C79] to-[#4A2FA0] text-gray-900 bg-no-repeat font-ubuntu dark:text-white transition-colors duration-300;
+  @apply bg-gradient-to-bl from-[#C5404A] via-[#5E3C79] to-[#4A2FA0] text-gray-900 bg-no-repeat font-ubuntu dark:bg-[#0F0F0F] dark:text-white transition-colors duration-300;
 }
 
 .bg-wrapper {
