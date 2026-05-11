@@ -22,7 +22,7 @@ $radius: 10px;
 // ── BUTTONS ───────────────────────────────────────────────────────────────
 .btn-primary {
   display: inline-flex; align-items: center; gap: 6px;
-  background: $blue; color: #fff; border: none; border-radius: $radius;
+  background: #2b3990; color: #fff; border: none; border-radius: $radius;
   padding: 0 20px; height: 42px; font-size: 0.875rem; font-weight: 600;
   cursor: pointer; transition: background 0.2s, box-shadow 0.2s;
   mat-icon { font-size: 18px; width: 18px; height: 18px; }

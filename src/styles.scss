@@ -806,7 +806,7 @@ $radius: 10px;
 
 
 .btn-primary {
-  display: inline-flex; align-items: center; gap: 6px; background: $blue; color: #fff;
+  display: inline-flex; align-items: center; gap: 6px; background:#2b3990; color: #fff;
   border: none; border-radius: $radius; padding: 0 20px; height: 42px;
   font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.2s, box-shadow 0.2s;
   mat-icon { font-size: 18px; width: 18px; height: 18px; }
@@ -1146,13 +1146,13 @@ html.dark {
   .clear-btn { width: 28px; height: 28px; mat-icon { font-size: 16px; } }
 }
 
-.btn-primary {
-  display: inline-flex; align-items: center; gap: 6px; background: $blue; color: #fff;
-  border: none; border-radius: $radius; padding: 0 20px; height: 42px;
-  font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.2s, box-shadow 0.2s;
-  mat-icon { font-size: 18px; width: 18px; height: 18px; }
-  &:hover { background: #2f4ac4; box-shadow: 0 4px 12px rgba(59,91,219,0.35); }
-}
+// .btn-primary {
+//   display: inline-flex; align-items: center; gap: 6px; background: $blue; color: #fff;
+//   border: none; border-radius: $radius; padding: 0 20px; height: 42px;
+//   font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.2s, box-shadow 0.2s;
+//   mat-icon { font-size: 18px; width: 18px; height: 18px; }
+//   &:hover { background: #2f4ac4; box-shadow: 0 4px 12px rgba(59,91,219,0.35); }
+// }
 
 .ent-table {
   width: 100%;
