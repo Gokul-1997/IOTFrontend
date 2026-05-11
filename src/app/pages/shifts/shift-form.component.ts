@@ -117,16 +117,20 @@ export class ShiftFormComponent implements OnInit {
         .pipe(finalize(() => { this.saving = false; }))
         .subscribe({
           next: () => this.saved.emit(),
-          error: (err: any) =>
-            this.toast.error(err?.error?.message || 'Update failed. Try again.')
+          error: (err: any) => {
+            this.saving = false;
+            this.toast.error(err?.error?.message || 'Update failed. Try again.');
+          }
         });
     } else {
       this.service.create(payload)
         .pipe(finalize(() => { this.saving = false; }))
         .subscribe({
           next: () => this.saved.emit(),
-          error: (err: any) =>
-            this.toast.error(err?.error?.message || 'Create failed. Try again.')
+          error: (err: any) => {
+            this.saving = false;
+            this.toast.error(err?.error?.message || 'Create failed. Try again.');
+          }
         });
     }
   }
