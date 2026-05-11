@@ -80,16 +80,20 @@
       <div class="w-full md:w-1/2 bg-blue-50 dark:bg-black rounded-xl p-2">
 
         <!-- Operator -->
-        <div class="flex items-center gap-3 mb-3">
-          <img src="/images/user/owner.png" class="h-12 w-12 rounded-full">
-          <div class="flex-1 flex items-center justify-between gap-4">
-            <div>
+        <div class="space-y-1 text-sm mb-3">
+          
+          <div class="flex gap-2">
+            <div class="bg-white dark:bg-[#111111]  rounded-lg p-3 flex flex-1 justify-between">
+              
+              <div>
               <p class="text-sm text-gray-500 dark:text-[#939393]">Operator</p>
-              <p class="text-lg font-semibold">{{ operator?.operator_name || '--' }}</p>
+              <p class="font-bold">{{ operator?.operator_name || '--' }}</p>
+              </div>
+              <img src="/images/user/owner.png" class="h-12 w-12 rounded-full">
             </div>
-            <div class="text-right">
+            <div class="bg-white dark:bg-[#111111]  rounded-lg p-3 flex flex-col flex-1">
               <p class="text-sm text-gray-500 dark:text-[#939393]">Employee Id</p>
-              <p class="text-lg font-semibold">{{ operator?.employee_id || '--' }}</p>
+              <p class="font-bold">{{ operator?.employee_id || '--' }}</p>
             </div>
           </div>
         </div>
@@ -119,28 +123,20 @@
         </div>
 
         <!-- Plan / Actual -->
-        <div class="grid grid-cols-2 gap-3 text-center bg-white dark:bg-[#111111]  rounded-lg p-3 mb-3">
-          <div class="flex items-center gap-2">
-            <span class="font-semibold green rounded-md w-7 h-7 flex items-center justify-center text-white p-0.5">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-                <path fill-rule="evenodd" d="M15.22 6.268a.75.75 0 0 1 .968-.431l5.942 2.28a.75.75 0 0 1 .431.97l-2.28 5.94a.75.75 0 1 1-1.4-.537l1.63-4.251-1.086.484a11.2 11.2 0 0 0-5.45 5.173.75.75 0 0 1-1.199.19L9 12.312l-6.22 6.22a.75.75 0 0 1-1.06-1.061l6.75-6.75a.75.75 0 0 1 1.06 0l3.606 3.606a12.695 12.695 0 0 1 5.68-4.974l1.086-.483-4.251-1.632a.75.75 0 0 1-.432-.97Z" clip-rule="evenodd" />
-              </svg>
-            </span>
-            <div class="text-start flex items-center gap-2">
+        <div class="space-y-1 text-sm mb-3">
+          <div class=" flex gap-2">
+          <div class="bg-white dark:bg-[#111111]  rounded-lg p-3 flex flex-col flex-1">
+
               <p class="text-gray-700 dark:text-[#939393] text-sm">Plan</p>
-              <p class="font-semibold text-2xl">{{ job?.target_qty || 0 }}</p>
-            </div>
+              <p class="font-bold">{{ job?.target_qty || 0 }}</p>
+
           </div>
-          <div class="flex items-center gap-2">
-            <span class="font-semibold red rounded-md w-7 h-7 flex items-center justify-center text-white p-0.5">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
-                <path fill-rule="evenodd" d="M1.72 5.47a.75.75 0 0 1 1.06 0L9 11.69l3.756-3.756a.75.75 0 0 1 .985-.066 12.698 12.698 0 0 1 4.575 6.832l.308 1.149 2.277-3.943a.75.75 0 1 1 1.299.75l-3.182 5.51a.75.75 0 0 1-1.025.275l-5.511-3.181a.75.75 0 0 1 .75-1.3l3.943 2.277-.308-1.149a11.194 11.194 0 0 0-3.528-5.617l-3.809 3.81a.75.75 0 0 1-1.06 0L1.72 6.53a.75.75 0 0 1 0-1.061Z" clip-rule="evenodd" />
-              </svg>
-            </span>
-            <div class="text-start flex items-center gap-2">
+          <div class="bg-white dark:bg-[#111111]  rounded-lg p-3 flex flex-col flex-1">
+
               <p class="text-gray-700 dark:text-[#939393] text-sm">Actual</p>
-              <p class="font-semibold text-2xl">{{ livePartCount || 0 }}</p>
-            </div>
+              <p class="font-bold">{{ livePartCount || 0 }}</p>
+
+          </div>
           </div>
         </div>
 

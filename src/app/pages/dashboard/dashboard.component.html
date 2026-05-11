@@ -238,10 +238,11 @@
           <div class="flex flex-row md:flex-col justify-center gap-1 mt-2 text-sm md:gap-2">
 
             <div *ngIf="auth.hasWidget('dashboard', 'target')" class="text-center flex gap-2 items-center w-full">
-              <span class="font-semibold green rounded-md w-5 h-5 flex items-center justify-center text-white p-0.5">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-              <path fill-rule="evenodd" d="M15.22 6.268a.75.75 0 0 1 .968-.431l5.942 2.28a.75.75 0 0 1 .431.97l-2.28 5.94a.75.75 0 1 1-1.4-.537l1.63-4.251-1.086.484a11.2 11.2 0 0 0-5.45 5.173.75.75 0 0 1-1.199.19L9 12.312l-6.22 6.22a.75.75 0 0 1-1.06-1.061l6.75-6.75a.75.75 0 0 1 1.06 0l3.606 3.606a12.695 12.695 0 0 1 5.68-4.974l1.086-.483-4.251-1.632a.75.75 0 0 1-.432-.97Z" clip-rule="evenodd" />
-            </svg>
+              <span class="text-[#2b3990]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                  <path fill="#2b3990" d="M7.624 4.449C9.501 3.698 10.621 3.25 12 3.25s2.499.448 4.376 1.199l2.97 1.188c.954.382 1.727.69 2.258.969c.268.14.528.3.729.493c.206.198.417.498.417.901s-.21.703-.417.901c-.2.193-.46.352-.73.493c-.53.278-1.303.587-2.258.97l-2.97 1.187C14.5 12.302 13.38 12.75 12 12.75s-2.499-.448-4.376-1.199l-2.969-1.188c-.955-.382-1.728-.69-2.259-.969a3.2 3.2 0 0 1-.729-.493C1.461 8.703 1.25 8.403 1.25 8s.21-.703.417-.901c.2-.193.46-.352.73-.493c.53-.278 1.303-.587 2.258-.97z"/>
+                  <path fill="#2b3990" fill-rule="evenodd" d="M2.5 11.442v-.002l.003.003l.024.021q.036.03.118.094c.109.084.278.208.508.357c.46.299 1.161.697 2.104 1.074l2.809 1.123c2.025.81 2.874 1.138 3.934 1.138s1.91-.328 3.934-1.138l2.809-1.123a12 12 0 0 0 2.104-1.074a8 8 0 0 0 .65-.472l.003-.002l.001-.001a.75.75 0 0 1 1 1.118L22 12l.5.558v.002l-.002.001l-.005.004l-.014.012l-.045.039a9 9 0 0 1-.77.558A13.7 13.7 0 0 1 19.3 14.38l-2.809 1.124l-.115.046c-1.877.751-2.997 1.199-4.376 1.199s-2.499-.448-4.376-1.199l-.115-.046L4.7 14.38a13.7 13.7 0 0 1-2.363-1.207a9 9 0 0 1-.771-.558l-.045-.039l-.014-.012l-.005-.004l-.001-.002H1.5L2 12l-.5.559a.75.75 0 0 1 1-1.119m-.001 4a.75.75 0 0 0-1.057.06zm0 0l.004.003l.024.021q.036.03.118.094c.109.084.278.208.508.357c.46.299 1.161.696 2.104 1.074l2.809 1.123c2.025.81 2.874 1.138 3.934 1.138s1.91-.328 3.934-1.138l2.809-1.123a12 12 0 0 0 2.104-1.074a8 8 0 0 0 .65-.472l.003-.002l.001-.001a.75.75 0 0 1 1 1.118l-.484-.54l.484.54l-.002.002l-.001.001l-.005.004l-.014.012q-.016.015-.045.038a9 9 0 0 1-.77.558a13.7 13.7 0 0 1-2.364 1.208l-2.809 1.124l-.115.046c-1.877.751-2.997 1.199-4.376 1.199s-2.499-.448-4.376-1.199l-.115-.046L4.7 18.38a13.7 13.7 0 0 1-2.363-1.207a9 9 0 0 1-.771-.558l-.045-.039l-.014-.012l-.005-.004l-.001-.002H1.5L2 16l-.5.559a.75.75 0 0 1-.058-1.06" clip-rule="evenodd"/>
+                </svg>
             </span>
               <div class="text-left">
               <div class="text-xs">Target</div>
@@ -250,10 +251,10 @@
             </div>
 
             <div *ngIf="auth.hasWidget('dashboard', 'partcount')" class="text-center flex gap-2 items-center w-full md:border-t pt-1 dark:border-gray-700">
-              <span class="font-semibold red rounded-md w-5 h-5 flex items-center justify-center text-white p-0.5">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
-  <path fill-rule="evenodd" d="M1.72 5.47a.75.75 0 0 1 1.06 0L9 11.69l3.756-3.756a.75.75 0 0 1 .985-.066 12.698 12.698 0 0 1 4.575 6.832l.308 1.149 2.277-3.943a.75.75 0 1 1 1.299.75l-3.182 5.51a.75.75 0 0 1-1.025.275l-5.511-3.181a.75.75 0 0 1 .75-1.3l3.943 2.277-.308-1.149a11.194 11.194 0 0 0-3.528-5.617l-3.809 3.81a.75.75 0 0 1-1.06 0L1.72 6.53a.75.75 0 0 1 0-1.061Z" clip-rule="evenodd" />
-</svg>
+              <span class="text-green-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                  <path fill="#2b3990" d="M9.5 2A1.5 1.5 0 0 0 8 3.5v1A1.5 1.5 0 0 0 9.5 6h5A1.5 1.5 0 0 0 16 4.5v-1A1.5 1.5 0 0 0 14.5 2z"/>
+                  <path fill="#2b3990" fill-rule="evenodd" d="M6.5 4.037c-1.258.07-2.052.27-2.621.84C3 5.756 3 7.17 3 9.998v6c0 2.829 0 4.243.879 5.122c.878.878 2.293.878 5.121.878h6c2.828 0 4.243 0 5.121-.878c.879-.88.879-2.293.879-5.122v-6c0-2.828 0-4.242-.879-5.121c-.569-.57-1.363-.77-2.621-.84V4.5a3 3 0 0 1-3 3h-5a3 3 0 0 1-3-3zm9.012 8.511a.75.75 0 1 0-1.024-1.096l-3.774 3.522l-1.202-1.122a.75.75 0 0 0-1.024 1.096l1.715 1.6a.75.75 0 0 0 1.023 0z" clip-rule="evenodd"/></svg>
 
             </span>
               <div class="text-left">
@@ -289,7 +290,7 @@
       (click)="goToPage(currentPage - 1)"
       [disabled]="currentPage === 1"
       class="px-3 py-1.5 rounded-lg text-sm font-medium transition
-             bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-gray-600
+             bg-white dark:bg-[#1a1a1a] 
              disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]">
       ‹ Prev
     </button>
@@ -301,7 +302,7 @@
         class="w-8 h-8 rounded-full text-sm font-semibold transition border"
         [ngClass]="p === currentPage
           ? 'bg-[var(--color-primary-500)] text-white border-[var(--color-primary-500)]'
-          : 'bg-white dark:bg-[#1a1a1a] border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'">
+          : 'bg-white dark:bg-[#1a1a1a] hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'">
         {{ p }}
       </button>
     </ng-container>
