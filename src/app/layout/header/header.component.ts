@@ -57,7 +57,7 @@ export class HeaderComponent implements OnInit {
 
   ngOnInit() {
     const user = this.auth.getUser();
-    this.userName    = user.name || user.username || 'Admin';
+    this.userName    = user.username || user.company_name || 'Admin';
     this.userEmail   = user.email || '';
     this.isSntSuper  = this.auth.isSntSuper();
     this.isAdmin     = this.auth.isAdmin();
