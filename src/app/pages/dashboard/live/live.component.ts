@@ -513,7 +513,7 @@ export class LiveComponent implements OnInit, OnDestroy {
           hollow: { size: '42%' },
           track: {
             show: true,
-            background: '#000', // background: isDark ? '#1f2937' : '#e5e7eb',
+            background: '#E0E0E0', // background: isDark ? '#1f2937' : '#e5e7eb',
             strokeWidth: '100%',
             opacity: 0.5,
             margin: 0

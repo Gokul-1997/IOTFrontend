@@ -22,7 +22,7 @@
         <button
           (click)="setFilter('all')"
           class="flex border_status pr-2 items-center transition rounded-md px-2 py-1"
-          [ngClass]="statusFilter === 'all' ? 'ring-2 ring-white bg-blue-700' : 'hover:bg-blue-800'">
+          [ngClass]="statusFilter === 'all' ? 'bg-blue-700 ring-2 ring-white ' : 'bg-blue-700 hover:bg-blue-800'">
           Total : <span class="font-medium ml-1">{{ machines.length }}</span>
         </button>
         <div class="flex gap-2">
@@ -37,27 +37,27 @@
           <button
             (click)="setFilter('idle')"
             class="flex border_status px-4 py-1 rounded-md transition-all"
-            [ngClass]="statusFilter === 'idle' ? 'bg-yellow-400 ring-2 ring-white' : 'bg-yellow-600 hover:bg-yellow-500'">
+            [ngClass]="statusFilter === 'idle' ? 'bg-yellow-600 ring-2 ring-white' : 'bg-[#dfb400] hover:bg-yellow-600'">
             Idle : <span class="font-medium ml-1">{{ idleCount }}</span>
           </button>
           <!-- Alarm filter button -->
           <button
             (click)="setFilter('alarm')"
             class="flex border_status px-4 py-1 rounded-md transition-all"
-            [ngClass]="statusFilter === 'alarm' ? 'bg-red-400 ring-2 ring-white' : 'bg-red-600 hover:bg-red-500'">
+            [ngClass]="statusFilter === 'alarm' ? 'bg-red-600 ring-2 ring-white' : 'bg-[#fb3748] hover:bg-red-500'">
             Alarm : <span class="font-medium ml-1">{{ alarmCount }}</span>
           </button>
         </div>
       </div>
-<div class="bg-blue-900 rounded-md flex px-4 py-1">
+<div class="rounded-md flex px-4 py-1">
       <div class="flex  border_status pr-2">
         <div class="items-center font-medium ml-1"> {{ shift.shift_code }}</div>
       </div>
-      <span class="text-gray-500">|</span>
+      <span class="text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none"><path stroke="currentColor" stroke-width="1.5" d="M2 12c0-3.771 0-5.657 1.172-6.828S6.229 4 10 4h4c3.771 0 5.657 0 6.828 1.172S22 8.229 22 12v2c0 3.771 0 5.657-1.172 6.828S17.771 22 14 22h-4c-3.771 0-5.657 0-6.828-1.172S2 17.771 2 14z"/><path stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="M7 4V2.5M17 4V2.5M2.5 9h19" opacity="0.5"/><path fill="currentColor" d="M18 17a1 1 0 1 1-2 0a1 1 0 0 1 2 0m0-4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m-5 4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m0-4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m-5 4a1 1 0 1 1-2 0a1 1 0 0 1 2 0m0-4a1 1 0 1 1-2 0a1 1 0 0 1 2 0"/></g></svg></span>
       <div class="flex border_status px-2">
         <div class="items-center font-medium">{{ currentDateStr }}</div>
       </div>
-      <span class="text-gray-500">|</span>
+      <span class="text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4.75a7.25 7.25 0 1 0 0 14.5a7.25 7.25 0 0 0 0-14.5M3.25 12a8.75 8.75 0 1 1 17.5 0a8.75 8.75 0 0 1-17.5 0"/><path fill="currentColor" d="M12 7.25a.75.75 0 0 1 .75.75v3.69l1.78 1.78a.75.75 0 1 1-1.06 1.06l-2-2a.75.75 0 0 1-.22-.53V8a.75.75 0 0 1 .75-.75" opacity="0.5"/></svg></span>
       <div class="ms-2">
         <div class="items-center font-medium">{{ currentTime }}</div>
       </div>
@@ -96,7 +96,7 @@
         <!-- MACHINE IMAGE + RUN/IDLE -->
 
         <div>
-          <div class="text-xl font-bold text-[var(--color-primary-500)] dark:text-white">{{ m.machine_serial_no }}</div>
+          <div class="text-xl font-bold text-[var(--color-primary-500)] dark:text-white text-center">{{ m.machine_serial_no }}</div>
           <div class="grid grid-cols-[2fr_1fr_auto] md:grid-cols-1 md:gap-2">
           <img [src]="m.image_url"
                class="w-full md:h-28 object-contain" />
@@ -282,7 +282,7 @@
   </div>
 
   <!-- PAGINATION -->
-  <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-3 mt-4 flex-wrap">
+  <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-3 mt-10 flex-wrap">
 
     <!-- Prev -->
     <button

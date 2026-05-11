@@ -131,21 +131,21 @@
 
       <!-- Date From -->
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium  dark:text-gray-400">Date From</label>
+        <label class="label_custom">Date From</label>
         <input type="date" [(ngModel)]="filters.date_from"
           class="filter-date"/>
       </div>
 
       <!-- Date To -->
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium  dark:text-gray-400">Date To</label>
+        <label class="label_custom">Date To</label>
         <input type="date" [(ngModel)]="filters.date_to"
           class="filter-date"/>
       </div>
 
       <!-- Machine -->
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium  dark:text-gray-400">Machine</label>
+        <label class="label_custom">Machine</label>
         <select [(ngModel)]="filters.machine_id" (change)="onMachineChange()"
           class="filter-select">
           <option value="">All Machines</option>
@@ -155,7 +155,7 @@
 
       <!-- Operator -->
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium  dark:text-gray-400">Operator</label>
+        <label class="label_custom">Operator</label>
         <select [(ngModel)]="filters.operator_id"
           class="filter-select">
           <option value="">All Operators</option>
@@ -165,7 +165,7 @@
 
       <!-- Shift -->
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium  dark:text-gray-400">Shift</label>
+        <label class="label_custom">Shift</label>
         <select [(ngModel)]="filters.shift_id"
           class="filter-select">
           <option value="">All Shifts</option>
@@ -244,12 +244,12 @@
     <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
       <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">
         {{ activeTab === 'production' ? 'Production Report' : activeTab === 'oee-hourly' ? 'OEE Hourly Report' : 'Shift OEE Report' }}
-        <span class="ml-2 text-xs font-normal text-gray-400">({{ rows.length }} records)</span>
+        <span class="ml-2 text-sm font-normal text-gray-400">({{ rows.length }} records)</span>
       </p>
-      <div class="flex items-center gap-2 text-xs text-gray-400">
+      <div class="flex items-center gap-2 text-sm text-gray-400">
         <span>Show</span>
         <select [(ngModel)]="pageSize" (ngModelChange)="page = 1"
-          class="border border-gray-200 dark:border-gray-600 rounded px-2 py-1 text-xs
+          class="border border-gray-200 dark:border-gray-600 rounded px-2 py-1 text-sm
                  bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200">
           <option [value]="10">10</option>
           <option [value]="15">15</option>
@@ -293,7 +293,7 @@
             <th
               *ngFor="let col of activeColumns"
               (click)="sort(col.key)"
-              [class]="'px-3 py-2.5 text-xs font-semibold  dark:text-gray-400
+              [class]="'px-3 py-2.5 text-base font-semibold  dark:text-gray-400
                         cursor-pointer select-none whitespace-nowrap
                         hover:text-gray-700 dark:hover:text-gray-200 transition-colors '
                        + (col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left')">

@@ -25,14 +25,14 @@ export class HeaderComponent implements OnInit {
   isSntSuper = false;
 
   // All menus with permission keys for filtering
-  allMenus: any[] = [
-    { label: 'Dashboard', path: '/dashboard', icon: 'gauge', permission: 'page:dashboard' },
-    { label: 'OEE', path: '/oee-reports', icon: 'oee', permission: 'page:oee-reports' },
-    { label: 'Reports', path: '/reports', icon: 'reports', permission: 'page:reports' },
-    { label: 'Charts', path: '/charts', icon: 'chart', permission: 'page:charts' },
-    { label: 'Quality', path: '/quality', icon: 'quality', permission: 'page:quality' },
+ allMenus: any[] = [
+    { label: 'Dashboard', path: '/dashboard', icon: 'dashnew', permission: 'page:dashboard' },
+    { label: 'OEE', path: '/oee-reports', icon: 'donutnew', permission: 'page:oee-reports' },
+    { label: 'Reports', path: '/reports', icon: 'reportnew', permission: 'page:reports' },
+    { label: 'Charts', path: '/charts', icon: 'chartnew', permission: 'page:charts' },
+    { label: 'Quality', path: '/quality', icon: 'dropnew', permission: 'page:quality' },
     {
-      label: 'Master', icon: 'settings',
+      label: 'Settings', icon: 'gearnew',
       children: [
         { label: 'Machines', path: '/machines', permission: 'page:machines' },
         { label: 'Component', path: '/component', permission: 'page:component' },
