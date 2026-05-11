@@ -64,6 +64,7 @@ export class MachinesComponent implements OnInit, OnDestroy {
     'y_axis',
     'z_axis',
     'fourth_axis',
+    'fifth_axis',
     'twin_spindle',
     'twin_table',
     'atc_tool_capacity',

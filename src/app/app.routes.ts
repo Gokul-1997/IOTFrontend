@@ -49,6 +49,12 @@ export const routes: Routes = [
       { path: 'quality', canActivate: [permissionGuard('page:quality')], loadComponent: () => import('./pages/quality/quality').then(m => m.Quality) },
       { path: 'job', canActivate: [permissionGuard('page:job')], loadComponent: () => import('./pages/job/job-list.component').then(m => m.JobListComponent) },
 
+      { path: 'alarms', loadComponent: () => import('./pages/alarms/alarms.component').then(m => m.AlarmsComponent) },
+      { path: 'downtime', loadComponent: () => import('./pages/downtime/downtime.component').then(m => m.DowntimeComponent) },
+      { path: 'maintenance', loadComponent: () => import('./pages/maintenance/maintenance.component').then(m => m.MaintenanceComponent) },
+      { path: 'production-plans', loadComponent: () => import('./pages/production-plans/production-plans.component').then(m => m.ProductionPlansComponent) },
+      { path: 'security/2fa', loadComponent: () => import('./pages/security/twofa-setup.component').then(m => m.TwofaSetupComponent) },
+
       // ADMIN ROUTES (SNT_SUPER / COMPANY_ADMIN / ADMIN)
       {
         path: 'admin',
