@@ -83,7 +83,7 @@
           </div>
           <div class="text-left">
             <p class="text-sm font-medium dark:text-white leading-none">{{ userName }}</p>
-            <p *ngIf="userEmail" class="text-xs text-gray-400 leading-none mt-0.5">{{ userEmail }}</p>
+            <p class="text-xs text-gray-400 leading-none mt-0.5">{{ userRole }}</p>
           </div>
           <svg class="w-4 h-4 text-gray-400 transition-transform" [class.rotate-180]="showUserMenu"
             viewBox="0 0 20 20" fill="currentColor">
@@ -97,11 +97,8 @@
           class="absolute right-0 mt-2 w-52 bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-2 z-50">
           <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
             <p class="text-sm font-semibold text-gray-800 dark:text-white">{{ userName }}</p>
-            <p *ngIf="userEmail" class="text-xs text-gray-400 truncate">{{ userEmail }}</p>
-            <!-- <div class="flex items-center gap-1.5 mt-1">
-              <span class="text-xs px-1.5 py-0.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 rounded font-medium">{{ userRole }}</span>
-              <span *ngIf="planName" class="text-xs px-1.5 py-0.5 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 rounded font-medium">{{ planName }}</span>
-            </div> -->
+            <!-- <span class="text-xs px-1.5 py-0.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 rounded font-medium">{{ userRole }}</span> -->
+            <p *ngIf="userEmail" class="text-xs text-gray-400 truncate mt-1">{{ userEmail }}</p>
           </div>
           <button (click)="logout()"
             class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#2b3990] hover:bg-red-50 dark:hover:bg-red-900/20 transition">
