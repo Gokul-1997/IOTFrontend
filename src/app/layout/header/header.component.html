@@ -6,7 +6,7 @@
     <!-- LEFT -->
     <div class="flex items-center gap-4">
       <img src="/images/logo/mp_logo.png" class="w-52 dark:hidden" />
-      <img src="/images/logo/mp_logo.png" class="w-52 hidden dark:block" alt="Logo" />
+      <img src="/images/logo/mp_logo-white.png" class="w-52 hidden dark:block" alt="Logo" />
     </div>
 
     <!-- DESKTOP MENU -->
@@ -49,7 +49,7 @@
             <button
               *ngFor="let child of menu.children"
               (click)="navigate(child); closeMenu()"
-              class="block w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+              class="block w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-white"
               [class.active]="isActive(child.path)">
               {{ child.label }}
             </button>
