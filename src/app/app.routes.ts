@@ -20,6 +20,15 @@ export const routes: Routes = [
     children: [
 
       { path: 'dashboard', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
+      { path: 'factory', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/factory/factory.component').then(m => m.FactoryComponent) },
+      { path: 'maintenance-dashboard', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/maintenance-dashboard/maintenance-dashboard.component').then(m => m.MaintenanceDashboardComponent) },
+      { path: 'preventive-maintenance', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/preventive-dashboard/preventive-dashboard.component').then(m => m.PreventiveDashboardComponent) },
+      { path: 'periodic-maintenance', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/periodic-dashboard/periodic-dashboard.component').then(m => m.PeriodicDashboardComponent) },
+      { path: 'alarm-report', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/alarm-dashboard/alarm-dashboard.component').then(m => m.AlarmDashboardComponent) },
+      { path: 'downtime-analysis', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/downtime-dashboard/downtime-dashboard.component').then(m => m.DowntimeDashboardComponent) },
+      { path: 'operator-performance', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/operator-dashboard/operator-dashboard.component').then(m => m.OperatorDashboardComponent) },
+      { path: 'oee-dashboard', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/oee-dashboard/oee-dashboard.component').then(m => m.OeeDashboardComponent) },
+      { path: 'energy-dashboard', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/energy-dashboard/energy-dashboard.component').then(m => m.EnergyDashboardComponent) },
       { path: 'dashboard/live/:id', canActivate: [permissionGuard('page:dashboard:live')], loadComponent: () => import('./pages/dashboard/live/live.component').then(m => m.LiveComponent) },
 
       { path: 'component', canActivate: [permissionGuard('page:component')], loadComponent: () => import('./pages/component/component_list.component').then(m => m.ComponentList) },
@@ -48,6 +57,8 @@ export const routes: Routes = [
       { path: 'charts', canActivate: [permissionGuard('page:charts')], loadComponent: () => import('./pages/charts/charts').then(m => m.Charts) },
       { path: 'quality', canActivate: [permissionGuard('page:quality')], loadComponent: () => import('./pages/quality/quality').then(m => m.Quality) },
       { path: 'job', canActivate: [permissionGuard('page:job')], loadComponent: () => import('./pages/job/job-list.component').then(m => m.JobListComponent) },
+
+      { path: 'programs', loadComponent: () => import('./pages/programs/programs.component').then(m => m.ProgramsComponent) },
 
       { path: 'alarms', loadComponent: () => import('./pages/alarms/alarms.component').then(m => m.AlarmsComponent) },
       { path: 'downtime', loadComponent: () => import('./pages/downtime/downtime.component').then(m => m.DowntimeComponent) },

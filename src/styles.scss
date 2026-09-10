@@ -4,6 +4,12 @@
 // Learn more about theming and how to use it for your application's
 // custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
+// Shared dialog, form and tab system. Loaded here because @use must come
+// before any other rule — which also puts it ahead of @tailwind utilities,
+// so a utility class can still override a component class where the two are
+// combined. Every rule in it is class-based, so it out-specifies Tailwind's
+// element-level preflight regardless of order.
+@use './styles/dialog';
 @import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@100;200;300;400;500;600;700;800;900&family=Ubuntu:wght@300;400;500;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Questrial&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
 
@@ -47,7 +53,7 @@ body {
 @tailwind utilities;
 
 body {
-  @apply bg-gradient-to-bl from-[#C5404A] via-[#5E3C79] to-[#4A2FA0] text-gray-900 bg-no-repeat font-ubuntu dark:text-white transition-colors duration-300;
+  @apply bg-gradient-to-bl from-[#C5404A] via-[#5E3C79] to-[#4A2FA0] text-gray-900 bg-no-repeat font-ubuntu dark:bg-[#0F0F0F] dark:text-white transition-colors duration-300;
 }
 
 .bg-wrapper {
@@ -59,10 +65,13 @@ body {
   background: #000;
   padding-top: 15px;
 }
+/* flex-wrap + gap are load-bearing: this bar is on 16 pages and, without
+   wrapping, its title and action buttons pushed past a 390px phone viewport
+   and made every one of those pages scroll sideways. */
 .bg-top-bar{
   @apply bg-gradient-to-r from-[#2B3990] to-[#9B3F70]
-  text-white rounded-xl px-1 md:px-4 py-2 mb-3
-            flex items-center justify-between  shadow-xl
+  text-white rounded-xl px-2 md:px-4 py-2 mb-3
+            flex flex-wrap items-center justify-between gap-2 shadow-xl
 }
 
 .dark .bg-top-bar{
@@ -141,7 +150,10 @@ h4 {
 
 /* MAIN NAV BUTTON */
 .nav-btn {
-  padding:10px 16px;
+  /* 12px, not 16: eight grouped items need 64px less than the header had
+     to give at 1440px, and 8×2×4px of padding is exactly where it comes
+     from without shrinking the text or the touch target height. */
+  padding:10px 12px;
   border-radius: 15px;
   font-size:15px;
   transition: all 0.15s ease;
@@ -806,7 +818,7 @@ $radius: 10px;
 
 
 .btn-primary {
-  display: inline-flex; align-items: center; gap: 6px; background: $blue; color: #fff;
+  display: inline-flex; align-items: center; gap: 6px; background:#2b3990; color: #fff;
   border: none; border-radius: $radius; padding: 0 20px; height: 42px;
   font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.2s, box-shadow 0.2s;
   mat-icon { font-size: 18px; width: 18px; height: 18px; }
@@ -1146,13 +1158,13 @@ html.dark {
   .clear-btn { width: 28px; height: 28px; mat-icon { font-size: 16px; } }
 }
 
-.btn-primary {
-  display: inline-flex; align-items: center; gap: 6px; background: $blue; color: #fff;
-  border: none; border-radius: $radius; padding: 0 20px; height: 42px;
-  font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.2s, box-shadow 0.2s;
-  mat-icon { font-size: 18px; width: 18px; height: 18px; }
-  &:hover { background: #2f4ac4; box-shadow: 0 4px 12px rgba(59,91,219,0.35); }
-}
+// .btn-primary {
+//   display: inline-flex; align-items: center; gap: 6px; background: $blue; color: #fff;
+//   border: none; border-radius: $radius; padding: 0 20px; height: 42px;
+//   font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.2s, box-shadow 0.2s;
+//   mat-icon { font-size: 18px; width: 18px; height: 18px; }
+//   &:hover { background: #2f4ac4; box-shadow: 0 4px 12px rgba(59,91,219,0.35); }
+// }
 
 .ent-table {
   width: 100%;
