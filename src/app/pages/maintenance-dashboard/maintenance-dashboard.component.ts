@@ -12,12 +12,13 @@ import { MaintenanceDashboardService } from './maintenance-dashboard.service';
    Machine-condition view over GET /dashboard/maintenance,
    filterable by Shift / Machine / Date.
 
-   The agreement also lists servo load per axis, temperature,
-   battery voltage, insulation resistance and fan/amplifier
-   status. Nothing collects those signals — telemetry_raw has no
-   such column and the MQTT collector is a separate service — so
-   the API returns their names in `unavailable` and this page
-   states the gap rather than drawing empty gauges.
+   Servo load per axis, servo and spindle temperature, encoder
+   temperature, batteries, insulation resistance and fans come from
+   the FOCAS collector (migration 021). Controllers differ in what
+   they supply — some report a temperature for one servo only — so
+   every per-axis value is independently nullable and shows as "--",
+   never as 0. The API names the signals no machine has reported in
+   `unavailable`, measured from the data rather than declared.
 ───────────────────────────────────────────────────────────── */
 
 const POLL_MS = 60_000;
@@ -25,8 +26,10 @@ const POLL_MS = 60_000;
 /** API key → the words a maintenance engineer would use. */
 const SIGNAL_LABELS: Record<string, string> = {
   servo_load_per_axis:   'Servo load per axis',
-  machine_temperature:   'Machine temperature',
-  battery_status:        'CNC / APC battery status',
+  servo_temperature:     'Servo motor temperature',
+  spindle_temperature:   'Spindle motor temperature',
+  encoder_temperature:   'Encoder temperature',
+  battery_status:        'CNC / APC battery voltage',
   insulation_resistance: 'Insulation resistance',
   fan_amplifier_status:  'Cooling fan & amplifier status'
 };
@@ -56,6 +59,23 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   /* ── chart ── */
   cycleSeries:     any[] = [];
   cycleCategories: string[] = [];
+  alarmSeries:     number[] = [];
+  spindleSeries:   number[] = [];
+
+  /* Machine condition for the machine the card describes. Built once per
+     response rather than in getters, so change detection does not hand the
+     charts a fresh array — and a redraw — on every pass. */
+  servoLoadAxes:   { axis: string; value: number | null }[] = [];
+  servoTempAxes:   { axis: string; value: number | null }[] = [];
+  encoderTempAxes: { axis: string; value: number | null }[] = [];
+  servoLoadSeries: any[] = [];
+  servoTempSeries: any[] = [];
+  servoTempMissing = '';
+  hasEncoderTemp   = false;
+  fanList: { name: string; value: string }[] = [];
+  conditionCategories: string[] = [];
+  tempTrendSeries: any[] = [];
+  irTrendSeries:   any[] = [];
 
   private destroy$ = new Subject<void>();
 
@@ -136,10 +156,191 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       data: trend.map((t: any) => t.avg_cycle_seconds ?? null)
     }];
 
+    /* Donuts and gauges take a flat number array; the {name,data} series
+       shape renders an empty chart with no error. */
+    this.alarmSeries = [
+      Number(d.alarms.critical) || 0,
+      Number(d.alarms.non_critical) || 0,
+      Number(d.alarms.information) || 0
+    ];
+
+    /* A spindle at 0% and a spindle with no sensor look identical on a
+       gauge, so an absent reading gets no gauge at all. */
+    const load = this.focusRow?.spindle_load;
+    this.spindleSeries = load === null || load === undefined ? [] : [Number(load)];
+
+    const axes = (prefix: string) => ['x', 'y', 'z'].map(a => ({
+      axis: a.toUpperCase(),
+      value: (this.focusRow?.[`${prefix}_${a}`] ?? null) as number | null
+    }));
+    const hasAny = (list: { value: number | null }[]) => list.some(a => a.value !== null);
+
+    this.servoLoadAxes = axes('servo_load');
+    this.servoLoadSeries = hasAny(this.servoLoadAxes)
+      ? [{ name: 'Load %', data: this.servoLoadAxes.map(a => a.value) }] : [];
+
+    this.servoTempAxes = axes('servo_temp');
+    this.servoTempSeries = hasAny(this.servoTempAxes)
+      ? [{ name: 'Temperature °C', data: this.servoTempAxes.map(a => a.value) }] : [];
+    /* Some controllers report a temperature for one servo only. The silent
+       axes are named in words rather than drawn as 0 °C. */
+    this.servoTempMissing = hasAny(this.servoTempAxes)
+      ? this.servoTempAxes.filter(a => a.value === null).map(a => a.axis).join(', ') : '';
+
+    this.encoderTempAxes = axes('encoder_temp');
+    this.hasEncoderTemp  = hasAny(this.encoderTempAxes);
+
+    const fans = this.focusRow?.fan_status;
+    this.fanList = fans && typeof fans === 'object' && !Array.isArray(fans)
+      ? Object.entries(fans).map(([k, v]) => ({ name: k.replace(/_/g, ' '), value: String(v) }))
+      : [];
+
+    /* Condition trend exists only when one machine is selected — averaging
+       servo temperatures across a fleet describes no motor. A series is
+       drawn only if it has at least one reading in the window. */
+    const ct = d.condition_trend || [];
+    this.conditionCategories = ct.map((t: any) =>
+      new Date(t.hour_start).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false }));
+    const lines = (defs: [string, string][]) => defs
+      .filter(([, key]) => ct.some((t: any) => t[key] != null))
+      .map(([name, key]) => ({ name, data: ct.map((t: any) => t[key] ?? null) }));
+    this.tempTrendSeries = lines([
+      ['Servo X', 'servo_temp_x'], ['Servo Y', 'servo_temp_y'],
+      ['Servo Z', 'servo_temp_z'], ['Spindle', 'spindle_motor_temp']
+    ]);
+    this.irTrendSeries = lines([
+      ['IR X', 'servo_insulation_res_x'], ['IR Y', 'servo_insulation_res_y'],
+      ['IR Z', 'servo_insulation_res_z']
+    ]);
+
     this.cdr.markForCheck();
   }
 
   /* ── view helpers ── */
+
+  /** The machine the detail card describes: the filtered one, else the
+   *  first that is actually reporting, else the first row. */
+  get focusRow(): any {
+    const rows = this.data?.rows || [];
+    if (!rows.length) return null;
+    /* The machine the data was loaded for, not the dropdown: a user who picks
+       another machine but has not pressed Submit must not see this card
+       relabel itself over the previous machine's readings. */
+    const loadedFor = this.data?.filters?.machine_id ?? null;
+    if (loadedFor) {
+      return rows.find((r: any) => r.machine_id === loadedFor) || null;
+    }
+    return rows.find((r: any) => r.received_at) || rows[0];
+  }
+
+  /** Unmeasured shows as a dash, never 0% — they are different claims. */
+  pct(v: number | null | undefined): string {
+    if (v === null || v === undefined) return '--';
+    const n = Number(v);
+    // the OEE view returns fractions; the tiles show percentages
+    return `${(n <= 1 ? n * 100 : n).toFixed(1)}%`;
+  }
+
+  /* MEXA pill classes. statusClass below is left for any call site still
+     using the Tailwind variants. */
+  statusBadge(s: string): string {
+    switch (s) {
+      case 'RUNNING':   return 'mexa-badge-good';
+      case 'IDLE':      return 'mexa-badge-warn';
+      case 'BREAKDOWN': return 'mexa-badge-bad';
+      default:          return 'mexa-badge-neutral';
+    }
+  }
+
+  statusWord(s: string): string {
+    return s ? s.charAt(0) + s.slice(1).toLowerCase() : '--';
+  }
+
+  get alarmDonut(): any {
+    return {
+      chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
+      labels: ['Critical', 'Non critical', 'Information'],
+      colors: ['#e03131', '#22c55e', '#f5a623'],
+      plotOptions: {
+        pie: { donut: { size: '64%', labels: {
+          show: true,
+          total: { show: true, label: 'Total Alarms', fontSize: '.75rem',
+                   formatter: () => String(this.data?.alarms?.total ?? 0) }
+        } } }
+      },
+      dataLabels: { enabled: true, formatter: (_v: number, o: any) => String(o.w.config.series[o.seriesIndex]) },
+      // the key list beside the donut already names every class
+      legend: { show: false },
+      tooltip: { y: { formatter: (v: number) => `${v} alarms` } },
+      noData: { text: 'No alarms in this window' }
+    };
+  }
+
+  get spindleGauge(): any {
+    const load = Number(this.spindleSeries[0] ?? 0);
+    return {
+      chart: { type: 'radialBar', height: 260, fontFamily: 'inherit' },
+      labels: ['Spindle Load'],
+      // the band the reading falls in, so colour and number agree
+      colors: [load >= 85 ? '#e03131' : load >= 60 ? '#f5a623' : '#22c55e'],
+      plotOptions: {
+        radialBar: {
+          hollow: { size: '62%' },
+          track: { background: 'rgba(148,163,184,.22)' },
+          dataLabels: {
+            name: { fontSize: '.8rem', offsetY: 18 },
+            value: { fontSize: '1.6rem', fontWeight: 700, offsetY: -12,
+                     formatter: (v: number) => `${Math.round(v)}%` }
+          }
+        }
+      },
+      stroke: { lineCap: 'round' },
+      legend: { show: false },
+      noData: { text: 'Not reporting' }
+    };
+  }
+
+/** A reading with its unit, or a dash. A missing sensor is never "0". */
+  reading(v: number | null | undefined, unit: string, digits = 1): string {
+    if (v === null || v === undefined) return '--';
+    const n = Number(v);
+    if (!Number.isFinite(n)) return '--';
+    return unit ? `${n.toFixed(digits)} ${unit}` : n.toFixed(digits);
+  }
+
+  get servoChart(): any {
+    return {
+      chart: { type: 'bar', height: 220, toolbar: { show: false }, fontFamily: 'inherit' },
+      plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
+      colors: ['#2f2d8f', '#4a76c8', '#9b7ec8'],
+      // a null axis gets no label rather than a "0" floating over nothing
+      dataLabels: { enabled: true, formatter: (v: number | null) => v == null ? '' : String(v) },
+      legend: { show: false },
+      xaxis: { categories: ['X', 'Y', 'Z'] },
+      grid: { borderColor: 'rgba(148,163,184,.25)' },
+      tooltip: { theme: 'dark', y: { formatter: (v: number | null) => v == null ? 'not reporting' : String(v) } },
+      noData: { text: 'No axis is reporting' }
+    };
+  }
+
+  private trendOptions(unit: string, colors: string[]): any {
+    return {
+      chart: { type: 'line', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
+      stroke: { width: 3, curve: 'smooth' },
+      markers: { size: 3 },
+      colors,
+      dataLabels: { enabled: false },
+      legend: { position: 'bottom' },
+      xaxis: { categories: this.conditionCategories, title: { text: 'Hour' } },
+      yaxis: { title: { text: unit }, labels: { formatter: (v: number) => v == null ? '' : v.toFixed(0) } },
+      grid: { borderColor: 'rgba(148,163,184,.25)' },
+      tooltip: { theme: 'dark', y: { formatter: (v: number | null) => v == null ? 'no reading' : `${v} ${unit}` } },
+      noData: { text: 'No reading in this window' }
+    };
+  }
+
+  get tempTrendChart(): any { return this.trendOptions('°C', ['#2f2d8f', '#4a76c8', '#9b7ec8', '#e8618c']); }
+  get irTrendChart(): any   { return this.trendOptions('Resistance', ['#4a76c8', '#2f2d8f', '#9b7ec8']); }
 
   get hasCycleData(): boolean {
     return this.cycleSeries.some(s => (s.data || []).some((v: number | null) => v != null));

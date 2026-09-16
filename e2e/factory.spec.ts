@@ -73,19 +73,23 @@ test.describe('Factory Overall Dashboard', () => {
     await mockApi(page);
     await page.goto('/factory');
 
-    await expect(page.getByRole('heading', { name: /Factory Overall Dashboard/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Overall Factory Dashboard/i })).toBeVisible();
 
-    // machine state tiles
-    await expect(page.getByText('12', { exact: true }).first()).toBeVisible();
-    await expect(page.getByText('8',  { exact: true }).first()).toBeVisible();
+    // machine state tiles: running and idle are the headline figures, and
+    // the fleet size rides with them so the counts have a denominator
+    await expect(page.getByText('8', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('3', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(/of 12 machines/i)).toBeVisible();
 
     // production against plan
     await expect(page.getByText('420')).toBeVisible();
     await expect(page.getByText(/of 500 planned/i)).toBeVisible();
     await expect(page.getByText('84%')).toBeVisible();
 
-    // OEE headline + target
-    await expect(page.getByText('61%')).toBeVisible();
+    // OEE headline + target. The figure now appears twice by design — the
+    // KPI tile and the radial's centre label — so the tile is named.
+    await expect(page.locator('.mexa-kpi', { hasText: 'Overall' })
+                     .getByText('61%')).toBeVisible();
     await expect(page.getByText(/Target 85%/i)).toBeVisible();
 
     // energy, with the configured tariff applied
@@ -93,8 +97,10 @@ test.describe('Factory Overall Dashboard', () => {
     await expect(page.getByText(/₹1,186/)).toBeVisible();
 
     // alarm classes from the agreement
-    await expect(page.getByText(/Non-Critical/i)).toBeVisible();
-    await expect(page.getByText(/Information/i)).toBeVisible();
+    // the agreement hyphenates it, MEXA_DS_dashboard_UI_02.pdf does not;
+    // either spelling names the same class
+    await expect(page.getByText(/Non[- ]Critical/i).first()).toBeVisible();
+    await expect(page.getByText(/Information/i).first()).toBeVisible();
   });
 
   test('shows "Tariff not set" instead of zero when no rate is configured', async ({ authedPage: page }) => {

@@ -21,6 +21,8 @@ export class PeriodicDashboardService {
     machine_id?: number | null;
     search?: string;
     status?: string;
+    /** 'overdue' | 'today' — a property of the due date, not a status. */
+    due?: string;
     page?: number;
     limit?: number;
   }): Observable<any> {
@@ -28,6 +30,7 @@ export class PeriodicDashboardService {
     if (params.machine_id) query.machine_id = params.machine_id;
     if (params.search)     query.search     = params.search;
     if (params.status)     query.status     = params.status;
+    if (params.due)        query.due        = params.due;
     if (params.page)       query.page       = params.page;
     if (params.limit)      query.limit      = params.limit;
     return this.http.get<any>(`${this.api}/dashboard/periodic`, { params: query });

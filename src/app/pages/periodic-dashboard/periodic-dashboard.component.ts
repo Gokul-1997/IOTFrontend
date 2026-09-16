@@ -32,6 +32,8 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
   selectedMachine: number | null = null;
   search = '';
   statusFilter = '';
+  /** 'overdue' | 'today' | '' — set by the Attention Required panel. */
+  dueFilter = '';
   page = 1;
   readonly limit = 10;
 
@@ -52,6 +54,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
   /* ── charts ── */
   trendSeries: any[] = [];
   trendCategories: string[] = [];
+  workloadSeries: number[] = [];
 
   readonly FREQUENCIES = ['DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'HALF_YEARLY', 'YEARLY'];
   readonly STATUSES = ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
@@ -96,6 +99,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
     this.selectedMachine = null;
     this.search = '';
     this.statusFilter = '';
+    this.dueFilter = '';
     this.page = 1;
     this.loadSchedules();
     this.load();
@@ -117,6 +121,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
       machine_id: this.selectedMachine,
       search: this.search,
       status: this.statusFilter,
+      due: this.dueFilter,
       page: this.page,
       limit: this.limit
     })
@@ -147,6 +152,10 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
       name: 'Compliance %',
       data: (d.compliance_trend || []).map((t: any) => t.compliance_pct)
     }];
+
+    /* Donuts take a flat number array; the {name,data} series shape
+       renders an empty chart with no error. */
+    this.workloadSeries = (d.technician_workload || []).map((w: any) => Number(w.open) || 0);
 
     this.cdr.markForCheck();
   }
@@ -294,6 +303,72 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
+  /** Attention Required rows. Clicking the active one clears the filter,
+   *  so a user cannot get stuck inside a filter they did not notice. */
+  focusDue(kind: 'overdue' | 'today'): void {
+    this.dueFilter = this.dueFilter === kind ? '' : kind;
+    this.statusFilter = '';
+    this.page = 1;
+    this.load();
+  }
+
+  /** Technicians carrying at least one overdue ticket. */
+  get overloadedTechnicians(): number {
+    return (this.data?.technician_workload || [])
+      .filter((w: any) => Number(w.overdue) > 0).length;
+  }
+
+  private readonly palette = ['#e8618c', '#17b3a3', '#f5a623', '#2f2d8f', '#4a76c8', '#9b7ec8'];
+
+  donutColour(i: number): string { return this.palette[i % this.palette.length]; }
+
+  /* MEXA pill classes. The Tailwind helpers below are left for any call
+     site still using them. */
+  priorityBadge(p: string): string {
+    switch (String(p).toUpperCase()) {
+      case 'CRITICAL':
+      case 'HIGH':   return 'mexa-badge-bad';
+      case 'MEDIUM': return 'mexa-badge-warn';
+      default:       return 'mexa-badge-good';
+    }
+  }
+
+  statusBadge(s: string): string {
+    switch (String(s).toUpperCase()) {
+      case 'OPEN':        return 'mexa-badge-warn';
+      case 'ASSIGNED':
+      case 'IN_PROGRESS': return 'mexa-badge-violet';
+      default:            return 'mexa-badge-info';
+    }
+  }
+
+  /** IN_PROGRESS reads badly in a pill; the underscore is not for users. */
+  statusWord(s: string): string {
+    const v = String(s || '').toUpperCase();
+    if (v === 'IN_PROGRESS') return 'In Progress';
+    return v ? v.charAt(0) + v.slice(1).toLowerCase() : '--';
+  }
+
+  get workloadDonut(): any {
+    const total = this.workloadSeries.reduce((a, b) => a + b, 0);
+    return {
+      chart: { type: 'donut', height: 250, fontFamily: 'inherit' },
+      labels: (this.data?.technician_workload || []).map((w: any) => w.technician),
+      colors: this.palette,
+      plotOptions: {
+        pie: { donut: { size: '64%', labels: {
+          show: true,
+          total: { show: true, label: 'Total', fontSize: '.8rem', formatter: () => String(total) }
+        } } }
+      },
+      dataLabels: { enabled: true, formatter: (_v: number, o: any) => String(o.w.config.series[o.seriesIndex]) },
+      // the key list beside the donut already names every technician
+      legend: { show: false },
+      tooltip: { y: { formatter: (v: number) => `${v} open` } },
+      noData: { text: 'No open tickets to assign' }
+    };
+  }
+
   /* ── view helpers ── */
 
   /** True when there is genuinely no plan yet, as opposed to a filter that
@@ -316,10 +391,15 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
   dueLabel(due: string, isOverdue: boolean): string {
     if (!due) return '--';
     const d = new Date(due);
+    if (Number.isNaN(d.getTime())) return '--';
     const days = Math.round((d.getTime() - Date.now()) / 86_400_000);
     if (isOverdue) return `${Math.abs(days)}d overdue`;
     if (days === 0) return 'Today';
     if (days === 1) return 'Tomorrow';
+    /* A date can be in the past without being overdue — the schedule's
+       grace days have not run out yet. Without this branch that case
+       formats as "in -82d". */
+    if (days < 0) return `${Math.abs(days)}d ago`;
     return `in ${days}d`;
   }
 

@@ -1,404 +1,322 @@
-<!--
-  Phase 2 · Screen 3 — Preventive Maintenance Dashboard.
+<!-- Phase 2 · Screen 3 — Preventive Maintenance Dashboard, MEXA design. -->
 
-  Reports the loop: alarms cross a threshold → a PM ticket is raised with a
-  due date → the work gets done. Because every figure is zero until rules
-  exist and alarms arrive, the empty state is treated as a first-class
-  screen rather than an afterthought — it explains why, and offers the one
-  action that changes it.
--->
-<div class="page-wrapper">
+<p class="mexa-updated" *ngIf="updatedAt">
+  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
+  Last Updated: {{ updatedAt }}
+</p>
 
-  <div class="bg-top-bar">
-    <div class="toolbar-left">
-      <div class="page-title">
-        <mat-icon class="title-icon">event_repeat</mat-icon>
-        <div><h2>Preventive Maintenance</h2></div>
-        <span class="subtitle" *ngIf="updatedAt">Updated {{ updatedAt }}</span>
+<!-- ══════════ TITLE BAR ══════════ -->
+<form class="mexa-titlebar" (ngSubmit)="submit()">
+  <h1 class="mexa-title">Preventive Maintenance Dashboard</h1>
+  <span class="mexa-titlebar-spacer"></span>
+
+  <div class="mexa-filters">
+    <label class="mexa-filter-label" for="pvMachine">Machine</label>
+    <select id="pvMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine">
+      <option [ngValue]="null">All</option>
+      <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+    </select>
+
+    <label class="mexa-filter-label" for="pvDate">Date</label>
+    <input id="pvDate" type="date" class="mexa-date" [(ngModel)]="selectedDate" name="date">
+
+    <button type="submit" class="mexa-submit" [disabled]="loading">
+      {{ loading ? 'Loading…' : 'Submit' }}
+    </button>
+  </div>
+</form>
+
+<!-- ══════════ STATES ══════════ -->
+<p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
+<div *ngIf="loading && !data" class="mexa-note" aria-live="polite">Loading…</div>
+
+<ng-container *ngIf="data">
+
+  <!-- No rules means no tickets will ever be raised. A setup gap, not an
+       empty result, so it is said in words with the fix attached. -->
+  <p *ngIf="isUnconfigured" class="mexa-note mexa-note-warn">
+    <strong>No alarm rules are configured.</strong>
+    Preventive tickets are raised from repeated critical alarms. Add a rule under
+    <strong>Alarm rules</strong> below before this screen can report anything.
+  </p>
+
+  <!-- ══════════ KPI TILES ══════════ -->
+  <div class="mexa-kpis">
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Total Critical<br>Alarms</span>
+        <span class="mexa-kpi-icon" style="background:#dc2626" aria-hidden="true">
+          <mat-icon>notification_important</mat-icon>
+        </span>
       </div>
+      <p class="mexa-kpi-value">{{ data.kpis.critical_alarms }}</p>
+      <p class="mexa-kpi-sub">{{ data.kpis.critical_alarms_open }} still open</p>
     </div>
-    <div class="toolbar-right flex gap-2">
-      <button class="btn-primary" (click)="showRules = !showRules" [attr.aria-expanded]="showRules">
-        <mat-icon>tune</mat-icon>
-        {{ showRules ? 'Hide rules' : 'Threshold rules' }}
-      </button>
-      <button class="btn-primary" (click)="runEngine()" [disabled]="running">
-        <mat-icon>play_arrow</mat-icon>
-        {{ running ? 'Running…' : 'Run rules now' }}
-      </button>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Open PM<br>Tickets</span>
+        <span class="mexa-kpi-icon" style="background:#17b3a3" aria-hidden="true">
+          <mat-icon>notifications_active</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ data.kpis.pm_open }}</p>
+      <p class="mexa-kpi-sub">of {{ data.kpis.pm_generated }} raised</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Completed PM<br>Tickets</span>
+        <span class="mexa-kpi-icon" style="background:#9b7ec8" aria-hidden="true">
+          <mat-icon>task_alt</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ data.kpis.pm_completed }}</p>
+      <p class="mexa-kpi-sub">{{ data.kpis.pm_overdue }} overdue</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Compliance</span>
+        <span class="mexa-kpi-icon" style="background:#6b7280" aria-hidden="true">
+          <mat-icon>fact_check</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ compliance }}</p>
+      <p class="mexa-kpi-sub">Completed over raised</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Avg. Resolution<br>Time</span>
+        <span class="mexa-kpi-icon" style="background:#3b9ae1" aria-hidden="true">
+          <mat-icon>hourglass_bottom</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ hours(data.kpis.avg_resolution_hours) }}</p>
+      <p class="mexa-kpi-sub">over {{ data.kpis.resolved_count }} resolved</p>
     </div>
   </div>
 
-  <!-- ── filters ────────────────────────────────────────────── -->
-  <div class="ui-tabpanel mb-4">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-      <div>
-        <label class="ui-label" for="pmDate">Date</label>
-        <input id="pmDate" class="ui-input" type="date" [(ngModel)]="selectedDate" [max]="today" />
+  <!-- ══════════ ROW 2 ══════════ -->
+  <div class="mexa-grid xl:grid-cols-4 lg:grid-cols-2">
+
+    <section class="mexa-card">
+      <h2 class="mexa-card-title mexa-card-title-left">Critical Alarm Trend</h2>
+      <apx-chart *ngIf="trendSeries.length"
+        [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
+        [fill]="trendChart.fill" [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
+        [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
+        [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
+      <p *ngIf="!trendSeries.length" class="mexa-empty">No critical alarms in this period.</p>
+    </section>
+
+    <section class="mexa-card">
+      <h2 class="mexa-card-title">Alarms by Severity</h2>
+      <div class="mexa-donutrow" *ngIf="severityTotal > 0; else noSeverity">
+        <apx-chart
+          [series]="severitySeries" [chart]="severityDonut.chart" [labels]="severityDonut.labels"
+          [colors]="severityDonut.colors" [dataLabels]="severityDonut.dataLabels"
+          [plotOptions]="severityDonut.plotOptions" [legend]="severityDonut.legend"
+          [tooltip]="severityDonut.tooltip" [noData]="severityDonut.noData"></apx-chart>
+        <ul class="mexa-keylist">
+          <li>
+            <span class="mexa-key-swatch" style="--swatch:#e03131" aria-hidden="true"></span>
+            <span>
+              <span class="mexa-key-label">Critical</span>
+              <span class="mexa-key-value">{{ data.alarm_severity.critical }}</span>
+            </span>
+          </li>
+          <li>
+            <span class="mexa-key-swatch" style="--swatch:#17b3a3" aria-hidden="true"></span>
+            <span>
+              <span class="mexa-key-label">Non critical</span>
+              <span class="mexa-key-value">{{ data.alarm_severity.non_critical }}</span>
+            </span>
+          </li>
+          <li>
+            <span class="mexa-key-swatch" style="--swatch:#f5a623" aria-hidden="true"></span>
+            <span>
+              <span class="mexa-key-label">Information</span>
+              <span class="mexa-key-value">{{ data.alarm_severity.information }}</span>
+            </span>
+          </li>
+        </ul>
       </div>
+      <ng-template #noSeverity><p class="mexa-empty">No alarms in this period.</p></ng-template>
+    </section>
+
+    <section class="mexa-card">
+      <h2 class="mexa-card-title">Machine Wise Critical Alarms</h2>
+      <apx-chart *ngIf="machineSeries.length && machineCategories.length"
+        [series]="machineSeries" [chart]="machineChart.chart" [plotOptions]="machineChart.plotOptions"
+        [colors]="machineChart.colors" [dataLabels]="machineChart.dataLabels" [legend]="machineChart.legend"
+        [xaxis]="machineChart.xaxis" [yaxis]="machineChart.yaxis" [grid]="machineChart.grid"
+        [tooltip]="machineChart.tooltip" [noData]="machineChart.noData"></apx-chart>
+      <p *ngIf="!machineCategories.length" class="mexa-empty">No critical alarms in this period.</p>
+    </section>
+
+    <section class="mexa-card">
+      <h2 class="mexa-card-title mexa-card-title-left">Top 5 Critical Alarm Reasons</h2>
+      <apx-chart *ngIf="reasonSeries.length"
+        [series]="reasonSeries" [chart]="reasonChart.chart" [plotOptions]="reasonChart.plotOptions"
+        [colors]="reasonChart.colors" [dataLabels]="reasonChart.dataLabels" [legend]="reasonChart.legend"
+        [xaxis]="reasonChart.xaxis" [grid]="reasonChart.grid" [tooltip]="reasonChart.tooltip"
+        [noData]="reasonChart.noData"></apx-chart>
+      <p *ngIf="!reasonSeries.length" class="mexa-empty">No critical alarms in this period.</p>
+    </section>
+  </div>
+
+  <!-- ══════════ PM TICKETS ══════════ -->
+  <section class="mexa-card">
+    <div class="mexa-tablebar">
+      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">PM Tickets (Alarm Based)</h2>
+      <span class="inline-flex items-center gap-2 flex-wrap">
+        <label class="sr-only" for="pvSearch">Search tickets</label>
+        <input id="pvSearch" type="search" class="mexa-search" placeholder="Search"
+               [(ngModel)]="search" name="search" (ngModelChange)="onSearchInput()">
+        <button type="button" class="mexa-pagebtn" (click)="showRules = !showRules"
+                [attr.aria-expanded]="showRules">
+          {{ showRules ? 'Hide alarm rules' : 'Alarm rules' }}
+        </button>
+        <button type="button" class="mexa-pagebtn" (click)="reset()">Reset</button>
+      </span>
+    </div>
+
+    <div class="mexa-tablewrap">
+      <table class="mexa-table">
+        <caption class="sr-only">Preventive maintenance tickets raised from alarms</caption>
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Ticket No</th>
+            <th scope="col">Machine</th>
+            <th scope="col">Alarm Name</th>
+            <th scope="col">Priority</th>
+            <th scope="col">Triggered On</th>
+            <th scope="col">Due Date</th>
+            <th scope="col">Status</th>
+            <th scope="col">Age</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of data.tickets.data; let i = index">
+            <td class="num">{{ (data.tickets.page - 1) * limit + i + 1 }}</td>
+            <td class="num strong">{{ t.ticket_id }}</td>
+            <td>{{ t.machine_serial_no }}</td>
+            <td>
+              {{ t.alarm_name }}
+              <span *ngIf="t.threshold_count" class="mexa-rank-sub">
+                after {{ t.threshold_count }} occurrences
+              </span>
+            </td>
+            <td><span class="mexa-badge" [ngClass]="priorityBadge(t.priority)">{{ t.priority | titlecase }}</span></td>
+            <td class="num whitespace-nowrap">{{ t.created_at | date:'dd-MMM-yy HH:mm' }}</td>
+            <td class="num whitespace-nowrap">
+              {{ t.due_date ? (t.due_date | date:'dd-MMM-yy HH:mm') : '--' }}
+              <!-- overdue is a fact about the row, so it is said on the row -->
+              <span *ngIf="t.is_overdue" class="mexa-rank-sub" style="color:var(--mexa-bad)">overdue</span>
+            </td>
+            <td><span class="mexa-badge" [ngClass]="statusBadge(t.status)">{{ statusWord(t.status) }}</span></td>
+            <td class="num">{{ age(t.age_hours) }}</td>
+          </tr>
+          <tr *ngIf="!data.tickets.data.length">
+            <td colspan="9" class="mexa-empty">No tickets match these filters.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mexa-pager" *ngIf="data.tickets.total > 0">
+      <span aria-live="polite">Showing: {{ data.tickets.data.length }} of {{ data.tickets.total }}</span>
+      <span class="inline-flex items-center gap-2">
+        <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
+                [disabled]="data.tickets.page <= 1">‹ Previous</button>
+        <span>{{ data.tickets.page }} / {{ data.tickets.totalPages }}</span>
+        <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
+                [disabled]="data.tickets.page >= data.tickets.totalPages">Next ›</button>
+      </span>
+    </div>
+  </section>
+
+  <!-- ══════════ ALARM RULES ══════════ -->
+  <section class="mexa-card" *ngIf="showRules">
+    <h2 class="mexa-card-title mexa-card-title-left">Alarm Rules</h2>
+    <p class="mexa-card-hint">
+      A ticket is raised when an alarm repeats this many times inside the window.
+      Leave the machine blank to apply the rule to every machine.
+    </p>
+
+    <form class="grid gap-3 sm:grid-cols-2 lg:grid-cols-6 items-end my-4" (ngSubmit)="saveRule()">
       <div>
-        <label class="ui-label" for="pmMachine">Machine</label>
-        <select id="pmMachine" class="ui-input" [(ngModel)]="selectedMachine">
+        <label for="ruMachine" class="ui-label">Machine</label>
+        <select id="ruMachine" class="filter-select w-full" [(ngModel)]="ruleForm.machine_id" name="ruMachine">
           <option [ngValue]="null">All machines</option>
           <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
         </select>
       </div>
       <div>
-        <label class="ui-label" for="pmSearch">Search tickets</label>
-        <input id="pmSearch" class="ui-input" [(ngModel)]="search" (ngModelChange)="onSearchInput()"
-               placeholder="Ticket, machine or alarm" autocomplete="off" />
+        <label for="ruType" class="ui-label">Alarm type</label>
+        <input id="ruType" type="text" class="ui-input" [(ngModel)]="ruleForm.alarm_type" name="ruType">
       </div>
-      <div class="flex gap-2 lg:col-span-2">
-        <button type="button" class="ui-btn ui-btn-primary" (click)="submit()" [disabled]="loading">
-          <span *ngIf="loading" class="ui-spinner" aria-hidden="true"></span>
-          {{ loading ? 'Loading…' : 'Apply' }}
+      <div>
+        <label for="ruCount" class="ui-label">Occurrences</label>
+        <input id="ruCount" type="number" min="1" class="ui-input"
+               [(ngModel)]="ruleForm.threshold_count" name="ruCount">
+      </div>
+      <div>
+        <label for="ruWindow" class="ui-label">Within (hours)</label>
+        <input id="ruWindow" type="number" min="1" class="ui-input"
+               [(ngModel)]="ruleForm.window_hours" name="ruWindow">
+      </div>
+      <div>
+        <label for="ruDue" class="ui-label">Due in (hours)</label>
+        <input id="ruDue" type="number" min="1" class="ui-input"
+               [(ngModel)]="ruleForm.due_hours" name="ruDue">
+      </div>
+      <div>
+        <button type="submit" class="mexa-submit" [disabled]="savingRule">
+          {{ savingRule ? 'Saving…' : 'Save rule' }}
         </button>
-        <button type="button" class="ui-btn ui-btn-ghost" (click)="reset()">Reset</button>
       </div>
-    </div>
-  </div>
+    </form>
 
-  <div *ngIf="errorMsg" class="ui-alert ui-alert-error mb-4" role="alert">{{ errorMsg }}</div>
-
-  <!-- ── threshold rules ────────────────────────────────────── -->
-  <div class="ui-tabpanel mb-4" *ngIf="showRules">
-    <h3 class="ui-section-title">Threshold rules</h3>
-    <p class="ui-section-hint">
-      When an alarm repeats this many times inside the window, a preventive ticket is raised
-      automatically at the given priority and due date.
-    </p>
-
-    <div class="grid grid-cols-2 lg:grid-cols-7 gap-3 mt-4 items-end">
-      <div class="col-span-2">
-        <label class="ui-label" for="rAlarm">Alarm name<span class="ui-req" aria-hidden="true">*</span></label>
-        <input id="rAlarm" class="ui-input" [(ngModel)]="ruleForm.alarm_type"
-               placeholder="e.g. SPINDLE_OVERLOAD" autocomplete="off" />
-      </div>
-      <div>
-        <label class="ui-label" for="rMachine">Machine</label>
-        <select id="rMachine" class="ui-input" [(ngModel)]="ruleForm.machine_id">
-          <option [ngValue]="null">All</option>
-          <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-        </select>
-      </div>
-      <div>
-        <label class="ui-label" for="rCount">Triggers</label>
-        <input id="rCount" class="ui-input" type="number" min="1" [(ngModel)]="ruleForm.threshold_count" />
-      </div>
-      <div>
-        <label class="ui-label" for="rWindow">Within</label>
-        <div class="ui-unit-wrap">
-          <input id="rWindow" class="ui-input" type="number" min="1" [(ngModel)]="ruleForm.window_hours" />
-          <span class="ui-unit" aria-hidden="true">h</span>
-        </div>
-      </div>
-      <div>
-        <label class="ui-label" for="rDue">Due in</label>
-        <div class="ui-unit-wrap">
-          <input id="rDue" class="ui-input" type="number" min="1" [(ngModel)]="ruleForm.due_hours" />
-          <span class="ui-unit" aria-hidden="true">h</span>
-        </div>
-      </div>
-      <div>
-        <label class="ui-label" for="rPriority">Priority</label>
-        <select id="rPriority" class="ui-input" [(ngModel)]="ruleForm.priority">
-          <option value="LOW">Low</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="HIGH">High</option>
-          <option value="CRITICAL">Critical</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="flex justify-end mt-3">
-      <button type="button" class="ui-btn ui-btn-primary" (click)="saveRule()" [disabled]="savingRule">
-        <span *ngIf="savingRule" class="ui-spinner" aria-hidden="true"></span>
-        {{ savingRule ? 'Saving…' : 'Save rule' }}
-      </button>
-    </div>
-
-    <div class="overflow-x-auto mt-4" *ngIf="thresholds.length">
-      <table class="w-full text-sm">
-        <caption class="sr-only">Configured alarm threshold rules</caption>
-        <thead class="border-b border-slate-200 dark:border-slate-700">
-          <tr class="text-left">
-            <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Alarm</th>
-            <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Machine</th>
-            <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Rule</th>
-            <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Due in</th>
-            <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Priority</th>
-            <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300"><span class="sr-only">Actions</span></th>
+    <div class="mexa-tablewrap">
+      <table class="mexa-table">
+        <caption class="sr-only">Configured alarm rules</caption>
+        <thead>
+          <tr>
+            <th scope="col">Scope</th>
+            <th scope="col">Alarm Type</th>
+            <th scope="col">Occurrences</th>
+            <th scope="col">Window</th>
+            <th scope="col">Due In</th>
+            <th scope="col">Priority</th>
+            <th scope="col">Tickets Raised</th>
+            <th scope="col">Active</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+        <tbody>
           <tr *ngFor="let r of thresholds">
-            <td class="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">{{ r.alarm_type }}</td>
-            <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.machine_serial_no || 'All machines' }}</td>
-            <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.threshold_count }} in {{ r.window_hours }}h</td>
-            <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.due_hours }}h</td>
-            <td class="px-3 py-2">
-              <span class="px-2 py-1 rounded-md text-xs font-semibold" [class]="priorityClass(r.priority)">{{ r.priority }}</span>
+            <td class="strong">{{ r.machine_serial_no || r.scope_machine || 'All machines' }}</td>
+            <td>{{ r.alarm_type || 'Any' }}</td>
+            <td class="num">{{ r.threshold_count }}</td>
+            <td class="num">{{ r.window_hours }}h</td>
+            <td class="num">{{ r.due_hours }}h</td>
+            <td><span class="mexa-badge" [ngClass]="priorityBadge(r.priority)">{{ r.priority | titlecase }}</span></td>
+            <td class="num">{{ r.tickets_created ?? 0 }}</td>
+            <td>
+              <span class="mexa-badge" [class.mexa-badge-good]="r.is_active"
+                    [class.mexa-badge-neutral]="!r.is_active">
+                {{ r.is_active ? 'Active' : 'Off' }}
+              </span>
             </td>
-            <td class="px-3 py-2 text-right">
-              <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="deleteRule(r)"
-                      [attr.aria-label]="'Delete rule for ' + r.alarm_type">Delete</button>
-            </td>
+          </tr>
+          <tr *ngIf="!thresholds.length">
+            <td colspan="8" class="mexa-empty">No rules configured yet.</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p *ngIf="!thresholds.length" class="ui-hint mt-3">No rules yet. Add one above to start raising preventive tickets.</p>
-  </div>
-
-  <ng-container *ngIf="data as d">
-
-    <!--
-      Nothing configured yet. Shown instead of a wall of zeros, which would
-      read as a broken screen rather than an unconfigured one.
-    -->
-    <div class="ui-tabpanel text-center py-12" *ngIf="isUnconfigured; else content">
-      <mat-icon class="!w-12 !h-12 !text-5xl text-slate-300 dark:text-slate-600" aria-hidden="true">event_repeat</mat-icon>
-      <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mt-3">No preventive maintenance set up yet</h3>
-      <p class="ui-hint max-w-xl mx-auto mt-2">
-        Preventive tickets are raised automatically when an alarm repeats more often than you allow.
-        Add a threshold rule — for example <span class="font-medium">3 SPINDLE_OVERLOAD alarms in 24 hours</span> —
-        and tickets will appear here as soon as machines breach it.
-      </p>
-      <button type="button" class="ui-btn ui-btn-primary mt-4" (click)="showRules = true">
-        Add the first rule
-      </button>
-    </div>
-
-    <ng-template #content>
-
-      <!-- ── headline numbers ─────────────────────────────────── -->
-      <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-        <div class="ui-tabpanel">
-          <p class="ui-section-title">Critical alarms</p>
-          <p class="text-3xl font-bold mt-1"
-             [class]="d.kpis.critical_alarms > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-slate-100'">
-            {{ d.kpis.critical_alarms }}
-          </p>
-          <p class="ui-hint">{{ d.kpis.critical_alarms_open }} still unresolved</p>
-        </div>
-
-        <div class="ui-tabpanel">
-          <p class="ui-section-title">PM tickets raised</p>
-          <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ d.kpis.pm_generated }}</p>
-          <p class="ui-hint">All time</p>
-        </div>
-
-        <div class="ui-tabpanel">
-          <p class="ui-section-title">Open</p>
-          <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ d.kpis.pm_open }}</p>
-          <p class="ui-hint">Needing attention</p>
-        </div>
-
-        <div class="ui-tabpanel">
-          <p class="ui-section-title">Overdue</p>
-          <p class="text-3xl font-bold mt-1"
-             [class]="d.kpis.pm_overdue > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-slate-100'">
-            {{ d.kpis.pm_overdue }}
-          </p>
-          <p class="ui-hint">Past their due date</p>
-        </div>
-
-        <div class="ui-tabpanel">
-          <p class="ui-section-title">Avg resolution</p>
-          <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">
-            {{ hours(d.kpis.avg_resolution_hours) }}
-          </p>
-          <p class="ui-hint">
-            {{ d.kpis.resolved_count ? 'Across ' + d.kpis.resolved_count + ' resolved' : 'None resolved yet' }}
-          </p>
-        </div>
-      </div>
-
-      <!-- ── alarm charts ─────────────────────────────────────── -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        <div class="ui-tabpanel">
-          <h3 class="ui-section-title">Critical alarm trend</h3>
-          <p class="ui-section-hint">Last seven days, ending on the selected date.</p>
-          <apx-chart *ngIf="trendSeries.length"
-            [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
-            [fill]="trendChart.fill" [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
-            [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
-            [tooltip]="trendChart.tooltip"></apx-chart>
-        </div>
-
-        <div class="ui-tabpanel">
-          <h3 class="ui-section-title">Critical alarms by machine</h3>
-          <p class="ui-section-hint">Worst offenders on the selected date.</p>
-          <apx-chart *ngIf="machineCategories.length"
-            [series]="machineSeries" [chart]="machineChart.chart" [plotOptions]="machineChart.plotOptions"
-            [colors]="machineChart.colors" [dataLabels]="machineChart.dataLabels"
-            [xaxis]="machineChart.xaxis" [grid]="machineChart.grid" [tooltip]="machineChart.tooltip"></apx-chart>
-          <p *ngIf="!machineCategories.length" class="ui-hint py-10 text-center">
-            No critical alarms on this date.
-          </p>
-        </div>
-      </div>
-
-      <!-- ── severity, status, reasons ────────────────────────── -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-        <div class="ui-tabpanel">
-          <h3 class="ui-section-title">Alarms by severity</h3>
-          <div class="grid grid-cols-3 gap-3 mt-4">
-            <div class="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-3">
-              <p class="text-xs font-semibold text-red-800 dark:text-red-300">Critical</p>
-              <p class="text-2xl font-bold text-red-800 dark:text-red-300">{{ d.alarm_severity.critical }}</p>
-            </div>
-            <div class="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-3">
-              <p class="text-xs font-semibold text-amber-800 dark:text-amber-300">Non-critical</p>
-              <p class="text-2xl font-bold text-amber-800 dark:text-amber-300">{{ d.alarm_severity.non_critical }}</p>
-            </div>
-            <div class="rounded-lg border border-sky-200 bg-sky-50 dark:bg-sky-900/20 dark:border-sky-800 p-3">
-              <p class="text-xs font-semibold text-sky-800 dark:text-sky-300">Information</p>
-              <p class="text-2xl font-bold text-sky-800 dark:text-sky-300">{{ d.alarm_severity.information }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="ui-tabpanel">
-          <h3 class="ui-section-title">PM ticket status</h3>
-          <div class="grid grid-cols-3 gap-3 mt-4">
-            <div class="rounded-lg border border-sky-200 bg-sky-50 dark:bg-sky-900/20 dark:border-sky-800 p-3">
-              <p class="text-xs font-semibold text-sky-800 dark:text-sky-300">Open</p>
-              <p class="text-2xl font-bold text-sky-800 dark:text-sky-300">{{ d.ticket_status.open }}</p>
-            </div>
-            <div class="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-3">
-              <p class="text-xs font-semibold text-amber-800 dark:text-amber-300">In progress</p>
-              <p class="text-2xl font-bold text-amber-800 dark:text-amber-300">{{ d.ticket_status.in_progress }}</p>
-            </div>
-            <div class="rounded-lg border border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800 p-3">
-              <p class="text-xs font-semibold text-emerald-800 dark:text-emerald-300">Completed</p>
-              <p class="text-2xl font-bold text-emerald-800 dark:text-emerald-300">{{ d.ticket_status.completed }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="ui-tabpanel">
-          <h3 class="ui-section-title">Top alarm reasons</h3>
-          <ul class="mt-3 space-y-2" *ngIf="d.top_alarm_reasons.length; else noReasons">
-            <li *ngFor="let r of d.top_alarm_reasons" class="flex items-center justify-between text-sm">
-              <span class="text-slate-700 dark:text-slate-200">{{ r.alarm_type }}</span>
-              <span class="text-slate-500 dark:text-slate-400">
-                {{ r.occurrences }}<span *ngIf="r.critical" class="text-red-600 dark:text-red-400"> · {{ r.critical }} critical</span>
-              </span>
-            </li>
-          </ul>
-          <ng-template #noReasons><p class="ui-hint mt-3">No alarms on this date.</p></ng-template>
-        </div>
-      </div>
-
-      <!-- ── open PM tickets ──────────────────────────────────── -->
-      <div class="ui-tabpanel mb-4">
-        <h3 class="ui-section-title">Preventive maintenance tickets</h3>
-        <p class="ui-section-hint">Soonest due first. Tickets with no due date appear last.</p>
-
-        <div class="overflow-x-auto mt-4">
-          <table class="w-full text-sm">
-            <caption class="sr-only">Ticket, machine, alarm, priority, status, created, due date and age</caption>
-            <thead class="border-b border-slate-200 dark:border-slate-700">
-              <tr class="text-left">
-                <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Ticket</th>
-                <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Machine</th>
-                <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Alarm</th>
-                <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Priority</th>
-                <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Status</th>
-                <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Created</th>
-                <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Due</th>
-                <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Age</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-              <tr *ngFor="let t of d.tickets.data" class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                <td class="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">#{{ t.ticket_id }}</td>
-                <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ t.machine_serial_no || '—' }}</td>
-                <td class="px-3 py-2 text-slate-600 dark:text-slate-300">
-                  {{ t.alarm_name || '—' }}
-                  <span *ngIf="t.threshold_count" class="text-xs text-slate-400">({{ t.threshold_count }}×)</span>
-                </td>
-                <td class="px-3 py-2">
-                  <span class="px-2 py-1 rounded-md text-xs font-semibold" [class]="priorityClass(t.priority)">{{ t.priority }}</span>
-                </td>
-                <td class="px-3 py-2">
-                  <span class="px-2 py-1 rounded-md text-xs font-semibold" [class]="statusClass(t.status)">{{ t.status }}</span>
-                </td>
-                <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ t.created_at | date:'dd MMM HH:mm' }}</td>
-                <td class="px-3 py-2">
-                  <ng-container *ngIf="t.due_date; else noDue">
-                    <span [class]="t.is_overdue ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-slate-600 dark:text-slate-300'">
-                      {{ t.due_date | date:'dd MMM HH:mm' }}
-                    </span>
-                    <!-- word, not just colour -->
-                    <span *ngIf="t.is_overdue" class="ml-1 text-xs text-red-600 dark:text-red-400">Overdue</span>
-                  </ng-container>
-                  <ng-template #noDue><span class="text-slate-400">—</span></ng-template>
-                </td>
-                <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ age(t.age_hours) }}</td>
-              </tr>
-              <tr *ngIf="!d.tickets.data.length">
-                <td colspan="8" class="px-3 py-10 text-center text-slate-400">
-                  {{ search ? 'No tickets match "' + search + '".' : 'No preventive tickets yet.' }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="flex items-center justify-between mt-3" *ngIf="d.tickets.total > d.tickets.limit">
-          <p class="ui-hint !mt-0">
-            {{ (d.tickets.page - 1) * d.tickets.limit + 1 }}–{{ (d.tickets.page - 1) * d.tickets.limit + d.tickets.data.length }}
-            of {{ d.tickets.total }}
-          </p>
-          <div class="flex gap-2">
-            <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm"
-                    [disabled]="d.tickets.page <= 1" (click)="changePage(-1)">Previous</button>
-            <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm"
-                    [disabled]="d.tickets.page >= d.tickets.totalPages" (click)="changePage(1)">Next</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── alarm trigger summary ────────────────────────────── -->
-      <div class="ui-tabpanel" *ngIf="d.alarm_triggers.length">
-        <h3 class="ui-section-title">Alarm trigger summary</h3>
-        <p class="ui-section-hint">How often each rule's alarm fired on this date, and how many tickets it has raised in total.</p>
-
-        <div class="overflow-x-auto mt-4">
-          <table class="w-full text-sm">
-            <caption class="sr-only">Alarm name, threshold, occurrences and tickets created</caption>
-            <thead class="border-b border-slate-200 dark:border-slate-700">
-              <tr class="text-left">
-                <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Alarm</th>
-                <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Scope</th>
-                <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Threshold</th>
-                <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Triggers</th>
-                <th scope="col" class="px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">PM tickets</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-              <tr *ngFor="let r of d.alarm_triggers">
-                <td class="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">
-                  {{ r.alarm_type }}
-                  <span *ngIf="!r.is_active" class="ml-1 text-xs text-slate-400">(inactive)</span>
-                </td>
-                <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.scope_machine || 'All machines' }}</td>
-                <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.threshold_count }} in {{ r.window_hours }}h</td>
-                <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.occurrences }}</td>
-                <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ r.tickets_created }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </ng-template>
-  </ng-container>
-
-  <div *ngIf="!data && !errorMsg" class="ui-tabpanel text-center py-16">
-    <p class="ui-hint">Loading preventive maintenance data…</p>
-  </div>
-
-</div>
+  </section>
+</ng-container>

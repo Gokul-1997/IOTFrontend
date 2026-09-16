@@ -41,15 +41,15 @@ export class HeaderComponent implements OnInit {
       label: 'Dashboards', icon: 'dashnew',
       children: [
         { label: 'Live Dashboard', path: '/dashboard', permission: 'page:dashboard' },
-        { label: 'Factory Overall', path: '/factory', permission: 'page:dashboard' },
-        { label: 'Maintenance', path: '/maintenance-dashboard', permission: 'page:dashboard' },
-        { label: 'Preventive', path: '/preventive-maintenance', permission: 'page:dashboard' },
-        { label: 'Periodic', path: '/periodic-maintenance', permission: 'page:dashboard' },
-        { label: 'Alarms', path: '/alarm-report', permission: 'page:dashboard' },
-        { label: 'Downtime', path: '/downtime-analysis', permission: 'page:dashboard' },
-        { label: 'Operators', path: '/operator-performance', permission: 'page:dashboard' },
-        { label: 'OEE', path: '/oee-dashboard', permission: 'page:dashboard' },
-        { label: 'Energy', path: '/energy-dashboard', permission: 'page:dashboard' }
+        // { label: 'Factory Overall', path: '/factory', permission: 'page:dashboard' },
+        // { label: 'Maintenance', path: '/maintenance-dashboard', permission: 'page:dashboard' },
+        // { label: 'Preventive', path: '/preventive-maintenance', permission: 'page:dashboard' },
+        // { label: 'Periodic', path: '/periodic-maintenance', permission: 'page:dashboard' },
+        // { label: 'Alarms', path: '/alarm-report', permission: 'page:dashboard' },
+        // { label: 'Downtime', path: '/downtime-analysis', permission: 'page:dashboard' },
+        // { label: 'Operators', path: '/operator-performance', permission: 'page:dashboard' },
+        // { label: 'OEE', path: '/oee-dashboard', permission: 'page:dashboard' },
+        // { label: 'Energy', path: '/energy-dashboard', permission: 'page:dashboard' }
       ]
     },
     {
@@ -61,10 +61,10 @@ export class HeaderComponent implements OnInit {
         { label: 'Quality', path: '/quality', permission: 'page:quality' }
       ]
     },
-    { label: 'Alarms', path: '/alarms', icon: 'alerts', permission: 'page:alarms' },
-    { label: 'Downtime', path: '/downtime', icon: 'downtime', permission: 'page:downtime' },
-    { label: 'Maintenance', path: '/maintenance', icon: 'maintenance', permission: 'page:maintenance' },
-    { label: 'Production Plans', path: '/production-plans', icon: 'plans', permission: 'page:production-plans' },
+    // { label: 'Alarms', path: '/alarms', icon: 'alerts', permission: 'page:alarms' },
+    // { label: 'Downtime', path: '/downtime', icon: 'downtime', permission: 'page:downtime' },
+    // { label: 'Maintenance', path: '/maintenance', icon: 'maintenance', permission: 'page:maintenance' },
+    // { label: 'Production Plans', path: '/production-plans', icon: 'plans', permission: 'page:production-plans' },
     {
       label: 'Settings', icon: 'gearnew',
       children: [

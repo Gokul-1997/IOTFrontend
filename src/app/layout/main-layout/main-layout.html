@@ -1,5 +1,16 @@
 <app-header></app-header>
 
-<div >
-  <router-outlet></router-outlet>
+<!--
+  The gradient field every dashboard sits on. Putting it here rather than
+  on each page means a screen cannot be added and quietly miss it, and the
+  footer is written once instead of nine times.
+-->
+<div class="mexa-shell">
+  <div class="mexa-page">
+    <router-outlet></router-outlet>
+  </div>
+
+  <footer class="mexa-footer">
+    Copyright {{ year }}. All Rights Reserved <strong>STM Mexa</strong>.
+  </footer>
 </div>

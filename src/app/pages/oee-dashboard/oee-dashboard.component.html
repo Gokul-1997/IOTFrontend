@@ -1,259 +1,314 @@
-<div class="p-4 sm:p-6 space-y-5 min-w-0">
+<!-- Phase 2 · Screen 8 — OEE Dashboard, MEXA design. -->
 
-  <!-- ══════════ HEADER ══════════ -->
-  <div class="flex flex-wrap items-start justify-between gap-3">
-    <div class="min-w-0">
-      <h1 class="text-xl font-semibold text-gray-800 dark:text-gray-100">OEE</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400">
-        Availability × Performance × Quality, recomputed from the period's totals.
-        <span *ngIf="updatedAt" class="ml-1">Updated {{ updatedAt }}.</span>
+<p class="mexa-updated" *ngIf="updatedAt">
+  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
+  Last Updated: {{ updatedAt }}
+</p>
+
+<!-- ══════════ TITLE BAR ══════════ -->
+<form class="mexa-titlebar" (ngSubmit)="submit()">
+  <h1 class="mexa-title">OEE Dashboard</h1>
+
+  <div class="mexa-statuschips" *ngIf="data">
+    <span class="mexa-statuschip" style="--chip:#22c55e">Running: {{ data.status_counts.RUNNING }}</span>
+    <span class="mexa-statuschip" style="--chip:#f5a623">Idle: {{ data.status_counts.IDLE }}</span>
+    <span class="mexa-statuschip" style="--chip:#e03131">Alarm: {{ data.status_counts.ALARM }}</span>
+    <span class="mexa-statuschip" style="--chip:#94a3b8">Offline: {{ data.status_counts.OFFLINE }}</span>
+  </div>
+
+  <span class="mexa-titlebar-spacer"></span>
+
+  <div class="mexa-filters">
+    <label class="mexa-filter-label" for="oeShift">Shift</label>
+    <select id="oeShift" class="mexa-select" [(ngModel)]="f.shift_id" name="shift">
+      <option [ngValue]="null">All</option>
+      <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_name || s.name }}</option>
+    </select>
+
+    <label class="mexa-filter-label" for="oeFrom">Date</label>
+    <input id="oeFrom" type="date" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
+    <span class="mexa-filter-label" aria-hidden="true">–</span>
+    <input id="oeTo" type="date" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
+
+    <button type="submit" class="mexa-submit" [disabled]="loading">
+      {{ loading ? 'Loading…' : 'Submit' }}
+    </button>
+  </div>
+</form>
+
+<!-- ══════════ STATES ══════════ -->
+<p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
+<div *ngIf="loading && !data" class="mexa-note" aria-live="polite">Loading…</div>
+
+<ng-container *ngIf="data">
+
+  <!-- OEE needs a cycle time per machine; without one, performance cannot
+       be computed at all. Said plainly rather than shown as a low score. -->
+  <p *ngIf="data.coverage.oee_computable < data.coverage.machines" class="mexa-note mexa-note-warn">
+    <strong>{{ data.coverage.oee_computable }} of {{ data.coverage.machines }} machines have a computable OEE.</strong>
+    {{ data.coverage.note }}
+  </p>
+
+  <!-- ══════════ KPI TILES ══════════ -->
+  <div class="mexa-kpis">
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Average<br>OEE</span>
+        <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true">
+          <mat-icon>settings</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ pct(data.kpis.oee_pct) }}</p>
+      <p class="mexa-kpi-sub">
+        Target {{ data.thresholds.good }}%
+        <span *ngIf="gapToTarget !== null">
+          · <span class="mexa-delta" [class.mexa-delta-up]="gapToTarget >= 0"
+                  [class.mexa-delta-down]="gapToTarget < 0">
+              {{ gapToTarget >= 0 ? '▲' : '▼' }} {{ absPct(gapToTarget) }}
+            </span>
+          {{ gapToTarget >= 0 ? 'above' : 'below' }}
+        </span>
       </p>
     </div>
-    <div class="flex items-center gap-1" role="group" aria-label="Export the filtered list">
-      <button type="button" class="ui-btn ui-btn-ghost" (click)="export('xlsx')" [disabled]="exporting">
-        {{ exporting === 'xlsx' ? '…' : 'Excel' }}
-      </button>
-      <button type="button" class="ui-btn ui-btn-ghost" (click)="export('csv')" [disabled]="exporting">
-        {{ exporting === 'csv' ? '…' : 'CSV' }}
-      </button>
-      <button type="button" class="ui-btn ui-btn-ghost" (click)="export('pdf')" [disabled]="exporting">
-        {{ exporting === 'pdf' ? '…' : 'PDF' }}
-      </button>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Average<br>Availability</span>
+        <span class="mexa-kpi-icon" style="background:#17b3a3" aria-hidden="true">
+          <mat-icon>schedule</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ pct(data.kpis.availability_pct) }}</p>
+      <p class="mexa-kpi-sub">Run time over planned time</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Average<br>Performance</span>
+        <span class="mexa-kpi-icon" style="background:#3b9ae1" aria-hidden="true">
+          <mat-icon>speed</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ pct(data.kpis.performance_pct) }}</p>
+      <p class="mexa-kpi-sub">{{ data.coverage.with_cycle_time }} machines have a cycle time</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Average<br>Quality</span>
+        <span class="mexa-kpi-icon" style="background:#9b7ec8" aria-hidden="true">
+          <mat-icon>water_drop</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ pct(data.kpis.quality_pct) }}</p>
+      <p class="mexa-kpi-sub">{{ data.kpis.rejected }} rejected</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Total<br>Production</span>
+        <span class="mexa-kpi-icon" style="background:#6b7280" aria-hidden="true">
+          <mat-icon>inventory_2</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ data.kpis.produced }}</p>
+      <p class="mexa-kpi-sub">Pcs · {{ data.kpis.good }} good</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Total<br>Downtime</span>
+        <span class="mexa-kpi-icon" style="background:#f5a623" aria-hidden="true">
+          <mat-icon>timer_off</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ hours(data.kpis.downtime_seconds) }}</p>
+      <p class="mexa-kpi-sub">{{ data.kpis.alarm_count }} alarms</p>
     </div>
   </div>
 
-  <!-- ══════════ FILTERS ══════════ -->
-  <form class="ui-viewbar grid gap-3 sm:grid-cols-2 lg:grid-cols-5 items-end" (ngSubmit)="submit()">
-    <div>
-      <label for="oeFrom" class="ui-label">From</label>
-      <input id="oeFrom" type="date" class="ui-input" [(ngModel)]="f.from" name="from" (ngModelChange)="submit()">
-    </div>
-    <div>
-      <label for="oeTo" class="ui-label">To</label>
-      <input id="oeTo" type="date" class="ui-input" [(ngModel)]="f.to" name="to" (ngModelChange)="submit()">
-    </div>
-    <div>
-      <label for="oeMachine" class="ui-label">Machine</label>
-      <select id="oeMachine" class="filter-select w-full" [(ngModel)]="f.machine_id" name="machine" (ngModelChange)="submit()">
-        <option [ngValue]="null">All machines</option>
-        <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-      </select>
-    </div>
-    <div>
-      <label for="oeShift" class="ui-label">Shift</label>
-      <select id="oeShift" class="filter-select w-full" [(ngModel)]="f.shift_id" name="shift" (ngModelChange)="submit()">
-        <option [ngValue]="null">All shifts</option>
-        <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.name || s.shift_name }}</option>
-      </select>
-    </div>
-    <div>
-      <label for="oeSearch" class="ui-label">Search</label>
-      <input id="oeSearch" type="search" class="ui-input" placeholder="Machine or model"
-             [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
-    </div>
-    <div class="sm:col-span-2 lg:col-span-5">
-      <button type="button" class="ui-btn ui-btn-ghost" (click)="reset()">Reset filters</button>
-    </div>
-  </form>
+  <!-- ══════════ TABS ══════════ -->
+  <div class="mexa-tabs" role="tablist" aria-label="OEE views">
+    <button type="button" class="mexa-tab" role="tab" id="tabAnalytics"
+            aria-controls="panelOee" [attr.aria-selected]="tab === 'analytics'"
+            (click)="tab = 'analytics'">Analytics</button>
+    <button type="button" class="mexa-tab" role="tab" id="tabReport"
+            aria-controls="panelOee" [attr.aria-selected]="tab === 'report'"
+            (click)="tab = 'report'">Report</button>
+  </div>
 
-  <!-- ══════════ STATES ══════════ -->
-  <p *ngIf="errorMsg" class="ui-alert ui-alert-error" role="alert">{{ errorMsg }}</p>
-  <div *ngIf="loading && !data" class="ui-alert" aria-live="polite">Loading…</div>
+  <section class="mexa-card mexa-tabpanel" id="panelOee" role="tabpanel"
+           [attr.aria-labelledby]="tab === 'analytics' ? 'tabAnalytics' : 'tabReport'">
 
-  <ng-container *ngIf="data">
+    <!-- ─────────── ANALYTICS ─────────── -->
+    <ng-container *ngIf="tab === 'analytics'">
 
-    <!-- Said before any number, because it decides how much of this screen
-         means anything. Performance needs a cycle time. -->
-    <div *ngIf="data.coverage.with_cycle_time < data.coverage.machines" class="ui-alert ui-alert-info">
-      <strong>{{ data.coverage.with_cycle_time }} of {{ data.coverage.machines }} machines have a cycle time.</strong>
-      {{ data.coverage.note }}
-    </div>
+      <div class="mexa-oeecards">
+        <article *ngFor="let m of data.machines.data" class="mexa-oeecard" [ngClass]="bandTile(m.band)">
+          <div class="mexa-oeecard-head">
+            <span class="mexa-oeecard-name">{{ m.machine_serial_no }}</span>
+            <span class="mexa-oeecard-grade">{{ bandWord(m.band) }}</span>
+          </div>
 
-    <!-- ══════════ LIVE STATUS ══════════ -->
-    <div class="grid gap-3 grid-cols-2 lg:grid-cols-4">
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Running</p>
-        <p class="text-3xl font-bold text-emerald-700 dark:text-emerald-400 mt-1">{{ data.status_counts.RUNNING }}</p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Idle</p>
-        <p class="text-3xl font-bold text-amber-700 dark:text-amber-400 mt-1">{{ data.status_counts.IDLE }}</p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Alarm</p>
-        <p class="text-3xl font-bold text-red-700 dark:text-red-400 mt-1">{{ data.status_counts.ALARM }}</p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Offline</p>
-        <p class="text-3xl font-bold text-slate-500 mt-1">{{ data.status_counts.OFFLINE }}</p>
-        <p class="ui-hint">No telemetry in the last hour</p>
-      </div>
-    </div>
-
-    <!-- ══════════ OEE KPIs ══════════ -->
-    <div class="grid gap-3 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">OEE</p>
-        <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ pct(data.kpis.oee_pct) }}</p>
-        <p class="ui-hint">
-          <span class="px-2 py-0.5 rounded-md text-xs font-medium" [class]="bandClass(data.kpis.band)">
-            {{ data.kpis.band | titlecase }}
-          </span>
-        </p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Availability</p>
-        <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ pct(data.kpis.availability_pct) }}</p>
-        <p class="ui-hint">Run of planned time</p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Performance</p>
-        <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ pct(data.kpis.performance_pct) }}</p>
-        <p class="ui-hint">{{ data.kpis.machines_measurable }} of {{ data.kpis.machines_total }} machines</p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Quality</p>
-        <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ pct(data.kpis.quality_pct) }}</p>
-        <p class="ui-hint">Good of produced</p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Total production</p>
-        <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ data.kpis.produced }}</p>
-        <p class="ui-hint">{{ data.kpis.rejected }} rejected</p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Total downtime</p>
-        <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hours(data.kpis.downtime_seconds) }}</p>
-        <p class="ui-hint">{{ hours(data.kpis.idle_seconds) }} idle</p>
-      </div>
-    </div>
-
-    <!-- ══════════ TREND + RANKINGS ══════════ -->
-    <div class="grid gap-4 lg:grid-cols-3">
-      <section class="ui-tabpanel lg:col-span-2 min-w-0">
-        <h2 class="ui-section-title">Availability trend</h2>
-        <apx-chart *ngIf="trendSeries.length"
-          [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
-          [fill]="trendChart.fill" [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
-          [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
-          [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
-      </section>
-
-      <section class="ui-tabpanel min-w-0 space-y-4">
-        <div>
-          <h2 class="ui-section-title">Top 5 machines</h2>
-          <p *ngIf="!data.top_machines.length" class="text-sm text-gray-400">No computable OEE.</p>
-          <ol class="divide-y divide-gray-100 dark:divide-gray-700">
-            <li *ngFor="let m of data.top_machines; let i = index"
-                class="py-1.5 flex items-center justify-between gap-2">
-              <span class="text-sm text-gray-700 dark:text-gray-200 truncate">
-                <span class="text-xs text-gray-400 mr-1">{{ i + 1 }}.</span>{{ m.machine_serial_no }}
+          <div class="mexa-oeecard-body">
+            <!-- the figure is printed inside; the ring is decoration -->
+            <span class="mexa-oeering" aria-hidden="true"
+                  [style.--pct.%]="m.oee_pct || 0" [style.--ring-hole]="bandColour(m.band)">
+              <span class="mexa-oeering-text">
+                <span class="mexa-oeering-pct">{{ m.oee_pct === null ? '--' : m.oee_pct + '%' }}</span>
+                <span class="mexa-oeering-cap">OEE</span>
               </span>
-              <span class="text-xs font-medium text-gray-600 dark:text-gray-300">{{ pct(m.oee_pct) }}</span>
-            </li>
-          </ol>
-        </div>
-        <div>
-          <h2 class="ui-section-title">Bottom 5 machines</h2>
-          <p *ngIf="!data.bottom_machines.length" class="text-sm text-gray-400">Not enough machines to rank.</p>
-          <ol class="divide-y divide-gray-100 dark:divide-gray-700">
-            <li *ngFor="let m of data.bottom_machines" class="py-1.5 flex items-center justify-between gap-2">
-              <span class="text-sm text-gray-700 dark:text-gray-200 truncate">{{ m.machine_serial_no }}</span>
-              <span class="text-xs font-medium text-red-700 dark:text-red-400">{{ pct(m.oee_pct) }}</span>
-            </li>
-          </ol>
-        </div>
+            </span>
+
+            <div class="mexa-oeecard-metrics">
+              <div><span>Availability</span><span class="num">{{ pct(m.availability_pct) }}</span></div>
+              <div><span>Performance</span><span class="num">{{ pct(m.performance_pct) }}</span></div>
+              <div><span>Quality</span><span class="num">{{ pct(m.quality_pct) }}</span></div>
+            </div>
+          </div>
+
+          <!-- said on the tile, because a dash needs explaining -->
+          <p *ngIf="!m.has_cycle_time" class="text-xs opacity-90">No cycle time set</p>
+        </article>
+
+        <p *ngIf="!data.machines.data.length" class="mexa-empty">No machines match these filters.</p>
+      </div>
+
+      <div class="mexa-pager" *ngIf="data.machines.total > 0">
+        <span aria-live="polite">Total Machines {{ data.machines.total }}</span>
+
+        <span class="mexa-bandlegend">
+          <span><i style="--dot:#15803d"></i>&gt; {{ data.thresholds.good }}% (Excellent)</span>
+          <span><i style="--dot:#2f2d8f"></i>{{ data.thresholds.fair }}–{{ data.thresholds.good }}% (Good)</span>
+          <span><i style="--dot:#b45309"></i>&lt; {{ data.thresholds.fair }}% (Needs improvement)</span>
+          <span><i style="--dot:#94a3b8"></i>Not measurable</span>
+        </span>
+
+        <span class="inline-flex items-center gap-2">
+          <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
+                  [disabled]="data.machines.page <= 1">‹ Previous</button>
+          <span>{{ data.machines.page }} / {{ data.machines.totalPages }}</span>
+          <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
+                  [disabled]="data.machines.page >= data.machines.totalPages">Next ›</button>
+        </span>
+      </div>
+
+      <div class="mexa-grid lg:grid-cols-3 mt-4">
+        <section class="mexa-card lg:col-span-2" style="box-shadow:none;border:1px solid var(--mexa-rule)">
+          <h2 class="mexa-card-title mexa-card-title-left">OEE Trend</h2>
+          <apx-chart *ngIf="trendSeries.length"
+            [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
+            [fill]="trendChart.fill" [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
+            [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
+            [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
+          <p *ngIf="!trendSeries.length" class="mexa-empty">No production recorded for this period.</p>
+        </section>
+
+        <section class="mexa-card" style="box-shadow:none;border:1px solid var(--mexa-rule)">
+          <h2 class="mexa-card-title mexa-card-title-left">Machines by OEE</h2>
+          <apx-chart *ngIf="rankSeries.length"
+            [series]="rankSeries" [chart]="rankChart.chart" [plotOptions]="rankChart.plotOptions"
+            [colors]="rankChart.colors" [dataLabels]="rankChart.dataLabels" [legend]="rankChart.legend"
+            [xaxis]="rankChart.xaxis" [grid]="rankChart.grid" [tooltip]="rankChart.tooltip"
+            [noData]="rankChart.noData"></apx-chart>
+          <p *ngIf="!rankSeries.length" class="mexa-empty">No machine has a computable OEE.</p>
+        </section>
+      </div>
+
+      <section class="mexa-card mt-4" style="box-shadow:none;border:1px solid var(--mexa-rule)"
+               *ngIf="compSeries.length && compCategories.length">
+        <h2 class="mexa-card-title mexa-card-title-left">Availability, Performance and Quality by Machine</h2>
+        <apx-chart
+          [series]="compSeries" [chart]="compChart.chart" [plotOptions]="compChart.plotOptions"
+          [colors]="compChart.colors" [dataLabels]="compChart.dataLabels" [legend]="compChart.legend"
+          [xaxis]="compChart.xaxis" [yaxis]="compChart.yaxis" [grid]="compChart.grid"
+          [tooltip]="compChart.tooltip" [noData]="compChart.noData"></apx-chart>
       </section>
-    </div>
+    </ng-container>
 
-    <!-- ══════════ COMPONENT COMPARISON ══════════ -->
-    <section class="ui-tabpanel min-w-0">
-      <h2 class="ui-section-title">Availability, performance and quality by machine</h2>
-      <p class="ui-hint mb-2">Only machines whose OEE can be computed appear here.</p>
-      <apx-chart *ngIf="compSeries.length"
-        [series]="compSeries" [chart]="compChart.chart" [plotOptions]="compChart.plotOptions"
-        [colors]="compChart.colors" [dataLabels]="compChart.dataLabels" [legend]="compChart.legend"
-        [xaxis]="compChart.xaxis" [yaxis]="compChart.yaxis" [grid]="compChart.grid"
-        [tooltip]="compChart.tooltip" [noData]="compChart.noData"></apx-chart>
-    </section>
+    <!-- ─────────── REPORT ─────────── -->
+    <ng-container *ngIf="tab === 'report'">
+      <div class="mexa-tablebar">
+        <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Machine Wise OEE Summary</h2>
+        <span class="inline-flex items-center gap-2 flex-wrap">
+          <label class="sr-only" for="oeSearch">Search machines</label>
+          <input id="oeSearch" type="search" class="mexa-search" placeholder="Search"
+                 [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
+          <span class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
+            <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">
+              {{ exporting === 'xlsx' ? '…' : 'Excel' }}
+            </button>
+            <button type="button" class="mexa-pagebtn" (click)="export('csv')" [disabled]="exporting">
+              {{ exporting === 'csv' ? '…' : 'CSV' }}
+            </button>
+            <button type="button" class="mexa-pagebtn" (click)="export('pdf')" [disabled]="exporting">
+              {{ exporting === 'pdf' ? '…' : 'PDF' }}
+            </button>
+          </span>
+          <button type="button" class="mexa-pagebtn" (click)="reset()">Reset</button>
+        </span>
+      </div>
 
-    <!-- ══════════ MACHINE TABLE ══════════ -->
-    <section class="ui-tabpanel min-w-0">
-      <h2 class="ui-section-title">Machine detail</h2>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <caption class="sr-only">Machine-wise OEE, best first</caption>
+      <div class="mexa-tablewrap">
+        <table class="mexa-table">
+          <caption class="sr-only">OEE by machine, best first</caption>
           <thead>
-            <tr class="text-left text-xs text-gray-500 border-b border-gray-200 dark:border-gray-700">
-              <th scope="col" class="px-3 py-2 font-semibold">Machine</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Status</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Avail.</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Perf.</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Quality</th>
-              <th scope="col" class="px-3 py-2 font-semibold">OEE</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Production</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Good</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Rejects</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Downtime</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Alarms</th>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Machine</th>
+              <th scope="col">Status</th>
+              <th scope="col">Availability (%)</th>
+              <th scope="col">Performance (%)</th>
+              <th scope="col">Quality (%)</th>
+              <th scope="col">OEE</th>
+              <th scope="col">Actuals</th>
+              <th scope="col">Good</th>
+              <th scope="col">Rejections</th>
+              <th scope="col">Rej (%)</th>
+              <th scope="col">Alarms</th>
+              <th scope="col">Downtime</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
-            <tr *ngFor="let m of data.machines.data">
-              <td class="px-3 py-2">
-                <span class="block text-gray-800 dark:text-gray-100">{{ m.machine_serial_no }}</span>
-                <span class="block text-xs text-gray-400">{{ m.model }}</span>
+          <tbody>
+            <tr *ngFor="let m of data.machines.data; let i = index">
+              <td class="num">{{ (data.machines.page - 1) * limit + i + 1 }}</td>
+              <td>
+                <span class="strong">{{ m.machine_serial_no }}</span>
+                <span class="mexa-rank-sub">{{ m.model }}</span>
               </td>
-              <td class="px-3 py-2">
-                <span class="px-2 py-0.5 rounded-md text-xs font-medium" [class]="statusClass(m.status)">
-                  {{ m.status | titlecase }}
-                </span>
-              </td>
-              <td class="px-3 py-2 text-gray-600 dark:text-gray-300">{{ pct(m.availability_pct) }}</td>
-              <td class="px-3 py-2 text-gray-600 dark:text-gray-300">
+              <td><span class="mexa-badge" [ngClass]="statusBadge(m.status)">{{ m.status | titlecase }}</span></td>
+              <td class="num">{{ pct(m.availability_pct) }}</td>
+              <td class="num">
                 {{ pct(m.performance_pct) }}
-                <!-- said in words: this is a configuration gap, not a bad machine -->
-                <span *ngIf="!m.has_cycle_time" class="block text-xs text-gray-400">no cycle time</span>
+                <!-- a dash here means no cycle time, not a slow machine -->
+                <span *ngIf="!m.has_cycle_time" class="mexa-rank-sub">no cycle time</span>
               </td>
-              <td class="px-3 py-2 text-gray-600 dark:text-gray-300">{{ pct(m.quality_pct) }}</td>
-              <td class="px-3 py-2">
-                <span class="font-medium text-gray-800 dark:text-gray-100">{{ pct(m.oee_pct) }}</span>
-                <span class="ml-1 px-2 py-0.5 rounded-md text-xs font-medium" [class]="bandClass(m.band)">
-                  {{ m.band | titlecase }}
-                </span>
-              </td>
-              <td class="px-3 py-2 text-gray-800 dark:text-gray-100 font-medium">{{ m.produced }}</td>
-              <td class="px-3 py-2 text-gray-600 dark:text-gray-300">{{ m.good }}</td>
-              <td class="px-3 py-2" [class]="m.rejected > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-gray-400'">
-                {{ m.rejected }}
-              </td>
-              <td class="px-3 py-2 text-gray-500 whitespace-nowrap">{{ hours(m.downtime_seconds) }}</td>
-              <td class="px-3 py-2" [class]="m.alarm_count > 0 ? 'text-red-700 dark:text-red-400' : 'text-gray-400'">
-                {{ m.alarm_count }}
-              </td>
+              <td class="num">{{ pct(m.quality_pct) }}</td>
+              <td class="num strong">{{ pct(m.oee_pct) }}</td>
+              <td class="num">{{ m.produced }}</td>
+              <td class="num">{{ m.good }}</td>
+              <td class="num">{{ m.rejected }}</td>
+              <td class="num">{{ rejectionPct(m) }}</td>
+              <td class="num">{{ m.alarm_count }}</td>
+              <td class="num whitespace-nowrap">{{ hours(m.downtime_seconds) }}</td>
             </tr>
             <tr *ngIf="!data.machines.data.length">
-              <td colspan="11" class="px-3 py-10 text-center text-gray-400">
-                No machines match these filters.
-              </td>
+              <td colspan="13" class="mexa-empty">No machines match these filters.</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="flex items-center justify-between gap-3 pt-3" *ngIf="data.machines.total > 0">
-        <p class="text-xs text-gray-500" aria-live="polite">
-          Page {{ data.machines.page }} of {{ data.machines.totalPages }} ·
-          {{ data.machines.total }} machine(s)
-        </p>
-        <div class="flex items-center gap-2">
-          <button type="button" class="ui-btn ui-btn-ghost" (click)="changePage(-1)"
-                  [disabled]="data.machines.page <= 1">Previous</button>
-          <button type="button" class="ui-btn ui-btn-ghost" (click)="changePage(1)"
-                  [disabled]="data.machines.page >= data.machines.totalPages">Next</button>
-        </div>
+      <div class="mexa-pager" *ngIf="data.machines.total > 0">
+        <span aria-live="polite">Showing: {{ data.machines.data.length }} of {{ data.machines.total }}</span>
+        <span class="inline-flex items-center gap-2">
+          <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
+                  [disabled]="data.machines.page <= 1">‹ Previous</button>
+          <span>{{ data.machines.page }} / {{ data.machines.totalPages }}</span>
+          <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
+                  [disabled]="data.machines.page >= data.machines.totalPages">Next ›</button>
+        </span>
       </div>
-    </section>
-  </ng-container>
-</div>
+    </ng-container>
+  </section>
+</ng-container>

@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, interval, startWith, switchMap, takeUntil, catchError, of } from 'rxjs';
 import { FactoryService } from './factory.service';
@@ -19,7 +20,7 @@ const POLL_MS = 60_000;
 @Component({
   selector: 'app-factory',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgApexchartsModule],
+  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule],
   templateUrl: './factory.component.html'
 })
 export class FactoryComponent implements OnInit, OnDestroy {
@@ -45,6 +46,11 @@ export class FactoryComponent implements OnInit, OnDestroy {
   trendCategories: string[] = [];
   downtimeSeries:  number[] = [];
   downtimeLabels:  string[] = [];
+  /* Charts the MEXA design adds: the OEE radial, the run/idle split and
+     the alarm severity ring. */
+  oeeRadialSeries:  number[] = [];
+  runtimeSeries:    number[] = [];
+  alarmSeries:      number[] = [];
 
   private destroy$ = new Subject<void>();
 
@@ -135,10 +141,51 @@ export class FactoryComponent implements OnInit, OnDestroy {
     this.downtimeLabels = reasons.map((r: any) => r.reason);
     this.downtimeSeries = reasons.map((r: any) => Math.round(r.seconds / 60));
 
+    /* The three rings on the MEXA layout. Values are read straight from
+       the payload rather than recomputed here, so a chart can never show
+       a different number from the tile above it. */
+    this.oeeRadialSeries = [
+      this.pct(d.oee?.availability), this.pct(d.oee?.performance), this.pct(d.oee?.quality)
+    ];
+
+    const run = Number(d.time?.run_seconds || 0);
+    const idle = Number(d.time?.idle_seconds || 0);
+    this.runtimeSeries = (run + idle) > 0 ? [run, idle] : [];
+
+    const a = d.alarms || {};
+    this.alarmSeries = [
+      Number(a.critical || 0), Number(a.non_critical || 0), Number(a.information || 0)
+    ];
+
     this.cdr.markForCheck();
   }
 
   /* ── view helpers ── */
+
+  /** A percentage the charts can plot, never NaN. */
+  /** How far OEE sits from its target, or null when either is unmeasured. */
+  get oeeVsTarget(): number | null {
+    const oee = this.data?.oee?.oee;
+    const target = this.data?.oee?.target;
+    if (oee == null || target == null) return null;
+    return Number((Number(oee) - Number(target)).toFixed(2));
+  }
+
+  absPct(v: number): string { return `${Math.abs(v)}%`; }
+
+  pct(v: any): number {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.round(n * 10) / 10 : 0;
+  }
+
+  /** Running share of manned time — the "Overall Utilization" tile. */
+  get utilisation(): number | null {
+    const run = Number(this.data?.time?.run_seconds || 0);
+    const idle = Number(this.data?.time?.idle_seconds || 0);
+    // null rather than 0 when nothing was recorded: "0% utilised" and
+    // "nothing reported" are different claims.
+    return (run + idle) > 0 ? Math.round((run / (run + idle)) * 100) : null;
+  }
 
   /** Seconds → "8h 12m", the format the shop floor reads fastest. */
   hm(seconds: number | null | undefined): string {
@@ -202,14 +249,93 @@ export class FactoryComponent implements OnInit, OnDestroy {
     };
   }
 
+  /**
+   * Downtime by reason, as horizontal bars.
+   *
+   * The MEXA layout puts the reason names down the left and the minutes
+   * along the bar, which reads faster than a donut when there are eight
+   * reasons — a donut with eight slices is a legend, not a chart.
+   */
   get downtimeChart(): any {
     return {
-      chart:  { type: 'donut', height: 260, fontFamily: 'inherit' },
-      labels: this.downtimeLabels,
-      colors: ['#e03131', '#f59f00', '#2B3990', '#9B3F70', '#12b886', '#7048e8'],
-      legend: { position: 'bottom' },
-      dataLabels: { enabled: true },
-      tooltip: { y: { formatter: (v: number) => `${v} min` } }
+      chart: { type: 'bar', height: 320, toolbar: { show: false }, fontFamily: 'inherit' },
+      plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '62%', distributed: true } },
+      colors: ['#9b7ec8', '#f5811f', '#3b9ae1', '#22c6d6', '#4a5a7a', '#8a63d2', '#f06a8a', '#17b3a3'],
+      dataLabels: {
+        enabled: true,
+        // inside the bar, as in the mock, so long reason names keep their room
+        offsetX: 0, style: { fontSize: '.72rem', fontWeight: 700, colors: ['#fff'] }
+      },
+      // distributed gives each bar its own colour, which also duplicates
+      // the category in the legend — the axis already names them
+      legend: { show: false },
+      grid: { borderColor: 'rgba(148,163,184,.25)' },
+      tooltip: { y: { formatter: (v: number) => `${v} min` } },
+      noData: { text: 'No downtime reasons recorded' }
+    };
+  }
+
+  /* ── MEXA charts ────────────────────────────────────────── */
+
+  /** The three OEE components as concentric arcs, OEE itself in the middle. */
+  get oeeRadial(): any {
+    return {
+      chart: { type: 'radialBar', height: 300, fontFamily: 'inherit' },
+      plotOptions: {
+        radialBar: {
+          startAngle: -168, endAngle: 168,
+          hollow: { size: '42%' },
+          track: { background: '#eceaf5', strokeWidth: '100%' },
+          dataLabels: {
+            name: { fontSize: '1.1rem', offsetY: -6, color: '#1f2430' },
+            value: { fontSize: '1.9rem', fontWeight: 700, offsetY: 4, color: '#1f2430',
+                     formatter: (v: number) => `${Math.round(v)}%` },
+            total: {
+              show: true, label: 'OEE', fontSize: '1.1rem', color: '#1f2430',
+              // the middle shows OEE from the payload, not an average of
+              // the three arcs, so it matches the tile above
+              formatter: () => `${this.pct(this.data?.oee?.oee)}%`
+            }
+          }
+        }
+      },
+      colors: ['#9b7ec8', '#4a76c8', '#2b3a8f'],
+      labels: ['Availability', 'Performance', 'Quality'],
+      stroke: { lineCap: 'round' },
+      legend: { show: false },
+      noData: { text: 'No OEE recorded for this period' }
+    };
+  }
+
+  get runtimeDonut(): any {
+    return {
+      chart: { type: 'donut', height: 280, fontFamily: 'inherit' },
+      labels: ['Run Time', 'Idle Time'],
+      colors: ['#22c55e', '#f5a623'],
+      dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%`,
+                    style: { fontSize: '1rem', fontWeight: 700 } },
+      plotOptions: { pie: { donut: { size: '58%' } } },
+      legend: { position: 'bottom', fontSize: '.9rem' },
+      tooltip: { y: { formatter: (v: number) => this.hm(v) } },
+      noData: { text: 'No run or idle time recorded' }
+    };
+  }
+
+  get alarmDonut(): any {
+    return {
+      chart: { type: 'donut', height: 280, fontFamily: 'inherit' },
+      labels: ['Critical', 'Non critical', 'Information'],
+      colors: ['#f43f5e', '#22c55e', '#f5a623'],
+      dataLabels: { enabled: true, formatter: (_v: number, o: any) => o.w.config.series[o.seriesIndex] },
+      plotOptions: {
+        pie: { donut: { size: '62%', labels: {
+          show: true,
+          total: { show: true, label: 'Total Alarms', fontSize: '.95rem',
+                   formatter: () => String(this.data?.alarms?.total ?? 0) }
+        } } }
+      },
+      legend: { position: 'bottom', fontSize: '.9rem' },
+      noData: { text: 'No alarms recorded' }
     };
   }
 }

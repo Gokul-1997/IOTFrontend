@@ -1,272 +1,307 @@
-<div class="p-4 sm:p-6 space-y-5 min-w-0">
+<!-- Phase 2 · Screen 6 — Downtime Reason Analysis, MEXA design. -->
 
-  <!-- ══════════ HEADER ══════════ -->
-  <div class="flex flex-wrap items-start justify-between gap-3">
-    <div class="min-w-0">
-      <h1 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Downtime Analysis</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400">
-        Where production time is being lost, and how much of it has a reason against it.
-        <span *ngIf="updatedAt" class="ml-1">Updated {{ updatedAt }}.</span>
-      </p>
+<p class="mexa-updated" *ngIf="updatedAt">
+  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
+  Last Updated: {{ updatedAt }}
+</p>
+
+<!-- ══════════ TITLE BAR ══════════ -->
+<form class="mexa-titlebar" (ngSubmit)="submit()">
+  <h1 class="mexa-title">Downtime Reason Analysis</h1>
+  <span class="mexa-titlebar-spacer"></span>
+
+  <div class="mexa-filters">
+    <label class="mexa-filter-label" for="dtMachine">Machine Name</label>
+    <select id="dtMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
+      <option [ngValue]="null">All</option>
+      <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+    </select>
+
+    <label class="mexa-filter-label" for="dtShift">Shift</label>
+    <select id="dtShift" class="mexa-select" [(ngModel)]="f.shift_id" name="shift">
+      <option [ngValue]="null">All</option>
+      <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_name || s.name }}</option>
+    </select>
+
+    <label class="mexa-filter-label" for="dtFrom">Date</label>
+    <input id="dtFrom" type="date" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
+    <span class="mexa-filter-label" aria-hidden="true">–</span>
+    <input id="dtTo" type="date" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
+
+    <button type="submit" class="mexa-submit" [disabled]="loading">
+      {{ loading ? 'Loading…' : 'Submit' }}
+    </button>
+  </div>
+</form>
+
+<!-- ══════════ STATES ══════════ -->
+<p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
+<div *ngIf="loading && !data" class="mexa-note" aria-live="polite">Loading…</div>
+
+<ng-container *ngIf="data">
+
+  <!-- Telemetry shows idle time but nobody entered a reason: a setup gap,
+       not an empty filter result, and worth saying in words. -->
+  <p *ngIf="hasNoReasons" class="mexa-note mexa-note-warn">
+    <strong>No downtime reasons have been entered.</strong>
+    The machines reported {{ hours(data.kpis.idle_seconds) }} of idle time in this period, but no
+    operator recorded why. The Pareto below stays empty until reasons are entered.
+  </p>
+
+  <!-- ══════════ KPI TILES ══════════ -->
+  <div class="mexa-kpis">
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Total<br>Downtime</span>
+        <span class="mexa-kpi-icon" style="background:#dc2626" aria-hidden="true">
+          <mat-icon>timer_off</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ hours(data.kpis.total_downtime_seconds) }}</p>
+      <p class="mexa-kpi-sub">{{ data.kpis.open_events }} still open</p>
     </div>
-    <div class="flex items-center gap-1" role="group" aria-label="Export the filtered list">
-      <button type="button" class="ui-btn ui-btn-ghost" (click)="export('xlsx')" [disabled]="exporting">
-        {{ exporting === 'xlsx' ? '…' : 'Excel' }}
-      </button>
-      <button type="button" class="ui-btn ui-btn-ghost" (click)="export('csv')" [disabled]="exporting">
-        {{ exporting === 'csv' ? '…' : 'CSV' }}
-      </button>
-      <button type="button" class="ui-btn ui-btn-ghost" (click)="export('pdf')" [disabled]="exporting">
-        {{ exporting === 'pdf' ? '…' : 'PDF' }}
-      </button>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Availability</span>
+        <span class="mexa-kpi-icon" style="background:#22c55e" aria-hidden="true">
+          <mat-icon>check_circle</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ pct(data.kpis.availability_pct) }}</p>
+      <p class="mexa-kpi-sub">Run time over planned time</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Downtime<br>Events</span>
+        <span class="mexa-kpi-icon" style="background:#3b9ae1" aria-hidden="true">
+          <mat-icon>report</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ data.kpis.downtime_events }}</p>
+      <p class="mexa-kpi-sub">{{ pct(data.kpis.reason_coverage_pct) }} have a reason</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Running<br>Time</span>
+        <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true">
+          <mat-icon>play_circle</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ hours(data.kpis.run_seconds) }}</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Idle<br>Time</span>
+        <span class="mexa-kpi-icon" style="background:#b45309" aria-hidden="true">
+          <mat-icon>pause_circle</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ hours(data.kpis.idle_seconds) }}</p>
+      <p class="mexa-kpi-sub">{{ hours(data.kpis.unaccounted_seconds) }} unaccounted</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Alarm<br>Time</span>
+        <span class="mexa-kpi-icon" style="background:#9b7ec8" aria-hidden="true">
+          <mat-icon>error</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ hours(data.kpis.alarm_seconds) }}</p>
     </div>
   </div>
 
-  <!-- ══════════ FILTERS ══════════ -->
-  <form class="ui-viewbar grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 items-end" (ngSubmit)="submit()">
-    <div>
-      <label for="dtFrom" class="ui-label">From</label>
-      <input id="dtFrom" type="date" class="ui-input" [(ngModel)]="f.from" name="from" (ngModelChange)="submit()">
-    </div>
-    <div>
-      <label for="dtTo" class="ui-label">To</label>
-      <input id="dtTo" type="date" class="ui-input" [(ngModel)]="f.to" name="to" (ngModelChange)="submit()">
-    </div>
-    <div>
-      <label for="dtMachine" class="ui-label">Machine</label>
-      <select id="dtMachine" class="filter-select w-full" [(ngModel)]="f.machine_id" name="machine" (ngModelChange)="submit()">
-        <option [ngValue]="null">All machines</option>
-        <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-      </select>
-    </div>
-    <div>
-      <label for="dtShift" class="ui-label">Shift</label>
-      <select id="dtShift" class="filter-select w-full" [(ngModel)]="f.shift_id" name="shift" (ngModelChange)="submit()">
-        <option [ngValue]="null">All shifts</option>
-        <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.name || s.shift_name }}</option>
-      </select>
-    </div>
-    <div>
-      <label for="dtReason" class="ui-label">Reason</label>
-      <select id="dtReason" class="filter-select w-full" [(ngModel)]="f.reason_id" name="reason" (ngModelChange)="submit()">
-        <option [ngValue]="null">All reasons</option>
-        <option *ngFor="let r of reasons" [ngValue]="r.id">{{ r.name }}</option>
-      </select>
-    </div>
-    <div>
-      <label for="dtCategory" class="ui-label">Category</label>
-      <select id="dtCategory" class="filter-select w-full" [(ngModel)]="f.category" name="category" (ngModelChange)="submit()">
-        <option value="">All</option>
-        <option *ngFor="let c of CATEGORIES" [value]="c">{{ c | titlecase }}</option>
-      </select>
-    </div>
-    <div>
-      <label for="dtSearch" class="ui-label">Search</label>
-      <input id="dtSearch" type="search" class="ui-input" placeholder="Reason, note or machine"
-             [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
-    </div>
-    <div class="sm:col-span-2 lg:col-span-4 xl:col-span-7">
-      <button type="button" class="ui-btn ui-btn-ghost" (click)="reset()">Reset filters</button>
-    </div>
-  </form>
+  <!-- ══════════ ROW 2 — Pareto + reason summary ══════════ -->
+  <div class="mexa-grid lg:grid-cols-3">
 
-  <!-- ══════════ STATES ══════════ -->
-  <p *ngIf="errorMsg" class="ui-alert ui-alert-error" role="alert">{{ errorMsg }}</p>
-  <div *ngIf="loading && !data" class="ui-alert" aria-live="polite">Loading…</div>
-
-  <ng-container *ngIf="data">
-
-    <!-- The honest headline: telemetry knows the machines were idle, but
-         nobody has said why. Better stated than quietly shown as zero. -->
-    <div *ngIf="hasNoReasons" class="ui-alert ui-alert-warn">
-      <strong>{{ hours(data.kpis.idle_seconds) }} of idle time with no reason recorded.</strong>
-      Availability below is measured from the machines. The reason breakdown stays empty until
-      operators enter downtime reasons.
-    </div>
-
-    <!-- ══════════ KPIs ══════════ -->
-    <div class="grid gap-3 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Availability</p>
-        <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ pct(data.kpis.availability_pct) }}</p>
-        <p class="ui-hint">Measured from telemetry</p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Running time</p>
-        <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hours(data.kpis.run_seconds) }}</p>
-        <p class="ui-hint">Cutting</p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Idle time</p>
-        <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hours(data.kpis.idle_seconds) }}</p>
-        <p class="ui-hint">Not cutting</p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Alarm time</p>
-        <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hours(data.kpis.alarm_seconds) }}</p>
-        <p class="ui-hint">In an alarm state</p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Downtime events</p>
-        <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ data.kpis.downtime_events }}</p>
-        <p class="ui-hint">
-          {{ hours(data.kpis.total_downtime_seconds) }} recorded
-          <span *ngIf="data.kpis.open_events > 0">· {{ data.kpis.open_events }} still open</span>
-        </p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Reason coverage</p>
-        <p class="text-3xl font-bold mt-1"
-           [class]="(data.kpis.reason_coverage_pct ?? 0) < 50 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-slate-100'">
-          {{ pct(data.kpis.reason_coverage_pct) }}
-        </p>
-        <!-- the number that says whether the rest of this screen is trustworthy -->
-        <p class="ui-hint">{{ hours(data.kpis.unaccounted_seconds) }} unaccounted</p>
-      </div>
-    </div>
-
-    <!-- ══════════ PARETO ══════════ -->
-    <section class="ui-tabpanel min-w-0">
-      <h2 class="ui-section-title">Downtime by reason</h2>
-      <apx-chart *ngIf="paretoSeries.length"
+    <section class="mexa-card lg:col-span-2">
+      <h2 class="mexa-card-title mexa-card-title-left">Downtime by Reason (Pareto)</h2>
+      <apx-chart *ngIf="paretoSeries.length && data.by_reason.length"
         [series]="paretoSeries" [chart]="paretoChart.chart" [stroke]="paretoChart.stroke"
         [plotOptions]="paretoChart.plotOptions" [colors]="paretoChart.colors"
         [dataLabels]="paretoChart.dataLabels" [legend]="paretoChart.legend"
         [xaxis]="paretoChart.xaxis" [yaxis]="paretoChart.yaxis" [grid]="paretoChart.grid"
         [tooltip]="paretoChart.tooltip" [noData]="paretoChart.noData"></apx-chart>
+      <p *ngIf="!data.by_reason.length" class="mexa-empty">
+        No downtime reasons recorded for this period.
+      </p>
     </section>
 
-    <!-- ══════════ TOP 5 + CATEGORY + SHIFT ══════════ -->
-    <div class="grid gap-4 lg:grid-cols-3">
-      <section class="ui-tabpanel min-w-0">
-        <h2 class="ui-section-title">Top 5 reasons</h2>
-        <p *ngIf="!data.top_reasons.length" class="text-sm text-gray-400">No reasons recorded.</p>
-        <ol class="divide-y divide-gray-100 dark:divide-gray-700">
-          <li *ngFor="let r of data.top_reasons; let i = index"
-              class="py-2 flex items-start justify-between gap-3">
-            <span class="min-w-0">
-              <!-- numbered because rank is the information here -->
-              <span class="text-xs text-gray-400 mr-1">{{ i + 1 }}.</span>
-              <span class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ r.reason }}</span>
-              <span class="block text-xs text-gray-500 ml-4">{{ r.events }} event(s)</span>
-            </span>
-            <span class="text-xs whitespace-nowrap text-gray-600 dark:text-gray-300">
-              {{ hours(r.seconds) }} · {{ r.share_pct }}%
-            </span>
-          </li>
-        </ol>
-      </section>
-
-      <section class="ui-tabpanel min-w-0">
-        <h2 class="ui-section-title">By category</h2>
-        <p *ngIf="!data.by_category.length" class="text-sm text-gray-400">No reasons recorded.</p>
-        <ul class="divide-y divide-gray-100 dark:divide-gray-700">
-          <li *ngFor="let c of data.by_category" class="py-2 flex items-center justify-between gap-3">
-            <span class="px-2 py-0.5 rounded-md text-xs font-medium" [class]="categoryClass(c.category)">
-              {{ c.category | titlecase }}
-            </span>
-            <span class="text-xs text-gray-600 dark:text-gray-300">
-              {{ hours(c.seconds) }} · {{ c.events }} event(s)
-            </span>
-          </li>
-        </ul>
-      </section>
-
-      <section class="ui-tabpanel min-w-0">
-        <h2 class="ui-section-title">By shift</h2>
-        <p *ngIf="!data.by_shift.length" class="text-sm text-gray-400">No reasons recorded.</p>
-        <ul class="divide-y divide-gray-100 dark:divide-gray-700">
-          <li *ngFor="let s of data.by_shift" class="py-2 flex items-center justify-between gap-3">
-            <span class="text-sm text-gray-700 dark:text-gray-200">{{ s.shift_name }}</span>
-            <span class="text-xs text-gray-600 dark:text-gray-300">
-              {{ hours(s.seconds) }} · {{ s.events }} event(s)
-            </span>
-          </li>
-        </ul>
-      </section>
-    </div>
-
-    <!-- ══════════ HOURLY ══════════ -->
-    <section class="ui-tabpanel min-w-0">
-      <h2 class="ui-section-title">When machines stop, by hour of day</h2>
-      <apx-chart *ngIf="hourlySeries.length"
-        [series]="hourlySeries" [chart]="hourlyChart.chart" [plotOptions]="hourlyChart.plotOptions"
-        [colors]="hourlyChart.colors" [dataLabels]="hourlyChart.dataLabels"
-        [xaxis]="hourlyChart.xaxis" [yaxis]="hourlyChart.yaxis" [grid]="hourlyChart.grid"
-        [tooltip]="hourlyChart.tooltip" [noData]="hourlyChart.noData"></apx-chart>
-    </section>
-
-    <!-- ══════════ DETAIL ══════════ -->
-    <section class="ui-tabpanel min-w-0">
-      <h2 class="ui-section-title">Downtime records</h2>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <caption class="sr-only">Downtime records, most recent first</caption>
+    <section class="mexa-card">
+      <h2 class="mexa-card-title mexa-card-title-left">Downtime By Reason Summary</h2>
+      <div class="mexa-tablewrap">
+        <table class="mexa-table" style="min-width:0">
+          <caption class="sr-only">Downtime reasons, largest first</caption>
           <thead>
-            <tr class="text-left text-xs text-gray-500 border-b border-gray-200 dark:border-gray-700">
-              <th scope="col" class="px-3 py-2 font-semibold">Machine</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Shift</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Start</th>
-              <th scope="col" class="px-3 py-2 font-semibold">End</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Duration</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Reason</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Category</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Operator</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Status</th>
+            <tr>
+              <th scope="col">Downtime Reason</th>
+              <th scope="col">Occurrences</th>
+              <th scope="col">Total DT</th>
+              <th scope="col">Contribution</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
-            <tr *ngFor="let e of data.events.data">
-              <td class="px-3 py-2 text-gray-800 dark:text-gray-100">{{ e.machine_serial_no }}</td>
-              <td class="px-3 py-2 text-gray-500">{{ e.shift_name }}</td>
-              <td class="px-3 py-2 text-gray-500 whitespace-nowrap">{{ e.started_at | date:'dd MMM HH:mm' }}</td>
-              <td class="px-3 py-2 text-gray-500 whitespace-nowrap">
-                {{ e.ended_at ? (e.ended_at | date:'dd MMM HH:mm') : '--' }}
-              </td>
-              <td class="px-3 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                {{ hours(e.duration_seconds) }}
-                <span *ngIf="e.is_open" class="text-xs text-gray-400">so far</span>
-              </td>
-              <td class="px-3 py-2 text-gray-700 dark:text-gray-200">
-                {{ e.reason }}
-                <span *ngIf="e.sub_reason" class="block text-xs text-gray-400">{{ e.sub_reason }}</span>
-              </td>
-              <td class="px-3 py-2">
-                <span class="px-2 py-0.5 rounded-md text-xs font-medium" [class]="categoryClass(e.category)">
-                  {{ e.category | titlecase }}
+          <tbody>
+            <tr *ngFor="let r of data.by_reason">
+              <td class="strong">{{ r.reason }}</td>
+              <td class="num">{{ r.events }}</td>
+              <td class="num">{{ hours(r.seconds) }}</td>
+              <td>
+                <!-- bar and number together; the bar alone would not be
+                     readable to a screen reader or in greyscale -->
+                <span class="mexa-meter" aria-hidden="true">
+                  <span class="mexa-meter-fill" [style.width.%]="r.share_pct"></span>
                 </span>
-              </td>
-              <td class="px-3 py-2 text-gray-500">{{ e.operator_name || 'Unassigned' }}</td>
-              <td class="px-3 py-2">
-                <span class="px-2 py-0.5 rounded-md text-xs font-medium"
-                      [class]="e.is_open
-                        ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
-                        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'">
-                  {{ e.is_open ? 'Open' : 'Closed' }}
-                </span>
+                <span class="num">{{ pct(r.share_pct) }}</span>
               </td>
             </tr>
-            <tr *ngIf="!data.events.data.length">
-              <td colspan="9" class="px-3 py-10 text-center text-gray-400">
-                No downtime records match these filters.
-              </td>
+            <tr *ngIf="!data.by_reason.length">
+              <td colspan="4" class="mexa-empty">Nothing recorded.</td>
             </tr>
           </tbody>
         </table>
       </div>
-
-      <div class="flex items-center justify-between gap-3 pt-3" *ngIf="data.events.total > 0">
-        <p class="text-xs text-gray-500" aria-live="polite">
-          Page {{ data.events.page }} of {{ data.events.totalPages }} · {{ data.events.total }} record(s)
-        </p>
-        <div class="flex items-center gap-2">
-          <button type="button" class="ui-btn ui-btn-ghost" (click)="changePage(-1)"
-                  [disabled]="data.events.page <= 1">Previous</button>
-          <button type="button" class="ui-btn ui-btn-ghost" (click)="changePage(1)"
-                  [disabled]="data.events.page >= data.events.totalPages">Next</button>
-        </div>
-      </div>
     </section>
-  </ng-container>
-</div>
+  </div>
+
+  <!-- ══════════ ROW 3 — shift, status mix, hourly ══════════ -->
+  <div class="mexa-grid lg:grid-cols-3">
+
+    <section class="mexa-card">
+      <h2 class="mexa-card-title">Downtime by Shift</h2>
+      <div class="mexa-donutrow" *ngIf="shiftDonutSeries.length; else noShift">
+        <apx-chart
+          [series]="shiftDonutSeries" [chart]="shiftDonut.chart" [labels]="shiftDonut.labels"
+          [colors]="shiftDonut.colors" [dataLabels]="shiftDonut.dataLabels"
+          [plotOptions]="shiftDonut.plotOptions" [legend]="shiftDonut.legend"
+          [tooltip]="shiftDonut.tooltip" [noData]="shiftDonut.noData"></apx-chart>
+        <ul class="mexa-keylist">
+          <li *ngFor="let s of data.by_shift; let i = index">
+            <span class="mexa-key-swatch" [style.--swatch]="donutColour(i)" aria-hidden="true"></span>
+            <span>
+              <span class="mexa-key-label">{{ s.shift_name }}</span>
+              <span class="mexa-key-value">
+                {{ hours(s.seconds) }} · {{ sharePct(s.seconds, data.kpis.total_downtime_seconds) }}
+              </span>
+            </span>
+          </li>
+        </ul>
+      </div>
+      <ng-template #noShift><p class="mexa-empty">Nothing recorded by shift.</p></ng-template>
+    </section>
+
+    <section class="mexa-card">
+      <h2 class="mexa-card-title">Machine Status Summary</h2>
+      <div class="mexa-donutrow" *ngIf="statusTotal > 0; else noStatus">
+        <apx-chart
+          [series]="statusSeries" [chart]="statusDonut.chart" [labels]="statusDonut.labels"
+          [colors]="statusDonut.colors" [dataLabels]="statusDonut.dataLabels"
+          [plotOptions]="statusDonut.plotOptions" [legend]="statusDonut.legend"
+          [tooltip]="statusDonut.tooltip" [noData]="statusDonut.noData"></apx-chart>
+        <ul class="mexa-keylist">
+          <li *ngFor="let s of statusRows; let i = index">
+            <span class="mexa-key-swatch" [style.--swatch]="s.colour" aria-hidden="true"></span>
+            <span>
+              <span class="mexa-key-label">{{ s.label }}</span>
+              <span class="mexa-key-value">{{ hours(s.seconds) }} · {{ sharePct(s.seconds, statusTotal) }}</span>
+            </span>
+          </li>
+        </ul>
+      </div>
+      <ng-template #noStatus><p class="mexa-empty">No machine time recorded.</p></ng-template>
+    </section>
+
+    <section class="mexa-card">
+      <h2 class="mexa-card-title mexa-card-title-left">Downtime Trend (Hourly)</h2>
+      <apx-chart *ngIf="hourlySeries.length"
+        [series]="hourlySeries" [chart]="hourlyChart.chart" [plotOptions]="hourlyChart.plotOptions"
+        [colors]="hourlyChart.colors" [dataLabels]="hourlyChart.dataLabels"
+        [stroke]="hourlyChart.stroke" [markers]="hourlyChart.markers"
+        [xaxis]="hourlyChart.xaxis" [yaxis]="hourlyChart.yaxis" [grid]="hourlyChart.grid"
+        [tooltip]="hourlyChart.tooltip" [noData]="hourlyChart.noData"></apx-chart>
+      <p *ngIf="!hourlySeries.length" class="mexa-empty">No downtime recorded for this period.</p>
+    </section>
+  </div>
+
+  <!-- ══════════ DOWNTIME DETAILS ══════════ -->
+  <section class="mexa-card">
+    <div class="mexa-tablebar">
+      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Downtime Details</h2>
+      <span class="inline-flex items-center gap-2 flex-wrap">
+        <label class="sr-only" for="dtSearch">Search downtime events</label>
+        <input id="dtSearch" type="search" class="mexa-search" placeholder="Search"
+               [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
+        <span class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
+          <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">
+            {{ exporting === 'xlsx' ? '…' : 'Excel' }}
+          </button>
+          <button type="button" class="mexa-pagebtn" (click)="export('csv')" [disabled]="exporting">
+            {{ exporting === 'csv' ? '…' : 'CSV' }}
+          </button>
+          <button type="button" class="mexa-pagebtn" (click)="export('pdf')" [disabled]="exporting">
+            {{ exporting === 'pdf' ? '…' : 'PDF' }}
+          </button>
+        </span>
+        <button type="button" class="mexa-pagebtn" (click)="reset()">Reset</button>
+      </span>
+    </div>
+
+    <div class="mexa-tablewrap">
+      <table class="mexa-table">
+        <caption class="sr-only">Downtime events matching the current filters, newest first</caption>
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Start Time</th>
+            <th scope="col">End Time</th>
+            <th scope="col">Duration</th>
+            <th scope="col">Machine</th>
+            <th scope="col">Shift</th>
+            <th scope="col">Downtime Reason</th>
+            <th scope="col">Category</th>
+            <th scope="col">Operator</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of data.events.data; let i = index">
+            <td class="num">{{ (data.events.page - 1) * limit + i + 1 }}</td>
+            <td class="num whitespace-nowrap">{{ e.started_at | date:'dd-MMM-yyyy HH:mm' }}</td>
+            <td class="num whitespace-nowrap">{{ e.ended_at ? (e.ended_at | date:'dd-MMM-yyyy HH:mm') : '-' }}</td>
+            <td class="num">{{ hours(e.duration_seconds) }}</td>
+            <td class="strong">{{ e.machine_serial_no }}</td>
+            <td>{{ e.shift_name || '--' }}</td>
+            <td>
+              {{ e.reason || '--' }}
+              <span *ngIf="e.sub_reason" class="mexa-rank-sub">{{ e.sub_reason }}</span>
+            </td>
+            <td><span class="mexa-badge" [ngClass]="categoryBadge(e.category)">{{ e.category || '--' }}</span></td>
+            <td>{{ e.operator_name || '--' }}</td>
+            <td>
+              <span class="mexa-badge" [class.mexa-badge-warn]="e.is_open" [class.mexa-badge-info]="!e.is_open">
+                {{ e.is_open ? 'Open' : 'Closed' }}
+              </span>
+            </td>
+          </tr>
+          <tr *ngIf="!data.events.data.length">
+            <td colspan="10" class="mexa-empty">No downtime events match these filters.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mexa-pager" *ngIf="data.events.total > 0">
+      <span aria-live="polite">Showing: {{ data.events.data.length }} of {{ data.events.total }}</span>
+      <span class="inline-flex items-center gap-2">
+        <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
+                [disabled]="data.events.page <= 1">‹ Previous</button>
+        <span>{{ data.events.page }} / {{ data.events.totalPages }}</span>
+        <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
+                [disabled]="data.events.page >= data.events.totalPages">Next ›</button>
+      </span>
+    </div>
+  </section>
+</ng-container>

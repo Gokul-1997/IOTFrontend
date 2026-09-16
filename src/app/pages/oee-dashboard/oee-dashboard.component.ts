@@ -45,6 +45,11 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   trendCategories: string[] = [];
   compSeries: any[] = [];
   compCategories: string[] = [];
+  rankSeries: any[] = [];
+  rankCategories: string[] = [];
+
+  /** Which tab of the card is showing. */
+  tab: 'analytics' | 'report' = 'analytics';
 
   private destroy$ = new Subject<void>();
   private search$ = new RxSubject<string>();
@@ -127,6 +132,12 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
       { name: 'Performance',  data: withOee.map((m: any) => m.performance_pct) },
       { name: 'Quality',      data: withOee.map((m: any) => m.quality_pct) }
     ];
+
+    /* Machines by OEE, best first. Only machines with a computable OEE —
+       a null plotted as zero would read as a failing machine. */
+    const ranked = [...withOee].sort((a: any, b: any) => b.oee_pct - a.oee_pct).slice(0, 5);
+    this.rankCategories = ranked.map((m: any) => m.machine_serial_no);
+    this.rankSeries = ranked.length ? [{ name: 'OEE', data: ranked.map((m: any) => m.oee_pct) }] : [];
 
     this.cdr.markForCheck();
   }
@@ -225,6 +236,78 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'dark' },
       noData: { text: 'No production recorded for this period' }
+    };
+  }
+
+  /* ── band presentation ── */
+
+  /** How far average OEE sits from the target, or null when unmeasured. */
+  get gapToTarget(): number | null {
+    const oee = this.data?.kpis?.oee_pct;
+    const target = this.data?.thresholds?.good;
+    if (oee === null || oee === undefined || target === undefined) return null;
+    return Number((oee - target).toFixed(2));
+  }
+
+  absPct(v: number): string { return `${Math.abs(v)}%`; }
+
+  /** Rejection rate for a row, null-safe: no output is not zero scrap. */
+  rejectionPct(m: any): string {
+    const produced = Number(m?.produced);
+    if (!produced) return '--';
+    return `${Math.round((Number(m.rejected) / produced) * 1000) / 10}%`;
+  }
+
+  bandTile(band: string): string {
+    switch (band) {
+      case 'GOOD': return 'mexa-grade-excellent';
+      case 'FAIR': return 'mexa-grade-good';
+      case 'POOR': return 'mexa-grade-avg';
+      default:     return 'mexa-grade-unknown';
+    }
+  }
+
+  /** The tile's solid colour, passed to the ring so its hole matches. */
+  bandColour(band: string): string {
+    switch (band) {
+      case 'GOOD': return '#15803d';
+      case 'FAIR': return '#2f2d8f';
+      case 'POOR': return '#b45309';
+      default:     return '#64748b';
+    }
+  }
+
+  bandWord(band: string): string {
+    switch (band) {
+      case 'GOOD': return 'Excellent';
+      case 'FAIR': return 'Good';
+      case 'POOR': return 'Needs work';
+      // "Unknown" would read as a fault; the cause is a missing cycle time
+      default:     return 'Not measurable';
+    }
+  }
+
+  statusBadge(status: string): string {
+    switch (status) {
+      case 'RUNNING': return 'mexa-badge-good';
+      case 'ALARM':   return 'mexa-badge-bad';
+      case 'IDLE':    return 'mexa-badge-warn';
+      default:        return 'mexa-badge-neutral';
+    }
+  }
+
+  get rankChart(): any {
+    return {
+      chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
+      plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '62%', distributed: true } },
+      colors: ['#2f2d8f', '#4a76c8', '#9b7ec8', '#17b3a3', '#6b7280'],
+      dataLabels: { enabled: true, style: { fontSize: '.72rem', fontWeight: 700, colors: ['#fff'] } },
+      // distributed repeats every machine in the legend; the axis names them
+      legend: { show: false },
+      xaxis: { categories: this.rankCategories, title: { text: 'OEE (%)' }, max: 100 },
+      grid:  { borderColor: 'rgba(148,163,184,.25)' },
+      tooltip: { theme: 'dark', y: { formatter: (v: number) => `${v}%` } },
+      noData: { text: 'No machine has a computable OEE' }
     };
   }
 

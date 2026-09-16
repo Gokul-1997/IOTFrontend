@@ -1,0 +1,591 @@
+/* ─────────────────────────────────────────────────────────────
+   MEXA dashboard design system
+   Implements MEXA_DS_dashboard_UI_02.pdf.
+
+   Every dashboard shares one shell: a white app bar, a diagonal
+   indigo-to-crimson field, and white cards floating on it. The cards
+   carry the meaning; the field is what makes them read as cards rather
+   than as sections of a page.
+
+   Written as classes rather than Tailwind utilities because the same
+   nine components repeat on nine screens — a KPI tile described inline
+   nine times drifts by the third one.
+   ───────────────────────────────────────────────────────────── */
+
+html, body { background: #2e2c80; }
+
+:root {
+  /* The field. Blue sits bottom-left, crimson top-right, with the
+     purple crossover roughly on the diagonal. */
+  --mexa-field-1: #2e2c80;
+  --mexa-field-2: #6d3a8c;
+  --mexa-field-3: #ba3450;
+
+  /* Chrome */
+  --mexa-bar:        rgba(58, 56, 140, .82);
+  --mexa-bar-solid:  #3a388c;
+  --mexa-submit:     #2f2d8f;
+  --mexa-submit-h:   #26247a;
+
+  /* Surfaces */
+  --mexa-card:       #ffffff;
+  --mexa-ink:        #1f2430;
+  --mexa-ink-2:      #4b5262;
+  --mexa-ink-3:      #8992a5;
+  --mexa-rule:       #e8e9f2;
+  --mexa-thead:      #e6e5f6;
+  --mexa-row-alt:    #f5f4fc;
+
+  /* The series palette the charts use, in the order the mock uses it. */
+  --mexa-navy:   #2b3a8f;
+  --mexa-blue:   #4a76c8;
+  --mexa-violet: #9b7ec8;
+  --mexa-teal:   #17b3a3;
+  --mexa-slate:  #6b7280;
+
+  /* Semantic. Separate from the series palette on purpose: a bar being
+     "the third series" and a machine being "critical" are different
+     kinds of statement and must not share a colour. */
+  --mexa-good:  #22c55e;
+  --mexa-warn:  #f5a623;
+  --mexa-bad:   #ef4444;
+  --mexa-info:  #3b9ae1;
+}
+
+:root[data-theme="dark"], .dark {
+  --mexa-field-1: #1a1950;
+  --mexa-field-2: #45245a;
+  --mexa-field-3: #75202f;
+  --mexa-card:    #1b1f2a;
+  --mexa-ink:     #e8ebf2;
+  --mexa-ink-2:   #a8b0c2;
+  --mexa-ink-3:   #737d92;
+  --mexa-rule:    #2b303d;
+  --mexa-thead:   #262a3a;
+  --mexa-row-alt: #212534;
+}
+
+/* ── Shell ────────────────────────────────────────────────── */
+
+.mexa-shell {
+  min-height: calc(100vh - 4rem);      /* the app bar is 4rem */
+  background: linear-gradient(45deg,
+    var(--mexa-field-1) 0%,
+    var(--mexa-field-2) 52%,
+    var(--mexa-field-3) 100%);
+  /* Not background-attachment: fixed. It looks right in the viewport and
+     then paints only one screen's worth, so a dashboard taller than the
+     window ends on a hard band of nothing below the fold. */
+  padding: 1rem 1.25rem 0;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) { .mexa-shell { padding: 1.25rem 1.75rem 0; } }
+
+.mexa-page { flex: 1 1 auto; min-width: 0; }
+
+.mexa-footer {
+  padding: 1.75rem 0 1.25rem;
+  text-align: right;
+  font-size: .8rem;
+  color: rgba(255, 255, 255, .55);
+}
+.mexa-footer strong { color: rgba(255, 255, 255, .8); font-weight: 600; }
+
+/* "Last Updated" sits above the title bar, right-aligned, quiet. */
+.mexa-updated {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .4rem;
+  font-size: .82rem;
+  color: rgba(255, 255, 255, .85);
+  margin-bottom: .5rem;
+}
+
+/* ── Title bar ────────────────────────────────────────────── */
+
+.mexa-titlebar {
+  background: var(--mexa-bar);
+  backdrop-filter: blur(6px);
+  border-radius: 14px;
+  padding: .85rem 1.15rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem 1rem;
+}
+
+.mexa-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  letter-spacing: -.01em;
+}
+
+/* Pushes the filters to the right without a wrapper div. */
+.mexa-titlebar-spacer { flex: 1 1 auto; }
+
+/* Inline status legend, as on the OEE and Maintenance headers. */
+.mexa-legend { display: flex; flex-wrap: wrap; align-items: center; gap: .9rem; }
+.mexa-legend-item {
+  display: inline-flex; align-items: center; gap: .4rem;
+  color: #fff; font-size: .88rem; font-weight: 600;
+}
+.mexa-legend-dot { width: .7rem; height: .7rem; border-radius: 999px; flex: none; }
+
+/* ── Filters in the title bar ─────────────────────────────── */
+
+.mexa-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
+
+.mexa-filter-label {
+  color: #fff; font-size: .9rem; font-weight: 600; white-space: nowrap;
+}
+
+.mexa-select,
+.mexa-date {
+  appearance: none;
+  background: #fff;
+  border: 0;
+  border-radius: 9px;
+  padding: .5rem 2rem .5rem .85rem;
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--mexa-ink);
+  min-width: 9rem;
+  cursor: pointer;
+  /* The chevron is drawn rather than relying on the native control, so
+     the field looks the same on every platform. background-color is set
+     separately from background-image: the `background` shorthand would
+     reset the position and size and tile the arrow. */
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%231f2430'%3E%3Cpath d='M5.5 7.5l4.5 4.5 4.5-4.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .6rem center;
+  background-size: 1.05rem;
+}
+.mexa-date { background-image: none; padding-right: .85rem; cursor: text; }
+
+.mexa-select:focus-visible,
+.mexa-date:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+.mexa-submit {
+  background: var(--mexa-submit);
+  color: #fff;
+  border: 0;
+  border-radius: 9px;
+  padding: .55rem 1.4rem;
+  font: inherit;
+  font-size: .92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
+}
+.mexa-submit:hover:not(:disabled) { background: var(--mexa-submit-h); }
+.mexa-submit:disabled { opacity: .6; cursor: not-allowed; }
+.mexa-submit:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+/* ── KPI tile ─────────────────────────────────────────────── */
+
+.mexa-kpis {
+  display: grid;
+  gap: .85rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  margin-bottom: 1rem;
+}
+
+.mexa-kpi {
+  background: var(--mexa-card);
+  border-radius: 13px;
+  padding: .95rem 1.05rem;
+  box-shadow: 0 6px 18px -8px rgba(12, 10, 40, .45);
+  min-width: 0;
+}
+
+.mexa-kpi-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: .6rem;
+}
+
+.mexa-kpi-label {
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--mexa-ink);
+  line-height: 1.25;
+  min-width: 0;
+}
+
+/* The coloured disc. Its colour is decoration — the label already says
+   what the number is — so it never carries meaning on its own. */
+.mexa-kpi-icon {
+  width: 2.6rem; height: 2.6rem;
+  border-radius: 999px;
+  display: grid; place-items: center;
+  flex: none;
+  color: #fff;
+}
+.mexa-kpi-icon svg, .mexa-kpi-icon mat-icon { width: 1.3rem; height: 1.3rem; font-size: 1.3rem; }
+
+.mexa-kpi-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--mexa-ink);
+  line-height: 1.15;
+  margin-top: .35rem;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+.mexa-kpi-value small { font-size: .95rem; font-weight: 600; color: var(--mexa-ink-3); margin-left: .25rem; }
+
+.mexa-kpi-sub {
+  margin-top: .3rem;
+  font-size: .82rem;
+  color: var(--mexa-ink-3);
+}
+
+/* Direction is stated with an arrow as well as a colour, so the meaning
+   survives for a reader who cannot separate red from green. */
+.mexa-delta { font-weight: 700; }
+.mexa-delta-up   { color: var(--mexa-good); }
+.mexa-delta-down { color: var(--mexa-bad); }
+
+/* ── Card ─────────────────────────────────────────────────── */
+
+.mexa-card {
+  background: var(--mexa-card);
+  border-radius: 18px;
+  padding: 1.1rem 1.25rem 1.25rem;
+  box-shadow: 0 10px 26px -12px rgba(12, 10, 40, .5);
+  min-width: 0;
+}
+
+.mexa-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--mexa-ink);
+  margin: 0 0 .85rem;
+  text-align: center;
+}
+/* Tables and lists read better with the title on the left; charts are
+   centred, as in the mock. */
+.mexa-card-title-left { text-align: left; }
+
+.mexa-card-hint { font-size: .82rem; color: var(--mexa-ink-3); margin: -.5rem 0 .75rem; }
+
+.mexa-grid { display: grid; gap: 1rem; margin-bottom: 1rem; min-width: 0; }
+
+/* ── Table ────────────────────────────────────────────────── */
+
+.mexa-tablewrap { overflow-x: auto; }
+
+.mexa-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: .88rem;
+  min-width: 40rem;
+}
+
+.mexa-table thead th {
+  background: var(--mexa-thead);
+  color: var(--mexa-ink);
+  font-weight: 700;
+  text-align: left;
+  padding: .7rem .8rem;
+  white-space: nowrap;
+}
+.mexa-table thead th:first-child { border-radius: 9px 0 0 9px; }
+.mexa-table thead th:last-child  { border-radius: 0 9px 9px 0; }
+
+.mexa-table tbody td {
+  padding: .75rem .8rem;
+  color: var(--mexa-ink-2);
+  border-bottom: 1px solid var(--mexa-rule);
+  vertical-align: middle;
+}
+.mexa-table tbody tr:nth-child(even) { background: var(--mexa-row-alt); }
+.mexa-table tbody tr:last-child td { border-bottom: 0; }
+.mexa-table .num { font-variant-numeric: tabular-nums; }
+.mexa-table .strong { color: var(--mexa-ink); font-weight: 600; }
+
+.mexa-empty { text-align: center; padding: 2.5rem 1rem; color: var(--mexa-ink-3); }
+
+/* Search box above a table */
+.mexa-search {
+  border: 1px solid var(--mexa-rule);
+  border-radius: 10px;
+  padding: .5rem .85rem;
+  font: inherit;
+  font-size: .9rem;
+  background: var(--mexa-card);
+  color: var(--mexa-ink);
+  min-width: 12rem;
+}
+.mexa-search:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 1px; }
+
+.mexa-tablebar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .75rem;
+  justify-content: space-between; margin-bottom: .85rem;
+}
+
+.mexa-pager {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .75rem;
+  justify-content: space-between; padding-top: .9rem;
+  font-size: .84rem; color: var(--mexa-ink-3);
+}
+.mexa-pagebtn {
+  background: none; border: 0; font: inherit; font-size: .86rem; font-weight: 600;
+  color: var(--mexa-ink-2); cursor: pointer; padding: .35rem .6rem; border-radius: 7px;
+}
+.mexa-pagebtn:hover:not(:disabled) { background: var(--mexa-row-alt); }
+.mexa-pagebtn:disabled { opacity: .4; cursor: not-allowed; }
+.mexa-pagebtn:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 1px; }
+
+/* ── Badges ───────────────────────────────────────────────── */
+
+.mexa-badge {
+  display: inline-block;
+  padding: .25rem .7rem;
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.mexa-badge-good    { background: #e7f8ee; color: #157347; border-color: #b7ebcb; }
+.mexa-badge-warn    { background: #fff5e0; color: #9a6100; border-color: #fbe2ab; }
+.mexa-badge-bad     { background: #fdeaec; color: #b42334; border-color: #f7c6cc; }
+.mexa-badge-info    { background: #e8f0fe; color: #1d4ed8; border-color: #c3d7fb; }
+.mexa-badge-violet  { background: #f1ebfb; color: #6d31c4; border-color: #ddcbf5; }
+.mexa-badge-neutral { background: #eef0f4; color: #4b5262; border-color: #dcdfe8; }
+
+.dark .mexa-badge-good    { background: #10331f; color: #6fdba0; border-color: #1d5c38; }
+.dark .mexa-badge-warn    { background: #362a10; color: #f7c667; border-color: #5e4a1c; }
+.dark .mexa-badge-bad     { background: #3a1620; color: #f59aa6; border-color: #62232f; }
+.dark .mexa-badge-info    { background: #14243d; color: #8fb8f5; border-color: #1e3a63; }
+.dark .mexa-badge-violet  { background: #241a3d; color: #c0a3f0; border-color: #3c2a63; }
+.dark .mexa-badge-neutral { background: #262a36; color: #aab2c4; border-color: #363c4c; }
+
+/* ── Alerts on the field ──────────────────────────────────── */
+
+.mexa-note {
+  background: var(--mexa-card);
+  border-radius: 13px;
+  padding: .85rem 1.1rem;
+  margin-bottom: 1rem;
+  font-size: .9rem;
+  color: var(--mexa-ink-2);
+  border-left: 4px solid var(--mexa-info);
+  box-shadow: 0 6px 18px -10px rgba(12, 10, 40, .45);
+}
+.mexa-note strong { color: var(--mexa-ink); }
+.mexa-note-warn { border-left-color: var(--mexa-warn); }
+.mexa-note-bad  { border-left-color: var(--mexa-bad); }
+
+/* ── Ranked list, as used by Top 5 panels ─────────────────── */
+
+.mexa-rank { list-style: none; margin: 0; padding: 0; }
+.mexa-rank li {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem;
+  padding: .55rem 0;
+  border-bottom: 1px solid var(--mexa-rule);
+}
+.mexa-rank li:last-child { border-bottom: 0; }
+.mexa-rank-n { color: var(--mexa-ink-3); font-size: .8rem; margin-right: .35rem; }
+.mexa-rank-name { font-size: .9rem; color: var(--mexa-ink); font-weight: 600; min-width: 0; }
+.mexa-rank-sub { display: block; font-size: .78rem; color: var(--mexa-ink-3); font-weight: 400; }
+.mexa-rank-value { font-size: .86rem; color: var(--mexa-ink-2); white-space: nowrap; font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mexa-submit, .mexa-pagebtn { transition: none; }
+}
+
+/* ── Status chips that sit beside a dashboard title ───────────
+   The OEE and Maintenance screens put a live tally next to the
+   heading ("Running: 16  Idle: 02"). It rides in the title bar, so
+   the text is white and the only colour is the dot. */
+
+.mexa-statuschips {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: .35rem 1.1rem;
+  margin-left: 1rem;
+}
+.mexa-statuschip {
+  display: inline-flex; align-items: center; gap: .4rem;
+  color: #fff; font-size: .85rem; font-weight: 600;
+  white-space: nowrap;
+}
+.mexa-statuschip::before {
+  content: ''; width: .62rem; height: .62rem; border-radius: 50%;
+  background: var(--chip, #fff); flex: none;
+}
+
+/* ── Tab pair (OEE: Analytics | Report) ───────────────────────
+   Tabs sit ON the card, so the active one shares the card's white
+   and loses its bottom edge; the inactive one is a muted lavender
+   tucked behind it. */
+
+.mexa-tabs {
+  display: flex; gap: .25rem; margin: 0 auto -1px;
+  width: max-content; position: relative; z-index: 1;
+}
+.mexa-tab {
+  appearance: none; border: 0; cursor: pointer;
+  padding: .7rem 2.5rem;
+  border-radius: 12px 12px 0 0;
+  font: inherit; font-size: 1rem; font-weight: 700;
+  background: #ded9ee; color: #8b86a3;
+  transition: background .15s, color .15s;
+}
+.mexa-tab[aria-selected='true'] { background: #fff; color: var(--mexa-ink); }
+.mexa-tab:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.mexa-tabpanel { border-radius: 18px; }
+
+/* ── Machine OEE tile (OEE dashboard, Analytics) ──────────────
+   A solid colour band per grade. White text on all four grades,
+   so the amber is darkened past what the mock shows to keep the
+   label above 4.5:1 — WCAG wins over an exact colour match. */
+
+.mexa-oeecards {
+  display: grid; gap: .85rem;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+.mexa-oeecard {
+  border-radius: 14px; padding: .9rem 1rem;
+  color: #fff;
+  display: flex; flex-direction: column; gap: .6rem;
+}
+.mexa-oeecard-head {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+}
+.mexa-oeecard-name { font-size: 1.05rem; font-weight: 800; }
+.mexa-oeecard-grade { display: inline-flex; align-items: center; gap: .35rem; font-size: .75rem; }
+.mexa-oeecard-grade::before {
+  content: ''; width: .5rem; height: .5rem; border-radius: 50%; background: #fff;
+}
+.mexa-oeecard-body { display: flex; align-items: center; gap: .75rem; }
+.mexa-oeecard-metrics { flex: 1; display: grid; gap: .2rem; font-size: .85rem; font-weight: 600; }
+.mexa-oeecard-metrics > div { display: flex; justify-content: space-between; gap: .5rem; }
+
+/* The four grade bands. Amber and green are darkened from the mock
+   for contrast against white text. */
+.mexa-grade-excellent { background: #15803d; }
+.mexa-grade-good      { background: #2f2d8f; }
+.mexa-grade-avg       { background: #b45309; }
+.mexa-grade-poor      { background: #c32b3f; }
+
+/* ── Attention Required rows (Periodic dashboard) ─────────────
+   A count in a coloured disc, a label, and a chevron. Rendered as
+   buttons because each one filters the table below it. */
+
+.mexa-attention { display: grid; gap: .6rem; }
+.mexa-attention-row {
+  display: flex; align-items: center; gap: .85rem; width: 100%;
+  padding: .7rem .9rem;
+  background: #f4f4f8; border: 0; border-radius: 12px;
+  font: inherit; text-align: left; cursor: pointer;
+  transition: background .15s;
+}
+.mexa-attention-row:hover { background: #ebebf3; }
+.mexa-attention-row:focus-visible { outline: 3px solid var(--mexa-navy); outline-offset: 2px; }
+.mexa-attention-n {
+  flex: none; width: 2.4rem; height: 2.4rem; border-radius: 50%;
+  display: grid; place-items: center;
+  color: #fff; font-weight: 800; font-size: .95rem;
+}
+.mexa-attention-label { flex: 1; min-width: 0; }
+.mexa-attention-label strong { display: block; font-size: .92rem; color: var(--mexa-ink); }
+.mexa-attention-label span   { font-size: .78rem; color: var(--mexa-ink-3); }
+.mexa-attention-row .mexa-chev { color: var(--mexa-ink-3); flex: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mexa-tab, .mexa-attention-row { transition: none; }
+}
+
+/* ── Key list: the two-line legend that sits beside a donut ───
+   .mexa-legend is white-on-gradient for the title bar; this one
+   lives inside a white card and stacks label over value, as the
+   Energy and Downtime screens do. */
+
+.mexa-keylist { display: grid; gap: .7rem; align-content: center; margin: 0; padding: 0; list-style: none; }
+.mexa-keylist li { display: flex; align-items: flex-start; gap: .6rem; }
+.mexa-keylist .mexa-key-swatch {
+  flex: none; width: .4rem; align-self: stretch; min-height: 2.1rem;
+  border-radius: 999px; background: var(--swatch, var(--mexa-navy));
+}
+.mexa-keylist .mexa-key-label { font-size: .88rem; font-weight: 700; color: var(--mexa-ink); }
+.mexa-keylist .mexa-key-value { display: block; font-size: .84rem; color: var(--mexa-ink-2); font-weight: 600; }
+
+/* A donut and its key side by side; stacks under ~520px. */
+.mexa-donutrow {
+  display: grid; gap: 1rem; align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+@media (max-width: 33rem) { .mexa-donutrow { grid-template-columns: 1fr; } }
+
+/* ── Contribution meter, as in the Downtime reason summary ────
+   Always paired with the number beside it: the bar is decoration,
+   the figure is the data. Hidden from assistive tech for that
+   reason. */
+
+.mexa-meter {
+  display: inline-block; vertical-align: middle;
+  width: 3.5rem; height: .35rem; margin-right: .5rem;
+  border-radius: 999px; background: var(--mexa-rule); overflow: hidden;
+}
+.mexa-meter-fill { display: block; height: 100%; background: var(--mexa-blue); border-radius: 999px; }
+
+/* ── OEE ring inside a machine tile ───────────────────────────
+   A conic gradient rather than twenty chart instances: the OEE
+   dashboard shows up to twenty machines at once, and twenty
+   ApexCharts on one screen is a visible stall on a shop-floor PC.
+   The percentage is printed in the middle, so the ring is
+   decoration and is hidden from assistive tech. */
+
+.mexa-oeering {
+  flex: none; width: 5.2rem; height: 5.2rem; border-radius: 50%;
+  display: grid; place-items: center;
+  background: conic-gradient(#fff var(--pct, 0%), rgba(255,255,255,.28) 0);
+  position: relative;
+}
+/* The hole is painted with the tile's own band colour, passed down as
+   --ring-hole; inheriting would copy the conic gradient itself. */
+.mexa-oeering::after {
+  content: ''; position: absolute; inset: .62rem;
+  border-radius: 50%; background: var(--ring-hole, #2f2d8f);
+}
+.mexa-oeering-text {
+  position: relative; z-index: 1; text-align: center; line-height: 1.05;
+}
+.mexa-oeering-pct { display: block; font-size: 1.15rem; font-weight: 800; }
+.mexa-oeering-cap { display: block; font-size: .6rem; letter-spacing: .06em; opacity: .85; }
+
+/* The band legend under the tile grid. */
+.mexa-bandlegend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1.1rem;
+  font-size: .82rem; color: var(--mexa-ink-2);
+}
+.mexa-bandlegend span { display: inline-flex; align-items: center; gap: .4rem; }
+.mexa-bandlegend i {
+  width: .62rem; height: .62rem; border-radius: 50%; background: var(--dot); flex: none;
+}
+
+/* A machine whose OEE cannot be computed at all — a missing cycle time,
+   not a bad score. Grey says "no reading", never "failing". */
+.mexa-grade-unknown { background: #64748b; }
+
+/* ── Per-axis readout under a servo chart ─────────────────────
+   Each axis in words, including "--" for a silent one, so a gap in the
+   chart is never the only sign that a sensor is missing. */
+.mexa-axisrow {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem;
+  margin: .5rem 0 0; padding: 0; list-style: none; text-align: center;
+}
+.mexa-axisrow li { display: grid; gap: .1rem; }
+.mexa-axisrow span { font-size: .75rem; color: var(--mexa-ink-3); }
+.mexa-axisrow strong { font-size: .95rem; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }

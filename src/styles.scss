@@ -10,8 +10,12 @@
 // combined. Every rule in it is class-based, so it out-specifies Tailwind's
 // element-level preflight regardless of order.
 @use './styles/dialog';
+// MEXA dashboard design system — the shell, tiles, cards and tables that
+// every Phase 2 dashboard shares.
+@use './styles/mexa';
 @import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@100;200;300;400;500;600;700;800;900&family=Ubuntu:wght@300;400;500;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Questrial&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800&display=swap');
 
 
 html {

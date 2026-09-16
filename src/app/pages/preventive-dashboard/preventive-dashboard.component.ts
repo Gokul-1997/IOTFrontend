@@ -55,6 +55,10 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   trendCategories: string[] = [];
   machineSeries: any[] = [];
   machineCategories: string[] = [];
+  severitySeries: number[] = [];
+  severityTotal = 0;
+  reasonSeries: any[] = [];
+  reasonCategories: string[] = [];
 
   private destroy$ = new Subject<void>();
   private search$  = new RxSubject<string>();
@@ -146,6 +150,20 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
 
     this.machineCategories = (d.alarms_by_machine || []).map((m: any) => m.machine_serial_no);
     this.machineSeries = [{ name: 'Critical alarms', data: (d.alarms_by_machine || []).map((m: any) => m.critical) }];
+
+    /* Donuts take a flat number array; the {name,data} series shape
+       renders an empty chart with no error. */
+    this.severitySeries = [
+      Number(d.alarm_severity.critical) || 0,
+      Number(d.alarm_severity.non_critical) || 0,
+      Number(d.alarm_severity.information) || 0
+    ];
+    this.severityTotal = this.severitySeries.reduce((a, b) => a + b, 0);
+
+    const reasons = (d.top_alarm_reasons || []).slice(0, 5);
+    this.reasonCategories = reasons.map((r: any) => r.alarm_type || r.alarm_name || 'Unnamed');
+    this.reasonSeries = reasons.length
+      ? [{ name: 'Occurrences', data: reasons.map((r: any) => r.occurrences ?? r.critical ?? 0) }] : [];
 
     this.cdr.markForCheck();
   }
@@ -305,15 +323,92 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
     };
   }
 
+  /* Machine-wise alarms is a column chart in the design, matching the
+     other "by machine" panels; reasons stay horizontal because the
+     labels are sentences. */
   get machineChart(): any {
     return {
       chart:  { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
-      plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '60%' } },
-      colors: ['#2563eb'],
-      dataLabels: { enabled: true },
-      xaxis:  { categories: this.machineCategories, title: { text: 'Critical alarms' } },
+      plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
+      colors: this.palette,
+      dataLabels: { enabled: false },
+      // distributed repeats every machine in the legend; the axis names them
+      legend: { show: false },
+      xaxis:  { categories: this.machineCategories },
+      yaxis:  { title: { text: 'No. of Alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark' }
+      tooltip:{ theme: 'dark' },
+      noData: { text: 'No critical alarms in this period' }
+    };
+  }
+
+  private readonly palette = ['#2f2d8f', '#4a76c8', '#9b7ec8', '#17b3a3', '#6b7280'];
+
+  /** Completed over raised. Null-safe: nothing raised is not 0% compliant. */
+  get compliance(): string {
+    const raised = Number(this.data?.kpis?.pm_generated) || 0;
+    if (!raised) return '--';
+    return `${Math.round((Number(this.data.kpis.pm_completed) / raised) * 1000) / 10}%`;
+  }
+
+  /* MEXA pill classes. The older Tailwind helpers are left in place for
+     any call site still using them. */
+  priorityBadge(p: string): string {
+    switch (String(p).toUpperCase()) {
+      case 'CRITICAL':
+      case 'HIGH':   return 'mexa-badge-bad';
+      case 'MEDIUM': return 'mexa-badge-warn';
+      default:       return 'mexa-badge-good';
+    }
+  }
+
+  statusBadge(s: string): string {
+    switch (String(s).toUpperCase()) {
+      case 'OPEN':        return 'mexa-badge-warn';
+      case 'ASSIGNED':
+      case 'IN_PROGRESS': return 'mexa-badge-violet';
+      default:            return 'mexa-badge-info';
+    }
+  }
+
+  /** IN_PROGRESS reads badly in a pill; the underscore is not for users. */
+  statusWord(s: string): string {
+    const v = String(s || '').toUpperCase();
+    if (v === 'IN_PROGRESS') return 'In Progress';
+    return v ? v.charAt(0) + v.slice(1).toLowerCase() : '--';
+  }
+
+  get severityDonut(): any {
+    return {
+      chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
+      labels: ['Critical', 'Non critical', 'Information'],
+      colors: ['#e03131', '#17b3a3', '#f5a623'],
+      plotOptions: {
+        pie: { donut: { size: '62%', labels: {
+          show: true,
+          total: { show: true, label: 'Total', fontSize: '.8rem',
+                   formatter: () => String(this.severityTotal) }
+        } } }
+      },
+      dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%` },
+      // the key list beside the donut already names every severity
+      legend: { show: false },
+      tooltip: { y: { formatter: (v: number) => `${v} alarms` } },
+      noData: { text: 'No alarms in this period' }
+    };
+  }
+
+  get reasonChart(): any {
+    return {
+      chart: { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
+      plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '62%', distributed: true } },
+      colors: this.palette,
+      dataLabels: { enabled: true, style: { fontSize: '.72rem', fontWeight: 700, colors: ['#fff'] } },
+      legend: { show: false },
+      xaxis: { categories: this.reasonCategories, title: { text: 'Occurrences' } },
+      grid:  { borderColor: 'rgba(148,163,184,.25)' },
+      tooltip: { theme: 'dark' },
+      noData: { text: 'No critical alarms in this period' }
     };
   }
 }

@@ -1,237 +1,281 @@
-<div class="p-4 sm:p-6 space-y-5 min-w-0">
+<!-- Phase 2 · Screen 5 — Alarm Report Dashboard, MEXA design. -->
 
-  <!-- ══════════ HEADER ══════════ -->
-  <div class="flex flex-wrap items-start justify-between gap-3">
-    <div class="min-w-0">
-      <h1 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Alarms</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400">
-        Faults reported by the machines, with how long each one lasted.
-        <span *ngIf="updatedAt" class="ml-1">Updated {{ updatedAt }}.</span>
-      </p>
+<p class="mexa-updated" *ngIf="updatedAt">
+  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
+  Last Updated: {{ updatedAt }}
+</p>
+
+<!-- ══════════ TITLE BAR ══════════ -->
+<form class="mexa-titlebar" (ngSubmit)="submit()">
+  <h1 class="mexa-title">Alarm Report Dashboard</h1>
+  <span class="mexa-titlebar-spacer"></span>
+
+  <div class="mexa-filters">
+    <label class="mexa-filter-label" for="alMachine">Machine Name</label>
+    <select id="alMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
+      <option [ngValue]="null">All</option>
+      <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+    </select>
+
+    <label class="mexa-filter-label" for="alShift">Shift</label>
+    <select id="alShift" class="mexa-select" [(ngModel)]="f.shift_id" name="shift">
+      <option [ngValue]="null">All</option>
+      <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_name || s.name }}</option>
+    </select>
+
+    <label class="mexa-filter-label" for="alSeverity">Severity</label>
+    <select id="alSeverity" class="mexa-select" [(ngModel)]="f.severity" name="severity">
+      <option value="">All</option>
+      <option value="CRITICAL">Critical</option>
+      <option value="NORMAL">Normal</option>
+    </select>
+
+    <label class="mexa-filter-label" for="alType">Alarm Type</label>
+    <select id="alType" class="mexa-select" [(ngModel)]="f.alarm_type" name="alarmType">
+      <option value="">All</option>
+      <option *ngFor="let t of data?.facets?.types || []" [value]="t">{{ t }}</option>
+    </select>
+
+    <label class="mexa-filter-label" for="alFrom">Date</label>
+    <input id="alFrom" type="date" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
+    <span class="mexa-filter-label" aria-hidden="true">–</span>
+    <input id="alTo" type="date" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
+
+    <button type="submit" class="mexa-submit" [disabled]="loading">
+      {{ loading ? 'Loading…' : 'Submit' }}
+    </button>
+  </div>
+</form>
+
+<!-- ══════════ STATES ══════════ -->
+<p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
+<div *ngIf="loading && !data" class="mexa-note" aria-live="polite">Loading…</div>
+
+<ng-container *ngIf="data">
+
+  <!-- Nothing ever recorded is a setup problem, not an empty filter. -->
+  <p *ngIf="isUnconfigured" class="mexa-note mexa-note-warn">
+    <strong>No alarms have been recorded yet.</strong>
+    Alarms appear here as soon as the devices report an alarm code in their MQTT payload.
+  </p>
+
+  <!-- ══════════ KPI TILES ══════════ -->
+  <div class="mexa-kpis">
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Total<br>Alarms</span>
+        <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true">
+          <mat-icon>notifications</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ data.kpis.total }}</p>
+      <p class="mexa-kpi-sub">All alarms</p>
     </div>
-    <div class="flex items-center gap-1" role="group" aria-label="Export the filtered list">
-      <button type="button" class="ui-btn ui-btn-ghost" (click)="export('xlsx')" [disabled]="exporting">
-        {{ exporting === 'xlsx' ? '…' : 'Excel' }}
-      </button>
-      <button type="button" class="ui-btn ui-btn-ghost" (click)="export('csv')" [disabled]="exporting">
-        {{ exporting === 'csv' ? '…' : 'CSV' }}
-      </button>
-      <button type="button" class="ui-btn ui-btn-ghost" (click)="export('pdf')" [disabled]="exporting">
-        {{ exporting === 'pdf' ? '…' : 'PDF' }}
-      </button>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Critical<br>Alarms</span>
+        <span class="mexa-kpi-icon" style="background:#dc2626" aria-hidden="true">
+          <mat-icon>notification_important</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ data.kpis.critical }}</p>
+      <p class="mexa-kpi-sub">{{ sharePct(data.kpis.critical, data.kpis.total) }} of total</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Normal<br>Alarms</span>
+        <span class="mexa-kpi-icon" style="background:#17b3a3" aria-hidden="true">
+          <mat-icon>notifications_active</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ data.kpis.normal }}</p>
+      <p class="mexa-kpi-sub">{{ sharePct(data.kpis.normal, data.kpis.total) }} of total</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Open<br>Alarms</span>
+        <span class="mexa-kpi-icon" style="background:#4a76c8" aria-hidden="true">
+          <mat-icon>pending</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ data.kpis.open }}</p>
+      <p class="mexa-kpi-sub">{{ sharePct(data.kpis.open, data.kpis.total) }} of total</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Max<br>Duration</span>
+        <span class="mexa-kpi-icon" style="background:#6b7280" aria-hidden="true">
+          <mat-icon>timelapse</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ duration(data.kpis.max_duration_seconds) }}</p>
+      <p class="mexa-kpi-sub">Average {{ duration(data.kpis.avg_duration_seconds) }}</p>
     </div>
   </div>
 
-  <!-- ══════════ FILTERS ══════════ -->
-  <form class="ui-viewbar grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 items-end"
-        (ngSubmit)="submit()">
-    <div>
-      <label for="alFrom" class="ui-label">From</label>
-      <input id="alFrom" type="date" class="ui-input" [(ngModel)]="f.from" name="from" (ngModelChange)="submit()">
-    </div>
-    <div>
-      <label for="alTo" class="ui-label">To</label>
-      <input id="alTo" type="date" class="ui-input" [(ngModel)]="f.to" name="to" (ngModelChange)="submit()">
-    </div>
-    <div>
-      <label for="alMachine" class="ui-label">Machine</label>
-      <select id="alMachine" class="filter-select w-full" [(ngModel)]="f.machine_id" name="machine" (ngModelChange)="submit()">
-        <option [ngValue]="null">All machines</option>
-        <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-      </select>
-    </div>
-    <div>
-      <label for="alShift" class="ui-label">Shift</label>
-      <select id="alShift" class="filter-select w-full" [(ngModel)]="f.shift_id" name="shift" (ngModelChange)="submit()">
-        <option [ngValue]="null">All shifts</option>
-        <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.name }}</option>
-      </select>
-    </div>
-    <div>
-      <label for="alSeverity" class="ui-label">Severity</label>
-      <select id="alSeverity" class="filter-select w-full" [(ngModel)]="f.severity" name="severity" (ngModelChange)="submit()">
-        <option value="">Any</option>
-        <option value="CRITICAL">Critical</option>
-        <option value="NORMAL">Normal</option>
-      </select>
-    </div>
-    <div>
-      <label for="alType" class="ui-label">Alarm name</label>
-      <select id="alType" class="filter-select w-full" [(ngModel)]="f.alarm_type" name="alarmType" (ngModelChange)="submit()">
-        <option value="">Any</option>
-        <option *ngFor="let t of data?.facets?.types || []" [value]="t">{{ t }}</option>
-      </select>
-    </div>
-    <div>
-      <label for="alSearch" class="ui-label">Search</label>
-      <input id="alSearch" type="search" class="ui-input" placeholder="Code, name or machine"
-             [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
-    </div>
-    <div class="sm:col-span-2 lg:col-span-4 xl:col-span-7">
-      <button type="button" class="ui-btn ui-btn-ghost" (click)="reset()">Reset filters</button>
-    </div>
-  </form>
+  <!-- ══════════ ROW 2 ══════════ -->
+  <div class="mexa-grid xl:grid-cols-4 lg:grid-cols-2">
 
-  <!-- ══════════ STATES ══════════ -->
-  <p *ngIf="errorMsg" class="ui-alert ui-alert-error" role="alert">{{ errorMsg }}</p>
-  <div *ngIf="loading && !data" class="ui-alert" aria-live="polite">Loading…</div>
+    <section class="mexa-card">
+      <h2 class="mexa-card-title">Top 5 Alarms By Machine</h2>
+      <apx-chart *ngIf="machineSeries.length"
+        [series]="machineSeries" [chart]="machineChart.chart" [plotOptions]="machineChart.plotOptions"
+        [colors]="machineChart.colors" [dataLabels]="machineChart.dataLabels"
+        [xaxis]="machineChart.xaxis" [yaxis]="machineChart.yaxis" [grid]="machineChart.grid"
+        [legend]="machineChart.legend" [tooltip]="machineChart.tooltip"
+        [noData]="machineChart.noData"></apx-chart>
+      <p *ngIf="!machineSeries.length" class="mexa-empty">No alarms in this period.</p>
+    </section>
 
-  <div *ngIf="isUnconfigured" class="ui-alert ui-alert-warn">
-    <strong>No alarms have ever been recorded.</strong>
-    The machines are not reporting alarm states over MQTT yet, so this screen — and the
-    preventive-maintenance rules that depend on alarms — will stay empty until they do.
-  </div>
-
-  <ng-container *ngIf="data">
-
-    <!-- ══════════ KPIs ══════════ -->
-    <div class="grid gap-3 grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Total alarms</p>
-        <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ data.kpis.total }}</p>
-        <p class="ui-hint">In this period</p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Critical</p>
-        <p class="text-3xl font-bold mt-1"
-           [class]="data.kpis.critical > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-slate-100'">
-          {{ data.kpis.critical }}
-        </p>
-        <p class="ui-hint">Highest severity</p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Normal</p>
-        <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ data.kpis.normal }}</p>
-        <p class="ui-hint">Everything else</p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Still open</p>
-        <p class="text-3xl font-bold mt-1"
-           [class]="data.kpis.open > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-slate-100'">
-          {{ data.kpis.open }}
-        </p>
-        <p class="ui-hint">Not yet cleared</p>
-      </div>
-      <div class="ui-tabpanel">
-        <p class="ui-section-title">Longest alarm</p>
-        <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">
-          {{ duration(data.kpis.max_duration_seconds) }}
-        </p>
-        <!-- an open alarm is measured to now, so the worst outage is visible
-             before anyone closes it -->
-        <p class="ui-hint">Average {{ duration(data.kpis.avg_duration_seconds) }}</p>
-      </div>
-    </div>
-
-    <!-- ══════════ CHARTS ══════════ -->
-    <div class="grid gap-4 lg:grid-cols-2">
-      <section class="ui-tabpanel min-w-0">
-        <h2 class="ui-section-title">Alarms per day</h2>
-        <apx-chart *ngIf="trendSeries.length"
-          [series]="trendSeries" [chart]="trendChart.chart" [plotOptions]="trendChart.plotOptions"
-          [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
-          [legend]="trendChart.legend" [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis"
-          [grid]="trendChart.grid" [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
-      </section>
-
-      <section class="ui-tabpanel min-w-0">
-        <h2 class="ui-section-title">Alarms by machine</h2>
-        <apx-chart *ngIf="machineSeries.length"
-          [series]="machineSeries" [chart]="machineChart.chart" [plotOptions]="machineChart.plotOptions"
-          [colors]="machineChart.colors" [dataLabels]="machineChart.dataLabels"
-          [xaxis]="machineChart.xaxis" [grid]="machineChart.grid"
-          [tooltip]="machineChart.tooltip" [noData]="machineChart.noData"></apx-chart>
-      </section>
-    </div>
-
-    <!-- ══════════ BY SHIFT ══════════ -->
-    <section class="ui-tabpanel min-w-0">
-      <h2 class="ui-section-title">By shift</h2>
-      <p *ngIf="!data.by_shift.length" class="text-sm text-gray-400">No alarms in this period.</p>
-      <ul class="divide-y divide-gray-100 dark:divide-gray-700">
-        <li *ngFor="let s of data.by_shift" class="py-2 flex items-center justify-between gap-3">
-          <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ s.shift_name }}</span>
-          <span class="flex items-center gap-2 text-xs">
-            <span class="text-gray-500">{{ s.total }} total</span>
-            <span *ngIf="s.critical > 0"
-                  class="px-2 py-0.5 rounded-md bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
-              {{ s.critical }} critical
+    <section class="mexa-card">
+      <h2 class="mexa-card-title">Alarms by Shift</h2>
+      <div class="mexa-donutrow" *ngIf="shiftDonutSeries.length; else noShift">
+        <apx-chart
+          [series]="shiftDonutSeries" [chart]="shiftDonut.chart" [labels]="shiftDonut.labels"
+          [colors]="shiftDonut.colors" [dataLabels]="shiftDonut.dataLabels"
+          [plotOptions]="shiftDonut.plotOptions" [legend]="shiftDonut.legend"
+          [tooltip]="shiftDonut.tooltip" [noData]="shiftDonut.noData"></apx-chart>
+        <ul class="mexa-keylist">
+          <li *ngFor="let s of data.by_shift; let i = index">
+            <span class="mexa-key-swatch" [style.--swatch]="donutColour(i)" aria-hidden="true"></span>
+            <span>
+              <span class="mexa-key-label">{{ s.shift_name }}</span>
+              <span class="mexa-key-value">{{ s.total }} ({{ sharePct(s.total, shiftTotal) }})</span>
             </span>
-          </span>
-        </li>
-      </ul>
+          </li>
+        </ul>
+      </div>
+      <ng-template #noShift><p class="mexa-empty">No alarms in this period.</p></ng-template>
     </section>
 
-    <!-- ══════════ ALARM TABLE ══════════ -->
-    <section class="ui-tabpanel min-w-0">
-      <h2 class="ui-section-title">Alarm details</h2>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <caption class="sr-only">Alarm records, most recent first</caption>
-          <thead>
-            <tr class="text-left text-xs text-gray-500 border-b border-gray-200 dark:border-gray-700">
-              <th scope="col" class="px-3 py-2 font-semibold">Machine</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Shift</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Code</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Alarm</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Severity</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Generated</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Closed</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Duration</th>
-              <th scope="col" class="px-3 py-2 font-semibold">Status</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-50 dark:divide-gray-700">
-            <tr *ngFor="let a of data.alarms.data">
-              <td class="px-3 py-2 text-gray-800 dark:text-gray-100">{{ a.machine_serial_no }}</td>
-              <td class="px-3 py-2 text-gray-500">{{ a.shift_name }}</td>
-              <td class="px-3 py-2 text-gray-500 font-mono text-xs">{{ a.alarm_code || '--' }}</td>
-              <td class="px-3 py-2 text-gray-700 dark:text-gray-200">{{ a.alarm_type }}</td>
-              <td class="px-3 py-2">
-                <span class="px-2 py-0.5 rounded-md text-xs font-medium" [class]="severityClass(a.severity)">
-                  {{ isCritical(a.severity) ? 'Critical' : 'Normal' }}
-                </span>
-              </td>
-              <td class="px-3 py-2 text-gray-500 whitespace-nowrap">{{ a.started_at | date:'dd MMM HH:mm' }}</td>
-              <td class="px-3 py-2 text-gray-500 whitespace-nowrap">
-                {{ a.ended_at ? (a.ended_at | date:'dd MMM HH:mm') : '--' }}
-              </td>
-              <td class="px-3 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                {{ duration(a.duration_seconds) }}
-                <!-- an open alarm is still counting, and saying so stops the
-                     number reading as a final figure -->
-                <span *ngIf="a.is_open" class="text-xs text-gray-400">so far</span>
-              </td>
-              <td class="px-3 py-2">
-                <span class="px-2 py-0.5 rounded-md text-xs font-medium"
-                      [class]="a.is_open
-                        ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
-                        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'">
-                  {{ a.is_open ? 'Open' : 'Closed' }}
-                </span>
-              </td>
-            </tr>
-            <tr *ngIf="!data.alarms.data.length">
-              <td colspan="9" class="px-3 py-10 text-center text-gray-400">
-                No alarms match these filters.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <section class="mexa-card">
+      <!-- The mock calls this "Alarm Type Distribution" but plots severity;
+           named for what it actually shows. -->
+      <h2 class="mexa-card-title">Alarm Severity Distribution</h2>
+      <div class="mexa-donutrow" *ngIf="data.kpis.total; else noSeverity">
+        <apx-chart
+          [series]="severitySeries" [chart]="severityDonut.chart" [labels]="severityDonut.labels"
+          [colors]="severityDonut.colors" [dataLabels]="severityDonut.dataLabels"
+          [plotOptions]="severityDonut.plotOptions" [legend]="severityDonut.legend"
+          [tooltip]="severityDonut.tooltip" [noData]="severityDonut.noData"></apx-chart>
+        <ul class="mexa-keylist">
+          <li>
+            <span class="mexa-key-swatch" style="--swatch:#e03131" aria-hidden="true"></span>
+            <span>
+              <span class="mexa-key-label">Critical</span>
+              <span class="mexa-key-value">{{ data.by_severity.critical }}
+                ({{ sharePct(data.by_severity.critical, data.kpis.total) }})</span>
+            </span>
+          </li>
+          <li>
+            <span class="mexa-key-swatch" style="--swatch:#17b3a3" aria-hidden="true"></span>
+            <span>
+              <span class="mexa-key-label">Normal</span>
+              <span class="mexa-key-value">{{ data.by_severity.normal }}
+                ({{ sharePct(data.by_severity.normal, data.kpis.total) }})</span>
+            </span>
+          </li>
+        </ul>
       </div>
-
-      <div class="flex items-center justify-between gap-3 pt-3" *ngIf="data.alarms.total > 0">
-        <p class="text-xs text-gray-500" aria-live="polite">
-          Page {{ data.alarms.page }} of {{ data.alarms.totalPages }} · {{ data.alarms.total }} alarm(s)
-        </p>
-        <div class="flex items-center gap-2">
-          <button type="button" class="ui-btn ui-btn-ghost" (click)="changePage(-1)"
-                  [disabled]="data.alarms.page <= 1">Previous</button>
-          <button type="button" class="ui-btn ui-btn-ghost" (click)="changePage(1)"
-                  [disabled]="data.alarms.page >= data.alarms.totalPages">Next</button>
-        </div>
-      </div>
+      <ng-template #noSeverity><p class="mexa-empty">No alarms in this period.</p></ng-template>
     </section>
-  </ng-container>
-</div>
+
+    <section class="mexa-card">
+      <h2 class="mexa-card-title">Alarms Trend</h2>
+      <apx-chart *ngIf="trendSeries.length"
+        [series]="trendSeries" [chart]="trendChart.chart" [plotOptions]="trendChart.plotOptions"
+        [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels" [stroke]="trendChart.stroke"
+        [markers]="trendChart.markers" [legend]="trendChart.legend"
+        [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
+        [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
+      <p *ngIf="!trendSeries.length" class="mexa-empty">No alarms in this period.</p>
+    </section>
+  </div>
+
+  <!-- ══════════ ALARMS DETAILS ══════════ -->
+  <section class="mexa-card">
+    <div class="mexa-tablebar">
+      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Alarms Details</h2>
+      <span class="inline-flex items-center gap-2 flex-wrap">
+        <label class="sr-only" for="alSearch">Search alarms</label>
+        <input id="alSearch" type="search" class="mexa-search" placeholder="Search"
+               [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
+        <span class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
+          <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">
+            {{ exporting === 'xlsx' ? '…' : 'Excel' }}
+          </button>
+          <button type="button" class="mexa-pagebtn" (click)="export('csv')" [disabled]="exporting">
+            {{ exporting === 'csv' ? '…' : 'CSV' }}
+          </button>
+          <button type="button" class="mexa-pagebtn" (click)="export('pdf')" [disabled]="exporting">
+            {{ exporting === 'pdf' ? '…' : 'PDF' }}
+          </button>
+        </span>
+        <button type="button" class="mexa-pagebtn" (click)="reset()">Reset</button>
+      </span>
+    </div>
+
+    <div class="mexa-tablewrap">
+      <table class="mexa-table">
+        <caption class="sr-only">Alarms matching the current filters, newest first</caption>
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Machine Name</th>
+            <th scope="col">Shift</th>
+            <th scope="col">Alarm Code</th>
+            <th scope="col">Alarm Name</th>
+            <th scope="col">Severity</th>
+            <th scope="col">Status</th>
+            <th scope="col">Duration</th>
+            <th scope="col">Generated Time</th>
+            <th scope="col">Closed Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of data.alarms.data; let i = index">
+            <td class="num">{{ (data.alarms.page - 1) * limit + i + 1 }}</td>
+            <td class="strong">{{ a.machine_serial_no }}</td>
+            <td>{{ a.shift_name || '--' }}</td>
+            <td class="num">{{ a.alarm_code }}</td>
+            <td>{{ a.alarm_type || '--' }}</td>
+            <td>
+              <!-- Colour reinforces the word; it is never the only cue. -->
+              <span class="mexa-badge" [class.mexa-badge-bad]="isCritical(a.severity)"
+                    [class.mexa-badge-warn]="!isCritical(a.severity)">
+                {{ isCritical(a.severity) ? 'Critical' : 'Normal' }}
+              </span>
+            </td>
+            <td>
+              <span class="mexa-badge" [class.mexa-badge-warn]="a.is_open"
+                    [class.mexa-badge-info]="!a.is_open">
+                {{ a.is_open ? 'Open' : 'Closed' }}
+              </span>
+            </td>
+            <td class="num">{{ duration(a.duration_seconds) }}</td>
+            <td class="num whitespace-nowrap">{{ a.started_at | date:'dd-MMM-yyyy HH:mm:ss' }}</td>
+            <td class="num whitespace-nowrap">{{ a.ended_at ? (a.ended_at | date:'dd-MMM-yyyy HH:mm:ss') : '-' }}</td>
+          </tr>
+          <tr *ngIf="!data.alarms.data.length">
+            <td colspan="10" class="mexa-empty">No alarms match these filters.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mexa-pager" *ngIf="data.alarms.total > 0">
+      <span aria-live="polite">Showing: {{ data.alarms.data.length }} of {{ data.alarms.total }}</span>
+      <span class="inline-flex items-center gap-2">
+        <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
+                [disabled]="data.alarms.page <= 1">‹ Previous</button>
+        <span>{{ data.alarms.page }} / {{ data.alarms.totalPages }}</span>
+        <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
+                [disabled]="data.alarms.page >= data.alarms.totalPages">Next ›</button>
+      </span>
+    </div>
+  </section>
+</ng-container>

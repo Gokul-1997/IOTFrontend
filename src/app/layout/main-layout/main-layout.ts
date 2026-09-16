@@ -8,4 +8,7 @@ import { HeaderComponent } from '../header/header.component';
   imports: [RouterOutlet, HeaderComponent],
   templateUrl: './main-layout.html',
 })
-export class MainLayoutComponent {}
+export class MainLayoutComponent {
+  /** Read once rather than hard-coded, so the footer is not wrong in January. */
+  readonly year = new Date().getFullYear();
+}

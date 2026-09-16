@@ -40,6 +40,14 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
   productionSeries: any[] = [];
   productionCategories: string[] = [];
 
+  /* The three Top-5 bars and the grouped quality/utilisation chart. Each
+     keeps its own categories: an operator with no rejection rate must not
+     shift the labels on a chart they do appear in. */
+  scoreSeries: any[] = [];      scoreCategories: string[] = [];
+  rejectionSeries: any[] = [];  rejectionCategories: string[] = [];
+  downtimeSeries: any[] = [];   downtimeCategories: string[] = [];
+  apqSeries: any[] = [];        apqCategories: string[] = [];
+
   private destroy$ = new Subject<void>();
   private search$ = new RxSubject<string>();
 
@@ -110,6 +118,36 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
 
     this.productionCategories = (d.by_production || []).map((r: any) => r.operator_name);
     this.productionSeries = [{ name: 'Parts', data: (d.by_production || []).map((r: any) => r.produced) }];
+
+    /* Top 5 panels are drawn from the page the table shows. Rows whose
+       metric is null are dropped rather than plotted as zero — an
+       operator with nothing measured is not an operator scoring nil. */
+    const rows = d.operators?.data || [];
+
+    const scored = this.top(rows, 'oee_pct');
+    this.scoreCategories = scored.map((r: any) => r.operator_name);
+    this.scoreSeries = scored.length ? [{ name: 'OEE', data: scored.map((r: any) => r.oee_pct) }] : [];
+
+    const rejected = this.top(rows, 'rejection_rate_pct');
+    this.rejectionCategories = rejected.map((r: any) => r.operator_name);
+    this.rejectionSeries = rejected.length
+      ? [{ name: 'Rejection', data: rejected.map((r: any) => r.rejection_rate_pct) }] : [];
+
+    const down = [...rows].filter((r: any) => Number(r.downtime_seconds) > 0)
+      .sort((a: any, b: any) => b.downtime_seconds - a.downtime_seconds).slice(0, 5);
+    this.downtimeCategories = down.map((r: any) => r.operator_name);
+    this.downtimeSeries = down.length
+      ? [{ name: 'Downtime', data: down.map((r: any) => +(r.downtime_seconds / 3600).toFixed(2)) }] : [];
+
+    /* Availability is not computed per operator, so this charts the two
+       rates that are — mislabelling utilisation as availability would be
+       worse than showing two bars instead of three. */
+    const apq = scored.length ? scored : rows.slice(0, 5);
+    this.apqCategories = apq.map((r: any) => r.operator_name);
+    this.apqSeries = apq.length ? [
+      { name: 'Utilisation', data: apq.map((r: any) => r.utilization_pct ?? 0) },
+      { name: 'Quality',     data: apq.map((r: any) => r.quality_rate_pct ?? 0) }
+    ] : [];
 
     this.cdr.markForCheck();
   }
@@ -198,6 +236,77 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'dark' },
       noData: { text: 'No production recorded for this period' }
+    };
+  }
+
+  /* ── performance bands ── */
+
+  /** Server-computed over every operator, so the tiles do not change as
+   *  you page through the table. */
+  get bands(): any {
+    return this.data?.bands ?? { excellent: 0, good: 0, average: 0, needs_help: 0, unrated: 0 };
+  }
+
+  bandLabel(oee: number | null | undefined): string {
+    if (oee === null || oee === undefined) return 'Unrated';
+    if (oee >= 85) return 'Excellent';
+    if (oee >= 75) return 'Good';
+    if (oee >= 60) return 'Avg';
+    return 'Help';
+  }
+
+  bandBadge(oee: number | null | undefined): string {
+    if (oee === null || oee === undefined) return 'mexa-badge-neutral';
+    if (oee >= 85) return 'mexa-badge-good';
+    if (oee >= 75) return 'mexa-badge-info';
+    if (oee >= 60) return 'mexa-badge-warn';
+    return 'mexa-badge-bad';
+  }
+
+  /** Top five rows by a numeric field, skipping rows where it is null. */
+  private top(rows: any[], field: string): any[] {
+    return [...rows]
+      .filter(r => r[field] !== null && r[field] !== undefined)
+      .sort((a, b) => b[field] - a[field])
+      .slice(0, 5);
+  }
+
+  private readonly palette = ['#2f2d8f', '#4a76c8', '#9b7ec8', '#17b3a3', '#6b7280'];
+
+  /** Shared shape for the three horizontal Top-5 bars. */
+  get barChart(): any {
+    return {
+      chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
+      plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '62%', distributed: true } },
+      colors: this.palette,
+      dataLabels: { enabled: true, style: { fontSize: '.72rem', fontWeight: 700, colors: ['#fff'] } },
+      // distributed repeats every name in the legend; the axis names them
+      legend: { show: false },
+      grid: { borderColor: 'rgba(148,163,184,.25)' },
+      noData: { text: 'Nothing measured for this period' }
+    };
+  }
+
+  /* Each bar keeps its own axis so a chart cannot borrow another's names. */
+  get scoreAxis(): any     { return { categories: this.scoreCategories,     title: { text: 'OEE (%)' } }; }
+  get rejectionAxis(): any { return { categories: this.rejectionCategories, title: { text: 'Rejection (%)' } }; }
+  get downtimeAxis(): any  { return { categories: this.downtimeCategories,  title: { text: 'Hours' } }; }
+
+  get pctTooltip(): any   { return { theme: 'dark', y: { formatter: (v: number) => `${v}%` } }; }
+  get hoursTooltip(): any { return { theme: 'dark', y: { formatter: (v: number) => `${v} h` } }; }
+
+  get apqChart(): any {
+    return {
+      chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
+      plotOptions: { bar: { borderRadius: 3, columnWidth: '62%' } },
+      colors: ['#3b9ae1', '#9b7ec8'],
+      dataLabels: { enabled: false },
+      legend: { position: 'bottom' },
+      xaxis: { categories: this.apqCategories },
+      yaxis: { max: 100, title: { text: '%' } },
+      grid:  { borderColor: 'rgba(148,163,184,.25)' },
+      tooltip: { theme: 'dark', y: { formatter: (v: number) => `${v}%` } },
+      noData: { text: 'Nothing measured for this period' }
     };
   }
 }

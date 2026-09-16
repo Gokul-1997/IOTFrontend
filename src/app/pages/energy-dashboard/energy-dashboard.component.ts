@@ -44,6 +44,10 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   trendCategories: string[] = [];
   machineSeries: any[] = [];
   machineCategories: string[] = [];
+  shiftDonutSeries: number[] = [];
+  shiftTotal = 0;
+  monthSeries: any[] = [];
+  monthCategories: string[] = [];
 
   private destroy$ = new Subject<void>();
   private search$ = new RxSubject<string>();
@@ -120,6 +124,15 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
     const reporting = (d.machines?.data || []).filter((m: any) => m.kwh !== null);
     this.machineCategories = reporting.map((m: any) => m.machine_serial_no);
     this.machineSeries = [{ name: 'kWh', data: reporting.map((m: any) => m.kwh) }];
+
+    /* A donut needs a flat array of numbers, not a {name,data} series —
+       passing the series shape renders an empty chart with no error. */
+    this.shiftDonutSeries = (d.by_shift || []).map((s: any) => Number(s.kwh) || 0);
+    this.shiftTotal = this.shiftDonutSeries.reduce((a, b) => a + b, 0);
+
+    this.monthCategories = (d.by_month || []).map((m: any) =>
+      new Date(m.month).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }));
+    this.monthSeries = [{ name: 'Cost', data: (d.by_month || []).map((m: any) => m.cost ?? m.kwh) }];
 
     this.cdr.markForCheck();
   }
@@ -231,16 +244,65 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
     };
   }
 
+  /** The MEXA palette, in the order the design cycles it. */
+  private readonly palette = ['#2f2d8f', '#4a76c8', '#9b7ec8', '#17b3a3', '#6b7280', '#f5811f'];
+
+  donutColour(i: number): string { return this.palette[i % this.palette.length]; }
+
+  /** Share of a total, guarding the empty-period divide-by-zero. */
+  sharePct(value: number | null | undefined, total: number): string {
+    const n = Number(value);
+    if (!total || !Number.isFinite(n)) return '--';
+    return `${Math.round((n / total) * 1000) / 10}%`;
+  }
+
   get machineChart(): any {
     return {
       chart:  { type: 'bar', height: 300, toolbar: { show: false }, fontFamily: 'inherit' },
-      plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '60%' } },
-      colors: ['#b45309'],
-      dataLabels: { enabled: true },
+      plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '60%', distributed: true } },
+      colors: this.palette,
+      dataLabels: { enabled: true, style: { fontSize: '.72rem', fontWeight: 700, colors: ['#fff'] } },
+      // distributed repeats every machine in the legend; the axis names them
+      legend: { show: false },
       xaxis:  { categories: this.machineCategories, title: { text: 'kWh' } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'dark' },
       noData: { text: 'No machine is reporting an energy counter yet' }
+    };
+  }
+
+  get shiftDonut(): any {
+    return {
+      chart: { type: 'donut', height: 260, fontFamily: 'inherit' },
+      labels: (this.data?.by_shift || []).map((s: any) => s.shift_name),
+      colors: this.palette,
+      plotOptions: {
+        pie: { donut: { size: '66%', labels: {
+          show: true,
+          total: { show: true, label: 'kWh', fontSize: '.8rem',
+                   formatter: () => this.shiftTotal.toFixed(0) }
+        } } }
+      },
+      dataLabels: { enabled: false },
+      // the key list beside the donut already names every shift
+      legend: { show: false },
+      tooltip: { y: { formatter: (v: number) => `${v} kWh` } },
+      noData: { text: 'Nothing recorded by shift' }
+    };
+  }
+
+  get monthChart(): any {
+    return {
+      chart: { type: 'bar', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
+      plotOptions: { bar: { borderRadius: 4, columnWidth: '50%', distributed: true } },
+      colors: this.palette,
+      dataLabels: { enabled: false },
+      legend: { show: false },
+      xaxis: { categories: this.monthCategories },
+      yaxis: { title: { text: `Cost (${this.data?.currency || 'INR'})` } },
+      grid:  { borderColor: 'rgba(148,163,184,.25)' },
+      tooltip: { theme: 'dark' },
+      noData: { text: 'Nothing recorded by month' }
     };
   }
 }

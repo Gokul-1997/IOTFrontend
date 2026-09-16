@@ -44,6 +44,10 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
   paretoCategories: string[] = [];
   hourlySeries: any[] = [];
   hourlyCategories: string[] = [];
+  shiftDonutSeries: number[] = [];
+  statusSeries: number[] = [];
+  statusRows: { label: string; seconds: number; colour: string }[] = [];
+  statusTotal = 0;
 
   readonly CATEGORIES = ['PLANNED', 'UNPLANNED', 'QUALITY', 'CHANGEOVER'];
 
@@ -135,13 +139,36 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
     /* A Pareto is bars plus the cumulative line — the line is the point,
        because it is what shows how few reasons cover most of the loss. */
     this.paretoCategories = (d.by_reason || []).map((r: any) => r.reason);
+    /* Per-point fillColor rather than plotOptions.bar.distributed: this is
+       a mixed bar+line chart, and distributed colours the line series too. */
     this.paretoSeries = [
-      { name: 'Hours',        type: 'column', data: (d.by_reason || []).map((r: any) => +(r.seconds / 3600).toFixed(2)) },
-      { name: 'Cumulative %', type: 'line',   data: (d.by_reason || []).map((r: any) => r.cumulative_pct) }
+      { name: 'Hours', type: 'column',
+        data: (d.by_reason || []).map((r: any, i: number) => ({
+          x: r.reason,
+          y: +(r.seconds / 3600).toFixed(2),
+          fillColor: this.donutColour(i)
+        })) },
+      { name: 'Cumulative %', type: 'line',
+        data: (d.by_reason || []).map((r: any) => ({ x: r.reason, y: r.cumulative_pct })) }
     ];
 
     this.hourlyCategories = (d.hourly || []).map((h: any) => String(h.hour).padStart(2, '0'));
     this.hourlySeries = [{ name: 'Hours down', data: (d.hourly || []).map((h: any) => +(h.seconds / 3600).toFixed(2)) }];
+
+    /* Donuts take a flat number array; the {name,data} series shape
+       renders an empty chart with no error. */
+    this.shiftDonutSeries = (d.by_shift || []).map((s: any) => Number(s.seconds) || 0);
+
+    /* Run / idle / alarm is the machine's whole day, so it is built from
+       the KPI seconds rather than the reason table — a machine can be
+       idle without anyone having entered a reason for it. */
+    this.statusRows = [
+      { label: 'Running', seconds: Number(d.kpis.run_seconds)   || 0, colour: '#2f2d8f' },
+      { label: 'Idle',    seconds: Number(d.kpis.idle_seconds)  || 0, colour: '#4a76c8' },
+      { label: 'Alarm',   seconds: Number(d.kpis.alarm_seconds) || 0, colour: '#f5a623' }
+    ].filter(r => r.seconds > 0);
+    this.statusSeries = this.statusRows.map(r => r.seconds);
+    this.statusTotal = this.statusSeries.reduce((a, b) => a + b, 0);
 
     this.cdr.markForCheck();
   }
@@ -211,6 +238,18 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
     return v === null || v === undefined ? '--' : `${v}%`;
   }
 
+  /** MEXA pill class per category. Kept alongside categoryClass so the
+   *  older Tailwind call sites keep working. */
+  categoryBadge(c: string): string {
+    switch (String(c).toUpperCase()) {
+      case 'PLANNED':    return 'mexa-badge-info';
+      case 'UNPLANNED':  return 'mexa-badge-bad';
+      case 'QUALITY':    return 'mexa-badge-warn';
+      case 'CHANGEOVER': return 'mexa-badge-violet';
+      default:           return 'mexa-badge-neutral';
+    }
+  }
+
   categoryClass(c: string): string {
     switch (String(c).toUpperCase()) {
       case 'PLANNED':    return 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300';
@@ -231,7 +270,8 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
       chart:  { type: 'line', height: 300, toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: [0, 3], curve: 'straight' },
       plotOptions: { bar: { columnWidth: '55%', borderRadius: 3 } },
-      colors: ['#dc2626', '#0f766e'],
+      // the columns carry their own fillColor; this sets the line
+      colors: ['#2f2d8f', '#1f2937'],
       dataLabels: { enabled: false },
       legend: { position: 'top', horizontalAlign: 'right' },
       xaxis:  { categories: this.paretoCategories, labels: { rotate: -35, trim: true } },
@@ -248,15 +288,56 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
 
   get hourlyChart(): any {
     return {
-      chart:  { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
-      plotOptions: { bar: { columnWidth: '65%', borderRadius: 2 } },
-      colors: ['#2563eb'],
+      chart:  { type: 'line', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
+      plotOptions: {},
+      stroke: { width: 3, curve: 'smooth' },
+      markers: { size: 4 },
+      colors: ['#2f2d8f'],
       dataLabels: { enabled: false },
-      xaxis:  { categories: this.hourlyCategories, title: { text: 'Hour of day' } },
+      xaxis:  { categories: this.hourlyCategories, title: { text: 'Time (Hour)' } },
       yaxis:  { title: { text: 'Hours down' }, labels: { formatter: (v: number) => v?.toFixed(1) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'dark' },
       noData: { text: 'No downtime recorded for this period' }
+    };
+  }
+
+  /** The MEXA palette, in the order the design cycles it. */
+  private readonly palette = ['#2f2d8f', '#9b7ec8', '#4a76c8', '#17b3a3', '#6b7280', '#f5811f'];
+
+  donutColour(i: number): string { return this.palette[i % this.palette.length]; }
+
+  /** Share of a total, guarding the empty-period divide-by-zero. */
+  sharePct(value: number | null | undefined, total: number): string {
+    const n = Number(value);
+    if (!total || !Number.isFinite(n)) return '--';
+    return `${Math.round((n / total) * 1000) / 10}%`;
+  }
+
+  get shiftDonut(): any {
+    return {
+      chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
+      labels: (this.data?.by_shift || []).map((s: any) => s.shift_name),
+      colors: this.palette,
+      plotOptions: { pie: { donut: { size: '62%' } } },
+      dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%` },
+      // the key list beside the donut already names every shift
+      legend: { show: false },
+      tooltip: { y: { formatter: (v: number) => this.hours(v) } },
+      noData: { text: 'Nothing recorded by shift' }
+    };
+  }
+
+  get statusDonut(): any {
+    return {
+      chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
+      labels: this.statusRows.map(r => r.label),
+      colors: this.statusRows.map(r => r.colour),
+      plotOptions: { pie: { donut: { size: '62%' } } },
+      dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%` },
+      legend: { show: false },
+      tooltip: { y: { formatter: (v: number) => this.hours(v) } },
+      noData: { text: 'No machine time recorded' }
     };
   }
 }
