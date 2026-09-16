@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MaintenanceService } from '../../core/services/maintenance.service';
@@ -53,18 +53,19 @@ export class MaintenanceComponent implements OnInit {
     private svc: MaintenanceService,
     private ticketSvc: TicketService,
     private adminSvc: AdminService,
-    private machinesSvc: MachinesService
+    private machinesSvc: MachinesService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     this.loadTickets();
     this.loadUpcoming();
     this.adminSvc.getUsers().subscribe({
-      next: (r: any) => { this.assignableUsers = Array.isArray(r) ? r : []; },
+      next: (r: any) => { this.assignableUsers = Array.isArray(r) ? r : []; this.cdr.markForCheck(); },
       error: () => { /* not an admin-tier role — assignment stays optional */ }
     });
     this.machinesSvc.getAllForDropdown().subscribe({
-      next: (r: any) => { this.machines = r?.data || []; }
+      next: (r: any) => { this.machines = r?.data || []; this.cdr.markForCheck(); }
     });
   }
 
@@ -79,6 +80,7 @@ export class MaintenanceComponent implements OnInit {
   // ── Tickets ──────────────────────────────────────────────
   loadTickets() {
     this.loading = true;
+    this.cdr.markForCheck();
     const params = this.ticketFilter === 'open' ? {} : {};
     this.ticketSvc.getTickets(params).subscribe({
       next: (r: any) => {
@@ -87,8 +89,9 @@ export class MaintenanceComponent implements OnInit {
           ? rows.filter((t: any) => t.status !== 'RESOLVED' && t.status !== 'CLOSED')
           : rows;
         this.loading = false;
+        this.cdr.markForCheck();
       },
-      error: () => { this.loading = false; }
+      error: () => { this.loading = false; this.cdr.markForCheck(); }
     });
   }
 
@@ -100,13 +103,16 @@ export class MaintenanceComponent implements OnInit {
       next: () => {
         this.showTicketForm = false;
         this.ticketForm = { machine_id: '', title: '', description: '', issue_type: 'BREAKDOWN', priority: 'MEDIUM', assigned_to: '' };
+        this.cdr.markForCheck();
         this.loadTickets();
-      }
+      },
+      /* A failed create used to close nothing and say nothing. */
+      error: () => this.cdr.markForCheck()
     });
   }
 
   openTicket(t: any) {
-    this.ticketSvc.getTicketById(t.id).subscribe({ next: (r: any) => { this.selectedTicket = r.data; this.statusNote = ''; } });
+    this.ticketSvc.getTicketById(t.id).subscribe({ next: (r: any) => { this.selectedTicket = r.data; this.statusNote = ''; this.cdr.markForCheck(); } });
   }
 
   closeTicketDetail() { this.selectedTicket = null; this.statusNote = ''; }
@@ -114,14 +120,14 @@ export class MaintenanceComponent implements OnInit {
   changeTicketStatus(status: string) {
     if (!this.selectedTicket) return;
     this.ticketSvc.updateStatus(this.selectedTicket.id, status, this.statusNote || undefined).subscribe({
-      next: () => { this.openTicket(this.selectedTicket); this.statusNote = ''; this.loadTickets(); }
+      next: () => { this.openTicket(this.selectedTicket); this.statusNote = ''; this.cdr.markForCheck(); this.loadTickets(); }
     });
   }
 
   assignTicketTo(userId: number) {
     if (!this.selectedTicket || !userId) return;
     this.ticketSvc.assignTicket(this.selectedTicket.id, userId).subscribe({
-      next: () => { this.openTicket(this.selectedTicket); this.loadTickets(); }
+      next: () => { this.openTicket(this.selectedTicket); this.cdr.markForCheck(); this.loadTickets(); }
     });
   }
 
@@ -144,26 +150,36 @@ export class MaintenanceComponent implements OnInit {
   // ── Schedules / Logs / MTTR (unchanged) ─────────────────────
   loadSchedules() {
     this.loading = true;
-    this.svc.getSchedules().subscribe({ next: r => { this.schedules = r.data || []; this.loading = false; }, error: () => this.loading = false });
+    this.cdr.markForCheck();
+    this.svc.getSchedules().subscribe({
+      next: r => { this.schedules = r.data || []; this.loading = false; this.cdr.markForCheck(); },
+      error: () => { this.loading = false; this.cdr.markForCheck(); }
+    });
   }
 
   loadLogs() {
     this.loading = true;
-    this.svc.getLogs().subscribe({ next: r => { this.logs = r.data || []; this.loading = false; }, error: () => this.loading = false });
+    this.cdr.markForCheck();
+    this.svc.getLogs().subscribe({
+      next: r => { this.logs = r.data || []; this.loading = false; this.cdr.markForCheck(); },
+      error: () => { this.loading = false; this.cdr.markForCheck(); }
+    });
   }
 
-  loadMTTR() { this.svc.getMTTR().subscribe({ next: r => this.mttr = r.data || [] }); }
-  loadUpcoming() { this.svc.getUpcoming(7).subscribe({ next: r => this.upcoming = r.data || [] }); }
+  loadMTTR() { this.svc.getMTTR().subscribe({ next: r => { this.mttr = r.data || []; this.cdr.markForCheck(); } }); }
+  loadUpcoming() { this.svc.getUpcoming(7).subscribe({ next: r => { this.upcoming = r.data || []; this.cdr.markForCheck(); } }); }
 
   saveSchedule() {
     this.svc.createSchedule(this.form).subscribe({
-      next: () => { this.showForm = false; this.form = { title: '', machine_id: '', maintenance_type: 'PREVENTIVE', scheduled_at: '', estimated_duration_minutes: 60, assigned_to: '', recurrence: 'NONE' }; this.loadSchedules(); }
+      next: () => { this.showForm = false; this.form = { title: '', machine_id: '', maintenance_type: 'PREVENTIVE', scheduled_at: '', estimated_duration_minutes: 60, assigned_to: '', recurrence: 'NONE' }; this.cdr.markForCheck(); this.loadSchedules(); },
+      error: () => this.cdr.markForCheck()
     });
   }
 
   saveLog() {
     this.svc.createLog(this.logForm).subscribe({
-      next: () => { this.showLogForm = false; this.logForm = { title: '', machine_id: '', maintenance_type: 'CORRECTIVE', started_at: '', completed_at: '', technician_name: '', work_performed: '', status: 'COMPLETED' }; this.loadLogs(); }
+      next: () => { this.showLogForm = false; this.logForm = { title: '', machine_id: '', maintenance_type: 'CORRECTIVE', started_at: '', completed_at: '', technician_name: '', work_performed: '', status: 'COMPLETED' }; this.cdr.markForCheck(); this.loadLogs(); },
+      error: () => this.cdr.markForCheck()
     });
   }
 

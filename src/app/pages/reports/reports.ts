@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule }  from '@angular/forms';
-import { ReportsService, ReportFilters, ReportType } from './reports.service';
+import { ReportsService, ReportFilters, ReportType, MAX_DIRECT_DAYS, rangeDays } from './reports.service';
 import { AuthService } from '../../core/services/auth.service';
 import { UiTabsDirective } from '../../shared/ui-tabs.directive';
 
@@ -122,6 +122,20 @@ export class Reports implements OnInit {
   page     = 1;
   pageSize = 15;
 
+  /* ── delivery ──
+     A range up to three months is answered in the page; beyond that the
+     server refuses it (413 RANGE_TOO_LARGE) and the report is emailed
+     instead. The rule is enforced on the server — this mirrors it so the UI
+     can explain the position before the user presses anything. */
+  maxDirectDays = MAX_DIRECT_DAYS;
+  emailing  = false;
+  emailNote = '';
+  emailErr  = '';
+  recipient = '';
+
+  get rangeDays(): number { return rangeDays(this.filters.date_from, this.filters.date_to); }
+  get rangeTooLong(): boolean { return this.rangeDays > this.maxDirectDays; }
+
   /* ── sort ── */
   sortCol = '';
   sortDir: 'asc' | 'desc' = 'asc';
@@ -211,6 +225,19 @@ export class Reports implements OnInit {
 
   /* ── load data ── */
   loadReport(): void {
+    this.emailNote = '';
+    this.emailErr  = '';
+
+    /* Asking anyway would cost a round trip to be told no. The banner in the
+       template explains the choice and offers the email route. */
+    if (this.rangeTooLong) {
+      this.loading = false;
+      this.rows    = [];
+      this.kpis    = [];
+      this.cdr.markForCheck();
+      return;
+    }
+
     this.loading = true;
     this.rows    = [];
     this.kpis    = [];
@@ -229,7 +256,48 @@ export class Reports implements OnInit {
         this.loading = false;
         this.cdr.markForCheck();
       },
-      error: () => { this.loading = false; this.cdr.markForCheck(); }
+      error: (err: any) => {
+        this.loading = false;
+        /* The server is the authority on the limit; if it refuses a range the
+           client thought was fine, say what it said. */
+        if (err?.error?.code === 'RANGE_TOO_LARGE') {
+          this.emailErr = err.error.message || 'That range is too long to download. Email it instead.';
+        }
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  /** Send the current report, with its current columns, by email. */
+  sendByEmail(): void {
+    if (this.emailing) return;
+    this.emailing  = true;
+    this.emailNote = '';
+    this.emailErr  = '';
+    this.cdr.markForCheck();
+
+    this.svc.emailReport({
+      ...this.filters,
+      type:    this.activeTab,
+      columns: this.activeColumns.map(c => c.key),
+      email:   this.recipient.trim() || undefined,
+      /* Names, so the covering note reads "Machine: CNC-01" rather than an id. */
+      labels: {
+        machine:  this.filters.machine_id  ? this.labelOf(this.machines,  this.filters.machine_id)  : '',
+        shift:    this.filters.shift_id    ? this.labelOf(this.shifts,    this.filters.shift_id)    : '',
+        operator: this.filters.operator_id ? this.labelOf(this.operators, this.filters.operator_id) : ''
+      }
+    }).subscribe({
+      next: (res: any) => {
+        this.emailing  = false;
+        this.emailNote = res?.data?.message || 'The report is on its way.';
+        this.cdr.markForCheck();
+      },
+      error: (err: any) => {
+        this.emailing = false;
+        this.emailErr = err?.error?.message || 'The report could not be sent. Try again.';
+        this.cdr.markForCheck();
+      }
     });
   }
 

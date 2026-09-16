@@ -195,9 +195,11 @@ html, body { background: #2e2c80; }
 
 .mexa-kpis {
   display: grid;
-  gap: .85rem;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  margin-bottom: 1rem;
+  gap: .7rem;
+  /* Narrower track: six tiles fit one row on a laptop instead of wrapping to
+     two, which is what pushed the first chart below the fold. */
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  margin-bottom: .85rem;
 }
 
 .mexa-kpi {
@@ -259,7 +261,7 @@ html, body { background: #2e2c80; }
 .mexa-card {
   background: var(--mexa-card);
   border-radius: 18px;
-  padding: 1.1rem 1.25rem 1.25rem;
+  padding: .95rem 1.05rem 1.05rem;
   box-shadow: 0 10px 26px -12px rgba(12, 10, 40, .5);
   min-width: 0;
 }
@@ -589,3 +591,84 @@ html, body { background: #2e2c80; }
 .mexa-axisrow li { display: grid; gap: .1rem; }
 .mexa-axisrow span { font-size: .75rem; color: var(--mexa-ink-3); }
 .mexa-axisrow strong { font-size: .95rem; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
+
+
+/* ── Charts ───────────────────────────────────────────────────
+   ApexCharts sizes itself from its parent's width at init. Left inline it
+   measures a shrink-to-fit box, which is why charts came out narrower than
+   their card and sat off-centre. */
+
+.mexa-card apx-chart {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+.mexa-card .apexcharts-canvas { margin-inline: auto; }
+
+/* Charts share one height per row so cards in a grid line up on their
+   baselines rather than each card ending wherever its chart happens to. */
+.mexa-grid > .mexa-card { display: flex; flex-direction: column; }
+.mexa-grid > .mexa-card > apx-chart,
+.mexa-grid > .mexa-card > .mexa-donutrow { margin-top: auto; }
+
+/* ── Skeleton loading ─────────────────────────────────────────
+   A skeleton stands in for the shape of the content that is coming, so the
+   page does not reflow when it arrives and the reader is not asked to hold
+   an empty rectangle in mind. It never claims a value: no zeros, no dashes,
+   just the geometry. */
+
+.mexa-skel {
+  position: relative;
+  overflow: hidden;
+  background: var(--mexa-rule);
+  border-radius: 8px;
+}
+
+.mexa-skel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55), transparent);
+  animation: mexa-shimmer 1.4s ease-in-out infinite;
+}
+
+.dark .mexa-skel::after,
+:root[data-theme="dark"] .mexa-skel::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .08), transparent);
+}
+
+@keyframes mexa-shimmer { to { transform: translateX(100%); } }
+
+/* Motion here is decoration; the layout already communicates "loading". */
+@media (prefers-reduced-motion: reduce) {
+  .mexa-skel::after { animation: none; }
+}
+
+.mexa-skel-line  { height: .7rem; margin-bottom: .5rem; }
+.mexa-skel-line:last-child { margin-bottom: 0; }
+.mexa-skel-w40   { width: 40%; }
+.mexa-skel-w60   { width: 60%; }
+.mexa-skel-w80   { width: 80%; }
+.mexa-skel-label { height: .85rem; width: 55%; }
+.mexa-skel-value { height: 1.9rem; width: 45%; margin-top: .55rem; }
+.mexa-skel-sub   { height: .7rem; width: 70%; margin-top: .55rem; }
+.mexa-skel-disc  { width: 2.6rem; height: 2.6rem; border-radius: 999px; flex: none; }
+.mexa-skel-title { height: 1rem; width: 38%; margin: 0 auto .85rem; }
+.mexa-skel-chart { height: 220px; border-radius: 12px; }
+.mexa-skel-donut { width: 9.5rem; height: 9.5rem; border-radius: 999px; margin: .5rem auto; }
+.mexa-skel-row   { height: 2.1rem; margin-bottom: .45rem; border-radius: 6px; }
+
+/* ── Small screens ────────────────────────────────────────────
+   The field and the card shadows cost real estate that a phone does not
+   have; the content keeps its gutters, everything else tightens. */
+
+@media (max-width: 640px) {
+  .mexa-card  { padding: .8rem .85rem .9rem; border-radius: 14px; }
+  .mexa-kpis  { grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: .55rem; }
+  .mexa-kpi   { padding: .75rem .8rem; }
+  .mexa-kpi-value { font-size: 1.6rem; }
+  .mexa-kpi-icon  { width: 2.1rem; height: 2.1rem; }
+  .mexa-kpi-icon svg, .mexa-kpi-icon mat-icon { width: 1.1rem; height: 1.1rem; font-size: 1.1rem; }
+  .mexa-card-title { font-size: .98rem; }
+}

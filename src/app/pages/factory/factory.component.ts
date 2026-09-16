@@ -5,6 +5,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, interval, startWith, switchMap, takeUntil, catchError, of } from 'rxjs';
 import { FactoryService } from './factory.service';
+import { ChartMemo } from '../../shared/chart-memo';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 1 — Factory Overall Dashboard
@@ -20,10 +22,13 @@ const POLL_MS = 60_000;
 @Component({
   selector: 'app-factory',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule],
+  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './factory.component.html'
 })
 export class FactoryComponent implements OnInit, OnDestroy {
+
+  /** Chart options keep the same reference until apply() bumps this. */
+  private charts = new ChartMemo();
 
   /* ── filters ── */
   machines: any[] = [];
@@ -105,6 +110,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
   }
 
   private apply(res: any): void {
+    this.charts.bump();
     this.loading = false;
 
     if (!res || res.status !== 'success' || !res.data) {
@@ -219,6 +225,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
   /* ── chart option blocks (kept out of the template) ── */
 
   get shiftChart(): any {
+    return this.charts.memo('shiftChart', () => {
     return {
       chart:  { type: 'bar', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 6, columnWidth: '45%' } },
@@ -229,9 +236,11 @@ export class FactoryComponent implements OnInit, OnDestroy {
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'dark' }
     };
+  });
   }
 
   get trendChart(): any {
+    return this.charts.memo('trendChart', () => {
     return {
       chart:  { height: 260, type: 'line', toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: [3, 0], curve: 'smooth' },
@@ -247,6 +256,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'dark' }
     };
+  });
   }
 
   /**
@@ -257,6 +267,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
    * reasons — a donut with eight slices is a legend, not a chart.
    */
   get downtimeChart(): any {
+    return this.charts.memo('downtimeChart', () => {
     return {
       chart: { type: 'bar', height: 320, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '62%', distributed: true } },
@@ -273,12 +284,14 @@ export class FactoryComponent implements OnInit, OnDestroy {
       tooltip: { y: { formatter: (v: number) => `${v} min` } },
       noData: { text: 'No downtime reasons recorded' }
     };
+  });
   }
 
   /* ── MEXA charts ────────────────────────────────────────── */
 
   /** The three OEE components as concentric arcs, OEE itself in the middle. */
   get oeeRadial(): any {
+    return this.charts.memo('oeeRadial', () => {
     return {
       chart: { type: 'radialBar', height: 300, fontFamily: 'inherit' },
       plotOptions: {
@@ -305,9 +318,11 @@ export class FactoryComponent implements OnInit, OnDestroy {
       legend: { show: false },
       noData: { text: 'No OEE recorded for this period' }
     };
+  });
   }
 
   get runtimeDonut(): any {
+    return this.charts.memo('runtimeDonut', () => {
     return {
       chart: { type: 'donut', height: 280, fontFamily: 'inherit' },
       labels: ['Run Time', 'Idle Time'],
@@ -319,9 +334,11 @@ export class FactoryComponent implements OnInit, OnDestroy {
       tooltip: { y: { formatter: (v: number) => this.hm(v) } },
       noData: { text: 'No run or idle time recorded' }
     };
+  });
   }
 
   get alarmDonut(): any {
+    return this.charts.memo('alarmDonut', () => {
     return {
       chart: { type: 'donut', height: 280, fontFamily: 'inherit' },
       labels: ['Critical', 'Non critical', 'Information'],
@@ -337,5 +354,6 @@ export class FactoryComponent implements OnInit, OnDestroy {
       legend: { position: 'bottom', fontSize: '.9rem' },
       noData: { text: 'No alarms recorded' }
     };
+  });
   }
 }

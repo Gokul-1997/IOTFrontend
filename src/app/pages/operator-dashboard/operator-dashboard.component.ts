@@ -6,6 +6,8 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { OperatorDashboardService } from './operator-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ChartMemo } from '../../shared/chart-memo';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 7 — Operator Performance
@@ -20,10 +22,13 @@ import { ToastService } from '../../core/services/toast.service';
 @Component({
   selector: 'app-operator-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule],
+  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './operator-dashboard.component.html'
 })
 export class OperatorDashboardComponent implements OnInit, OnDestroy {
+
+  /** Chart options keep the same reference until apply() bumps this. */
+  private charts = new ChartMemo();
 
   machines: any[] = [];
   shifts: any[] = [];
@@ -106,6 +111,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
   }
 
   private apply(res: any): void {
+    this.charts.bump();
     this.loading = false;
     if (!res || res.status !== 'success' || !res.data) {
       if (!this.errorMsg) this.errorMsg = 'No operator performance data available.';
@@ -227,6 +233,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
   }
 
   get productionChart(): any {
+    return this.charts.memo('productionChart', () => {
     return {
       chart:  { type: 'bar', height: 300, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '65%' } },
@@ -237,6 +244,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
       tooltip:{ theme: 'dark' },
       noData: { text: 'No production recorded for this period' }
     };
+  });
   }
 
   /* ── performance bands ── */
@@ -244,7 +252,9 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
   /** Server-computed over every operator, so the tiles do not change as
    *  you page through the table. */
   get bands(): any {
+    return this.charts.memo('bands', () => {
     return this.data?.bands ?? { excellent: 0, good: 0, average: 0, needs_help: 0, unrated: 0 };
+  });
   }
 
   bandLabel(oee: number | null | undefined): string {
@@ -275,6 +285,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
 
   /** Shared shape for the three horizontal Top-5 bars. */
   get barChart(): any {
+    return this.charts.memo('barChart', () => {
     return {
       chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '62%', distributed: true } },
@@ -285,17 +296,29 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
       grid: { borderColor: 'rgba(148,163,184,.25)' },
       noData: { text: 'Nothing measured for this period' }
     };
+  });
   }
 
   /* Each bar keeps its own axis so a chart cannot borrow another's names. */
-  get scoreAxis(): any     { return { categories: this.scoreCategories,     title: { text: 'OEE (%)' } }; }
-  get rejectionAxis(): any { return { categories: this.rejectionCategories, title: { text: 'Rejection (%)' } }; }
-  get downtimeAxis(): any  { return { categories: this.downtimeCategories,  title: { text: 'Hours' } }; }
+  get scoreAxis(): any     {
+    return this.charts.memo('scoreAxis', () => { return { categories: this.scoreCategories,     title: { text: 'OEE (%)' } }; });
+  }
+  get rejectionAxis(): any {
+    return this.charts.memo('rejectionAxis', () => { return { categories: this.rejectionCategories, title: { text: 'Rejection (%)' } }; });
+  }
+  get downtimeAxis(): any  {
+    return this.charts.memo('downtimeAxis', () => { return { categories: this.downtimeCategories,  title: { text: 'Hours' } }; });
+  }
 
-  get pctTooltip(): any   { return { theme: 'dark', y: { formatter: (v: number) => `${v}%` } }; }
-  get hoursTooltip(): any { return { theme: 'dark', y: { formatter: (v: number) => `${v} h` } }; }
+  get pctTooltip(): any   {
+    return this.charts.memo('pctTooltip', () => { return { theme: 'dark', y: { formatter: (v: number) => `${v}%` } }; });
+  }
+  get hoursTooltip(): any {
+    return this.charts.memo('hoursTooltip', () => { return { theme: 'dark', y: { formatter: (v: number) => `${v} h` } }; });
+  }
 
   get apqChart(): any {
+    return this.charts.memo('apqChart', () => {
     return {
       chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 3, columnWidth: '62%' } },
@@ -308,5 +331,6 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
       tooltip: { theme: 'dark', y: { formatter: (v: number) => `${v}%` } },
       noData: { text: 'Nothing measured for this period' }
     };
+  });
   }
 }

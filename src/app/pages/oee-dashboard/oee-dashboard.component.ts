@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { OeeDashboardService } from './oee-dashboard.service';
-import { ToastService } from '../../core/services/toast.service';
+import { ChartMemo } from '../../shared/chart-memo';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 8 — OEE Dashboard
@@ -24,10 +25,13 @@ import { ToastService } from '../../core/services/toast.service';
 @Component({
   selector: 'app-oee-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule],
+  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './oee-dashboard.component.html'
 })
 export class OeeDashboardComponent implements OnInit, OnDestroy {
+
+  /** Chart options keep the same reference until apply() bumps this. */
+  private charts = new ChartMemo();
 
   machines: any[] = [];
   shifts: any[] = [];
@@ -39,7 +43,6 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   loading = false;
   errorMsg = '';
   updatedAt = '';
-  exporting = '';
 
   trendSeries: any[] = [];
   trendCategories: string[] = [];
@@ -48,15 +51,10 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   rankSeries: any[] = [];
   rankCategories: string[] = [];
 
-  /** Which tab of the card is showing. */
-  tab: 'analytics' | 'report' = 'analytics';
-
   private destroy$ = new Subject<void>();
-  private search$ = new RxSubject<string>();
 
   constructor(
     private svc: OeeDashboardService,
-    private toast: ToastService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -69,10 +67,6 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       });
 
-    this.search$
-      .pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(() => { this.page = 1; this.load(); });
-
     this.load();
   }
 
@@ -81,10 +75,9 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   blankFilters() {
     const today = this.todayStr();
     const weekAgo = new Date(Date.now() - 6 * 86_400_000).toISOString().slice(0, 10);
-    return { from: weekAgo, to: today, machine_id: null, shift_id: null, search: '' };
+    return { from: weekAgo, to: today, machine_id: null, shift_id: null };
   }
 
-  onSearchInput(): void { this.search$.next(this.f.search); }
   submit(): void { this.page = 1; this.load(); }
   reset(): void { this.f = this.blankFilters(); this.page = 1; this.load(); }
 
@@ -109,6 +102,7 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   }
 
   private apply(res: any): void {
+    this.charts.bump();
     this.loading = false;
     if (!res || res.status !== 'success' || !res.data) {
       if (!this.errorMsg) this.errorMsg = 'No OEE data available.';
@@ -161,29 +155,6 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
     };
   }
 
-  export(format: 'xlsx' | 'csv' | 'pdf'): void {
-    this.exporting = format;
-    this.cdr.markForCheck();
-    this.svc.exportAs(format, this.f)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: blob => {
-          this.exporting = '';
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url; a.download = `oee_${this.todayStr()}.${format}`;
-          a.click();
-          setTimeout(() => URL.revokeObjectURL(url), 0);
-          this.cdr.markForCheck();
-        },
-        error: () => {
-          this.exporting = '';
-          this.cdr.markForCheck();
-          this.toast.error('No machines match these filters');
-        }
-      });
-  }
-
   /* ── view helpers ── */
 
   /** Unknown shows as a dash, never 0% — they are different claims. */
@@ -224,6 +195,7 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   }
 
   get trendChart(): any {
+    return this.charts.memo('trendChart', () => {
     return {
       chart:  { type: 'area', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: 2, curve: 'smooth' },
@@ -237,6 +209,7 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
       tooltip:{ theme: 'dark' },
       noData: { text: 'No production recorded for this period' }
     };
+  });
   }
 
   /* ── band presentation ── */
@@ -250,13 +223,6 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   }
 
   absPct(v: number): string { return `${Math.abs(v)}%`; }
-
-  /** Rejection rate for a row, null-safe: no output is not zero scrap. */
-  rejectionPct(m: any): string {
-    const produced = Number(m?.produced);
-    if (!produced) return '--';
-    return `${Math.round((Number(m.rejected) / produced) * 1000) / 10}%`;
-  }
 
   bandTile(band: string): string {
     switch (band) {
@@ -287,16 +253,8 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  statusBadge(status: string): string {
-    switch (status) {
-      case 'RUNNING': return 'mexa-badge-good';
-      case 'ALARM':   return 'mexa-badge-bad';
-      case 'IDLE':    return 'mexa-badge-warn';
-      default:        return 'mexa-badge-neutral';
-    }
-  }
-
   get rankChart(): any {
+    return this.charts.memo('rankChart', () => {
     return {
       chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '62%', distributed: true } },
@@ -309,9 +267,11 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
       tooltip: { theme: 'dark', y: { formatter: (v: number) => `${v}%` } },
       noData: { text: 'No machine has a computable OEE' }
     };
+  });
   }
 
   get compChart(): any {
+    return this.charts.memo('compChart', () => {
     return {
       chart:  { type: 'bar', height: 320, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { columnWidth: '65%', borderRadius: 2 } },
@@ -324,5 +284,6 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
       tooltip:{ theme: 'dark', shared: true, intersect: false },
       noData: { text: 'No machine has a computable OEE for this period' }
     };
+  });
   }
 }

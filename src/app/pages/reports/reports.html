@@ -81,7 +81,7 @@
       <!-- Export CSV (selected columns) — controlled by widget:export -->
       <button *ngIf="auth.hasWidget('reports', 'export')"
         (click)="exportCsv()"
-        [disabled]="rows.length === 0 || selectedCount === 0"
+        [disabled]="rows.length === 0 || selectedCount === 0 || rangeTooLong"
         class="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium
                text-white shadow hover:bg-emerald-700 transition-colors disabled:opacity-40">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,13 +94,27 @@
       <!-- Full Excel — controlled by widget:export -->
       <button *ngIf="auth.hasWidget('reports', 'export')"
         (click)="downloadFullExcel()"
-        class="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium
+        [disabled]="rangeTooLong"
+        class="flex items-center gap-2 rounded-lg disabled:opacity-40 bg-blue-600 px-4 py-2 text-sm font-medium
                text-white shadow hover:bg-blue-700 transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
         </svg>
         Excel
+      </button>
+
+      <!-- Email the current report, with the columns as selected. -->
+      <button *ngIf="auth.hasWidget('reports', 'export')"
+        type="button" (click)="sendByEmail()"
+        [disabled]="emailing || selectedCount === 0"
+        class="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium
+               text-white shadow hover:bg-indigo-700 transition-colors disabled:opacity-40">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+        {{ emailing ? 'Sending…' : 'Email' }}
       </button>
 
     </div>
@@ -112,6 +126,9 @@
   <!-- ══════════════════════════════════════════════
        TABS
   ══════════════════════════════════════════════ -->
+  <p class="text-center text-xs font-semibold uppercase tracking-wide text-white/70 mb-1">
+    Step 1 — choose a report
+  </p>
   <div class="ui-tabs ui-tabs-center" role="tablist" uiTabs aria-label="Report type">
     <button *ngFor="let tab of tabs"
             type="button" role="tab" class="ui-tab"
@@ -189,6 +206,61 @@
       </div>
 
     </div>
+
+    <!-- ══════════════════════════════════════════════
+         DELIVERY — up to three months is shown here; a longer range is
+         built on the server and emailed, because a year of hourly rows is
+         six figures of data and neither the response nor the browser
+         should be asked to carry it.
+    ══════════════════════════════════════════════ -->
+    <div *ngIf="rangeTooLong"
+         class="mt-3 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 p-4"
+         role="status">
+      <div class="flex items-start gap-3">
+        <span aria-hidden="true" class="text-xl leading-none">✉️</span>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-amber-900 dark:text-amber-200">
+            This range covers {{ rangeDays }} days — too long to show on screen.
+          </p>
+          <p class="mt-0.5 text-xs text-amber-800 dark:text-amber-300">
+            Up to {{ maxDirectDays }} days can be downloaded directly. Longer reports are
+            built in the background and emailed as a spreadsheet, using the columns
+            you have selected ({{ selectedCount }}).
+          </p>
+
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <label class="sr-only" for="reportEmail">Send the report to</label>
+            <input id="reportEmail" type="email" [(ngModel)]="recipient"
+                   [attr.aria-describedby]="emailErr ? 'reportEmailErr' : null"
+                   placeholder="Leave blank to use your account email"
+                   class="flex-1 min-w-[16rem] rounded-lg border border-amber-300 bg-white
+                          dark:bg-gray-800 px-3 py-2 text-sm"/>
+            <button type="button" (click)="sendByEmail()"
+                    [disabled]="emailing || selectedCount === 0"
+                    class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white
+                           shadow hover:bg-amber-700 disabled:opacity-40">
+              {{ emailing ? 'Sending…' : 'Email this report' }}
+            </button>
+          </div>
+
+          <p *ngIf="selectedCount === 0" class="mt-2 text-xs text-amber-800">
+            Choose at least one column first.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Outcome of an email request, wherever it was started from. -->
+    <p *ngIf="emailNote" role="status"
+       class="mt-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200
+              px-3 py-2 text-sm text-emerald-800 dark:text-emerald-300">
+      {{ emailNote }}
+    </p>
+    <p *ngIf="emailErr" id="reportEmailErr" role="alert"
+       class="mt-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200
+              px-3 py-2 text-sm text-red-800 dark:text-red-300">
+      {{ emailErr }}
+    </p>
 
     <!-- Active filter chips -->
     <div *ngIf="filters.machine_id || filters.operator_id || filters.shift_id || filters.date_to !== filters.date_from"
@@ -277,7 +349,7 @@
     </div>
 
     <!-- Empty state -->
-    <div *ngIf="!loading && rows.length === 0"
+    <div *ngIf="!loading && rows.length === 0 && !rangeTooLong"
       class="p-12 flex flex-col items-center gap-2 text-gray-400">
       <svg class="w-12 h-12 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"

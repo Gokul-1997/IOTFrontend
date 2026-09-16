@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, Validators, ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { OperatorService } from '../operators/operator.service';
@@ -26,7 +26,8 @@ export class OperatorShiftComponent implements OnInit {
     private operatorService: OperatorService,
     private shiftService: ShiftsService,
     private assignmentService: AssignmentService,
-    public auth: AuthService
+    public auth: AuthService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit() {
@@ -35,8 +36,10 @@ export class OperatorShiftComponent implements OnInit {
       shift_id: ['', Validators.required],
       effective_from: ['', Validators.required]
     });
-    this.operatorService.getAll().subscribe(d => this.operators = d);
-    this.shiftService.getShifts().subscribe(d => this.shifts = d);
+  /* Zoneless: an HTTP response resolving does not schedule a render, so a
+     callback that changes what is on screen has to say so itself. */
+    this.operatorService.getAll().subscribe(d => { this.operators = d; this.cdr.markForCheck(); });
+    this.shiftService.getShifts().subscribe(d => { this.shifts = d; this.cdr.markForCheck(); });
   }
 
   submit() {
@@ -49,10 +52,12 @@ export class OperatorShiftComponent implements OnInit {
         this.saving = false;
         alert('Operator assigned to shift');
         this.form.reset();
+        this.cdr.markForCheck();
       },
       error: () => {
         this.saving = false;
         alert('Assignment failed');
+        this.cdr.markForCheck();
       }
     });
   }

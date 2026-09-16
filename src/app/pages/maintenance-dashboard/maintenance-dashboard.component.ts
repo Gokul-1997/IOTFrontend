@@ -5,6 +5,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, interval, startWith, switchMap, takeUntil, catchError, of } from 'rxjs';
 import { MaintenanceDashboardService } from './maintenance-dashboard.service';
+import { ChartMemo } from '../../shared/chart-memo';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 2 — Maintenance Dashboard
@@ -37,10 +39,13 @@ const SIGNAL_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-maintenance-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule],
+  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './maintenance-dashboard.component.html'
 })
 export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
+
+  /** Chart options keep the same reference until apply() bumps this. */
+  private charts = new ChartMemo();
 
   /* ── filters ── */
   machines: any[] = [];
@@ -90,10 +95,28 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       .subscribe(res => {
         this.machines = res?.data?.machines ?? [];
         this.shifts   = res?.data?.shifts   ?? [];
-        this.cdr.markForCheck();
-      });
 
-    /* poll so a wall-mounted board stays current without a reload */
+        /* This screen describes the condition of ONE machine: a servo
+           temperature averaged over a fleet describes no motor, and the API
+           only returns a condition trend when a machine is named — so with
+           "All" selected the trend cards were permanently empty. A machine is
+           therefore always selected, the first one until the user picks
+           another. */
+        if (this.selectedMachine === null && this.machines.length) {
+          this.selectedMachine = this.machines[0].id;
+        }
+        this.cdr.markForCheck();
+        this.startPolling();
+      });
+  }
+
+  /* Polling starts only once the default machine is known, so the first
+     request is already scoped to it rather than fetching the whole fleet and
+     then immediately refetching. */
+  private polling = false;
+  private startPolling(): void {
+    if (this.polling) return;
+    this.polling = true;
     interval(POLL_MS)
       .pipe(startWith(0), switchMap(() => this.fetch$()), takeUntil(this.destroy$))
       .subscribe(res => this.apply(res));
@@ -109,7 +132,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   }
 
   reset(): void {
-    this.selectedMachine = null;
+    this.selectedMachine = this.machines[0]?.id ?? null;
     this.selectedShift   = null;
     this.selectedDate    = this.todayStr();
     this.submit();
@@ -132,6 +155,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   }
 
   private apply(res: any): void {
+    this.charts.bump();
     this.loading = false;
 
     if (!res || res.status !== 'success' || !res.data) {
@@ -221,6 +245,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   /** The machine the detail card describes: the filtered one, else the
    *  first that is actually reporting, else the first row. */
   get focusRow(): any {
+    return this.charts.memo('focusRow', () => {
     const rows = this.data?.rows || [];
     if (!rows.length) return null;
     /* The machine the data was loaded for, not the dropdown: a user who picks
@@ -231,6 +256,14 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       return rows.find((r: any) => r.machine_id === loadedFor) || null;
     }
     return rows.find((r: any) => r.received_at) || rows[0];
+  });
+  }
+
+  /** The serial of the machine on screen, for the title bar. */
+  get focusName(): string {
+    return this.focusRow?.machine_serial_no
+      || this.machines.find(m => m.id === this.selectedMachine)?.machine_serial_no
+      || '';
   }
 
   /** Unmeasured shows as a dash, never 0% — they are different claims. */
@@ -257,6 +290,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   }
 
   get alarmDonut(): any {
+    return this.charts.memo('alarmDonut', () => {
     return {
       chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
       labels: ['Critical', 'Non critical', 'Information'],
@@ -274,9 +308,11 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       tooltip: { y: { formatter: (v: number) => `${v} alarms` } },
       noData: { text: 'No alarms in this window' }
     };
+  });
   }
 
   get spindleGauge(): any {
+    return this.charts.memo('spindleGauge', () => {
     const load = Number(this.spindleSeries[0] ?? 0);
     return {
       chart: { type: 'radialBar', height: 260, fontFamily: 'inherit' },
@@ -298,6 +334,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       legend: { show: false },
       noData: { text: 'Not reporting' }
     };
+  });
   }
 
 /** A reading with its unit, or a dash. A missing sensor is never "0". */
@@ -309,6 +346,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   }
 
   get servoChart(): any {
+    return this.charts.memo('servoChart', () => {
     return {
       chart: { type: 'bar', height: 220, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
@@ -321,6 +359,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       tooltip: { theme: 'dark', y: { formatter: (v: number | null) => v == null ? 'not reporting' : String(v) } },
       noData: { text: 'No axis is reporting' }
     };
+  });
   }
 
   private trendOptions(unit: string, colors: string[]): any {
@@ -339,8 +378,12 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     };
   }
 
-  get tempTrendChart(): any { return this.trendOptions('°C', ['#2f2d8f', '#4a76c8', '#9b7ec8', '#e8618c']); }
-  get irTrendChart(): any   { return this.trendOptions('Resistance', ['#4a76c8', '#2f2d8f', '#9b7ec8']); }
+  get tempTrendChart(): any {
+    return this.charts.memo('tempTrendChart', () => { return this.trendOptions('°C', ['#2f2d8f', '#4a76c8', '#9b7ec8', '#e8618c']); });
+  }
+  get irTrendChart(): any   {
+    return this.charts.memo('irTrendChart', () => { return this.trendOptions('Resistance', ['#4a76c8', '#2f2d8f', '#9b7ec8']); });
+  }
 
   get hasCycleData(): boolean {
     return this.cycleSeries.some(s => (s.data || []).some((v: number | null) => v != null));
@@ -393,6 +436,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   }
 
   get cycleChart(): any {
+    return this.charts.memo('cycleChart', () => {
     return {
       chart:  { type: 'line', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: 3, curve: 'smooth' },
@@ -405,5 +449,6 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       tooltip:{ theme: 'dark', y: { formatter: (v: number) => v == null ? 'no production' : `${v.toFixed(1)} s` } },
       noData: { text: 'No production in this window' }
     };
+  });
   }
 }

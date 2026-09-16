@@ -6,6 +6,8 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { DowntimeDashboardService } from './downtime-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ChartMemo } from '../../shared/chart-memo';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 6 — Downtime Reason Loss Analysis
@@ -22,10 +24,13 @@ import { ToastService } from '../../core/services/toast.service';
 @Component({
   selector: 'app-downtime-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule],
+  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './downtime-dashboard.component.html'
 })
 export class DowntimeDashboardComponent implements OnInit, OnDestroy {
+
+  /** Chart options keep the same reference until apply() bumps this. */
+  private charts = new ChartMemo();
 
   machines: any[] = [];
   shifts: any[] = [];
@@ -123,6 +128,7 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
   }
 
   private apply(res: any): void {
+    this.charts.bump();
     this.loading = false;
 
     if (!res || res.status !== 'success' || !res.data) {
@@ -266,6 +272,7 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
   }
 
   get paretoChart(): any {
+    return this.charts.memo('paretoChart', () => {
     return {
       chart:  { type: 'line', height: 300, toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: [0, 3], curve: 'straight' },
@@ -284,9 +291,11 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
       tooltip:{ theme: 'dark', shared: true, intersect: false },
       noData: { text: 'No downtime reasons recorded for this period' }
     };
+  });
   }
 
   get hourlyChart(): any {
+    return this.charts.memo('hourlyChart', () => {
     return {
       chart:  { type: 'line', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: {},
@@ -300,6 +309,7 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
       tooltip:{ theme: 'dark' },
       noData: { text: 'No downtime recorded for this period' }
     };
+  });
   }
 
   /** The MEXA palette, in the order the design cycles it. */
@@ -315,6 +325,7 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
   }
 
   get shiftDonut(): any {
+    return this.charts.memo('shiftDonut', () => {
     return {
       chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
       labels: (this.data?.by_shift || []).map((s: any) => s.shift_name),
@@ -326,9 +337,11 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
       tooltip: { y: { formatter: (v: number) => this.hours(v) } },
       noData: { text: 'Nothing recorded by shift' }
     };
+  });
   }
 
   get statusDonut(): any {
+    return this.charts.memo('statusDonut', () => {
     return {
       chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
       labels: this.statusRows.map(r => r.label),
@@ -339,5 +352,6 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
       tooltip: { y: { formatter: (v: number) => this.hours(v) } },
       noData: { text: 'No machine time recorded' }
     };
+  });
   }
 }

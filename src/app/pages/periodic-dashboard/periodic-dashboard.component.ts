@@ -6,6 +6,8 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { PeriodicDashboardService } from './periodic-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ChartMemo } from '../../shared/chart-memo';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 4 — Periodic Maintenance Dashboard
@@ -22,10 +24,13 @@ import { ToastService } from '../../core/services/toast.service';
 @Component({
   selector: 'app-periodic-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule],
+  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './periodic-dashboard.component.html'
 })
 export class PeriodicDashboardComponent implements OnInit, OnDestroy {
+
+  /** Chart options keep the same reference until apply() bumps this. */
+  private charts = new ChartMemo();
 
   /* ── filters ── */
   machines: any[] = [];
@@ -133,6 +138,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
   }
 
   private apply(res: any): void {
+    this.charts.bump();
     this.loading = false;
 
     if (!res || res.status !== 'success' || !res.data) {
@@ -350,6 +356,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
   }
 
   get workloadDonut(): any {
+    return this.charts.memo('workloadDonut', () => {
     const total = this.workloadSeries.reduce((a, b) => a + b, 0);
     return {
       chart: { type: 'donut', height: 250, fontFamily: 'inherit' },
@@ -367,6 +374,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
       tooltip: { y: { formatter: (v: number) => `${v} open` } },
       noData: { text: 'No open tickets to assign' }
     };
+  });
   }
 
   /* ── view helpers ── */
@@ -428,6 +436,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
   }
 
   get trendChart(): any {
+    return this.charts.memo('trendChart', () => {
     return {
       chart:  { type: 'line', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: 3, curve: 'smooth' },
@@ -442,5 +451,6 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
       tooltip:{ theme: 'dark' },
       noData: { text: 'No completed cycles yet' }
     };
+  });
   }
 }

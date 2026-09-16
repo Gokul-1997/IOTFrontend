@@ -50,10 +50,12 @@ export class PlantFormComponent extends DialogFormBase implements OnInit {
       : this.service.createPlant(payload);
 
     req.subscribe({
-      next:  () => { this.saving = false; this.saved.emit(); },
+      next:  () => { this.saving = false; this.touch(); this.saved.emit(); },
       error: (err) => {
         this.saving   = false;
+        /* Without this the message is assigned but never painted. */
         this.errorMsg = err?.error?.message || 'Failed to save plant. Please try again.';
+        this.touch();
       }
     });
   }

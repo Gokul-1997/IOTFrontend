@@ -6,6 +6,8 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { PreventiveDashboardService } from './preventive-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ChartMemo } from '../../shared/chart-memo';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 3 — Preventive Maintenance Dashboard
@@ -23,10 +25,13 @@ import { ToastService } from '../../core/services/toast.service';
 @Component({
   selector: 'app-preventive-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule],
+  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './preventive-dashboard.component.html'
 })
 export class PreventiveDashboardComponent implements OnInit, OnDestroy {
+
+  /** Chart options keep the same reference until apply() bumps this. */
+  private charts = new ChartMemo();
 
   /* ── filters ── */
   machines: any[] = [];
@@ -131,6 +136,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   }
 
   private apply(res: any): void {
+    this.charts.bump();
     this.loading = false;
 
     if (!res || res.status !== 'success' || !res.data) {
@@ -310,6 +316,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   }
 
   get trendChart(): any {
+    return this.charts.memo('trendChart', () => {
     return {
       chart:  { type: 'area', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: 2, curve: 'smooth' },
@@ -321,12 +328,14 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'dark' }
     };
+  });
   }
 
   /* Machine-wise alarms is a column chart in the design, matching the
      other "by machine" panels; reasons stay horizontal because the
      labels are sentences. */
   get machineChart(): any {
+    return this.charts.memo('machineChart', () => {
     return {
       chart:  { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
@@ -340,6 +349,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
       tooltip:{ theme: 'dark' },
       noData: { text: 'No critical alarms in this period' }
     };
+  });
   }
 
   private readonly palette = ['#2f2d8f', '#4a76c8', '#9b7ec8', '#17b3a3', '#6b7280'];
@@ -379,6 +389,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   }
 
   get severityDonut(): any {
+    return this.charts.memo('severityDonut', () => {
     return {
       chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
       labels: ['Critical', 'Non critical', 'Information'],
@@ -396,9 +407,11 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
       tooltip: { y: { formatter: (v: number) => `${v} alarms` } },
       noData: { text: 'No alarms in this period' }
     };
+  });
   }
 
   get reasonChart(): any {
+    return this.charts.memo('reasonChart', () => {
     return {
       chart: { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '62%', distributed: true } },
@@ -410,5 +423,6 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
       tooltip: { theme: 'dark' },
       noData: { text: 'No critical alarms in this period' }
     };
+  });
   }
 }

@@ -29,7 +29,16 @@
 
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
-<div *ngIf="loading && !data" class="mexa-note" aria-live="polite">Loading…</div>
+<!-- First load: placeholders shaped like the cards that are coming, so
+     the page does not jump when the data lands. No values are shown —
+     a placeholder reading would be a claim about a machine. -->
+<ng-container *ngIf="loading && !data">
+  <app-skeleton kind="kpis" [count]="5" label="Loading dashboard"></app-skeleton>
+  <div class="mexa-grid lg:grid-cols-2">
+    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
+    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
+  </div>
+</ng-container>
 
 <ng-container *ngIf="data">
 

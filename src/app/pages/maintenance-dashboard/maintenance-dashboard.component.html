@@ -15,11 +15,14 @@
 <form class="mexa-titlebar" (ngSubmit)="submit()">
   <h1 class="mexa-title">Maintenance Dashboard</h1>
 
-  <div class="mexa-statuschips" *ngIf="data">
-    <span class="mexa-statuschip" style="--chip:#22c55e">Running: {{ data.machines.running }}</span>
-    <span class="mexa-statuschip" style="--chip:#f5a623">Idle: {{ data.machines.idle }}</span>
-    <span class="mexa-statuschip" style="--chip:#e03131">Breakdown: {{ data.machines.breakdown }}</span>
-    <span class="mexa-statuschip" style="--chip:#94a3b8">Offline: {{ data.machines.offline }}</span>
+  <!-- One machine, named. The fleet counts that used to sit here belong on
+       the Factory screen; here they described a different machine from the
+       one every card below was reporting. -->
+  <div class="mexa-statuschips" *ngIf="focusName">
+    <span class="mexa-statuschip" style="--chip:#2f2d8f">{{ focusName }}</span>
+    <span class="mexa-badge" *ngIf="focusRow" [ngClass]="statusBadge(rowStatus(focusRow))">
+      {{ statusWord(rowStatus(focusRow)) }}
+    </span>
   </div>
 
   <span class="mexa-titlebar-spacer"></span>
@@ -32,10 +35,13 @@
     </select>
 
     <label class="mexa-filter-label" for="mtMachine">Machine</label>
-    <select id="mtMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine">
-      <option [ngValue]="null">All</option>
+    <select id="mtMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine"
+            aria-describedby="mtMachineHint">
       <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
     </select>
+    <span id="mtMachineHint" class="sr-only">
+      This dashboard reports one machine's condition at a time.
+    </span>
 
     <label class="mexa-filter-label" for="mtDate">Date</label>
     <input id="mtDate" type="date" class="mexa-date" [(ngModel)]="selectedDate" name="date">
@@ -48,7 +54,18 @@
 
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
-<div *ngIf="loading && !data" class="mexa-note" aria-live="polite">Loading…</div>
+<!-- First load: placeholders shaped like the cards that are coming, so
+     the page does not jump when the data lands. No values are shown —
+     a placeholder reading would be a claim about a machine. -->
+<ng-container *ngIf="loading && !data">
+  <app-skeleton kind="kpis" [count]="6" label="Loading dashboard"></app-skeleton>
+  <div class="mexa-grid lg:grid-cols-2">
+    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
+    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
+    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
+    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
+  </div>
+</ng-container>
 
 <ng-container *ngIf="data">
 
@@ -56,41 +73,34 @@
   <div class="mexa-kpis">
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Machine<br>Health</span>
-        <span class="mexa-kpi-icon" style="background:#22c55e" aria-hidden="true">
-          <mat-icon>favorite</mat-icon>
-        </span>
-      </div>
-      <p class="mexa-kpi-value">{{ data.health.percent }}%</p>
-      <!-- "health" is not defined in the agreement, so the basis is printed -->
-      <p class="mexa-kpi-sub">{{ data.health.basis }}</p>
-    </div>
-
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Machines<br>Running</span>
+        <span class="mexa-kpi-label">Machine<br>Status</span>
         <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true">
-          <mat-icon>play_arrow</mat-icon>
+          <mat-icon>precision_manufacturing</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.machines.running }}</p>
-      <p class="mexa-kpi-sub">of {{ data.machines.total }} machines</p>
+      <p class="mexa-kpi-value" style="font-size:1.6rem">
+        {{ focusRow ? statusWord(rowStatus(focusRow)) : '--' }}
+      </p>
+      <p class="mexa-kpi-sub">
+        {{ focusRow?.received_at ? 'Last seen ' + (focusRow.received_at | date:'HH:mm:ss') : 'Not reporting' }}
+      </p>
     </div>
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">In<br>Breakdown</span>
-        <span class="mexa-kpi-icon" style="background:#dc2626" aria-hidden="true">
-          <mat-icon>build</mat-icon>
+        <span class="mexa-kpi-label">Spindle<br>Load</span>
+        <span class="mexa-kpi-icon" style="background:#17b3a3" aria-hidden="true">
+          <mat-icon>speed</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.machines.breakdown }}</p>
-      <p class="mexa-kpi-sub">{{ data.machines.offline }} not reporting</p>
+      <!-- a missing sensor is a dash, never 0% -->
+      <p class="mexa-kpi-value">{{ reading(focusRow?.spindle_load, '%', 0) }}</p>
+      <p class="mexa-kpi-sub">Feed rate {{ focusRow?.feed_rate ?? '--' }}</p>
     </div>
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Overall<br>OEE</span>
+        <span class="mexa-kpi-label">Machine<br>OEE</span>
         <span class="mexa-kpi-icon" style="background:#9b7ec8" aria-hidden="true">
           <mat-icon>settings</mat-icon>
         </span>
@@ -102,7 +112,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Run<br>Time</span>
-        <span class="mexa-kpi-icon" style="background:#17b3a3" aria-hidden="true">
+        <span class="mexa-kpi-icon" style="background:#22c55e" aria-hidden="true">
           <mat-icon>schedule</mat-icon>
         </span>
       </div>
@@ -112,7 +122,18 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Total<br>Alarms</span>
+        <span class="mexa-kpi-label">Parts<br>Produced</span>
+        <span class="mexa-kpi-icon" style="background:#4a76c8" aria-hidden="true">
+          <mat-icon>inventory_2</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ data.production.produced }}</p>
+      <p class="mexa-kpi-sub">{{ focusRow?.part_name || 'No part set' }}</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Alarms<br>Today</span>
         <span class="mexa-kpi-icon" style="background:#f5a623" aria-hidden="true">
           <mat-icon>notifications</mat-icon>
         </span>
@@ -300,7 +321,7 @@
     <section class="mexa-card" *ngIf="missingSignals.length">
       <h2 class="mexa-card-title mexa-card-title-left">Signals Not Reported</h2>
       <p class="mexa-card-hint">
-        No machine in this selection has sent a value for these. They fill in
+        This machine has not sent a value for these. They fill in
         once the controller or the collector supplies them.
       </p>
       <ul class="mexa-rank mt-2">
@@ -333,13 +354,8 @@
   <section class="mexa-card">
     <h2 class="mexa-card-title mexa-card-title-left">Temperature &amp; Insulation Resistance Trend</h2>
 
-    <!-- keyed to the machine the data was loaded for, not the dropdown -->
-    <p *ngIf="!data.filters?.machine_id" class="mexa-empty">
-      Select a machine and press Submit to see its temperatures and insulation
-      resistance through the shift.
-    </p>
 
-    <div class="mexa-grid lg:grid-cols-2" style="margin:0" *ngIf="data.filters?.machine_id">
+    <div class="mexa-grid lg:grid-cols-2" style="margin:0">
       <div>
         <h3 class="mexa-card-hint">Temperature (°C)</h3>
         <apx-chart *ngIf="tempTrendSeries.length"
@@ -363,46 +379,4 @@
     </div>
   </section>
 
-  <!-- ══════════ MACHINE TABLE ══════════ -->
-  <section class="mexa-card">
-    <h2 class="mexa-card-title mexa-card-title-left">Machine Status</h2>
-    <div class="mexa-tablewrap">
-      <table class="mexa-table">
-        <caption class="sr-only">Live status of every active machine</caption>
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">Machine</th>
-            <th scope="col">Status</th>
-            <th scope="col">Component ID</th>
-            <th scope="col">Part</th>
-            <th scope="col">Operator</th>
-            <th scope="col">Spindle Load</th>
-            <th scope="col">Feed Rate</th>
-            <th scope="col">Run Time</th>
-            <th scope="col">Last Seen</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let r of data.rows; let i = index">
-            <td class="num">{{ i + 1 }}</td>
-            <td class="strong">{{ r.machine_serial_no }}</td>
-            <td><span class="mexa-badge" [ngClass]="statusBadge(rowStatus(r))">{{ statusWord(rowStatus(r)) }}</span></td>
-            <td>{{ r.component_id || '--' }}</td>
-            <td>{{ r.part_name || '--' }}</td>
-            <td>{{ r.operator_name || 'Unassigned' }}</td>
-            <td class="num">{{ r.spindle_load ?? '--' }}</td>
-            <td class="num">{{ r.feed_rate ?? '--' }}</td>
-            <td class="num whitespace-nowrap">{{ hm(r.run_seconds) }}</td>
-            <td class="num whitespace-nowrap">
-              {{ r.received_at ? (r.received_at | date:'dd-MMM HH:mm:ss') : 'never' }}
-            </td>
-          </tr>
-          <tr *ngIf="!data.rows.length">
-            <td colspan="10" class="mexa-empty">No active machines for this selection.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
 </ng-container>

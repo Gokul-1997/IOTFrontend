@@ -67,7 +67,7 @@ export class LineFormComponent extends DialogFormBase implements OnInit {
       }
 
       this.service.updateLine(this.data.id, changed).subscribe({
-        next: () => { this.saving = false; this.saved.emit(); },
+        next: () => { this.saving = false; this.touch(); this.saved.emit(); },
         error: (err: any) => {
           this.saving = false;
           this.touch();
@@ -76,7 +76,7 @@ export class LineFormComponent extends DialogFormBase implements OnInit {
       });
     } else {
       this.service.createLine(payload).subscribe({
-        next: () => { this.saving = false; this.saved.emit(); },
+        next: () => { this.saving = false; this.touch(); this.saved.emit(); },
         error: (err: any) => {
           this.saving = false;
           this.touch();

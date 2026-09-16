@@ -5,6 +5,19 @@ import { environment } from '../../../environments/environment';
 
 export type ReportType = 'production' | 'oee-hourly' | 'shift-oee';
 
+/** Mirrors MAX_DIRECT_DAYS in Backend report.limits.js; the server is the
+ *  authority and re-states it on GET /reports/columns. */
+export const MAX_DIRECT_DAYS = 92;
+
+/** Inclusive, so a single day counts as one. */
+export function rangeDays(from: string, to: string): number {
+  if (!from || !to) return 0;
+  const a = Date.parse(`${from}T00:00:00Z`);
+  const b = Date.parse(`${to}T00:00:00Z`);
+  if (Number.isNaN(a) || Number.isNaN(b) || b < a) return 0;
+  return Math.round((b - a) / 86_400_000) + 1;
+}
+
 export interface ReportFilters {
   date_from:   string;
   date_to:     string;
@@ -74,6 +87,22 @@ export class ReportsService {
       link.click();
       URL.revokeObjectURL(url);
     });
+  }
+
+  /** The column definitions the server will build the emailed file from. */
+  getColumns(type: ReportType): Observable<any> {
+    return this.http.get(`${this.api}/columns`, { params: { type } });
+  }
+
+  /**
+   * Ask for the report to be emailed. Answers 202 immediately — the file is
+   * built after the response, so a success here means "accepted", not "sent".
+   */
+  emailReport(body: {
+    type: ReportType; columns: string[]; email?: string;
+    labels?: Record<string, string>;
+  } & ReportFilters): Observable<any> {
+    return this.http.post(`${this.api}/email`, body);
   }
 
   private toParams(f: ReportFilters): Record<string, string> {

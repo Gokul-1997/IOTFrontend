@@ -117,21 +117,23 @@ export class ShiftFormComponent extends DialogFormBase implements OnInit {
       }
 
       this.service.update(this.data.id, changed)
-        .pipe(finalize(() => { this.saving = false; }))
+        .pipe(finalize(() => { this.saving = false; this.touch(); }))
         .subscribe({
           next: () => this.saved.emit(),
           error: (err: any) => {
             this.saving = false;
+            this.touch();
             this.toast.error(err?.error?.message || 'Update failed. Try again.');
           }
         });
     } else {
       this.service.create(payload)
-        .pipe(finalize(() => { this.saving = false; }))
+        .pipe(finalize(() => { this.saving = false; this.touch(); }))
         .subscribe({
           next: () => this.saved.emit(),
           error: (err: any) => {
             this.saving = false;
+            this.touch();
             this.toast.error(err?.error?.message || 'Create failed. Try again.');
           }
         });

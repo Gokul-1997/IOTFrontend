@@ -6,6 +6,8 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { EnergyDashboardService } from './energy-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ChartMemo } from '../../shared/chart-memo';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 9 — Energy Monitoring
@@ -19,10 +21,13 @@ import { ToastService } from '../../core/services/toast.service';
 @Component({
   selector: 'app-energy-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule],
+  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './energy-dashboard.component.html'
 })
 export class EnergyDashboardComponent implements OnInit, OnDestroy {
+
+  /** Chart options keep the same reference until apply() bumps this. */
+  private charts = new ChartMemo();
 
   machines: any[] = [];
   f: any = this.blankFilters();
@@ -104,6 +109,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   }
 
   private apply(res: any): void {
+    this.charts.bump();
     this.loading = false;
     if (!res || res.status !== 'success' || !res.data) {
       if (!this.errorMsg) this.errorMsg = 'No energy data available.';
@@ -230,6 +236,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   }
 
   get trendChart(): any {
+    return this.charts.memo('trendChart', () => {
     return {
       chart:  { type: 'area', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: 2, curve: 'smooth' },
@@ -242,6 +249,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       tooltip:{ theme: 'dark' },
       noData: { text: 'No machine is reporting an energy counter yet' }
     };
+  });
   }
 
   /** The MEXA palette, in the order the design cycles it. */
@@ -257,6 +265,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   }
 
   get machineChart(): any {
+    return this.charts.memo('machineChart', () => {
     return {
       chart:  { type: 'bar', height: 300, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '60%', distributed: true } },
@@ -269,9 +278,11 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       tooltip:{ theme: 'dark' },
       noData: { text: 'No machine is reporting an energy counter yet' }
     };
+  });
   }
 
   get shiftDonut(): any {
+    return this.charts.memo('shiftDonut', () => {
     return {
       chart: { type: 'donut', height: 260, fontFamily: 'inherit' },
       labels: (this.data?.by_shift || []).map((s: any) => s.shift_name),
@@ -289,9 +300,11 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       tooltip: { y: { formatter: (v: number) => `${v} kWh` } },
       noData: { text: 'Nothing recorded by shift' }
     };
+  });
   }
 
   get monthChart(): any {
+    return this.charts.memo('monthChart', () => {
     return {
       chart: { type: 'bar', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '50%', distributed: true } },
@@ -304,5 +317,6 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       tooltip: { theme: 'dark' },
       noData: { text: 'Nothing recorded by month' }
     };
+  });
   }
 }

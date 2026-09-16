@@ -369,24 +369,19 @@ for (const s of screens) {
   });
 }
 
-test('OEE dashboard switches between Analytics and Report', async ({ authedPage: page }) => {
+test('OEE dashboard has no Report view — reports belong to the Report page', async ({ authedPage: page }) => {
   await mockApi(page);
   await page.setViewportSize({ width: 1600, height: 1200 });
   await page.goto('/oee-dashboard');
 
-  // Analytics is the landing tab: machine tiles, no summary table
+  // the analytics content is all that remains
   await expect(page.locator('.mexa-oeecard')).toHaveCount(4);
+
+  // the tab strip and the machine-summary table were removed from this screen
+  await expect(page.locator('.mexa-tabs')).toHaveCount(0);
+  await expect(page.getByRole('tab')).toHaveCount(0);
   await expect(page.locator('.mexa-table')).toHaveCount(0);
-
-  await page.getByRole('tab', { name: 'Report' }).click();
-  await expect(page.locator('.mexa-oeecard')).toHaveCount(0);
-  await expect(page.locator('.mexa-table')).toHaveCount(1);
-  await expect(page.locator('.mexa-table')).toContainText('CNC-01');
-
-  // a machine with no cycle time must read as unmeasured, never as zero
-  await expect(page.locator('.mexa-table')).toContainText('no cycle time');
-  await page.waitForTimeout(800);
-  await page.screenshot({ path: 'mexa-08-oee-report.png', fullPage: true });
+  await expect(page.getByRole('button', { name: 'Excel' })).toHaveCount(0);
 });
 
 test('Periodic Attention Required filters the ticket table', async ({ authedPage: page }) => {

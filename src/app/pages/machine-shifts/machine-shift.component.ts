@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -30,7 +30,8 @@ export class MachineShiftComponent implements OnInit {
     private fb: FormBuilder,
     private machineService: MachinesService,
     private shiftService: ShiftsService,
-    private machineShiftService: MachineShiftService
+    private machineShiftService: MachineShiftService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -38,10 +39,13 @@ export class MachineShiftComponent implements OnInit {
       machine_id: ['']
     });
 
+    /* Zoneless: without markForCheck both dropdowns stay empty until an
+       unrelated click forces a change-detection pass. */
     this.machineService.getAllForDropdown().subscribe((res: any) => {
       this.machines = res.data || [];
+      this.cdr.markForCheck();
     });
-    this.shiftService.getShifts().subscribe(d => this.shifts = d);
+    this.shiftService.getShifts().subscribe(d => { this.shifts = d; this.cdr.markForCheck(); });
   }
 
   loadConfig() {
@@ -50,6 +54,7 @@ export class MachineShiftComponent implements OnInit {
 
     this.machineShiftService.getByMachine(machineId).subscribe(res => {
       this.selectedShifts = res.map((x: any) => x.shift_id);
+      this.cdr.markForCheck();
     });
   }
 
@@ -71,6 +76,7 @@ export class MachineShiftComponent implements OnInit {
 
     this.machineShiftService.save(payload).subscribe(() => {
       alert('Machine shift configuration saved');
+      this.cdr.markForCheck();
     });
   }
 }

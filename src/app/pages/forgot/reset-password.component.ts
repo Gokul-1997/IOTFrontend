@@ -1,5 +1,5 @@
 import { CommonModule } from "@angular/common";
-import { Component } from "@angular/core";
+import { ChangeDetectorRef, Component } from "@angular/core";
 import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from "@angular/forms";
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import { AuthService } from "../../core/services/auth.service";
@@ -33,7 +33,8 @@ export class ResetPasswordComponent {
   constructor(
     private route: ActivatedRoute,
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.token = this.route.snapshot.params['token'];
   }
@@ -47,10 +48,14 @@ export class ResetPasswordComponent {
         next: (res: any) => {
           this.message = 'Password reset successful. Redirecting to login...';
           this.success = true;
+          /* Zoneless: without this the confirmation never appears and the
+             user is redirected from a page that still looks like a form. */
+          this.cdr.markForCheck();
           setTimeout(() => this.router.navigate(['/login']), 2000);
         },
         error: (err) => {
           this.message = err.error?.message || 'Reset failed';
+          this.cdr.markForCheck();
         }
       });
   }

@@ -65,11 +65,15 @@ export class JobCreateModalComponent extends DialogFormBase implements OnInit {
     this.service.startJob(this.form).subscribe({
       next: () => {
         this.saving = false;
+        this.touch();
         this.close.emit();
       },
       error: (err: any) => {
         this.saving = false;
         this.error  = err?.error?.message || 'Failed to start job. Try again.';
+        /* Without this the button stays on "Saving…" and the reason the job
+           was not started is never shown. */
+        this.touch();
       }
     });
   }

@@ -38,7 +38,17 @@
 
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
-<div *ngIf="loading && !data" class="mexa-note" aria-live="polite">Loading…</div>
+<!-- First load: placeholders shaped like the cards that are coming, so
+     the page does not jump when the data lands. No values are shown —
+     a placeholder reading would be a claim about a machine. -->
+<ng-container *ngIf="loading && !data">
+  <app-skeleton kind="kpis" [count]="6" label="Loading dashboard"></app-skeleton>
+  <div class="mexa-grid lg:grid-cols-2">
+    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
+    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
+    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
+  </div>
+</ng-container>
 
 <ng-container *ngIf="data">
 
@@ -127,21 +137,9 @@
     </div>
   </div>
 
-  <!-- ══════════ TABS ══════════ -->
-  <div class="mexa-tabs" role="tablist" aria-label="OEE views">
-    <button type="button" class="mexa-tab" role="tab" id="tabAnalytics"
-            aria-controls="panelOee" [attr.aria-selected]="tab === 'analytics'"
-            (click)="tab = 'analytics'">Analytics</button>
-    <button type="button" class="mexa-tab" role="tab" id="tabReport"
-            aria-controls="panelOee" [attr.aria-selected]="tab === 'report'"
-            (click)="tab = 'report'">Report</button>
-  </div>
 
-  <section class="mexa-card mexa-tabpanel" id="panelOee" role="tabpanel"
-           [attr.aria-labelledby]="tab === 'analytics' ? 'tabAnalytics' : 'tabReport'">
+  <section class="mexa-card">
 
-    <!-- ─────────── ANALYTICS ─────────── -->
-    <ng-container *ngIf="tab === 'analytics'">
 
       <div class="mexa-oeecards">
         <article *ngFor="let m of data.machines.data" class="mexa-oeecard" [ngClass]="bandTile(m.band)">
@@ -224,91 +222,5 @@
           [xaxis]="compChart.xaxis" [yaxis]="compChart.yaxis" [grid]="compChart.grid"
           [tooltip]="compChart.tooltip" [noData]="compChart.noData"></apx-chart>
       </section>
-    </ng-container>
-
-    <!-- ─────────── REPORT ─────────── -->
-    <ng-container *ngIf="tab === 'report'">
-      <div class="mexa-tablebar">
-        <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Machine Wise OEE Summary</h2>
-        <span class="inline-flex items-center gap-2 flex-wrap">
-          <label class="sr-only" for="oeSearch">Search machines</label>
-          <input id="oeSearch" type="search" class="mexa-search" placeholder="Search"
-                 [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
-          <span class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
-            <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">
-              {{ exporting === 'xlsx' ? '…' : 'Excel' }}
-            </button>
-            <button type="button" class="mexa-pagebtn" (click)="export('csv')" [disabled]="exporting">
-              {{ exporting === 'csv' ? '…' : 'CSV' }}
-            </button>
-            <button type="button" class="mexa-pagebtn" (click)="export('pdf')" [disabled]="exporting">
-              {{ exporting === 'pdf' ? '…' : 'PDF' }}
-            </button>
-          </span>
-          <button type="button" class="mexa-pagebtn" (click)="reset()">Reset</button>
-        </span>
-      </div>
-
-      <div class="mexa-tablewrap">
-        <table class="mexa-table">
-          <caption class="sr-only">OEE by machine, best first</caption>
-          <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Machine</th>
-              <th scope="col">Status</th>
-              <th scope="col">Availability (%)</th>
-              <th scope="col">Performance (%)</th>
-              <th scope="col">Quality (%)</th>
-              <th scope="col">OEE</th>
-              <th scope="col">Actuals</th>
-              <th scope="col">Good</th>
-              <th scope="col">Rejections</th>
-              <th scope="col">Rej (%)</th>
-              <th scope="col">Alarms</th>
-              <th scope="col">Downtime</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let m of data.machines.data; let i = index">
-              <td class="num">{{ (data.machines.page - 1) * limit + i + 1 }}</td>
-              <td>
-                <span class="strong">{{ m.machine_serial_no }}</span>
-                <span class="mexa-rank-sub">{{ m.model }}</span>
-              </td>
-              <td><span class="mexa-badge" [ngClass]="statusBadge(m.status)">{{ m.status | titlecase }}</span></td>
-              <td class="num">{{ pct(m.availability_pct) }}</td>
-              <td class="num">
-                {{ pct(m.performance_pct) }}
-                <!-- a dash here means no cycle time, not a slow machine -->
-                <span *ngIf="!m.has_cycle_time" class="mexa-rank-sub">no cycle time</span>
-              </td>
-              <td class="num">{{ pct(m.quality_pct) }}</td>
-              <td class="num strong">{{ pct(m.oee_pct) }}</td>
-              <td class="num">{{ m.produced }}</td>
-              <td class="num">{{ m.good }}</td>
-              <td class="num">{{ m.rejected }}</td>
-              <td class="num">{{ rejectionPct(m) }}</td>
-              <td class="num">{{ m.alarm_count }}</td>
-              <td class="num whitespace-nowrap">{{ hours(m.downtime_seconds) }}</td>
-            </tr>
-            <tr *ngIf="!data.machines.data.length">
-              <td colspan="13" class="mexa-empty">No machines match these filters.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="mexa-pager" *ngIf="data.machines.total > 0">
-        <span aria-live="polite">Showing: {{ data.machines.data.length }} of {{ data.machines.total }}</span>
-        <span class="inline-flex items-center gap-2">
-          <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
-                  [disabled]="data.machines.page <= 1">‹ Previous</button>
-          <span>{{ data.machines.page }} / {{ data.machines.totalPages }}</span>
-          <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
-                  [disabled]="data.machines.page >= data.machines.totalPages">Next ›</button>
-        </span>
-      </div>
-    </ng-container>
   </section>
 </ng-container>

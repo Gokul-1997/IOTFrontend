@@ -6,6 +6,8 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { AlarmDashboardService } from './alarm-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ChartMemo } from '../../shared/chart-memo';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 5 — Alarm Dashboard & Reports
@@ -19,10 +21,13 @@ import { ToastService } from '../../core/services/toast.service';
 @Component({
   selector: 'app-alarm-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule],
+  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './alarm-dashboard.component.html'
 })
 export class AlarmDashboardComponent implements OnInit, OnDestroy {
+
+  /** Chart options keep the same reference until apply() bumps this. */
+  private charts = new ChartMemo();
 
   /* ── filters ── */
   machines: any[] = [];
@@ -121,6 +126,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   }
 
   private apply(res: any): void {
+    this.charts.bump();
     this.loading = false;
 
     if (!res || res.status !== 'success' || !res.data) {
@@ -248,6 +254,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   }
 
   get trendChart(): any {
+    return this.charts.memo('trendChart', () => {
     return {
       chart:  { type: 'line', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: {},
@@ -262,9 +269,11 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
       tooltip:{ theme: 'dark' },
       noData: { text: 'No alarms in this period' }
     };
+  });
   }
 
   get machineChart(): any {
+    return this.charts.memo('machineChart', () => {
     return {
       chart:  { type: 'bar', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
@@ -278,9 +287,11 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
       tooltip:{ theme: 'dark' },
       noData: { text: 'No alarms in this period' }
     };
+  });
   }
 
   get shiftDonut(): any {
+    return this.charts.memo('shiftDonut', () => {
     return {
       chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
       labels: (this.data?.by_shift || []).map((s: any) => s.shift_name),
@@ -292,9 +303,11 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
       tooltip: { y: { formatter: (v: number) => `${v} alarms` } },
       noData: { text: 'No alarms in this period' }
     };
+  });
   }
 
   get severityDonut(): any {
+    return this.charts.memo('severityDonut', () => {
     return {
       chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
       labels: ['Critical', 'Normal'],
@@ -305,5 +318,6 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
       tooltip: { y: { formatter: (v: number) => `${v} alarms` } },
       noData: { text: 'No alarms in this period' }
     };
+  });
   }
 }

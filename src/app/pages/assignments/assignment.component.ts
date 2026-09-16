@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { OperatorService } from '../operators/operator.service';
@@ -26,7 +26,8 @@ export class AssignmentComponent implements OnInit {
     private operatorService: OperatorService,
     private machineService: MachinesService,
     private assignmentService: AssignmentService,
-    public auth: AuthService
+    public auth: AuthService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit() {
@@ -35,9 +36,12 @@ export class AssignmentComponent implements OnInit {
       machine_id: ['', Validators.required],
       assigned_from: ['', Validators.required]
     });
-    this.operatorService.getAll().subscribe(d => this.operators = d);
+  /* Zoneless: an HTTP response resolving does not schedule a render, so a
+     callback that changes what is on screen has to say so itself. */
+    this.operatorService.getAll().subscribe(d => { this.operators = d; this.cdr.markForCheck(); });
     this.machineService.getAllForDropdown().subscribe((res: any) => {
       this.machines = res.data || [];
+      this.cdr.markForCheck();
     });
   }
 
@@ -51,10 +55,12 @@ export class AssignmentComponent implements OnInit {
         this.saving = false;
         alert('Operator assigned to machine');
         this.form.reset();
+        this.cdr.markForCheck();
       },
       error: () => {
         this.saving = false;
         alert('Assignment failed');
+        this.cdr.markForCheck();
       }
     });
   }
