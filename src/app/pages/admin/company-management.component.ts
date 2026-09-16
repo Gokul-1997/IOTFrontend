@@ -25,6 +25,17 @@ export class CompanyManagementComponent implements OnInit {
 
   // Plan modal
   showPlanModal = false;
+
+  /* Plan history and usage. Both are read-only views of an assignment that
+     already exists: history answers "who changed this and when", usage
+     answers "is this company near its ceiling" — the question that decides
+     whether the next create call will be refused. */
+  showHistoryModal = false;
+  historyCompany: any = null;
+  history: any[] = [];
+  historyLoading = false;
+  usage: any = null;
+  usageLoading = false;
   selectedCompany: any = null;
   planForm = { plan_id: 0, max_users: null as number | null, max_plants: null as number | null, max_machines: null as number | null };
 
@@ -143,6 +154,66 @@ export class CompanyManagementComponent implements OnInit {
   }
 
   // ── Plan Assignment ────────────────────────────
+  /** Usage and history for one company, shown together: the limits mean
+   *  little without what is actually consumed against them. */
+  openHistoryModal(company: any) {
+    this.historyCompany = company;
+    this.history = [];
+    this.usage = null;
+    this.showHistoryModal = true;
+    this.historyLoading = true;
+    this.usageLoading = true;
+    this.cdr.detectChanges();
+
+    this.companyService.getPlanHistory(company.id).subscribe({
+      next: (res: any) => {
+        this.history = res?.data || [];
+        this.historyLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.historyLoading = false;
+        this.cdr.detectChanges();
+        this.toast.error('Failed to load plan history');
+      }
+    });
+
+    this.companyService.getCompanyUsage(company.id).subscribe({
+      next: (res: any) => {
+        this.usage = res;
+        this.usageLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.usageLoading = false;
+        this.cdr.detectChanges();
+        this.toast.error('Failed to load usage');
+      }
+    });
+  }
+
+  closeHistoryModal() {
+    this.showHistoryModal = false;
+    this.historyCompany = null;
+    this.history = [];
+    this.usage = null;
+    this.cdr.detectChanges();
+  }
+
+  /** Bar colour by how close a company is to its ceiling. */
+  usageBarClass(pct: number | null): string {
+    if (pct === null || pct === undefined) return 'bg-gray-300';
+    if (pct >= 100) return 'bg-red-500';
+    if (pct >= 80)  return 'bg-amber-500';
+    return 'bg-green-500';
+  }
+
+  /** "3 of 999" — and "3 (no limit)" when the plan sets none. */
+  usageLabel(used: number, max: number | null): string {
+    if (max === null || max === undefined || Number(max) <= 0) return `${used} (no limit)`;
+    return `${used} of ${max}`;
+  }
+
   openPlanModal(company: any) {
     this.selectedCompany = company;
     this.planForm = {

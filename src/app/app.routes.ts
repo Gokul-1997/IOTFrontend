@@ -72,6 +72,7 @@ export const routes: Routes = [
         canActivate: [adminGuard],
         children: [
           { path: 'companies', canActivate: [sntSuperGuard], loadComponent: () => import('./pages/admin/company-management.component').then(m => m.CompanyManagementComponent) },
+          { path: 'plans', canActivate: [sntSuperGuard], loadComponent: () => import('./pages/admin/plan-management.component').then(m => m.PlanManagementComponent) },
           { path: 'users', canActivate: [companyAdminGuard], loadComponent: () => import('./pages/admin/user-management.component').then(m => m.UserManagementComponent) },
           { path: 'roles', canActivate: [companyAdminGuard], loadComponent: () => import('./pages/admin/role-management.component').then(m => m.RoleManagementComponent) },
           { path: '', redirectTo: 'users', pathMatch: 'full' }

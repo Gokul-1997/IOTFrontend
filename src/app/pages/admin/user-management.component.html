@@ -6,7 +6,15 @@
        class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
       Companies
     </a>
-    <a *ngIf="!auth.isSntSuper()" routerLink="/admin/users" routerLinkActive="bg-blue-600 text-white"
+    <a *ngIf="auth.isSntSuper()" routerLink="/admin/plans" routerLinkActive="bg-blue-600 text-white"
+       class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+      Plans
+    </a>
+    <a routerLink="/admin/users" routerLinkActive="bg-blue-600 text-white"
+       class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+      Users
+    </a>
+    <a *ngIf="false" routerLink="/admin/users" routerLinkActive="bg-blue-600 text-white"
        class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
       Users
     </a>
@@ -53,6 +61,7 @@
           <tr class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">#</th>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">User</th>
+            <th *ngIf="auth.isSntSuper()" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Company</th>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Roles</th>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Status</th>
             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Actions</th>
@@ -72,6 +81,15 @@
                   <p class="text-xs text-gray-400">{{ user.email }}</p>
                 </div>
               </div>
+            </td>
+            <td *ngIf="auth.isSntSuper()" class="px-4 py-3">
+              <span *ngIf="user.company_name || companyName(user.company_id)"
+                    class="px-2 py-0.5 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 text-xs rounded-full font-medium">
+                {{ user.company_name || companyName(user.company_id) }}
+              </span>
+              <!-- a user with no company can log in but belongs to no tenant -->
+              <span *ngIf="!user.company_name && !companyName(user.company_id)"
+                    class="text-xs text-amber-600 dark:text-amber-400 italic">No company</span>
             </td>
             <td class="px-4 py-3">
               <div class="flex flex-wrap gap-1">
@@ -131,6 +149,24 @@
       </button>
     </div>
     <div class="ui-dialog-body space-y-4">
+
+      <!--
+        A super admin has no company of their own, so the API requires one
+        here ("Company is required when creating a user"). A company admin
+        never sees this: their own company is used.
+      -->
+      <div *ngIf="auth.isSntSuper()">
+        <label class="ui-label" for="createFormCompany">
+          Company<span class="ui-req" aria-hidden="true">*</span>
+        </label>
+        <select id="createFormCompany" class="ui-input"
+                [(ngModel)]="createForm.company_id"
+                (ngModelChange)="onCreateCompanyChange()">
+          <option [ngValue]="null">Select a company</option>
+          <option *ngFor="let c of companies" [ngValue]="c.id">{{ c.company_name }}</option>
+        </select>
+        <p class="ui-hint">The user signs in to this company's data only.</p>
+      </div>
 
       <div>
         <label class="ui-label">Username<span class="ui-req" aria-hidden="true">*</span></label>
@@ -216,6 +252,16 @@
       </button>
     </div>
     <div class="ui-dialog-body space-y-4">
+
+      <!-- Moving a user between companies is a super-admin action; the API
+           only applies company_id when the caller is SNT_SUPER. -->
+      <div *ngIf="auth.isSntSuper()">
+        <label class="ui-label" for="editFormCompany">Company</label>
+        <select id="editFormCompany" class="ui-input" [(ngModel)]="editForm.company_id">
+          <option [ngValue]="null">No company</option>
+          <option *ngFor="let c of companies" [ngValue]="c.id">{{ c.company_name }}</option>
+        </select>
+      </div>
 
       <div>
         <label class="ui-label">Username</label>

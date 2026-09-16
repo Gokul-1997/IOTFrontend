@@ -38,6 +38,16 @@ export class CompanyService {
     return this.http.post<any>(`${this.api}/companies/${companyId}/plan`, data);
   }
 
+  /** Plan changes over time: who changed it, when, from what, and why. */
+  getPlanHistory(companyId: number, params?: any): Observable<any> {
+    return this.http.get<any>(`${this.api}/companies/${companyId}/plan/history`, { params: params || {} });
+  }
+
+  /** Current usage against the plan's limits, resolved as the quota check resolves them. */
+  getCompanyUsage(companyId: number): Observable<any> {
+    return this.http.get<any>(`${this.api}/companies/${companyId}/usage`);
+  }
+
   getPlanFeatures(companyId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.api}/companies/${companyId}/plan-features`);
   }

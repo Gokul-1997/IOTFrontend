@@ -96,6 +96,20 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
+  /** Company name for a user row, when the list endpoint did not include it. */
+  companyName(companyId: number | null): string {
+    if (!companyId) return '';
+    return this.companies.find(c => c.id === companyId)?.company_name || '';
+  }
+
+  /* Machines belong to a company, so the supervised-machine list has to
+     follow the company the user is being created in — otherwise a super
+     admin would tick machines from whichever company loaded first. */
+  onCreateCompanyChange() {
+    this.createForm.supervised_machine_ids = [];
+    this.cdr.detectChanges();
+  }
+
   loadCompanies() {
     this.adminService.getCompanies().subscribe({
       next: res => {
@@ -208,6 +222,14 @@ export class UserManagementComponent implements OnInit {
   createUser() {
     if (!this.createForm.username.trim() || !this.createForm.email.trim() || !this.createForm.password.trim()) {
       this.toastService.error('Username, email and password are required');
+      return;
+    }
+
+    /* Caught here rather than by the API, which answers "Company is
+       required when creating a user" only after the form has been filled
+       in and submitted. */
+    if (this.auth.isSntSuper() && !this.createForm.company_id) {
+      this.toastService.error('Select the company this user belongs to');
       return;
     }
 
