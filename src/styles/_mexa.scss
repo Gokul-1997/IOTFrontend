@@ -775,3 +775,40 @@ html, body { background: var(--mexa-ground); }
   background: rgba(255, 255, 255, .07) !important;
   color: var(--mexa-ink-2);
 }
+
+/* ── Readout: a label and its reading ─────────────────────────
+   Most of the Maintenance screen is this shape — a machine's condition is a
+   list of named values, not a plot. Three of those lists were drawn as bar
+   charts of three numbers each, which filled a card with axes and gridlines
+   to carry what a row of text says better. */
+
+.mexa-readout { display: grid; gap: .55rem; margin: 0; }
+.mexa-readout > div {
+  display: flex; align-items: baseline; justify-content: space-between; gap: .75rem;
+}
+.mexa-readout dt { font-size: .82rem; color: var(--mexa-ink-3); min-width: 0; }
+.mexa-readout dd {
+  margin: 0; font-size: .92rem; font-weight: 600; color: var(--mexa-ink);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+
+/* ── Per-axis condition ───────────────────────────────────────
+   One row per axis so load, motor temperature and encoder temperature line
+   up across it. A silent sensor is a dash in its own column, which is what
+   made the charts unreadable: an axis with no reading simply had no bar,
+   and an empty slot looks identical to a zero. */
+
+.mexa-axistable { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.mexa-axistable th {
+  text-align: left; padding: 0 0 .45rem;
+  font-size: .7rem; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--mexa-ink-3);
+}
+.mexa-axistable th.num, .mexa-axistable td.num { text-align: right; }
+.mexa-axistable td {
+  padding: .55rem 0; border-top: 1px solid var(--mexa-rule);
+  color: var(--mexa-ink); font-variant-numeric: tabular-nums;
+}
+.mexa-axistable td.axis { font-weight: 700; width: 2.5rem; }
+.mexa-axistable .mexa-meter { width: 2.75rem; margin-right: .45rem; }
+.mexa-axistable .dim { color: var(--mexa-ink-3); }

@@ -79,6 +79,10 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   hasEncoderTemp   = false;
   fanList: { name: string; value: string }[] = [];
   conditionCategories: string[] = [];
+  /* One row per axis. The three per-axis readings were three separate
+     charts of three numbers each; as rows they compare across the axis,
+     which is the question a maintenance engineer actually has. */
+  axisRows: { axis: string; load: number | null; temp: number | null; encoder: number | null }[] = [];
   tempTrendSeries: any[] = [];
   irTrendSeries:   any[] = [];
 
@@ -170,9 +174,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       : '';
 
     const trend = d.cycle_time_trend || [];
-    this.cycleCategories = trend.map((t: any) =>
-      new Date(t.hour_start).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })
-    );
+    this.cycleCategories = trend.map((t: any) => this.hourLabel(t.hour_start));
     // null for hours with no production — Apex leaves a gap rather than
     // dropping the line to zero, which would read as an impossibly fast cycle
     this.cycleSeries = [{
@@ -214,6 +216,13 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     this.encoderTempAxes = axes('encoder_temp');
     this.hasEncoderTemp  = hasAny(this.encoderTempAxes);
 
+    this.axisRows = ['X', 'Y', 'Z'].map((axis, i) => ({
+      axis,
+      load:    this.servoLoadAxes[i]?.value   ?? null,
+      temp:    this.servoTempAxes[i]?.value   ?? null,
+      encoder: this.encoderTempAxes[i]?.value ?? null
+    }));
+
     const fans = this.focusRow?.fan_status;
     this.fanList = fans && typeof fans === 'object' && !Array.isArray(fans)
       ? Object.entries(fans).map(([k, v]) => ({ name: k.replace(/_/g, ' '), value: String(v) }))
@@ -223,8 +232,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
        servo temperatures across a fleet describes no motor. A series is
        drawn only if it has at least one reading in the window. */
     const ct = d.condition_trend || [];
-    this.conditionCategories = ct.map((t: any) =>
-      new Date(t.hour_start).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false }));
+    this.conditionCategories = ct.map((t: any) => this.hourLabel(t.hour_start));
     const lines = (defs: [string, string][]) => defs
       .filter(([, key]) => ct.some((t: any) => t[key] != null))
       .map(([name, key]) => ({ name, data: ct.map((t: any) => t[key] ?? null) }));
@@ -257,6 +265,30 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     }
     return rows.find((r: any) => r.received_at) || rows[0];
   });
+  }
+
+  /** An hour label, or blank. A malformed timestamp must never reach a
+   *  shop-floor display as the words "Invalid Date". */
+  private hourLabel(iso: string): string {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime())
+      ? ''
+      : d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+
+  /** Whether any axis reported anything at all. */
+  get hasAxisData(): boolean {
+    return this.axisRows.some(r => r.load !== null || r.temp !== null || r.encoder !== null);
+  }
+
+  /** Servo load as a share of full load, for the inline meter. */
+  loadPct(v: number | null): number {
+    return v === null || v === undefined ? 0 : Math.max(0, Math.min(100, Number(v)));
+  }
+
+  /** The trend card only earns its space when a line can be drawn. */
+  get hasConditionTrend(): boolean {
+    return this.tempTrendSeries.length > 0 || this.irTrendSeries.length > 0;
   }
 
   /** The serial of the machine on screen, for the title bar. */
@@ -315,7 +347,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     return this.charts.memo('spindleGauge', () => {
     const load = Number(this.spindleSeries[0] ?? 0);
     return {
-      chart: { type: 'radialBar', height: 260, fontFamily: 'inherit' },
+      chart: { type: 'radialBar', height: 215, fontFamily: 'inherit' },
       labels: ['Spindle Load'],
       // the band the reading falls in, so colour and number agree
       colors: [load >= 85 ? '#e03131' : load >= 60 ? '#f5a623' : '#22c55e'],
@@ -343,23 +375,6 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     const n = Number(v);
     if (!Number.isFinite(n)) return '--';
     return unit ? `${n.toFixed(digits)} ${unit}` : n.toFixed(digits);
-  }
-
-  get servoChart(): any {
-    return this.charts.memo('servoChart', () => {
-    return {
-      chart: { type: 'bar', height: 220, toolbar: { show: false }, fontFamily: 'inherit' },
-      plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
-      colors: ['#2f2d8f', '#4a76c8', '#9b7ec8'],
-      // a null axis gets no label rather than a "0" floating over nothing
-      dataLabels: { enabled: true, formatter: (v: number | null) => v == null ? '' : String(v) },
-      legend: { show: false },
-      xaxis: { categories: ['X', 'Y', 'Z'] },
-      grid: { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip: { theme: 'dark', y: { formatter: (v: number | null) => v == null ? 'not reporting' : String(v) } },
-      noData: { text: 'No axis is reporting' }
-    };
-  });
   }
 
   private trendOptions(unit: string, colors: string[]): any {

@@ -421,15 +421,24 @@ test('a servo with no temperature sensor reads as "--", never as 0 °C', async (
   await page.setViewportSize({ width: 1600, height: 1200 });
   await page.goto('/maintenance-dashboard');
 
-  const temp = page.locator('.mexa-card')
-    .filter({ has: page.getByRole('heading', { name: 'Servo Motor Temperature (°C)' }) });
-  await expect(temp).toContainText('27.0 °C');
-  await expect(temp).toContainText('Y, Z not reporting a temperature');
-  await expect(temp).not.toContainText('0.0 °C');
+  /* The per-axis readings live in one table now — the two bar charts they
+     used to be drew three numbers each and could not show a silent sensor,
+     which is the whole point here. */
+  const axes = page.locator('.mexa-card')
+    .filter({ has: page.getByRole('heading', { name: 'Axis Condition' }) });
+
+  await expect(axes).toContainText('27.0 °C');
+  await expect(axes).toContainText('Y, Z not reporting a temperature');
+  // the claim this test exists to defend
+  await expect(axes).not.toContainText('0.0 °C');
+
+  // the silent axes are dashes, in their own cells
+  const yRow = axes.locator('tbody tr').nth(1);
+  await expect(yRow).toContainText('--');
 
   // what the data lacks is named; what arrives is not
   const gaps = page.locator('.mexa-card')
-    .filter({ has: page.getByRole('heading', { name: 'Signals Not Reported' }) });
+    .filter({ has: page.getByRole('heading', { name: 'Power & Cooling' }) });
   await expect(gaps).toContainText('Encoder temperature');
   await expect(gaps).not.toContainText('Servo load per axis');
 

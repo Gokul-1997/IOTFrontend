@@ -143,47 +143,32 @@
     </div>
   </div>
 
-  <!-- ══════════ ROW 2 — machine card, spindle, missing signals ══════════ -->
-  <div class="mexa-grid lg:grid-cols-4">
+  <!-- ══════════ ROW 2 — the machine, its spindle, its alarms ══════════ -->
+  <div class="mexa-grid lg:grid-cols-3 items-start">
 
-    <!-- The design's machine card. Shows the selected machine, or the
-         first reporting one when the filter is "All". -->
+    <!-- Identity and the job it is running. -->
     <section class="mexa-card" *ngIf="focusRow as r">
-      <div class="flex items-start justify-between gap-2 mb-3">
+      <div class="mexa-tablebar">
         <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">{{ r.machine_serial_no }}</h2>
         <span class="mexa-badge" [ngClass]="statusBadge(rowStatus(r))">{{ statusWord(rowStatus(r)) }}</span>
       </div>
 
-      <dl class="grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
-        <div>
-          <dt class="mexa-rank-sub">Machine Id</dt>
-          <dd class="font-semibold text-[--mexa-ink]">{{ r.machine_id }}</dd>
-        </div>
-        <div>
-          <dt class="mexa-rank-sub">Component ID</dt>
-          <dd class="font-semibold text-[--mexa-ink]">{{ r.component_id || '--' }}</dd>
-        </div>
-        <div>
-          <dt class="mexa-rank-sub">Operator</dt>
-          <dd class="font-semibold text-[--mexa-ink]">{{ r.operator_name || 'Unassigned' }}</dd>
-        </div>
-        <div>
-          <dt class="mexa-rank-sub">Target Qty</dt>
-          <dd class="font-semibold text-[--mexa-ink]">{{ r.target_qty ?? '--' }}</dd>
-        </div>
-        <div>
-          <dt class="mexa-rank-sub">Part</dt>
-          <dd class="font-semibold text-[--mexa-ink]">{{ r.part_name || '--' }}</dd>
-        </div>
-        <div>
-          <dt class="mexa-rank-sub">Run Time</dt>
-          <dd class="font-semibold text-[--mexa-ink]">{{ hm(r.run_seconds) }}</dd>
-        </div>
+      <dl class="mexa-readout">
+        <div><dt>Machine ID</dt><dd>{{ r.machine_id }}</dd></div>
+        <div><dt>Operator</dt><dd>{{ r.operator_name || 'Unassigned' }}</dd></div>
+        <div><dt>Part</dt><dd>{{ r.part_name || '--' }}</dd></div>
+        <div><dt>Component ID</dt><dd>{{ r.component_id || '--' }}</dd></div>
+        <div><dt>Target quantity</dt><dd>{{ r.target_qty ?? '--' }}</dd></div>
+        <div><dt>Run time</dt><dd>{{ hm(r.run_seconds) }}</dd></div>
+        <div><dt>Program sequence</dt><dd>{{ r.sequence_number != null ? 'N' + r.sequence_number : '--' }}</dd></div>
       </dl>
     </section>
 
-    <section class="mexa-card">
-      <h2 class="mexa-card-title">Spindle Load</h2>
+    <!-- Spindle: the gauge and the readings behind it. They describe one
+         component and were split across two cards, each half empty. -->
+    <section class="mexa-card" *ngIf="focusRow as r">
+      <h2 class="mexa-card-title mexa-card-title-left">Spindle</h2>
+
       <apx-chart *ngIf="spindleSeries.length"
         [series]="spindleSeries" [chart]="spindleGauge.chart" [labels]="spindleGauge.labels"
         [colors]="spindleGauge.colors" [plotOptions]="spindleGauge.plotOptions"
@@ -193,13 +178,18 @@
       <p *ngIf="!spindleSeries.length" class="mexa-empty">
         This machine is not reporting a spindle load.
       </p>
-      <p *ngIf="spindleSeries.length" class="mexa-card-hint text-center">
-        Latest reading{{ focusRow?.feed_rate != null ? ' · feed rate ' + focusRow.feed_rate : '' }}
-      </p>
+
+      <dl class="mexa-readout" style="margin-top:.6rem">
+        <div><dt>Speed</dt><dd>{{ reading(r.spindle_speed, 'RPM', 0) }}</dd></div>
+        <div><dt>Motor temperature</dt><dd>{{ reading(r.spindle_motor_temp, '°C') }}</dd></div>
+        <!-- unit not stated by the collector yet, so none is invented -->
+        <div><dt>Insulation resistance</dt><dd>{{ reading(r.spindle_insulation_res, '') }}</dd></div>
+        <div><dt>Feed rate</dt><dd>{{ r.feed_rate ?? '--' }}</dd></div>
+      </dl>
     </section>
 
     <section class="mexa-card">
-      <h2 class="mexa-card-title">Alarm Summary</h2>
+      <h2 class="mexa-card-title mexa-card-title-left">Alarm Summary</h2>
       <div class="mexa-donutrow" *ngIf="data.alarms.total; else noAlarms">
         <apx-chart
           [series]="alarmSeries" [chart]="alarmDonut.chart" [labels]="alarmDonut.labels"
@@ -232,104 +222,80 @@
       </div>
       <ng-template #noAlarms><p class="mexa-empty">No alarms in this window.</p></ng-template>
     </section>
-
-    <!-- Spindle condition. Every value carries its unit or a dash, because
-         a spindle with no temperature sensor must never read as 0 °C. -->
-    <section class="mexa-card" *ngIf="focusRow as r">
-      <h2 class="mexa-card-title">Spindle Condition</h2>
-      <dl class="grid gap-y-3 text-sm">
-        <div class="flex items-baseline justify-between gap-3">
-          <dt class="mexa-rank-sub">Spindle speed</dt>
-          <dd class="font-semibold text-[--mexa-ink] num">{{ reading(r.spindle_speed, 'RPM', 0) }}</dd>
-        </div>
-        <div class="flex items-baseline justify-between gap-3">
-          <dt class="mexa-rank-sub">Motor temperature</dt>
-          <dd class="font-semibold text-[--mexa-ink] num">{{ reading(r.spindle_motor_temp, '°C') }}</dd>
-        </div>
-        <div class="flex items-baseline justify-between gap-3">
-          <dt class="mexa-rank-sub">Insulation resistance</dt>
-          <!-- unit not stated by the collector yet, so none is invented -->
-          <dd class="font-semibold text-[--mexa-ink] num">{{ reading(r.spindle_insulation_res, '') }}</dd>
-        </div>
-        <div class="flex items-baseline justify-between gap-3">
-          <dt class="mexa-rank-sub">Program sequence</dt>
-          <dd class="font-semibold text-[--mexa-ink] num">{{ r.sequence_number != null ? 'N' + r.sequence_number : '--' }}</dd>
-        </div>
-      </dl>
-    </section>
   </div>
 
-  <!-- ══════════ ROW 3 — servo axes, batteries & fans, gaps ══════════ -->
-  <div class="mexa-grid lg:grid-cols-4">
+  <!-- ══════════ ROW 3 — axis condition, power & cooling ══════════ -->
+  <div class="mexa-grid lg:grid-cols-2 items-start">
 
+    <!-- Was two bar charts of three numbers each, one of which usually had a
+         single bar and two empty slots. As rows the three axes compare
+         directly, and a silent sensor is a dash rather than a missing bar. -->
     <section class="mexa-card">
-      <h2 class="mexa-card-title">Servo Load (%)</h2>
-      <apx-chart *ngIf="servoLoadSeries.length"
-        [series]="servoLoadSeries" [chart]="servoChart.chart" [plotOptions]="servoChart.plotOptions"
-        [colors]="servoChart.colors" [dataLabels]="servoChart.dataLabels" [legend]="servoChart.legend"
-        [xaxis]="servoChart.xaxis" [grid]="servoChart.grid" [tooltip]="servoChart.tooltip"
-        [noData]="servoChart.noData"></apx-chart>
-      <p *ngIf="!servoLoadSeries.length" class="mexa-empty">No servo axis is reporting a load.</p>
-      <ul class="mexa-axisrow" *ngIf="servoLoadSeries.length" aria-label="Servo load per axis">
-        <li *ngFor="let a of servoLoadAxes"><span>{{ a.axis }}</span><strong>{{ reading(a.value, '%', 0) }}</strong></li>
-      </ul>
-    </section>
+      <h2 class="mexa-card-title mexa-card-title-left">Axis Condition</h2>
+      <p class="mexa-card-hint">
+        Per axis. A dash is a sensor that reported nothing — never a zero.
+      </p>
 
-    <section class="mexa-card">
-      <h2 class="mexa-card-title">Servo Motor Temperature (°C)</h2>
-      <apx-chart *ngIf="servoTempSeries.length"
-        [series]="servoTempSeries" [chart]="servoChart.chart" [plotOptions]="servoChart.plotOptions"
-        [colors]="servoChart.colors" [dataLabels]="servoChart.dataLabels" [legend]="servoChart.legend"
-        [xaxis]="servoChart.xaxis" [grid]="servoChart.grid" [tooltip]="servoChart.tooltip"
-        [noData]="servoChart.noData"></apx-chart>
-      <p *ngIf="!servoTempSeries.length" class="mexa-empty">No servo is reporting a temperature.</p>
-      <ul class="mexa-axisrow" *ngIf="servoTempSeries.length" aria-label="Servo motor temperature per axis">
-        <li *ngFor="let a of servoTempAxes"><span>{{ a.axis }}</span><strong>{{ reading(a.value, '°C') }}</strong></li>
-      </ul>
+      <div class="mexa-tablewrap" *ngIf="hasAxisData; else noAxis">
+      <table class="mexa-axistable">
+        <caption class="sr-only">Servo load and temperature for each axis</caption>
+        <thead>
+          <tr>
+            <th scope="col">Axis</th>
+            <th scope="col">Servo load</th>
+            <th scope="col" class="num">Motor temp</th>
+            <th scope="col" class="num">Encoder temp</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of axisRows">
+            <td class="axis">{{ a.axis }}</td>
+            <td>
+              <span class="mexa-meter" aria-hidden="true">
+                <span class="mexa-meter-fill" [style.width.%]="loadPct(a.load)"></span>
+              </span>
+              <span [class.dim]="a.load === null">{{ reading(a.load, '%', 0) }}</span>
+            </td>
+            <td class="num" [class.dim]="a.temp === null">{{ reading(a.temp, '°C') }}</td>
+            <td class="num" [class.dim]="a.encoder === null">{{ reading(a.encoder, '°C') }}</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <ng-template #noAxis>
+        <p class="mexa-empty">No axis is reporting a load or a temperature.</p>
+      </ng-template>
+
       <!-- the one-servo case, said in words -->
-      <p *ngIf="servoTempMissing" class="mexa-card-hint text-center mt-2">
+      <p *ngIf="servoTempMissing" class="mexa-card-hint" style="margin:.75rem 0 0">
         {{ servoTempMissing }} not reporting a temperature.
       </p>
-      <ul class="mexa-axisrow" *ngIf="hasEncoderTemp" aria-label="Encoder temperature per axis">
-        <li *ngFor="let a of encoderTempAxes"><span>Encoder {{ a.axis }}</span><strong>{{ reading(a.value, '°C') }}</strong></li>
-      </ul>
     </section>
 
     <section class="mexa-card" *ngIf="focusRow as r">
-      <h2 class="mexa-card-title mexa-card-title-left">Batteries &amp; Fans</h2>
-      <dl class="grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <dt class="mexa-rank-sub">CNC battery</dt>
-          <dd class="font-semibold text-[--mexa-ink] num">{{ reading(r.cnc_battery_voltage, 'V', 2) }}</dd>
-        </div>
-        <div>
-          <dt class="mexa-rank-sub">APC battery</dt>
-          <dd class="font-semibold text-[--mexa-ink] num">{{ reading(r.apc_battery_voltage, 'V', 2) }}</dd>
-        </div>
-      </dl>
-      <ul class="mexa-rank mt-3" *ngIf="fanList.length" aria-label="Cooling fans">
-        <li *ngFor="let f of fanList">
-          <span class="mexa-rank-name">{{ f.name }}</span>
-          <span class="mexa-rank-value">{{ f.value }}</span>
-        </li>
-      </ul>
-      <p *ngIf="!fanList.length" class="mexa-card-hint mt-3">This controller reports no fan status.</p>
-    </section>
+      <h2 class="mexa-card-title mexa-card-title-left">Power &amp; Cooling</h2>
 
-    <!-- Measured by the API: a signal is listed only when no machine in the
-         selection has sent any value for it, so the list shrinks on its own. -->
-    <section class="mexa-card" *ngIf="missingSignals.length">
-      <h2 class="mexa-card-title mexa-card-title-left">Signals Not Reported</h2>
-      <p class="mexa-card-hint">
-        This machine has not sent a value for these. They fill in
-        once the controller or the collector supplies them.
+      <dl class="mexa-readout">
+        <div><dt>CNC battery</dt><dd>{{ reading(r.cnc_battery_voltage, 'V', 2) }}</dd></div>
+        <div><dt>APC battery</dt><dd>{{ reading(r.apc_battery_voltage, 'V', 2) }}</dd></div>
+        <div *ngFor="let f of fanList"><dt>{{ f.name }}</dt><dd>{{ f.value }}</dd></div>
+      </dl>
+      <p *ngIf="!fanList.length" class="mexa-card-hint" style="margin:.7rem 0 0">
+        This controller reports no fan status.
       </p>
-      <ul class="mexa-rank mt-2">
-        <li *ngFor="let sig of missingSignals">
-          <span class="mexa-rank-name">{{ sig }}</span>
-          <span class="mexa-badge mexa-badge-neutral">No data</span>
-        </li>
-      </ul>
+
+      <!-- Measured by the API: a signal is listed only when nothing has sent
+           a value for it, so the list shrinks on its own. -->
+      <ng-container *ngIf="missingSignals.length">
+        <h3 class="mexa-card-title mexa-card-title-left"
+            style="margin:1.1rem 0 .5rem; font-size:.82rem">Not reported by this machine</h3>
+        <ul class="mexa-rank">
+          <li *ngFor="let sig of missingSignals">
+            <span class="mexa-rank-name">{{ sig }}</span>
+            <span class="mexa-badge mexa-badge-neutral">No data</span>
+          </li>
+        </ul>
+      </ng-container>
     </section>
   </div>
 
@@ -355,7 +321,11 @@
     <h2 class="mexa-card-title mexa-card-title-left">Temperature &amp; Insulation Resistance Trend</h2>
 
 
-    <div class="mexa-grid lg:grid-cols-2" style="margin:0">
+    <p *ngIf="!hasConditionTrend" class="mexa-empty">
+      No temperature or insulation resistance reported for this machine in this window.
+    </p>
+
+    <div class="mexa-grid lg:grid-cols-2" style="margin:0" *ngIf="hasConditionTrend">
       <div>
         <h3 class="mexa-card-hint">Temperature (°C)</h3>
         <apx-chart *ngIf="tempTrendSeries.length"
