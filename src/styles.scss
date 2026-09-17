@@ -57,16 +57,23 @@ body {
 @tailwind utilities;
 
 body {
-  @apply bg-gradient-to-bl from-[#C5404A] via-[#5E3C79] to-[#4A2FA0] text-gray-900 bg-no-repeat font-ubuntu dark:bg-[#0F0F0F] dark:text-white transition-colors duration-300;
+  @apply text-gray-900 bg-no-repeat font-ubuntu dark:text-white transition-colors duration-300;
+  background: var(--mexa-ground);
 }
 
+/* The ground for the pages that predate the MEXA screens. It was its own
+   indigo-to-crimson gradient, which left the app with two different grounds
+   depending on which page you were on — and put white cards on a saturated
+   field. It now takes the same neutral as .mexa-shell so every page reads as
+   one product. The coloured top bar on these pages is unchanged; that is
+   where the brand lives. */
 .bg-wrapper {
   min-height: 100vh;
-  background: linear-gradient(19deg, #4A2FA0 0%, #C5404A 100%);
+  background: var(--mexa-ground);
   padding-top: 15px;
 }
 .dark .bg-wrapper {
-  background: #000;
+  background: var(--mexa-ground);
   padding-top: 15px;
 }
 /* flex-wrap + gap are load-bearing: this bar is on 16 pages and, without

@@ -72,4 +72,8 @@ test('a range longer than three months is emailed, not fetched', async ({ authed
   expect(emailCalls[0].type).toBe('production');
   expect(emailCalls[0].columns.length).toBeGreaterThan(0);
   expect(emailCalls[0].date_from).toBe(daysAgo(200));
+
+  // the Report page is Tailwind-styled rather than MEXA; it shares the shell,
+  // so it is worth a look whenever the ground changes
+  await page.screenshot({ path: 'mexa-reports.png', fullPage: true });
 });

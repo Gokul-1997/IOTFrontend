@@ -12,27 +12,28 @@
    nine times drifts by the third one.
    ───────────────────────────────────────────────────────────── */
 
-html, body { background: #2e2c80; }
+html, body { background: var(--mexa-ground); }
 
 :root {
-  /* The field. Blue sits bottom-left, crimson top-right, with the
-     purple crossover roughly on the diagonal. */
-  --mexa-field-1: #2e2c80;
-  --mexa-field-2: #6d3a8c;
-  --mexa-field-3: #ba3450;
-
   /* Chrome */
   --mexa-bar:        rgba(58, 56, 140, .82);
   --mexa-bar-solid:  #3a388c;
   --mexa-submit:     #2f2d8f;
   --mexa-submit-h:   #26247a;
 
+  /* The ground the cards sit on. Deliberately a quiet, slightly cool
+     neutral rather than the brand gradient: on a dashboard the data has to
+     carry the colour, and a saturated field makes every card compete with
+     its own background. The brand still reads — the title bar is indigo and
+     the accents are drawn from the same family. */
+  --mexa-ground:     #eef0f5;
+
   /* Surfaces */
   --mexa-card:       #ffffff;
   --mexa-ink:        #1f2430;
   --mexa-ink-2:      #4b5262;
   --mexa-ink-3:      #8992a5;
-  --mexa-rule:       #e8e9f2;
+  --mexa-rule:       #e3e6ef;
   --mexa-thead:      #e6e5f6;
   --mexa-row-alt:    #f5f4fc;
 
@@ -53,14 +54,12 @@ html, body { background: #2e2c80; }
 }
 
 :root[data-theme="dark"], .dark {
-  --mexa-field-1: #1a1950;
-  --mexa-field-2: #45245a;
-  --mexa-field-3: #75202f;
-  --mexa-card:    #1b1f2a;
+  --mexa-ground:  #0d0f15;
+  --mexa-card:    #161a23;
   --mexa-ink:     #e8ebf2;
   --mexa-ink-2:   #a8b0c2;
   --mexa-ink-3:   #737d92;
-  --mexa-rule:    #2b303d;
+  --mexa-rule:    #252b39;
   --mexa-thead:   #262a3a;
   --mexa-row-alt: #212534;
 }
@@ -69,13 +68,7 @@ html, body { background: #2e2c80; }
 
 .mexa-shell {
   min-height: calc(100vh - 4rem);      /* the app bar is 4rem */
-  background: linear-gradient(45deg,
-    var(--mexa-field-1) 0%,
-    var(--mexa-field-2) 52%,
-    var(--mexa-field-3) 100%);
-  /* Not background-attachment: fixed. It looks right in the viewport and
-     then paints only one screen's worth, so a dashboard taller than the
-     window ends on a hard band of nothing below the fold. */
+  background: var(--mexa-ground);
   padding: 1rem 1.25rem 0;
   display: flex;
   flex-direction: column;
@@ -89,9 +82,9 @@ html, body { background: #2e2c80; }
   padding: 1.75rem 0 1.25rem;
   text-align: right;
   font-size: .8rem;
-  color: rgba(255, 255, 255, .55);
+  color: var(--mexa-ink-3);
 }
-.mexa-footer strong { color: rgba(255, 255, 255, .8); font-weight: 600; }
+.mexa-footer strong { color: var(--mexa-ink-2); font-weight: 600; }
 
 /* "Last Updated" sits above the title bar, right-aligned, quiet. */
 .mexa-updated {
@@ -100,16 +93,17 @@ html, body { background: #2e2c80; }
   justify-content: flex-end;
   gap: .4rem;
   font-size: .82rem;
-  color: rgba(255, 255, 255, .85);
+  color: var(--mexa-ink-3);
   margin-bottom: .5rem;
 }
 
 /* ── Title bar ────────────────────────────────────────────── */
 
 .mexa-titlebar {
-  background: var(--mexa-bar);
-  backdrop-filter: blur(6px);
-  border-radius: 14px;
+  /* Solid now the field behind it is quiet: a translucent bar over a plain
+     ground reads as a mistake rather than as depth. */
+  background: var(--mexa-bar-solid);
+  border-radius: 12px;
   padding: .85rem 1.15rem;
   margin-bottom: 1rem;
   display: flex;
@@ -204,9 +198,10 @@ html, body { background: #2e2c80; }
 
 .mexa-kpi {
   background: var(--mexa-card);
-  border-radius: 13px;
-  padding: .95rem 1.05rem;
-  box-shadow: 0 6px 18px -8px rgba(12, 10, 40, .45);
+  border: 1px solid var(--mexa-rule);
+  border-radius: 12px;
+  padding: .9rem 1rem;
+  box-shadow: 0 1px 2px rgba(17, 20, 45, .04);
   min-width: 0;
 }
 
@@ -215,30 +210,36 @@ html, body { background: #2e2c80; }
 }
 
 .mexa-kpi-label {
-  font-size: .95rem;
-  font-weight: 500;
-  color: var(--mexa-ink);
-  line-height: 1.25;
+  /* A label, not a heading: small, spaced, quiet — so the number below it
+     is unambiguously the thing being read. */
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--mexa-ink-3);
+  line-height: 1.35;
   min-width: 0;
 }
 
 /* The coloured disc. Its colour is decoration — the label already says
    what the number is — so it never carries meaning on its own. */
 .mexa-kpi-icon {
-  width: 2.6rem; height: 2.6rem;
-  border-radius: 999px;
+  /* A rounded square rather than a disc: the discs read as six unrelated
+     status lights when the colour means nothing. */
+  width: 2.1rem; height: 2.1rem;
+  border-radius: 9px;
   display: grid; place-items: center;
   flex: none;
   color: #fff;
 }
-.mexa-kpi-icon svg, .mexa-kpi-icon mat-icon { width: 1.3rem; height: 1.3rem; font-size: 1.3rem; }
+.mexa-kpi-icon svg, .mexa-kpi-icon mat-icon { width: 1.15rem; height: 1.15rem; font-size: 1.15rem; }
 
 .mexa-kpi-value {
-  font-size: 2rem;
+  font-size: 1.85rem;
   font-weight: 700;
   color: var(--mexa-ink);
   line-height: 1.15;
-  margin-top: .35rem;
+  margin-top: .45rem;
   letter-spacing: -.02em;
   font-variant-numeric: tabular-nums;
 }
@@ -260,15 +261,19 @@ html, body { background: #2e2c80; }
 
 .mexa-card {
   background: var(--mexa-card);
-  border-radius: 18px;
-  padding: .95rem 1.05rem 1.05rem;
-  box-shadow: 0 10px 26px -12px rgba(12, 10, 40, .5);
+  border: 1px solid var(--mexa-rule);
+  border-radius: 14px;
+  padding: 1rem 1.1rem 1.1rem;
+  /* A hairline separates a card from the ground; the heavy drop shadow it
+     replaces was doing that job because the ground was a gradient. */
+  box-shadow: 0 1px 2px rgba(17, 20, 45, .04);
   min-width: 0;
 }
 
 .mexa-card-title {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: .95rem;
+  font-weight: 650;
+  letter-spacing: .01em;
   color: var(--mexa-ink);
   margin: 0 0 .85rem;
   text-align: center;
@@ -383,7 +388,7 @@ html, body { background: #2e2c80; }
   font-size: .9rem;
   color: var(--mexa-ink-2);
   border-left: 4px solid var(--mexa-info);
-  box-shadow: 0 6px 18px -10px rgba(12, 10, 40, .45);
+  border: 1px solid var(--mexa-rule);
 }
 .mexa-note strong { color: var(--mexa-ink); }
 .mexa-note-warn { border-left-color: var(--mexa-warn); }
@@ -456,28 +461,44 @@ html, body { background: #2e2c80; }
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
 }
 .mexa-oeecard {
-  border-radius: 14px; padding: .9rem 1rem;
-  color: #fff;
-  display: flex; flex-direction: column; gap: .6rem;
+  /* Was a solid block of saturated colour per grade. Four of those side by
+     side read as a warning panel rather than a fleet, and forced every
+     figure on the tile to be white — so the numbers, which are the point,
+     had the same weight as the decoration. The grade now shows as an accent
+     and a labelled dot; the readings sit on the normal card surface. */
+  border-radius: 12px; padding: .85rem .95rem;
+  background: var(--mexa-card);
+  border: 1px solid var(--mexa-rule);
+  border-left: 3px solid var(--band, var(--mexa-navy));
+  color: var(--mexa-ink);
+  display: flex; flex-direction: column; gap: .55rem;
 }
 .mexa-oeecard-head {
   display: flex; align-items: center; justify-content: space-between; gap: .5rem;
 }
-.mexa-oeecard-name { font-size: 1.05rem; font-weight: 800; }
-.mexa-oeecard-grade { display: inline-flex; align-items: center; gap: .35rem; font-size: .75rem; }
+.mexa-oeecard-name { font-size: .98rem; font-weight: 700; color: var(--mexa-ink); }
+.mexa-oeecard-grade {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-size: .72rem; font-weight: 600; color: var(--mexa-ink-3);
+}
 .mexa-oeecard-grade::before {
-  content: ''; width: .5rem; height: .5rem; border-radius: 50%; background: #fff;
+  content: ''; width: .5rem; height: .5rem; border-radius: 50%;
+  background: var(--band, var(--mexa-navy));
 }
 .mexa-oeecard-body { display: flex; align-items: center; gap: .75rem; }
-.mexa-oeecard-metrics { flex: 1; display: grid; gap: .2rem; font-size: .85rem; font-weight: 600; }
+.mexa-oeecard-metrics {
+  flex: 1; display: grid; gap: .25rem; font-size: .82rem; font-weight: 600;
+  color: var(--mexa-ink-2);
+}
+.mexa-oeecard-metrics .num { color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
 .mexa-oeecard-metrics > div { display: flex; justify-content: space-between; gap: .5rem; }
 
-/* The four grade bands. Amber and green are darkened from the mock
-   for contrast against white text. */
-.mexa-grade-excellent { background: #15803d; }
-.mexa-grade-good      { background: #2f2d8f; }
-.mexa-grade-avg       { background: #b45309; }
-.mexa-grade-poor      { background: #c32b3f; }
+/* The four grade bands, now an accent rather than a fill. The same values
+   the band legend prints, so the key and the tiles agree. */
+.mexa-grade-excellent { --band: #15803d; }
+.mexa-grade-good      { --band: #2f2d8f; }
+.mexa-grade-avg       { --band: #b45309; }
+.mexa-grade-poor      { --band: #c32b3f; }
 
 /* ── Attention Required rows (Periodic dashboard) ─────────────
    A count in a coloured disc, a label, and a chevron. Rendered as
@@ -548,22 +569,29 @@ html, body { background: #2e2c80; }
    decoration and is hidden from assistive tech. */
 
 .mexa-oeering {
-  flex: none; width: 5.2rem; height: 5.2rem; border-radius: 50%;
+  flex: none; width: 4.6rem; height: 4.6rem; border-radius: 50%;
   display: grid; place-items: center;
-  background: conic-gradient(#fff var(--pct, 0%), rgba(255,255,255,.28) 0);
+  background: conic-gradient(var(--band, var(--mexa-navy)) var(--pct, 0%), var(--mexa-rule) 0);
   position: relative;
 }
-/* The hole is painted with the tile's own band colour, passed down as
-   --ring-hole; inheriting would copy the conic gradient itself. */
+/* The hole is the card surface — inheriting would copy the conic gradient
+   itself. (The template still passes --ring-hole; it is no longer read, as
+   the tile is no longer a coloured block.) */
 .mexa-oeering::after {
-  content: ''; position: absolute; inset: .62rem;
-  border-radius: 50%; background: var(--ring-hole, #2f2d8f);
+  content: ''; position: absolute; inset: .58rem;
+  border-radius: 50%; background: var(--mexa-card);
 }
 .mexa-oeering-text {
   position: relative; z-index: 1; text-align: center; line-height: 1.05;
 }
-.mexa-oeering-pct { display: block; font-size: 1.15rem; font-weight: 800; }
-.mexa-oeering-cap { display: block; font-size: .6rem; letter-spacing: .06em; opacity: .85; }
+.mexa-oeering-pct {
+  display: block; font-size: 1.1rem; font-weight: 700;
+  color: var(--mexa-ink); font-variant-numeric: tabular-nums;
+}
+.mexa-oeering-cap {
+  display: block; font-size: .6rem; letter-spacing: .06em;
+  color: var(--mexa-ink-3);
+}
 
 /* The band legend under the tile grid. */
 .mexa-bandlegend {
@@ -577,7 +605,7 @@ html, body { background: #2e2c80; }
 
 /* A machine whose OEE cannot be computed at all — a missing cycle time,
    not a bad score. Grey says "no reading", never "failing". */
-.mexa-grade-unknown { background: #64748b; }
+.mexa-grade-unknown { --band: #94a3b8; }
 
 /* ── Per-axis readout under a servo chart ─────────────────────
    Each axis in words, including "--" for a silent one, so a gap in the
@@ -725,4 +753,25 @@ html, body { background: #2e2c80; }
   .mexa-select {
     background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23a8b0c2'%3E%3Cpath d='M5.5 7.5l4.5 4.5 4.5-4.5'/%3E%3C/svg%3E");
   }
+}
+
+/* ── KPI icon: one tint, not six ──────────────────────────────
+   Every tile set its own saturated colour inline — six unrelated hues
+   carrying no meaning, which is most of why the KPI row read as decoration
+   rather than as figures. The stylesheet's own note already said the colour
+   was decorative; this makes that true by giving them all one quiet tint
+   with the glyph in the brand indigo. Declared with !important because the
+   colour is set inline on nine templates.
+
+   To bring the colours back, delete this block — nothing else depends on it. */
+
+.mexa-kpi-icon {
+  background: rgba(47, 45, 143, .09) !important;
+  color: var(--mexa-submit);
+}
+
+.dark .mexa-kpi-icon,
+:root[data-theme="dark"] .mexa-kpi-icon {
+  background: rgba(255, 255, 255, .07) !important;
+  color: var(--mexa-ink-2);
 }
