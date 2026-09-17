@@ -165,6 +165,29 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
     };
   }
 
+  /* ── the tile grid opens compact ──
+     Twenty tiles is most of a screen before the first chart begins, and the
+     ask for these dashboards was to show less first. The control below names
+     the full count rather than just "show more", so the fleet size is on
+     screen either way and nobody has to wonder whether a machine is missing. */
+  readonly compactCount = 6;
+  showAllMachines = false;
+
+  get visibleMachines(): any[] {
+    const rows = this.data?.machines?.data || [];
+    return this.showAllMachines ? rows : rows.slice(0, this.compactCount);
+  }
+
+  /** How many of this page's machines the compact view is holding back. */
+  get hiddenMachineCount(): number {
+    return Math.max(0, (this.data?.machines?.data?.length || 0) - this.compactCount);
+  }
+
+  toggleAllMachines(): void {
+    this.showAllMachines = !this.showAllMachines;
+    this.cdr.markForCheck();
+  }
+
   /* ── view helpers ── */
 
   /** Unknown shows as a dash, never 0% — they are different claims. */

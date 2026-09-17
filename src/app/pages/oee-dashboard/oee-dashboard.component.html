@@ -153,7 +153,7 @@
     </div>
 
     <div class="mexa-oeecards">
-      <article *ngFor="let m of data.machines.data" class="mexa-oeecard" [ngClass]="bandTile(m.band)">
+      <article *ngFor="let m of visibleMachines" class="mexa-oeecard" [ngClass]="bandTile(m.band)">
         <div class="mexa-oeecard-head">
           <span class="mexa-oeecard-name">{{ m.machine_serial_no }}</span>
           <span class="mexa-oeecard-grade">{{ bandWord(m.band) }}</span>
@@ -184,7 +184,19 @@
     </div>
 
     <div class="mexa-pager" *ngIf="data.machines.total > 0">
-      <span aria-live="polite">Total Machines {{ data.machines.total }}</span>
+      <span aria-live="polite">
+        Showing {{ visibleMachines.length }} of {{ data.machines.total }} machines
+      </span>
+
+      <!-- Named with its count, so the control says what it will reveal. -->
+      <button *ngIf="hiddenMachineCount > 0 || showAllMachines"
+              type="button" class="mexa-pagebtn"
+              [attr.aria-expanded]="showAllMachines"
+              (click)="toggleAllMachines()">
+        {{ showAllMachines
+             ? 'Show fewer'
+             : 'Show all ' + data.machines.data.length + ' on this page' }}
+      </button>
       <span class="inline-flex items-center gap-2">
         <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
                 [disabled]="data.machines.page <= 1">‹ Previous</button>
@@ -215,7 +227,7 @@
       <h2 class="mexa-card-title mexa-card-title-left">Machines by OEE</h2>
       <!-- Colour repeats the grade band, so it never carries meaning the bar
            length and the axis label do not already give. -->
-      <p class="mexa-card-hint">Best first. Bar colour shows the grade band.</p>
+      <p class="mexa-card-hint">Top 5 by OEE. Bar colour shows the grade band.</p>
       <apx-chart *ngIf="rankSeries.length"
         [series]="rankSeries" [chart]="rankChart.chart" [plotOptions]="rankChart.plotOptions"
         [colors]="rankChart.colors" [dataLabels]="rankChart.dataLabels" [legend]="rankChart.legend"

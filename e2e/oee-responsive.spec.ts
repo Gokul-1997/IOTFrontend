@@ -129,3 +129,50 @@ test('chart text stays legible on the dark surface', async ({ authedPage: page }
   expect(control, 'no filter control found').not.toBeNull();
   expect(control!.ratio, `filter text ${control!.color} on ${control!.bg}`).toBeGreaterThanOrEqual(4.5);
 });
+
+
+/*
+ * The tile grid with a real fleet.
+ *
+ * Production has 20 active machines for the main company (the service returns
+ * all 20 in one page), which is most of a screen of tiles before the first
+ * chart. The grid opens compact and says how much it is holding back — a
+ * "show more" that does not name its count leaves you unable to tell a
+ * collapsed list from a short one.
+ */
+test('the machine grid opens compact and can be expanded to the whole fleet', async ({ authedPage: page }) => {
+  const fleet = Array.from({ length: 20 }, (_, i) => {
+    const pct = 95 - i * 3;
+    return machine(`VMC-${String(i + 1).padStart(2, '0')}`, pct,
+                   pct >= 85 ? 'GOOD' : pct >= 60 ? 'FAIR' : 'POOR');
+  });
+  const twenty = ok({ ...oee.data, machines: { data: fleet, total: 20, page: 1, limit: 20, totalPages: 1 } });
+
+  await page.route('**/api/**', (r: any) => r.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify({ status: 'success', success: true, data: [] }) }));
+  await page.route('**/api/charts/meta*', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(meta) }));
+  await page.route('**/api/dashboard/oee*', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(twenty) }));
+
+  await page.setViewportSize({ width: 1600, height: 1200 });
+  await page.goto('/oee-dashboard');
+  await expect(page.locator('.mexa-kpi').first()).toBeVisible();
+
+  // compact by default, and honest about it
+  await expect(page.locator('.mexa-oeecard')).toHaveCount(6);
+  await expect(page.locator('.mexa-pager')).toContainText('Showing 6 of 20 machines');
+
+  const toggle = page.getByRole('button', { name: /show all 20 on this page/i });
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await page.screenshot({ path: 'mexa-oee-compact.png', fullPage: true });
+
+  await toggle.click();
+  await expect(page.locator('.mexa-oeecard')).toHaveCount(20);
+  await expect(page.locator('.mexa-pager')).toContainText('Showing 20 of 20 machines');
+  await expect(page.getByRole('button', { name: /show fewer/i })).toHaveAttribute('aria-expanded', 'true');
+  await page.screenshot({ path: 'mexa-oee-expanded.png', fullPage: true });
+
+  // and back
+  await page.getByRole('button', { name: /show fewer/i }).click();
+  await expect(page.locator('.mexa-oeecard')).toHaveCount(6);
+});
