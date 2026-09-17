@@ -38,6 +38,7 @@
 
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
+
 <!-- First load: placeholders shaped like the cards that are coming, so
      the page does not jump when the data lands. No values are shown —
      a placeholder reading would be a claim about a machine. -->
@@ -137,90 +138,100 @@
     </div>
   </div>
 
-
+  <!-- ══════════ MACHINE GRADES ══════════
+       Its own card, like every other section on every other screen. The
+       grade key sits with the tiles it explains rather than in the pager. -->
   <section class="mexa-card">
+    <div class="mexa-tablebar">
+      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Machine OEE</h2>
+      <span class="mexa-bandlegend">
+        <span><i style="--dot:#15803d"></i>&gt; {{ data.thresholds.good }}% (Excellent)</span>
+        <span><i style="--dot:#2f2d8f"></i>{{ data.thresholds.fair }}–{{ data.thresholds.good }}% (Good)</span>
+        <span><i style="--dot:#b45309"></i>&lt; {{ data.thresholds.fair }}% (Needs improvement)</span>
+        <span><i style="--dot:#94a3b8"></i>Not measurable</span>
+      </span>
+    </div>
 
+    <div class="mexa-oeecards">
+      <article *ngFor="let m of data.machines.data" class="mexa-oeecard" [ngClass]="bandTile(m.band)">
+        <div class="mexa-oeecard-head">
+          <span class="mexa-oeecard-name">{{ m.machine_serial_no }}</span>
+          <span class="mexa-oeecard-grade">{{ bandWord(m.band) }}</span>
+        </div>
 
-      <div class="mexa-oeecards">
-        <article *ngFor="let m of data.machines.data" class="mexa-oeecard" [ngClass]="bandTile(m.band)">
-          <div class="mexa-oeecard-head">
-            <span class="mexa-oeecard-name">{{ m.machine_serial_no }}</span>
-            <span class="mexa-oeecard-grade">{{ bandWord(m.band) }}</span>
-          </div>
-
-          <div class="mexa-oeecard-body">
-            <!-- the figure is printed inside; the ring is decoration -->
-            <span class="mexa-oeering" aria-hidden="true"
-                  [style.--pct.%]="m.oee_pct || 0" [style.--ring-hole]="bandColour(m.band)">
-              <span class="mexa-oeering-text">
-                <span class="mexa-oeering-pct">{{ m.oee_pct === null ? '--' : m.oee_pct + '%' }}</span>
-                <span class="mexa-oeering-cap">OEE</span>
-              </span>
+        <div class="mexa-oeecard-body">
+          <!-- the figure is printed inside; the ring is decoration -->
+          <span class="mexa-oeering" aria-hidden="true"
+                [style.--pct.%]="m.oee_pct || 0" [style.--ring-hole]="bandColour(m.band)">
+            <span class="mexa-oeering-text">
+              <span class="mexa-oeering-pct">{{ m.oee_pct === null ? '--' : m.oee_pct + '%' }}</span>
+              <span class="mexa-oeering-cap">OEE</span>
             </span>
+          </span>
 
-            <div class="mexa-oeecard-metrics">
-              <div><span>Availability</span><span class="num">{{ pct(m.availability_pct) }}</span></div>
-              <div><span>Performance</span><span class="num">{{ pct(m.performance_pct) }}</span></div>
-              <div><span>Quality</span><span class="num">{{ pct(m.quality_pct) }}</span></div>
-            </div>
+          <div class="mexa-oeecard-metrics">
+            <div><span>Availability</span><span class="num">{{ pct(m.availability_pct) }}</span></div>
+            <div><span>Performance</span><span class="num">{{ pct(m.performance_pct) }}</span></div>
+            <div><span>Quality</span><span class="num">{{ pct(m.quality_pct) }}</span></div>
           </div>
+        </div>
 
-          <!-- said on the tile, because a dash needs explaining -->
-          <p *ngIf="!m.has_cycle_time" class="text-xs opacity-90">No cycle time set</p>
-        </article>
+        <!-- said on the tile, because a dash needs explaining -->
+        <p *ngIf="!m.has_cycle_time" class="text-xs opacity-90">No cycle time set</p>
+      </article>
 
-        <p *ngIf="!data.machines.data.length" class="mexa-empty">No machines match these filters.</p>
-      </div>
+      <p *ngIf="!data.machines.data.length" class="mexa-empty">No machines match these filters.</p>
+    </div>
 
-      <div class="mexa-pager" *ngIf="data.machines.total > 0">
-        <span aria-live="polite">Total Machines {{ data.machines.total }}</span>
+    <div class="mexa-pager" *ngIf="data.machines.total > 0">
+      <span aria-live="polite">Total Machines {{ data.machines.total }}</span>
+      <span class="inline-flex items-center gap-2">
+        <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
+                [disabled]="data.machines.page <= 1">‹ Previous</button>
+        <span>{{ data.machines.page }} / {{ data.machines.totalPages }}</span>
+        <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
+                [disabled]="data.machines.page >= data.machines.totalPages">Next ›</button>
+      </span>
+    </div>
+  </section>
 
-        <span class="mexa-bandlegend">
-          <span><i style="--dot:#15803d"></i>&gt; {{ data.thresholds.good }}% (Excellent)</span>
-          <span><i style="--dot:#2f2d8f"></i>{{ data.thresholds.fair }}–{{ data.thresholds.good }}% (Good)</span>
-          <span><i style="--dot:#b45309"></i>&lt; {{ data.thresholds.fair }}% (Needs improvement)</span>
-          <span><i style="--dot:#94a3b8"></i>Not measurable</span>
-        </span>
+  <!-- ══════════ TREND + RANKING ══════════ -->
+  <div class="mexa-grid lg:grid-cols-3">
+    <section class="mexa-card lg:col-span-2">
+      <!-- Named for what it plots. The trend endpoint returns availability
+           only — a day's performance and quality are not computed — so
+           calling this "OEE Trend" would have it read as a figure it is not. -->
+      <h2 class="mexa-card-title mexa-card-title-left">Availability Trend</h2>
+      <p class="mexa-card-hint">Run time over planned time, by day.</p>
+      <apx-chart *ngIf="trendSeries.length"
+        [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
+        [fill]="trendChart.fill" [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
+        [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
+        [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
+      <p *ngIf="!trendSeries.length" class="mexa-empty">No production recorded for this period.</p>
+    </section>
 
-        <span class="inline-flex items-center gap-2">
-          <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
-                  [disabled]="data.machines.page <= 1">‹ Previous</button>
-          <span>{{ data.machines.page }} / {{ data.machines.totalPages }}</span>
-          <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
-                  [disabled]="data.machines.page >= data.machines.totalPages">Next ›</button>
-        </span>
-      </div>
+    <section class="mexa-card">
+      <h2 class="mexa-card-title mexa-card-title-left">Machines by OEE</h2>
+      <!-- Colour repeats the grade band, so it never carries meaning the bar
+           length and the axis label do not already give. -->
+      <p class="mexa-card-hint">Best first. Bar colour shows the grade band.</p>
+      <apx-chart *ngIf="rankSeries.length"
+        [series]="rankSeries" [chart]="rankChart.chart" [plotOptions]="rankChart.plotOptions"
+        [colors]="rankChart.colors" [dataLabels]="rankChart.dataLabels" [legend]="rankChart.legend"
+        [xaxis]="rankChart.xaxis" [grid]="rankChart.grid" [tooltip]="rankChart.tooltip"
+        [noData]="rankChart.noData"></apx-chart>
+      <p *ngIf="!rankSeries.length" class="mexa-empty">No machine has a computable OEE.</p>
+    </section>
+  </div>
 
-      <div class="mexa-grid lg:grid-cols-3 mt-4">
-        <section class="mexa-card lg:col-span-2" style="box-shadow:none;border:1px solid var(--mexa-rule)">
-          <h2 class="mexa-card-title mexa-card-title-left">OEE Trend</h2>
-          <apx-chart *ngIf="trendSeries.length"
-            [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
-            [fill]="trendChart.fill" [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
-            [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
-            [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
-          <p *ngIf="!trendSeries.length" class="mexa-empty">No production recorded for this period.</p>
-        </section>
-
-        <section class="mexa-card" style="box-shadow:none;border:1px solid var(--mexa-rule)">
-          <h2 class="mexa-card-title mexa-card-title-left">Machines by OEE</h2>
-          <apx-chart *ngIf="rankSeries.length"
-            [series]="rankSeries" [chart]="rankChart.chart" [plotOptions]="rankChart.plotOptions"
-            [colors]="rankChart.colors" [dataLabels]="rankChart.dataLabels" [legend]="rankChart.legend"
-            [xaxis]="rankChart.xaxis" [grid]="rankChart.grid" [tooltip]="rankChart.tooltip"
-            [noData]="rankChart.noData"></apx-chart>
-          <p *ngIf="!rankSeries.length" class="mexa-empty">No machine has a computable OEE.</p>
-        </section>
-      </div>
-
-      <section class="mexa-card mt-4" style="box-shadow:none;border:1px solid var(--mexa-rule)"
-               *ngIf="compSeries.length && compCategories.length">
-        <h2 class="mexa-card-title mexa-card-title-left">Availability, Performance and Quality by Machine</h2>
-        <apx-chart
-          [series]="compSeries" [chart]="compChart.chart" [plotOptions]="compChart.plotOptions"
-          [colors]="compChart.colors" [dataLabels]="compChart.dataLabels" [legend]="compChart.legend"
-          [xaxis]="compChart.xaxis" [yaxis]="compChart.yaxis" [grid]="compChart.grid"
-          [tooltip]="compChart.tooltip" [noData]="compChart.noData"></apx-chart>
-      </section>
+  <!-- ══════════ A / P / Q BY MACHINE ══════════ -->
+  <section class="mexa-card" *ngIf="compSeries.length && compCategories.length">
+    <h2 class="mexa-card-title mexa-card-title-left">Availability, Performance and Quality by Machine</h2>
+    <apx-chart
+      [series]="compSeries" [chart]="compChart.chart" [plotOptions]="compChart.plotOptions"
+      [colors]="compChart.colors" [dataLabels]="compChart.dataLabels" [legend]="compChart.legend"
+      [xaxis]="compChart.xaxis" [yaxis]="compChart.yaxis" [grid]="compChart.grid"
+      [tooltip]="compChart.tooltip" [noData]="compChart.noData"></apx-chart>
   </section>
 </ng-container>

@@ -446,8 +446,6 @@ html, body { background: #2e2c80; }
 }
 .mexa-tab[aria-selected='true'] { background: #fff; color: var(--mexa-ink); }
 .mexa-tab:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
-.mexa-tabpanel { border-radius: 18px; }
-
 /* ── Machine OEE tile (OEE dashboard, Analytics) ──────────────
    A solid colour band per grade. White text on all four grades,
    so the amber is darkened past what the mock shows to keep the
@@ -671,4 +669,60 @@ html, body { background: #2e2c80; }
   .mexa-kpi-icon  { width: 2.1rem; height: 2.1rem; }
   .mexa-kpi-icon svg, .mexa-kpi-icon mat-icon { width: 1.1rem; height: 1.1rem; font-size: 1.1rem; }
   .mexa-card-title { font-size: .98rem; }
+}
+
+
+/* ── Charts in dark mode ──────────────────────────────────────
+   ApexCharts paints axis, legend and title text a fixed grey (#6b7280)
+   picked against a white card. On the dark surface that measures 3.4:1 —
+   under WCAG 1.4.3's 4.5:1 for text — and no token in this file reaches it,
+   because the library writes the colour onto the SVG element itself rather
+   than inheriting it. So it is restated here, for both selectors the theme
+   supports.
+
+   Data labels printed inside a bar are deliberately left alone: they sit on
+   the series fill, not on the card, and are already white against it. */
+
+.dark, :root[data-theme="dark"] {
+
+  .apexcharts-xaxis text,
+  .apexcharts-yaxis text,
+  .apexcharts-xaxis-title text,
+  .apexcharts-yaxis-title text,
+  .apexcharts-title-text {
+    fill: var(--mexa-ink-2) !important;
+  }
+
+  /* the legend is HTML, not SVG */
+  .apexcharts-legend-text { color: var(--mexa-ink-2) !important; }
+
+  /* the grid is structure, not content — it stays recessive */
+  .apexcharts-gridline { stroke: rgba(148, 163, 184, .18); }
+}
+
+/* ── Filter controls in dark mode ─────────────────────────────
+   .mexa-select and .mexa-date set `background: #fff` outright while taking
+   their text from --mexa-ink, which becomes near-white in dark mode: the
+   selected value was white on white, about 1.1:1 — effectively invisible.
+   They take the card surface instead.
+
+   The chevron is a data-URI SVG with its ink baked in, so it is restated in
+   a light one; left as it was it would vanish into the new surface. Sized
+   with an inset shadow rather than a border, so the control does not change
+   size between themes, and color-scheme tells the browser to draw the native
+   date picker dark too. */
+
+.dark, :root[data-theme="dark"] {
+
+  .mexa-select,
+  .mexa-date {
+    background-color: var(--mexa-card);
+    color: var(--mexa-ink);
+    box-shadow: inset 0 0 0 1px var(--mexa-rule);
+    color-scheme: dark;
+  }
+
+  .mexa-select {
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23a8b0c2'%3E%3Cpath d='M5.5 7.5l4.5 4.5 4.5-4.5'/%3E%3C/svg%3E");
+  }
 }

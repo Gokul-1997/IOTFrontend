@@ -49,7 +49,6 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   compSeries: any[] = [];
   compCategories: string[] = [];
   rankSeries: any[] = [];
-  rankCategories: string[] = [];
 
   private destroy$ = new Subject<void>();
 
@@ -130,8 +129,19 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
     /* Machines by OEE, best first. Only machines with a computable OEE —
        a null plotted as zero would read as a failing machine. */
     const ranked = [...withOee].sort((a: any, b: any) => b.oee_pct - a.oee_pct).slice(0, 5);
-    this.rankCategories = ranked.map((m: any) => m.machine_serial_no);
-    this.rankSeries = ranked.length ? [{ name: 'OEE', data: ranked.map((m: any) => m.oee_pct) }] : [];
+    /* Per-point colour, carrying each machine's grade band — the same colour
+       its tile above uses. This chart used to rely on Apex's per-bar colour
+       cycling, which assigns colour by a bar's POSITION: the top bar was navy
+       whichever machine held the top spot, so re-filtering repainted machines
+       whose grade had not changed. Colour now follows the machine. */
+    this.rankSeries = ranked.length ? [{
+      name: 'OEE',
+      data: ranked.map((m: any) => ({
+        x: m.machine_serial_no,
+        y: m.oee_pct,
+        fillColor: this.bandColour(m.band)
+      }))
+    }] : [];
 
     this.cdr.markForCheck();
   }
@@ -257,12 +267,14 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
     return this.charts.memo('rankChart', () => {
     return {
       chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
-      plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '62%', distributed: true } },
-      colors: ['#2f2d8f', '#4a76c8', '#9b7ec8', '#17b3a3', '#6b7280'],
-      dataLabels: { enabled: true, style: { fontSize: '.72rem', fontWeight: 700, colors: ['#fff'] } },
-      // distributed repeats every machine in the legend; the axis names them
+      plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '58%' } },
+      // a fallback only: every point carries its own fillColor
+      colors: ['#2f2d8f'],
+      dataLabels: { enabled: true, formatter: (v: number) => `${v}%`,
+                    style: { fontSize: '.72rem', fontWeight: 700, colors: ['#fff'] } },
+      // one series, and the axis names each machine — a legend would repeat it
       legend: { show: false },
-      xaxis: { categories: this.rankCategories, title: { text: 'OEE (%)' }, max: 100 },
+      xaxis: { title: { text: 'OEE (%)' }, max: 100, tickAmount: 5 },
       grid:  { borderColor: 'rgba(148,163,184,.25)' },
       tooltip: { theme: 'dark', y: { formatter: (v: number) => `${v}%` } },
       noData: { text: 'No machine has a computable OEE' }

@@ -63,7 +63,10 @@
     <div class="flex items-center gap-1 shrink-0">
 
       <!-- THEME TOGGLE -->
-      <button (click)="toggleTheme()" class="p-2 rounded-full bg-[#2b3990] dark:bg-[#111111]">
+      <button (click)="toggleTheme()" type="button"
+              [attr.aria-pressed]="isDark"
+              [attr.aria-label]="isDark ? 'Switch to light theme' : 'Switch to dark theme'"
+              class="p-2 rounded-full bg-[#2b3990] dark:bg-[#111111]">
         <app-icon
           [name]="isDark ? 'sun' : 'moon'"
           [size]="20"
