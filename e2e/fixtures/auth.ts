@@ -12,6 +12,7 @@ import { test as base, Page } from '@playwright/test';
 
 type AuthFixtures = {
   authedPage: Page;
+  sntSuperPage: Page;
 };
 
 /**
@@ -30,9 +31,9 @@ function stubJwt(): string {
   return `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: '1', exp })}.e2e`;
 }
 
-async function seedAuth(page: Page) {
+async function seedAuth(page: Page, overrides: Record<string, unknown> = {}) {
   const token = stubJwt();
-  await page.addInitScript((jwt: string) => {
+  await page.addInitScript(([jwt, extra]: [string, Record<string, unknown>]) => {
     const stubUser = {
       id: 1,
       email: 'test@example.com',
@@ -47,18 +48,32 @@ async function seedAuth(page: Page) {
       // treats as full access.
       roles: ['ADMIN'],
       permissions: [],
-      company_permissions: []
+      company_permissions: [],
+      ...extra
     };
     // Key names must match AuthService: 'token' / 'refreshToken'.
     localStorage.setItem('token', jwt);
     localStorage.setItem('refreshToken', jwt);
     localStorage.setItem('user', JSON.stringify(stubUser));
-  }, token);
+  }, [token, overrides] as const);
 }
 
 export const test = base.extend<AuthFixtures>({
   authedPage: async ({ page }, use) => {
     await seedAuth(page);
+    await use(page);
+  },
+
+  /** The SNT_SUPER stub. company_id is null — a super admin belongs to no
+   *  company, which is exactly the case several admin-screen bugs (the
+   *  create-user company field, the roles company field) turned out to
+   *  assume away. */
+  sntSuperPage: async ({ page }, use) => {
+    await seedAuth(page, {
+      username: 'superadmin', email: 'super@stmcnc.com',
+      company_id: null, plant_id: null, user_type: 'SNT_SUPER',
+      is_snt_super: true, roles: ['SNT_SUPER']
+    });
     await use(page);
   }
 });

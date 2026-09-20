@@ -23,8 +23,9 @@ export class RoleManagementComponent implements OnInit {
   selectedRole: any = null;
   seeding = false;
 
-  createForm = { role_name: '' };
+  createForm = { role_name: '', company_id: null as number | null };
   selectedPermIds: Set<number> = new Set();
+  companies: any[] = [];
 
   constructor(
     private adminService: AdminService,
@@ -36,6 +37,14 @@ export class RoleManagementComponent implements OnInit {
   ngOnInit() {
     this.loadRoles();
     this.loadPermissions();
+    if (this.auth.isSntSuper()) this.loadCompanies();
+  }
+
+  loadCompanies() {
+    this.adminService.getCompanies().subscribe({
+      next: (res: any) => { this.companies = [...res]; this.cdr.detectChanges(); },
+      error: () => this.toastService.error('Failed to load companies')
+    });
   }
 
   loadRoles() {
@@ -89,7 +98,7 @@ export class RoleManagementComponent implements OnInit {
 
   // ── Create Role ──
   openCreateModal() {
-    this.createForm = { role_name: '' };
+    this.createForm = { role_name: '', company_id: null };
     this.showCreateModal = true;
     this.cdr.detectChanges();
   }
@@ -102,6 +111,14 @@ export class RoleManagementComponent implements OnInit {
   createRole() {
     if (!this.createForm.role_name.trim()) {
       this.toastService.error('Role name is required');
+      return;
+    }
+    // A role with no company would satisfy role.service.js's INSERT (company_id
+    // is nullable) but then never appear in any company admin's list — an
+    // orphaned role nobody could find or assign, since the list query filters
+    // by company_id for everyone except SNT_SUPER.
+    if (this.auth.isSntSuper() && !this.createForm.company_id) {
+      this.toastService.error('Select a company for this role');
       return;
     }
     this.loading = true;

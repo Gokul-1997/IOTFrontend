@@ -1,16 +1,25 @@
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
 
-  <!-- Admin Tab Navigation -->
+  <!-- Admin Tab Navigation.
+       This page's own tab bar had drifted from the other three: it was
+       missing Plans entirely, gated Users to company admins only (every
+       other page shows Users unconditionally), and never marked itself
+       active for a super admin — arriving here from another tab, an
+       SNT_SUPER user saw no indication of which page they were on. -->
   <div class="flex gap-1 mb-6 bg-white dark:bg-gray-800 rounded-xl shadow p-1 w-fit">
     <a *ngIf="auth.isSntSuper()" routerLink="/admin/companies" routerLinkActive="bg-blue-600 text-white"
        class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
       Companies
     </a>
-    <a *ngIf="!auth.isSntSuper()" routerLink="/admin/users" routerLinkActive="bg-blue-600 text-white"
+    <a *ngIf="auth.isSntSuper()" routerLink="/admin/plans" routerLinkActive="bg-blue-600 text-white"
+       class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+      Plans
+    </a>
+    <a routerLink="/admin/users" routerLinkActive="bg-blue-600 text-white"
        class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
       Users
     </a>
-    <a *ngIf="!auth.isSntSuper()" routerLink="/admin/roles" routerLinkActive="bg-blue-600 text-white"
+    <a routerLink="/admin/roles" routerLinkActive="bg-blue-600 text-white"
        class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
       Roles & Permissions
     </a>
@@ -148,6 +157,23 @@
       </button>
     </div>
     <div class="ui-dialog-body">
+      <!--
+        A super admin belongs to no company, so the backend needs to be told
+        which company's role this is (role.service.js scopes the list query
+        by company_id — a role created with none would never appear for any
+        company's admin to find). A company admin never sees this: their own
+        company is used automatically.
+      -->
+      <div class="ui-field" *ngIf="auth.isSntSuper()">
+        <label class="ui-label" for="roleCompany">
+          Company<span class="ui-req" aria-hidden="true">*</span>
+        </label>
+        <select id="roleCompany" class="ui-input" [(ngModel)]="createForm.company_id">
+          <option [ngValue]="null">Select a company</option>
+          <option *ngFor="let c of companies" [ngValue]="c.id">{{ c.company_name }}</option>
+        </select>
+      </div>
+
       <div class="ui-field">
         <label class="ui-label" for="roleName">
           Role name<span class="ui-req" aria-hidden="true">*</span>

@@ -57,6 +57,11 @@ export class UserManagementComponent implements OnInit {
     this.loadUsers();
     this.loadRoles();
     this.loadMachines();
+    /* loadCompanies() existed but was never called — the "Company" field
+       is required for SNT_SUPER to create a user (the API rejects a create
+       with no company_id) and its dropdown was always empty, so SNT_SUPER
+       could not create a user for any company through this screen at all. */
+    if (this.auth.isSntSuper()) this.loadCompanies();
   }
 
   loadMachines() {
