@@ -366,3 +366,94 @@ describe('AuthService.getCompanyPermissions', () => {
     expect(service.getCompanyPermissions()).toEqual([]);
   });
 });
+
+// ── refresh carries the current grants ────────────────────────────────────────
+
+/*
+ * hasPermission / hasAction / hasWidget read `permissions` and
+ * `company_permissions` from the user object saved at login, and nothing ever
+ * rewrote them — a page revoked in Manage Access stayed usable in the UI until
+ * the person signed out and back in. The refresh response now carries both.
+ */
+describe('AuthService.refreshToken — grants', () => {
+  /** A structurally valid JWT that expires in 30s, so scheduleRefresh sees
+   *  refreshTime <= 0 and arms no timer. */
+  const soonJwt = () => {
+    const b64 = (o: object) => btoa(JSON.stringify(o)).replace(/=+$/, '');
+    return `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ exp: Math.floor(Date.now() / 1000) + 30 })}.sig`;
+  };
+
+  function refresh(body: Record<string, unknown>) {
+    const http = TestBed.inject(HttpTestingController);
+    localStorage.setItem('refreshToken', 'rt');
+    service.refreshToken().subscribe();
+    http.expectOne(r => r.url.includes('/auth/refresh')).flush({ accessToken: soonJwt(), ...body });
+  }
+
+  test('a page revoked since login disappears from the stored user', () => {
+    // COMPANY_ADMIN is the role whose gating is decided by company_permissions
+    seedUser({ roles: ['COMPANY_ADMIN'], company_permissions: ['page:dashboard:view', 'page:reports:view'] });
+    expect(service.hasPermission('page:reports')).toBe(true);
+
+    refresh({ company_permissions: ['page:dashboard:view'] });
+
+    expect(service.getCompanyPermissions()).toEqual(['page:dashboard:view']);
+    expect(service.hasPermission('page:reports')).toBe(false);
+  });
+
+  test('role permissions are refreshed too', () => {
+    seedUser({ roles: ['SUPERVISOR'], permissions: ['page:machines:view'] });
+    refresh({ permissions: ['page:machines:view', 'page:quality:view'] });
+    expect(service.getPermissions()).toContain('page:quality:view');
+  });
+
+  test('an older API that returns only a token leaves the lists alone', () => {
+    // an empty company list reads as "unrestricted" — blanking it would
+    // silently grant everything
+    seedUser({ company_permissions: ['page:dashboard:view'], permissions: ['page:dashboard:view'] });
+    refresh({});
+    expect(service.getCompanyPermissions()).toEqual(['page:dashboard:view']);
+    expect(service.getPermissions()).toEqual(['page:dashboard:view']);
+  });
+
+  test('other fields on the stored user survive the merge', () => {
+    seedUser({ company_id: 4, username: 'admin1', plan: { plan_code: 'PRO' } });
+    refresh({ company_permissions: ['page:dashboard:view'] });
+    const u = service.getUser();
+    expect(u.company_id).toBe(4);
+    expect(u.username).toBe('admin1');
+    expect(u.plan).toEqual({ plan_code: 'PRO' });
+  });
+
+  test('a stored token is replaced', () => {
+    seedUser();
+    refresh({});
+    expect(localStorage.getItem('token')).not.toBe('fake-token');
+  });
+
+  describe('grantsChanged$ — what the header listens to', () => {
+    test('fires when the grants differ', () => {
+      seedUser({ company_permissions: ['page:a:view', 'page:b:view'] });
+      const seen = vi.fn();
+      service.grantsChanged$.subscribe(seen);
+      refresh({ company_permissions: ['page:a:view'] });
+      expect(seen).toHaveBeenCalledTimes(1);
+    });
+
+    test('does not fire when nothing changed', () => {
+      seedUser({ company_permissions: ['page:a:view'], permissions: ['page:a:view'] });
+      const seen = vi.fn();
+      service.grantsChanged$.subscribe(seen);
+      refresh({ company_permissions: ['page:a:view'], permissions: ['page:a:view'] });
+      expect(seen).not.toHaveBeenCalled();
+    });
+
+    test('a reordered but identical list is not a change', () => {
+      seedUser({ company_permissions: ['page:a:view', 'page:b:view'] });
+      const seen = vi.fn();
+      service.grantsChanged$.subscribe(seen);
+      refresh({ company_permissions: ['page:b:view', 'page:a:view'] });
+      expect(seen).not.toHaveBeenCalled();
+    });
+  });
+});

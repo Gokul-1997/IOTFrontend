@@ -333,14 +333,23 @@
       <div class="animate-spin w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
     </div>
 
+    <!-- Failed. Nothing below is editable: the boxes would all read as
+         unchecked, which is not what the company has, and saving that would
+         replace its real access with nothing. -->
+    <div *ngIf="!accessLoading && accessLoadFailed" class="text-center py-12 px-6" role="alert">
+      <p class="font-medium text-red-600 dark:text-red-400">Could not load this company's access</p>
+      <p class="text-sm text-gray-500 mt-1">Nothing has been changed. Try again before editing.</p>
+      <button (click)="loadAccess()" class="ui-btn ui-btn-primary mt-4">Try again</button>
+    </div>
+
     <!-- Empty -->
-    <div *ngIf="!accessLoading && allPermissions.length === 0" class="text-center py-12 text-gray-500 px-6">
+    <div *ngIf="!accessLoading && !accessLoadFailed && allPermissions.length === 0" class="text-center py-12 text-gray-500 px-6">
       <p class="font-medium">No permissions found</p>
       <p class="text-sm mt-1">Go to Roles & Permissions tab and click <strong>"Sync Pages"</strong> first to register all pages.</p>
     </div>
 
     <!-- Scrollable body -->
-    <div *ngIf="!accessLoading && allPermissions.length > 0" class="overflow-y-auto flex-1 p-6">
+    <div *ngIf="!accessLoading && !accessLoadFailed && allPermissions.length > 0" class="overflow-y-auto flex-1 p-6">
       <div *ngFor="let group of getAccessGroups()" class="mb-6">
         <!-- Group Header -->
         <div class="flex items-center gap-2 mb-3 pb-2 border-b-2 border-gray-200 dark:border-gray-600">
@@ -388,15 +397,34 @@
 
     <!-- Footer -->
     <div class="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-700 shrink-0">
-      <span class="text-sm text-gray-500">
-        {{ companyPermIds.size }} permission(s) selected
-      </span>
-      <div class="flex gap-3">
+      <div class="text-sm min-w-0" aria-live="polite">
+        <!-- Not shown when the load failed: "0 selected" would say the
+             company has none, when the truth is that we do not know. -->
+        <span *ngIf="!accessLoadFailed" class="text-gray-500">{{ companyPermIds.size }} permission(s) selected</span>
+        <span *ngIf="accessLoadFailed" class="text-gray-500">Access not loaded</span>
+
+        <!-- What pressing Save will do, in the same words the result uses. -->
+        <span *ngIf="!accessLoadFailed && !accessUnchanged && companyPermIds.size > 0" class="block text-xs mt-0.5">
+          <span *ngIf="accessGranting" class="text-emerald-600 dark:text-emerald-400">Granting {{ accessGranting }}</span>
+          <span *ngIf="accessGranting && accessRevoking" class="text-gray-400"> · </span>
+          <span *ngIf="accessRevoking" class="text-amber-600 dark:text-amber-400">
+            Removing {{ accessRevoking }} — roles in this company that hold them lose them too
+          </span>
+        </span>
+
+        <!-- Saving nothing is not "lock them out": an empty grant reads as
+             unrestricted. Said here, not discovered afterwards. -->
+        <span *ngIf="!accessLoadFailed && !accessLoading && companyPermIds.size === 0" class="block text-xs mt-0.5 text-red-600 dark:text-red-400" role="alert">
+          Select at least one page. A company with none selected is treated as unrestricted — deactivate it to lock it out.
+        </span>
+      </div>
+      <div class="flex gap-3 shrink-0">
         <button (click)="closeAccessModal()"
           class="ui-btn ui-btn-ghost">
           Cancel
         </button>
-        <button (click)="saveCompanyAccess()" [disabled]="accessLoading"
+        <button (click)="saveCompanyAccess()"
+          [disabled]="accessLoading || accessLoadFailed || companyPermIds.size === 0 || accessUnchanged"
           class="ui-btn ui-btn-primary">
           {{ accessLoading ? 'Saving...' : 'Save Access' }}
         </button>

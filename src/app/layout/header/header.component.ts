@@ -1,6 +1,7 @@
-import { Component, HostListener, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { IconComponent } from '../../shared/icon/icon';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
@@ -12,7 +13,9 @@ import { NotificationBellComponent } from '../../shared/notification-bell/notifi
   imports: [CommonModule, RouterModule, IconComponent, NotificationBellComponent],
   templateUrl: './header.component.html',
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent implements OnInit, OnDestroy {
+
+  private grantsSub?: Subscription;
 
   openMenu: string | null = null;
   showUserMenu = false;
@@ -125,7 +128,16 @@ export class HeaderComponent implements OnInit {
     }
 
     this.buildMenus();
+
+    // A refresh that brought different grants: rebuild, so a page the company
+    // just lost stops appearing in the bar without a reload.
+    this.grantsSub = this.auth.grantsChanged$.subscribe(() => {
+      this.buildMenus();
+      this.touch();
+    });
   }
+
+  ngOnDestroy() { this.grantsSub?.unsubscribe(); }
 
   buildMenus() {
     // SNT_SUPER only sees Admin pages — no dashboard/reports/master

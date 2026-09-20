@@ -1,5 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { CompanyService } from '../../core/services/company.service';
@@ -61,6 +62,17 @@ export class CompanyManagementComponent implements OnInit {
   allPermissions: any[] = [];       // all permissions grouped by module
   companyPermIds: Set<number> = new Set();  // selected permission IDs
   accessLoading = false;
+
+  /* What the company held when the modal opened. Two things depend on it:
+     the summary of what a save will change, and the load-failed guard below
+     — without a trustworthy "before", a save cannot be described, only
+     performed blind. */
+  accessOriginalIds: Set<number> = new Set();
+  /* Set when either half of the load failed. The modal used to swallow the
+     failure of the current-grants request, show every box unchecked, and
+     leave Save live: pressing it replaced the company's real access with
+     nothing. */
+  accessLoadFailed = false;
 
   constructor(
     private companyService: CompanyService,
@@ -260,41 +272,67 @@ export class CompanyManagementComponent implements OnInit {
   // ── Page Access Modal (Super User assigns page+action per company) ──
   openAccessModal(company: any) {
     this.accessCompany = company;
-    this.accessLoading = true;
     this.showAccessModal = true;
+    this.loadAccess();
+  }
+
+  /** Both requests must succeed before anything is editable. */
+  loadAccess() {
+    if (!this.accessCompany) return;
+    this.accessLoading = true;
+    this.accessLoadFailed = false;
     this.companyPermIds = new Set();
+    this.accessOriginalIds = new Set();
     this.cdr.detectChanges();
 
-    // Load all permissions + current company permissions in parallel
-    const loadAll = this.companyService.getGroupedPermissions();
-    const loadCompany = this.companyService.getCompanyPermissions(company.id);
-
-    loadAll.subscribe({
-      next: grouped => {
-        this.allPermissions = grouped;
-        loadCompany.subscribe({
-          next: current => {
-            this.companyPermIds = new Set(current.map((p: any) => p.id));
-            this.accessLoading = false;
-            this.cdr.detectChanges();
-          },
-          error: () => {
-            this.accessLoading = false;
-            this.cdr.detectChanges();
-          }
-        });
-      },
-      error: () => {
-        this.toast.error('Failed to load permissions');
+    forkJoin({
+      all:     this.companyService.getGroupedPermissions(),
+      current: this.companyService.getCompanyPermissions(this.accessCompany.id)
+    }).subscribe({
+      next: ({ all, current }) => {
+        this.allPermissions = all;
+        // The catalogue holds page permissions only; the API may also return
+        // legacy grants a company carries. Only what the modal can show and
+        // edit belongs in the working set.
+        const offered = new Set(all.flatMap((m: any) => m.permissions.map((p: any) => p.id)));
+        const held = current.map((p: any) => p.id).filter((id: number) => offered.has(id));
+        this.companyPermIds = new Set(held);
+        this.accessOriginalIds = new Set(held);
         this.accessLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        this.accessLoadFailed = true;
+        this.accessLoading = false;
+        this.toast.error(err?.error?.message || 'Could not load this company\'s access. Nothing was changed.');
         this.cdr.detectChanges();
       }
     });
   }
 
+  /** Pages this save would take away from the company. */
+  get accessRevoking(): number {
+    let n = 0;
+    this.accessOriginalIds.forEach(id => { if (!this.companyPermIds.has(id)) n++; });
+    return n;
+  }
+
+  /** Pages this save would newly grant. */
+  get accessGranting(): number {
+    let n = 0;
+    this.companyPermIds.forEach(id => { if (!this.accessOriginalIds.has(id)) n++; });
+    return n;
+  }
+
+  get accessUnchanged(): boolean {
+    return this.accessRevoking === 0 && this.accessGranting === 0;
+  }
+
   closeAccessModal() {
     this.showAccessModal = false;
     this.accessCompany = null;
+    this.accessLoadFailed = false;
+    this.accessOriginalIds = new Set();
     this.cdr.detectChanges();
   }
 
@@ -359,12 +397,30 @@ export class CompanyManagementComponent implements OnInit {
   }
 
   saveCompanyAccess() {
-    if (!this.accessCompany) return;
+    if (!this.accessCompany || this.accessLoadFailed) return;
+
+    // The frontend reads a company with no grants as "fresh, unrestricted"
+    // (auth.service.ts: companyPerms.length === 0), so saving nothing does not
+    // lock a company out — it opens everything to it. The API refuses it too.
+    if (this.companyPermIds.size === 0) {
+      this.toast.error('Select at least one page. To lock a company out, deactivate it.');
+      return;
+    }
+    if (this.accessUnchanged) {
+      this.closeAccessModal();
+      return;
+    }
+
     this.accessLoading = true;
     this.cdr.detectChanges();
+    const name = this.accessCompany.company_name;
     this.companyService.assignCompanyPermissions(this.accessCompany.id, Array.from(this.companyPermIds)).subscribe({
-      next: () => {
-        this.toast.success('Page access updated for ' + this.accessCompany.company_name);
+      next: (res: any) => {
+        const stripped = res?.revoked_from_roles || 0;
+        this.toast.success(
+          `Page access updated for ${name}` +
+          (stripped ? ` — removed from ${stripped} role grant${stripped === 1 ? '' : 's'}` : '')
+        );
         this.closeAccessModal();
         this.loadCompanies();
       },

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { tap } from 'rxjs';
+import { Subject, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { jwtDecode } from 'jwt-decode';
 import { Router } from '@angular/router';
@@ -10,6 +10,11 @@ export class AuthService {
 
   private api = environment.apiUrl + '/auth';
   private refreshTimer: any;
+
+  /** Fires when a refresh brings a different set of grants than the browser
+   *  held — so the header can rebuild its menu instead of showing a page the
+   *  company no longer has until the next reload. */
+  readonly grantsChanged$ = new Subject<void>();
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -31,9 +36,46 @@ export class AuthService {
     return this.http.post<any>(`${this.api}/refresh`, { refreshToken }).pipe(
       tap(res => {
         localStorage.setItem('token', res.accessToken);
+        this.mergeGrants(res);
         this.scheduleRefresh(res.accessToken);
       })
     );
+  }
+
+  /**
+   * Keep the stored grants in step with the server.
+   *
+   * hasPermission/hasAction/hasWidget all read `permissions` and
+   * `company_permissions` out of the user object saved at login, and nothing
+   * ever rewrote them: a page an admin revoked in Manage Access stayed usable
+   * in the UI until the person signed out and back in. The refresh response
+   * now carries both lists, so they are refreshed here every time the token
+   * is — roughly every 14 minutes for anyone with the app open.
+   *
+   * Only fields the server actually sent are applied. An older API that
+   * returns just a token must not blank the lists (an empty company list
+   * reads as "unrestricted").
+   */
+  private mergeGrants(res: any): void {
+    const hasPerms   = Array.isArray(res?.permissions);
+    const hasCompany = Array.isArray(res?.company_permissions);
+    if (!hasPerms && !hasCompany) return;
+
+    const user = this.getUser();
+    if (!user || !Object.keys(user).length) return;
+
+    const before = JSON.stringify([user.permissions, user.company_permissions]);
+    if (hasPerms)   user.permissions         = res.permissions;
+    if (hasCompany) user.company_permissions = res.company_permissions;
+    localStorage.setItem('user', JSON.stringify(user));
+
+    // Order-insensitive: the API does not promise a stable row order, and a
+    // reshuffled but identical list is not a change worth rebuilding a menu for.
+    const norm = (v: any) => JSON.stringify(Array.isArray(v) ? [...v].sort() : v);
+    if (norm(user.permissions) + norm(user.company_permissions) !==
+        norm(JSON.parse(before)[0]) + norm(JSON.parse(before)[1])) {
+      this.grantsChanged$.next();
+    }
   }
 
   logout(): void {

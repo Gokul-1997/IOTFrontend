@@ -163,3 +163,125 @@ test('all four admin tabs are present and consistent across every admin page', a
     await expect(page.getByRole('link', { name: 'Users' })).toHaveCount(1);
   }
 });
+
+/*
+ * Manage Access — what S&T decides a company has paid for.
+ *
+ * Two regressions worth naming:
+ *   - if loading the company's CURRENT grants failed, the modal swallowed it,
+ *     showed every box unchecked and left Save live: pressing it replaced the
+ *     company's real access with nothing.
+ *   - saving with nothing selected looks like "revoke everything" but the
+ *     frontend reads an empty grant list as unrestricted — it granted everything.
+ */
+const catalogue = [
+  { module: 'dashboard', label: 'Dashboards', group: 'Main', permissions: [
+      { id: 1, permission_key: 'page:dashboard:view', action: 'view', actionLabel: 'View' },
+      { id: 2, permission_key: 'page:dashboard:export', action: 'export', actionLabel: 'Export' } ] },
+  { module: 'reports', label: 'Reports', group: 'Main', permissions: [
+      { id: 3, permission_key: 'page:reports:view', action: 'view', actionLabel: 'View' } ] },
+  { module: 'programs', label: 'Program Transfer', group: 'Setup', permissions: [
+      { id: 4, permission_key: 'page:programs:view', action: 'view', actionLabel: 'View' },
+      { id: 5, permission_key: 'page:programs:transfer', action: 'transfer', actionLabel: 'Transfer' } ] }
+];
+
+/** The company holds 1, 2, 3 — and one legacy key the modal cannot show. */
+const heldByCompany = [
+  { id: 1, permission_key: 'page:dashboard:view' },
+  { id: 2, permission_key: 'page:dashboard:export' },
+  { id: 3, permission_key: 'page:reports:view' },
+  { id: 901, permission_key: 'machine.view' }
+];
+
+async function mockAccessApi(page: any, opts: { failCurrent?: boolean } = {}) {
+  await mockAdminApi(page);
+  await page.route('**/api/plans/permissions', (r: any) => r.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify(catalogue) }));
+
+  const state = { failCurrent: !!opts.failCurrent, puts: [] as any[] };
+  await page.route('**/api/companies/4/permissions', (route: any) => {
+    if (route.request().method() === 'PUT') {
+      state.puts.push(JSON.parse(route.request().postData() || '{}'));
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ company_id: 4, permission_count: 2, granted: 0, revoked: 1, revoked_from_roles: 2 }) });
+    }
+    if (state.failCurrent) {
+      return route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ message: 'boom' }) });
+    }
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(heldByCompany) });
+  });
+  return state;
+}
+
+const openAccess = async (page: any) => {
+  await page.goto('/admin/companies');
+  await page.getByRole('row', { name: /S AND T/ }).getByRole('button', { name: 'Access' }).click();
+};
+
+test('Manage Access: opens with the company\'s current grants ticked, Save waits for a change', async ({ sntSuperPage: page }) => {
+  await mockAccessApi(page);
+  await page.setViewportSize({ width: 1400, height: 1000 });
+  await openAccess(page);
+
+  await expect(page.getByText('Manage Access:')).toBeVisible();
+  // 3 page grants — the legacy machine.view the modal cannot show is not counted
+  await expect(page.getByText('3 permission(s) selected')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save Access' })).toBeDisabled();
+  await page.screenshot({ path: 'mexa-admin-access.png', fullPage: true });
+});
+
+test('Manage Access: a revoke says what it will do, then sends only what remains', async ({ sntSuperPage: page }) => {
+  const state = await mockAccessApi(page);
+  await page.setViewportSize({ width: 1400, height: 1000 });
+  await openAccess(page);
+  await expect(page.getByText('3 permission(s) selected')).toBeVisible();
+
+  // take Reports away: the "View" boxes run Dashboards, Reports, Program Transfer
+  await page.locator('label', { hasText: 'View' }).nth(1).locator('input').uncheck();
+
+  await expect(page.getByText(/Removing 1/)).toBeVisible();
+  await expect(page.getByText(/roles in this company that hold them lose them too/)).toBeVisible();
+  await page.screenshot({ path: 'mexa-admin-access-revoke.png', fullPage: true });
+
+  await page.getByRole('button', { name: 'Save Access' }).click();
+
+  await expect(page.getByText(/removed from 2 role grants/)).toBeVisible();
+  expect(state.puts).toHaveLength(1);
+  // page ids only — the legacy key was never in the working set
+  expect(state.puts[0].permission_ids.sort()).toEqual([1, 2]);
+});
+
+test('Manage Access: saving nothing is blocked, because empty means unrestricted', async ({ sntSuperPage: page }) => {
+  const state = await mockAccessApi(page);
+  await page.setViewportSize({ width: 1400, height: 1000 });
+  await openAccess(page);
+  await expect(page.getByText('3 permission(s) selected')).toBeVisible();
+
+  // untick every module
+  for (const box of await page.locator('.ui-dialog-lg input[type=checkbox]').all()) {
+    if (await box.isChecked()) await box.uncheck();
+  }
+  await expect(page.getByText('0 permission(s) selected')).toBeVisible();
+  await expect(page.getByText(/treated as unrestricted/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save Access' })).toBeDisabled();
+  expect(state.puts).toHaveLength(0);
+});
+
+test('Manage Access: if the current grants cannot be loaded, nothing is editable and Save cannot wipe them', async ({ sntSuperPage: page }) => {
+  const state = await mockAccessApi(page, { failCurrent: true });
+  await page.setViewportSize({ width: 1400, height: 1000 });
+  await openAccess(page);
+
+  // the bug: this failure was swallowed, every box showed unchecked, Save was live
+  await expect(page.getByText("Could not load this company's access")).toBeVisible();
+  await expect(page.locator('.ui-dialog-lg input[type=checkbox]')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Save Access' })).toBeDisabled();
+  expect(state.puts).toHaveLength(0);
+  await page.screenshot({ path: 'mexa-admin-access-failed.png', fullPage: true });
+
+  // and it recovers once the request works
+  state.failCurrent = false;
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await expect(page.getByText('3 permission(s) selected')).toBeVisible();
+  await expect(page.locator('.ui-dialog-lg input[type=checkbox]').first()).toBeVisible();
+});
