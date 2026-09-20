@@ -6,6 +6,7 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { EnergyDashboardService } from './energy-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 
@@ -60,8 +61,13 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   constructor(
     private svc: EnergyDashboardService,
     private toast: ToastService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private auth: AuthService
   ) {}
+
+  /** Export is its own grant — a company can have this page without being able to take data off it. */
+  get canExport(): boolean { return this.auth.hasAction('analytics-energy', 'export'); }
+  get canEditSettings(): boolean { return this.auth.hasAction('analytics-energy', 'settings'); }
 
   ngOnInit(): void {
     this.svc.getMeta()

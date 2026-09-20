@@ -149,20 +149,30 @@ export class AuthService {
   hasPermission(permission: string): boolean {
     if (this.isSntSuper()) return true;
     // Company admin: check company_permissions
-    if (this.isCompanyAdmin()) {
-      const companyPerms = this.getCompanyPermissions();
-      if (companyPerms.length === 0) return true; // fresh company, no restrictions
-      return companyPerms.includes(permission) || companyPerms.some(p => p.startsWith(permission + ':'));
-    }
+    if (this.isCompanyAdmin()) return this.companyAllows(permission);
+
+    /* Any other role needs the permission on the role AND the page granted to
+       its company. Only the role was checked, so a role could go on showing —
+       and opening — a page its company had since been refused. The API checks
+       both (middleware/access.middleware.js); the menu and the route guard now
+       agree with it. */
     const perms = this.getPermissions();
-    if (perms.includes(permission)) return true;
-    return perms.some(p => p.startsWith(permission + ':'));
+    const roleAllows = perms.includes(permission) || perms.some(p => p.startsWith(permission + ':'));
+    return roleAllows && this.companyAllows(permission);
+  }
+
+  /** Has the company been granted this page? A company with no grants at all
+   *  is fresh and unrestricted — the reading everything else here takes. */
+  private companyAllows(permission: string): boolean {
+    const companyPerms = this.getCompanyPermissions();
+    if (companyPerms.length === 0) return true;
+    return companyPerms.includes(permission) || companyPerms.some(p => p.startsWith(permission + ':'));
   }
 
   /**
    * Check if user has a specific CRUD action on a page.
    * e.g. hasAction('machines', 'create')
-   * Company admins check company_permissions; regular users check their role permissions.
+   * Company admins check company_permissions; regular users need the role permission and the company grant.
    */
   hasAction(module: string, action: string): boolean {
     if (this.isSntSuper()) return true;
@@ -174,7 +184,11 @@ export class AuthService {
       return companyPerms.length === 0 || companyPerms.includes(key);
     }
 
-    // Regular user: check their role permissions
+    // Regular user: the role must hold it AND the company must have been
+    // granted it (an empty grant list is a fresh, unrestricted company) — the
+    // same rule as hasWidget, and as the API for the analytics dashboards.
+    const companyPerms = this.getCompanyPermissions();
+    if (companyPerms.length > 0 && !companyPerms.includes(key)) return false;
     return this.getPermissions().includes(key);
   }
 
@@ -197,6 +211,19 @@ export class AuthService {
     return this.getPermissions().includes(key);
   }
 
+  /** The nine dashboards, in the order a user should land on them. */
+  private static readonly ANALYTICS_LANDINGS = [
+    { permission: 'page:analytics-factory',     path: '/factory' },
+    { permission: 'page:analytics-oee',         path: '/oee-dashboard' },
+    { permission: 'page:analytics-maintenance', path: '/maintenance-dashboard' },
+    { permission: 'page:analytics-preventive',  path: '/preventive-maintenance' },
+    { permission: 'page:analytics-periodic',    path: '/periodic-maintenance' },
+    { permission: 'page:analytics-downtime',    path: '/downtime-analysis' },
+    { permission: 'page:analytics-alarms',      path: '/alarm-report' },
+    { permission: 'page:analytics-operators',   path: '/operator-performance' },
+    { permission: 'page:analytics-energy',      path: '/energy-dashboard' },
+  ];
+
   /** Returns the first route the user has permission for. */
   getFirstAccessibleRoute(): string {
     try {
@@ -209,6 +236,7 @@ export class AuthService {
         if (companyPerms.length === 0) return '/dashboard';
         const pageRoutes = [
           { permission: 'page:dashboard',      path: '/dashboard' },
+          ...AuthService.ANALYTICS_LANDINGS,
           { permission: 'page:oee-reports',     path: '/oee-reports' },
           { permission: 'page:reports',         path: '/reports' },
           { permission: 'page:charts',          path: '/charts' },
@@ -221,9 +249,9 @@ export class AuthService {
         return first ? first.path : '/admin/users';
       }
 
-      const permissions = this.getPermissions();
       const pageRoutes = [
         { permission: 'page:dashboard',      path: '/dashboard' },
+        ...AuthService.ANALYTICS_LANDINGS,
         { permission: 'page:oee-reports',     path: '/oee-reports' },
         { permission: 'page:reports',         path: '/reports' },
         { permission: 'page:charts',          path: '/charts' },
@@ -238,9 +266,9 @@ export class AuthService {
         { permission: 'page:plants',          path: '/plants' },
       ];
 
-      const first = pageRoutes.find(r =>
-        permissions.includes(r.permission) || permissions.some(p => p.startsWith(r.permission + ':'))
-      );
+      // Role AND company, as hasPermission — landing on a page the API would
+      // then refuse is worse than falling through to the next one.
+      const first = pageRoutes.find(r => this.hasPermission(r.permission));
       return first ? first.path : '/no-access';
     } catch {
       return '/no-access';

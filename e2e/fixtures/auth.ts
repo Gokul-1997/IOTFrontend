@@ -31,7 +31,7 @@ function stubJwt(): string {
   return `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: '1', exp })}.e2e`;
 }
 
-async function seedAuth(page: Page, overrides: Record<string, unknown> = {}) {
+export async function seedAuth(page: Page, overrides: Record<string, unknown> = {}) {
   const token = stubJwt();
   await page.addInitScript(([jwt, extra]: [string, Record<string, unknown>]) => {
     const stubUser = {

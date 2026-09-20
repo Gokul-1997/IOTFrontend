@@ -184,6 +184,44 @@ describe('AuthService.hasPermission', () => {
   });
 });
 
+// A regular role needs the page on the role AND on its company. The menu used
+// to look at the role only, so it kept offering pages the company had lost —
+// pages the API now refuses.
+describe('AuthService.hasPermission — role and company together', () => {
+  test('shows a page the role holds and the company was granted', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-oee:view'], company_permissions: ['page:analytics-oee:view'] });
+    expect(service.hasPermission('page:analytics-oee')).toBe(true);
+  });
+
+  test('hides a page the role holds but the company was not granted', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-oee:view'], company_permissions: ['page:analytics-energy:view'] });
+    expect(service.hasPermission('page:analytics-oee')).toBe(false);
+  });
+
+  test('hides a page the company has but the role does not', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-oee:view'], company_permissions: ['page:analytics-oee:view', 'page:analytics-energy:view'] });
+    expect(service.hasPermission('page:analytics-energy')).toBe(false);
+  });
+
+  test('a company with no grants at all is fresh and unrestricted', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-oee:view'], company_permissions: [] });
+    expect(service.hasPermission('page:analytics-oee')).toBe(true);
+  });
+
+  test('a company that lost one dashboard loses only that one', () => {
+    const grants = ['page:analytics-oee:view', 'page:analytics-alarms:view'];
+    seedUser({ roles: ['MANAGER'], permissions: [...grants, 'page:analytics-energy:view'], company_permissions: grants });
+    expect(service.hasPermission('page:analytics-oee')).toBe(true);
+    expect(service.hasPermission('page:analytics-alarms')).toBe(true);
+    expect(service.hasPermission('page:analytics-energy')).toBe(false);
+  });
+
+  test('SNT_SUPER still sees everything regardless of grants', () => {
+    seedUser({ roles: ['SNT_SUPER'], permissions: [], company_permissions: ['page:other:view'] });
+    expect(service.hasPermission('page:analytics-oee')).toBe(true);
+  });
+});
+
 // ── hasAction ─────────────────────────────────────────────────────────────────
 
 describe('AuthService.hasAction', () => {
@@ -193,7 +231,7 @@ describe('AuthService.hasAction', () => {
   });
 
   test('exact key match: page:machines:create', () => {
-    seedUser({ roles: ['ADMIN'], permissions: ['page:machines:create'] });
+    seedUser({ roles: ['ADMIN'], permissions: ['page:machines:create'], company_permissions: ['page:machines:create'] });
     expect(service.hasAction('machines', 'create')).toBe(true);
   });
 
@@ -215,6 +253,43 @@ describe('AuthService.hasAction', () => {
 });
 
 // ── hasWidget ─────────────────────────────────────────────────────────────────
+
+describe('AuthService.hasAction — role and company together', () => {
+  test('a regular role needs the action on the role AND on its company', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-energy:export'], company_permissions: ['page:analytics-energy:export'] });
+    expect(service.hasAction('analytics-energy', 'export')).toBe(true);
+  });
+
+  test('view granted, export not: the Export button stays hidden', () => {
+    seedUser({
+      roles: ['MANAGER'],
+      permissions: ['page:analytics-energy:view', 'page:analytics-energy:export'],
+      company_permissions: ['page:analytics-energy:view']
+    });
+    expect(service.hasAction('analytics-energy', 'view')).toBe(true);
+    expect(service.hasAction('analytics-energy', 'export')).toBe(false);
+  });
+
+  test('Tariff settings is separate from export', () => {
+    seedUser({
+      roles: ['MANAGER'],
+      permissions: ['page:analytics-energy:export', 'page:analytics-energy:settings'],
+      company_permissions: ['page:analytics-energy:export']
+    });
+    expect(service.hasAction('analytics-energy', 'export')).toBe(true);
+    expect(service.hasAction('analytics-energy', 'settings')).toBe(false);
+  });
+
+  test('a company with no grants is fresh — the role decides', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-energy:export'], company_permissions: [] });
+    expect(service.hasAction('analytics-energy', 'export')).toBe(true);
+  });
+
+  test('the role still has to hold it even when the company has it', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-energy:view'], company_permissions: ['page:analytics-energy:view', 'page:analytics-energy:export'] });
+    expect(service.hasAction('analytics-energy', 'export')).toBe(false);
+  });
+});
 
 describe('AuthService.hasWidget', () => {
   test('SNT_SUPER can see all widgets', () => {
@@ -325,6 +400,36 @@ describe('AuthService.getFirstAccessibleRoute', () => {
 });
 
 // ── logout ────────────────────────────────────────────────────────────────────
+
+describe('AuthService.getFirstAccessibleRoute — the nine dashboards', () => {
+  test('a role with only OEE lands on the OEE dashboard, not on /no-access', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-oee:view'], company_permissions: [] });
+    expect(service.getFirstAccessibleRoute()).toBe('/oee-dashboard');
+  });
+
+  test('a company admin whose company was granted only Alarms lands on Alarms', () => {
+    seedUser({ roles: ['COMPANY_ADMIN'], company_permissions: ['page:analytics-alarms:view'] });
+    expect(service.getFirstAccessibleRoute()).toBe('/alarm-report');
+  });
+
+  test('skips a dashboard the role holds but the company was not granted', () => {
+    seedUser({
+      roles: ['MANAGER'],
+      permissions: ['page:analytics-factory:view', 'page:analytics-oee:view'],
+      company_permissions: ['page:analytics-oee:view']
+    });
+    expect(service.getFirstAccessibleRoute()).toBe('/oee-dashboard');
+  });
+
+  test('the live dashboard still comes first when the user has it', () => {
+    seedUser({
+      roles: ['MANAGER'],
+      permissions: ['page:dashboard:view', 'page:analytics-oee:view'],
+      company_permissions: []
+    });
+    expect(service.getFirstAccessibleRoute()).toBe('/dashboard');
+  });
+});
 
 describe('AuthService.logout', () => {
   test('clears localStorage and navigates to /login', () => {

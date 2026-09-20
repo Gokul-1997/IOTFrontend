@@ -19,16 +19,22 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
 
+      /* Every page here is guarded by the key Manage Access grants for it.
+         The nine Phase 2 dashboards each have their own (page:analytics-*);
+         they all used to share page:dashboard, so none could be sold or
+         revoked on its own. alarms, downtime, maintenance, production-plans
+         and programs had catalogue modules and menu entries but NO guard, so
+         un-granting them hid the menu item and left the URL open. */
       { path: 'dashboard', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
-      { path: 'factory', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/factory/factory.component').then(m => m.FactoryComponent) },
-      { path: 'maintenance-dashboard', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/maintenance-dashboard/maintenance-dashboard.component').then(m => m.MaintenanceDashboardComponent) },
-      { path: 'preventive-maintenance', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/preventive-dashboard/preventive-dashboard.component').then(m => m.PreventiveDashboardComponent) },
-      { path: 'periodic-maintenance', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/periodic-dashboard/periodic-dashboard.component').then(m => m.PeriodicDashboardComponent) },
-      { path: 'alarm-report', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/alarm-dashboard/alarm-dashboard.component').then(m => m.AlarmDashboardComponent) },
-      { path: 'downtime-analysis', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/downtime-dashboard/downtime-dashboard.component').then(m => m.DowntimeDashboardComponent) },
-      { path: 'operator-performance', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/operator-dashboard/operator-dashboard.component').then(m => m.OperatorDashboardComponent) },
-      { path: 'oee-dashboard', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/oee-dashboard/oee-dashboard.component').then(m => m.OeeDashboardComponent) },
-      { path: 'energy-dashboard', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/energy-dashboard/energy-dashboard.component').then(m => m.EnergyDashboardComponent) },
+      { path: 'factory', canActivate: [permissionGuard('page:analytics-factory')], loadComponent: () => import('./pages/factory/factory.component').then(m => m.FactoryComponent) },
+      { path: 'maintenance-dashboard', canActivate: [permissionGuard('page:analytics-maintenance')], loadComponent: () => import('./pages/maintenance-dashboard/maintenance-dashboard.component').then(m => m.MaintenanceDashboardComponent) },
+      { path: 'preventive-maintenance', canActivate: [permissionGuard('page:analytics-preventive')], loadComponent: () => import('./pages/preventive-dashboard/preventive-dashboard.component').then(m => m.PreventiveDashboardComponent) },
+      { path: 'periodic-maintenance', canActivate: [permissionGuard('page:analytics-periodic')], loadComponent: () => import('./pages/periodic-dashboard/periodic-dashboard.component').then(m => m.PeriodicDashboardComponent) },
+      { path: 'alarm-report', canActivate: [permissionGuard('page:analytics-alarms')], loadComponent: () => import('./pages/alarm-dashboard/alarm-dashboard.component').then(m => m.AlarmDashboardComponent) },
+      { path: 'downtime-analysis', canActivate: [permissionGuard('page:analytics-downtime')], loadComponent: () => import('./pages/downtime-dashboard/downtime-dashboard.component').then(m => m.DowntimeDashboardComponent) },
+      { path: 'operator-performance', canActivate: [permissionGuard('page:analytics-operators')], loadComponent: () => import('./pages/operator-dashboard/operator-dashboard.component').then(m => m.OperatorDashboardComponent) },
+      { path: 'oee-dashboard', canActivate: [permissionGuard('page:analytics-oee')], loadComponent: () => import('./pages/oee-dashboard/oee-dashboard.component').then(m => m.OeeDashboardComponent) },
+      { path: 'energy-dashboard', canActivate: [permissionGuard('page:analytics-energy')], loadComponent: () => import('./pages/energy-dashboard/energy-dashboard.component').then(m => m.EnergyDashboardComponent) },
       { path: 'dashboard/live/:id', canActivate: [permissionGuard('page:dashboard:live')], loadComponent: () => import('./pages/dashboard/live/live.component').then(m => m.LiveComponent) },
 
       { path: 'component', canActivate: [permissionGuard('page:component')], loadComponent: () => import('./pages/component/component_list.component').then(m => m.ComponentList) },
@@ -58,12 +64,12 @@ export const routes: Routes = [
       { path: 'quality', canActivate: [permissionGuard('page:quality')], loadComponent: () => import('./pages/quality/quality').then(m => m.Quality) },
       { path: 'job', canActivate: [permissionGuard('page:job')], loadComponent: () => import('./pages/job/job-list.component').then(m => m.JobListComponent) },
 
-      { path: 'programs', loadComponent: () => import('./pages/programs/programs.component').then(m => m.ProgramsComponent) },
+      { path: 'programs', canActivate: [permissionGuard('page:programs')], loadComponent: () => import('./pages/programs/programs.component').then(m => m.ProgramsComponent) },
 
-      { path: 'alarms', loadComponent: () => import('./pages/alarms/alarms.component').then(m => m.AlarmsComponent) },
-      { path: 'downtime', loadComponent: () => import('./pages/downtime/downtime.component').then(m => m.DowntimeComponent) },
-      { path: 'maintenance', loadComponent: () => import('./pages/maintenance/maintenance.component').then(m => m.MaintenanceComponent) },
-      { path: 'production-plans', loadComponent: () => import('./pages/production-plans/production-plans.component').then(m => m.ProductionPlansComponent) },
+      { path: 'alarms', canActivate: [permissionGuard('page:alarms')], loadComponent: () => import('./pages/alarms/alarms.component').then(m => m.AlarmsComponent) },
+      { path: 'downtime', canActivate: [permissionGuard('page:downtime')], loadComponent: () => import('./pages/downtime/downtime.component').then(m => m.DowntimeComponent) },
+      { path: 'maintenance', canActivate: [permissionGuard('page:maintenance')], loadComponent: () => import('./pages/maintenance/maintenance.component').then(m => m.MaintenanceComponent) },
+      { path: 'production-plans', canActivate: [permissionGuard('page:production-plans')], loadComponent: () => import('./pages/production-plans/production-plans.component').then(m => m.ProductionPlansComponent) },
       { path: 'security/2fa', loadComponent: () => import('./pages/security/twofa-setup.component').then(m => m.TwofaSetupComponent) },
 
       /* Every authenticated user reaches these — no permission key, because

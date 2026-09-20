@@ -285,3 +285,82 @@ test('Manage Access: if the current grants cannot be loaded, nothing is editable
   await expect(page.getByText('3 permission(s) selected')).toBeVisible();
   await expect(page.locator('.ui-dialog-lg input[type=checkbox]').first()).toBeVisible();
 });
+
+
+/*
+ * The nine analytics dashboards used to share one key with the live dashboard,
+ * so S&T could not sell a company "OEE but not Energy". Each is now its own
+ * module under an Analytics group, and the modules that have separate Export or
+ * Tariff settings carry those as their own boxes.
+ */
+const analytics = [
+  ['factory', 'Factory Overall', ['view']],
+  ['maintenance', 'Maintenance Dashboard', ['view']],
+  ['preventive', 'Preventive Maintenance', ['view']],
+  ['periodic', 'Periodic Maintenance', ['view', 'export']],
+  ['alarms', 'Alarm Report', ['view', 'export']],
+  ['downtime', 'Downtime Analysis', ['view', 'export']],
+  ['operators', 'Operator Performance', ['view', 'export']],
+  ['oee', 'OEE Dashboard', ['view', 'export']],
+  ['energy', 'Energy Dashboard', ['view', 'export', 'settings']]
+] as const;
+
+const actionLabel: Record<string, string> = { view: 'View', export: 'Export', settings: 'Tariff Settings' };
+let nextId = 100;
+const analyticsModules = analytics.map(([key, label, actions]) => ({
+  module: `analytics-${key}`, label, group: 'Analytics',
+  permissions: actions.map(a => ({ id: nextId++, permission_key: `page:analytics-${key}:${a}`, action: a, actionLabel: actionLabel[a] }))
+}));
+const idOf = (key: string) => analyticsModules.flatMap(m => m.permissions).find(p => p.permission_key === key)!.id;
+
+test('Manage Access: the nine dashboards are separate modules under Analytics, each with its own actions', async ({ sntSuperPage: page }) => {
+  const state = await mockAccessApi(page);
+  // company holds the classic dashboard plus OEE and all three Energy boxes
+  const held = [
+    { id: 1, permission_key: 'page:dashboard:view' },
+    { id: idOf('page:analytics-oee:view'), permission_key: 'page:analytics-oee:view' },
+    { id: idOf('page:analytics-energy:view'), permission_key: 'page:analytics-energy:view' },
+    { id: idOf('page:analytics-energy:export'), permission_key: 'page:analytics-energy:export' },
+    { id: idOf('page:analytics-energy:settings'), permission_key: 'page:analytics-energy:settings' }
+  ];
+  await page.route('**/api/plans/permissions', (r: any) => r.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify([...catalogue, ...analyticsModules]) }));
+  await page.route('**/api/companies/4/permissions', (route: any) => {
+    if (route.request().method() === 'PUT') {
+      state.puts.push(JSON.parse(route.request().postData() || '{}'));
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ company_id: 4, permission_count: 4, granted: 0, revoked: 1, revoked_from_roles: 0 }) });
+    }
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(held) });
+  });
+  await page.setViewportSize({ width: 1400, height: 1400 });
+  await openAccess(page);
+
+  // one group, nine modules — each named as the menu names it
+  await expect(page.getByText('Analytics', { exact: true })).toBeVisible();
+  for (const [, label] of analytics) {
+    await expect(page.locator('.ui-dialog-lg').getByText(label, { exact: true }), `${label} module`).toBeVisible();
+  }
+  // the energy module carries all three actions; the factory module only View
+  const energy = page.locator('.ui-dialog-lg .border', { has: page.getByText('Energy Dashboard', { exact: true }) }).last();
+  await expect(energy.getByText('Export', { exact: true })).toBeVisible();
+  await expect(energy.getByText('Tariff Settings', { exact: true })).toBeVisible();
+  const factory = page.locator('.ui-dialog-lg .border', { has: page.getByText('Factory Overall', { exact: true }) }).last();
+  await expect(factory.getByText('Export', { exact: true })).toHaveCount(0);
+
+  await expect(page.getByText('5 permission(s) selected')).toBeVisible();
+  await page.screenshot({ path: 'mexa-admin-access-analytics.png', fullPage: true });
+
+  // take away only the Tariff Settings box: everything else stays granted
+  await energy.getByText('Tariff Settings', { exact: true }).click();
+  await expect(page.getByText(/Removing 1/)).toBeVisible();
+  await page.getByRole('button', { name: 'Save Access' }).click();
+  await expect(page.getByText('Page access updated for S AND T')).toBeVisible();
+
+  expect(state.puts).toHaveLength(1);
+  const sent = state.puts[0].permission_ids as number[];
+  expect(sent).not.toContain(idOf('page:analytics-energy:settings'));
+  expect(sent).toContain(idOf('page:analytics-energy:export'));
+  expect(sent).toContain(idOf('page:analytics-oee:view'));
+  expect(sent.length).toBe(4);
+});

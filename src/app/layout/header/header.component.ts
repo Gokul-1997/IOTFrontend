@@ -44,15 +44,15 @@ export class HeaderComponent implements OnInit, OnDestroy {
       label: 'Dashboards', icon: 'dashnew',
       children: [
         { label: 'Live Dashboard', path: '/dashboard', permission: 'page:dashboard' },
-        { label: 'Factory Overall', path: '/factory', permission: 'page:dashboard' },
-        { label: 'Maintenance', path: '/maintenance-dashboard', permission: 'page:dashboard' },
-        { label: 'Preventive', path: '/preventive-maintenance', permission: 'page:dashboard' },
-        { label: 'Periodic', path: '/periodic-maintenance', permission: 'page:dashboard' },
-        { label: 'Alarms', path: '/alarm-report', permission: 'page:dashboard' },
-        { label: 'Downtime', path: '/downtime-analysis', permission: 'page:dashboard' },
-        { label: 'Operators', path: '/operator-performance', permission: 'page:dashboard' },
-        { label: 'OEE', path: '/oee-dashboard', permission: 'page:dashboard' },
-        { label: 'Energy', path: '/energy-dashboard', permission: 'page:dashboard' }
+        { label: 'Factory Overall', path: '/factory', permission: 'page:analytics-factory' },
+        { label: 'Maintenance', path: '/maintenance-dashboard', permission: 'page:analytics-maintenance' },
+        { label: 'Preventive', path: '/preventive-maintenance', permission: 'page:analytics-preventive' },
+        { label: 'Periodic', path: '/periodic-maintenance', permission: 'page:analytics-periodic' },
+        { label: 'Alarms', path: '/alarm-report', permission: 'page:analytics-alarms' },
+        { label: 'Downtime', path: '/downtime-analysis', permission: 'page:analytics-downtime' },
+        { label: 'Operators', path: '/operator-performance', permission: 'page:analytics-operators' },
+        { label: 'OEE', path: '/oee-dashboard', permission: 'page:analytics-oee' },
+        { label: 'Energy', path: '/energy-dashboard', permission: 'page:analytics-energy' }
       ]
     },
     {
@@ -72,13 +72,13 @@ export class HeaderComponent implements OnInit, OnDestroy {
       label: 'Settings', icon: 'gearnew',
       children: [
         { label: 'Machines', path: '/machines', permission: 'page:machines' },
-        { label: 'Program Transfer', path: '/programs', permission: 'page:machines' },
+        { label: 'Program Transfer', path: '/programs', permission: 'page:programs' },
         { label: 'Component', path: '/component', permission: 'page:component' },
         { label: 'Job', path: '/job', permission: 'page:job' },
         { label: 'Lines', path: '/lines', permission: 'page:lines' },
         { label: 'Shifts', path: '/shifts', permission: 'page:shifts' },
         { label: 'Operators', path: '/operators', permission: 'page:operators' },
-        { label: '2FA Security', path: '/security/2fa', permission: 'page:security' }
+        { label: '2FA Security', path: '/security/2fa' }
       ]
     },
     { label: 'Admin', path: '/admin/users', icon: 'shield', adminOnly: true } 
@@ -152,12 +152,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
         if (menu.children) {
           const filteredChildren = menu.children.filter((child: any) =>
-            this.auth.hasPermission(child.permission)
+            !child.permission || this.auth.hasPermission(child.permission)
           );
           return filteredChildren.length > 0 ? { ...menu, children: filteredChildren } : null;
         }
 
-        return this.auth.hasPermission(menu.permission) ? menu : null;
+        return !menu.permission || this.auth.hasPermission(menu.permission) ? menu : null;
       })
       .filter(m => m !== null);
   }

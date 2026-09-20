@@ -245,7 +245,7 @@
         <label class="sr-only" for="dtSearch">Search downtime events</label>
         <input id="dtSearch" type="search" class="mexa-search" placeholder="Search"
                [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
-        <span class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
+        <span *ngIf="canExport" class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
           <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">
             {{ exporting === 'xlsx' ? '…' : 'Excel' }}
           </button>

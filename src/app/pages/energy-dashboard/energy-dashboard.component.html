@@ -206,7 +206,7 @@
         <label class="sr-only" for="enSearch">Search machines</label>
         <input id="enSearch" type="search" class="mexa-search" placeholder="Search"
                [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
-        <span class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
+        <span *ngIf="canExport" class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
           <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">
             {{ exporting === 'xlsx' ? '…' : 'Excel' }}
           </button>
@@ -217,7 +217,7 @@
             {{ exporting === 'pdf' ? '…' : 'PDF' }}
           </button>
         </span>
-        <button type="button" class="mexa-pagebtn" (click)="showSettings = !showSettings"
+        <button *ngIf="canEditSettings" type="button" class="mexa-pagebtn" (click)="showSettings = !showSettings"
                 [attr.aria-expanded]="showSettings">
           {{ showSettings ? 'Hide settings' : 'Tariff & limits' }}
         </button>
@@ -284,7 +284,7 @@
 </ng-container>
 
 <!-- ══════════ TARIFF & LIMITS ══════════ -->
-<section class="mexa-card" *ngIf="showSettings">
+<section class="mexa-card" *ngIf="showSettings && canEditSettings">
   <h2 class="mexa-card-title mexa-card-title-left">Tariff &amp; Limits</h2>
   <p class="mexa-card-hint">
     Leave the machine blank to set the company default. A row for a specific machine overrides it.
