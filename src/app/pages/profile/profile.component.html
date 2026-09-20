@@ -1,0 +1,113 @@
+<div class="p-4 md:p-6 max-w-2xl mx-auto">
+  <h1 class="text-2xl font-bold text-gray-800 dark:text-white mb-1">My Profile</h1>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Your account details and security</p>
+
+  <!-- ── loading ── -->
+  <div *ngIf="loading" class="space-y-4" aria-busy="true" role="status" aria-label="Loading profile">
+    <div class="h-24 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"></div>
+    <div class="h-40 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"></div>
+  </div>
+
+  <!-- ── error ── -->
+  <div *ngIf="!loading && errorMsg" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4" role="alert">
+    <p class="text-sm text-red-700 dark:text-red-300">{{ errorMsg }}</p>
+    <button (click)="load()" class="mt-2 text-sm font-medium text-red-700 dark:text-red-300 underline">Try again</button>
+  </div>
+
+  <ng-container *ngIf="!loading && !errorMsg && profile">
+
+    <!-- ══════════ ACCOUNT DETAILS ══════════ -->
+    <section class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <h2 class="font-semibold text-gray-800 dark:text-white">Account Details</h2>
+        <button *ngIf="!editing" (click)="startEdit()"
+          class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">Edit</button>
+      </div>
+
+      <!-- view mode -->
+      <dl *ngIf="!editing" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+        <div><dt class="text-gray-400 dark:text-gray-500">Username</dt><dd class="font-medium text-gray-800 dark:text-white mt-0.5">{{ profile.username }}</dd></div>
+        <div><dt class="text-gray-400 dark:text-gray-500">Role</dt><dd class="font-medium text-gray-800 dark:text-white mt-0.5">{{ roleLabel(profile.user_type) }}</dd></div>
+        <div><dt class="text-gray-400 dark:text-gray-500">Email</dt><dd class="font-medium text-gray-800 dark:text-white mt-0.5">{{ profile.email || '--' }}</dd></div>
+        <div><dt class="text-gray-400 dark:text-gray-500">Mobile</dt><dd class="font-medium text-gray-800 dark:text-white mt-0.5">{{ profile.mobile || '--' }}</dd></div>
+        <div><dt class="text-gray-400 dark:text-gray-500">Company</dt><dd class="font-medium text-gray-800 dark:text-white mt-0.5">{{ profile.company_name || '--' }}</dd></div>
+        <div><dt class="text-gray-400 dark:text-gray-500">Plant</dt><dd class="font-medium text-gray-800 dark:text-white mt-0.5">{{ profile.plant_name || '--' }}</dd></div>
+        <div><dt class="text-gray-400 dark:text-gray-500">Last login</dt>
+          <dd class="font-medium text-gray-800 dark:text-white mt-0.5">
+            {{ profile.last_login_at ? (profile.last_login_at | date:'medium') : 'This is your first login' }}
+          </dd>
+        </div>
+      </dl>
+
+      <!-- edit mode: only email and mobile — username, role and company are
+           admin-controlled, so this form cannot touch them -->
+      <form *ngIf="editing" (ngSubmit)="saveProfile()" class="space-y-4">
+        <div>
+          <label for="profEmail" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Email</label>
+          <input id="profEmail" type="email" name="email" required [(ngModel)]="form.email"
+            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+        </div>
+        <div>
+          <label for="profMobile" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Mobile</label>
+          <input id="profMobile" type="tel" name="mobile" [(ngModel)]="form.mobile"
+            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+        </div>
+        <p *ngIf="saveErr" class="text-sm text-red-600 dark:text-red-400" role="alert">{{ saveErr }}</p>
+        <div class="flex gap-2">
+          <button type="submit" [disabled]="saving"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60">
+            {{ saving ? 'Saving…' : 'Save changes' }}
+          </button>
+          <button type="button" (click)="cancelEdit()" [disabled]="saving"
+            class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-700">
+            Cancel
+          </button>
+        </div>
+      </form>
+
+      <p *ngIf="saveNote && !editing" class="mt-3 text-sm text-emerald-700 dark:text-emerald-400" role="status">{{ saveNote }}</p>
+    </section>
+
+    <!-- ══════════ CHANGE PASSWORD ══════════ -->
+    <section class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+      <h2 class="font-semibold text-gray-800 dark:text-white mb-4">Change Password</h2>
+      <form (ngSubmit)="changePassword()" class="space-y-4 max-w-sm">
+        <div>
+          <label for="pwCurrent" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Current password</label>
+          <input id="pwCurrent" type="password" name="current" required autocomplete="current-password"
+            [(ngModel)]="pwForm.current_password"
+            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+        </div>
+        <div>
+          <label for="pwNew" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">New password</label>
+          <input id="pwNew" type="password" name="new" required minlength="8" autocomplete="new-password"
+            [(ngModel)]="pwForm.new_password"
+            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">At least 8 characters.</p>
+        </div>
+        <div>
+          <label for="pwConfirm" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Confirm new password</label>
+          <input id="pwConfirm" type="password" name="confirm" required autocomplete="new-password"
+            [(ngModel)]="pwForm.confirm_password"
+            class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+        </div>
+        <p *ngIf="pwErr" class="text-sm text-red-600 dark:text-red-400" role="alert">{{ pwErr }}</p>
+        <p *ngIf="pwNote" class="text-sm text-emerald-700 dark:text-emerald-400" role="status">{{ pwNote }}</p>
+        <button type="submit" [disabled]="changingPw"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60">
+          {{ changingPw ? 'Changing…' : 'Change password' }}
+        </button>
+      </form>
+    </section>
+
+    <!-- ══════════ SECURITY ══════════ -->
+    <section class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <h2 class="font-semibold text-gray-800 dark:text-white mb-1">Two-Factor Authentication</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Add an extra layer of security to your account.</p>
+      <a routerLink="/security/2fa"
+        class="inline-block px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700">
+        Manage 2FA →
+      </a>
+    </section>
+  </ng-container>
+</div>

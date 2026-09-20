@@ -66,6 +66,13 @@ export const routes: Routes = [
       { path: 'production-plans', loadComponent: () => import('./pages/production-plans/production-plans.component').then(m => m.ProductionPlansComponent) },
       { path: 'security/2fa', loadComponent: () => import('./pages/security/twofa-setup.component').then(m => m.TwofaSetupComponent) },
 
+      /* Every authenticated user reaches these — no permission key, because
+         "view my own profile" and "change my own theme" are not a page a
+         role can be denied. */
+      { path: 'profile',       loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent) },
+      { path: 'settings',      loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
+      { path: 'notifications', loadComponent: () => import('./pages/notifications/notifications.component').then(m => m.NotificationsComponent) },
+
       // ADMIN ROUTES (SNT_SUPER / COMPANY_ADMIN / ADMIN)
       {
         path: 'admin',

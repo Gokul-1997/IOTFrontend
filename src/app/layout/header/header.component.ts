@@ -3,18 +3,18 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { IconComponent } from '../../shared/icon/icon';
 import { AuthService } from '../../core/services/auth.service';
-// import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
+import { ThemeService } from '../../core/services/theme.service';
+import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 
 @Component({
   standalone: true,
   selector: 'app-header',
-  imports: [CommonModule, RouterModule, IconComponent],
+  imports: [CommonModule, RouterModule, IconComponent, NotificationBellComponent],
   templateUrl: './header.component.html',
 })
 export class HeaderComponent implements OnInit {
 
   openMenu: string | null = null;
-  isDark = false;
   showUserMenu = false;
   userName = 'Admin';
   userEmail = '';
@@ -86,6 +86,7 @@ export class HeaderComponent implements OnInit {
   constructor(
     private router: Router,
     private auth: AuthService,
+    public  theme: ThemeService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -96,6 +97,13 @@ export class HeaderComponent implements OnInit {
    * the user menu did nothing. Every handler that changes them has to say so.
    */
   private touch() { this.cdr.markForCheck(); }
+
+  /** Closes the user-menu dropdown after a link inside it is followed —
+   *  public because the template calls it directly. */
+  closeUserMenu(): void {
+    this.showUserMenu = false;
+    this.touch();
+  }
 
   ngOnInit() {
     const user = this.auth.getUser();
@@ -160,11 +168,12 @@ export class HeaderComponent implements OnInit {
   isActive(path: string) { return this.router.url.startsWith(path); }
   isChildActive(children: any[]) { return children?.some(c => this.router.url.startsWith(c.path)); }
 
-  toggleTheme() {
-    this.isDark = !this.isDark;
-    this.touch();
-    document.documentElement.classList.toggle('dark', this.isDark);
-  }
+  /* State and persistence now live in ThemeService — before this, isDark
+     was a plain component field, always initialised to false, with nothing
+     reading or writing localStorage. It survived route changes (the header
+     sits outside <router-outlet>) but not a reload or a new tab: dark mode
+     never actually stuck. */
+  toggleTheme() { this.theme.toggle(); }
 
   isMobileMenuOpen = false;
   toggleMobileMenu() { this.isMobileMenuOpen = !this.isMobileMenuOpen; this.touch(); }
