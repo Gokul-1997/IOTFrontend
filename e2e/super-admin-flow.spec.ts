@@ -133,6 +133,18 @@ test('Users: the company dropdown is populated — regression for the empty-drop
 /* The AWS model: S&T sets up a company's admin; the company admin gives out
    every other role. So S&T's request carries COMPANY_ADMIN, whatever else
    the form held. */
+/* S&T sees each company's admin only. The API decides that (user.service
+   limits S&T to users holding the shared Company Admin role); the page says
+   what the list is. */
+test('Company Admins: S&T\'s users page is titled for what it lists', async ({ sntSuperPage: page }) => {
+  await mockAdminApi(page);
+  await page.setViewportSize({ width: 1500, height: 1100 });
+  await page.goto('/admin/users');
+  await expect(page.getByRole('heading', { name: 'Company Admins' })).toBeVisible();
+  await expect(page.getByText(/The admin creates and manages the rest of that company's users/)).toBeVisible();
+  await expect(page.getByRole('button', { name: '+ Add Company Admin' })).toBeVisible();
+});
+
 test('Users: S&T creates a company admin, with the Company Admin role', async ({ sntSuperPage: page }) => {
   await mockAdminApi(page);
   const posted: any[] = [];
@@ -181,10 +193,10 @@ test('S&T\'s three admin tabs are present and consistent across every S&T admin 
     await page.goto(path);
     await expect(page.getByRole('link', { name: 'Companies' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Plans' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Users' })).toBeVisible();
+    // S&T's side of users is each company's admin, and the tab says so
+    await expect(page.getByRole('link', { name: 'Company Admins' })).toHaveCount(1);
+    await expect(page.getByRole('link', { name: 'Users', exact: true })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Roles & Permissions' })).toHaveCount(0);
-    // no leftover dead nav items
-    await expect(page.getByRole('link', { name: 'Users' })).toHaveCount(1);
   }
 });
 

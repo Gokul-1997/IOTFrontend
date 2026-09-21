@@ -12,7 +12,7 @@
     </a>
     <a routerLink="/admin/users" routerLinkActive="bg-blue-600 text-white"
        class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-      Users
+      {{ auth.isSntSuper() ? 'Company Admins' : 'Users' }}
     </a>
     <a *ngIf="!auth.isSntSuper()" routerLink="/admin/roles" routerLinkActive="bg-blue-600 text-white"
        class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
@@ -26,9 +26,10 @@
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
       <div>
-        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">User Management</h1>
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">{{ auth.isSntSuper() ? 'Company Admins' : 'User Management' }}</h1>
         <p class="text-sm text-gray-500 mt-1" *ngIf="!auth.isSntSuper()">Create your company's users and give each one a role</p>
-        <p class="text-sm text-gray-500 mt-1" *ngIf="auth.isSntSuper()">You add each company's admin. The admin creates the rest of that company's users.</p>
+        <!-- S&T sees each company's admin only; the users a company creates are its own -->
+        <p class="text-sm text-gray-500 mt-1" *ngIf="auth.isSntSuper()">Each company's admin. The admin creates and manages the rest of that company's users.</p>
       </div>
       <button (click)="openCreateModal()"
         class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
@@ -47,8 +48,8 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
           d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
       </svg>
-      <p class="font-medium">No users found</p>
-      <p class="text-sm mt-1">Create your first user to get started</p>
+      <p class="font-medium">{{ auth.isSntSuper() ? 'No company admins yet' : 'No users found' }}</p>
+      <p class="text-sm mt-1">{{ auth.isSntSuper() ? 'Add a company admin to get started' : 'Create your first user to get started' }}</p>
     </div>
 
     <!-- Users Table -->

@@ -155,7 +155,7 @@ test('the default roles are offered when creating a user', async ({ page }) => {
 
 test('a company admin sees just Users and Roles in the admin tabs', async ({ page }) => {
   await openRoles(page);
-  await expect(page.getByRole('link', { name: 'Users' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Users', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Roles & Permissions' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Companies' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Sync Pages' })).toHaveCount(0);
