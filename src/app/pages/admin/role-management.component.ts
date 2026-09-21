@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { AdminService } from './admin.service';
 import { ToastService } from '../../core/services/toast.service';
-import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-role-management',
@@ -21,7 +20,6 @@ export class RoleManagementComponent implements OnInit {
   showCreateModal = false;
   showPagesModal = false;
   selectedRole: any = null;
-  seeding = false;
 
   createForm = { role_name: '' };
   selectedPermIds: Set<number> = new Set();
@@ -35,8 +33,7 @@ export class RoleManagementComponent implements OnInit {
   constructor(
     private adminService: AdminService,
     private toastService: ToastService,
-    private cdr: ChangeDetectorRef,
-    public auth: AuthService
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -46,13 +43,12 @@ export class RoleManagementComponent implements OnInit {
 
   /* The roles model: S&T creates the company and its admin and sets what it
      can use (Manage Access); the company starts with its own copy of the
-     default roles, and its admin manages every one of them. So for S&T this
-     page is read-only. */
-  get canManage(): boolean { return !this.auth.isSntSuper(); }
+     default roles, and its admin manages every one of them. Only a company
+     admin reaches this page (companyRolesGuard). */
 
   /** Any company role can be copied; Company Admin's access is Manage Access, not pages. */
   canCopy(role: any): boolean {
-    return this.canManage && role.role_name !== 'COMPANY_ADMIN' && role.role_name !== 'SNT_SUPER';
+    return !role.is_system;
   }
 
   isCompanyAdminRole(role: any): boolean { return role.is_system && role.role_name === 'COMPANY_ADMIN'; }
@@ -82,23 +78,6 @@ export class RoleManagementComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: () => this.toastService.error('Failed to load permissions')
-    });
-  }
-
-  seedPages() {
-    this.seeding = true;
-    this.cdr.detectChanges();
-    this.adminService.seedPagePermissions().subscribe({
-      next: () => {
-        this.toastService.success('Page permissions seeded successfully');
-        this.seeding = false;
-        this.loadPermissions();
-      },
-      error: () => {
-        this.toastService.error('Failed to seed page permissions');
-        this.seeding = false;
-        this.cdr.detectChanges();
-      }
     });
   }
 

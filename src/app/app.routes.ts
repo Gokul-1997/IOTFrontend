@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
 import { sntSuperGuard } from './core/guards/snt-super.guard';
-import { companyAdminGuard } from './core/guards/company-admin.guard';
+import { companyAdminGuard, companyRolesGuard } from './core/guards/company-admin.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 
 export const routes: Routes = [
@@ -87,7 +87,7 @@ export const routes: Routes = [
           { path: 'companies', canActivate: [sntSuperGuard], loadComponent: () => import('./pages/admin/company-management.component').then(m => m.CompanyManagementComponent) },
           { path: 'plans', canActivate: [sntSuperGuard], loadComponent: () => import('./pages/admin/plan-management.component').then(m => m.PlanManagementComponent) },
           { path: 'users', canActivate: [companyAdminGuard], loadComponent: () => import('./pages/admin/user-management.component').then(m => m.UserManagementComponent) },
-          { path: 'roles', canActivate: [companyAdminGuard], loadComponent: () => import('./pages/admin/role-management.component').then(m => m.RoleManagementComponent) },
+          { path: 'roles', canActivate: [companyRolesGuard], loadComponent: () => import('./pages/admin/role-management.component').then(m => m.RoleManagementComponent) },
           { path: '', redirectTo: 'users', pathMatch: 'full' }
         ]
       },

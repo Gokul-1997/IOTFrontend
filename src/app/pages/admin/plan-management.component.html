@@ -14,7 +14,7 @@
        class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
       Users
     </a>
-    <a routerLink="/admin/roles" routerLinkActive="bg-blue-600 text-white"
+    <a *ngIf="!auth.isSntSuper()" routerLink="/admin/roles" routerLinkActive="bg-blue-600 text-white"
        class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
       Roles &amp; Permissions
     </a>

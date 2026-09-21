@@ -9,7 +9,9 @@ import { test, expect } from './fixtures/auth';
  *     dropdown that was never populated (loadCompanies() existed, was
  *     never called) — an SNT_SUPER could not create a user for any company
  *   - the Roles & Permissions screen was hidden from SNT_SUPER entirely,
- *     although every backend route already supported them
+ *     although every backend route already supported them. (Since reversed
+ *     on purpose: each company now owns and manages its roles, and the page
+ *     had nothing left for S&T — see the test below.)
  * Both are asserted against directly below, not just implied by a fix.
  */
 
@@ -157,46 +159,30 @@ test('Users: S&T creates a company admin, with the Company Admin role', async ({
   expect(posted[0].company_id).toBe(4);
 });
 
-test('Roles & Permissions: reachable by SNT_SUPER, shows every company\'s roles, read-only', async ({ sntSuperPage: page }) => {
+/* Each company owns its roles and its admin manages them; S&T creates the
+   company and its admin and sets Manage Access. The Roles page had nothing
+   left for S&T, so it is not offered — and the URL sends S&T home. */
+test('Roles & Permissions is not on the S&T side — no tab, and the URL goes to Companies', async ({ sntSuperPage: page }) => {
   await mockAdminApi(page);
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/admin/companies');
+  await expect(page.getByRole('link', { name: 'Companies' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Roles & Permissions' })).toHaveCount(0);
 
-  // the bug: this tab used to not exist for SNT_SUPER at all
-  const rolesTab = page.getByRole('link', { name: 'Roles & Permissions' });
-  await expect(rolesTab).toBeVisible();
-  await rolesTab.click();
-  await expect(page).toHaveURL(/\/admin\/roles$/);
-
-  // roles from two different companies, both visible — the cross-company view
-  await expect(page.getByText('SETTER')).toBeVisible();
-  await expect(page.getByText('QC_LEAD')).toBeVisible();
-  await expect(page.getByText('S AND T')).toBeVisible();
-  await expect(page.getByText('Precision Auto Components')).toBeVisible();
-
-  /* The AWS model: S&T reads every company's roles for support, but each
-     company's admin manages them. No create, edit, copy or delete here. */
-  await expect(page.getByRole('button', { name: '+ Create Role' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Edit Permissions' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Copy' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Delete' })).toHaveCount(0);
-  await expect(page.getByText('View only').first()).toBeVisible();
-  // catalogue upkeep is still S&T's
-  await expect(page.getByRole('button', { name: 'Sync Pages' })).toBeVisible();
-
-  await page.screenshot({ path: 'mexa-admin-roles.png', fullPage: true });
+  await page.goto('/admin/roles');
+  await expect(page).toHaveURL(/\/admin\/companies$/);
 });
 
-test('all four admin tabs are present and consistent across every admin page', async ({ sntSuperPage: page }) => {
+test('S&T\'s three admin tabs are present and consistent across every S&T admin page', async ({ sntSuperPage: page }) => {
   await mockAdminApi(page);
   await page.setViewportSize({ width: 1500, height: 1100 });
 
-  for (const path of ['/admin/companies', '/admin/plans', '/admin/users', '/admin/roles']) {
+  for (const path of ['/admin/companies', '/admin/plans', '/admin/users']) {
     await page.goto(path);
     await expect(page.getByRole('link', { name: 'Companies' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Plans' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Users' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Roles & Permissions' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Roles & Permissions' })).toHaveCount(0);
     // no leftover dead nav items
     await expect(page.getByRole('link', { name: 'Users' })).toHaveCount(1);
   }

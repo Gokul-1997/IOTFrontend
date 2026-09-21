@@ -1,20 +1,8 @@
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
 
-  <!-- Admin Tab Navigation.
-       This page's own tab bar had drifted from the other three: it was
-       missing Plans entirely, gated Users to company admins only (every
-       other page shows Users unconditionally), and never marked itself
-       active for a super admin — arriving here from another tab, an
-       SNT_SUPER user saw no indication of which page they were on. -->
+  <!-- Admin tabs. Only a company admin reaches this page (companyRolesGuard),
+       so only their two tabs are shown. -->
   <div class="flex gap-1 mb-6 bg-white dark:bg-gray-800 rounded-xl shadow p-1 w-fit">
-    <a *ngIf="auth.isSntSuper()" routerLink="/admin/companies" routerLinkActive="bg-blue-600 text-white"
-       class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-      Companies
-    </a>
-    <a *ngIf="auth.isSntSuper()" routerLink="/admin/plans" routerLinkActive="bg-blue-600 text-white"
-       class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-      Plans
-    </a>
     <a routerLink="/admin/users" routerLinkActive="bg-blue-600 text-white"
        class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
       Users
@@ -32,24 +20,14 @@
     <div class="flex justify-between items-center mb-4">
       <div>
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Roles & Permissions</h1>
-        <p class="text-sm text-gray-500 mt-1" *ngIf="canManage">
+        <p class="text-sm text-gray-500 mt-1">
           Your company started with five default roles. Change them to fit how you work, copy one, or create a new role.
         </p>
-        <p class="text-sm text-gray-500 mt-1" *ngIf="!canManage">
-          View only. Each company's admin manages its own roles.
-        </p>
       </div>
-      <div class="flex gap-2">
-        <!-- Sync Pages is catalogue upkeep, S&T's job; the route is S&T-only -->
-        <button *ngIf="!canManage" (click)="seedPages()" [disabled]="seeding"
-          class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 text-sm font-medium">
-          {{ seeding ? 'Syncing...' : 'Sync Pages' }}
-        </button>
-        <button *ngIf="canManage" (click)="openCreateModal()"
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
-          + Create Role
-        </button>
-      </div>
+      <button (click)="openCreateModal()"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+        + Create Role
+      </button>
     </div>
 
     <!-- Info Banner -->
@@ -58,14 +36,10 @@
         <svg class="w-4 h-4 text-blue-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
-        <p class="text-sm text-blue-700 dark:text-blue-300" *ngIf="canManage">
+        <p class="text-sm text-blue-700 dark:text-blue-300">
           <strong>How it works:</strong> S&amp;T decides which pages your company can use. Every role here is yours:
           use <strong>Edit Permissions</strong> to add or remove pages, <strong>Copy</strong> to make a variation.
           A role can only ever include pages your company has access to.
-        </p>
-        <p class="text-sm text-blue-700 dark:text-blue-300" *ngIf="!canManage">
-          <strong>How it works:</strong> You create the company and its admin, and set which pages it can use
-          (Companies → Manage Access). Each company starts with the five default roles, and its admin manages them.
         </p>
       </div>
     </div>
@@ -100,28 +74,17 @@
             <td class="px-4 py-3">
               <div class="flex items-center gap-2">
                 <span class="font-semibold text-gray-800 dark:text-white">{{ role.role_name }}</span>
-                <span *ngIf="role.role_name === 'SNT_SUPER'"
-                  class="px-2 py-0.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-xs rounded-full font-medium">
-                  S&amp;T Super
-                </span>
                 <span *ngIf="isCompanyAdminRole(role)"
                   class="px-2 py-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-xs rounded-full font-medium">
                   Admin
                 </span>
-                <span *ngIf="role.company_name"
-                  class="px-2 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs rounded-full font-medium">
-                  {{ role.company_name }}
-                </span>
               </div>
             </td>
             <td class="px-4 py-3">
-              <span *ngIf="role.role_name === 'SNT_SUPER'" class="text-sm text-red-600 dark:text-red-400 font-medium">
-                All pages (full access)
-              </span>
               <span *ngIf="isCompanyAdminRole(role)" class="text-sm text-gray-600 dark:text-gray-300 font-medium">
                 Everything the company has access to
               </span>
-              <div *ngIf="role.role_name !== 'SNT_SUPER' && !isCompanyAdminRole(role)">
+              <div *ngIf="!isCompanyAdminRole(role)">
                 <span *ngIf="getPageCount(role) === 0" class="text-sm text-red-400 italic">No access assigned</span>
                 <div *ngIf="getPageCount(role) > 0" class="flex items-center gap-2">
                   <span class="text-xs font-semibold px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full">
@@ -135,9 +98,9 @@
               </div>
             </td>
             <td class="px-4 py-3 text-center">
-              <!-- S&T: read-only. Company Admin: set by Manage Access. Every
-                   other role, the five defaults included, is the company's own. -->
-              <div *ngIf="canManage" class="flex items-center justify-center gap-2">
+              <!-- Company Admin is set by Manage Access. Every other role, the
+                   five defaults included, is the company's own. -->
+              <div class="flex items-center justify-center gap-2">
                 <button *ngIf="!role.is_system"
                   (click)="openPagesModal(role)"
                   class="px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 font-medium whitespace-nowrap">
@@ -156,7 +119,6 @@
                 </button>
                 <span *ngIf="isCompanyAdminRole(role)" class="text-xs text-gray-400">Set by Manage Access</span>
               </div>
-              <span *ngIf="!canManage" class="text-xs text-gray-400">View only</span>
             </td>
           </tr>
         </tbody>
@@ -233,7 +195,7 @@
     <!-- Empty -->
     <div *ngIf="permissionModules.length === 0" class="text-center py-12 text-gray-500 px-6">
       <p>No permissions available.</p>
-      <p class="text-sm mt-1">Click <strong>"Sync Pages"</strong> first, then ensure the company has page access assigned.</p>
+      <p class="text-sm mt-1">Your company has no pages it can give to a role yet. S&amp;T sets these in Manage Access.</p>
     </div>
 
     <!-- Scrollable body -->

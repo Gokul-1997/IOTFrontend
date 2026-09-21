@@ -81,7 +81,4 @@ export class AdminService {
     return this.http.get(`${this.baseUrl}/roles/pages/list`);
   }
 
-  seedPagePermissions(): Observable<any> {
-    return this.http.post(`${this.baseUrl}/roles/pages/seed`, {});
-  }
 }
