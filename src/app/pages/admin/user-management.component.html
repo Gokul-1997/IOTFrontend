@@ -28,12 +28,13 @@
       <div>
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">{{ auth.isSntSuper() ? 'Company Admins' : 'User Management' }}</h1>
         <p class="text-sm text-gray-500 mt-1" *ngIf="!auth.isSntSuper()">Create your company's users and give each one a role</p>
-        <!-- S&T sees each company's admin only; the users a company creates are its own -->
-        <p class="text-sm text-gray-500 mt-1" *ngIf="auth.isSntSuper()">Each company's admin. The admin creates and manages the rest of that company's users.</p>
+        <!-- S&T sees one admin per company, the one made with the company.
+             Anyone else, a second full-access admin included, the company adds. -->
+        <p class="text-sm text-gray-500 mt-1" *ngIf="auth.isSntSuper()">One admin per company, created with the company. The admin adds everyone else, including anyone else who needs full access.</p>
       </div>
-      <button (click)="openCreateModal()"
+      <button *ngIf="!auth.isSntSuper()" (click)="openCreateModal()"
         class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
-        {{ auth.isSntSuper() ? '+ Add Company Admin' : '+ Create User' }}
+        + Create User
       </button>
     </div>
 
@@ -49,7 +50,7 @@
           d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
       </svg>
       <p class="font-medium">{{ auth.isSntSuper() ? 'No company admins yet' : 'No users found' }}</p>
-      <p class="text-sm mt-1">{{ auth.isSntSuper() ? 'Add a company admin to get started' : 'Create your first user to get started' }}</p>
+      <p class="text-sm mt-1">{{ auth.isSntSuper() ? "A company's admin is created with the company, on the Companies page." : 'Create your first user to get started' }}</p>
     </div>
 
     <!-- Users Table -->
@@ -81,12 +82,12 @@
               </div>
             </td>
             <td *ngIf="auth.isSntSuper()" class="px-4 py-3">
-              <span *ngIf="user.company_name || companyName(user.company_id)"
+              <span *ngIf="user.company_name"
                     class="px-2 py-0.5 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 text-xs rounded-full font-medium">
-                {{ user.company_name || companyName(user.company_id) }}
+                {{ user.company_name }}
               </span>
               <!-- a user with no company can log in but belongs to no tenant -->
-              <span *ngIf="!user.company_name && !companyName(user.company_id)"
+              <span *ngIf="!user.company_name"
                     class="text-xs text-amber-600 dark:text-amber-400 italic">No company</span>
             </td>
             <td class="px-4 py-3">
@@ -100,7 +101,14 @@
               </div>
             </td>
             <td class="px-4 py-3">
-              <span [class]="user.is_active
+              <!-- A disabled company shuts out everyone in it, whatever their own account says -->
+              <span *ngIf="user.company_active === false"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs rounded-full"
+                    title="Nobody in this company can sign in until it is turned back on, on the Companies page">
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                Company disabled
+              </span>
+              <span *ngIf="user.company_active !== false" [class]="user.is_active
                 ? 'inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs rounded-full'
                 : 'inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs rounded-full'">
                 <span class="w-1.5 h-1.5 rounded-full" [class]="user.is_active ? 'bg-green-500' : 'bg-red-500'"></span>
@@ -119,7 +127,9 @@
                     : 'px-3 py-1.5 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 font-medium'">
                   {{ user.is_active ? 'Disable' : 'Enable' }}
                 </button>
-                <button (click)="deleteUser(user)"
+                <!-- A company's admin goes only with the company: S&T can't add
+                     another, so deleting this one would leave nobody to run it -->
+                <button *ngIf="!auth.isSntSuper()" (click)="deleteUser(user)"
                   class="px-3 py-1.5 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600 font-medium">
                   Delete
                 </button>
@@ -137,9 +147,8 @@
   <div class="ui-dialog">
     <div class="ui-dialog-header">
       <div>
-        <h2 class="ui-dialog-title">{{ auth.isSntSuper() ? 'Add Company Admin' : 'Create New User' }}</h2>
-        <p class="ui-dialog-subtitle" *ngIf="!auth.isSntSuper()">Credentials, role, and the machines they authorise transfers to.</p>
-        <p class="ui-dialog-subtitle" *ngIf="auth.isSntSuper()">This person creates the rest of the company's users.</p>
+        <h2 class="ui-dialog-title">Create New User</h2>
+        <p class="ui-dialog-subtitle">Credentials, role, and the machines they authorise transfers to.</p>
       </div>
       <button (click)="closeCreateModal()" class="ui-close" aria-label="Close">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -148,24 +157,6 @@
       </button>
     </div>
     <div class="ui-dialog-body space-y-4">
-
-      <!--
-        A super admin has no company of their own, so the API requires one
-        here ("Company is required when creating a user"). A company admin
-        never sees this: their own company is used.
-      -->
-      <div *ngIf="auth.isSntSuper()">
-        <label class="ui-label" for="createFormCompany">
-          Company<span class="ui-req" aria-hidden="true">*</span>
-        </label>
-        <select id="createFormCompany" class="ui-input"
-                [(ngModel)]="createForm.company_id"
-                (ngModelChange)="onCreateCompanyChange()">
-          <option [ngValue]="null">Select a company</option>
-          <option *ngFor="let c of companies" [ngValue]="c.id">{{ c.company_name }}</option>
-        </select>
-        <p class="ui-hint">The user signs in to this company's data only.</p>
-      </div>
 
       <div>
         <label class="ui-label">Username<span class="ui-req" aria-hidden="true">*</span></label>
@@ -185,11 +176,7 @@
           class="ui-input"
           placeholder="Minimum 8 characters">
       </div>
-      <div *ngIf="auth.isSntSuper()">
-        <span class="ui-label">Role</span>
-        <p class="ui-input bg-gray-50 dark:bg-gray-700/50" aria-live="polite">Company Admin</p>
-      </div>
-      <div *ngIf="!auth.isSntSuper()">
+      <div>
         <label class="ui-label" for="createFormRole">
           Role<span class="ui-req" aria-hidden="true">*</span>
         </label>
@@ -245,8 +232,9 @@
   <div class="ui-dialog">
     <div class="ui-dialog-header">
       <div>
-        <h2 class="ui-dialog-title">Edit User</h2>
-        <p class="ui-dialog-subtitle">Change credentials, roles or supervised machines.</p>
+        <h2 class="ui-dialog-title">{{ auth.isSntSuper() ? 'Edit Company Admin' : 'Edit User' }}</h2>
+        <p class="ui-dialog-subtitle" *ngIf="!auth.isSntSuper()">Change credentials, roles or supervised machines.</p>
+        <p class="ui-dialog-subtitle" *ngIf="auth.isSntSuper()">Change the admin's name, email, password or status. To hand the account to someone else, change all three.</p>
       </div>
       <button (click)="closeEditModal()" class="ui-close" aria-label="Close">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -256,14 +244,12 @@
     </div>
     <div class="ui-dialog-body space-y-4">
 
-      <!-- Moving a user between companies is a super-admin action; the API
-           only applies company_id when the caller is SNT_SUPER. -->
+      <!-- A company's admin stays with the company they were created with;
+           the API refuses a change of company. -->
       <div *ngIf="auth.isSntSuper()">
-        <label class="ui-label" for="editFormCompany">Company</label>
-        <select id="editFormCompany" class="ui-input" [(ngModel)]="editForm.company_id">
-          <option [ngValue]="null">No company</option>
-          <option *ngFor="let c of companies" [ngValue]="c.id">{{ c.company_name }}</option>
-        </select>
+        <span class="ui-label">Company</span>
+        <p class="ui-input bg-gray-50 dark:bg-gray-700/50">{{ selectedUser?.company_name || 'No company' }}</p>
+        <p class="ui-hint">A company admin always stays with their company.</p>
       </div>
 
       <div>
@@ -290,12 +276,11 @@
           Account Active
         </label>
       </div>
-      <!-- S&T sees the role but does not change it: the company admin gives
-           its users their roles. -->
+      <!-- S&T sees the role but does not change it: it comes with the company -->
       <div *ngIf="auth.isSntSuper()">
         <span class="ui-label">Role</span>
         <p class="ui-input bg-gray-50 dark:bg-gray-700/50">{{ roleNames(selectedUser) }}</p>
-        <p class="ui-hint">Set by this company's admin.</p>
+        <p class="ui-hint">Set when the company was created.</p>
       </div>
       <div *ngIf="!auth.isSntSuper()">
         <label class="ui-label" for="editFormRole">
@@ -319,7 +304,7 @@
         transfer. Showing this list for, say, a Viewer only invites the
         question "why does a viewer need machines?".
       -->
-      <div *ngIf="roleNeedsMachines('Edit')">
+      <div *ngIf="!auth.isSntSuper() && roleNeedsMachines('Edit')">
         <label class="ui-label">Machines this user supervises</label>
         <p class="ui-hint !mt-0 mb-2">
           Sending a program to one of these machines will need this user's authorisation code.

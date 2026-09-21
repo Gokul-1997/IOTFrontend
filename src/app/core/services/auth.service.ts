@@ -78,14 +78,28 @@ export class AuthService {
     }
   }
 
-  logout(): void {
+  /** `reason`, when given, is shown on the sign-in page — so someone signed
+   *  out by the server (their company was turned off) is told why. */
+  logout(reason?: string): void {
     clearTimeout(this.refreshTimer);
     const refreshToken = localStorage.getItem('refreshToken');
     if (refreshToken) {
       this.http.post(`${this.api}/logout`, { refreshToken }).subscribe({ error: () => {} });
     }
     localStorage.clear();
+    if (reason) {
+      try { sessionStorage.setItem('signedOutReason', reason); } catch { /* shown only if storage works */ }
+    }
     this.router.navigate(['/login']);
+  }
+
+  /** The reason set by logout(), read once. */
+  takeSignedOutReason(): string {
+    try {
+      const reason = sessionStorage.getItem('signedOutReason') || '';
+      sessionStorage.removeItem('signedOutReason');
+      return reason;
+    } catch { return ''; }
   }
 
   scheduleRefresh(token: string): void {

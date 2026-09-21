@@ -17,7 +17,6 @@ import { MachinesService } from '../machines/machines.service';
 export class UserManagementComponent implements OnInit {
   users: any[] = [];
   roles: any[] = [];
-  companies: any[] = [];
   /** Every machine in the company — the pool a user can be made supervisor of. */
   machines: any[] = [];
   loading = false;
@@ -29,7 +28,6 @@ export class UserManagementComponent implements OnInit {
     username: '',
     email: '',
     password: '',
-    company_id: null as number | null,
     role_ids: [] as number[],
     supervised_machine_ids: [] as number[]
   };
@@ -39,7 +37,6 @@ export class UserManagementComponent implements OnInit {
     email: '',
     password: '',
     is_active: true,
-    company_id: null as number | null,
     role_ids: [] as number[],
     supervised_machine_ids: [] as number[]
   };
@@ -55,13 +52,11 @@ export class UserManagementComponent implements OnInit {
 
   ngOnInit() {
     this.loadUsers();
+    /* S&T only edits each company's admin — name, email, password, active —
+       so it needs neither the company's roles nor its machines. */
+    if (this.auth.isSntSuper()) return;
     this.loadRoles();
     this.loadMachines();
-    /* loadCompanies() existed but was never called — the "Company" field
-       is required for SNT_SUPER to create a user (the API rejects a create
-       with no company_id) and its dropdown was always empty, so SNT_SUPER
-       could not create a user for any company through this screen at all. */
-    if (this.auth.isSntSuper()) this.loadCompanies();
   }
 
   loadMachines() {
@@ -101,47 +96,18 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
-  /** Company name for a user row, when the list endpoint did not include it. */
-  companyName(companyId: number | null): string {
-    if (!companyId) return '';
-    return this.companies.find(c => c.id === companyId)?.company_name || '';
-  }
-
-  /* Machines belong to a company, so the supervised-machine list has to
-     follow the company the user is being created in — otherwise a super
-     admin would tick machines from whichever company loaded first. */
-  onCreateCompanyChange() {
-    this.createForm.supervised_machine_ids = [];
-    this.cdr.detectChanges();
-  }
-
-  loadCompanies() {
-    this.adminService.getCompanies().subscribe({
-      next: res => {
-        this.companies = [...res];
-        this.cdr.detectChanges();
-      },
-      error: () => this.toastService.error('Failed to load companies')
-    });
-  }
-
-  /* The roles model: S&T creates each company's admin, and the company
-     admin creates everyone else. So for S&T the role is always Company
-     Admin, and it is shown rather than chosen. */
-  get companyAdminRoleId(): number | null {
-    return this.roles.find(r => r.is_system && r.role_name === 'COMPANY_ADMIN')?.id ?? null;
-  }
-
   /** The roles on a user row, as text — for S&T, who sees them read-only. */
   roleNames(user: any): string {
     return (user?.roles || []).map((r: any) => r.role_name).join(', ') || 'No role';
   }
 
+  /* Only a company admin creates users. A company's own admin is made with
+     the company, on the Companies page; anyone else — a second full-access
+     admin included — the company admin adds here. */
   openCreateModal() {
-    const fixed = this.auth.isSntSuper() && this.companyAdminRoleId ? [this.companyAdminRoleId] : [];
     this.createForm = {
-      username: '', email: '', password: '', company_id: null,
-      role_ids: fixed, supervised_machine_ids: []
+      username: '', email: '', password: '',
+      role_ids: [], supervised_machine_ids: []
     };
     this.showCreateModal = true;
     this.cdr.detectChanges();
@@ -243,20 +209,6 @@ export class UserManagementComponent implements OnInit {
       return;
     }
 
-    /* Caught here rather than by the API, which answers "Company is
-       required when creating a user" only after the form has been filled
-       in and submitted. */
-    if (this.auth.isSntSuper() && !this.createForm.company_id) {
-      this.toastService.error('Select the company this user belongs to');
-      return;
-    }
-    if (this.auth.isSntSuper()) {
-      if (!this.companyAdminRoleId) {
-        this.toastService.error('Roles are still loading. Try again in a moment.');
-        return;
-      }
-      this.createForm.role_ids = [this.companyAdminRoleId];
-    }
     // the API refuses a user with no role; say so before submitting
     if (!this.createForm.role_ids.length) {
       this.toastService.error('Choose a role for this user');
@@ -291,12 +243,14 @@ export class UserManagementComponent implements OnInit {
       email: user.email,
       password: '',
       is_active: user.is_active,
-      company_id: user.company_id || null,
       role_ids: user.roles?.map((r: any) => r.id) || [],
       supervised_machine_ids: []
     };
     this.showEditModal = true;
     this.cdr.detectChanges();
+
+    // S&T edits no machines, so it has nothing to fetch
+    if (this.auth.isSntSuper()) return;
 
     // The list endpoint doesn't carry supervised machines, so tick the
     // boxes once the detail arrives rather than holding the modal shut.
@@ -333,9 +287,13 @@ export class UserManagementComponent implements OnInit {
     const updateData: any = {
       username: this.editForm.username,
       email: this.editForm.email,
-      is_active: this.editForm.is_active,
-      supervised_machine_ids: this.editForm.supervised_machine_ids
+      is_active: this.editForm.is_active
     };
+    /* S&T changes an admin's own details only — never the company, and no
+       machines: the API refuses anything else from S&T. */
+    if (!this.auth.isSntSuper()) {
+      updateData.supervised_machine_ids = this.editForm.supervised_machine_ids;
+    }
     if (this.editForm.password.trim()) {
       updateData.password = this.editForm.password;
     }
@@ -416,10 +374,5 @@ export class UserManagementComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
-  }
-
-  getCompanyName(companyId: number): string {
-    const c = this.companies.find(co => co.id === companyId);
-    return c ? c.company_name : '—';
   }
 }

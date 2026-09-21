@@ -106,69 +106,66 @@ test('Plans: the plan catalogue lists both plans with their limits', async ({ sn
   await page.screenshot({ path: 'mexa-admin-plans.png', fullPage: true });
 });
 
-test('Users: the company dropdown is populated — regression for the empty-dropdown bug', async ({ sntSuperPage: page }) => {
-  await mockAdminApi(page);
-  await page.setViewportSize({ width: 1500, height: 1100 });
-  await page.goto('/admin/users');
-  await expect(page.getByText('admin1', { exact: true })).toBeVisible();
-
-  // S&T adds a company's admin; the admin creates everyone else
-  await page.getByRole('button', { name: '+ Add Company Admin' }).click();
-  const companySelect = page.locator('#createFormCompany');
-  await expect(companySelect).toBeVisible();
-
-  // the bug: this dropdown held nothing but "Select a company"
-  const optionCount = await companySelect.locator('option').count();
-  expect(optionCount, 'company dropdown must list real companies, not just the placeholder').toBeGreaterThan(1);
-  await expect(companySelect.locator('option', { hasText: 'S AND T' })).toHaveCount(1);
-  await expect(companySelect.locator('option', { hasText: 'Precision Auto Components' })).toHaveCount(1);
-
-  // the role is fixed and shown, not chosen
-  await expect(page.locator('#createFormRole')).toHaveCount(0);
-  await expect(page.locator('.ui-dialog').getByText('Company Admin', { exact: true })).toBeVisible();
-
-  await page.screenshot({ path: 'mexa-admin-users-create.png', fullPage: true });
-});
-
-/* The AWS model: S&T sets up a company's admin; the company admin gives out
-   every other role. So S&T's request carries COMPANY_ADMIN, whatever else
-   the form held. */
-/* S&T sees each company's admin only. The API decides that (user.service
-   limits S&T to users holding the shared Company Admin role); the page says
-   what the list is. */
-test('Company Admins: S&T\'s users page is titled for what it lists', async ({ sntSuperPage: page }) => {
+/* One admin per company, made with the company on the Companies page. The
+   company admin adds everyone else — a second full-access admin included —
+   so S&T's page lists each company's admin and adds or deletes no one. */
+test('Company Admins: one per company — no Add, no Delete', async ({ sntSuperPage: page }) => {
   await mockAdminApi(page);
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/admin/users');
   await expect(page.getByRole('heading', { name: 'Company Admins' })).toBeVisible();
-  await expect(page.getByText(/The admin creates and manages the rest of that company's users/)).toBeVisible();
-  await expect(page.getByRole('button', { name: '+ Add Company Admin' })).toBeVisible();
+  await expect(page.getByText(/One admin per company, created with the company/)).toBeVisible();
+  await expect(page.getByText('admin1', { exact: true })).toBeVisible();
+
+  await expect(page.getByRole('button', { name: /Add Company Admin|Create User/ })).toHaveCount(0);
+  const row = page.getByRole('row', { name: /admin1/ });
+  await expect(row.getByRole('button', { name: 'Edit' })).toBeVisible();
+  await expect(row.getByRole('button', { name: 'Disable' })).toBeVisible();
+  await expect(row.getByRole('button', { name: 'Delete' })).toHaveCount(0);
+  await page.screenshot({ path: 'mexa-admin-company-admins.png', fullPage: true });
 });
 
-test('Users: S&T creates a company admin, with the Company Admin role', async ({ sntSuperPage: page }) => {
+test('Company Admins: editing changes the admin\'s own details — never the company', async ({ sntSuperPage: page }) => {
   await mockAdminApi(page);
-  const posted: any[] = [];
-  await page.route('**/api/users', (r: any) => {
-    if (r.request().method() === 'POST') {
-      posted.push(JSON.parse(r.request().postData() || '{}'));
-      return r.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 50 }) });
+  const puts: any[] = [];
+  await page.route('**/api/users/1', (r: any) => {
+    if (r.request().method() === 'PUT') {
+      puts.push(JSON.parse(r.request().postData() || '{}'));
+      return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 1 }) });
     }
-    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(users) });
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(users[0]) });
   });
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/admin/users');
-  await page.getByRole('button', { name: '+ Add Company Admin' }).click();
+  await page.getByRole('row', { name: /admin1/ }).getByRole('button', { name: 'Edit' }).click();
 
-  await page.locator('#createFormCompany').selectOption({ label: 'S AND T' });
   const dialog = page.locator('.ui-dialog');
-  await dialog.getByPlaceholder('e.g., john_doe').fill('newadmin');
-  await dialog.getByPlaceholder('user@company.com').fill('newadmin@sandt.com');
-  await dialog.getByPlaceholder('Minimum 8 characters').fill('Passw0rd!');
-  await dialog.getByRole('button', { name: 'Create User' }).click();
+  await expect(dialog.getByRole('heading', { name: 'Edit Company Admin' })).toBeVisible();
+  // the company is shown, not chosen
+  await expect(dialog.locator('select')).toHaveCount(0);
+  await expect(dialog.getByText('S AND T', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('A company admin always stays with their company.')).toBeVisible();
+  // and no machines to tick
+  await expect(dialog.getByText('Machines this user supervises')).toHaveCount(0);
+  await page.screenshot({ path: 'mexa-admin-company-admin-edit.png', fullPage: true });
 
-  await expect.poll(() => posted.length).toBe(1);
-  expect(posted[0].role_ids).toEqual([1]);          // COMPANY_ADMIN's id in the fixture
-  expect(posted[0].company_id).toBe(4);
+  await dialog.locator('input[type=email]').fill('new-admin@sandt.com');
+  await dialog.getByRole('button', { name: 'Save Changes' }).click();
+
+  await expect.poll(() => puts.length).toBe(1);
+  expect(Object.keys(puts[0]).sort()).toEqual(['email', 'is_active', 'username']);
+  expect(puts[0].email).toBe('new-admin@sandt.com');
+});
+
+test('Company Admins: a disabled company\'s admin reads "Company disabled"', async ({ sntSuperPage: page }) => {
+  await mockAdminApi(page);
+  await page.route('**/api/users', (r: any) => r.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify([{ ...users[0], company_active: false }]) }));
+  await page.setViewportSize({ width: 1500, height: 1100 });
+  await page.goto('/admin/users');
+  const row = page.getByRole('row', { name: /admin1/ });
+  await expect(row.getByText('Company disabled')).toBeVisible();
+  await expect(row.getByText('Active', { exact: true })).toHaveCount(0);
 });
 
 /* Each company owns its roles and its admin manages them; S&T creates the

@@ -454,18 +454,18 @@ export class CompanyManagementComponent implements OnInit {
 
   // ── Deactivate ─────────────────────────────────
   deactivateCompany(company: any) {
-    if (!confirm(`Deactivate "${company.company_name}"? This will disable all users.`)) return;
+    if (!confirm(`Deactivate "${company.company_name}"?\n\nEveryone in this company — its admin and every user it created — is signed out now and can't sign in until you activate it again. Alarm emails stop too.\n\nNothing is deleted.`)) return;
     this.loading = true;
     this.cdr.detectChanges();
     this.companyService.deleteCompany(company.id).subscribe({
-      next: () => { this.toast.success('Company deactivated'); this.loadCompanies(); },
+      next: () => { this.toast.success(`${company.company_name} deactivated — everyone in it is signed out`); this.loadCompanies(); },
       error: () => { this.toast.error('Failed to deactivate company'); this.loading = false; this.cdr.detectChanges(); }
     });
   }
 
   // ── Activate ───────────────────────────────────
   activateCompany(company: any) {
-    if (!confirm(`Activate "${company.company_name}"? This will re-enable the company and its users.`)) return;
+    if (!confirm(`Activate "${company.company_name}"?\n\nEveryone who could sign in before it was deactivated can sign in again.`)) return;
     this.loading = true;
     this.cdr.detectChanges();
     this.companyService.updateCompany(company.id, { is_active: true }).subscribe({

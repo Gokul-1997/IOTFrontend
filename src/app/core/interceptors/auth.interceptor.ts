@@ -61,7 +61,9 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
           catchError((refreshErr) => {
             isRefreshing = false;
             refreshTokenSubject.next(null); // unblock any queued requests so they can fail
-            authService.logout();
+            // S&T turned the company off: say so on the sign-in page
+            const companyOff = refreshErr?.error?.code === 'COMPANY_DISABLED';
+            authService.logout(companyOff ? refreshErr.error.message : undefined);
             return throwError(() => refreshErr);
           })
         );

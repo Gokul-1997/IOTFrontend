@@ -90,6 +90,9 @@ export class LoginComponent
         this.startCarousel();
         this.isDark =
             document.documentElement.classList.contains('dark');
+
+        // why the last session ended, when the server ended it
+        this.error = this.auth.takeSignedOutReason();
     }
 
     ////////////////////////////////////////////
@@ -259,6 +262,8 @@ export class LoginComponent
             case 401:
                 return err.error?.message || 'Invalid email or password.';
             case 403:
+                // the company is turned off, not this one account: say which
+                if (err.error?.code === 'COMPANY_DISABLED') return err.error.message;
                 return 'Your account has been deactivated. Please contact support.';
             case 429:
                 return 'Too many login attempts. Please wait a moment and try again.';
