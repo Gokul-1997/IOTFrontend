@@ -44,12 +44,13 @@ export class RoleManagementComponent implements OnInit {
     this.loadPermissions();
   }
 
-  /* The roles model: S&T sets what a company can use (Manage Access) and
-     does not manage its roles, so for S&T this page is read-only. The
-     company admin copies defaults and manages the company's own roles. */
+  /* The roles model: S&T creates the company and its admin and sets what it
+     can use (Manage Access); the company starts with its own copy of the
+     default roles, and its admin manages every one of them. So for S&T this
+     page is read-only. */
   get canManage(): boolean { return !this.auth.isSntSuper(); }
 
-  /** Default roles can be copied; Company Admin's access is Manage Access, not pages. */
+  /** Any company role can be copied; Company Admin's access is Manage Access, not pages. */
   canCopy(role: any): boolean {
     return this.canManage && role.role_name !== 'COMPANY_ADMIN' && role.role_name !== 'SNT_SUPER';
   }

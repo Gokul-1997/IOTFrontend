@@ -3,29 +3,25 @@ import { test, expect, seedAuth } from './fixtures/auth';
 /*
  * The Roles page, as a company admin sees it.
  *
- * The bug this covers: role.service.list filtered on company_id alone, and
- * every system role carries company_id NULL — so the five default roles
- * (Supervisor, Maintenance, Quality, Setter, HR) were invisible, and a
- * company admin had nothing to assign a new user to.
+ * The flow the customer asked for: each company starts with its OWN copy of
+ * the five default roles (created with the company), and its admin manages
+ * them completely — adds or removes pages, copies, deletes. S&T takes no
+ * action on roles. Company Admin is the one shared role, and its access is
+ * Manage Access rather than a page list.
  *
- * The other half is what must NOT be offered: SNT_SUPER is never listed to a
- * company, and a default role cannot be edited here — it is defined in the
- * backend and re-applied on every restart, so an edit would be undone.
+ * What must NOT be offered: SNT_SUPER is never listed to a company.
  */
 
 const DEFAULTS = ['SUPERVISOR', 'MAINTENANCE', 'QUALITY', 'SETTER', 'HR'];
 
-const systemRole = (id: number, role_name: string, keys = 4) => ({
-  id, role_name, is_system: true, company_id: null,
-  description: `${role_name} default`,
-  permissions: Array.from({ length: keys }, (_, i) => ({
-    id: id * 100 + i, permission_key: `page:thing-${i}:view`, description: 'View' }))
-});
+const withPages = (keys: number, base: number) => Array.from({ length: keys }, (_, i) => ({
+  id: base * 100 + i, permission_key: `page:thing-${i}:view`, description: 'View' }));
 
-// what the API returns to a company admin: system roles + their own, no SNT_SUPER
+// what the API returns to a company admin: Company Admin, plus the company's own roles
 const roles = [
-  systemRole(7, 'COMPANY_ADMIN', 25),
-  ...DEFAULTS.map((n, i) => systemRole(51 + i, n, 6 + i)),
+  { id: 7, role_name: 'COMPANY_ADMIN', is_system: true, company_id: null, description: 'admin', permissions: withPages(5, 7) },
+  ...DEFAULTS.map((n, i) => ({ id: 51 + i, role_name: n, is_system: false, company_id: 4,
+                               description: `${n} default`, permissions: withPages(6 + i, 51 + i) })),
   { id: 80, role_name: 'LINE_LEAD', is_system: false, company_id: 4,
     description: 'ours', permissions: [{ id: 1, permission_key: 'page:machines:view' }] }
 ];
@@ -58,14 +54,26 @@ test('SNT_SUPER is not offered to a company', async ({ page }) => {
   await expect(page.getByText('SNT_SUPER', { exact: true })).toHaveCount(0);
 });
 
-/* The AWS model: default roles are the same everywhere and locked. The
-   company admin's way to change one is to copy it. */
-test('a default role offers Copy — not Edit or Delete', async ({ page }) => {
+/* The company's default roles are its own: the admin changes them directly. */
+test('a default role is fully editable — it is the company\'s own', async ({ page }) => {
   await openRoles(page);
   const row = page.locator('tr', { hasText: 'MAINTENANCE' });
-  await expect(row.getByRole('button', { name: 'Copy' })).toBeVisible();
-  await expect(row.getByRole('button', { name: 'Edit Permissions' })).toHaveCount(0);
-  await expect(row.getByRole('button', { name: 'Delete' })).toHaveCount(0);
+  await expect(row.getByRole('button', { name: 'Edit Permissions' })).toBeEnabled();
+  await expect(row.getByRole('button', { name: 'Copy' })).toBeEnabled();
+  await expect(row.getByRole('button', { name: 'Delete' })).toBeEnabled();
+});
+
+test('changing a default role saves to that company role', async ({ page }) => {
+  await openRoles(page);
+  const sent: any[] = [];
+  await page.route('**/api/roles/52/permissions', (r: any) => {
+    sent.push(JSON.parse(r.request().postData() || '{}'));
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ pages: 7 }) });
+  });
+  await page.locator('tr', { hasText: 'MAINTENANCE' }).getByRole('button', { name: 'Edit Permissions' }).click();
+  await page.getByRole('button', { name: 'Save Permissions' }).click();
+  await expect.poll(() => sent.length).toBe(1);
+  expect(sent[0].permission_ids).toHaveLength(7);
 });
 
 test('Company Admin cannot be copied — its access is Manage Access', async ({ page }) => {

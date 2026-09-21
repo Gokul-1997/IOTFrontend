@@ -33,7 +33,7 @@
       <div>
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Roles & Permissions</h1>
         <p class="text-sm text-gray-500 mt-1" *ngIf="canManage">
-          Default roles are the same in every company. Copy one to make your own version, or create a role from scratch.
+          Your company started with five default roles. Change them to fit how you work, copy one, or create a new role.
         </p>
         <p class="text-sm text-gray-500 mt-1" *ngIf="!canManage">
           View only. Each company's admin manages its own roles.
@@ -59,13 +59,13 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
         <p class="text-sm text-blue-700 dark:text-blue-300" *ngIf="canManage">
-          <strong>How it works:</strong> S&amp;T decides which pages your company can use.
-          Pick a <strong>default role</strong> for a user, or <strong>Copy</strong> one and change it.
-          A role can only ever open pages your company has access to.
+          <strong>How it works:</strong> S&amp;T decides which pages your company can use. Every role here is yours:
+          use <strong>Edit Permissions</strong> to add or remove pages, <strong>Copy</strong> to make a variation.
+          A role can only ever include pages your company has access to.
         </p>
         <p class="text-sm text-blue-700 dark:text-blue-300" *ngIf="!canManage">
-          <strong>How it works:</strong> You set which pages a company can use (Companies → Manage Access)
-          and create its admin. That admin gives its users a default role, or copies one and changes it.
+          <strong>How it works:</strong> You create the company and its admin, and set which pages it can use
+          (Companies → Manage Access). Each company starts with the five default roles, and its admin manages them.
         </p>
       </div>
     </div>
@@ -104,9 +104,9 @@
                   class="px-2 py-0.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-xs rounded-full font-medium">
                   S&amp;T Super
                 </span>
-                <span *ngIf="role.is_system && role.role_name !== 'SNT_SUPER'"
+                <span *ngIf="isCompanyAdminRole(role)"
                   class="px-2 py-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-xs rounded-full font-medium">
-                  Default
+                  Admin
                 </span>
                 <span *ngIf="role.company_name"
                   class="px-2 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs rounded-full font-medium">
@@ -135,9 +135,8 @@
               </div>
             </td>
             <td class="px-4 py-3 text-center">
-              <!-- S&T: read-only. Default roles: Copy only — they are the same in
-                   every company and re-applied on every restart, so an edit
-                   would be undone. A company's own role: everything. -->
+              <!-- S&T: read-only. Company Admin: set by Manage Access. Every
+                   other role, the five defaults included, is the company's own. -->
               <div *ngIf="canManage" class="flex items-center justify-center gap-2">
                 <button *ngIf="!role.is_system"
                   (click)="openPagesModal(role)"
@@ -146,7 +145,7 @@
                 </button>
                 <button *ngIf="canCopy(role)"
                   (click)="openCopyModal(role)"
-                  [title]="role.is_system ? 'Make your own version of this default role' : 'Make a new role from this one'"
+                  title="Make a new role from this one"
                   class="px-3 py-1.5 bg-white dark:bg-gray-700 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 text-xs rounded-lg hover:bg-blue-50 dark:hover:bg-gray-600 font-medium">
                   Copy
                 </button>
