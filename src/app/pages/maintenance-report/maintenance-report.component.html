@@ -1,0 +1,272 @@
+<!-- Maintenance Report — the exportable ticket record, MEXA design. -->
+
+<p class="mexa-updated" *ngIf="updatedAt">
+  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
+  Last Updated: {{ updatedAt }}
+</p>
+
+<!-- ══════════ TITLE BAR ══════════ -->
+<form class="mexa-titlebar" (ngSubmit)="submit()">
+  <h1 class="mexa-title">Maintenance Report</h1>
+  <span class="mexa-titlebar-spacer"></span>
+
+  <div class="mexa-filters">
+    <label class="mexa-filter-label" for="mrMachine">Machine</label>
+    <select id="mrMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
+      <option [ngValue]="null">All</option>
+      <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+    </select>
+
+    <label class="mexa-filter-label" for="mrType">Type</label>
+    <select id="mrType" class="mexa-select" [(ngModel)]="f.issue_type" name="issue_type">
+      <option value="">All</option>
+      <option *ngFor="let t of ISSUES" [value]="t">{{ words(t) }}</option>
+    </select>
+
+    <label class="mexa-filter-label" for="mrStatus">Status</label>
+    <select id="mrStatus" class="mexa-select" [(ngModel)]="f.status" name="status">
+      <option value="">All</option>
+      <option *ngFor="let s of STATUSES" [value]="s">{{ words(s) }}</option>
+    </select>
+
+    <label class="mexa-filter-label" for="mrFrom">Date</label>
+    <input id="mrFrom" type="date" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
+    <span class="mexa-filter-label" aria-hidden="true">–</span>
+    <input id="mrTo" type="date" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
+
+    <button type="submit" class="mexa-submit" [disabled]="loading">
+      {{ loading ? 'Loading…' : 'Submit' }}
+    </button>
+  </div>
+</form>
+
+<!-- ══════════ STATES ══════════ -->
+<p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
+
+<ng-container *ngIf="loading && !data">
+  <app-skeleton kind="kpis" [count]="5" label="Loading maintenance report"></app-skeleton>
+  <div class="mexa-grid lg:grid-cols-2">
+    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
+    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="data">
+
+  <!-- Both caveats are shown, not buried: an average over three tickets is
+       not the claim an average over three hundred is, and a ticket with no
+       minutes entered still counts as a ticket. -->
+  <p *ngIf="data.kpis.downtime_note" class="mexa-note">{{ data.kpis.downtime_note }}</p>
+
+  <!-- ══════════ KPI TILES ══════════ -->
+  <div class="mexa-kpis">
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Total<br>Tickets</span>
+        <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true">
+          <mat-icon>assignment</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ data.kpis.tickets }}</p>
+      <p class="mexa-kpi-sub">{{ data.kpis.breakdowns }} breakdown(s)</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Still<br>Open</span>
+        <span class="mexa-kpi-icon" style="background:#c8384b" aria-hidden="true">
+          <mat-icon>pending_actions</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ data.kpis.open }}</p>
+      <p class="mexa-kpi-sub">{{ data.kpis.critical }} critical</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Resolved /<br>Closed</span>
+        <span class="mexa-kpi-icon" style="background:#2f9e6f" aria-hidden="true">
+          <mat-icon>task_alt</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ data.kpis.settled }}</p>
+      <p class="mexa-kpi-sub">of {{ data.kpis.tickets }} raised</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Mean Time<br>to Repair</span>
+        <span class="mexa-kpi-icon" style="background:#4a76c8" aria-hidden="true">
+          <mat-icon>timer</mat-icon>
+        </span>
+      </div>
+      <!-- a dash, not 0h, when nothing has been resolved -->
+      <p class="mexa-kpi-value">{{ hours(data.kpis.mttr_hours) }}</p>
+      <p class="mexa-kpi-sub">{{ data.kpis.mttr_basis_note }}</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Recorded<br>Downtime</span>
+        <span class="mexa-kpi-icon" style="background:#e0a341" aria-hidden="true">
+          <mat-icon>hourglass_bottom</mat-icon>
+        </span>
+      </div>
+      <p class="mexa-kpi-value">{{ minutes(data.kpis.downtime_minutes) }}</p>
+      <p class="mexa-kpi-sub">entered on tickets</p>
+    </div>
+  </div>
+
+  <!-- ══════════ CHARTS ══════════ -->
+  <div class="mexa-grid lg:grid-cols-2">
+    <section class="mexa-card">
+      <h2 class="mexa-card-title mexa-card-title-left">Tickets Raised vs Resolved</h2>
+      <apx-chart *ngIf="trendSeries.length"
+        [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
+        [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
+        [markers]="trendChart.markers" [legend]="trendChart.legend"
+        [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
+        [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
+      <p *ngIf="!trendSeries.length" class="mexa-empty">No tickets in this period.</p>
+    </section>
+
+    <section class="mexa-card">
+      <h2 class="mexa-card-title mexa-card-title-left">Tickets by Type</h2>
+      <apx-chart *ngIf="typeSeries.length"
+        [series]="typeSeries" [chart]="typeChart.chart" [labels]="typeChart.labels"
+        [colors]="typeChart.colors" [legend]="typeChart.legend"
+        [plotOptions]="typeChart.plotOptions"
+        [dataLabels]="typeChart.dataLabels" [tooltip]="typeChart.tooltip"
+        [noData]="typeChart.noData"></apx-chart>
+      <p *ngIf="!typeSeries.length" class="mexa-empty">No tickets in this period.</p>
+    </section>
+  </div>
+
+  <section class="mexa-card">
+    <div class="mexa-tablebar">
+      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Stopped Time by Machine</h2>
+      <span class="mexa-card-hint" style="margin:0">
+        From the minutes entered on each ticket, not from telemetry.
+      </span>
+    </div>
+    <apx-chart *ngIf="downtimeSeries.length"
+      [series]="downtimeSeries" [chart]="downtimeChart.chart"
+      [plotOptions]="downtimeChart.plotOptions" [colors]="downtimeChart.colors"
+      [dataLabels]="downtimeChart.dataLabels" [xaxis]="downtimeChart.xaxis"
+      [yaxis]="downtimeChart.yaxis" [grid]="downtimeChart.grid"
+      [tooltip]="downtimeChart.tooltip" [noData]="downtimeChart.noData"></apx-chart>
+    <p *ngIf="!downtimeSeries.length" class="mexa-empty">No downtime was recorded on these tickets.</p>
+  </section>
+
+  <!-- ══════════ PER-MACHINE SUMMARY ══════════ -->
+  <section class="mexa-card">
+    <h2 class="mexa-card-title mexa-card-title-left">Machine Summary</h2>
+    <div class="mexa-tablewrap">
+      <table class="mexa-table">
+        <caption class="sr-only">Machines ranked by recorded stopped time, worst first</caption>
+        <thead>
+          <tr>
+            <th scope="col">Machine</th>
+            <th scope="col">Tickets</th>
+            <th scope="col">Breakdowns</th>
+            <th scope="col">Downtime</th>
+            <th scope="col">MTTR</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of data.by_machine">
+            <td class="strong">{{ r.machine_serial_no }}</td>
+            <td class="num">{{ r.tickets }}</td>
+            <td class="num">{{ r.breakdowns }}</td>
+            <td class="num whitespace-nowrap">{{ minutes(r.downtime_minutes) }}</td>
+            <td class="num whitespace-nowrap">{{ hours(r.mttr_hours) }}</td>
+          </tr>
+          <tr *ngIf="!data.by_machine.length">
+            <td colspan="5" class="mexa-empty">No machine has a ticket in this period.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══════════ TICKET DETAIL ══════════ -->
+  <section class="mexa-card">
+    <div class="mexa-tablebar">
+      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Maintenance Tickets</h2>
+      <span class="inline-flex items-center gap-2 flex-wrap">
+        <label class="sr-only" for="mrSearch">Search tickets</label>
+        <input id="mrSearch" type="search" class="mexa-search" placeholder="Search"
+               [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
+        <span *ngIf="canExport" class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
+          <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">
+            {{ exporting === 'xlsx' ? '…' : 'Excel' }}
+          </button>
+          <button type="button" class="mexa-pagebtn" (click)="export('csv')" [disabled]="exporting">
+            {{ exporting === 'csv' ? '…' : 'CSV' }}
+          </button>
+          <button type="button" class="mexa-pagebtn" (click)="export('pdf')" [disabled]="exporting">
+            {{ exporting === 'pdf' ? '…' : 'PDF' }}
+          </button>
+        </span>
+        <button type="button" class="mexa-pagebtn" (click)="reset()">Reset</button>
+      </span>
+    </div>
+
+    <div class="mexa-tablewrap">
+      <table class="mexa-table">
+        <caption class="sr-only">Maintenance tickets, most recently raised first</caption>
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Machine</th>
+            <th scope="col">Title</th>
+            <th scope="col">Type</th>
+            <th scope="col">Priority</th>
+            <th scope="col">Raised</th>
+            <th scope="col">Repair</th>
+            <th scope="col">Downtime</th>
+            <th scope="col">Assigned To</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of data.tickets.data; let i = index">
+            <td class="num">{{ (data.tickets.page - 1) * limit + i + 1 }}</td>
+            <td class="strong">{{ r.machine_serial_no }}</td>
+            <td>{{ r.title }}</td>
+            <td>{{ words(r.issue_type) }}</td>
+            <td>
+              <span class="mexa-badge" [ngClass]="priorityBadge(r.priority)">{{ words(r.priority) }}</span>
+            </td>
+            <td class="whitespace-nowrap">{{ r.created_at | date:'dd MMM, HH:mm' }}</td>
+            <!-- an unresolved ticket has no repair time yet: a dash, not zero -->
+            <td class="num whitespace-nowrap">{{ hours(r.repair_hours) }}</td>
+            <!-- read as hours and minutes, as everywhere else on the page;
+                 a ticket with nothing entered is a dash, not 0m -->
+            <td class="num whitespace-nowrap">
+              {{ r.downtime_minutes === null || r.downtime_minutes === undefined ? '--' : minutes(r.downtime_minutes) }}
+            </td>
+            <td>{{ r.assigned_to_name || 'Unassigned' }}</td>
+            <td>
+              <span class="mexa-badge" [ngClass]="statusBadge(r.status)">{{ words(r.status) }}</span>
+            </td>
+          </tr>
+          <tr *ngIf="!data.tickets.data.length">
+            <td colspan="10" class="mexa-empty">No maintenance tickets match these filters.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mexa-pager" *ngIf="data.tickets.total > 0">
+      <span aria-live="polite">Showing: {{ data.tickets.data.length }} of {{ data.tickets.total }}</span>
+      <span class="inline-flex items-center gap-2">
+        <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
+                [disabled]="data.tickets.page <= 1">‹ Previous</button>
+        <span>{{ data.tickets.page }} / {{ data.tickets.totalPages }}</span>
+        <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
+                [disabled]="data.tickets.page >= data.tickets.totalPages">Next ›</button>
+      </span>
+    </div>
+  </section>
+</ng-container>

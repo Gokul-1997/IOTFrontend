@@ -58,10 +58,6 @@ const maintenance = ok({
       target_qty: null, operator_name: null, machine_status: null, alarm: null,
       spindle_load: null, feed_rate: null, received_at: null, run_seconds: 0 }
   ],
-  cycle_time_trend: Array.from({ length: 9 }, (_, i) => ({
-    hour_start: `2026-06-18T0${i}:00:00.000Z`,
-    avg_cycle_seconds: i === 4 ? null : 25 + i * 2.5
-  })),
   condition_trend: [],
   unavailable: ['encoder_temperature', 'battery_status', 'insulation_resistance', 'fan_amplifier_status']
 });

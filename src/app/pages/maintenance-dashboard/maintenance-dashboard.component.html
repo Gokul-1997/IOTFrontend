@@ -299,23 +299,6 @@
     </section>
   </div>
 
-  <!-- ══════════ CYCLE TIME ══════════ -->
-  <section class="mexa-card">
-    <div class="mexa-tablebar">
-      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Cycle Time (Sec)</h2>
-      <span class="mexa-card-hint" style="margin:0" *ngIf="hasCycleData">
-        Hours with no production are a gap in the line, not a zero.
-      </span>
-    </div>
-    <apx-chart *ngIf="hasCycleData"
-      [series]="cycleSeries" [chart]="cycleChart.chart" [stroke]="cycleChart.stroke"
-      [colors]="cycleChart.colors" [dataLabels]="cycleChart.dataLabels"
-      [markers]="cycleChart.markers" [xaxis]="cycleChart.xaxis" [yaxis]="cycleChart.yaxis"
-      [grid]="cycleChart.grid" [tooltip]="cycleChart.tooltip"
-      [noData]="cycleChart.noData"></apx-chart>
-    <p *ngIf="!hasCycleData" class="mexa-empty">No production in this window.</p>
-  </section>
-
   <!-- ══════════ CONDITION TREND ══════════ -->
   <section class="mexa-card">
     <h2 class="mexa-card-title mexa-card-title-left">Temperature &amp; Insulation Resistance Trend</h2>

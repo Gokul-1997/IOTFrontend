@@ -138,3 +138,21 @@ test('Energy: all three grants show everything', async ({ page }) => {
   await expect(page.getByRole('group', { name: 'Export the filtered list' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Tariff & limits' })).toBeVisible();
 });
+
+/* Two things the customer asked to be taken out on 2026-09-21. Both were
+   built, neither is in the Phase 2 scope, and a removal that leaves the
+   route or the menu entry behind is not a removal. */
+test('Production Plans is gone — no menu entry, no route', async ({ page }) => {
+  await seedAuth(page, {
+    roles: ['COMPANY_ADMIN'], user_type: 'COMPANY_ADMIN', company_permissions: []
+  });
+  await mockApi(page);
+  await page.setViewportSize({ width: 1500, height: 900 });
+  await page.goto('/dashboard');
+
+  await expect(page.getByRole('button', { name: 'Production Plans' })).toHaveCount(0);
+
+  // an unrestricted company admin can open anything that exists — this does not
+  await page.goto('/production-plans');
+  await expect(page).not.toHaveURL(/\/production-plans/);
+});

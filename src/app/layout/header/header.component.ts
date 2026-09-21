@@ -61,13 +61,13 @@ export class HeaderComponent implements OnInit, OnDestroy {
         { label: 'OEE', path: '/oee-reports', permission: 'page:oee-reports' },
         { label: 'Reports', path: '/reports', permission: 'page:reports' },
         { label: 'Charts', path: '/charts', permission: 'page:charts' },
-        { label: 'Quality', path: '/quality', permission: 'page:quality' }
+        { label: 'Quality', path: '/quality', permission: 'page:quality' },
+        { label: 'Maintenance Report', path: '/maintenance-report', permission: 'page:maintenance-report' }
       ]
     },
     { label: 'Alarms', path: '/alarms', icon: 'alerts', permission: 'page:alarms' },
     { label: 'Downtime', path: '/downtime', icon: 'downtime', permission: 'page:downtime' },
     { label: 'Maintenance', path: '/maintenance', icon: 'maintenance', permission: 'page:maintenance' },
-    { label: 'Production Plans', path: '/production-plans', icon: 'plans', permission: 'page:production-plans' },
     {
       label: 'Settings', icon: 'gearnew',
       children: [

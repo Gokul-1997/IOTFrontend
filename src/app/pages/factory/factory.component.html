@@ -114,17 +114,8 @@
           <mat-icon>inventory_2</mat-icon>
         </span>
       </div>
-      <!-- No plan is not a plan of zero: percent is null and the tile says
-           so, rather than printing "4600 of 0 planned". -->
-      <p class="mexa-kpi-value">
-        {{ data.production.percent === null ? '--' : pct(data.production.percent) + '%' }}
-      </p>
-      <p class="mexa-kpi-sub" *ngIf="data.production.percent !== null">
-        {{ data.production.produced }} of {{ data.production.planned }} planned
-      </p>
-      <p class="mexa-kpi-sub" *ngIf="data.production.percent === null">
-        {{ data.production.produced }} produced · No plan set
-      </p>
+      <p class="mexa-kpi-value">{{ data.production.produced }}</p>
+      <p class="mexa-kpi-sub">pieces this shift</p>
     </div>
 
     <div class="mexa-kpi">

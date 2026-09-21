@@ -62,8 +62,6 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   updatedAt = '';
 
   /* ── chart ── */
-  cycleSeries:     any[] = [];
-  cycleCategories: string[] = [];
   alarmSeries:     number[] = [];
   spindleSeries:   number[] = [];
 
@@ -172,15 +170,6 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     this.updatedAt = d.updated_at
       ? new Date(d.updated_at).toLocaleString('en-IN', { hour12: true })
       : '';
-
-    const trend = d.cycle_time_trend || [];
-    this.cycleCategories = trend.map((t: any) => this.hourLabel(t.hour_start));
-    // null for hours with no production — Apex leaves a gap rather than
-    // dropping the line to zero, which would read as an impossibly fast cycle
-    this.cycleSeries = [{
-      name: 'Avg cycle time (s)',
-      data: trend.map((t: any) => t.avg_cycle_seconds ?? null)
-    }];
 
     /* Donuts and gauges take a flat number array; the {name,data} series
        shape renders an empty chart with no error. */
@@ -400,10 +389,6 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     return this.charts.memo('irTrendChart', () => { return this.trendOptions('Resistance', ['#4a76c8', '#2f2d8f', '#9b7ec8']); });
   }
 
-  get hasCycleData(): boolean {
-    return this.cycleSeries.some(s => (s.data || []).some((v: number | null) => v != null));
-  }
-
   /** Signals the API says it cannot supply, in readable form. */
   get missingSignals(): string[] {
     return (this.data?.unavailable || []).map((k: string) => SIGNAL_LABELS[k] || k);
@@ -450,20 +435,4 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     ).toISOString().split('T')[0];
   }
 
-  get cycleChart(): any {
-    return this.charts.memo('cycleChart', () => {
-    return {
-      chart:  { type: 'line', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
-      stroke: { width: 3, curve: 'smooth' },
-      colors: ['#2563eb'],
-      dataLabels: { enabled: false },
-      markers: { size: 3 },
-      xaxis:  { categories: this.cycleCategories, title: { text: 'Hour' } },
-      yaxis:  { title: { text: 'Seconds per part' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
-      grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark', y: { formatter: (v: number) => v == null ? 'no production' : `${v.toFixed(1)} s` } },
-      noData: { text: 'No production in this window' }
-    };
-  });
-  }
 }

@@ -29,8 +29,6 @@ const maintenance = ok({
     sequence_number: 100, received_at: new Date().toISOString(), run_seconds: 16338,
     servo_load_x: 5, servo_load_y: 6, servo_load_z: 6, servo_temp_x: 27
   }],
-  cycle_time_trend: Array.from({ length: 6 }, (_, i) => ({
-    hour_start: `2026-06-18T${String(5 + i).padStart(2, '0')}:30:00.000Z`, avg_cycle_seconds: 25 + i * 3 })),
   condition_trend: []
 });
 
@@ -87,4 +85,20 @@ test('axis readings stay legible in dark mode', async ({ authedPage: page }) => 
   expect(report, 'no axis table found').not.toBeNull();
   expect(report!.card, 'dark mode did not apply').not.toBe('rgb(255, 255, 255)');
   expect(report!.ratio).toBeGreaterThanOrEqual(4.5);
+});
+
+/* Cycle Time was taken off this screen on 2026-09-21: cycle time per part is
+   a production measure, and this dashboard is about machine condition. The
+   backend no longer computes it either, so a chart left behind would draw
+   from a field that is never sent. */
+test('there is no Cycle Time chart', async ({ authedPage: page }) => {
+  await mockApi(page);
+  await page.setViewportSize({ width: 1500, height: 1200 });
+  await page.goto('/maintenance-dashboard');
+  await expect(page.locator('.mexa-kpi').first()).toBeVisible();
+
+  await expect(page.getByText(/Cycle Time/i)).toHaveCount(0);
+  await expect(page.getByText(/Seconds per part/i)).toHaveCount(0);
+  // the screen still shows what it is for
+  await expect(page.getByText('Alarm Summary')).toBeVisible();
 });

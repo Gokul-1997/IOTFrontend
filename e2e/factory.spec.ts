@@ -20,7 +20,7 @@ const factoryResponse = {
     filters: { date: '2026-08-10', shift_id: null, shift_code: null, machine_id: null },
     updated_at: '2026-08-10T09:30:00.000Z',
     machines: { total: 12, running: 8, idle: 3, breakdown: 1, offline: 0 },
-    production: { produced: 420, planned: 500, percent: 84 },
+    production: { produced: 420 },
     time: { run_seconds: 29520, idle_seconds: 7200, down_seconds: 3600 },
     oee: { availability: 82, performance: 76, quality: 98, oee: 61, target: 85 },
     energy: {
@@ -81,10 +81,10 @@ test.describe('Factory Overall Dashboard', () => {
     await expect(page.getByText('3', { exact: true }).first()).toBeVisible();
     await expect(page.getByText(/of 12 machines/i)).toBeVisible();
 
-    // production against plan
-    await expect(page.getByText('420')).toBeVisible();
-    await expect(page.getByText(/of 500 planned/i)).toBeVisible();
-    await expect(page.getByText('84%')).toBeVisible();
+    // pieces produced — production plans were never part of Phase 2, so the
+    // tile counts output rather than comparing it to a plan
+    await expect(page.locator('.mexa-kpi', { hasText: 'Production' }).getByText('420')).toBeVisible();
+    await expect(page.getByText(/pieces this shift/i)).toBeVisible();
 
     // OEE headline + target. The figure now appears twice by design — the
     // KPI tile and the radial's centre label — so the tile is named.
@@ -113,17 +113,6 @@ test.describe('Factory Overall Dashboard', () => {
     await page.goto('/factory');
 
     await expect(page.getByText(/Tariff not set/i).first()).toBeVisible();
-  });
-
-  test('shows "No plan set" when no production plan exists', async ({ authedPage: page }) => {
-    const noPlan = JSON.parse(JSON.stringify(factoryResponse));
-    noPlan.data.production.planned = 0;
-    noPlan.data.production.percent = null;
-
-    await mockApi(page, noPlan);
-    await page.goto('/factory');
-
-    await expect(page.getByText(/No plan set/i)).toBeVisible();
   });
 
   test('surfaces an error message when the API fails', async ({ authedPage: page }) => {

@@ -22,7 +22,7 @@ export const routes: Routes = [
       /* Every page here is guarded by the key Manage Access grants for it.
          The nine Phase 2 dashboards each have their own (page:analytics-*);
          they all used to share page:dashboard, so none could be sold or
-         revoked on its own. alarms, downtime, maintenance, production-plans
+         revoked on its own. alarms, downtime and maintenance
          and programs had catalogue modules and menu entries but NO guard, so
          un-granting them hid the menu item and left the URL open. */
       { path: 'dashboard', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
@@ -35,6 +35,7 @@ export const routes: Routes = [
       { path: 'operator-performance', canActivate: [permissionGuard('page:analytics-operators')], loadComponent: () => import('./pages/operator-dashboard/operator-dashboard.component').then(m => m.OperatorDashboardComponent) },
       { path: 'oee-dashboard', canActivate: [permissionGuard('page:analytics-oee')], loadComponent: () => import('./pages/oee-dashboard/oee-dashboard.component').then(m => m.OeeDashboardComponent) },
       { path: 'energy-dashboard', canActivate: [permissionGuard('page:analytics-energy')], loadComponent: () => import('./pages/energy-dashboard/energy-dashboard.component').then(m => m.EnergyDashboardComponent) },
+      { path: 'maintenance-report', canActivate: [permissionGuard('page:maintenance-report')], loadComponent: () => import('./pages/maintenance-report/maintenance-report.component').then(m => m.MaintenanceReportComponent) },
       { path: 'dashboard/live/:id', canActivate: [permissionGuard('page:dashboard:live')], loadComponent: () => import('./pages/dashboard/live/live.component').then(m => m.LiveComponent) },
 
       { path: 'component', canActivate: [permissionGuard('page:component')], loadComponent: () => import('./pages/component/component_list.component').then(m => m.ComponentList) },
@@ -69,7 +70,6 @@ export const routes: Routes = [
       { path: 'alarms', canActivate: [permissionGuard('page:alarms')], loadComponent: () => import('./pages/alarms/alarms.component').then(m => m.AlarmsComponent) },
       { path: 'downtime', canActivate: [permissionGuard('page:downtime')], loadComponent: () => import('./pages/downtime/downtime.component').then(m => m.DowntimeComponent) },
       { path: 'maintenance', canActivate: [permissionGuard('page:maintenance')], loadComponent: () => import('./pages/maintenance/maintenance.component').then(m => m.MaintenanceComponent) },
-      { path: 'production-plans', canActivate: [permissionGuard('page:production-plans')], loadComponent: () => import('./pages/production-plans/production-plans.component').then(m => m.ProductionPlansComponent) },
       { path: 'security/2fa', loadComponent: () => import('./pages/security/twofa-setup.component').then(m => m.TwofaSetupComponent) },
 
       /* Every authenticated user reaches these — no permission key, because
