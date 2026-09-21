@@ -13,7 +13,7 @@
       </div>
     </div>
     <div class="toolbar-right">
-      <button *ngIf="tab === 'programs'" class="btn-primary" (click)="showUpload = true">
+      <button *ngIf="tab === 'programs' && canUpload" class="btn-primary" (click)="showUpload = true">
         <mat-icon>upload_file</mat-icon>
         Upload Program
       </button>
@@ -140,14 +140,14 @@
                   <div class="flex gap-1.5">
                     <button (click)="download(p)"
                       class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs hover:bg-gray-200">Save</button>
-                    <button (click)="deleteProgram(p)"
+                    <button *ngIf="canDelete" (click)="deleteProgram(p)"
                       class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">Delete</button>
                   </div>
                 </td>
               </tr>
               <tr *ngIf="!loading && programs.length === 0">
                 <td colspan="5" class="px-4 py-10 text-center text-gray-400">
-                  No programs yet. Use "Upload Program" to add a G-code file.
+                  No programs yet.<span *ngIf="canUpload"> Use "Upload Program" to add a G-code file.</span>
                 </td>
               </tr>
             </tbody>
@@ -156,7 +156,9 @@
 
         <div class="px-4 py-3 border-t bg-gray-50 flex items-center justify-between">
           <span class="text-xs text-gray-500">{{ selectedCount }} selected</span>
-          <button (click)="sendSelected()"
+          <!-- said, rather than a button that answers "Permission denied" -->
+          <span *ngIf="!canTransfer" class="text-xs text-gray-500">Sending to a machine is not part of your role.</span>
+          <button *ngIf="canTransfer" (click)="sendSelected()"
             [disabled]="transferring || selectedCount === 0 || !selectedMachineId"
             class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-40">
             {{ transferring ? 'Sending…' : 'Send to Machine →' }}
@@ -210,7 +212,7 @@
                   {{ f.modified_at ? (f.modified_at | date:'dd MMM HH:mm') : '--' }}
                 </td>
                 <td class="px-3 py-2">
-                  <button (click)="fetchFile(f)" [disabled]="fetchingFile === f.name"
+                  <button *ngIf="canFetch" (click)="fetchFile(f)" [disabled]="fetchingFile === f.name"
                     class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 disabled:opacity-40">
                     {{ fetchingFile === f.name ? 'Getting…' : '← Get' }}
                   </button>
@@ -225,7 +227,7 @@
           </table>
         </div>
 
-        <div class="px-4 py-3 border-t bg-gray-50">
+        <div *ngIf="canFetch" class="px-4 py-3 border-t bg-gray-50">
           <span class="text-xs text-gray-500">
             "Get" copies the program from the controller into the server library.
           </span>

@@ -30,7 +30,7 @@ export const companyAdminGuard: CanActivateFn = (route, state) => {
       return true;
     }
 
-    router.navigate(['/dashboard']);
+    router.navigate(['/']);   // their own first page, which may not be the Live Dashboard
     return false;
   } catch {
     router.navigate(['/login']);
@@ -66,8 +66,28 @@ export const companyRolesGuard: CanActivateFn = (route, state) => {
       return true;
     }
 
-    router.navigate(['/dashboard']);
+    router.navigate(['/']);   // their own first page, which may not be the Live Dashboard
     return false;
+  } catch {
+    router.navigate(['/login']);
+    return false;
+  }
+};
+
+/**
+ * Pages that belong to someone inside a company — Settings (notification
+ * choices) and Notifications. S&T belongs to no company and is sent none,
+ * so S&T goes to its own landing page instead of an empty screen.
+ */
+export const companyUserGuard: CanActivateFn = () => {
+  const router = inject(Router);
+  try {
+    const roles: string[] = JSON.parse(localStorage.getItem('user') || '{}').roles || [];
+    if (roles.includes('SNT_SUPER')) {
+      router.navigate(['/admin/companies']);
+      return false;
+    }
+    return true;
   } catch {
     router.navigate(['/login']);
     return false;

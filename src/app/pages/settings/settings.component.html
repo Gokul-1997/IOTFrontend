@@ -54,20 +54,6 @@
             [class.translate-x-6]="prefs[row.key]" [class.translate-x-1]="!prefs[row.key]"></span>
         </button>
       </div>
-
-      <div class="flex items-center justify-between gap-4 py-3">
-        <div class="min-w-0">
-          <p class="text-sm font-medium text-gray-700 dark:text-gray-200">Email digest</p>
-          <p class="text-xs text-gray-400 dark:text-gray-500">A daily summary by email, in addition to in-app notifications.</p>
-        </div>
-        <button type="button" role="switch" [attr.aria-checked]="!!prefs['email_digest']" aria-label="Email digest"
-          (click)="toggleDigest()"
-          class="relative inline-flex h-6 w-11 flex-none items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          [class.bg-blue-600]="prefs['email_digest']" [class.bg-gray-300]="!prefs['email_digest']">
-          <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
-            [class.translate-x-6]="prefs['email_digest']" [class.translate-x-1]="!prefs['email_digest']"></span>
-        </button>
-      </div>
     </div>
 
     <p *ngIf="saveErr" class="mt-3 text-sm text-red-600 dark:text-red-400" role="alert">{{ saveErr }}</p>

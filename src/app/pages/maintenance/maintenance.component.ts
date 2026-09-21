@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MaintenanceService } from '../../core/services/maintenance.service';
 import { TicketService } from '../../core/services/ticket.service';
-import { AdminService } from '../admin/admin.service';
 import { MachinesService } from '../machines/machines.service';
 
 @Component({
@@ -29,10 +28,8 @@ export class MaintenanceComponent implements OnInit {
   ticketFilter: 'open' | 'all' = 'open';
   showTicketForm = false;
   ticketForm: any = { machine_id: '', title: '', description: '', issue_type: 'BREAKDOWN', priority: 'MEDIUM', assigned_to: '' };
-  // Populated best-effort — GET /api/users is ADMIN-tier only, so a
-  // MANAGER/SUPERVISOR creating a ticket may not have access to it. The
-  // assign dropdown just stays empty for them; the ticket can still be
-  // created unassigned and picked up later by someone who can assign it.
+  // The company's active users. This used the admin-only user list, which
+  // refused every other role — a MAINTENANCE user saw an empty dropdown.
   assignableUsers: any[] = [];
   selectedTicket: any = null;
   statusNote = '';
@@ -52,7 +49,6 @@ export class MaintenanceComponent implements OnInit {
   constructor(
     private svc: MaintenanceService,
     private ticketSvc: TicketService,
-    private adminSvc: AdminService,
     private machinesSvc: MachinesService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -60,9 +56,9 @@ export class MaintenanceComponent implements OnInit {
   ngOnInit() {
     this.loadTickets();
     this.loadUpcoming();
-    this.adminSvc.getUsers().subscribe({
-      next: (r: any) => { this.assignableUsers = Array.isArray(r) ? r : []; this.cdr.markForCheck(); },
-      error: () => { /* not an admin-tier role — assignment stays optional */ }
+    this.ticketSvc.getAssignees().subscribe({
+      next: (r: any) => { this.assignableUsers = r?.data || []; this.cdr.markForCheck(); },
+      error: () => { /* assignment stays optional; the ticket can be created unassigned */ }
     });
     this.machinesSvc.getAllForDropdown().subscribe({
       next: (r: any) => { this.machines = r?.data || []; this.cdr.markForCheck(); }

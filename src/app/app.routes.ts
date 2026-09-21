@@ -1,8 +1,10 @@
+import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
+import { AuthService } from './core/services/auth.service';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
 import { sntSuperGuard } from './core/guards/snt-super.guard';
-import { companyAdminGuard, companyRolesGuard } from './core/guards/company-admin.guard';
+import { companyAdminGuard, companyRolesGuard, companyUserGuard } from './core/guards/company-admin.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 
 export const routes: Routes = [
@@ -76,8 +78,8 @@ export const routes: Routes = [
          "view my own profile" and "change my own theme" are not a page a
          role can be denied. */
       { path: 'profile',       loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent) },
-      { path: 'settings',      loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
-      { path: 'notifications', loadComponent: () => import('./pages/notifications/notifications.component').then(m => m.NotificationsComponent) },
+      { path: 'settings',      canActivate: [companyUserGuard], loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
+      { path: 'notifications', canActivate: [companyUserGuard], loadComponent: () => import('./pages/notifications/notifications.component').then(m => m.NotificationsComponent) },
 
       // ADMIN ROUTES (SNT_SUPER / COMPANY_ADMIN / ADMIN)
       {
@@ -95,8 +97,10 @@ export const routes: Routes = [
       // NO ACCESS
       { path: 'no-access', loadComponent: () => import('./pages/no-access/no-access.component').then(m => m.NoAccessComponent) },
 
-      // DEFAULT
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+      // DEFAULT — the first page this person can open. It was always the
+      // Live Dashboard, so any role without that page (Quality, Setter, HR)
+      // opened the app on "Access Denied".
+      { path: '', pathMatch: 'full', redirectTo: () => inject(AuthService).getFirstAccessibleRoute() }
     ]
   },
 

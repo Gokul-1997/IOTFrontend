@@ -59,13 +59,13 @@ describe('companyAdminGuard', () => {
   test('blocks VIEWER → redirects to /dashboard', () => {
     seedUser(['VIEWER']);
     expect(runGuard()).toBe(false);
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/dashboard']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
   });
 
   test('blocks OPERATOR → redirects to /dashboard', () => {
     seedUser(['OPERATOR']);
     expect(runGuard()).toBe(false);
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/dashboard']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
   });
 
   test('no stored user → redirects to /login', () => {
@@ -82,7 +82,7 @@ describe('companyAdminGuard', () => {
   test('a user with no roles at all is blocked', () => {
     localStorage.setItem('user', JSON.stringify({ username: 'x' }));
     expect(runGuard()).toBe(false);
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/dashboard']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
   });
 });
 
@@ -114,7 +114,7 @@ describe('companyRolesGuard', () => {
   test('blocks an ordinary role → /dashboard', () => {
     seedUser(['SUPERVISOR']);
     expect(runRoles()).toBe(false);
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/dashboard']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
   });
 
   test('no stored user → /login', () => {

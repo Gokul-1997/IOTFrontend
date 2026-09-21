@@ -68,10 +68,9 @@ export class SettingsComponent implements OnInit {
     this.save();
   }
 
-  toggleDigest(): void {
-    this.prefs = { ...this.prefs, email_digest: !this.prefs['email_digest'] };
-    this.save();
-  }
+  /* An "Email digest" switch sat here. Nothing ever sent a digest, so it saved
+     a choice that did nothing; it comes back with the digest itself, next
+     phase. */
 
   /** Saves on every change — a settings toggle, not a form with a submit
    *  step, so there is nothing for the user to remember to click. */

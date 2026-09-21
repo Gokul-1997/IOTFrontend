@@ -49,7 +49,7 @@ describe('adminGuard', () => {
   test('blocks VIEWER and redirects to /dashboard', () => {
     seedUser(['VIEWER']);
     expect(runGuard()).toBe(false);
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/dashboard']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
   });
 
   test('blocks when no user in localStorage → redirects to /login', () => {
@@ -66,7 +66,7 @@ describe('adminGuard', () => {
   test('blocks when roles array is empty → redirects to /dashboard', () => {
     seedUser([]);
     expect(runGuard()).toBe(false);
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/dashboard']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
   });
 
   test('allows user with multiple roles including ADMIN', () => {

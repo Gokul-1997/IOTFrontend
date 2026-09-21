@@ -69,6 +69,14 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   get canExport(): boolean { return this.auth.hasAction('analytics-energy', 'export'); }
   get canEditSettings(): boolean { return this.auth.hasAction('analytics-energy', 'settings'); }
 
+  /** Open Tariff & limits and bring it into view — it sits below the machine
+   *  table, so opening it without scrolling looked like nothing happened. */
+  openSettings(): void {
+    this.showSettings = true;
+    this.cdr.detectChanges();
+    document.getElementById('energySettings')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   ngOnInit(): void {
     this.svc.getMeta()
       .pipe(takeUntil(this.destroy$), catchError(() => of(null)))

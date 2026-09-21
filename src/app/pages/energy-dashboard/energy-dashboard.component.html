@@ -29,6 +29,13 @@
     <button type="submit" class="mexa-submit" [disabled]="loading">
       {{ loading ? 'Loading…' : 'Submit' }}
     </button>
+    <!-- Where the cost per kWh is set. Up here so it can be found; it used
+         to sit in the machine table's toolbar at the bottom of the page. -->
+    <button *ngIf="canEditSettings" type="button" class="mexa-submit"
+            (click)="showSettings ? (showSettings = false) : openSettings()"
+            [attr.aria-expanded]="showSettings" aria-controls="energySettings">
+      {{ showSettings ? 'Hide tariff' : 'Tariff & limits' }}
+    </button>
   </div>
 </form>
 
@@ -59,7 +66,15 @@
 
   <p *ngIf="!noEnergyData && !data.coverage.tariff_configured" class="mexa-note">
     <strong>No tariff configured.</strong>
-    Energy is shown in kWh. Set a cost per unit under <strong>Tariff &amp; limits</strong> to see cost.
+    Energy is shown in kWh until a cost per unit is set.
+    <ng-container *ngIf="canEditSettings">
+      <button type="button" class="underline font-semibold" (click)="openSettings()">Set the tariff</button>
+      to see cost.
+    </ng-container>
+    <!-- said plainly, rather than pointing at a button this person can't see -->
+    <ng-container *ngIf="!canEditSettings">
+      Your company admin sets it on this page, under <strong>Tariff &amp; limits</strong>.
+    </ng-container>
   </p>
 
   <!-- ══════════ KPI TILES ══════════ -->
@@ -217,10 +232,6 @@
             {{ exporting === 'pdf' ? '…' : 'PDF' }}
           </button>
         </span>
-        <button *ngIf="canEditSettings" type="button" class="mexa-pagebtn" (click)="showSettings = !showSettings"
-                [attr.aria-expanded]="showSettings">
-          {{ showSettings ? 'Hide settings' : 'Tariff & limits' }}
-        </button>
         <button type="button" class="mexa-pagebtn" (click)="reset()">Reset</button>
       </span>
     </div>
@@ -284,7 +295,7 @@
 </ng-container>
 
 <!-- ══════════ TARIFF & LIMITS ══════════ -->
-<section class="mexa-card" *ngIf="showSettings && canEditSettings">
+<section id="energySettings" class="mexa-card scroll-mt-4" *ngIf="showSettings && canEditSettings">
   <h2 class="mexa-card-title mexa-card-title-left">Tariff &amp; Limits</h2>
   <p class="mexa-card-hint">
     Leave the machine blank to set the company default. A row for a specific machine overrides it.

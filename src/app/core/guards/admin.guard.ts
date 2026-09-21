@@ -19,7 +19,7 @@ export const adminGuard: CanActivateFn = (route, state) => {
       return true;
     }
 
-    router.navigate(['/dashboard']);
+    router.navigate(['/']);   // their own first page, which may not be the Live Dashboard
     return false;
   } catch {
     router.navigate(['/login']);

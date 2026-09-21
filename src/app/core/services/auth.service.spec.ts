@@ -399,6 +399,32 @@ describe('AuthService.getFirstAccessibleRoute', () => {
   });
 });
 
+/* The landing list used to stop at a handful of pages, so a role whose only
+   page was further down the menu signed in to "Access Denied" although the
+   menu offered it a page. These are the default roles as production holds
+   them (company S AND T). */
+describe('AuthService.getFirstAccessibleRoute — every default role lands on a page it has', () => {
+  const company = ['page:programs:view', 'page:programs:upload', 'page:quality:view', 'page:quality:edit',
+    'page:analytics-oee:view', 'page:analytics-operators:view', 'page:operators:view', 'page:maintenance:view'];
+
+  test.each([
+    ['SETTER — Program Transfer only', ['page:programs:view', 'page:programs:upload', 'machine.view'], '/programs'],
+    ['QUALITY — OEE dashboard and Quality', ['page:analytics-oee:view', 'page:quality:view', 'line.view'], '/oee-dashboard'],
+    ['a role with Quality alone', ['page:quality:view'], '/quality'],
+    ['HR — Operator Performance and Operators', ['page:analytics-operators:view', 'page:operators:view', 'operator.view'], '/operator-performance'],
+    ['a role with Maintenance tickets alone', ['page:maintenance:view'], '/maintenance'],
+  ])('%s', (_label, permissions, landing) => {
+    seedUser({ roles: ['CUSTOM'], permissions, company_permissions: company });
+    expect(service.getFirstAccessibleRoute()).toBe(landing);
+  });
+
+  test('a page the company was not granted is skipped, not landed on', () => {
+    seedUser({ roles: ['CUSTOM'], permissions: ['page:programs:view', 'page:quality:view'],
+               company_permissions: ['page:quality:view'] });
+    expect(service.getFirstAccessibleRoute()).toBe('/quality');
+  });
+});
+
 // ── logout ────────────────────────────────────────────────────────────────────
 
 describe('AuthService.getFirstAccessibleRoute — the nine dashboards', () => {

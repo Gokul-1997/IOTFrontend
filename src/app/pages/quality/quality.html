@@ -277,7 +277,8 @@
               </ng-template>
 
               <!-- Edit / Save icons -->
-              <div class="absolute bottom-2 right-2">
+              <!-- Quality → Edit only: a view-only role (SUPERVISOR) saw these and could change figures -->
+              <div *ngIf="auth.hasAction('quality', 'edit')" class="absolute bottom-2 right-2">
                 <button
                   *ngIf="!editingRejected"
                   (click)="startEditRejected()"
@@ -326,7 +327,8 @@
               </ng-template>
 
               <!-- Edit / Save icons -->
-              <div class="absolute bottom-2 right-2">
+              <!-- Quality → Edit only: a view-only role (SUPERVISOR) saw these and could change figures -->
+              <div *ngIf="auth.hasAction('quality', 'edit')" class="absolute bottom-2 right-2">
                 <button
                   *ngIf="!editingRework"
                   (click)="startEditRework()"

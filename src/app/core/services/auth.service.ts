@@ -238,52 +238,45 @@ export class AuthService {
     { permission: 'page:analytics-energy',      path: '/energy-dashboard' },
   ];
 
-  /** Returns the first route the user has permission for. */
+  /** Every page someone can land on, in the order they should land on them.
+   *  It used to stop at a handful, so a role holding only Program Transfer
+   *  (SETTER), or only Quality, signed in to "Access Denied" although the
+   *  menu offered it a page. Order follows the menu. */
+  private static readonly LANDINGS = [
+    { permission: 'page:dashboard',          path: '/dashboard' },
+    ...AuthService.ANALYTICS_LANDINGS,
+    { permission: 'page:maintenance-report', path: '/maintenance-report' },
+    { permission: 'page:oee-reports',        path: '/oee-reports' },
+    { permission: 'page:reports',            path: '/reports' },
+    { permission: 'page:charts',             path: '/charts' },
+    { permission: 'page:quality',            path: '/quality' },
+    { permission: 'page:programs',           path: '/programs' },
+    { permission: 'page:maintenance',        path: '/maintenance' },
+    { permission: 'page:alarms',             path: '/alarms' },
+    { permission: 'page:downtime',           path: '/downtime' },
+    { permission: 'page:machines',           path: '/machines' },
+    { permission: 'page:component',          path: '/component' },
+    { permission: 'page:job',                path: '/job' },
+    { permission: 'page:shifts',             path: '/shifts' },
+    { permission: 'page:operators',          path: '/operators' },
+    { permission: 'page:assignments',        path: '/assignments' },
+    { permission: 'page:machine-shifts',     path: '/machine-shifts' },
+    { permission: 'page:plants',             path: '/plants' },
+    { permission: 'page:lines',              path: '/lines' },
+  ];
+
+  /** The first page this person can open — after sign-in, and for the
+   *  app's home address. Role AND company, as hasPermission: landing on a
+   *  page the API would then refuse is worse than falling through. */
   getFirstAccessibleRoute(): string {
     try {
       // SNT_SUPER only accesses admin pages
       if (this.isSntSuper()) return '/admin/companies';
 
-      // COMPANY_ADMIN: find first page from company_permissions
-      if (this.isCompanyAdmin()) {
-        const companyPerms = this.getCompanyPermissions();
-        if (companyPerms.length === 0) return '/dashboard';
-        const pageRoutes = [
-          { permission: 'page:dashboard',      path: '/dashboard' },
-          ...AuthService.ANALYTICS_LANDINGS,
-          { permission: 'page:oee-reports',     path: '/oee-reports' },
-          { permission: 'page:reports',         path: '/reports' },
-          { permission: 'page:charts',          path: '/charts' },
-          { permission: 'page:quality',         path: '/quality' },
-          { permission: 'page:machines',        path: '/machines' },
-        ];
-        const first = pageRoutes.find(r =>
-          companyPerms.some(p => p.startsWith(r.permission))
-        );
-        return first ? first.path : '/admin/users';
-      }
-
-      const pageRoutes = [
-        { permission: 'page:dashboard',      path: '/dashboard' },
-        ...AuthService.ANALYTICS_LANDINGS,
-        { permission: 'page:oee-reports',     path: '/oee-reports' },
-        { permission: 'page:reports',         path: '/reports' },
-        { permission: 'page:charts',          path: '/charts' },
-        { permission: 'page:quality',         path: '/quality' },
-        { permission: 'page:machines',        path: '/machines' },
-        { permission: 'page:component',       path: '/component' },
-        { permission: 'page:job',             path: '/job' },
-        { permission: 'page:shifts',          path: '/shifts' },
-        { permission: 'page:operators',       path: '/operators' },
-        { permission: 'page:assignments',     path: '/assignments' },
-        { permission: 'page:machine-shifts',  path: '/machine-shifts' },
-        { permission: 'page:plants',          path: '/plants' },
-      ];
-
-      // Role AND company, as hasPermission — landing on a page the API would
-      // then refuse is worse than falling through to the next one.
-      const first = pageRoutes.find(r => this.hasPermission(r.permission));
-      return first ? first.path : '/no-access';
+      const first = AuthService.LANDINGS.find(r => this.hasPermission(r.permission));
+      if (first) return first.path;
+      // a company admin whose company has no pages yet still runs its users
+      return this.isCompanyAdmin() ? '/admin/users' : '/no-access';
     } catch {
       return '/no-access';
     }
