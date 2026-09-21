@@ -123,9 +123,18 @@
             </td>
             <td class="px-4 py-3 text-center">
               <div class="flex items-center justify-center gap-2">
+                <!-- A default role means the same thing in every company: it is
+                     defined in the backend and re-applied on every restart, so an
+                     edit here would be silently undone. The API refuses it too,
+                     and offering a button that always errors is worse than not
+                     offering one. -->
                 <button *ngIf="role.role_name !== 'SNT_SUPER'"
                   (click)="openPagesModal(role)"
-                  class="px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 font-medium">
+                  [disabled]="role.is_system"
+                  [title]="role.is_system
+                    ? 'Default roles are the same in every company and are managed by S&amp;T. Create your own role to change what it can open.'
+                    : 'Assign pages and actions to this role'"
+                  class="px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 font-medium disabled:opacity-30 disabled:cursor-not-allowed">
                   Edit Permissions
                 </button>
                 <button (click)="deleteRole(role)"

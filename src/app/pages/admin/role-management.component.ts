@@ -139,6 +139,10 @@ export class RoleManagementComponent implements OnInit {
 
   // ── Permission Assignment Modal ──
   openPagesModal(role: any) {
+    // The template disables this for system roles; guard the method too, so a
+    // stale click or a direct call cannot open an editor whose Save the API
+    // will refuse.
+    if (role?.is_system) return;
     this.selectedRole = role;
     this.selectedPermIds = new Set(
       (role.permissions || [])
