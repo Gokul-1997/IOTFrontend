@@ -125,10 +125,23 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
+  /* The roles model: S&T creates each company's admin, and the company
+     admin creates everyone else. So for S&T the role is always Company
+     Admin, and it is shown rather than chosen. */
+  get companyAdminRoleId(): number | null {
+    return this.roles.find(r => r.is_system && r.role_name === 'COMPANY_ADMIN')?.id ?? null;
+  }
+
+  /** The roles on a user row, as text — for S&T, who sees them read-only. */
+  roleNames(user: any): string {
+    return (user?.roles || []).map((r: any) => r.role_name).join(', ') || 'No role';
+  }
+
   openCreateModal() {
+    const fixed = this.auth.isSntSuper() && this.companyAdminRoleId ? [this.companyAdminRoleId] : [];
     this.createForm = {
       username: '', email: '', password: '', company_id: null,
-      role_ids: [], supervised_machine_ids: []
+      role_ids: fixed, supervised_machine_ids: []
     };
     this.showCreateModal = true;
     this.cdr.detectChanges();
@@ -237,6 +250,18 @@ export class UserManagementComponent implements OnInit {
       this.toastService.error('Select the company this user belongs to');
       return;
     }
+    if (this.auth.isSntSuper()) {
+      if (!this.companyAdminRoleId) {
+        this.toastService.error('Roles are still loading. Try again in a moment.');
+        return;
+      }
+      this.createForm.role_ids = [this.companyAdminRoleId];
+    }
+    // the API refuses a user with no role; say so before submitting
+    if (!this.createForm.role_ids.length) {
+      this.toastService.error('Choose a role for this user');
+      return;
+    }
 
     this.loading = true;
     this.cdr.detectChanges();
@@ -255,8 +280,12 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
+  /** The roles the user had when the form opened, to tell whether they changed. */
+  private originalRoleIds: number[] = [];
+
   openEditModal(user: any) {
     this.selectedUser = user;
+    this.originalRoleIds = (user.roles || []).map((r: any) => r.id);
     this.editForm = {
       username: user.username,
       email: user.email,
@@ -329,10 +358,27 @@ export class UserManagementComponent implements OnInit {
       });
     };
 
+    /* The role was re-sent on every save, changed or not. Now it is sent only
+       when it changed — and never by S&T, who sees it read-only: S&T cannot
+       hand out a company's roles, so re-sending one would refuse the whole
+       save and leave S&T unable even to reset a password. */
+    const same = (a: number[], b: number[]) =>
+      a.length === b.length && [...a].sort().every((v, i) => v === [...b].sort()[i]);
+    const roleChanged = !this.auth.isSntSuper() && !same(this.originalRoleIds, this.editForm.role_ids);
+
+    if (!roleChanged) { doUpdate(); return; }
+
+    if (!this.editForm.role_ids.length) {
+      this.toastService.error('Choose a role for this user');
+      this.loading = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.adminService.assignRolesToUser(this.selectedUser.id, this.editForm.role_ids).subscribe({
       next: () => doUpdate(),
-      error: () => {
-        this.toastService.error('Role assignment failed');
+      error: err => {
+        this.toastService.error(err.error?.message || 'Role assignment failed');
         this.loading = false;
         this.cdr.detectChanges();
       }

@@ -54,6 +54,11 @@ export class AdminService {
     return this.http.put(`${this.baseUrl}/roles/${id}`, data);
   }
 
+  /** Copy a default role (or one of the company's own) into a new company role. */
+  copyRole(id: string | number, data: { role_name: string }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/roles/${id}/copy`, data);
+  }
+
   deleteRole(id: string | number): Observable<any> {
     return this.http.delete(`${this.baseUrl}/roles/${id}`);
   }

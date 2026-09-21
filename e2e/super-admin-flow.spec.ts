@@ -110,7 +110,8 @@ test('Users: the company dropdown is populated — regression for the empty-drop
   await page.goto('/admin/users');
   await expect(page.getByText('admin1', { exact: true })).toBeVisible();
 
-  await page.getByRole('button', { name: /create user/i }).click();
+  // S&T adds a company's admin; the admin creates everyone else
+  await page.getByRole('button', { name: '+ Add Company Admin' }).click();
   const companySelect = page.locator('#createFormCompany');
   await expect(companySelect).toBeVisible();
 
@@ -120,10 +121,43 @@ test('Users: the company dropdown is populated — regression for the empty-drop
   await expect(companySelect.locator('option', { hasText: 'S AND T' })).toHaveCount(1);
   await expect(companySelect.locator('option', { hasText: 'Precision Auto Components' })).toHaveCount(1);
 
+  // the role is fixed and shown, not chosen
+  await expect(page.locator('#createFormRole')).toHaveCount(0);
+  await expect(page.locator('.ui-dialog').getByText('Company Admin', { exact: true })).toBeVisible();
+
   await page.screenshot({ path: 'mexa-admin-users-create.png', fullPage: true });
 });
 
-test('Roles & Permissions: reachable by SNT_SUPER, shows every company\'s roles, company field on create', async ({ sntSuperPage: page }) => {
+/* The AWS model: S&T sets up a company's admin; the company admin gives out
+   every other role. So S&T's request carries COMPANY_ADMIN, whatever else
+   the form held. */
+test('Users: S&T creates a company admin, with the Company Admin role', async ({ sntSuperPage: page }) => {
+  await mockAdminApi(page);
+  const posted: any[] = [];
+  await page.route('**/api/users', (r: any) => {
+    if (r.request().method() === 'POST') {
+      posted.push(JSON.parse(r.request().postData() || '{}'));
+      return r.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 50 }) });
+    }
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(users) });
+  });
+  await page.setViewportSize({ width: 1500, height: 1100 });
+  await page.goto('/admin/users');
+  await page.getByRole('button', { name: '+ Add Company Admin' }).click();
+
+  await page.locator('#createFormCompany').selectOption({ label: 'S AND T' });
+  const dialog = page.locator('.ui-dialog');
+  await dialog.getByPlaceholder('e.g., john_doe').fill('newadmin');
+  await dialog.getByPlaceholder('user@company.com').fill('newadmin@sandt.com');
+  await dialog.getByPlaceholder('Minimum 8 characters').fill('Passw0rd!');
+  await dialog.getByRole('button', { name: 'Create User' }).click();
+
+  await expect.poll(() => posted.length).toBe(1);
+  expect(posted[0].role_ids).toEqual([1]);          // COMPANY_ADMIN's id in the fixture
+  expect(posted[0].company_id).toBe(4);
+});
+
+test('Roles & Permissions: reachable by SNT_SUPER, shows every company\'s roles, read-only', async ({ sntSuperPage: page }) => {
   await mockAdminApi(page);
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/admin/companies');
@@ -140,11 +174,15 @@ test('Roles & Permissions: reachable by SNT_SUPER, shows every company\'s roles,
   await expect(page.getByText('S AND T')).toBeVisible();
   await expect(page.getByText('Precision Auto Components')).toBeVisible();
 
-  await page.getByRole('button', { name: '+ Create Role' }).click();
-  const roleCompanySelect = page.locator('#roleCompany');
-  await expect(roleCompanySelect, 'SNT_SUPER must be asked which company a new role belongs to').toBeVisible();
-  const optionCount = await roleCompanySelect.locator('option').count();
-  expect(optionCount).toBeGreaterThan(1);
+  /* The AWS model: S&T reads every company's roles for support, but each
+     company's admin manages them. No create, edit, copy or delete here. */
+  await expect(page.getByRole('button', { name: '+ Create Role' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Edit Permissions' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Copy' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Delete' })).toHaveCount(0);
+  await expect(page.getByText('View only').first()).toBeVisible();
+  // catalogue upkeep is still S&T's
+  await expect(page.getByRole('button', { name: 'Sync Pages' })).toBeVisible();
 
   await page.screenshot({ path: 'mexa-admin-roles.png', fullPage: true });
 });

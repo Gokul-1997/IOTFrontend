@@ -23,9 +23,14 @@ export class RoleManagementComponent implements OnInit {
   selectedRole: any = null;
   seeding = false;
 
-  createForm = { role_name: '', company_id: null as number | null };
+  createForm = { role_name: '' };
   selectedPermIds: Set<number> = new Set();
-  companies: any[] = [];
+
+  /* Copy a role into a new one the company owns */
+  showCopyModal = false;
+  copySource: any = null;
+  copyName = '';
+  copying = false;
 
   constructor(
     private adminService: AdminService,
@@ -37,15 +42,19 @@ export class RoleManagementComponent implements OnInit {
   ngOnInit() {
     this.loadRoles();
     this.loadPermissions();
-    if (this.auth.isSntSuper()) this.loadCompanies();
   }
 
-  loadCompanies() {
-    this.adminService.getCompanies().subscribe({
-      next: (res: any) => { this.companies = [...res]; this.cdr.detectChanges(); },
-      error: () => this.toastService.error('Failed to load companies')
-    });
+  /* The roles model: S&T sets what a company can use (Manage Access) and
+     does not manage its roles, so for S&T this page is read-only. The
+     company admin copies defaults and manages the company's own roles. */
+  get canManage(): boolean { return !this.auth.isSntSuper(); }
+
+  /** Default roles can be copied; Company Admin's access is Manage Access, not pages. */
+  canCopy(role: any): boolean {
+    return this.canManage && role.role_name !== 'COMPANY_ADMIN' && role.role_name !== 'SNT_SUPER';
   }
+
+  isCompanyAdminRole(role: any): boolean { return role.is_system && role.role_name === 'COMPANY_ADMIN'; }
 
   loadRoles() {
     this.loading = true;
@@ -98,7 +107,7 @@ export class RoleManagementComponent implements OnInit {
 
   // ── Create Role ──
   openCreateModal() {
-    this.createForm = { role_name: '', company_id: null };
+    this.createForm = { role_name: '' };
     this.showCreateModal = true;
     this.cdr.detectChanges();
   }
@@ -113,19 +122,11 @@ export class RoleManagementComponent implements OnInit {
       this.toastService.error('Role name is required');
       return;
     }
-    // A role with no company would satisfy role.service.js's INSERT (company_id
-    // is nullable) but then never appear in any company admin's list — an
-    // orphaned role nobody could find or assign, since the list query filters
-    // by company_id for everyone except SNT_SUPER.
-    if (this.auth.isSntSuper() && !this.createForm.company_id) {
-      this.toastService.error('Select a company for this role');
-      return;
-    }
     this.loading = true;
     this.cdr.detectChanges();
-    this.adminService.createRole(this.createForm).subscribe({
+    this.adminService.createRole({ role_name: this.createForm.role_name.trim() }).subscribe({
       next: () => {
-        this.toastService.success('Role created successfully');
+        this.toastService.success('Role created. Now choose what it can open.');
         this.closeCreateModal();
         this.loadRoles();
       },
@@ -211,14 +212,11 @@ export class RoleManagementComponent implements OnInit {
 
   savePageAccess() {
     if (!this.selectedRole) return;
-    // Keep non-page permissions, add selected page permissions
-    const nonPagePermIds = (this.selectedRole.permissions || [])
-      .filter((p: any) => !p.permission_key?.startsWith('page:'))
-      .map((p: any) => p.id);
-    const allPermIds = [...nonPagePermIds, ...Array.from(this.selectedPermIds)];
+    // Pages only. The API keys those pages need are worked out by the server.
+    const pageIds = Array.from(this.selectedPermIds);
     this.loading = true;
     this.cdr.detectChanges();
-    this.adminService.assignPermissionsToRole(this.selectedRole.id, allPermIds).subscribe({
+    this.adminService.assignPermissionsToRole(this.selectedRole.id, pageIds).subscribe({
       next: () => {
         this.toastService.success('Permissions updated successfully');
         this.closePagesModal();
@@ -232,8 +230,53 @@ export class RoleManagementComponent implements OnInit {
     });
   }
 
+  // ── Copy ──
+  openCopyModal(role: any) {
+    if (!this.canCopy(role)) return;
+    this.copySource = role;
+    this.copyName = `${role.role_name} COPY`;
+    this.showCopyModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeCopyModal() {
+    this.showCopyModal = false;
+    this.copySource = null;
+    this.copyName = '';
+    this.cdr.detectChanges();
+  }
+
+  copyRole() {
+    const name = this.copyName.trim();
+    if (!this.copySource || !name) {
+      this.toastService.error('Give the new role a name');
+      return;
+    }
+    this.copying = true;
+    this.cdr.detectChanges();
+    this.adminService.copyRole(this.copySource.id, { role_name: name }).subscribe({
+      next: (res: any) => {
+        this.copying = false;
+        // say what was left out, and why, rather than letting it look complete
+        const skipped = res?.skipped || 0;
+        this.toastService.success(
+          `"${res?.role?.role_name || name}" created from ${res?.from || this.copySource.role_name}` +
+          (skipped ? ` — ${skipped} permission${skipped === 1 ? '' : 's'} left out because your plan does not include ${skipped === 1 ? 'it' : 'them'}` : '')
+        );
+        this.closeCopyModal();
+        this.loadRoles();
+      },
+      error: err => {
+        this.copying = false;
+        this.toastService.error(err.error?.message || 'Could not copy the role');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   // ── Delete ──
   deleteRole(role: any) {
+    if (role.is_system) return;
     if (!confirm(`Delete role "${role.role_name}"? This cannot be undone.`)) return;
     this.loading = true;
     this.cdr.detectChanges();
@@ -242,8 +285,9 @@ export class RoleManagementComponent implements OnInit {
         this.toastService.success('Role deleted');
         this.loadRoles();
       },
-      error: () => {
-        this.toastService.error('Failed to delete role');
+      error: err => {
+        // e.g. "assigned to 3 active users — move them first"
+        this.toastService.error(err.error?.message || 'Failed to delete role');
         this.loading = false;
         this.cdr.detectChanges();
       }
@@ -256,8 +300,11 @@ export class RoleManagementComponent implements OnInit {
     if (!pages.length) return '';
     // Group by module and show unique module names
     const moduleSet = new Set<string>();
-    pages.forEach((p: any) => moduleSet.add(p.permission_key.split(':')[1]));
-    return Array.from(moduleSet).map(m => m.charAt(0).toUpperCase() + m.slice(1)).join(', ');
+    pages.forEach((p: any) => moduleSet.add(this.moduleOf(p.permission_key)));
+    // the names people see in the menu, not keys like "analytics-oee"
+    return Array.from(moduleSet)
+      .map(m => this.permissionModules.find(x => x.module === m)?.label || m.charAt(0).toUpperCase() + m.slice(1))
+      .join(', ');
   }
 
   getPageCount(role: any): number {
@@ -265,9 +312,14 @@ export class RoleManagementComponent implements OnInit {
     const modules = new Set(
       (role.permissions || [])
         .filter((p: any) => p.permission_key?.startsWith('page:'))
-        .map((p: any) => p.permission_key.split(':')[1])
+        .map((p: any) => this.moduleOf(p.permission_key))
     );
     return modules.size;
+  }
+
+  /** page:dashboard:live:view → "dashboard:live" (the module, whatever its depth). */
+  private moduleOf(key: string): string {
+    return key.split(':').slice(1, -1).join(':');
   }
 
   getActionCount(role: any): number {

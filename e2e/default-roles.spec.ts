@@ -58,18 +58,79 @@ test('SNT_SUPER is not offered to a company', async ({ page }) => {
   await expect(page.getByText('SNT_SUPER', { exact: true })).toHaveCount(0);
 });
 
-test('a default role cannot be edited or deleted here', async ({ page }) => {
+/* The AWS model: default roles are the same everywhere and locked. The
+   company admin's way to change one is to copy it. */
+test('a default role offers Copy — not Edit or Delete', async ({ page }) => {
   await openRoles(page);
   const row = page.locator('tr', { hasText: 'MAINTENANCE' });
-  await expect(row.getByRole('button', { name: 'Edit Permissions' })).toBeDisabled();
-  await expect(row.getByRole('button', { name: 'Delete' })).toBeDisabled();
+  await expect(row.getByRole('button', { name: 'Copy' })).toBeVisible();
+  await expect(row.getByRole('button', { name: 'Edit Permissions' })).toHaveCount(0);
+  await expect(row.getByRole('button', { name: 'Delete' })).toHaveCount(0);
 });
 
-test('the company\'s own role is still fully editable', async ({ page }) => {
+test('Company Admin cannot be copied — its access is Manage Access', async ({ page }) => {
+  await openRoles(page);
+  const row = page.locator('tr', { hasText: 'COMPANY_ADMIN' });
+  await expect(row.getByRole('button', { name: 'Copy' })).toHaveCount(0);
+  await expect(row.getByText('Everything the company has access to')).toBeVisible();
+});
+
+test('the company\'s own role is fully editable', async ({ page }) => {
   await openRoles(page);
   const row = page.locator('tr', { hasText: 'LINE_LEAD' });
   await expect(row.getByRole('button', { name: 'Edit Permissions' })).toBeEnabled();
+  await expect(row.getByRole('button', { name: 'Copy' })).toBeEnabled();
   await expect(row.getByRole('button', { name: 'Delete' })).toBeEnabled();
+});
+
+test('copying a default role creates the company\'s own version, and says what it left out', async ({ page }) => {
+  await openRoles(page);
+  const posted: any[] = [];
+  await page.route('**/api/roles/51/copy', (r: any) => {
+    posted.push(JSON.parse(r.request().postData() || '{}'));
+    return r.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({
+      role: { id: 90, role_name: 'NIGHT SUPERVISOR' }, copied: 5, skipped: 1, from: 'SUPERVISOR' }) });
+  });
+
+  await page.locator('tr', { hasText: 'SUPERVISOR' }).first().getByRole('button', { name: 'Copy' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Copy SUPERVISOR' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('#copyName')).toHaveValue('SUPERVISOR COPY');
+  await page.screenshot({ path: 'mexa-roles-copy.png', fullPage: true });
+
+  await dialog.locator('#copyName').fill('NIGHT SUPERVISOR');
+  await dialog.getByRole('button', { name: 'Copy Role' }).click();
+
+  await expect.poll(() => posted.length).toBe(1);
+  expect(posted[0]).toEqual({ role_name: 'NIGHT SUPERVISOR' });
+  await expect(page.getByText(/NIGHT SUPERVISOR" created from SUPERVISOR/)).toBeVisible();
+  await expect(page.getByText(/1 permission left out because your plan does not include it/)).toBeVisible();
+});
+
+test('a name the server refuses shows the server\'s reason', async ({ page }) => {
+  await openRoles(page);
+  await page.route('**/api/roles/51/copy', (r: any) => r.fulfill({ status: 409, contentType: 'application/json',
+    body: JSON.stringify({ message: '"supervisor" is a default role. Copy it instead, or choose another name.' }) }));
+
+  await page.locator('tr', { hasText: 'SUPERVISOR' }).first().getByRole('button', { name: 'Copy' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Copy SUPERVISOR' });
+  await dialog.locator('#copyName').fill('supervisor');
+  await dialog.getByRole('button', { name: 'Copy Role' }).click();
+  await expect(page.getByText(/is a default role/)).toBeVisible();
+  await expect(dialog).toBeVisible();     // stays open to fix the name
+});
+
+test('permissions saved from the editor are pages only — the server adds the rest', async ({ page }) => {
+  await openRoles(page);
+  const sent: any[] = [];
+  await page.route('**/api/roles/80/permissions', (r: any) => {
+    sent.push(JSON.parse(r.request().postData() || '{}'));
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ pages: 1 }) });
+  });
+  await page.locator('tr', { hasText: 'LINE_LEAD' }).getByRole('button', { name: 'Edit Permissions' }).click();
+  await page.getByRole('button', { name: 'Save Permissions' }).click();
+  await expect.poll(() => sent.length).toBe(1);
+  expect(sent[0].permission_ids).toEqual([1]);   // the page id; no machine.view-style ids
 });
 
 test('the default roles are offered when creating a user', async ({ page }) => {

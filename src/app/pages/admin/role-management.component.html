@@ -32,14 +32,20 @@
     <div class="flex justify-between items-center mb-4">
       <div>
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Roles & Permissions</h1>
-        <p class="text-sm text-gray-500 mt-1">Create roles and assign page access with CRUD actions (View, Create, Edit, Delete)</p>
+        <p class="text-sm text-gray-500 mt-1" *ngIf="canManage">
+          Default roles are the same in every company. Copy one to make your own version, or create a role from scratch.
+        </p>
+        <p class="text-sm text-gray-500 mt-1" *ngIf="!canManage">
+          View only. Each company's admin manages its own roles.
+        </p>
       </div>
       <div class="flex gap-2">
-        <button (click)="seedPages()" [disabled]="seeding"
+        <!-- Sync Pages is catalogue upkeep, S&T's job; the route is S&T-only -->
+        <button *ngIf="!canManage" (click)="seedPages()" [disabled]="seeding"
           class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 text-sm font-medium">
           {{ seeding ? 'Syncing...' : 'Sync Pages' }}
         </button>
-        <button (click)="openCreateModal()"
+        <button *ngIf="canManage" (click)="openCreateModal()"
           class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
           + Create Role
         </button>
@@ -52,10 +58,14 @@
         <svg class="w-4 h-4 text-blue-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
-        <p class="text-sm text-blue-700 dark:text-blue-300">
-          <strong>How it works:</strong> 1) S&amp;T Super User sets which pages a company can access (Companies tab → Manage Access).
-          2) Create a role here. 3) Click "Edit Permissions" to assign View/Create/Edit/Delete per page.
-          4) Go to Users tab → assign the role. Only pages allowed by the company's access will appear.
+        <p class="text-sm text-blue-700 dark:text-blue-300" *ngIf="canManage">
+          <strong>How it works:</strong> S&amp;T decides which pages your company can use.
+          Pick a <strong>default role</strong> for a user, or <strong>Copy</strong> one and change it.
+          A role can only ever open pages your company has access to.
+        </p>
+        <p class="text-sm text-blue-700 dark:text-blue-300" *ngIf="!canManage">
+          <strong>How it works:</strong> You set which pages a company can use (Companies → Manage Access)
+          and create its admin. That admin gives its users a default role, or copies one and changes it.
         </p>
       </div>
     </div>
@@ -82,7 +92,7 @@
           <tr class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Role</th>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Access</th>
-            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-56">Actions</th>
+            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-72">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -96,7 +106,7 @@
                 </span>
                 <span *ngIf="role.is_system && role.role_name !== 'SNT_SUPER'"
                   class="px-2 py-0.5 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-xs rounded-full font-medium">
-                  System
+                  Default
                 </span>
                 <span *ngIf="role.company_name"
                   class="px-2 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs rounded-full font-medium">
@@ -108,41 +118,46 @@
               <span *ngIf="role.role_name === 'SNT_SUPER'" class="text-sm text-red-600 dark:text-red-400 font-medium">
                 All pages (full access)
               </span>
-              <div *ngIf="role.role_name !== 'SNT_SUPER'">
+              <span *ngIf="isCompanyAdminRole(role)" class="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                Everything the company has access to
+              </span>
+              <div *ngIf="role.role_name !== 'SNT_SUPER' && !isCompanyAdminRole(role)">
                 <span *ngIf="getPageCount(role) === 0" class="text-sm text-red-400 italic">No access assigned</span>
                 <div *ngIf="getPageCount(role) > 0" class="flex items-center gap-2">
                   <span class="text-xs font-semibold px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full">
-                    {{ getPageCount(role) }} pages
+                    {{ getPageCount(role) }} {{ getPageCount(role) === 1 ? 'page' : 'pages' }}
                   </span>
                   <span class="text-xs text-gray-400">
-                    ({{ getActionCount(role) }} actions)
+                    ({{ getActionCount(role) }} {{ getActionCount(role) === 1 ? 'action' : 'actions' }})
                   </span>
                   <span class="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs">{{ getPageNames(role) }}</span>
                 </div>
               </div>
             </td>
             <td class="px-4 py-3 text-center">
-              <div class="flex items-center justify-center gap-2">
-                <!-- A default role means the same thing in every company: it is
-                     defined in the backend and re-applied on every restart, so an
-                     edit here would be silently undone. The API refuses it too,
-                     and offering a button that always errors is worse than not
-                     offering one. -->
-                <button *ngIf="role.role_name !== 'SNT_SUPER'"
+              <!-- S&T: read-only. Default roles: Copy only — they are the same in
+                   every company and re-applied on every restart, so an edit
+                   would be undone. A company's own role: everything. -->
+              <div *ngIf="canManage" class="flex items-center justify-center gap-2">
+                <button *ngIf="!role.is_system"
                   (click)="openPagesModal(role)"
-                  [disabled]="role.is_system"
-                  [title]="role.is_system
-                    ? 'Default roles are the same in every company and are managed by S&amp;T. Create your own role to change what it can open.'
-                    : 'Assign pages and actions to this role'"
-                  class="px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 font-medium disabled:opacity-30 disabled:cursor-not-allowed">
+                  class="px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 font-medium whitespace-nowrap">
                   Edit Permissions
                 </button>
-                <button (click)="deleteRole(role)"
-                  [disabled]="role.is_system"
-                  class="px-3 py-1.5 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600 font-medium disabled:opacity-30 disabled:cursor-not-allowed">
+                <button *ngIf="canCopy(role)"
+                  (click)="openCopyModal(role)"
+                  [title]="role.is_system ? 'Make your own version of this default role' : 'Make a new role from this one'"
+                  class="px-3 py-1.5 bg-white dark:bg-gray-700 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 text-xs rounded-lg hover:bg-blue-50 dark:hover:bg-gray-600 font-medium">
+                  Copy
+                </button>
+                <button *ngIf="!role.is_system"
+                  (click)="deleteRole(role)"
+                  class="px-3 py-1.5 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600 font-medium">
                   Delete
                 </button>
+                <span *ngIf="isCompanyAdminRole(role)" class="text-xs text-gray-400">Set by Manage Access</span>
               </div>
+              <span *ngIf="!canManage" class="text-xs text-gray-400">View only</span>
             </td>
           </tr>
         </tbody>
@@ -166,32 +181,15 @@
       </button>
     </div>
     <div class="ui-dialog-body">
-      <!--
-        A super admin belongs to no company, so the backend needs to be told
-        which company's role this is (role.service.js scopes the list query
-        by company_id — a role created with none would never appear for any
-        company's admin to find). A company admin never sees this: their own
-        company is used automatically.
-      -->
-      <div class="ui-field" *ngIf="auth.isSntSuper()">
-        <label class="ui-label" for="roleCompany">
-          Company<span class="ui-req" aria-hidden="true">*</span>
-        </label>
-        <select id="roleCompany" class="ui-input" [(ngModel)]="createForm.company_id">
-          <option [ngValue]="null">Select a company</option>
-          <option *ngFor="let c of companies" [ngValue]="c.id">{{ c.company_name }}</option>
-        </select>
-      </div>
-
       <div class="ui-field">
         <label class="ui-label" for="roleName">
           Role name<span class="ui-req" aria-hidden="true">*</span>
         </label>
         <input id="roleName" [(ngModel)]="createForm.role_name" type="text"
                class="ui-input" autocomplete="off"
-               placeholder="e.g. SETTER, SUPERVISOR, OPERATOR"
+               placeholder="e.g. LINE LEAD"
                aria-describedby="roleNameHint">
-        <p id="roleNameHint" class="ui-hint">Uppercase, one word — this is how it appears when assigning users.</p>
+        <p id="roleNameHint" class="ui-hint">This is how it appears when you give a user their role. It can't match a default role's name.</p>
       </div>
 
       <!-- Explains the link between this role and machine assignment, which
@@ -300,6 +298,41 @@
           {{ loading ? 'Saving...' : 'Save Permissions' }}
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ──────────────── COPY ROLE MODAL ──────────────── -->
+<div *ngIf="showCopyModal" class="ui-overlay">
+  <div class="ui-dialog ui-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="copyTitle">
+    <div class="ui-dialog-header">
+      <div>
+        <h2 id="copyTitle" class="ui-dialog-title">Copy {{ copySource?.role_name }}</h2>
+        <p class="ui-dialog-subtitle">Your company's own version, which you can change.</p>
+      </div>
+      <button (click)="closeCopyModal()" class="ui-close" aria-label="Close">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="ui-dialog-body">
+      <div class="ui-field">
+        <label class="ui-label" for="copyName">
+          New role name<span class="ui-req" aria-hidden="true">*</span>
+        </label>
+        <input id="copyName" [(ngModel)]="copyName" type="text" class="ui-input" autocomplete="off"
+               (keydown.enter)="copyRole()" aria-describedby="copyHint">
+        <p id="copyHint" class="ui-hint">
+          It starts with the same pages as {{ copySource?.role_name }}. Pages your company does not have are left out.
+        </p>
+      </div>
+    </div>
+    <div class="ui-dialog-footer">
+      <button (click)="closeCopyModal()" class="ui-btn ui-btn-ghost">Cancel</button>
+      <button (click)="copyRole()" [disabled]="copying || !copyName.trim()" class="ui-btn ui-btn-primary">
+        {{ copying ? 'Copying...' : 'Copy Role' }}
+      </button>
     </div>
   </div>
 </div>
