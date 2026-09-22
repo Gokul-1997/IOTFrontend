@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OeeReportsService } from './oee.service';
@@ -23,6 +23,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
   styleUrl: './oee-reports.scss'
 })
 export class OeeReportsComponent implements OnInit, OnDestroy {
+  /** Shown as a tab inside Reports: the Reports page supplies the heading. */
+  @Input() embedded = false;
+
 
   private destroy$ = new Subject<void>();
 

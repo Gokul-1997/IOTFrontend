@@ -7,9 +7,6 @@ import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { OeeDashboardService } from './oee-dashboard.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
-import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
-import { AuthService } from '../../core/services/auth.service';
-import { ToastService } from '../../core/services/toast.service';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 8 — OEE Dashboard
@@ -28,7 +25,7 @@ import { ToastService } from '../../core/services/toast.service';
 @Component({
   selector: 'app-oee-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
+  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './oee-dashboard.component.html'
 })
 export class OeeDashboardComponent implements OnInit, OnDestroy {
@@ -40,30 +37,13 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   shifts: any[] = [];
   f: any = this.blankFilters();
   page = 1;
-  /* Every machine in one response: the cards and the report table page
+  /* Every machine in one response: the cards page
      through them on screen, 5 cards and N rows at a time. */
   readonly limit = 200;
-
-  /** The design's two tabs. */
-  tab: 'analytics' | 'report' = 'analytics';
 
   /** Machine cards, five to a page as the design shows them. */
   readonly cardsPerPage = 5;
   cardPage = 1;
-
-  /** Report table: client-side sort and paging over every machine. */
-  reportSort = 'oee_pct';
-  reportDir: 'asc' | 'desc' = 'desc';
-  reportPage = 1;
-  reportLimit = 10;
-  readonly reportColumns = [
-    { key: 'machine_serial_no', label: 'Machine' }, { key: 'status', label: 'Status' },
-    { key: 'availability_pct', label: 'Availability (%)' }, { key: 'performance_pct', label: 'Performance (%)' },
-    { key: 'quality_pct', label: 'Quality (%)' }, { key: 'oee_pct', label: 'OEE' },
-    { key: 'produced', label: 'Actuals' }, { key: 'good', label: 'Good' },
-    { key: 'rejected', label: 'Rejections' }, { key: 'rework', label: 'Rework' },
-    { key: 'rejection_rate_pct', label: 'Rej (%)' }, { key: 'idle_seconds', label: 'Downtime' }
-  ];
 
   /** Machines by OEE: the design's Top 5 / Bottom 5. */
   rankWhich: 'top' | 'bottom' = 'top';
@@ -83,30 +63,8 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private svc: OeeDashboardService,
-    private cdr: ChangeDetectorRef,
-    private auth: AuthService,
-    private toast: ToastService
+    private cdr: ChangeDetectorRef
   ) {}
-
-  /** Export is its own grant, as on every other dashboard. */
-  get canExport(): boolean { return this.auth.hasAction('analytics-oee', 'export'); }
-  exporting = '';
-
-  export(format: 'xlsx' | 'csv' | 'pdf'): void {
-    this.exporting = format;
-    this.cdr.markForCheck();
-    this.svc.exportAs(format, this.f).pipe(takeUntil(this.destroy$)).subscribe({
-      next: blob => {
-        this.exporting = '';
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `oee_${this.todayStr()}.${format}`; a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 0);
-        this.cdr.markForCheck();
-      },
-      error: () => { this.exporting = ''; this.cdr.markForCheck(); this.toast.error('No machines match these filters'); }
-    });
-  }
 
   ngOnInit(): void {
     this.svc.getMeta()
@@ -169,7 +127,6 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
     this.trendSeries = (d.trend || []).some((t: any) => t.oee_pct != null)
       ? [{ name: 'OEE', data: (d.trend || []).map((t: any) => t.oee_pct) }] : [];
     this.cardPage = 1;
-    this.reportPage = 1;
 
     /* Only machines with a computable OEE go on the comparison chart —
        plotting a null as a zero bar would read as a failing machine. */
@@ -329,9 +286,7 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
     return ({ EXCELLENT: 'Excellent', GOOD: 'Good', AVG: 'Avg', POOR: 'Needs Improvement' } as any)[g] || 'No cycle time';
   }
 
-  /* ── tabs, cards and the report table ── */
-  setTab(t: 'analytics' | 'report'): void { this.tab = t; this.cdr.markForCheck(); }
-
+  /* ── machine cards ── */
   get cardTotalPages(): number { return Math.max(1, Math.ceil((this.data?.machines?.data?.length || 0) / this.cardsPerPage)); }
   get pageCards(): any[] {
     const rows = this.data?.machines?.data || [];
@@ -344,31 +299,6 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
     this.rankWhich = which;
     this.apply({ status: 'success', data: this.data });   // rebuild the bars from what is loaded
   }
-
-  private get reportRows(): any[] {
-    const q = String(this.f.search || '').trim().toLowerCase();
-    const rows = (this.data?.machines?.data || [])
-      .filter((m: any) => !q || String(m.machine_serial_no).toLowerCase().includes(q));
-    const k = this.reportSort, sign = this.reportDir === 'asc' ? 1 : -1;
-    return [...rows].sort((a: any, b: any) => {
-      const x = a[k], y = b[k];
-      if (x == null && y == null) return 0;
-      if (x == null) return 1;
-      if (y == null) return -1;
-      return typeof x === 'string' ? sign * x.localeCompare(y) : sign * (x - y);
-    });
-  }
-  get reportTotal(): number { return this.reportRows.length; }
-  get reportTotalPages(): number { return Math.max(1, Math.ceil(this.reportTotal / this.reportLimit)); }
-  get reportPageRows(): any[] {
-    return this.reportRows.slice((this.reportPage - 1) * this.reportLimit, this.reportPage * this.reportLimit);
-  }
-  reportSortBy(key: string): void {
-    if (this.reportSort === key) this.reportDir = this.reportDir === 'desc' ? 'asc' : 'desc';
-    else { this.reportSort = key; this.reportDir = key === 'machine_serial_no' || key === 'status' ? 'asc' : 'desc'; }
-    this.reportPage = 1;
-  }
-  reportAria(key: string): string { return this.reportSort !== key ? 'none' : this.reportDir === 'asc' ? 'ascending' : 'descending'; }
 
   /** "↑ 3.18%" / "↓ 1.32%" from a signed change in percentage points. */
   change(v: number | null | undefined): string {

@@ -40,7 +40,7 @@
     </p>
 
     <div *ngIf="!loading && !errorMsg" class="divide-y divide-gray-100 dark:divide-gray-700">
-      <div *ngFor="let row of rows" class="flex items-center justify-between gap-4 py-3">
+      <div *ngFor="let row of visibleRows" class="flex items-center justify-between gap-4 py-3">
         <div class="min-w-0">
           <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ row.label }}</p>
           <p class="text-xs text-gray-400 dark:text-gray-500">{{ row.hint }}</p>

@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures/auth';
+import { test, expect, seedAuth } from './fixtures/auth';
 
 /*
  * The account surfaces that did not exist before this change: Profile,
@@ -110,6 +110,8 @@ test('dark mode survives a reload', async ({ authedPage: page }) => {
 });
 
 test('Settings toggles dark mode and per-user notification preferences', async ({ authedPage: page }) => {
+  // Settings lists only what a role can be sent; a company admin is sent everything
+  await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
   await mockCommon(page);
   let putBody: any = null;
   await page.route('**/api/notifications/preferences', route => {

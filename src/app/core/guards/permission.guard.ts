@@ -1,5 +1,6 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
+import { AuthService } from '../services/auth.service';
 
 /**
  * Guard that checks if the user has permission to access a page.
@@ -68,5 +69,23 @@ export function permissionGuard(requiredPermission: string): CanActivateFn {
       router.navigate(['/login']);
       return false;
     }
+  };
+}
+
+/**
+ * A page more than one permission can open — the Reports page holds the
+ * production reports (page:reports) and the OEE reports (page:oee-reports),
+ * so either one lets a role in; the page then shows only the tabs it may use.
+ * Same rule as everywhere else: the role holds it AND the company was granted it.
+ */
+export function anyPermissionGuard(keys: string[]): CanActivateFn {
+  return () => {
+    const router = inject(Router);
+    const auth = inject(AuthService);
+    if (!localStorage.getItem('user')) { router.navigate(['/login']); return false; }
+    if (auth.isSntSuper()) { router.navigate(['/admin/companies']); return false; }
+    if (keys.some(k => auth.hasPermission(k))) return true;
+    router.navigate(['/no-access']);
+    return false;
   };
 }

@@ -1,11 +1,11 @@
 import { inject } from '@angular/core';
-import { Routes } from '@angular/router';
+import { Routes, Router } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
 import { sntSuperGuard } from './core/guards/snt-super.guard';
 import { companyAdminGuard, companyRolesGuard, companyUserGuard } from './core/guards/company-admin.guard';
-import { permissionGuard } from './core/guards/permission.guard';
+import { permissionGuard, anyPermissionGuard } from './core/guards/permission.guard';
 
 export const routes: Routes = [
 
@@ -36,6 +36,8 @@ export const routes: Routes = [
       { path: 'downtime-analysis', canActivate: [permissionGuard('page:analytics-downtime')], loadComponent: () => import('./pages/downtime-dashboard/downtime-dashboard.component').then(m => m.DowntimeDashboardComponent) },
       { path: 'operator-performance', canActivate: [permissionGuard('page:analytics-operators')], loadComponent: () => import('./pages/operator-dashboard/operator-dashboard.component').then(m => m.OperatorDashboardComponent) },
       { path: 'oee-dashboard', canActivate: [permissionGuard('page:analytics-oee')], loadComponent: () => import('./pages/oee-dashboard/oee-dashboard.component').then(m => m.OeeDashboardComponent) },
+      // Tariff & Limits: its own page (it sat at the foot of the Energy Dashboard)
+      { path: 'energy-tariff', canActivate: [permissionGuard('page:analytics-energy:settings')], loadComponent: () => import('./pages/energy-tariff/energy-tariff.component').then(m => m.EnergyTariffComponent) },
       { path: 'energy-dashboard', canActivate: [permissionGuard('page:analytics-energy')], loadComponent: () => import('./pages/energy-dashboard/energy-dashboard.component').then(m => m.EnergyDashboardComponent) },
       { path: 'maintenance-report', canActivate: [permissionGuard('page:maintenance-report')], loadComponent: () => import('./pages/maintenance-report/maintenance-report.component').then(m => m.MaintenanceReportComponent) },
       { path: 'dashboard/live/:id', canActivate: [permissionGuard('page:dashboard:live')], loadComponent: () => import('./pages/dashboard/live/live.component').then(m => m.LiveComponent) },
@@ -61,8 +63,9 @@ export const routes: Routes = [
 
       { path: 'lines', canActivate: [permissionGuard('page:lines')], loadComponent: () => import('./pages/lines/lines.component').then(m => m.LinesComponent) },
 
-      { path: 'reports', canActivate: [permissionGuard('page:reports')], loadComponent: () => import('./pages/reports/reports').then(m => m.Reports) },
-      { path: 'oee-reports', canActivate: [permissionGuard('page:oee-reports')], loadComponent: () => import('./pages/oee-reports/oee-reports').then(m => m.OeeReportsComponent) },
+      { path: 'reports', canActivate: [anyPermissionGuard(['page:reports', 'page:oee-reports'])], loadComponent: () => import('./pages/reports/reports').then(m => m.Reports) },
+      // One Reports page: the old OEE Reports address opens its tab there
+      { path: 'oee-reports', pathMatch: 'full', redirectTo: () => inject(Router).createUrlTree(['/reports'], { queryParams: { tab: 'oee-records' } }) },
       { path: 'charts', canActivate: [permissionGuard('page:charts')], loadComponent: () => import('./pages/charts/charts').then(m => m.Charts) },
       { path: 'quality', canActivate: [permissionGuard('page:quality')], loadComponent: () => import('./pages/quality/quality').then(m => m.Quality) },
       { path: 'job', canActivate: [permissionGuard('page:job')], loadComponent: () => import('./pages/job/job-list.component').then(m => m.JobListComponent) },

@@ -58,8 +58,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     {
       label: 'Analytics', icon: 'donutnew',
       children: [
-        { label: 'OEE', path: '/oee-reports', permission: 'page:oee-reports' },
-        { label: 'Reports', path: '/reports', permission: 'page:reports' },
+        // one Reports page holds every report, the OEE ones included
+        { label: 'Reports', path: '/reports', permission: ['page:reports', 'page:oee-reports'] },
         { label: 'Charts', path: '/charts', permission: 'page:charts' },
         { label: 'Quality', path: '/quality', permission: 'page:quality' },
         { label: 'Maintenance Report', path: '/maintenance-report', permission: 'page:maintenance-report' }
@@ -69,7 +69,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
     { label: 'Downtime', path: '/downtime', icon: 'downtime', permission: 'page:downtime' },
     { label: 'Maintenance', path: '/maintenance', icon: 'maintenance', permission: 'page:maintenance' },
     {
-      label: 'Settings', icon: 'gearnew',
+      /* "Master", as the design names it: the company's setup data. It was
+         labelled "Settings", the same word as a person's own Settings page. */
+      label: 'Master', icon: 'gearnew',
       children: [
         { label: 'Machines', path: '/machines', permission: 'page:machines' },
         { label: 'Program Transfer', path: '/programs', permission: 'page:programs' },
@@ -78,7 +80,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
         { label: 'Lines', path: '/lines', permission: 'page:lines' },
         { label: 'Shifts', path: '/shifts', permission: 'page:shifts' },
         { label: 'Operators', path: '/operators', permission: 'page:operators' },
-        { label: '2FA Security', path: '/security/2fa' }
+        // Tariff & limits, moved off the Energy Dashboard into its own page
+        { label: 'Energy Tariff', path: '/energy-tariff', permission: 'page:analytics-energy:settings' }
+        /* 2FA Security moved to the account menu: it is about the person, and
+           with no permission it made this menu appear for every role. */
       ]
     },
     { label: 'Admin', path: '/admin/users', icon: 'shield', adminOnly: true } 
@@ -152,12 +157,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
         if (menu.children) {
           const filteredChildren = menu.children.filter((child: any) =>
-            !child.permission || this.auth.hasPermission(child.permission)
+            this.allowed(child.permission)
           );
           return filteredChildren.length > 0 ? { ...menu, children: filteredChildren } : null;
         }
 
-        return !menu.permission || this.auth.hasPermission(menu.permission) ? menu : null;
+        return this.allowed(menu.permission) ? menu : null;
       })
       .filter(m => m !== null);
   }
@@ -167,6 +172,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
   logout() {
     this.showUserMenu = false;
     this.auth.logout();
+  }
+
+  /** No permission, one, or any of several (a page more than one grant opens). */
+  private allowed(p: string | string[] | undefined): boolean {
+    if (!p) return true;
+    return Array.isArray(p) ? p.some(k => this.auth.hasPermission(k)) : this.auth.hasPermission(p);
   }
 
   toggleMenu(label: string) { this.openMenu = this.openMenu === label ? null : label; this.touch(); }

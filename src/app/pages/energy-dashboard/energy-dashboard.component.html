@@ -31,11 +31,7 @@
     </button>
     <!-- Where the cost per kWh is set. Up here so it can be found; it used
          to sit in the machine table's toolbar at the bottom of the page. -->
-    <button *ngIf="canEditSettings" type="button" class="mexa-submit"
-            (click)="showSettings ? (showSettings = false) : openSettings()"
-            [attr.aria-expanded]="showSettings" aria-controls="energySettings">
-      {{ showSettings ? 'Hide tariff' : 'Tariff & limits' }}
-    </button>
+    <a *ngIf="canEditSettings" routerLink="/energy-tariff" class="mexa-submit">Tariff &amp; limits</a>
   </div>
 </form>
 
@@ -68,12 +64,12 @@
     <strong>No tariff configured.</strong>
     Energy is shown in kWh until a cost per unit is set.
     <ng-container *ngIf="canEditSettings">
-      <button type="button" class="underline font-semibold" (click)="openSettings()">Set the tariff</button>
+      <a routerLink="/energy-tariff" class="underline font-semibold">Set the tariff</a>
       to see cost.
     </ng-container>
     <!-- said plainly, rather than pointing at a button this person can't see -->
     <ng-container *ngIf="!canEditSettings">
-      Your company admin sets it on this page, under <strong>Tariff &amp; limits</strong>.
+      Your company admin sets it under <strong>Master → Energy Tariff</strong>.
     </ng-container>
   </p>
 
@@ -320,65 +316,3 @@
   </section>
 </ng-container>
 
-<!-- ══════════ TARIFF & LIMITS ══════════ -->
-<section id="energySettings" class="mexa-card scroll-mt-4" *ngIf="showSettings && canEditSettings">
-  <h2 class="mexa-card-title mexa-card-title-left">Tariff &amp; Limits</h2>
-  <p class="mexa-card-hint">
-    Leave the machine blank to set the company default. A row for a specific machine overrides it.
-  </p>
-
-  <form class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 items-end my-4" (ngSubmit)="saveSettings()">
-    <div>
-      <label for="stMachine" class="ui-label">Machine</label>
-      <select id="stMachine" class="filter-select w-full" [(ngModel)]="settingsForm.machine_id" name="stMachine">
-        <option [ngValue]="null">Company default</option>
-        <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-      </select>
-    </div>
-    <div>
-      <label for="stCost" class="ui-label">Cost per kWh</label>
-      <input id="stCost" type="number" min="0" step="0.01" class="ui-input"
-             [(ngModel)]="settingsForm.cost_per_kwh" name="stCost">
-    </div>
-    <div>
-      <label for="stCurrency" class="ui-label">Currency</label>
-      <input id="stCurrency" type="text" maxlength="8" class="ui-input"
-             [(ngModel)]="settingsForm.currency" name="stCurrency">
-    </div>
-    <div>
-      <label for="stOverload" class="ui-label">Overload above (kW)</label>
-      <input id="stOverload" type="number" min="0" step="0.1" class="ui-input"
-             [(ngModel)]="settingsForm.overload_kw" name="stOverload">
-    </div>
-    <div>
-      <button type="submit" class="mexa-submit" [disabled]="savingSettings">
-        {{ savingSettings ? 'Saving…' : 'Save' }}
-      </button>
-    </div>
-  </form>
-
-  <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
-    <table class="mexa-table">
-      <caption class="sr-only">Configured energy settings</caption>
-      <thead>
-        <tr>
-          <th scope="col">Scope</th>
-          <th scope="col">Cost per kWh</th>
-          <th scope="col">Currency</th>
-          <th scope="col">Overload Above</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let s of settings">
-          <td class="strong">{{ s.machine_serial_no || 'Company default' }}</td>
-          <td class="num">{{ s.cost_per_kwh || '--' }}</td>
-          <td>{{ s.currency }}</td>
-          <td class="num">{{ s.overload_kw ? s.overload_kw + ' kW' : '--' }}</td>
-        </tr>
-        <tr *ngIf="!settings.length">
-          <td colspan="4" class="mexa-empty">Nothing configured yet.</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</section>

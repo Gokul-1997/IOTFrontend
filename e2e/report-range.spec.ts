@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures/auth';
+import { test, expect, seedAuth } from './fixtures/auth';
 
 /*
  * The three-month rule on the Report page.
@@ -25,6 +25,8 @@ function daysAgo(days: number): string {
 test('a range longer than three months is emailed, not fetched', async ({ authedPage: page }) => {
   const dataCalls: string[] = [];
   const emailCalls: any[] = [];
+  // Reports opens for a role holding a report; the fixture's legacy ADMIN holds none
+  await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
 
   await page.route('**/api/reports/machines*',  r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ok([{ id: 1, name: 'CNC-01' }])) }));
   await page.route('**/api/reports/shifts*',    r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ok([{ id: 10, name: 'Shift 1' }])) }));

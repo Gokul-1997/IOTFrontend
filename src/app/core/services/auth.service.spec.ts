@@ -372,7 +372,7 @@ describe('AuthService.getFirstAccessibleRoute', () => {
       roles: ['COMPANY_ADMIN'],
       company_permissions: ['page:oee-reports:view']
     });
-    expect(service.getFirstAccessibleRoute()).toBe('/oee-reports');
+    expect(service.getFirstAccessibleRoute()).toBe('/reports');
   });
 
   test('regular user routes to first matching permission', () => {

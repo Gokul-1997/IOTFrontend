@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ThemeService } from '../../core/services/theme.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { AuthService } from '../../core/services/auth.service';
 
-interface PrefRow { key: string; label: string; hint: string; }
+interface PrefRow { key: string; label: string; hint: string; pages?: string[]; }
 
 /**
  * Application settings: theme and per-user notification preferences.
@@ -23,12 +24,23 @@ interface PrefRow { key: string; label: string; hint: string; }
 export class SettingsComponent implements OnInit {
 
   readonly rows: PrefRow[] = [
-    { key: 'notify_alarm',             label: 'Alarms',            hint: 'A machine goes into alarm' },
-    { key: 'notify_maintenance',       label: 'Maintenance',       hint: 'A ticket or scheduled service is due' },
-    { key: 'notify_ticket',            label: 'Tickets',           hint: 'A ticket you are involved in changes status' },
-    { key: 'notify_program_transfer',  label: 'Program transfer',  hint: 'A transfer needs your approval, or completes' },
+    { key: 'notify_alarm',             label: 'Alarms',            hint: 'A machine goes into alarm',
+      pages: ['page:alarms', 'page:analytics-alarms', 'page:dashboard'] },
+    { key: 'notify_maintenance',       label: 'Maintenance',       hint: 'A ticket or scheduled service is due',
+      pages: ['page:maintenance', 'page:analytics-maintenance', 'page:analytics-preventive', 'page:analytics-periodic', 'page:maintenance-report'] },
+    { key: 'notify_ticket',            label: 'Tickets',           hint: 'A ticket you are involved in changes status',
+      pages: ['page:maintenance'] },
+    { key: 'notify_program_transfer',  label: 'Program transfer',  hint: 'A transfer needs your approval, or completes',
+      pages: ['page:programs'] },
     { key: 'notify_system',            label: 'System',            hint: 'Account and platform announcements' }
   ];
+
+  /* Only the notifications this person's role can receive. Every role saw
+     all five — HR could switch Program transfer alerts on and off although
+     nothing ever sent one to HR. The API sends alarms only to the same roles. */
+  get visibleRows(): PrefRow[] {
+    return this.rows.filter(r => !r.pages || r.pages.some(p => this.auth.hasPermission(p)));
+  }
 
   prefs: Record<string, boolean> = {};
   loading = true;
@@ -39,6 +51,7 @@ export class SettingsComponent implements OnInit {
 
   constructor(
     public theme: ThemeService,
+    private auth: AuthService,
     private notif: NotificationService,
     private cdr: ChangeDetectorRef
   ) {}

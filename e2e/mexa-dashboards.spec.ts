@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures/auth';
+import { test, expect, seedAuth } from './fixtures/auth';
 
 /*
  * Renders all eight Phase 2 dashboards in the MEXA design and screenshots
@@ -365,25 +365,48 @@ for (const s of screens) {
   });
 }
 
-/* The design's two tabs, and the agreement's machine-wise OEE table with
-   search, sorting and paging. (Removed on 2026-09-16, restored 2026-09-22.) */
-test('OEE dashboard: Analytics and Report tabs, the report a sortable machine table', async ({ authedPage: page }) => {
+/* The agreement's machine-wise OEE table — search, sorting, paging — is a
+   tab of Reports, beside the other OEE reports, so there is one place for
+   every report. The OEE Dashboard is the analytics view only. (It was a
+   "Report" tab on the dashboard until 2026-09-22.) */
+test('OEE dashboard has no Report tab; the machine table lives in Reports', async ({ authedPage: page }) => {
   await mockApi(page);
   await page.setViewportSize({ width: 1600, height: 1200 });
   await page.goto('/oee-dashboard');
-
-  await expect(page.getByRole('tab', { name: 'Analytics' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('.mexa-oeecard').first()).toBeVisible();
   await expect(page.getByRole('heading', { name: 'OEE Trend' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Report' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Machine Wise OEE Summary' })).toHaveCount(0);
 
-  await page.getByRole('tab', { name: 'Report' }).click();
-  await expect(page.getByRole('heading', { name: 'Machine Wise OEE Summary' })).toBeVisible();
-  await expect(page.locator('.mexa-oeecard')).toHaveCount(0);
+  await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
+  await page.goto('/reports?tab=machine-oee');
+  await expect(page.getByRole('tab', { name: /Machine OEE/ })).toHaveAttribute('aria-selected', 'true');
   const table = page.locator('.mexa-table');
+  await expect(table.getByText('CNC-01')).toBeVisible();
   await expect(table.getByRole('button', { name: /Availability \(%\)/ })).toBeVisible();
   await expect(table.getByRole('button', { name: /Rework/ })).toBeVisible();
+  // highest OEE first, as the dashboard ranks them
+  await expect(table.locator('tbody tr').first()).toContainText('CNC-01');
   await table.getByRole('button', { name: /^Machine/ }).click();
   await expect(table.locator('th[aria-sort="ascending"]')).toHaveCount(1);
+
+  await page.getByRole('searchbox', { name: 'Search machines' }).fill('03');
+  await expect(table.locator('tbody tr')).toHaveCount(1);
+  await expect(table.locator('tbody tr')).toContainText('CNC-03');
+});
+
+test('Reports holds every report as a tab, and Analytics has one Reports entry', async ({ authedPage: page }) => {
+  await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
+  await mockApi(page);
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  await page.goto('/reports');
+  const tabs = page.getByRole('tablist', { name: 'Report type' }).getByRole('tab');
+  await expect(tabs).toHaveText([/Production/, /OEE Hourly/, /Shift OEE/, /OEE Records/, /Machine OEE/]);
+
+  await page.getByRole('button', { name: 'Analytics' }).first().click();
+  const menu = page.locator('nav .absolute');
+  await expect(menu.getByRole('button', { name: 'Reports', exact: true })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'OEE', exact: true })).toHaveCount(0);
 });
 
 test('Periodic Attention Required filters the ticket table', async ({ authedPage: page }) => {

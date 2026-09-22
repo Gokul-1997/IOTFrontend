@@ -10,8 +10,13 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule }  from '@angular/forms';
 import { ReportsService, ReportFilters, ReportType, MAX_DIRECT_DAYS, rangeDays } from './reports.service';
+import { ActivatedRoute } from '@angular/router';
+import { OeeReportsComponent } from '../oee-reports/oee-reports';
+import { MachineOeeReportComponent } from './machine-oee-report.component';
 import { AuthService } from '../../core/services/auth.service';
 import { UiTabsDirective } from '../../shared/ui-tabs.directive';
+
+type Tab = ReportType | 'oee-records' | 'machine-oee';
 
 /* ── Column definition ── */
 interface ColDef {
@@ -68,7 +73,7 @@ const COL_DEFS: Record<ReportType, ColDef[]> = {
 @Component({
   standalone: true,
   selector: 'app-reports',
-  imports: [UiTabsDirective, CommonModule, FormsModule],
+  imports: [UiTabsDirective, CommonModule, FormsModule, OeeReportsComponent, MachineOeeReportComponent],
   templateUrl: './reports.html',
   styleUrl: './reports.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -79,12 +84,26 @@ export class Reports implements OnInit {
   @ViewChild('colBtn')   colBtnRef?:   ElementRef;
 
   /* ── tabs ── */
-  tabs: { id: ReportType; label: string; icon: string }[] = [
-    { id: 'production', label: 'Production', icon: '⚙️' },
-    { id: 'oee-hourly', label: 'OEE Hourly', icon: '📊' },
-    { id: 'shift-oee',  label: 'Shift OEE',  icon: '🔄' },
+  /* Every report lives here — the OEE Reports page and the OEE Dashboard's
+     machine summary used to be separate places. Each tab shows only to a
+     role that may open it: the production reports need Reports, the OEE ones
+     need OEE Reports (and the machine summary the OEE Dashboard's data too). */
+  private readonly allTabs: { id: Tab; label: string; icon: string; allowed: () => boolean }[] = [
+    { id: 'production',  label: 'Production',  icon: '⚙️', allowed: () => this.auth.hasPermission('page:reports') },
+    { id: 'oee-hourly',  label: 'OEE Hourly',  icon: '📊', allowed: () => this.auth.hasPermission('page:reports') },
+    { id: 'shift-oee',   label: 'Shift OEE',   icon: '🔄', allowed: () => this.auth.hasPermission('page:reports') },
+    { id: 'oee-records', label: 'OEE Records', icon: '📋', allowed: () => this.auth.hasPermission('page:oee-reports') },
+    { id: 'machine-oee', label: 'Machine OEE', icon: '🏭',
+      allowed: () => this.auth.hasPermission('page:oee-reports') && this.auth.hasPermission('page:analytics-oee') },
   ];
-  activeTab: ReportType = 'production';
+  tabs: { id: Tab; label: string; icon: string }[] = [];
+  activeTab: Tab = 'production';
+
+  /** The active tab as one of the three built reports (only read when isBuilt). */
+  private get rt(): ReportType { return this.activeTab as ReportType; }
+
+  /** The three reports this page builds itself (columns, filters, table). */
+  get isBuilt(): boolean { return ['production', 'oee-hourly', 'shift-oee'].includes(this.activeTab); }
 
   /* ── filters ── */
   filters: ReportFilters = {
@@ -103,7 +122,7 @@ export class Reports implements OnInit {
   colBuilderOpen  = false;
   selectedColKeys = new Set<string>();   // keys currently selected
 
-  get allColumns(): ColDef[] { return COL_DEFS[this.activeTab]; }
+  get allColumns(): ColDef[] { return COL_DEFS[this.rt]; }
 
   /** Columns that will actually render (in original order) */
   get activeColumns(): ColDef[] {
@@ -143,15 +162,32 @@ export class Reports implements OnInit {
   constructor(
     private svc: ReportsService,
     private cdr: ChangeDetectorRef,
-    public  auth: AuthService
+    public  auth: AuthService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    this.tabs = this.allTabs.filter(t => t.allowed());
+    this.activeTab = this.tabs[0]?.id ?? 'production';
+    // ?tab=… opens a given report (the old /oee-reports address lands on OEE Records)
+    const wanted = this.route.snapshot.queryParamMap.get('tab') as Tab | null;
+    if (wanted && this.tabs.some(t => t.id === wanted)) this.activeTab = wanted;
+    if (!this.isBuilt) return;
+    this.loadFilterLists();
+    this.resetColSelection();
+    this.loadReport();
+  }
+
+  /** The machine / shift / operator lists for the built reports' filters —
+   *  once, on the first built tab shown (a page opened on an OEE tab has not
+   *  needed them yet). */
+  private filterListsLoaded = false;
+  private loadFilterLists(): void {
+    if (this.filterListsLoaded) return;
+    this.filterListsLoaded = true;
     this.svc.getMachines().subscribe({  next: r => { this.machines  = r.data; this.cdr.markForCheck(); } });
     this.svc.getShifts().subscribe({    next: r => { this.shifts    = r.data; this.cdr.markForCheck(); } });
     this.loadOperators();
-    this.resetColSelection();
-    this.loadReport();
   }
 
   loadOperators(machine_id?: string): void {
@@ -166,8 +202,10 @@ export class Reports implements OnInit {
   }
 
   /* ── tab switch ── */
-  setTab(tab: ReportType): void {
+  setTab(tab: Tab): void {
     this.activeTab = tab;
+    if (!this.isBuilt) { this.cdr.markForCheck(); return; }   // the embedded report loads itself
+    this.loadFilterLists();
     this.page      = 1;
     this.sortCol   = '';
     this.colBuilderOpen = false;
@@ -190,7 +228,7 @@ export class Reports implements OnInit {
   clearAllCols(): void   { this.selectedColKeys = new Set(); }
 
   resetColSelection(): void {
-    this.selectedColKeys = new Set(COL_DEFS[this.activeTab].filter(c => c.default).map(c => c.key));
+    this.selectedColKeys = new Set(COL_DEFS[this.rt].filter(c => c.default).map(c => c.key));
   }
 
   /** Returns the name of an item by id from a dropdown list */
@@ -252,7 +290,7 @@ export class Reports implements OnInit {
       next: (res: any) => {
         this.rows    = res.data.rows    || [];
         this.summary = res.data.summary || {};
-        this.kpis    = this.buildKpis(this.activeTab, this.summary);
+        this.kpis    = this.buildKpis(this.rt, this.summary);
         this.loading = false;
         this.cdr.markForCheck();
       },
@@ -278,7 +316,7 @@ export class Reports implements OnInit {
 
     this.svc.emailReport({
       ...this.filters,
-      type:    this.activeTab,
+      type:    this.rt,
       columns: this.activeColumns.map(c => c.key),
       email:   this.recipient.trim() || undefined,
       /* Names, so the covering note reads "Machine: CNC-01" rather than an id. */
@@ -355,7 +393,7 @@ export class Reports implements OnInit {
   }
 
   downloadFullExcel(): void {
-    this.svc.downloadExcel(this.activeTab, this.filters.date_from);
+    this.svc.downloadExcel(this.rt, this.filters.date_from);
   }
 
   /* ── KPI cards ── */

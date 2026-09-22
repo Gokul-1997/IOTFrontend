@@ -246,7 +246,7 @@ export class AuthService {
     { permission: 'page:dashboard',          path: '/dashboard' },
     ...AuthService.ANALYTICS_LANDINGS,
     { permission: 'page:maintenance-report', path: '/maintenance-report' },
-    { permission: 'page:oee-reports',        path: '/oee-reports' },
+    { permission: 'page:oee-reports',        path: '/reports' },
     { permission: 'page:reports',            path: '/reports' },
     { permission: 'page:charts',             path: '/charts' },
     { permission: 'page:quality',            path: '/quality' },

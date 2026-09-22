@@ -141,7 +141,15 @@
       <span class="ui-tab-icon" aria-hidden="true">{{ tab.icon }}</span>{{ tab.label }}
     </button>
   </div>
-<div class="ui-tabpanel shadow-xl" role="tabpanel"
+<div *ngIf="activeTab === 'oee-records'" class="ui-tabpanel shadow-xl" role="tabpanel"
+     id="panel-oee-records" aria-labelledby="tab-oee-records">
+  <app-oee-reports [embedded]="true"></app-oee-reports>
+</div>
+<div *ngIf="activeTab === 'machine-oee'" class="ui-tabpanel shadow-xl" role="tabpanel"
+     id="panel-machine-oee" aria-labelledby="tab-machine-oee">
+  <app-machine-oee-report></app-machine-oee-report>
+</div>
+<div *ngIf="isBuilt" class="ui-tabpanel shadow-xl" role="tabpanel"
      [id]="'panel-' + activeTab" [attr.aria-labelledby]="'tab-' + activeTab">
   <!-- ══════════════════════════════════════════════
        FILTER BAR

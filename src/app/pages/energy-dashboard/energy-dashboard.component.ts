@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { EnergyDashboardService } from './energy-dashboard.service';
@@ -22,7 +23,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 @Component({
   selector: 'app-energy-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './energy-dashboard.component.html'
 })
 export class EnergyDashboardComponent implements OnInit, OnDestroy {
@@ -41,10 +42,6 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   updatedAt = '';
   exporting = '';
 
-  showSettings = false;
-  savingSettings = false;
-  settingsForm: any = { machine_id: null, cost_per_kwh: null, currency: 'INR', overload_kw: null };
-  settings: any[] = [];
 
   trendSeries: any[] = [];
   trendCategories: string[] = [];
@@ -69,13 +66,6 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   get canExport(): boolean { return this.auth.hasAction('analytics-energy', 'export'); }
   get canEditSettings(): boolean { return this.auth.hasAction('analytics-energy', 'settings'); }
 
-  /** Open Tariff & limits and bring it into view — it sits below the machine
-   *  table, so opening it without scrolling looked like nothing happened. */
-  openSettings(): void {
-    this.showSettings = true;
-    this.cdr.detectChanges();
-    document.getElementById('energySettings')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
 
   ngOnInit(): void {
     this.svc.getMeta()
@@ -86,7 +76,6 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       .pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => { this.page = 1; this.load(); });
 
-    this.loadSettings();
     this.load();
   }
 
@@ -173,31 +162,6 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
     };
   }
 
-  loadSettings(): void {
-    this.svc.getSettings()
-      .pipe(takeUntil(this.destroy$), catchError(() => of(null)))
-      .subscribe(res => { this.settings = res?.data ?? []; this.cdr.markForCheck(); });
-  }
-
-  saveSettings(): void {
-    this.savingSettings = true;
-    this.cdr.markForCheck();
-    this.svc.saveSettings(this.settingsForm)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.savingSettings = false;
-          this.toast.success('Energy settings saved');
-          this.loadSettings();
-          this.load();
-        },
-        error: err => {
-          this.savingSettings = false;
-          this.cdr.markForCheck();
-          this.toast.error(err?.error?.message || 'Could not save the settings');
-        }
-      });
-  }
 
   export(format: 'xlsx' | 'csv' | 'pdf'): void {
     this.exporting = format;

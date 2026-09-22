@@ -149,18 +149,10 @@
     </div>
   </div>
 
-  <!-- ══════════ TABS — Analytics | Report, as the design ══════════ -->
-  <div class="flex justify-center gap-2 mt-2" role="tablist" aria-label="OEE views">
-    <button type="button" role="tab" class="px-10 py-2.5 rounded-t-xl font-bold text-lg"
-            [attr.aria-selected]="tab === 'analytics'" (click)="setTab('analytics')"
-            [ngClass]="tab === 'analytics' ? 'bg-[--mexa-card] text-[--mexa-ink] shadow-sm' : 'bg-[--mexa-row-alt] text-[--mexa-ink-3]'">Analytics</button>
-    <button type="button" role="tab" class="px-10 py-2.5 rounded-t-xl font-bold text-lg"
-            [attr.aria-selected]="tab === 'report'" (click)="setTab('report')"
-            [ngClass]="tab === 'report' ? 'bg-[--mexa-card] text-[--mexa-ink] shadow-sm' : 'bg-[--mexa-row-alt] text-[--mexa-ink-3]'">Report</button>
-  </div>
+  <!-- The machine-wise report is on the Reports page (Reports → Machine OEE):
+       one place for every report. This screen is the analytics. -->
 
-  <ng-container *ngIf="tab === 'analytics'">
-  <section class="mexa-card" role="tabpanel" aria-label="Analytics">
+  <section class="mexa-card" aria-label="Machine OEE">
     <div class="mexa-oeecards">
       <article *ngFor="let m of pageCards" class="mexa-oeecard mexa-oeecard-solid" [ngClass]="gradeTile(grade(m))">
         <div class="mexa-oeecard-head">
@@ -238,62 +230,5 @@
       [colors]="compChart.colors" [dataLabels]="compChart.dataLabels" [legend]="compChart.legend"
       [xaxis]="compChart.xaxis" [yaxis]="compChart.yaxis" [grid]="compChart.grid"
       [tooltip]="compChart.tooltip" [noData]="compChart.noData"></apx-chart>
-  </section>
-  </ng-container>
-
-  <!-- ══════════ REPORT — Machine Wise OEE Summary ══════════ -->
-  <section class="mexa-card" *ngIf="tab === 'report'" role="tabpanel" aria-label="Report">
-    <div class="mexa-tablebar">
-      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Machine Wise OEE Summary</h2>
-      <span class="inline-flex items-center gap-2">
-        <label class="sr-only" for="oeeSearch">Search machines</label>
-        <input id="oeeSearch" type="search" class="mexa-search" placeholder="Search"
-               [(ngModel)]="f.search" name="oeeSearch" (ngModelChange)="reportPage = 1">
-        <span *ngIf="canExport" class="inline-flex items-center gap-1" role="group" aria-label="Export the OEE report">
-          <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">{{ exporting === 'xlsx' ? '…' : 'Excel' }}</button>
-          <button type="button" class="mexa-pagebtn" (click)="export('csv')" [disabled]="exporting">{{ exporting === 'csv' ? '…' : 'CSV' }}</button>
-          <button type="button" class="mexa-pagebtn" (click)="export('pdf')" [disabled]="exporting">{{ exporting === 'pdf' ? '…' : 'PDF' }}</button>
-        </span>
-      </span>
-    </div>
-    <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
-      <table class="mexa-table">
-        <caption class="sr-only">OEE by machine</caption>
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col" *ngFor="let c of reportColumns" [attr.aria-sort]="reportAria(c.key)">
-              <button type="button" class="mexa-sort" (click)="reportSortBy(c.key)" [attr.aria-current]="reportSort === c.key">
-                {{ c.label }}
-                <span class="mexa-sort-arrow" aria-hidden="true">{{ reportSort === c.key ? (reportDir === 'asc' ? '▲' : '▼') : '⇅' }}</span>
-              </button>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let m of reportPageRows; let i = index">
-            <td class="num">{{ (reportPage - 1) * reportLimit + i + 1 }}</td>
-            <td class="strong">{{ m.machine_serial_no }}</td>
-            <td><span class="mexa-badge" [ngClass]="statusClass(m.status)">{{ m.status | titlecase }}</span></td>
-            <td class="num">{{ pct(m.availability_pct) }}</td>
-            <td class="num">{{ pct(m.performance_pct) }}</td>
-            <td class="num">{{ pct(m.quality_pct) }}</td>
-            <td class="num strong">{{ pct(m.oee_pct) }}</td>
-            <td class="num">{{ m.produced }}</td>
-            <td class="num">{{ m.good }}</td>
-            <td class="num">{{ m.rejected }}</td>
-            <td class="num">{{ m.rework }}</td>
-            <td class="num">{{ pct(m.rejection_rate_pct) }}</td>
-            <td class="num whitespace-nowrap">{{ hms(m.idle_seconds) }}</td>
-          </tr>
-          <tr *ngIf="!reportPageRows.length">
-            <td [attr.colspan]="reportColumns.length + 1" class="mexa-empty">No machines match these filters.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <app-mexa-pager [page]="reportPage" [totalPages]="reportTotalPages" [total]="reportTotal"
-                    [shown]="reportPageRows.length" [limit]="reportLimit"
-                    (pageChange)="reportPage = $event" (limitChange)="reportLimit = $event; reportPage = 1"></app-mexa-pager>
   </section>
 </ng-container>

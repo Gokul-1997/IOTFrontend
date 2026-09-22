@@ -6,7 +6,7 @@
       <div class="page-title">
         <!-- <mat-icon class="title-icon">assessment</mat-icon> -->
         <div>
-          <h2>OEE Reports</h2>
+          <h2 *ngIf="!embedded">OEE Reports</h2>
         </div>
         <span class="subtitle">{{ total }} record{{ total !== 1 ? 's' : '' }} found</span>
       </div>

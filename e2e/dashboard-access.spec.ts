@@ -108,7 +108,7 @@ test('Energy: view alone hides Export and Tariff settings', async ({ page }) => 
 
   await expect(page.getByText('Machine Detail')).toBeVisible();
   await expect(page.getByRole('group', { name: 'Export the filtered list' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Tariff & limits' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Tariff & limits' })).toHaveCount(0);
 });
 
 test('Energy: export granted shows Export but still not Tariff settings', async ({ page }) => {
@@ -122,7 +122,7 @@ test('Energy: export granted shows Export but still not Tariff settings', async 
   await page.goto('/energy-dashboard');
 
   await expect(page.getByRole('group', { name: 'Export the filtered list' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Tariff & limits' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Tariff & limits' })).toHaveCount(0);
 });
 
 test('Energy: all three grants show everything', async ({ page }) => {
@@ -136,7 +136,7 @@ test('Energy: all three grants show everything', async ({ page }) => {
   await page.goto('/energy-dashboard');
 
   await expect(page.getByRole('group', { name: 'Export the filtered list' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Tariff & limits' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Tariff & limits' })).toBeVisible();
 });
 
 /* Two things the customer asked to be taken out on 2026-09-21. Both were
