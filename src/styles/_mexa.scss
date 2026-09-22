@@ -535,6 +535,26 @@ html, body { background: var(--mexa-ground); }
 .mexa-grade-avg       { --band: #b45309; }
 .mexa-grade-poor      { --band: #c32b3f; }
 
+/* The design fills each machine card with its grade colour. White text on
+   every fill is at least 4.5:1; "no cycle time" uses slate-500 for the same
+   reason rather than the lighter key dot. */
+.mexa-oeecard.mexa-oeecard-solid { background: var(--band); border-color: var(--band); }
+.mexa-oeecard-solid.mexa-grade-unknown { --band: #64748b; }
+.mexa-oeecard-solid .mexa-oeecard-name,
+.mexa-oeecard-solid .mexa-oeecard-grade,
+.mexa-oeecard-solid .mexa-oeecard-metrics,
+.mexa-oeecard-solid .mexa-oeecard-metrics .num,
+.mexa-oeecard-solid .mexa-oeering-pct,
+.mexa-oeecard-solid .mexa-oeering-cap { color: #fff; }
+.mexa-oeecard-solid .mexa-oeecard-grade::before { background: #fff; }
+/* On a filled card the ring is white on a faint track, and its hole is the
+   card colour — the plain ring would be the fill's own colour on white. */
+.mexa-oeecard-solid .mexa-oeering {
+  background: conic-gradient(#fff var(--pct, 0%), rgba(255, 255, 255, .28) 0);
+}
+.mexa-oeecard-solid .mexa-oeering::after { background: var(--band); }
+.mexa-oeecard-solid .mexa-oeering-cap { opacity: .9; }
+
 /* ── Attention Required rows (Periodic dashboard) ─────────────
    A count in a coloured disc, a label, and a chevron. Rendered as
    buttons because each one filters the table below it. */

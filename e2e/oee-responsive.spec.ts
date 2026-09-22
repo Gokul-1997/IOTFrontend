@@ -140,13 +140,13 @@ test('chart text stays legible on the dark surface', async ({ authedPage: page }
  * "show more" that does not name its count leaves you unable to tell a
  * collapsed list from a short one.
  */
-test('the machine grid opens compact and can be expanded to the whole fleet', async ({ authedPage: page }) => {
+test('the machine cards go five to a page, as the design shows them', async ({ authedPage: page }) => {
   const fleet = Array.from({ length: 20 }, (_, i) => {
     const pct = 95 - i * 3;
     return machine(`VMC-${String(i + 1).padStart(2, '0')}`, pct,
                    pct >= 85 ? 'GOOD' : pct >= 60 ? 'FAIR' : 'POOR');
   });
-  const twenty = ok({ ...oee.data, machines: { data: fleet, total: 20, page: 1, limit: 20, totalPages: 1 } });
+  const twenty = ok({ ...oee.data, machines: { data: fleet, total: 20, page: 1, limit: 200, totalPages: 1 } });
 
   await page.route('**/api/**', (r: any) => r.fulfill({ status: 200, contentType: 'application/json',
     body: JSON.stringify({ status: 'success', success: true, data: [] }) }));
@@ -157,22 +157,12 @@ test('the machine grid opens compact and can be expanded to the whole fleet', as
   await page.goto('/oee-dashboard');
   await expect(page.locator('.mexa-kpi').first()).toBeVisible();
 
-  // compact by default, and honest about it
-  await expect(page.locator('.mexa-oeecard')).toHaveCount(6);
-  await expect(page.locator('.mexa-pager')).toContainText('Showing 6 of 20 machines');
-
-  const toggle = page.getByRole('button', { name: /show all 20 on this page/i });
-  await expect(toggle).toBeVisible();
-  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-  await page.screenshot({ path: 'mexa-oee-compact.png', fullPage: true });
-
-  await toggle.click();
-  await expect(page.locator('.mexa-oeecard')).toHaveCount(20);
-  await expect(page.locator('.mexa-pager')).toContainText('Showing 20 of 20 machines');
-  await expect(page.getByRole('button', { name: /show fewer/i })).toHaveAttribute('aria-expanded', 'true');
-  await page.screenshot({ path: 'mexa-oee-expanded.png', fullPage: true });
-
-  // and back
-  await page.getByRole('button', { name: /show fewer/i }).click();
-  await expect(page.locator('.mexa-oeecard')).toHaveCount(6);
+  await expect(page.locator('.mexa-oeecard')).toHaveCount(5);
+  await expect(page.getByText('Total Machines 20')).toBeVisible();
+  // the four grades of the design, on each card's own OEE
+  await expect(page.locator('.mexa-oeecard').first()).toHaveClass(/mexa-grade-excellent/);
+  const pages = page.getByRole('navigation', { name: 'Machine pages' });
+  await pages.getByRole('button', { name: '4', exact: true }).click();
+  await expect(page.locator('.mexa-oeecard').first()).toContainText('VMC-16');
+  await expect(page.locator('.mexa-oeecard').first()).toHaveClass(/mexa-grade-poor/);
 });

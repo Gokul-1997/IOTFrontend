@@ -365,19 +365,25 @@ for (const s of screens) {
   });
 }
 
-test('OEE dashboard has no Report view — reports belong to the Report page', async ({ authedPage: page }) => {
+/* The design's two tabs, and the agreement's machine-wise OEE table with
+   search, sorting and paging. (Removed on 2026-09-16, restored 2026-09-22.) */
+test('OEE dashboard: Analytics and Report tabs, the report a sortable machine table', async ({ authedPage: page }) => {
   await mockApi(page);
   await page.setViewportSize({ width: 1600, height: 1200 });
   await page.goto('/oee-dashboard');
 
-  // the analytics content is all that remains
-  await expect(page.locator('.mexa-oeecard')).toHaveCount(4);
+  await expect(page.getByRole('tab', { name: 'Analytics' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('.mexa-oeecard').first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'OEE Trend' })).toBeVisible();
 
-  // the tab strip and the machine-summary table were removed from this screen
-  await expect(page.locator('.mexa-tabs')).toHaveCount(0);
-  await expect(page.getByRole('tab')).toHaveCount(0);
-  await expect(page.locator('.mexa-table')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Excel' })).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Report' }).click();
+  await expect(page.getByRole('heading', { name: 'Machine Wise OEE Summary' })).toBeVisible();
+  await expect(page.locator('.mexa-oeecard')).toHaveCount(0);
+  const table = page.locator('.mexa-table');
+  await expect(table.getByRole('button', { name: /Availability \(%\)/ })).toBeVisible();
+  await expect(table.getByRole('button', { name: /Rework/ })).toBeVisible();
+  await table.getByRole('button', { name: /^Machine/ }).click();
+  await expect(table.locator('th[aria-sort="ascending"]')).toHaveCount(1);
 });
 
 test('Periodic Attention Required filters the ticket table', async ({ authedPage: page }) => {

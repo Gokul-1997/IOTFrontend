@@ -90,7 +90,10 @@
         </span>
       </div>
       <p class="mexa-kpi-value">{{ pct(data.kpis.availability_pct) }}</p>
-      <p class="mexa-kpi-sub">Run time over planned time</p>
+      <p class="mexa-kpi-sub" *ngIf="data.kpis.vs_yesterday?.availability != null; else aSub">
+        <span class="mexa-delta" [class.mexa-delta-up]="data.kpis.vs_yesterday.availability >= 0" [class.mexa-delta-down]="data.kpis.vs_yesterday.availability < 0">{{ change(data.kpis.vs_yesterday.availability) }}</span> vs Yesterday
+      </p>
+      <ng-template #aSub><p class="mexa-kpi-sub">Run time over planned time</p></ng-template>
     </div>
 
     <div class="mexa-kpi">
@@ -101,7 +104,10 @@
         </span>
       </div>
       <p class="mexa-kpi-value">{{ pct(data.kpis.performance_pct) }}</p>
-      <p class="mexa-kpi-sub">{{ data.coverage.with_cycle_time }} machines have a cycle time</p>
+      <p class="mexa-kpi-sub" *ngIf="data.kpis.vs_yesterday?.performance != null; else pSub">
+        <span class="mexa-delta" [class.mexa-delta-up]="data.kpis.vs_yesterday.performance >= 0" [class.mexa-delta-down]="data.kpis.vs_yesterday.performance < 0">{{ change(data.kpis.vs_yesterday.performance) }}</span> vs Yesterday
+      </p>
+      <ng-template #pSub><p class="mexa-kpi-sub">{{ data.coverage.with_cycle_time }} machines have a cycle time</p></ng-template>
     </div>
 
     <div class="mexa-kpi">
@@ -112,7 +118,10 @@
         </span>
       </div>
       <p class="mexa-kpi-value">{{ pct(data.kpis.quality_pct) }}</p>
-      <p class="mexa-kpi-sub">{{ data.kpis.rejected }} rejected</p>
+      <p class="mexa-kpi-sub" *ngIf="data.kpis.vs_yesterday?.quality != null; else qSub">
+        <span class="mexa-delta" [class.mexa-delta-up]="data.kpis.vs_yesterday.quality >= 0" [class.mexa-delta-down]="data.kpis.vs_yesterday.quality < 0">{{ change(data.kpis.vs_yesterday.quality) }}</span> vs Yesterday
+      </p>
+      <ng-template #qSub><p class="mexa-kpi-sub">{{ data.kpis.rejected }} rejected</p></ng-template>
     </div>
 
     <div class="mexa-kpi">
@@ -133,101 +142,86 @@
           <mat-icon>timer_off</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ hours(data.kpis.downtime_seconds) }}</p>
-      <p class="mexa-kpi-sub">{{ data.kpis.alarm_count }} alarms</p>
+      <!-- measured: time the machines were on but not running. Downtime
+           reasons are rarely entered, so the event total read 0. -->
+      <p class="mexa-kpi-value">{{ hms(data.kpis.idle_seconds) }}</p>
+      <p class="mexa-kpi-sub">HH:MM:SS · machine on, not running</p>
     </div>
   </div>
 
-  <!-- ══════════ MACHINE GRADES ══════════
-       Its own card, like every other section on every other screen. The
-       grade key sits with the tiles it explains rather than in the pager. -->
-  <section class="mexa-card">
-    <div class="mexa-tablebar">
-      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Machine OEE</h2>
-      <span class="mexa-bandlegend">
-        <span><i style="--dot:#15803d"></i>&gt; {{ data.thresholds.good }}% (Excellent)</span>
-        <span><i style="--dot:#2f2d8f"></i>{{ data.thresholds.fair }}–{{ data.thresholds.good }}% (Good)</span>
-        <span><i style="--dot:#b45309"></i>&lt; {{ data.thresholds.fair }}% (Needs improvement)</span>
-        <span><i style="--dot:#94a3b8"></i>Not measurable</span>
-      </span>
-    </div>
+  <!-- ══════════ TABS — Analytics | Report, as the design ══════════ -->
+  <div class="flex justify-center gap-2 mt-2" role="tablist" aria-label="OEE views">
+    <button type="button" role="tab" class="px-10 py-2.5 rounded-t-xl font-bold text-lg"
+            [attr.aria-selected]="tab === 'analytics'" (click)="setTab('analytics')"
+            [ngClass]="tab === 'analytics' ? 'bg-[--mexa-card] text-[--mexa-ink] shadow-sm' : 'bg-[--mexa-row-alt] text-[--mexa-ink-3]'">Analytics</button>
+    <button type="button" role="tab" class="px-10 py-2.5 rounded-t-xl font-bold text-lg"
+            [attr.aria-selected]="tab === 'report'" (click)="setTab('report')"
+            [ngClass]="tab === 'report' ? 'bg-[--mexa-card] text-[--mexa-ink] shadow-sm' : 'bg-[--mexa-row-alt] text-[--mexa-ink-3]'">Report</button>
+  </div>
 
+  <ng-container *ngIf="tab === 'analytics'">
+  <section class="mexa-card" role="tabpanel" aria-label="Analytics">
     <div class="mexa-oeecards">
-      <article *ngFor="let m of visibleMachines" class="mexa-oeecard" [ngClass]="bandTile(m.band)">
+      <article *ngFor="let m of pageCards" class="mexa-oeecard mexa-oeecard-solid" [ngClass]="gradeTile(grade(m))">
         <div class="mexa-oeecard-head">
           <span class="mexa-oeecard-name">{{ m.machine_serial_no }}</span>
-          <span class="mexa-oeecard-grade">{{ bandWord(m.band) }}</span>
+          <span class="mexa-oeecard-grade">{{ gradeWord(grade(m)) }}</span>
         </div>
-
         <div class="mexa-oeecard-body">
-          <!-- the figure is printed inside; the ring is decoration -->
           <span class="mexa-oeering" aria-hidden="true"
-                [style.--pct.%]="m.oee_pct || 0" [style.--ring-hole]="bandColour(m.band)">
+                [style.--pct.%]="m.oee_pct || 0" [style.--ring-hole]="bandColour(grade(m))">
             <span class="mexa-oeering-text">
               <span class="mexa-oeering-pct">{{ m.oee_pct === null ? '--' : m.oee_pct + '%' }}</span>
               <span class="mexa-oeering-cap">OEE</span>
             </span>
           </span>
-
           <div class="mexa-oeecard-metrics">
             <div><span>Availability</span><span class="num">{{ pct(m.availability_pct) }}</span></div>
             <div><span>Performance</span><span class="num">{{ pct(m.performance_pct) }}</span></div>
             <div><span>Quality</span><span class="num">{{ pct(m.quality_pct) }}</span></div>
           </div>
         </div>
-
-        <!-- said on the tile, because a dash needs explaining -->
-        <p *ngIf="!m.has_cycle_time" class="text-xs opacity-90">No cycle time set</p>
       </article>
-
       <p *ngIf="!data.machines.data.length" class="mexa-empty">No machines match these filters.</p>
     </div>
 
-    <div class="mexa-pager" *ngIf="data.machines.total > 0">
-      <span aria-live="polite">
-        Showing {{ visibleMachines.length }} of {{ data.machines.total }} machines
+    <div class="mexa-pager">
+      <span>Total Machines {{ data.machines.total }}</span>
+      <span class="mexa-bandlegend">
+        <span><i style="--dot:#15803d"></i>&gt;85% (Excellent)</span>
+        <span><i style="--dot:#2f2d8f"></i>75% &lt; 85% (Good)</span>
+        <span><i style="--dot:#b45309"></i>60% &lt; 75% (Avg)</span>
+        <span><i style="--dot:#c32b3f"></i>&lt; 60% (Needs Improvement)</span>
       </span>
-
-      <!-- Named with its count, so the control says what it will reveal. -->
-      <button *ngIf="hiddenMachineCount > 0 || showAllMachines"
-              type="button" class="mexa-pagebtn"
-              [attr.aria-expanded]="showAllMachines"
-              (click)="toggleAllMachines()">
-        {{ showAllMachines
-             ? 'Show fewer'
-             : 'Show all ' + data.machines.data.length + ' on this page' }}
-      </button>
-      <span class="inline-flex items-center gap-2">
-        <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
-                [disabled]="data.machines.page <= 1">‹ Previous</button>
-        <span>{{ data.machines.page }} / {{ data.machines.totalPages }}</span>
-        <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
-                [disabled]="data.machines.page >= data.machines.totalPages">Next ›</button>
-      </span>
+      <nav class="inline-flex items-center gap-1" aria-label="Machine pages">
+        <button type="button" class="mexa-pagebtn" (click)="cardGo(cardPage - 1)" [disabled]="cardPage <= 1">‹ Previous</button>
+        <button *ngFor="let p of [].constructor(cardTotalPages); let i = index" type="button" class="mexa-pagebtn"
+                (click)="cardGo(i + 1)" [attr.aria-current]="cardPage === i + 1 ? 'page' : null">{{ i + 1 }}</button>
+        <button type="button" class="mexa-pagebtn" (click)="cardGo(cardPage + 1)" [disabled]="cardPage >= cardTotalPages">Next ›</button>
+      </nav>
     </div>
   </section>
 
-  <!-- ══════════ TREND + RANKING ══════════ -->
   <div class="mexa-grid lg:grid-cols-3">
     <section class="mexa-card lg:col-span-2">
-      <!-- Named for what it plots. The trend endpoint returns availability
-           only — a day's performance and quality are not computed — so
-           calling this "OEE Trend" would have it read as a figure it is not. -->
-      <h2 class="mexa-card-title mexa-card-title-left">Availability Trend</h2>
-      <p class="mexa-card-hint">Run time over planned time, by day.</p>
+      <h2 class="mexa-card-title mexa-card-title-left">OEE Trend</h2>
       <apx-chart *ngIf="trendSeries.length"
-        [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
+        [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke" [markers]="trendChart.markers"
         [fill]="trendChart.fill" [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
         [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
         [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
-      <p *ngIf="!trendSeries.length" class="mexa-empty">No production recorded for this period.</p>
+      <p *ngIf="!trendSeries.length" class="mexa-empty">No machine had a computable OEE in this period.</p>
     </section>
 
     <section class="mexa-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Machines by OEE</h2>
-      <!-- Colour repeats the grade band, so it never carries meaning the bar
-           length and the axis label do not already give. -->
-      <p class="mexa-card-hint">Top 5 by OEE. Bar colour shows the grade band.</p>
+      <div class="mexa-card-head">
+        <h2 class="mexa-card-title mexa-card-title-left">Machines by OEE</h2>
+        <span class="mexa-seg" role="group" aria-label="Machines by OEE: show">
+          <button type="button" [attr.aria-pressed]="rankWhich === 'top'" (click)="setRank('top')">Top 5</button>
+          <button type="button" [attr.aria-pressed]="rankWhich === 'bottom'" (click)="setRank('bottom')">Botm 5</button>
+        </span>
+      </div>
+      <p class="mexa-card-hint">Bar colour shows the grade.</p>
       <apx-chart *ngIf="rankSeries.length"
         [series]="rankSeries" [chart]="rankChart.chart" [plotOptions]="rankChart.plotOptions"
         [colors]="rankChart.colors" [dataLabels]="rankChart.dataLabels" [legend]="rankChart.legend"
@@ -237,7 +231,6 @@
     </section>
   </div>
 
-  <!-- ══════════ A / P / Q BY MACHINE ══════════ -->
   <section class="mexa-card" *ngIf="compSeries.length && compCategories.length">
     <h2 class="mexa-card-title mexa-card-title-left">Availability, Performance and Quality by Machine</h2>
     <apx-chart
@@ -245,5 +238,62 @@
       [colors]="compChart.colors" [dataLabels]="compChart.dataLabels" [legend]="compChart.legend"
       [xaxis]="compChart.xaxis" [yaxis]="compChart.yaxis" [grid]="compChart.grid"
       [tooltip]="compChart.tooltip" [noData]="compChart.noData"></apx-chart>
+  </section>
+  </ng-container>
+
+  <!-- ══════════ REPORT — Machine Wise OEE Summary ══════════ -->
+  <section class="mexa-card" *ngIf="tab === 'report'" role="tabpanel" aria-label="Report">
+    <div class="mexa-tablebar">
+      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Machine Wise OEE Summary</h2>
+      <span class="inline-flex items-center gap-2">
+        <label class="sr-only" for="oeeSearch">Search machines</label>
+        <input id="oeeSearch" type="search" class="mexa-search" placeholder="Search"
+               [(ngModel)]="f.search" name="oeeSearch" (ngModelChange)="reportPage = 1">
+        <span *ngIf="canExport" class="inline-flex items-center gap-1" role="group" aria-label="Export the OEE report">
+          <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">{{ exporting === 'xlsx' ? '…' : 'Excel' }}</button>
+          <button type="button" class="mexa-pagebtn" (click)="export('csv')" [disabled]="exporting">{{ exporting === 'csv' ? '…' : 'CSV' }}</button>
+          <button type="button" class="mexa-pagebtn" (click)="export('pdf')" [disabled]="exporting">{{ exporting === 'pdf' ? '…' : 'PDF' }}</button>
+        </span>
+      </span>
+    </div>
+    <div class="mexa-tablewrap">
+      <table class="mexa-table">
+        <caption class="sr-only">OEE by machine</caption>
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col" *ngFor="let c of reportColumns" [attr.aria-sort]="reportAria(c.key)">
+              <button type="button" class="mexa-sort" (click)="reportSortBy(c.key)" [attr.aria-current]="reportSort === c.key">
+                {{ c.label }}
+                <span class="mexa-sort-arrow" aria-hidden="true">{{ reportSort === c.key ? (reportDir === 'asc' ? '▲' : '▼') : '⇅' }}</span>
+              </button>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of reportPageRows; let i = index">
+            <td class="num">{{ (reportPage - 1) * reportLimit + i + 1 }}</td>
+            <td class="strong">{{ m.machine_serial_no }}</td>
+            <td><span class="mexa-badge" [ngClass]="statusClass(m.status)">{{ m.status | titlecase }}</span></td>
+            <td class="num">{{ pct(m.availability_pct) }}</td>
+            <td class="num">{{ pct(m.performance_pct) }}</td>
+            <td class="num">{{ pct(m.quality_pct) }}</td>
+            <td class="num strong">{{ pct(m.oee_pct) }}</td>
+            <td class="num">{{ m.produced }}</td>
+            <td class="num">{{ m.good }}</td>
+            <td class="num">{{ m.rejected }}</td>
+            <td class="num">{{ m.rework }}</td>
+            <td class="num">{{ pct(m.rejection_rate_pct) }}</td>
+            <td class="num whitespace-nowrap">{{ hms(m.idle_seconds) }}</td>
+          </tr>
+          <tr *ngIf="!reportPageRows.length">
+            <td [attr.colspan]="reportColumns.length + 1" class="mexa-empty">No machines match these filters.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-mexa-pager [page]="reportPage" [totalPages]="reportTotalPages" [total]="reportTotal"
+                    [shown]="reportPageRows.length" [limit]="reportLimit"
+                    (pageChange)="reportPage = $event" (limitChange)="reportLimit = $event; reportPage = 1"></app-mexa-pager>
   </section>
 </ng-container>

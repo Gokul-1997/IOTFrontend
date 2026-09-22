@@ -7,6 +7,9 @@ import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { OeeDashboardService } from './oee-dashboard.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
+import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { AuthService } from '../../core/services/auth.service';
+import { ToastService } from '../../core/services/toast.service';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 8 — OEE Dashboard
@@ -25,7 +28,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 @Component({
   selector: 'app-oee-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
   templateUrl: './oee-dashboard.component.html'
 })
 export class OeeDashboardComponent implements OnInit, OnDestroy {
@@ -37,7 +40,33 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   shifts: any[] = [];
   f: any = this.blankFilters();
   page = 1;
-  readonly limit = 20;
+  /* Every machine in one response: the cards and the report table page
+     through them on screen, 5 cards and N rows at a time. */
+  readonly limit = 200;
+
+  /** The design's two tabs. */
+  tab: 'analytics' | 'report' = 'analytics';
+
+  /** Machine cards, five to a page as the design shows them. */
+  readonly cardsPerPage = 5;
+  cardPage = 1;
+
+  /** Report table: client-side sort and paging over every machine. */
+  reportSort = 'oee_pct';
+  reportDir: 'asc' | 'desc' = 'desc';
+  reportPage = 1;
+  reportLimit = 10;
+  readonly reportColumns = [
+    { key: 'machine_serial_no', label: 'Machine' }, { key: 'status', label: 'Status' },
+    { key: 'availability_pct', label: 'Availability (%)' }, { key: 'performance_pct', label: 'Performance (%)' },
+    { key: 'quality_pct', label: 'Quality (%)' }, { key: 'oee_pct', label: 'OEE' },
+    { key: 'produced', label: 'Actuals' }, { key: 'good', label: 'Good' },
+    { key: 'rejected', label: 'Rejections' }, { key: 'rework', label: 'Rework' },
+    { key: 'rejection_rate_pct', label: 'Rej (%)' }, { key: 'idle_seconds', label: 'Downtime' }
+  ];
+
+  /** Machines by OEE: the design's Top 5 / Bottom 5. */
+  rankWhich: 'top' | 'bottom' = 'top';
 
   data: any = null;
   loading = false;
@@ -54,8 +83,30 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private svc: OeeDashboardService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private auth: AuthService,
+    private toast: ToastService
   ) {}
+
+  /** Export is its own grant, as on every other dashboard. */
+  get canExport(): boolean { return this.auth.hasAction('analytics-oee', 'export'); }
+  exporting = '';
+
+  export(format: 'xlsx' | 'csv' | 'pdf'): void {
+    this.exporting = format;
+    this.cdr.markForCheck();
+    this.svc.exportAs(format, this.f).pipe(takeUntil(this.destroy$)).subscribe({
+      next: blob => {
+        this.exporting = '';
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `oee_${this.todayStr()}.${format}`; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+        this.cdr.markForCheck();
+      },
+      error: () => { this.exporting = ''; this.cdr.markForCheck(); this.toast.error('No machines match these filters'); }
+    });
+  }
 
   ngOnInit(): void {
     this.svc.getMeta()
@@ -114,7 +165,11 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
 
     this.trendCategories = (d.trend || []).map((t: any) =>
       new Date(t.day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
-    this.trendSeries = [{ name: 'Availability %', data: (d.trend || []).map((t: any) => t.availability_pct) }];
+    // OEE per day, each day worked out from its own totals by the API
+    this.trendSeries = (d.trend || []).some((t: any) => t.oee_pct != null)
+      ? [{ name: 'OEE', data: (d.trend || []).map((t: any) => t.oee_pct) }] : [];
+    this.cardPage = 1;
+    this.reportPage = 1;
 
     /* Only machines with a computable OEE go on the comparison chart —
        plotting a null as a zero bar would read as a failing machine. */
@@ -128,7 +183,8 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
 
     /* Machines by OEE, best first. Only machines with a computable OEE —
        a null plotted as zero would read as a failing machine. */
-    const ranked = [...withOee].sort((a: any, b: any) => b.oee_pct - a.oee_pct).slice(0, 5);
+    const byOee = [...withOee].sort((a: any, b: any) => b.oee_pct - a.oee_pct);
+    const ranked = this.rankWhich === 'top' ? byOee.slice(0, 5) : byOee.reverse().slice(0, 5);
     /* Per-point colour, carrying each machine's grade band — the same colour
        its tile above uses. This chart used to rely on Apex's per-bar colour
        cycling, which assigns colour by a bar's POSITION: the top bar was navy
@@ -139,7 +195,7 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
       data: ranked.map((m: any) => ({
         x: m.machine_serial_no,
         y: m.oee_pct,
-        fillColor: this.bandColour(m.band)
+        fillColor: this.bandColour(this.grade(m))
       }))
     }] : [];
 
@@ -230,13 +286,15 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   get trendChart(): any {
     return this.charts.memo('trendChart', () => {
     return {
-      chart:  { type: 'area', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
-      stroke: { width: 2, curve: 'smooth' },
-      fill:   { type: 'gradient', gradient: { shadeIntensity: 0.3, opacityFrom: 0.35, opacityTo: 0.05 } },
-      colors: ['#0f766e'],
-      dataLabels: { enabled: false },
-      xaxis:  { categories: this.trendCategories },
-      yaxis:  { min: 0, max: 100, title: { text: 'Availability %' },
+      chart:  { type: 'line', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
+      stroke: { width: 2.5, curve: 'straight' },
+      fill:   { type: 'solid' },
+      markers: { size: 5 },
+      colors: ['#2f2d8f'],
+      dataLabels: { enabled: true, formatter: (v: number | null) => v == null ? '' : `${v}%`, offsetY: -6,
+                    background: { enabled: false }, style: { fontSize: '.72rem', colors: ['#2f2d8f'] } },
+      xaxis:  { categories: this.trendCategories, title: { text: 'Time' } },
+      yaxis:  { min: 0, max: 100, title: { text: 'OEE (%)' },
                 labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'dark' },
@@ -257,6 +315,74 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
 
   absPct(v: number): string { return `${Math.abs(v)}%`; }
 
+  /* ── the design's four grades, on OEE ──
+     > 85 Excellent · 75–85 Good · 60–75 Avg · < 60 Needs Improvement */
+  grade(m: any): string {
+    const v = m?.oee_pct;
+    if (v === null || v === undefined) return 'UNKNOWN';
+    return v >= 85 ? 'EXCELLENT' : v >= 75 ? 'GOOD' : v >= 60 ? 'AVG' : 'POOR';
+  }
+  gradeTile(g: string): string {
+    return ({ EXCELLENT: 'mexa-grade-excellent', GOOD: 'mexa-grade-good', AVG: 'mexa-grade-avg', POOR: 'mexa-grade-poor' } as any)[g] || 'mexa-grade-unknown';
+  }
+  gradeWord(g: string): string {
+    return ({ EXCELLENT: 'Excellent', GOOD: 'Good', AVG: 'Avg', POOR: 'Needs Improvement' } as any)[g] || 'No cycle time';
+  }
+
+  /* ── tabs, cards and the report table ── */
+  setTab(t: 'analytics' | 'report'): void { this.tab = t; this.cdr.markForCheck(); }
+
+  get cardTotalPages(): number { return Math.max(1, Math.ceil((this.data?.machines?.data?.length || 0) / this.cardsPerPage)); }
+  get pageCards(): any[] {
+    const rows = this.data?.machines?.data || [];
+    return rows.slice((this.cardPage - 1) * this.cardsPerPage, this.cardPage * this.cardsPerPage);
+  }
+  cardGo(p: number): void { this.cardPage = p; this.cdr.markForCheck(); }
+
+  setRank(which: 'top' | 'bottom'): void {
+    if (this.rankWhich === which) return;
+    this.rankWhich = which;
+    this.apply({ status: 'success', data: this.data });   // rebuild the bars from what is loaded
+  }
+
+  private get reportRows(): any[] {
+    const q = String(this.f.search || '').trim().toLowerCase();
+    const rows = (this.data?.machines?.data || [])
+      .filter((m: any) => !q || String(m.machine_serial_no).toLowerCase().includes(q));
+    const k = this.reportSort, sign = this.reportDir === 'asc' ? 1 : -1;
+    return [...rows].sort((a: any, b: any) => {
+      const x = a[k], y = b[k];
+      if (x == null && y == null) return 0;
+      if (x == null) return 1;
+      if (y == null) return -1;
+      return typeof x === 'string' ? sign * x.localeCompare(y) : sign * (x - y);
+    });
+  }
+  get reportTotal(): number { return this.reportRows.length; }
+  get reportTotalPages(): number { return Math.max(1, Math.ceil(this.reportTotal / this.reportLimit)); }
+  get reportPageRows(): any[] {
+    return this.reportRows.slice((this.reportPage - 1) * this.reportLimit, this.reportPage * this.reportLimit);
+  }
+  reportSortBy(key: string): void {
+    if (this.reportSort === key) this.reportDir = this.reportDir === 'desc' ? 'asc' : 'desc';
+    else { this.reportSort = key; this.reportDir = key === 'machine_serial_no' || key === 'status' ? 'asc' : 'desc'; }
+    this.reportPage = 1;
+  }
+  reportAria(key: string): string { return this.reportSort !== key ? 'none' : this.reportDir === 'asc' ? 'ascending' : 'descending'; }
+
+  /** "↑ 3.18%" / "↓ 1.32%" from a signed change in percentage points. */
+  change(v: number | null | undefined): string {
+    if (v === null || v === undefined) return '';
+    return `${v > 0 ? '↑' : v < 0 ? '↓' : ''} ${Math.abs(v)}%`;
+  }
+
+  /** HH:MM:SS, hours running past 24, as the design writes durations. */
+  hms(seconds: number | null | undefined): string {
+    const n = Math.max(0, Math.round(Number(seconds) || 0));
+    const pad = (v: number) => String(v).padStart(2, '0');
+    return `${pad(Math.floor(n / 3600))}:${pad(Math.floor((n % 3600) / 60))}:${pad(n % 60)}`;
+  }
+
   bandTile(band: string): string {
     switch (band) {
       case 'GOOD': return 'mexa-grade-excellent';
@@ -269,9 +395,11 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   /** The tile's solid colour, passed to the ring so its hole matches. */
   bandColour(band: string): string {
     switch (band) {
+      case 'EXCELLENT': return '#15803d';
+      case 'AVG':       return '#b45309';
       case 'GOOD': return '#15803d';
       case 'FAIR': return '#2f2d8f';
-      case 'POOR': return '#b45309';
+      case 'POOR': return '#c32b3f';
       default:     return '#64748b';
     }
   }
