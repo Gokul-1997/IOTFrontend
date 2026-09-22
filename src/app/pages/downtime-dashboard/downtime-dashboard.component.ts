@@ -9,6 +9,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
+import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 6 — Downtime Reason Loss Analysis
@@ -25,7 +26,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 @Component({
   selector: 'app-downtime-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
   templateUrl: './downtime-dashboard.component.html'
 })
 export class DowntimeDashboardComponent implements OnInit, OnDestroy {
@@ -38,7 +39,7 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
   reasons: any[] = [];
   f: any = this.blankFilters();
   page = 1;
-  readonly limit = 20;
+  limit = 20;
 
   data: any = null;
   loading = false;
@@ -111,6 +112,10 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
   onSearchInput(): void { this.search$.next(this.f.search); }
   submit(): void { this.page = 1; this.load(); }
   reset(): void { this.f = this.blankFilters(); this.page = 1; this.load(); }
+
+  /** From the shared pager: jump to a page, or change how many rows a page holds. */
+  goTo(p: number): void { this.page = p; this.load(); }
+  setLimit(n: number): void { this.limit = n || 10; this.page = 1; this.load(); }
 
   changePage(delta: number): void {
     const next = this.page + delta;

@@ -78,6 +78,19 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
   /** Export is its own grant — a company can have this page without being able to take data off it. */
   get canExport(): boolean { return this.auth.hasAction('analytics-periodic', 'export'); }
 
+  /** Upcoming Maintenance: the design's Today | This Week | This Month. */
+  upcomingWindow: 'today' | 'week' | 'month' = 'week';
+
+  get upcomingRows(): any[] {
+    const now = new Date();
+    const end = new Date(now);
+    if (this.upcomingWindow === 'today') end.setHours(23, 59, 59, 999);
+    else if (this.upcomingWindow === 'week') { end.setDate(end.getDate() + 7); end.setHours(23, 59, 59, 999); }
+    else { end.setMonth(end.getMonth() + 1, 0); end.setHours(23, 59, 59, 999); }
+    // overdue items stay in every view — they are the most urgent of all
+    return (this.data?.upcoming || []).filter((u: any) => new Date(u.due_date) <= end);
+  }
+
   ngOnInit(): void {
     this.svc.getMeta()
       .pipe(takeUntil(this.destroy$), catchError(() => of(null)))

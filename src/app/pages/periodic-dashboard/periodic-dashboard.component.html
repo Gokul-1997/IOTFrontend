@@ -190,7 +190,13 @@
   <div class="mexa-grid lg:grid-cols-2">
 
     <section class="mexa-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Upcoming Maintenance</h2>
+      <div class="mexa-card-head">
+        <h2 class="mexa-card-title mexa-card-title-left">Upcoming Maintenance</h2>
+        <span class="mexa-seg" role="group" aria-label="Upcoming Maintenance: due">
+          <button type="button" *ngFor="let w of ['today','week','month']" [attr.aria-pressed]="upcomingWindow === w"
+                  (click)="upcomingWindow = $any(w)">{{ w === 'today' ? 'Today' : w === 'week' ? 'This Week' : 'This Month' }}</button>
+        </span>
+      </div>
       <div class="mexa-tablewrap">
         <table class="mexa-table" style="min-width:0">
           <caption class="sr-only">Maintenance due next, soonest first</caption>
@@ -205,7 +211,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let u of data.upcoming; let i = index">
+            <tr *ngFor="let u of upcomingRows; let i = index">
               <td class="num">{{ i + 1 }}</td>
               <td class="strong">{{ u.machine_serial_no }}</td>
               <td>
@@ -226,7 +232,7 @@
                 </span>
               </td>
             </tr>
-            <tr *ngIf="!data.upcoming.length">
+            <tr *ngIf="!upcomingRows.length">
               <td colspan="6" class="mexa-empty">Nothing due.</td>
             </tr>
           </tbody>

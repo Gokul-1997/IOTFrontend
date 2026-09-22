@@ -304,15 +304,8 @@
       </table>
     </div>
 
-    <div class="mexa-pager" *ngIf="data.events.total > 0">
-      <span aria-live="polite">Showing: {{ data.events.data.length }} of {{ data.events.total }}</span>
-      <span class="inline-flex items-center gap-2">
-        <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
-                [disabled]="data.events.page <= 1">‹ Previous</button>
-        <span>{{ data.events.page }} / {{ data.events.totalPages }}</span>
-        <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
-                [disabled]="data.events.page >= data.events.totalPages">Next ›</button>
-      </span>
-    </div>
+    <app-mexa-pager [page]="data.events.page" [totalPages]="data.events.totalPages" [total]="data.events.total"
+                    [shown]="data.events.data.length" [limit]="limit"
+                    (pageChange)="goTo($event)" (limitChange)="setLimit($event)"></app-mexa-pager>
   </section>
 </ng-container>
