@@ -31,7 +31,7 @@
     </select>
 
     <label class="mexa-filter-label" for="alType">Alarm Type</label>
-    <select id="alType" class="mexa-select" [(ngModel)]="f.alarm_type" name="alarmType">
+    <select id="alType" class="mexa-select max-w-[12rem]" [(ngModel)]="f.alarm_type" name="alarmType">
       <option value="">All</option>
       <option *ngFor="let t of data?.facets?.types || []" [value]="t">{{ t }}</option>
     </select>
@@ -123,8 +123,11 @@
           <mat-icon>timelapse</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ duration(data.kpis.max_duration_seconds) }}</p>
-      <p class="mexa-kpi-sub">Average {{ duration(data.kpis.avg_duration_seconds) }}</p>
+      <p class="mexa-kpi-value">{{ hms(data.kpis.max_duration_seconds) }}</p>
+      <!-- the alarm behind the figure, as the design names it -->
+      <p class="mexa-kpi-sub truncate" [title]="data.kpis.longest?.message || ''">
+        {{ data.kpis.longest ? data.kpis.longest.message + ' · ' + data.kpis.longest.machine_serial_no : 'Average ' + duration(data.kpis.avg_duration_seconds) }}
+      </p>
     </div>
   </div>
 
@@ -196,7 +199,7 @@
     </section>
 
     <section class="mexa-card">
-      <h2 class="mexa-card-title">Alarms Trend</h2>
+      <h2 class="mexa-card-title">Alarms Trend {{ data.trend_by === 'hour' ? '(By Hour)' : '(By Day)' }}</h2>
       <apx-chart *ngIf="trendSeries.length"
         [series]="trendSeries" [chart]="trendChart.chart" [plotOptions]="trendChart.plotOptions"
         [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels" [stroke]="trendChart.stroke"
@@ -236,15 +239,12 @@
         <thead>
           <tr>
             <th scope="col">#</th>
-            <th scope="col">Machine Name</th>
-            <th scope="col">Shift</th>
-            <th scope="col">Alarm Code</th>
-            <th scope="col">Alarm Name</th>
-            <th scope="col">Severity</th>
-            <th scope="col">Status</th>
-            <th scope="col">Duration</th>
-            <th scope="col">Generated Time</th>
-            <th scope="col">Closed Time</th>
+            <th scope="col" *ngFor="let c of columns" [attr.aria-sort]="ariaSort(c.key)">
+              <button type="button" class="mexa-sort" (click)="sortBy(c.key)" [attr.aria-current]="sort === c.key">
+                {{ c.label }}
+                <span class="mexa-sort-arrow" aria-hidden="true">{{ sort === c.key ? (dir === 'asc' ? '▲' : '▼') : '⇅' }}</span>
+              </button>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -267,7 +267,7 @@
                 {{ a.is_open ? 'Open' : 'Closed' }}
               </span>
             </td>
-            <td class="num">{{ duration(a.duration_seconds) }}</td>
+            <td class="num">{{ hms(a.duration_seconds) }}</td>
             <td class="num whitespace-nowrap">{{ a.started_at | date:'dd-MMM-yyyy HH:mm:ss' }}</td>
             <td class="num whitespace-nowrap">{{ a.ended_at ? (a.ended_at | date:'dd-MMM-yyyy HH:mm:ss') : '-' }}</td>
           </tr>
@@ -278,15 +278,8 @@
       </table>
     </div>
 
-    <div class="mexa-pager" *ngIf="data.alarms.total > 0">
-      <span aria-live="polite">Showing: {{ data.alarms.data.length }} of {{ data.alarms.total }}</span>
-      <span class="inline-flex items-center gap-2">
-        <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
-                [disabled]="data.alarms.page <= 1">‹ Previous</button>
-        <span>{{ data.alarms.page }} / {{ data.alarms.totalPages }}</span>
-        <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
-                [disabled]="data.alarms.page >= data.alarms.totalPages">Next ›</button>
-      </span>
-    </div>
+    <app-mexa-pager [page]="data.alarms.page" [totalPages]="data.alarms.totalPages" [total]="data.alarms.total"
+                    [shown]="data.alarms.data.length" [limit]="limit"
+                    (pageChange)="goTo($event)" (limitChange)="setLimit($event)"></app-mexa-pager>
   </section>
 </ng-container>
