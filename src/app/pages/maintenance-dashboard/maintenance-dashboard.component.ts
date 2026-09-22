@@ -104,12 +104,29 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
            "All" selected the trend cards were permanently empty. A machine is
            therefore always selected, the first one until the user picks
            another. */
-        if (this.selectedMachine === null && this.machines.length) {
-          this.selectedMachine = this.machines[0].id;
+        if (this.selectedMachine !== null || !this.machines.length) {
+          this.cdr.markForCheck();
+          this.startPolling();
+          return;
         }
-        this.cdr.markForCheck();
-        this.startPolling();
+        /* Open on a machine that is reporting now. The first in the list was
+           often an offline one, so the page opened on a wall of "No data"
+           while the machines next to it were streaming every reading. */
+        this.svc.getMaintenance({ date: this.selectedDate })
+          .pipe(takeUntil(this.destroy$), catchError(() => of(null)))
+          .subscribe(res => {
+            this.selectedMachine = this.pickReporting(res?.data?.rows || []) ?? this.machines[0].id;
+            this.cdr.markForCheck();
+            this.startPolling();
+          });
       });
+  }
+
+  /** A running machine first, then any other that is reporting. */
+  private pickReporting(rows: any[]): number | null {
+    const known = new Set(this.machines.map(m => m.id));
+    const live = rows.filter(r => known.has(r.machine_id) && this.rowStatus(r) !== 'OFFLINE');
+    return (live.find(r => this.rowStatus(r) === 'RUNNING') || live[0])?.machine_id ?? null;
   }
 
   /* Polling starts only once the default machine is known, so the first
@@ -134,7 +151,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   }
 
   reset(): void {
-    this.selectedMachine = this.machines[0]?.id ?? null;
+    this.selectedMachine = this.pickReporting(this.data?.rows || []) ?? this.machines[0]?.id ?? null;
     this.selectedShift   = null;
     this.selectedDate    = this.todayStr();
     this.submit();
@@ -290,9 +307,8 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   /** Unmeasured shows as a dash, never 0% — they are different claims. */
   pct(v: number | null | undefined): string {
     if (v === null || v === undefined) return '--';
-    const n = Number(v);
-    // the OEE view returns fractions; the tiles show percentages
-    return `${(n <= 1 ? n * 100 : n).toFixed(1)}%`;
+    // the API sends percentages; a value under 1 is a small percentage, not a fraction
+    return `${Number(v).toFixed(1)}%`;
   }
 
   /* MEXA pill classes. statusClass below is left for any call site still
@@ -358,7 +374,76 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   });
   }
 
-/** A reading with its unit, or a dash. A missing sensor is never "0". */
+  /* ── gauges and bands, as the design draws them ──
+
+     Healthy / Stable / Critical, the legend in the title bar. Load is a
+     percentage of rated load; temperatures are motor and encoder
+     temperatures in °C. A reading the machine did not send gets no gauge —
+     a needle at 0 would read as a cold, idle motor. */
+  readonly LOAD_BANDS = { stable: 60, critical: 85 };
+  readonly TEMP_BANDS = { stable: 60, critical: 80 };
+
+  band(v: number | null | undefined, b: { stable: number; critical: number }): 'Healthy' | 'Stable' | 'Critical' | '' {
+    if (v === null || v === undefined || !Number.isFinite(Number(v))) return '';
+    const n = Number(v);
+    return n >= b.critical ? 'Critical' : n >= b.stable ? 'Stable' : 'Healthy';
+  }
+  bandColour(word: string): string {
+    return word === 'Critical' ? '#e03131' : word === 'Stable' ? '#f5a623' : word === 'Healthy' ? '#22c55e' : '#94a3b8';
+  }
+  bandText(word: string): string {
+    return word === 'Critical' ? 'text-red-600 dark:text-red-400'
+         : word === 'Stable'   ? 'text-amber-600 dark:text-amber-400'
+         : word === 'Healthy'  ? 'text-emerald-600 dark:text-emerald-400' : 'text-[--mexa-ink-3]';
+  }
+
+  /** One semicircle gauge. `max` is the full sweep: 100 % for load, 120 °C for temperature. */
+  gauge(key: string, v: number | null | undefined, unit: string, max: number, bands: { stable: number; critical: number }): any {
+    return this.charts.memo(`gauge:${key}`, () => {
+      const word = this.band(v, bands);
+      const n = Number(v);
+      return {
+        series: [Math.max(0, Math.min(100, (n / max) * 100))],
+        chart: { type: 'radialBar', height: 150, fontFamily: 'inherit', sparkline: { enabled: true } },
+        colors: [this.bandColour(word)],
+        plotOptions: { radialBar: {
+          startAngle: -90, endAngle: 90,
+          hollow: { size: '58%' },
+          track: { background: 'rgba(148,163,184,.22)', strokeWidth: '100%' },
+          dataLabels: { name: { show: false },
+                        value: { offsetY: -4, fontSize: '1.05rem', fontWeight: 700,
+                                 formatter: () => `${unit === '%' ? Math.round(n) : n.toFixed(1)}${unit}` } }
+        } },
+        stroke: { lineCap: 'butt' }
+      };
+    });
+  }
+
+  /** X / Y / Z as three bars, one colour per axis as in the design. */
+  axisBars(key: string, values: (number | null)[], labels: string[], unit: string): any {
+    return this.charts.memo(`bars:${key}`, () => ({
+      series: [{ name: unit, data: values }],
+      chart: { type: 'bar', height: 190, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
+      plotOptions: { bar: { columnWidth: '55%', borderRadius: 4, distributed: true, dataLabels: { position: 'top' } } },
+      colors: ['#2f2d8f', '#4a76c8', '#9b7ec8'],
+      dataLabels: { enabled: true, offsetY: -18, formatter: (v: number | null) => v == null ? '--' : Number(v).toFixed(0),
+                    style: { fontSize: '.72rem', colors: [document.documentElement.classList.contains('dark') ? '#e8ebf2' : '#1f2430'] } },
+      legend: { show: false },
+      // two lines ("Encoder" / "Temp X"), as the design sets them, so no label is dropped
+      xaxis: { categories: labels.map(l => [l.slice(0, l.indexOf(' ')), l.slice(l.indexOf(' ') + 1)]),
+               labels: { rotate: 0, hideOverlappingLabels: false, trim: false } },
+      yaxis: { min: 0, max: (m: number) => Math.max(50, Math.ceil((m || 0) / 10) * 10 + 10), title: { text: unit === '°C' ? 'Celsius' : unit } },
+      grid: { borderColor: 'rgba(148,163,184,.25)' },
+      tooltip: { theme: 'dark', y: { formatter: (v: number | null) => v == null ? 'not reported' : `${v} ${unit}` } }
+    }));
+  }
+
+  /** Whether any of these readings was sent. */
+  anyReading(values: (number | null | undefined)[]): boolean {
+    return values.some(v => v !== null && v !== undefined);
+  }
+
+  /** A reading with its unit, or a dash. A missing sensor is never "0". */
   reading(v: number | null | undefined, unit: string, digits = 1): string {
     if (v === null || v === undefined) return '--';
     const n = Number(v);

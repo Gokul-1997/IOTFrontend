@@ -58,7 +58,7 @@ test('fits a phone without scrolling sideways', async ({ authedPage: page }) => 
   await page.screenshot({ path: 'mexa-maintenance-mobile.png', fullPage: true });
 });
 
-test('axis readings stay legible in dark mode', async ({ authedPage: page }) => {
+test('gauge captions stay legible in dark mode', async ({ authedPage: page }) => {
   await mockApi(page);
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/maintenance-dashboard');
@@ -67,7 +67,8 @@ test('axis readings stay legible in dark mode', async ({ authedPage: page }) => 
   await page.waitForTimeout(600);
 
   const report = await page.evaluate(() => {
-    const cell = document.querySelector('.mexa-axistable td') as HTMLElement | null;
+    // the "Servo Load X" caption above a gauge
+    const cell = [...document.querySelectorAll('.mexa-card p')].find(p => p.textContent?.trim() === 'Servo Load X') as HTMLElement | undefined;
     const card = document.querySelector('.mexa-card') as HTMLElement | null;
     if (!cell || !card) return null;
     const lum = (rgb: string) => {
@@ -81,8 +82,8 @@ test('axis readings stay legible in dark mode', async ({ authedPage: page }) => 
   });
 
   await page.screenshot({ path: 'mexa-maintenance-dark.png', fullPage: true });
-  console.log('dark-mode axis cell:', JSON.stringify(report));
-  expect(report, 'no axis table found').not.toBeNull();
+  console.log('dark-mode gauge caption:', JSON.stringify(report));
+  expect(report, 'no gauge caption found').not.toBeNull();
   expect(report!.card, 'dark mode did not apply').not.toBe('rgb(255, 255, 255)');
   expect(report!.ratio).toBeGreaterThanOrEqual(4.5);
 });
