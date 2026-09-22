@@ -59,7 +59,7 @@ test('the user menu reaches Profile, Settings and Notifications', async ({ authe
   await expect(page.locator('.mexa-kpi').first()).toBeVisible();
 
   // the dropdown used to hold nothing but a name, an email and Sign Out
-  await page.getByRole('button', { name: /test\s+ADMIN/ }).click();
+  await page.getByRole('button', { name: 'Account menu for test' }).click();
   await expect(page.getByRole('link', { name: 'My Profile' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Notifications' })).toBeVisible();

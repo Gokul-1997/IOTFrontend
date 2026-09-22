@@ -32,7 +32,7 @@ html, body { background: var(--mexa-ground); }
   --mexa-card:       #ffffff;
   --mexa-ink:        #1f2430;
   --mexa-ink-2:      #4b5262;
-  --mexa-ink-3:      #8992a5;
+  --mexa-ink-3:      #5d6679;   /* 4.6:1 or better on every MEXA surface (WCAG AA); #8992a5 was 2.7–3.1:1 */
   --mexa-rule:       #e3e6ef;
   --mexa-thead:      #e6e5f6;
   --mexa-row-alt:    #f5f4fc;
@@ -58,7 +58,7 @@ html, body { background: var(--mexa-ground); }
   --mexa-card:    #161a23;
   --mexa-ink:     #e8ebf2;
   --mexa-ink-2:   #a8b0c2;
-  --mexa-ink-3:   #737d92;
+  --mexa-ink-3:   #949eb2;   /* 5.3:1 or better on the dark surfaces */
   --mexa-rule:    #252b39;
   --mexa-thead:   #262a3a;
   --mexa-row-alt: #212534;
@@ -134,6 +134,22 @@ html, body { background: var(--mexa-ground); }
 /* ── Filters in the title bar ─────────────────────────────── */
 
 .mexa-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
+
+/* Phones: the wrapping row put each label at the end of the previous line,
+   next to the wrong control ("All ▾ Shift"). Two columns instead — every
+   label beside its own control — with the buttons across the full width. */
+@media (max-width: 640px) {
+  .mexa-filters {
+    display: grid; grid-template-columns: auto minmax(0, 1fr);
+    align-items: center; gap: .55rem .75rem; width: 100%;
+  }
+  .mexa-filters .mexa-select,
+  .mexa-filters .mexa-date { width: 100%; min-width: 0; }
+  .mexa-filters > button,
+  .mexa-filters .mexa-submit { grid-column: 1 / -1; width: 100%; justify-content: center; }
+  /* the "–" between the two dates reads as its own label, aligned right */
+  .mexa-filters .mexa-filter-label[aria-hidden="true"] { justify-self: end; }
+}
 
 .mexa-filter-label {
   color: #fff; font-size: .9rem; font-weight: 600; white-space: nowrap;
@@ -867,3 +883,21 @@ html, body { background: var(--mexa-ground); }
 .mexa-axistable td.axis { font-weight: 700; width: 2.5rem; }
 .mexa-axistable .mexa-meter { width: 2.75rem; margin-right: .45rem; }
 .mexa-axistable .dim { color: var(--mexa-ink-3); }
+
+/* ── Keyboard focus, everywhere ───────────────────────────────
+   WCAG 2.4.7: whatever has focus must show it. :where() keeps this at zero
+   specificity, so a component's own focus style still wins; this only fills
+   the gaps (icon buttons, table scrollers, links in menus). */
+:where(a, button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid #2f2d8f;
+  outline-offset: 2px;
+}
+:where(.dark) :where(a, button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline-color: #b9b6ff;
+}
+.mexa-tablewrap:focus-visible { border-radius: 10px; }
+
+/* Attention Required rows were a fixed light grey, so in dark mode their
+   light text sat on it at 1.1:1. They follow the theme now. */
+.dark .mexa-attention-row { background: var(--mexa-row-alt); }
+.dark .mexa-attention-row:hover { background: var(--mexa-thead); }

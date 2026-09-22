@@ -24,13 +24,13 @@
           (ngModelChange)="onSearchInput()"
           placeholder="Search line name…"
           class="search-input" />
-        <button *ngIf="search" mat-icon-button class="clear-btn" (click)="search=''; onSearchInput()">
+        <button *ngIf="search" mat-icon-button class="clear-btn" (click)="search=''; onSearchInput()" aria-label="Clear search" title="Clear search">
           <mat-icon>close</mat-icon>
         </button>
       </div>
 
       <!-- New Line Button -->
-      <button *ngIf="auth.hasAction('lines', 'create')" class="btn-primary" (click)="openCreate()">
+      <button *ngIf="auth.hasAction('lines', 'create')" class="btn-primary" (click)="openCreate()" aria-label="Add" title="Add">
         <mat-icon>add</mat-icon>
         New Line
       </button>
@@ -74,10 +74,10 @@
         <ng-container matColumnDef="actions" [stickyEnd]="true">
           <th mat-header-cell *matHeaderCellDef class="col-actions thead-custm">Actions</th>
           <td mat-cell *matCellDef="let r" class="col-actions">
-            <button *ngIf="auth.hasAction('lines', 'edit')" mat-icon-button class="action-edit" (click)="openEdit(r)" matTooltip="Edit">
+            <button *ngIf="auth.hasAction('lines', 'edit')" mat-icon-button class="action-edit" (click)="openEdit(r)" matTooltip="Edit" aria-label="Edit">
               <mat-icon>edit</mat-icon>
             </button>
-            <button *ngIf="auth.hasAction('lines', 'delete')" mat-icon-button class="action-delete" (click)="confirmDelete(r)" matTooltip="Delete">
+            <button *ngIf="auth.hasAction('lines', 'delete')" mat-icon-button class="action-delete" (click)="confirmDelete(r)" matTooltip="Delete" aria-label="Delete" title="Delete">
               <mat-icon>delete_outline</mat-icon>
             </button>
           </td>

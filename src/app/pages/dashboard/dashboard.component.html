@@ -30,21 +30,21 @@
           <button
             (click)="setFilter('running')"
             class="flex border_status px-4 py-1 rounded-md transition-all"
-            [ngClass]="statusFilter === 'running' ? 'bg-green-400 ring-2 ring-white' : 'bg-green-600 hover:bg-green-500'">
+            [ngClass]="statusFilter === 'running' ? 'bg-green-400 ring-2 ring-white' : 'bg-green-700 hover:bg-green-800'">
             Running : <span class="font-medium ml-1">{{ runningCount }}</span>
           </button>
           <!-- Idle filter button -->
           <button
             (click)="setFilter('idle')"
             class="flex border_status px-4 py-1 rounded-md transition-all"
-            [ngClass]="statusFilter === 'idle' ? 'bg-yellow-600 ring-2 ring-white' : 'bg-[#dfb400] hover:bg-yellow-600'">
+            [ngClass]="statusFilter === 'idle' ? 'bg-yellow-800 ring-2 ring-white' : 'bg-[#a16207] hover:bg-yellow-800'">
             Idle : <span class="font-medium ml-1">{{ idleCount }}</span>
           </button>
           <!-- Alarm filter button -->
           <button
             (click)="setFilter('alarm')"
             class="flex border_status px-4 py-1 rounded-md transition-all"
-            [ngClass]="statusFilter === 'alarm' ? 'bg-red-600 ring-2 ring-white' : 'bg-[#fb3748] hover:bg-red-500'">
+            [ngClass]="statusFilter === 'alarm' ? 'bg-red-600 ring-2 ring-white' : 'bg-[#dc2626] hover:bg-red-700'">
             Alarm : <span class="font-medium ml-1">{{ alarmCount }}</span>
           </button>
         </div>
@@ -98,7 +98,7 @@
         <div>
           <div class="text-xl font-bold text-[var(--color-primary-500)] dark:text-white text-center">{{ m.machine_serial_no }}</div>
           <div class="grid grid-cols-[2fr_1fr_auto] md:grid-cols-1 md:gap-2">
-          <img [src]="m.image_url"
+          <img [src]="m.image_url" [alt]="m.machine_serial_no || m.machine_name || 'Machine'"
                class="w-full md:h-28 object-contain" />
 
           <!-- RUN/IDLE TIME — controlled by widget:runtime -->

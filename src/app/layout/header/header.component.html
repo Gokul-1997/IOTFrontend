@@ -5,8 +5,8 @@
 
     <!-- LEFT -->
     <div class="flex items-center gap-4 shrink-0">
-      <img src="/images/logo/STM_Mexa_logo.svg" class="w-32 dark:hidden" />
-      <img src="/images/logo/STM_Mexa_logo.svg" class="w-32 hidden dark:block" alt="Logo" />
+      <img src="/images/logo/STM_Mexa_logo.svg" class="w-32 dark:hidden" alt="STM Mexa" />
+      <img src="/images/logo/STM_Mexa_logo.svg" class="w-32 hidden dark:block" alt="STM Mexa" />
     </div>
 
     <!-- DESKTOP MENU -->
@@ -79,14 +79,15 @@
 
       <!-- USER DROPDOWN -->
       <div class="user-menu-wrap hidden xl:block relative">
-        <button (click)="toggleUserMenu()"
+        <button (click)="toggleUserMenu()" type="button" aria-haspopup="menu" [attr.aria-expanded]="showUserMenu"
+          [attr.aria-label]="'Account menu for ' + userName"
           class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
           <div class="h-9 w-9 rounded-full bg-[#2b3990] flex items-center justify-center text-white font-semibold text-sm">
             {{ userName.charAt(0).toUpperCase() }}
           </div>
           <div class="text-left">
             <p class="text-sm font-medium dark:text-white leading-none">{{ userName }}</p>
-            <p class="text-xs text-gray-400 leading-none mt-0.5">{{ userRole }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 leading-none mt-0.5">{{ userRole }}</p>
           </div>
           <svg class="w-4 h-4 text-gray-400 transition-transform" [class.rotate-180]="showUserMenu"
             viewBox="0 0 20 20" fill="currentColor">
@@ -101,7 +102,7 @@
           <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
             <p class="text-sm font-semibold text-gray-800 dark:text-white">{{ userName }}</p>
             <!-- <span class="text-xs px-1.5 py-0.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 rounded font-medium">{{ userRole }}</span> -->
-            <p *ngIf="userEmail" class="text-xs text-gray-400 truncate mt-1">{{ userEmail }}</p>
+            <p *ngIf="userEmail" class="text-xs text-gray-500 dark:text-gray-400 truncate mt-1">{{ userEmail }}</p>
           </div>
           <!-- Before this the dropdown held only a name, an email and Sign
                Out — no route to a user's own profile or settings existed
@@ -143,8 +144,9 @@
       </div>
 
       <!-- HAMBURGER  -->
-      <button
-        class="xl:hidden p-2"
+      <button type="button"
+        class="xl:hidden p-2 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2b3990]"
+        [attr.aria-label]="isMobileMenuOpen ? 'Close menu' : 'Open menu'" [attr.aria-expanded]="isMobileMenuOpen"
         (click)="toggleMobileMenu()">
 
         <svg *ngIf="!isMobileMenuOpen"

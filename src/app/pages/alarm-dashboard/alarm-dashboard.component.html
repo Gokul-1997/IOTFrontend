@@ -31,7 +31,7 @@
     </select>
 
     <label class="mexa-filter-label" for="alType">Alarm Type</label>
-    <select id="alType" class="mexa-select max-w-[12rem]" [(ngModel)]="f.alarm_type" name="alarmType">
+    <select id="alType" class="mexa-select sm:max-w-[12rem]" [(ngModel)]="f.alarm_type" name="alarmType">
       <option value="">All</option>
       <option *ngFor="let t of data?.facets?.types || []" [value]="t">{{ t }}</option>
     </select>
@@ -233,7 +233,7 @@
       </span>
     </div>
 
-    <div class="mexa-tablewrap">
+    <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table">
         <caption class="sr-only">Alarms matching the current filters, newest first</caption>
         <thead>

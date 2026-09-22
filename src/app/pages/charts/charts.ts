@@ -118,9 +118,12 @@ export class Charts implements OnInit, OnDestroy {
     this.buildChartOptions();
 
     // Re-build chart options whenever dark class toggles on <html>
+    /* Schedule, don't force: the root's class can change while Angular is
+       already rendering (the phone layout does it), and a forced render inside
+       that one threw NG0100 (ExpressionChangedAfterItHasBeenChecked). */
     this.themeObserver = new MutationObserver(() => {
       this.buildChartOptions();
-      this.cdr.detectChanges();
+      this.cdr.markForCheck();
     });
     this.themeObserver.observe(document.documentElement, {
       attributes: true, attributeFilter: ['class']
@@ -132,7 +135,7 @@ export class Charts implements OnInit, OnDestroy {
         this.shifts   = res.data.shifts;
         if (this.machines.length) this.selectedMachine = this.machines[0].id;
         if (this.shifts.length)   this.selectedShift   = this.shifts[0].id;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
         this.loadAll();
       }
     });
@@ -164,11 +167,11 @@ export class Charts implements OnInit, OnDestroy {
         this.partChartWidth  = needed > window.innerWidth ? `${needed}px` : '100%';
         this.loadingParts    = false;
         this.partDataLoaded  = true;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => {
         this.loadingParts = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -225,13 +228,13 @@ export class Charts implements OnInit, OnDestroy {
         this.hourlyCategories = rows.map((r: any) => r.hour);
         this.loadingHourly   = false;
         this.hourlyDataLoaded = true;
-        this.cdr.detectChanges();
-        onComplete?.();
+        this.cdr.markForCheck();
+        queueMicrotask(() => onComplete?.());   // after this render, not inside it
       },
       error: () => {
         this.loadingHourly = false;
-        this.cdr.detectChanges();
-        onComplete?.();
+        this.cdr.markForCheck();
+        queueMicrotask(() => onComplete?.());   // after this render, not inside it
       }
     });
   }

@@ -1,6 +1,6 @@
 <div class="min-h-screen flex bg-gray-100 dark:bg-neutral-900">
   <!-- Dark mode toggle -->
-  <button (click)="toggleDark()" class="absolute top-6 right-6
+  <button type="button" (click)="toggleDark()" aria-label="Switch light or dark theme" class="absolute top-6 right-6
 w-10 h-10
 flex items-center justify-center
 rounded-lg
@@ -42,7 +42,7 @@ hover:scale-105 transition">
               <div
                 class="absolute w-96 h-96 bg-white rounded-full blur-[120px] opacity-40 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
               </div>
-              <img [src]="slide.image" class="relative mb-10 mx-auto pointer-events-none">
+              <img [src]="slide.image" alt="" class="relative mb-10 mx-auto pointer-events-none">
             </div>
             <!-- TEXT -->
             <div class="max-w-md mx-auto px-6 md:-mt-4">
@@ -68,8 +68,8 @@ hover:scale-105 transition">
   <div class="flex flex-1 items-center justify-center px-6">
     <div class="w-full max-w-md">
       <!-- Logo -->
-      <img src="/images/logo/STM_Mexa_logo.svg" class="mb-8 dark:hidden" />
-      <img src="/images/logo/STM_Mexa_logo.svg" class="mb-8 hidden dark:block" />
+      <img src="/images/logo/STM_Mexa_logo.svg" alt="STM Mexa" class="mb-8 dark:hidden" />
+      <img src="/images/logo/STM_Mexa_logo.svg" alt="STM Mexa" class="mb-8 hidden dark:block" />
       <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-2"> Sign In </h2>
       <p class="text-gray-500 dark:text-gray-400 mb-6"> Enter your email and password to sign in </p>
       <!-- FORM -->
@@ -99,6 +99,7 @@ hover:scale-105 transition">
   <!-- Professional Eye Toggle Button -->
   <button
     type="button"
+    [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'" [attr.aria-pressed]="showPassword"
     (click)="togglePassword()"
     class="absolute inset-y-0 right-0 flex items-center px-3
            text-gray-400 hover:text-gray-600
@@ -167,7 +168,7 @@ hover:scale-105 transition">
           <div class="flex-1">
             <p class="text-sm font-medium text-red-700 dark:text-red-400">{{ error }}</p>
           </div>
-          <button type="button" (click)="error = ''" class="text-red-400 hover:text-red-600 transition">
+          <button type="button" (click)="error = ''" class="text-red-400 hover:text-red-600 transition" aria-label="Dismiss message" title="Dismiss">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
             </svg>

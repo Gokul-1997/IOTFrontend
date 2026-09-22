@@ -392,9 +392,10 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     return word === 'Critical' ? '#e03131' : word === 'Stable' ? '#f5a623' : word === 'Healthy' ? '#22c55e' : '#94a3b8';
   }
   bandText(word: string): string {
-    return word === 'Critical' ? 'text-red-600 dark:text-red-400'
-         : word === 'Stable'   ? 'text-amber-600 dark:text-amber-400'
-         : word === 'Healthy'  ? 'text-emerald-600 dark:text-emerald-400' : 'text-[--mexa-ink-3]';
+    // the 700 shades: 4.8–5.5:1 on white (the 600s were 3.2–3.8)
+    return word === 'Critical' ? 'text-red-700 dark:text-red-400'
+         : word === 'Stable'   ? 'text-amber-700 dark:text-amber-400'
+         : word === 'Healthy'  ? 'text-emerald-700 dark:text-emerald-400' : 'text-[--mexa-ink-3]';
   }
 
   /** One semicircle gauge. `max` is the full sweep: 100 % for load, 120 °C for temperature. */

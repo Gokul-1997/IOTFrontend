@@ -64,7 +64,7 @@
                 type="checkbox"
                 [checked]="selectedColKeys.has(col.key)"
                 (change)="toggleCol(col.key)"
-                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"/>
+                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5" aria-label="Select row" />
               <span class="text-xs text-gray-700 dark:text-gray-200 select-none">{{ col.label }}</span>
             </label>
           </div>
@@ -153,21 +153,21 @@
       <div class="flex flex-col gap-1">
         <label class="label_custom">Date From</label>
         <input type="date" [(ngModel)]="filters.date_from"
-          class="filter-date"/>
+          class="filter-date" aria-label="Date From" />
       </div>
 
       <!-- Date To -->
       <div class="flex flex-col gap-1">
         <label class="label_custom">Date To</label>
         <input type="date" [(ngModel)]="filters.date_to"
-          class="filter-date"/>
+          class="filter-date" aria-label="Date To" />
       </div>
 
       <!-- Machine -->
       <div class="flex flex-col gap-1">
         <label class="label_custom">Machine</label>
         <select [(ngModel)]="filters.machine_id" (change)="onMachineChange()"
-          class="filter-select">
+          class="filter-select" aria-label="Machine" >
           <option value="">All Machines</option>
           <option *ngFor="let m of machines" [value]="m.id">{{ m.name }}</option>
         </select>
@@ -177,7 +177,7 @@
       <div class="flex flex-col gap-1">
         <label class="label_custom">Operator</label>
         <select [(ngModel)]="filters.operator_id"
-          class="filter-select">
+          class="filter-select" aria-label="Operator" >
           <option value="">All Operators</option>
           <option *ngFor="let o of operators" [value]="o.id">{{ o.name }}</option>
         </select>
@@ -187,7 +187,7 @@
       <div class="flex flex-col gap-1">
         <label class="label_custom">Shift</label>
         <select [(ngModel)]="filters.shift_id"
-          class="filter-select">
+          class="filter-select" aria-label="Shift" >
           <option value="">All Shifts</option>
           <option *ngFor="let s of shifts" [value]="s.id">{{ s.name }}</option>
         </select>
@@ -325,7 +325,7 @@
         <span>Show</span>
         <select [(ngModel)]="pageSize" (ngModelChange)="page = 1"
           class="border border-gray-200 dark:border-gray-600 rounded px-2 py-1 text-sm
-                 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200" aria-label="Page size" >
           <option [value]="10">10</option>
           <option [value]="15">15</option>
           <option [value]="25">25</option>
@@ -360,7 +360,7 @@
     </div>
 
     <!-- Data table -->
-    <div *ngIf="!loading && rows.length > 0 && selectedCount > 0" class="overflow-x-auto">
+    <div *ngIf="!loading && rows.length > 0 && selectedCount > 0" class="overflow-x-auto" tabindex="0" role="region" aria-label="Report table — scroll sideways to see every column">
       <table class="w-full text-sm">
         <thead>
           <tr class="">

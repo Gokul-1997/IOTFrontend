@@ -3,7 +3,7 @@
 <form [formGroup]="form" (ngSubmit)="submit()" class="form">
 
   <label>Operator</label>
-  <select formControlName="operator_id">
+  <select formControlName="operator_id" aria-label="Operator" >
     <option value="">Select Operator</option>
     <option *ngFor="let o of operators" [value]="o.id">
       {{ o.operator_name }}
@@ -11,7 +11,7 @@
   </select>
 
   <label>Shift</label>
-  <select formControlName="shift_id">
+  <select formControlName="shift_id" aria-label="Shift" >
     <option value="">Select Shift</option>
     <option *ngFor="let s of shifts" [value]="s.id">
       {{ s.shift_name }} ({{ s.start_time }} - {{ s.end_time }})
@@ -19,7 +19,7 @@
   </select>
 
   <label>Effective From</label>
-  <input type="date" formControlName="effective_from" />
+  <input type="date" formControlName="effective_from" aria-label="Effective From" />
 
   <button type="submit" [disabled]="saving" *ngIf="auth.hasAction('assignments', 'create')">
     {{ saving ? 'Saving...' : 'Assign Shift' }}

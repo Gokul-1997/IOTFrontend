@@ -303,7 +303,7 @@ h4 {
   --color-bg-light-gray: #F6F6F6;
   --btn-primary: #2563eb;
   --light-blue: #F3F4FF;
-  --green: #0CAD5D;
+  --green: #15803d;
   --red: #FF5966;
   --yellow: #FFA600;
   --blue: #3B4CCA;
@@ -383,15 +383,15 @@ h4 {
   margin-right: 6px;
 
   &.running {
-    background-color: #0CAD5D;
+    background-color: #15803d;
   }
 
   &.idle {
-    background-color: #dfb400;
+    background-color: #a16207;
   }
 
   &.alarm {
-    background-color: #fb3748;
+    background-color: #dc2626;
   }
 }
 
@@ -400,15 +400,15 @@ h4 {
 }
 
 .green {
-  background-color: #0CAD5D;
+  background-color: #15803d;
 }
 
 .yellow {
-  background-color: #dfb400;
+  background-color: #a16207;
 }
 
 .red {
-  background-color: #fb3748;
+  background-color: #dc2626;
 }
 
 .gray {
@@ -425,15 +425,15 @@ h4 {
   border-width: 10px;
 
   &.green-full {
-    border-color: #0CAD5D;
+    border-color: #15803d;
   }
 
   &.yellow-full {
-    border-color: #dfb400;
+    border-color: #a16207;
   }
 
   &.red-full {
-    border-color: #fb3748;
+    border-color: #dc2626;
   }
 
   &.gray-full {
@@ -966,7 +966,7 @@ input[type="date"]::after {
 }
 .btn-apply {
   padding: 9px 18px;
-  background: #6366f1;
+  background: #4f46e5;   /* white text 4.5 → 6.3 */
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -1071,7 +1071,7 @@ html.dark {
 .serial-no { color: #3b5bdb; font-size: 0.82rem; font-weight: 500; }
 
 // Sub text (e.g., shift time range)
-.sub-text { font-size: 0.82rem; font-weight: 500; color: #6c757d; }
+.sub-text { font-size: 0.82rem; font-weight: 500; color: #5d6679; }
 
 // Small badges
 .badge-shift { background: #e8f0fe; color: #3b5bdb; border-radius: 20px; padding: 2px 10px; font-size: 0.82rem; font-weight: 500; display: inline-block; }
@@ -1256,4 +1256,53 @@ html.dark {
 }
 .op-modal .text-sm {
     white-space: nowrap;
+}
+
+/* ══════════ Contrast corrections (WCAG 2.1 AA, 4.5:1 for text) ══════════
+   Measured with axe on every page at phone, tablet and desktop widths, in
+   light and dark themes. A few shared causes covered most failures, so they
+   are corrected here once rather than in dozens of templates.
+
+   Written with attribute selectors on purpose. Tailwind copies any rule whose
+   selector names a utility class onto every class that @applies it (the
+   .white-card / .btn-secondary rules above), which would spread these fixes
+   onto unrelated elements; [class~="…"] is invisible to that. Dark rules are
+   scoped html.dark because Tailwind emits its dark: variants after this file.
+
+   1. Mid-tone button colours under white text (2.1–3.8:1): one shade darker,
+      only while not hovered, so every hover:bg-* keeps working. */
+[class~="text-white"][class~="bg-blue-500"]:not(:hover)    { background-color: #2563eb; }  /* 3.7 → 5.2 */
+[class~="text-white"][class~="bg-red-500"]:not(:hover)     { background-color: #dc2626; }  /* 3.8 → 4.8 */
+[class~="text-white"]:is([class~="bg-green-500"], [class~="bg-green-600"]):not(:hover) { background-color: #15803d; }  /* 2.3/3.3 → 5.0 */
+[class~="text-white"][class~="bg-teal-600"]:not(:hover)    { background-color: #0f766e; }  /* 3.7 → 5.5 */
+[class~="text-white"][class~="bg-emerald-600"]:not(:hover) { background-color: #047857; }  /* 3.8 → 5.5 */
+[class~="text-white"]:is([class~="bg-amber-500"], [class~="bg-amber-600"]):not(:hover) { background-color: #b45309; }  /* 2.1/3.2 → 5.0 */
+[class~="text-white"][class~="bg-orange-600"]:not(:hover)  { background-color: #c2410c; }  /* 3.6 → 5.2 */
+[class~="text-white"][class~="bg-indigo-500"]:not(:hover)  { background-color: #4f46e5; }  /* 4.5 → 6.3 */
+
+/* 2. Light greys used for readable text, light theme only. */
+html:not(.dark) [class~="text-gray-400"]  { color: #5d6679; }   /* 2.5 → 5.8 on white, 5.1 on the page ground */
+html:not(.dark) [class~="text-gray-500"]  { color: #5d6679; }   /* 4.2 → 5.1 on the page ground */
+html:not(.dark) [class~="text-slate-400"] { color: #64748b; }
+html:not(.dark) [class~="text-slate-500"] { color: #55607a; }
+
+/* 3. Status text in green / red, and the MEXA ▲▼ deltas (2.3–3.8 → 4.8–5.0). */
+html:not(.dark) :is([class~="text-green-500"], [class~="text-green-600"]) { color: #15803d; }
+html:not(.dark) [class~="text-red-500"] { color: #dc2626; }
+html:not(.dark) .mexa-delta-up   { color: #15803d; }
+html:not(.dark) .mexa-delta-down { color: #dc2626; }
+
+/* 4. Dark theme. Greys with no dark: shade of their own sit on dark cards. */
+html.dark [class~="text-gray-500"]:not([class*="dark:text-"]) { color: #9ca3af; }
+html.dark [class~="dark:text-gray-500"] { color: #9ca3af; }            /* 4.0 → 7.5 on the page ground */
+html.dark thead [class~="dark:text-gray-400"] { color: #d1d5db; }      /* small caps on gray-700: 4.1 → 8.7 */
+/* A few screens keep white cards in dark mode; their grey text stays dark. */
+html.dark :is([class~="bg-white"], [class~="bg-gray-50"]):not([class*="dark:bg-"]) :is([class~="text-gray-400"], [class~="text-gray-500"]):not([class*="dark:text-"]) { color: #5d6679; }
+/* An active tab is white text on blue, whatever dark:text-* it also carries. */
+html.dark [class~="bg-blue-600"][class~="text-white"] { color: #fff; }
+.dark .serial-no { color: #a5b4fc; }   /* serial links on dark cards: 2.9 → 7.0 */
+
+/* Blinking status pills: still for anyone who asked for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .blink { animation: none !important; }
 }

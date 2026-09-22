@@ -196,11 +196,13 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
     return `${dd}/${mm}/${yyyy}`;
   }
 
+  /* Used for the figure's text as well as its bar, so each shade is the
+     darker one that reads at least 4.5:1 on white (WCAG AA). */
   getOeeColor(oee: number): string {
-    if (oee >= 85) return '#10b981';
-    if (oee >= 75) return '#3b82f6';
-    if (oee >= 60) return '#f59e0b';
-    return '#ef4444';
+    if (oee >= 85) return '#047857';
+    if (oee >= 75) return '#1d4ed8';
+    if (oee >= 60) return '#b45309';
+    return '#dc2626';
   }
 
   getBarWidth(value: number): string {

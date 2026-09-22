@@ -128,7 +128,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Power<br>Consumption</span>
-        <span class="mexa-kpi-icon" style="background:#4a76c8" aria-hidden="true">
+        <span class="mexa-kpi-icon" style="background:#3b63b0" aria-hidden="true">
           <mat-icon>bolt</mat-icon>
         </span>
       </div>
@@ -217,17 +217,17 @@
       <h2 class="mexa-card-title">Energy Cost Analysis</h2>
 
       <div class="grid grid-cols-2 gap-2 mb-3">
-        <div class="rounded-xl p-3 text-white" style="background:#4a76c8">
-          <span class="block text-xs opacity-90">Today's Cost</span>
+        <div class="rounded-xl p-3 text-white" style="background:#3b63b0">
+          <span class="block text-xs">Today's Cost</span>
           <p class="text-xl font-bold">{{ money(data.energy.cost_day) }}</p>
-          <span *ngIf="data.energy.day_vs_yesterday_pct !== null" class="block text-xs opacity-90">
+          <span *ngIf="data.energy.day_vs_yesterday_pct !== null" class="block text-xs">
             {{ change(data.energy.day_vs_yesterday_pct) }} vs Yesterday
           </span>
         </div>
         <div class="rounded-xl p-3 text-white" style="background:#6b7280">
-          <span class="block text-xs opacity-90">Monthly Cost</span>
+          <span class="block text-xs">Monthly Cost</span>
           <p class="text-xl font-bold">{{ money(data.energy.cost_month) }}</p>
-          <span *ngIf="data.energy.month_vs_last_pct !== null" class="block text-xs opacity-90">
+          <span *ngIf="data.energy.month_vs_last_pct !== null" class="block text-xs">
             {{ change(data.energy.month_vs_last_pct) }} vs Last Month
           </span>
         </div>

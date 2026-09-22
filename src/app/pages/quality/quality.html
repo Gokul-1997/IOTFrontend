@@ -27,7 +27,7 @@
           <select
             [(ngModel)]="selectedLine"
             (change)="onLineChange()"
-            class="filter-select">
+            class="filter-select" aria-label="Line Name" >
 
             <option *ngFor="let l of lines" [ngValue]="l.id">
               {{ l.name }}
@@ -44,7 +44,7 @@
 
           <select
             [(ngModel)]="selectedMachine"
-            class="filter-select">
+            class="filter-select" aria-label="Machine Name" >
 
             <option *ngFor="let m of machines" [ngValue]="m.id">
               {{ m.machine_serial_no }}
@@ -61,7 +61,7 @@
 
           <select
             [(ngModel)]="selectedShift"
-            class="filter-select">
+            class="filter-select" aria-label="Shift" >
 
             <option *ngFor="let s of shifts" [ngValue]="s.id">
               {{ s.shift_name }}
@@ -80,7 +80,7 @@
             type="date"
             [(ngModel)]="selectedDate"
             [max]="today"
-            class="filter-date" />
+            class="filter-date" aria-label="Date" />
         </div>
 
         <!-- SUBMIT -->
@@ -273,7 +273,7 @@
                   (keydown.escape)="cancelRejected()"
                   class="w-20 text-center text-3xl font-bold text-red-500
                          border-b-2 border-red-400 bg-transparent outline-none"
-                  #rejectedInputRef />
+                  #rejectedInputRef aria-label="Rejected value" />
               </ng-template>
 
               <!-- Edit / Save icons -->
@@ -282,18 +282,18 @@
                 <button
                   *ngIf="!editingRejected"
                   (click)="startEditRejected()"
-                  class="text-gray-400 hover:text-indigo-500 transition-colors">
+                  class="text-gray-400 hover:text-indigo-500 transition-colors" aria-label="Edit rejected quantity" title="Edit rejected quantity">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                   </svg>
                 </button>
                 <div *ngIf="editingRejected" class="flex gap-1">
-                  <button (click)="saveRejected()" class="text-green-500 hover:text-green-700 transition-colors">
+                  <button (click)="saveRejected()" class="text-green-500 hover:text-green-700 transition-colors" aria-label="Save rejected quantity" title="Save rejected quantity">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                       <path d="M5 13l4 4L19 7"/>
                     </svg>
                   </button>
-                  <button (click)="cancelRejected()" class="text-red-400 hover:text-red-600 transition-colors">
+                  <button (click)="cancelRejected()" class="text-red-400 hover:text-red-600 transition-colors" aria-label="Cancel editing rejected quantity" title="Cancel editing rejected quantity">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                       <path d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -323,7 +323,7 @@
                   (keydown.enter)="saveRework()"
                   (keydown.escape)="cancelRework()"
                   class="w-20 text-center text-3xl font-bold text-red-500
-                         border-b-2 border-red-400 bg-transparent outline-none" />
+                         border-b-2 border-red-400 bg-transparent outline-none" aria-label="Rework value" />
               </ng-template>
 
               <!-- Edit / Save icons -->
@@ -332,18 +332,18 @@
                 <button
                   *ngIf="!editingRework"
                   (click)="startEditRework()"
-                  class="text-gray-400 hover:text-indigo-500 transition-colors">
+                  class="text-gray-400 hover:text-indigo-500 transition-colors" aria-label="Edit rework quantity" title="Edit rework quantity">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                   </svg>
                 </button>
                 <div *ngIf="editingRework" class="flex gap-1">
-                  <button (click)="saveRework()" class="text-green-500 hover:text-green-700 transition-colors">
+                  <button (click)="saveRework()" class="text-green-500 hover:text-green-700 transition-colors" aria-label="Save rework quantity" title="Save rework quantity">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                       <path d="M5 13l4 4L19 7"/>
                     </svg>
                   </button>
-                  <button (click)="cancelRework()" class="text-red-400 hover:text-red-600 transition-colors">
+                  <button (click)="cancelRework()" class="text-red-400 hover:text-red-600 transition-colors" aria-label="Cancel editing rework quantity" title="Cancel editing rework quantity">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                       <path d="M6 18L18 6M6 6l12 12"/>
                     </svg>

@@ -16,8 +16,8 @@
       <div class="search-box">
         <mat-icon class="search-icon">search</mat-icon>
         <input type="text" placeholder="Search…" [(ngModel)]="searchText"
-          (keyup.enter)="onSearch()" class="search-input" />
-        <button *ngIf="searchText" mat-icon-button class="clear-btn" (click)="searchText=''; onSearch()">
+          (keyup.enter)="onSearch()" class="search-input" aria-label="Search text" />
+        <button *ngIf="searchText" mat-icon-button class="clear-btn" (click)="searchText=''; onSearch()" aria-label="Clear search" title="Clear search">
           <mat-icon>close</mat-icon>
         </button>
       </div>
@@ -34,7 +34,7 @@
 
     <div class="filter-item">
       <label class="filter-label">LINE</label>
-      <select [(ngModel)]="selectedLine" (change)="onLineChange()" [disabled]="loadingMeta" class="filter-select">
+      <select [(ngModel)]="selectedLine" (change)="onLineChange()" [disabled]="loadingMeta" class="filter-select" aria-label="Line" >
         <option [ngValue]="null">All Lines</option>
         <option *ngFor="let l of lines" [ngValue]="l.id">{{ l.name }}</option>
       </select>
@@ -42,7 +42,7 @@
 
     <div class="filter-item">
       <label class="filter-label">MACHINE</label>
-      <select [(ngModel)]="selectedMachine" (change)="onMachineChange()" [disabled]="loadingMeta" class="filter-select">
+      <select [(ngModel)]="selectedMachine" (change)="onMachineChange()" [disabled]="loadingMeta" class="filter-select" aria-label="Machine" >
         <option [ngValue]="null">All Machines</option>
         <option *ngFor="let m of filteredMachines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
       </select>
@@ -50,7 +50,7 @@
 
     <div class="filter-item">
       <label class="filter-label">SHIFT</label>
-      <select [(ngModel)]="selectedShift" (change)="onShiftChange()" [disabled]="loadingMeta" class="filter-select">
+      <select [(ngModel)]="selectedShift" (change)="onShiftChange()" [disabled]="loadingMeta" class="filter-select" aria-label="Shift" >
         <option [ngValue]="null">All Shifts</option>
         <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_code }}</option>
       </select>
@@ -58,12 +58,12 @@
 
     <div class="filter-item">
       <label class="filter-label">FROM DATE</label>
-      <input type="date" [(ngModel)]="fromDate" [max]="today" (change)="onDateChange()" class="filter-date" />
+      <input type="date" [(ngModel)]="fromDate" [max]="today" (change)="onDateChange()" class="filter-date" aria-label="From Date" />
     </div>
 
     <div class="filter-item">
       <label class="filter-label">TO DATE</label>
-      <input type="date" [(ngModel)]="toDate" [max]="today" (change)="onDateChange()" class="filter-date" />
+      <input type="date" [(ngModel)]="toDate" [max]="today" (change)="onDateChange()" class="filter-date" aria-label="To Date" />
     </div>
 
     <div class="filter-actions">
@@ -92,7 +92,7 @@
     </div>
 
     <!-- TABLE WRAPPER -->
-    <div class="table-wrapper">
+    <div class="table-wrapper" tabindex="0" role="region" aria-label="OEE report table — scroll sideways to see every column">
       <table class="data-table">
         <thead>
           <tr>

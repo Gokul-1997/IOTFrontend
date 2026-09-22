@@ -52,7 +52,7 @@
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">CNC Machine</label>
         <select [(ngModel)]="selectedMachineId" (ngModelChange)="onMachineChange()"
-          class="border rounded-lg px-3 py-2 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          class="border rounded-lg px-3 py-2 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="CNC Machine" >
           <option [ngValue]="null">-- Select machine --</option>
           <option *ngFor="let m of machines" [ngValue]="m.id">
             {{ m.machine_serial_no }} {{ m.ip_address ? '— ' + m.ip_address : '— no IP set' }}
@@ -103,7 +103,7 @@
           </div>
           <div class="flex gap-2">
             <input [(ngModel)]="search" (keyup.enter)="page = 1; load()" placeholder="Search programs…"
-              class="border rounded-lg px-3 py-1.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              class="border rounded-lg px-3 py-1.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Search" />
             <button (click)="page = 1; load()"
               class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">Search</button>
           </div>
@@ -115,7 +115,7 @@
               <tr>
                 <th class="px-3 py-2 w-8">
                   <input type="checkbox" [checked]="allSelected" (change)="toggleAll()"
-                         class="rounded border-gray-300" />
+                         class="rounded border-gray-300" aria-label="Select all" />
                 </th>
                 <th class="px-3 py-2 text-left font-semibold text-gray-600">Program</th>
                 <th class="px-3 py-2 text-left font-semibold text-gray-600">Size</th>
@@ -128,7 +128,7 @@
                   [class.bg-blue-50]="isSelected(p.id)">
                 <td class="px-3 py-2">
                   <input type="checkbox" [checked]="isSelected(p.id)" (change)="toggleProgram(p.id)"
-                         class="rounded border-gray-300" />
+                         class="rounded border-gray-300" aria-label="Select row" />
                 </td>
                 <td class="px-3 py-2">
                   <div class="font-medium text-gray-800">{{ p.name }}</div>
@@ -180,7 +180,7 @@
           <div class="flex gap-2">
             <input [(ngModel)]="machineSearch" (keyup.enter)="loadMachineFiles()"
               [disabled]="!selectedMachineId" placeholder="Search files on machine…"
-              class="border rounded-lg px-3 py-1.5 text-sm flex-1 disabled:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              class="border rounded-lg px-3 py-1.5 text-sm flex-1 disabled:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Machine search" />
             <button (click)="loadMachineFiles()" [disabled]="!selectedMachineId"
               class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 disabled:opacity-40">Search</button>
           </div>

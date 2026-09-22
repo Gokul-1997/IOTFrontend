@@ -197,7 +197,7 @@
                   (click)="upcomingWindow = $any(w)">{{ w === 'today' ? 'Today' : w === 'week' ? 'This Week' : 'This Month' }}</button>
         </span>
       </div>
-      <div class="mexa-tablewrap">
+      <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
         <table class="mexa-table" style="min-width:0">
           <caption class="sr-only">Maintenance due next, soonest first</caption>
           <thead>
@@ -242,7 +242,7 @@
 
     <section class="mexa-card">
       <h2 class="mexa-card-title mexa-card-title-left">Maintenance Type Wise Summary</h2>
-      <div class="mexa-tablewrap">
+      <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
         <table class="mexa-table" style="min-width:0">
           <caption class="sr-only">Open and completed work by frequency band</caption>
           <thead>
@@ -315,7 +315,7 @@
       </button>
     </p>
 
-    <div class="mexa-tablewrap">
+    <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table">
         <caption class="sr-only">Periodic maintenance tickets, newest due first</caption>
         <thead>
@@ -411,7 +411,7 @@
       </div>
     </form>
 
-    <div class="mexa-tablewrap">
+    <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table">
         <caption class="sr-only">Configured maintenance schedules</caption>
         <thead>
