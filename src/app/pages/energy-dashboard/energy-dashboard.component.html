@@ -89,7 +89,13 @@
       <p class="mexa-kpi-value">
         {{ num(data.kpis.total_kwh) }}<small *ngIf="data.kpis.total_kwh !== null">kWh</small>
       </p>
-      <p class="mexa-kpi-sub">{{ data.coverage.reporting }} of {{ data.coverage.machines }} machines reporting</p>
+      <p class="mexa-kpi-sub">
+        <ng-container *ngIf="data.kpis.kwh_vs_yesterday_pct !== null && data.kpis.kwh_vs_yesterday_pct !== undefined; else cov">
+          <span [class.text-red-600]="data.kpis.kwh_vs_yesterday_pct > 0" [class.text-emerald-600]="data.kpis.kwh_vs_yesterday_pct < 0">
+            {{ change(data.kpis.kwh_vs_yesterday_pct) }}</span> vs Yesterday
+        </ng-container>
+        <ng-template #cov>{{ data.coverage.reporting }} of {{ data.coverage.machines }} machines reporting</ng-template>
+      </p>
     </div>
 
     <div class="mexa-kpi">
@@ -116,13 +122,20 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Operating<br>Time</span>
-        <span class="mexa-kpi-icon" style="background:#17b3a3" aria-hidden="true">
-          <mat-icon>schedule</mat-icon>
-        </span>
+        <span class="mexa-kpi-label">Overall<br>Volts</span>
+        <span class="mexa-kpi-icon" style="background:#9b7ec8" aria-hidden="true"><mat-icon>electrical_services</mat-icon></span>
       </div>
-      <p class="mexa-kpi-value">{{ hours(data.kpis.total_operating_seconds) }}</p>
-      <p class="mexa-kpi-sub">Machines running</p>
+      <p class="mexa-kpi-value">{{ num(data.kpis.avg_voltage) }}<small *ngIf="data.kpis.avg_voltage != null">V</small></p>
+      <p class="mexa-kpi-sub">{{ data.kpis.avg_voltage == null ? 'Not reported by the devices' : 'Average over the period' }}</p>
+    </div>
+
+    <div class="mexa-kpi">
+      <div class="mexa-kpi-head">
+        <span class="mexa-kpi-label">Overall<br>AMPs</span>
+        <span class="mexa-kpi-icon" style="background:#17b3a3" aria-hidden="true"><mat-icon>power</mat-icon></span>
+      </div>
+      <p class="mexa-kpi-value">{{ num(data.kpis.avg_current) }}<small *ngIf="data.kpis.avg_current != null">A</small></p>
+      <p class="mexa-kpi-sub">{{ data.kpis.avg_current == null ? 'Not reported by the devices' : 'Average over the period' }}</p>
     </div>
 
     <div class="mexa-kpi">
@@ -133,10 +146,16 @@
           <mat-icon>warning</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value" [style.color]="data.kpis.overload_alerts > 0 ? '#c32b3f' : null">
-        {{ data.kpis.overload_alerts }}
-      </p>
-      <p class="mexa-kpi-sub">Peak above the configured limit</p>
+      <!-- the machine furthest over its limit, as the design names it -->
+      <ng-container *ngIf="data.kpis.overload_top as o; else noOverload">
+        <p class="mexa-kpi-value" style="color:#c32b3f">{{ o.machine_serial_no }}</p>
+        <p class="mexa-kpi-sub">Power exceeded <strong class="text-red-600">{{ o.exceeded_kw }} kW</strong>
+          <span *ngIf="data.kpis.overload_alerts > 1"> · {{ data.kpis.overload_alerts }} machines</span></p>
+      </ng-container>
+      <ng-template #noOverload>
+        <p class="mexa-kpi-value">0</p>
+        <p class="mexa-kpi-sub">Peak above the configured limit</p>
+      </ng-template>
     </div>
   </div>
 
@@ -190,13 +209,20 @@
     </section>
 
     <section class="mexa-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Energy Cost Trend</h2>
+      <div class="mexa-card-head">
+        <h2 class="mexa-card-title mexa-card-title-left">Energy Cost Trend</h2>
+        <span class="mexa-seg" role="group" aria-label="Energy Cost Trend: group by">
+          <button type="button" *ngFor="let p of ['day','week','month']" [attr.aria-pressed]="costBy === p"
+                  (click)="setCostBy(p)">{{ p === 'day' ? 'Day' : p === 'week' ? 'Week' : 'Month' }}</button>
+        </span>
+      </div>
       <apx-chart *ngIf="monthSeries.length"
         [series]="monthSeries" [chart]="monthChart.chart" [plotOptions]="monthChart.plotOptions"
         [colors]="monthChart.colors" [dataLabels]="monthChart.dataLabels"
         [xaxis]="monthChart.xaxis" [grid]="monthChart.grid" [legend]="monthChart.legend"
         [tooltip]="monthChart.tooltip" [noData]="monthChart.noData"></apx-chart>
-      <p *ngIf="!monthSeries.length" class="mexa-empty">Nothing recorded by month.</p>
+      <p *ngIf="!monthSeries.length" class="mexa-empty">Nothing recorded for this period.</p>
+      <p *ngIf="monthSeries.length && !data.rate_per_kwh" class="mexa-card-hint text-center !mt-0">In kWh — no tariff is set, so there is no cost.</p>
     </section>
 
     <section class="mexa-card">

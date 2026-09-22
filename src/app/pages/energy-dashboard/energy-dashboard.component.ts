@@ -150,9 +150,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
     this.shiftDonutSeries = (d.by_shift || []).map((s: any) => Number(s.kwh) || 0);
     this.shiftTotal = this.shiftDonutSeries.reduce((a, b) => a + b, 0);
 
-    this.monthCategories = (d.by_month || []).map((m: any) =>
-      new Date(m.month).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }));
-    this.monthSeries = [{ name: 'Cost', data: (d.by_month || []).map((m: any) => m.cost ?? m.kwh) }];
+    this.buildCostTrend();
 
     this.cdr.markForCheck();
   }
@@ -317,6 +315,52 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   });
   }
 
+  /** Energy Cost Trend grouping: the design's Day | Week | Month. */
+  costBy: 'day' | 'week' | 'month' = 'day';
+
+  setCostBy(p: string): void {
+    this.costBy = p as any;
+    this.buildCostTrend();
+    this.charts.bump();
+    this.cdr.markForCheck();
+  }
+
+  /* Priced at the company tariff when one is set; otherwise the bars are kWh
+     and say so. It used to plot kWh under a "Cost" title. Days come from the
+     daily trend, weeks are those days summed, months are the API's own. */
+  private buildCostTrend(): void {
+    const d = this.data;
+    const rate = d?.rate_per_kwh ?? null;
+    const price = (kwh: number) => rate != null ? Number((kwh * rate).toFixed(2)) : Number(kwh.toFixed(2));
+    let rows: { label: string; kwh: number }[] = [];
+    if (this.costBy === 'month') {
+      rows = (d?.by_month || []).map((m: any) => ({
+        label: new Date(m.month).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }), kwh: Number(m.kwh) || 0 }));
+    } else {
+      const days = (d?.trend || []).filter((t: any) => t.machines > 0);
+      if (this.costBy === 'day') {
+        rows = days.map((t: any) => ({ label: new Date(t.day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }), kwh: Number(t.kwh) || 0 }));
+      } else {
+        const weeks = new Map<string, number>();
+        for (const t of days) {
+          const dt = new Date(t.day);
+          const monday = new Date(dt); monday.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
+          const key = monday.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+          weeks.set(key, (weeks.get(key) || 0) + (Number(t.kwh) || 0));
+        }
+        rows = [...weeks.entries()].map(([label, kwh]) => ({ label: `Wk ${label}`, kwh }));
+      }
+    }
+    this.monthCategories = rows.map(r => r.label);
+    this.monthSeries = rows.length ? [{ name: rate != null ? 'Cost' : 'kWh', data: rows.map(r => price(r.kwh)) }] : [];
+  }
+
+  /** "↑ 12.5%" / "↓ 3.4%". */
+  change(v: number | null | undefined): string {
+    if (v === null || v === undefined) return '';
+    return `${v > 0 ? '↑' : v < 0 ? '↓' : ''} ${Math.abs(v)}%`;
+  }
+
   get monthChart(): any {
     return this.charts.memo('monthChart', () => {
     return {
@@ -326,7 +370,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       dataLabels: { enabled: false },
       legend: { show: false },
       xaxis: { categories: this.monthCategories },
-      yaxis: { title: { text: `Cost (${this.data?.currency || 'INR'})` } },
+      yaxis: { title: { text: this.data?.rate_per_kwh != null ? `Cost (${this.data?.currency || 'INR'})` : 'kWh' } },
       grid:  { borderColor: 'rgba(148,163,184,.25)' },
       tooltip: { theme: 'dark' },
       noData: { text: 'Nothing recorded by month' }

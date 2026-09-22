@@ -335,7 +335,7 @@ const screens: { path: string; title: string; kpis: number; file: string }[] = [
   { path: '/downtime-analysis',      title: 'Downtime Reason Analysis',          kpis: 6, file: 'mexa-06-downtime.png' },
   { path: '/operator-performance',   title: 'Operator Performance Dashboard',    kpis: 5, file: 'mexa-07-operator.png' },
   { path: '/oee-dashboard',          title: 'OEE Dashboard',                     kpis: 6, file: 'mexa-08-oee.png' },
-  { path: '/energy-dashboard',       title: 'Energy Dashboard',                  kpis: 5, file: 'mexa-09-energy.png' }
+  { path: '/energy-dashboard',       title: 'Energy Dashboard',                  kpis: 6, file: 'mexa-09-energy.png' }
 ];
 
 for (const s of screens) {
