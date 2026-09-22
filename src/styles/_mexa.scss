@@ -286,6 +286,29 @@ html, body { background: var(--mexa-ground); }
 
 .mexa-grid { display: grid; gap: 1rem; margin-bottom: 1rem; min-width: 0; }
 
+/* A card whose title shares a row with a control — the Top 5 / Bottom 5
+   switch in the mock. */
+.mexa-card-head {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  margin-bottom: .6rem;
+}
+.mexa-card-head .mexa-card-title { margin: 0; }
+
+/* Two-way switch drawn as one pill: "Top 5 | Botm 5". The pressed half is
+   the one showing. */
+.mexa-seg {
+  display: inline-flex; flex: none; border: 1px solid var(--mexa-rule);
+  border-radius: 999px; padding: 2px; background: var(--mexa-row-alt);
+}
+.mexa-seg button {
+  background: none; border: 0; font: inherit; font-size: .74rem; font-weight: 650;
+  color: var(--mexa-ink-3); padding: .2rem .6rem; border-radius: 999px; cursor: pointer;
+  white-space: nowrap;
+}
+.mexa-seg button[aria-pressed="true"] { background: var(--mexa-card); color: var(--mexa-submit); box-shadow: 0 1px 2px rgba(17,20,45,.08); }
+.dark .mexa-seg button[aria-pressed="true"] { color: #b9b6ff; }
+.mexa-seg button:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 1px; }
+
 /* ── Table ────────────────────────────────────────────────── */
 
 .mexa-tablewrap { overflow-x: auto; }
@@ -320,6 +343,15 @@ html, body { background: var(--mexa-ground); }
 .mexa-table .num { font-variant-numeric: tabular-nums; }
 .mexa-table .strong { color: var(--mexa-ink); font-weight: 600; }
 
+/* Sortable column: the whole header is the button; the arrow says which way. */
+.mexa-sort {
+  background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer;
+  display: inline-flex; align-items: center; gap: .25rem; white-space: nowrap;
+}
+.mexa-sort:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 2px; border-radius: 4px; }
+.mexa-sort-arrow { font-size: .7rem; color: var(--mexa-ink-3); }
+.mexa-sort[aria-current="true"] .mexa-sort-arrow { color: var(--mexa-submit); }
+
 .mexa-empty { text-align: center; padding: 2.5rem 1rem; color: var(--mexa-ink-3); }
 
 /* Search box above a table */
@@ -352,6 +384,9 @@ html, body { background: var(--mexa-ground); }
 .mexa-pagebtn:hover:not(:disabled) { background: var(--mexa-row-alt); }
 .mexa-pagebtn:disabled { opacity: .4; cursor: not-allowed; }
 .mexa-pagebtn:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 1px; }
+.mexa-pagebtn[aria-current="page"] { border: 1px solid var(--mexa-rule); color: var(--mexa-submit); }
+.mexa-pagesize { display: inline-flex; align-items: center; gap: .5rem; }
+.mexa-pagesize select { padding: .3rem 1.6rem .3rem .6rem; min-width: 0; }
 
 /* ── Badges ───────────────────────────────────────────────── */
 

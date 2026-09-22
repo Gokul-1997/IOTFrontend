@@ -46,8 +46,9 @@ export class FactoryComponent implements OnInit, OnDestroy {
 
   /* ── charts ── */
   shiftSeries:     any[] = [];
-  shiftCategories: string[] = [];
+  shiftCategories: any[] = [];
   trendSeries:     any[] = [];
+  energySeries:    any[] = [];
   trendCategories: string[] = [];
   downtimeSeries:  number[] = [];
   downtimeLabels:  string[] = [];
@@ -125,22 +126,27 @@ export class FactoryComponent implements OnInit, OnDestroy {
       ? new Date(d.updated_at).toLocaleString('en-IN', { hour12: true })
       : '';
 
-    /* shift-wise production */
-    this.shiftCategories = (d.shiftwise || []).map((s: any) => s.shift_code);
+    /* shift-wise production, each shift labelled with its hours as the mock does */
+    this.shiftCategories = (d.shiftwise || []).map((s: any) =>
+      s.start_time ? [s.shift_code, `(${this.hhmm(s.start_time)} - ${this.hhmm(s.end_time)})`] as any : s.shift_code);
     this.shiftSeries = [{
       name: 'Produced',
       data: (d.shiftwise || []).map((s: any) => s.produced)
     }];
 
-    /* hourly energy + production trend */
+    /* Production Trend: actual against target, hour by hour (the mock's two
+       lines). Energy has its own trend in the Energy Cost card. */
     const trend = d.trend || [];
     this.trendCategories = trend.map((t: any) =>
-      new Date(t.hour).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })
+      new Date(t.hour).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })
     );
-    this.trendSeries = [
-      { name: 'Energy (kWh)', type: 'line', data: trend.map((t: any) => t.kwh) },
-      { name: 'Produced',     type: 'column', data: trend.map((t: any) => t.produced) }
-    ];
+    const hasTarget = trend.some((t: any) => t.target != null);
+    this.trendSeries = trend.length ? [
+      { name: 'Actual', data: trend.map((t: any) => t.produced) },
+      ...(hasTarget ? [{ name: 'Target', data: trend.map((t: any) => t.target) }] : [])
+    ] : [];
+    this.energySeries = trend.some((t: any) => t.kwh > 0)
+      ? [{ name: 'Energy (kWh)', data: trend.map((t: any) => t.kwh) }] : [];
 
     /* downtime split by reason */
     const reasons = d.downtime?.by_reason || [];
@@ -178,6 +184,9 @@ export class FactoryComponent implements OnInit, OnDestroy {
   }
 
   absPct(v: number): string { return `${Math.abs(v)}%`; }
+
+  /** A dash, not 0%, when a factor could not be measured (no cycle time, nothing made). */
+  pctText(v: any): string { return v === null || v === undefined ? '--' : `${this.pct(v)}%`; }
 
   pct(v: any): number {
     const n = Number(v);
@@ -239,24 +248,53 @@ export class FactoryComponent implements OnInit, OnDestroy {
   });
   }
 
+  /** Actual (solid) against target (dashed), units per hour. */
   get trendChart(): any {
     return this.charts.memo('trendChart', () => {
     return {
-      chart:  { height: 260, type: 'line', toolbar: { show: false }, fontFamily: 'inherit' },
-      stroke: { width: [3, 0], curve: 'smooth' },
-      plotOptions: { bar: { borderRadius: 4, columnWidth: '45%' } },
-      colors: ['#9B3F70', '#2B3990'],
+      chart:  { height: 280, type: 'line', toolbar: { show: false }, fontFamily: 'inherit' },
+      stroke: { width: [3, 2], curve: 'smooth', dashArray: [0, 6] },
+      colors: ['#2B3990', '#ef4444'],
       dataLabels: { enabled: false },
-      xaxis:  { categories: this.trendCategories },
-      yaxis: [
-        { title: { text: 'kWh' } },
-        { opposite: true, title: { text: 'Produced' } }
-      ],
-      legend: { position: 'top' },
+      markers: { size: 0 },
+      xaxis:  { categories: this.trendCategories, title: { text: 'Hour' }, labels: { rotate: -45 } },
+      yaxis:  { min: 0, title: { text: 'Units' } },
+      legend: { position: 'bottom' },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark' }
+      tooltip:{ theme: 'dark', shared: true, intersect: false }
     };
   });
+  }
+
+  /** The small energy line inside the Energy Cost card. */
+  get energyChart(): any {
+    return this.charts.memo('energyChart', () => {
+    return {
+      chart:  { height: 170, type: 'line', toolbar: { show: false }, fontFamily: 'inherit', sparkline: { enabled: false } },
+      stroke: { width: 2, curve: 'straight' },
+      colors: ['#9b7ec8'],
+      markers: { size: 4 },
+      dataLabels: { enabled: false },
+      xaxis:  { categories: this.trendCategories, title: { text: 'Hour' }, labels: { rotate: -45, hideOverlappingLabels: true } },
+      yaxis:  { min: 0, title: { text: 'Units' } },
+      grid:   { borderColor: 'rgba(148,163,184,.25)' },
+      tooltip:{ theme: 'dark', y: { formatter: (v: number) => `${v} kWh` } }
+    };
+  });
+  }
+
+  /** "08:00:00" → "08:00". */
+  hhmm(t: string | null | undefined): string { return t ? String(t).slice(0, 5) : ''; }
+
+  /** Share of target for the Actual vs Target bars, capped for drawing only. */
+  targetBar(actual: number, target: number | null): number {
+    return target ? Math.min(100, Math.round((actual / target) * 100)) : 0;
+  }
+
+  /** "↑ 5.2%" / "↓ 3.4%" from a signed change. */
+  change(v: number | null | undefined): string {
+    if (v === null || v === undefined) return '';
+    return `${v > 0 ? '↑' : v < 0 ? '↓' : ''} ${Math.abs(v)}%`;
   }
 
   /**

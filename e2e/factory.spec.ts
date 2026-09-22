@@ -20,7 +20,7 @@ const factoryResponse = {
     filters: { date: '2026-08-10', shift_id: null, shift_code: null, machine_id: null },
     updated_at: '2026-08-10T09:30:00.000Z',
     machines: { total: 12, running: 8, idle: 3, breakdown: 1, offline: 0 },
-    production: { produced: 420 },
+    production: { produced: 420, actual: 380, target: 600, target_pct: 63.3, machines_with_target: 6 },
     time: { run_seconds: 29520, idle_seconds: 7200, down_seconds: 3600 },
     oee: { availability: 82, performance: 76, quality: 98, oee: 61, target: 85 },
     energy: {
@@ -28,8 +28,8 @@ const factoryResponse = {
       rate_per_kwh: 8, cost_day: 1186, cost_month: 24964
     },
     shiftwise: [
-      { shift_code: 'MS01', produced: 220 },
-      { shift_code: 'MS02', produced: 200 }
+      { shift_id: 1, shift_code: 'MS01', start_time: '06:00:00', end_time: '14:00:00', produced: 220, actual: 200, target: 300 },
+      { shift_id: 2, shift_code: 'MS02', start_time: '14:00:00', end_time: '22:00:00', produced: 200, actual: 180, target: 300 }
     ],
     downtime: {
       total_seconds: 3600, planned_seconds: 1200, unplanned_seconds: 2400,
@@ -40,8 +40,8 @@ const factoryResponse = {
     },
     alarms: { total: 9, critical: 2, non_critical: 4, information: 3, open: 5 },
     trend: [
-      { hour: '2026-08-10T02:00:00.000Z', kwh: 12.5, produced: 40 },
-      { hour: '2026-08-10T03:00:00.000Z', kwh: 14.1, produced: 52 }
+      { hour: '2026-08-10T02:00:00.000Z', kwh: 12.5, produced: 40, target: 37 },
+      { hour: '2026-08-10T03:00:00.000Z', kwh: 14.1, produced: 52, target: 37 }
     ]
   }
 };
@@ -81,10 +81,20 @@ test.describe('Factory Overall Dashboard', () => {
     await expect(page.getByText('3', { exact: true }).first()).toBeVisible();
     await expect(page.getByText(/of 12 machines/i)).toBeVisible();
 
-    // pieces produced — production plans were never part of Phase 2, so the
-    // tile counts output rather than comparing it to a plan
-    await expect(page.locator('.mexa-kpi', { hasText: 'Production' }).getByText('420')).toBeVisible();
-    await expect(page.getByText(/pieces this shift/i)).toBeVisible();
+    // production against the job targets, as the mock shows it (92%), with
+    // the counts behind the percentage
+    const prod = page.locator('.mexa-kpi', { hasText: 'Production' });
+    await expect(prod.getByText('63.3%')).toBeVisible();
+    await expect(prod.getByText(/380 of 600 target · 420 pieces/)).toBeVisible();
+
+    // Actual vs Target per shift, and each shift labelled with its hours
+    await expect(page.getByRole('heading', { name: 'Actual vs Target' })).toBeVisible();
+    await expect(page.getByText('200 / 300 Units')).toBeVisible();
+    await expect(page.getByText('180 / 300 Units')).toBeVisible();
+
+    // the Production Trend is actual against target; energy has its own trend
+    await expect(page.getByRole('heading', { name: 'Energy Consumption Trend' })).toBeVisible();
+    await expect(page.locator('section', { hasText: 'Production Trend' }).getByText('Target', { exact: true })).toBeVisible();
 
     // OEE headline + target. The figure now appears twice by design — the
     // KPI tile and the radial's centre label — so the tile is named.
@@ -130,4 +140,16 @@ test.describe('Factory Overall Dashboard', () => {
     await expect(page.getByText(/Shift not found or access denied/i)).toBeVisible();
   });
 
+});
+
+test('no job targets: the production tile counts pieces and says why there is no percentage', async ({ authedPage: page }) => {
+  const noTarget = JSON.parse(JSON.stringify(factoryResponse));
+  noTarget.data.production = { produced: 420, actual: 0, target: null, target_pct: null, machines_with_target: 0 };
+  noTarget.data.shiftwise = noTarget.data.shiftwise.map((s: any) => ({ ...s, target: null }));
+  await mockApi(page, noTarget);
+  await page.goto('/factory');
+  const prod = page.locator('.mexa-kpi', { hasText: 'Production' });
+  await expect(prod.getByText('420')).toBeVisible();
+  await expect(prod.getByText(/no job target set/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Actual vs Target' })).toHaveCount(0);
 });

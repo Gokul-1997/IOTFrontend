@@ -23,6 +23,12 @@
       <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
     </select>
 
+    <label class="mexa-filter-label" for="opOperator">Operator</label>
+    <select id="opOperator" class="mexa-select" [(ngModel)]="f.operator_id" name="operator">
+      <option [ngValue]="null">All</option>
+      <option *ngFor="let o of operatorList" [ngValue]="o.id">{{ o.operator_name }}</option>
+    </select>
+
     <label class="mexa-filter-label" for="opFrom">Date</label>
     <input id="opFrom" type="date" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
     <span class="mexa-filter-label" aria-hidden="true">–</span>
@@ -36,12 +42,9 @@
 
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
-<!-- First load: placeholders shaped like the cards that are coming, so
-     the page does not jump when the data lands. No values are shown —
-     a placeholder reading would be a claim about a machine. -->
 <ng-container *ngIf="loading && !data">
   <app-skeleton kind="kpis" [count]="5" label="Loading dashboard"></app-skeleton>
-  <div class="mexa-grid lg:grid-cols-2">
+  <div class="mexa-grid lg:grid-cols-2 xl:grid-cols-4">
     <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
     <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
     <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
@@ -57,10 +60,11 @@
     {{ data.attribution.note }}
   </p>
 
-  <p *ngIf="oeeLooksUnrecorded" class="mexa-note mexa-note-warn">
-    <strong>OEE is not recorded for these operators' machines.</strong>
-    Scores and bands below fall back to output, and the OEE column reads
-    <code>--</code> rather than 0%.
+  <p *ngIf="oeeGap > 0" class="mexa-note mexa-note-warn">
+    <strong>OEE needs a cycle time.</strong>
+    {{ oeeGap }} of {{ data.oee_coverage.machines }} running machines have no current job with a cycle time,
+    so operators who hold only those machines show OEE and efficiency as <code>--</code>.
+    Set the job on the machine to include them.
   </p>
 
   <!-- ══════════ KPI TILES ══════════ -->
@@ -68,100 +72,116 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total<br>Operators</span>
-        <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true">
-          <mat-icon>groups</mat-icon>
-        </span>
+        <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true"><mat-icon>groups</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.attribution.operators }}</p>
-      <p class="mexa-kpi-sub" *ngIf="bands.unrated">{{ bands.unrated }} without an OEE reading</p>
+      <p class="mexa-kpi-sub" *ngIf="data.bands.unrated">{{ data.bands.unrated }} with nothing measured</p>
     </div>
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Excellent<br>Performer</span>
-        <span class="mexa-kpi-icon" style="background:#22c55e" aria-hidden="true">
-          <mat-icon>star</mat-icon>
-        </span>
+        <span class="mexa-kpi-icon" style="background:#22c55e" aria-hidden="true"><mat-icon>star</mat-icon></span>
       </div>
-      <p class="mexa-kpi-value">{{ bands.excellent }}</p>
-      <p class="mexa-kpi-sub">OEE 85% and above</p>
+      <p class="mexa-kpi-value">{{ data.bands.excellent }}</p>
+      <p class="mexa-kpi-sub">Score {{ data.score_bands.excellent }}% and above</p>
     </div>
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Good<br>Performer</span>
-        <span class="mexa-kpi-icon" style="background:#3b9ae1" aria-hidden="true">
-          <mat-icon>verified</mat-icon>
-        </span>
+        <span class="mexa-kpi-icon" style="background:#3b9ae1" aria-hidden="true"><mat-icon>verified</mat-icon></span>
       </div>
-      <p class="mexa-kpi-value">{{ bands.good }}</p>
-      <p class="mexa-kpi-sub">OEE 75–85%</p>
+      <p class="mexa-kpi-value">{{ data.bands.good }}</p>
+      <p class="mexa-kpi-sub">Score {{ data.score_bands.good }}–{{ data.score_bands.excellent }}%</p>
     </div>
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Avg<br>Performer</span>
-        <span class="mexa-kpi-icon" style="background:#9b7ec8" aria-hidden="true">
-          <mat-icon>shield</mat-icon>
-        </span>
+        <span class="mexa-kpi-icon" style="background:#9b7ec8" aria-hidden="true"><mat-icon>shield</mat-icon></span>
       </div>
-      <p class="mexa-kpi-value">{{ bands.average }}</p>
-      <p class="mexa-kpi-sub">OEE 60–75%</p>
+      <p class="mexa-kpi-value">{{ data.bands.average }}</p>
+      <p class="mexa-kpi-sub">Score {{ data.score_bands.average }}–{{ data.score_bands.good }}%</p>
     </div>
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Who Needs<br>Help</span>
-        <span class="mexa-kpi-icon" style="background:#6b7280" aria-hidden="true">
-          <mat-icon>help</mat-icon>
-        </span>
+        <span class="mexa-kpi-icon" style="background:#6b7280" aria-hidden="true"><mat-icon>help</mat-icon></span>
       </div>
-      <p class="mexa-kpi-value">{{ bands.needs_help }}</p>
-      <p class="mexa-kpi-sub">OEE below 60%</p>
+      <p class="mexa-kpi-value">{{ data.bands.needs_help }}</p>
+      <p class="mexa-kpi-sub">Score below {{ data.score_bands.average }}%</p>
     </div>
   </div>
 
-  <!-- ══════════ ROW 2 ══════════ -->
-  <div class="mexa-grid xl:grid-cols-4 lg:grid-cols-2">
+  <!-- ══════════ TOP 5 / BOTTOM 5 CARDS ══════════ -->
+  <ng-template #seg let-board="board" let-label="label">
+    <span class="mexa-seg" role="group" [attr.aria-label]="label + ': show'">
+      <button type="button" [attr.aria-pressed]="isShowing(board, 'top')" (click)="show(board, 'top')">Top 5</button>
+      <button type="button" [attr.aria-pressed]="isShowing(board, 'bottom')" (click)="show(board, 'bottom')">Botm 5</button>
+    </span>
+  </ng-template>
 
-    <section class="mexa-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Operator Score</h2>
-      <apx-chart *ngIf="scoreSeries.length"
-        [series]="scoreSeries" [chart]="barChart.chart" [plotOptions]="barChart.plotOptions"
-        [colors]="barChart.colors" [dataLabels]="barChart.dataLabels" [legend]="barChart.legend"
-        [xaxis]="scoreAxis" [grid]="barChart.grid" [tooltip]="pctTooltip"
-        [noData]="barChart.noData"></apx-chart>
-      <p *ngIf="!scoreSeries.length" class="mexa-empty">No operator has a score for this period.</p>
+  <div class="mexa-grid lg:grid-cols-2 xl:grid-cols-4">
+
+    <section class="mexa-card" aria-labelledby="opScoreTitle">
+      <div class="mexa-card-head">
+        <h2 id="opScoreTitle" class="mexa-card-title mexa-card-title-left">Operator Score</h2>
+        <ng-container *ngTemplateOutlet="seg; context: { board: 'score', label: 'Operator Score' }"></ng-container>
+      </div>
+      <p class="mexa-card-hint">Average of utilisation, efficiency and quality rate</p>
+      <apx-chart *ngIf="rows('score').length"
+        [series]="scoreChart.series" [chart]="scoreChart.chart" [plotOptions]="scoreChart.plotOptions"
+        [colors]="scoreChart.colors" [dataLabels]="scoreChart.dataLabels" [legend]="scoreChart.legend"
+        [xaxis]="scoreChart.xaxis" [yaxis]="scoreChart.yaxis" [grid]="scoreChart.grid"
+        [tooltip]="scoreChart.tooltip" [noData]="scoreChart.noData"></apx-chart>
+      <p *ngIf="!rows('score').length" class="mexa-empty">No operator has a score for this period.</p>
     </section>
 
-    <section class="mexa-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Rejection Rate</h2>
-      <apx-chart *ngIf="rejectionSeries.length"
-        [series]="rejectionSeries" [chart]="barChart.chart" [plotOptions]="barChart.plotOptions"
-        [colors]="barChart.colors" [dataLabels]="barChart.dataLabels" [legend]="barChart.legend"
-        [xaxis]="rejectionAxis" [grid]="barChart.grid" [tooltip]="pctTooltip"
-        [noData]="barChart.noData"></apx-chart>
-      <p *ngIf="!rejectionSeries.length" class="mexa-empty">Nothing produced, so there is no rejection rate.</p>
+    <section class="mexa-card" aria-labelledby="opRejTitle">
+      <div class="mexa-card-head">
+        <h2 id="opRejTitle" class="mexa-card-title mexa-card-title-left">Rejection Rate</h2>
+        <ng-container *ngTemplateOutlet="seg; context: { board: 'rejection', label: 'Rejection Rate' }"></ng-container>
+      </div>
+      <p class="mexa-card-hint">Rejected and reworked parts, as a share of output</p>
+      <apx-chart *ngIf="rows('rejection').length"
+        [series]="rejectionChart.series" [chart]="rejectionChart.chart" [plotOptions]="rejectionChart.plotOptions"
+        [colors]="rejectionChart.colors" [dataLabels]="rejectionChart.dataLabels" [legend]="rejectionChart.legend"
+        [xaxis]="rejectionChart.xaxis" [yaxis]="rejectionChart.yaxis" [grid]="rejectionChart.grid"
+        [tooltip]="rejectionChart.tooltip" [noData]="rejectionChart.noData"></apx-chart>
+      <p *ngIf="noRejects" class="mexa-card-hint !mt-1">No rejects or rework were entered for this period.</p>
+      <p *ngIf="!rows('rejection').length" class="mexa-empty">Nothing produced, so there is no rejection rate.</p>
     </section>
 
-    <section class="mexa-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Downtime Contribution</h2>
-      <apx-chart *ngIf="downtimeSeries.length"
-        [series]="downtimeSeries" [chart]="barChart.chart" [plotOptions]="barChart.plotOptions"
-        [colors]="barChart.colors" [dataLabels]="barChart.dataLabels" [legend]="barChart.legend"
-        [xaxis]="downtimeAxis" [grid]="barChart.grid" [tooltip]="hoursTooltip"
-        [noData]="barChart.noData"></apx-chart>
-      <p *ngIf="!downtimeSeries.length" class="mexa-empty">No downtime recorded against an operator.</p>
+    <section class="mexa-card" aria-labelledby="opDownTitle">
+      <div class="mexa-card-head">
+        <h2 id="opDownTitle" class="mexa-card-title mexa-card-title-left">Downtime Contribution</h2>
+        <ng-container *ngTemplateOutlet="seg; context: { board: 'downtime', label: 'Downtime Contribution' }"></ng-container>
+      </div>
+      <p class="mexa-card-hint">Time the machines were on but not cutting</p>
+      <apx-chart *ngIf="rows('downtime').length"
+        [series]="downtimeChart.series" [chart]="downtimeChart.chart" [plotOptions]="downtimeChart.plotOptions"
+        [colors]="downtimeChart.colors" [dataLabels]="downtimeChart.dataLabels" [legend]="downtimeChart.legend"
+        [xaxis]="downtimeChart.xaxis" [yaxis]="downtimeChart.yaxis" [grid]="downtimeChart.grid"
+        [tooltip]="downtimeChart.tooltip" [noData]="downtimeChart.noData"></apx-chart>
+      <p *ngIf="!rows('downtime').length" class="mexa-empty">No machine time was reported for these operators.</p>
     </section>
 
-    <section class="mexa-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Quality &amp; Utilisation</h2>
-      <apx-chart *ngIf="apqSeries.length"
-        [series]="apqSeries" [chart]="apqChart.chart" [plotOptions]="apqChart.plotOptions"
-        [colors]="apqChart.colors" [dataLabels]="apqChart.dataLabels" [legend]="apqChart.legend"
-        [xaxis]="apqChart.xaxis" [yaxis]="apqChart.yaxis" [grid]="apqChart.grid"
-        [tooltip]="apqChart.tooltip" [noData]="apqChart.noData"></apx-chart>
-      <p *ngIf="!apqSeries.length" class="mexa-empty">Nothing measured for this period.</p>
+    <section class="mexa-card" aria-labelledby="opOeeTitle">
+      <div class="mexa-card-head">
+        <h2 id="opOeeTitle" class="mexa-card-title mexa-card-title-left">OEE</h2>
+        <ng-container *ngTemplateOutlet="seg; context: { board: 'oee', label: 'OEE' }"></ng-container>
+      </div>
+      <p class="mexa-card-hint">Availability, Performance and Quality, ranked by OEE</p>
+      <apx-chart *ngIf="rows('oee').length"
+        [series]="oeeChart.series" [chart]="oeeChart.chart" [plotOptions]="oeeChart.plotOptions"
+        [colors]="oeeChart.colors" [dataLabels]="oeeChart.dataLabels" [legend]="oeeChart.legend"
+        [xaxis]="oeeChart.xaxis" [yaxis]="oeeChart.yaxis" [grid]="oeeChart.grid"
+        [tooltip]="oeeChart.tooltip" [noData]="oeeChart.noData"></apx-chart>
+      <p *ngIf="!rows('oee').length" class="mexa-empty">
+        No operator's machines have a cycle time, so OEE cannot be worked out.
+      </p>
     </section>
   </div>
 
@@ -190,52 +210,45 @@
 
     <div class="mexa-tablewrap">
       <table class="mexa-table">
-        <caption class="sr-only">Operators ranked by OEE, best first</caption>
+        <caption class="sr-only">Operators, sorted by {{ sort }}</caption>
         <thead>
           <tr>
             <th scope="col">#</th>
-            <th scope="col">ID</th>
-            <th scope="col">Name</th>
-            <th scope="col">Machines</th>
-            <th scope="col">Run Time</th>
-            <th scope="col">Down Time</th>
-            <th scope="col">Utilization</th>
-            <th scope="col">Prod Qty</th>
-            <th scope="col">Good Qty</th>
-            <th scope="col">Rej Qty</th>
-            <th scope="col">Qly Rate</th>
-            <th scope="col">Alarms</th>
-            <th scope="col">OEE</th>
+            <th scope="col" *ngFor="let c of columns" [attr.aria-sort]="ariaSort(c.key)">
+              <button type="button" class="mexa-sort" (click)="sortBy(c.key)" [attr.aria-current]="sort === c.key">
+                {{ c.label }}
+                <span class="mexa-sort-arrow" aria-hidden="true">{{ sort === c.key ? (dir === 'asc' ? '▲' : '▼') : '⇅' }}</span>
+              </button>
+            </th>
             <th scope="col">Status</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let r of data.operators.data; let i = index">
-            <td class="num">{{ (data.operators.page - 1) * limit + i + 1 }}</td>
+            <td class="num">{{ (data.operators.page - 1) * data.operators.limit + i + 1 }}</td>
             <td class="num">{{ r.operator_code }}</td>
             <td class="strong">
               {{ r.operator_name }}
               <!-- the shared-machine caveat, stated on the row it applies to -->
-              <span *ngIf="r.shared_machines > 0" class="mexa-rank-sub">
-                {{ r.shared_machines }} machine(s) shared
-              </span>
+              <span *ngIf="r.shared_machines > 0" class="mexa-rank-sub">{{ r.shared_machines }} machine(s) shared</span>
             </td>
-            <td class="num">{{ r.machine_count }}</td>
-            <td class="num whitespace-nowrap">{{ hours(r.run_seconds) }}</td>
-            <td class="num whitespace-nowrap">{{ hours(r.downtime_seconds) }}</td>
+            <td>{{ r.shift_name || '--' }}</td>
+            <td>{{ r.machine_names || '--' }}</td>
+            <td class="num strong">{{ pct(r.score) }}</td>
+            <td class="num whitespace-nowrap">{{ hms(r.run_seconds) }}</td>
+            <td class="num whitespace-nowrap">{{ hms(r.downtime_seconds) }}</td>
             <td class="num">{{ pct(r.utilization_pct) }}</td>
             <td class="num">{{ r.produced }}</td>
             <td class="num">{{ r.good }}</td>
             <td class="num">{{ r.rejected }}</td>
             <td class="num">{{ pct(r.quality_rate_pct) }}</td>
             <td class="num">{{ r.alarm_count }}</td>
-            <td class="num strong">{{ pct(r.oee_pct) }}</td>
-            <td>
-              <span class="mexa-badge" [ngClass]="bandBadge(r.oee_pct)">{{ bandLabel(r.oee_pct) }}</span>
-            </td>
+            <td class="num">{{ pct(r.oee_pct) }}</td>
+            <td class="num">{{ pct(r.efficiency_pct) }}</td>
+            <td><span class="mexa-badge" [ngClass]="bandClass[r.band] || 'mexa-badge-neutral'">{{ bandText[r.band] || 'Unrated' }}</span></td>
           </tr>
           <tr *ngIf="!data.operators.data.length">
-            <td colspan="14" class="mexa-empty">No operators match these filters.</td>
+            <td [attr.colspan]="columns.length + 2" class="mexa-empty">No operators match these filters.</td>
           </tr>
         </tbody>
       </table>
@@ -243,12 +256,23 @@
 
     <div class="mexa-pager" *ngIf="data.operators.total > 0">
       <span aria-live="polite">Showing: {{ data.operators.data.length }} of {{ data.operators.total }}</span>
-      <span class="inline-flex items-center gap-2">
-        <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
-                [disabled]="data.operators.page <= 1">‹ Previous</button>
-        <span>{{ data.operators.page }} / {{ data.operators.totalPages }}</span>
-        <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
-                [disabled]="data.operators.page >= data.operators.totalPages">Next ›</button>
+      <span class="inline-flex items-center gap-3 flex-wrap">
+        <label class="mexa-pagesize">
+          Show Items Per Page
+          <select class="mexa-select" [ngModel]="limit" (ngModelChange)="setPageSize($event)" name="pageSize">
+            <option *ngFor="let n of pageSizes" [ngValue]="n">{{ n < 10 ? '0' + n : n }}</option>
+          </select>
+        </label>
+        <nav class="inline-flex items-center gap-1" aria-label="Pages">
+          <button type="button" class="mexa-pagebtn" (click)="changePage(-1)" [disabled]="data.operators.page <= 1">‹ Previous</button>
+          <ng-container *ngFor="let p of pageList">
+            <span *ngIf="p === '…'" class="px-1" aria-hidden="true">…</span>
+            <button *ngIf="p !== '…'" type="button" class="mexa-pagebtn" (click)="goTo(+p)"
+                    [attr.aria-current]="p === data.operators.page ? 'page' : null">{{ p }}</button>
+          </ng-container>
+          <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
+                  [disabled]="data.operators.page >= data.operators.totalPages">Next ›</button>
+        </nav>
       </span>
     </div>
   </section>
