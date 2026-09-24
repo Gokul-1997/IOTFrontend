@@ -44,10 +44,9 @@
      a placeholder reading would be a claim about a machine. -->
 <ng-container *ngIf="loading && !data">
   <app-skeleton kind="kpis" [count]="6" label="Loading dashboard"></app-skeleton>
-  <div class="mexa-grid lg:grid-cols-2">
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
+  <div class="mexa-grid lg:grid-cols-5">
+    <section class="mexa-card lg:col-span-2"><app-skeleton kind="chart"></app-skeleton></section>
+    <section class="mexa-card lg:col-span-3"><app-skeleton kind="chart"></app-skeleton></section>
   </div>
 </ng-container>
 
@@ -60,7 +59,9 @@
     {{ data.coverage.note }}
   </p>
 
-  <!-- ══════════ KPI TILES ══════════ -->
+  <!-- ══════════ KPI TILES ══════════
+       Each factor carries a thin track in its own colour — the same colour
+       its line has in the trend and its bar on every machine tile. -->
   <div class="mexa-kpis">
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
@@ -70,12 +71,16 @@
         </span>
       </div>
       <p class="mexa-kpi-value">{{ pct(data.kpis.oee_pct) }}</p>
+      <div class="mexa-kpi-track mexa-factor-oee" aria-hidden="true"
+           [style.--v.%]="data.kpis.oee_pct || 0" [style.--t.%]="data.thresholds.good">
+        <i></i><b></b>
+      </div>
       <p class="mexa-kpi-sub">
         Target {{ data.thresholds.good }}%
         <span *ngIf="gapToTarget !== null">
           · <span class="mexa-delta" [class.mexa-delta-up]="gapToTarget >= 0"
                   [class.mexa-delta-down]="gapToTarget < 0">
-              {{ gapToTarget >= 0 ? '▲' : '▼' }} {{ absPct(gapToTarget) }}
+              {{ gapToTarget >= 0 ? '▲' : '▼' }} {{ pts(gapToTarget) }}
             </span>
           {{ gapToTarget >= 0 ? 'above' : 'below' }}
         </span>
@@ -90,6 +95,7 @@
         </span>
       </div>
       <p class="mexa-kpi-value">{{ pct(data.kpis.availability_pct) }}</p>
+      <div class="mexa-kpi-track mexa-factor-a" aria-hidden="true" [style.--v.%]="data.kpis.availability_pct || 0"><i></i></div>
       <p class="mexa-kpi-sub" *ngIf="data.kpis.vs_yesterday?.availability != null; else aSub">
         <span class="mexa-delta" [class.mexa-delta-up]="data.kpis.vs_yesterday.availability >= 0" [class.mexa-delta-down]="data.kpis.vs_yesterday.availability < 0">{{ change(data.kpis.vs_yesterday.availability) }}</span> vs Yesterday
       </p>
@@ -104,6 +110,7 @@
         </span>
       </div>
       <p class="mexa-kpi-value">{{ pct(data.kpis.performance_pct) }}</p>
+      <div class="mexa-kpi-track mexa-factor-p" aria-hidden="true" [style.--v.%]="data.kpis.performance_pct || 0"><i></i></div>
       <p class="mexa-kpi-sub" *ngIf="data.kpis.vs_yesterday?.performance != null; else pSub">
         <span class="mexa-delta" [class.mexa-delta-up]="data.kpis.vs_yesterday.performance >= 0" [class.mexa-delta-down]="data.kpis.vs_yesterday.performance < 0">{{ change(data.kpis.vs_yesterday.performance) }}</span> vs Yesterday
       </p>
@@ -118,10 +125,11 @@
         </span>
       </div>
       <p class="mexa-kpi-value">{{ pct(data.kpis.quality_pct) }}</p>
+      <div class="mexa-kpi-track mexa-factor-q" aria-hidden="true" [style.--v.%]="data.kpis.quality_pct || 0"><i></i></div>
       <p class="mexa-kpi-sub" *ngIf="data.kpis.vs_yesterday?.quality != null; else qSub">
         <span class="mexa-delta" [class.mexa-delta-up]="data.kpis.vs_yesterday.quality >= 0" [class.mexa-delta-down]="data.kpis.vs_yesterday.quality < 0">{{ change(data.kpis.vs_yesterday.quality) }}</span> vs Yesterday
       </p>
-      <ng-template #qSub><p class="mexa-kpi-sub">{{ data.kpis.rejected }} rejected</p></ng-template>
+      <ng-template #qSub><p class="mexa-kpi-sub">{{ data.kpis.rejected | number }} rejected</p></ng-template>
     </div>
 
     <div class="mexa-kpi">
@@ -131,8 +139,8 @@
           <mat-icon>inventory_2</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.kpis.produced }}</p>
-      <p class="mexa-kpi-sub">Pcs · {{ data.kpis.good }} good</p>
+      <p class="mexa-kpi-value">{{ data.kpis.produced | number }}<small>pcs</small></p>
+      <p class="mexa-kpi-sub">{{ data.kpis.good | number }} good · {{ data.kpis.rejected | number }} rejected</p>
     </div>
 
     <div class="mexa-kpi">
@@ -143,38 +151,103 @@
         </span>
       </div>
       <!-- measured: time the machines were on but not running. Downtime
-           reasons are rarely entered, so the event total read 0. -->
-      <p class="mexa-kpi-value">{{ hms(data.kpis.idle_seconds) }}</p>
-      <p class="mexa-kpi-sub">HH:MM:SS · machine on, not running</p>
+           reasons are rarely entered, so the event total read 0. Hours and
+           minutes: "1594:14:50" across a fleet-week could not be read. -->
+      <p class="mexa-kpi-value" [title]="hms(data.kpis.idle_seconds) + ' (HH:MM:SS)'">{{ longHours(data.kpis.idle_seconds) }}</p>
+      <p class="mexa-kpi-sub">Machines on, not running</p>
     </div>
   </div>
 
-  <!-- The machine-wise report is on the Reports page (Reports → Machine OEE):
-       one place for every report. This screen is the analytics. -->
+  <!-- ══════════ WHERE OEE IS LOST · TREND ══════════ -->
+  <div class="mexa-grid lg:grid-cols-5">
+    <section class="mexa-card lg:col-span-2" aria-labelledby="oeLossTitle">
+      <h2 id="oeLossTitle" class="mexa-card-title mexa-card-title-left">Where OEE is lost</h2>
+      <p class="mexa-card-hint">Every planned hour, split into good output and the three OEE losses.</p>
 
-  <section class="mexa-card" aria-label="Machine OEE">
+      <ng-container *ngIf="loss; else noLoss">
+        <!-- the list below carries the same figures as text -->
+        <div class="mexa-lossbar" aria-hidden="true">
+          <span class="mexa-factor-oee" [style.--w.%]="loss.oee"></span>
+          <span *ngFor="let i of loss.items" [ngClass]="'mexa-factor-' + i.key" [style.--w.%]="i.pts"></span>
+        </div>
+        <ul class="mexa-losslist">
+          <li class="mexa-factor-oee">
+            <i aria-hidden="true"></i>
+            <span>Good output (OEE)<small>Parts made right, at full speed, in planned time</small></span>
+            <strong>{{ loss.oee | number:'1.1-1' }}%</strong>
+          </li>
+          <li *ngFor="let i of loss.items" [ngClass]="'mexa-factor-' + i.key" [class.is-biggest]="i === loss.biggest && i.pts > 0">
+            <i aria-hidden="true"></i>
+            <span>{{ i.label }}<small>{{ i.note }}</small></span>
+            <strong>{{ i.pts | number:'1.1-1' }} pts</strong>
+          </li>
+        </ul>
+        <p class="mexa-loss-verdict" *ngIf="loss.biggest.pts > 0">
+          Biggest loss: <strong>{{ loss.biggest.name }}</strong> — {{ loss.biggest.verdict }}
+        </p>
+      </ng-container>
+      <ng-template #noLoss>
+        <p class="mexa-empty">Needs a machine with a cycle time and production in this period.</p>
+      </ng-template>
+    </section>
+
+    <section class="mexa-card lg:col-span-3" aria-labelledby="oeTrendTitle">
+      <h2 id="oeTrendTitle" class="mexa-card-title mexa-card-title-left">OEE Trend</h2>
+      <p class="mexa-card-hint">OEE each day against the {{ data.thresholds.good }}% target, with the three factors behind it. Click a name in the key to hide or show its line.</p>
+      <apx-chart *ngIf="trendSeries.length"
+        [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke" [markers]="trendChart.markers"
+        [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels" [legend]="trendChart.legend"
+        [annotations]="trendChart.annotations"
+        [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
+        [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
+      <p *ngIf="!trendSeries.length" class="mexa-empty">No production was recorded in this period.</p>
+    </section>
+  </div>
+
+  <!-- ══════════ MACHINE OEE ══════════
+       Every machine, ranked. Top 5 / Bottom 5 are the design's two views;
+       the machine-wise table is on Reports → Machine OEE. -->
+  <section class="mexa-card" aria-labelledby="oeMachinesTitle">
+    <div class="mexa-card-head">
+      <h2 id="oeMachinesTitle" class="mexa-card-title mexa-card-title-left">Machine OEE</h2>
+      <span class="mexa-seg" role="group" aria-label="Machines to show">
+        <button type="button" [attr.aria-pressed]="machineView === 'all'" (click)="setView('all')">All {{ data.machines.data.length }}</button>
+        <button type="button" [attr.aria-pressed]="machineView === 'top'" (click)="setView('top')">Top 5</button>
+        <button type="button" [attr.aria-pressed]="machineView === 'bottom'" (click)="setView('bottom')">Bottom 5</button>
+      </span>
+    </div>
+
     <div class="mexa-oeecards">
-      <article *ngFor="let m of pageCards" class="mexa-oeecard mexa-oeecard-solid" [ngClass]="gradeTile(grade(m))">
+      <article *ngFor="let m of pageCards" class="mexa-oeecard mexa-oeecard-tint" [ngClass]="gradeTile(grade(m))"
+               [attr.aria-label]="m.machine_serial_no + ', OEE ' + pct(m.oee_pct) + ', ' + gradeWord(grade(m))">
         <div class="mexa-oeecard-head">
           <span class="mexa-oeecard-name">{{ m.machine_serial_no }}</span>
-          <span class="mexa-oeecard-grade">{{ gradeWord(grade(m)) }}</span>
+          <span class="mexa-oeecard-status" [style.--dot]="statusDot(m.status)">{{ statusWord(m.status) }}</span>
         </div>
         <div class="mexa-oeecard-body">
-          <span class="mexa-oeering" aria-hidden="true"
-                [style.--pct.%]="m.oee_pct || 0" [style.--ring-hole]="bandColour(grade(m))">
+          <span class="mexa-oeering" aria-hidden="true" [style.--pct.%]="m.oee_pct || 0">
             <span class="mexa-oeering-text">
               <span class="mexa-oeering-pct">{{ m.oee_pct === null ? '--' : m.oee_pct + '%' }}</span>
               <span class="mexa-oeering-cap">OEE</span>
             </span>
           </span>
-          <div class="mexa-oeecard-metrics">
-            <div><span>Availability</span><span class="num">{{ pct(m.availability_pct) }}</span></div>
-            <div><span>Performance</span><span class="num">{{ pct(m.performance_pct) }}</span></div>
-            <div><span>Quality</span><span class="num">{{ pct(m.quality_pct) }}</span></div>
+          <div class="mexa-apq">
+            <div class="mexa-apq-row mexa-factor-a"><span>Availability</span><span class="num">{{ pct(m.availability_pct) }}</span>
+              <span class="mexa-apq-bar" aria-hidden="true"><i [style.--v.%]="m.availability_pct || 0"></i></span></div>
+            <div class="mexa-apq-row mexa-factor-p"><span>Performance</span><span class="num">{{ pct(m.performance_pct) }}</span>
+              <span class="mexa-apq-bar" aria-hidden="true"><i [style.--v.%]="m.performance_pct || 0"></i></span></div>
+            <div class="mexa-apq-row mexa-factor-q"><span>Quality</span><span class="num">{{ pct(m.quality_pct) }}</span>
+              <span class="mexa-apq-bar" aria-hidden="true"><i [style.--v.%]="m.quality_pct || 0"></i></span></div>
           </div>
         </div>
+        <div class="mexa-oeecard-foot">
+          <span>{{ gradeWord(grade(m)) }}</span>
+          <small>{{ m.produced | number }} pcs</small>
+        </div>
       </article>
-      <p *ngIf="!data.machines.data.length" class="mexa-empty">No machines match these filters.</p>
+      <p *ngIf="!pageCards.length" class="mexa-empty">
+        {{ data.machines.data.length ? 'No machine has a computable OEE yet — it needs a cycle time on its current job.' : 'No machines match these filters.' }}
+      </p>
     </div>
 
     <div class="mexa-pager">
@@ -185,50 +258,12 @@
         <span><i style="--dot:#b45309"></i>60% &lt; 75% (Avg)</span>
         <span><i style="--dot:#c32b3f"></i>&lt; 60% (Needs Improvement)</span>
       </span>
-      <nav class="inline-flex items-center gap-1" aria-label="Machine pages">
+      <nav *ngIf="machineView === 'all' && cardTotalPages > 1" class="inline-flex items-center gap-1" aria-label="Machine pages">
         <button type="button" class="mexa-pagebtn" (click)="cardGo(cardPage - 1)" [disabled]="cardPage <= 1">‹ Previous</button>
         <button *ngFor="let p of [].constructor(cardTotalPages); let i = index" type="button" class="mexa-pagebtn"
                 (click)="cardGo(i + 1)" [attr.aria-current]="cardPage === i + 1 ? 'page' : null">{{ i + 1 }}</button>
         <button type="button" class="mexa-pagebtn" (click)="cardGo(cardPage + 1)" [disabled]="cardPage >= cardTotalPages">Next ›</button>
       </nav>
     </div>
-  </section>
-
-  <div class="mexa-grid lg:grid-cols-3">
-    <section class="mexa-card lg:col-span-2">
-      <h2 class="mexa-card-title mexa-card-title-left">OEE Trend</h2>
-      <apx-chart *ngIf="trendSeries.length"
-        [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke" [markers]="trendChart.markers"
-        [fill]="trendChart.fill" [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
-        [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
-        [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
-      <p *ngIf="!trendSeries.length" class="mexa-empty">No machine had a computable OEE in this period.</p>
-    </section>
-
-    <section class="mexa-card">
-      <div class="mexa-card-head">
-        <h2 class="mexa-card-title mexa-card-title-left">Machines by OEE</h2>
-        <span class="mexa-seg" role="group" aria-label="Machines by OEE: show">
-          <button type="button" [attr.aria-pressed]="rankWhich === 'top'" (click)="setRank('top')">Top 5</button>
-          <button type="button" [attr.aria-pressed]="rankWhich === 'bottom'" (click)="setRank('bottom')">Botm 5</button>
-        </span>
-      </div>
-      <p class="mexa-card-hint">Bar colour shows the grade.</p>
-      <apx-chart *ngIf="rankSeries.length"
-        [series]="rankSeries" [chart]="rankChart.chart" [plotOptions]="rankChart.plotOptions"
-        [colors]="rankChart.colors" [dataLabels]="rankChart.dataLabels" [legend]="rankChart.legend"
-        [xaxis]="rankChart.xaxis" [grid]="rankChart.grid" [tooltip]="rankChart.tooltip"
-        [noData]="rankChart.noData"></apx-chart>
-      <p *ngIf="!rankSeries.length" class="mexa-empty">No machine has a computable OEE.</p>
-    </section>
-  </div>
-
-  <section class="mexa-card" *ngIf="compSeries.length && compCategories.length">
-    <h2 class="mexa-card-title mexa-card-title-left">Availability, Performance and Quality by Machine</h2>
-    <apx-chart
-      [series]="compSeries" [chart]="compChart.chart" [plotOptions]="compChart.plotOptions"
-      [colors]="compChart.colors" [dataLabels]="compChart.dataLabels" [legend]="compChart.legend"
-      [xaxis]="compChart.xaxis" [yaxis]="compChart.yaxis" [grid]="compChart.grid"
-      [tooltip]="compChart.tooltip" [noData]="compChart.noData"></apx-chart>
   </section>
 </ng-container>

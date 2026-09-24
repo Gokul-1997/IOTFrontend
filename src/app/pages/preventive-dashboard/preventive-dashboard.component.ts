@@ -37,8 +37,13 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   /* ── filters ── */
   machines: any[] = [];
   selectedMachine: number | null = null;
-  selectedDate = this.todayStr();
-  today        = this.todayStr();
+  /* A From–To range, as the design draws it ("18 Jun 2026 - 18 Jul 2026");
+     it was one date, which could not show a week or a month. Defaults to
+     the last 7 days, the window the agreement's alarm trend describes. */
+  fromDate     = this.istDate(-6);
+  toDate       = this.istDate(0);
+  today        = this.istDate(0);
+  rangeError   = '';
   search       = '';
   page         = 1;
   limit = 10;
@@ -100,11 +105,28 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
 
   onSearchInput(): void { this.search$.next(this.search); }
 
-  submit(): void { this.page = 1; this.load(); }
+  /** Said before sending, in the words the server would use. */
+  private checkRange(): boolean {
+    const from = this.fromDate, to = this.toDate;
+    if (!from || !to)  this.rangeError = 'Choose both a start and an end date.';
+    else if (from > to) this.rangeError = 'The start date must be on or before the end date.';
+    else if ((Date.parse(to) - Date.parse(from)) / 86_400_000 + 1 > 366)
+                        this.rangeError = 'Choose a range of one year or less.';
+    else                this.rangeError = '';
+    return !this.rangeError;
+  }
+
+  submit(): void {
+    if (!this.checkRange()) { this.cdr.markForCheck(); return; }
+    this.page = 1;
+    this.load();
+  }
 
   reset(): void {
     this.selectedMachine = null;
-    this.selectedDate = this.todayStr();
+    this.fromDate = this.istDate(-6);
+    this.toDate = this.istDate(0);
+    this.rangeError = '';
     this.search = '';
     this.page = 1;
     this.load();
@@ -127,7 +149,8 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
 
     this.svc.getPreventive({
-      date: this.selectedDate,
+      from: this.fromDate,
+      to: this.toDate,
       machine_id: this.selectedMachine,
       search: this.search,
       page: this.page,
@@ -192,7 +215,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   private normalise(d: any): any {
     return {
       ...d,
-      filters:  d?.filters  ?? { date: this.selectedDate, machine_id: null, search: null },
+      filters:  d?.filters  ?? { from: this.fromDate, to: this.toDate, machine_id: null, search: null },
       kpis: {
         critical_alarms: 0, critical_alarms_open: 0, pm_generated: 0, pm_open: 0,
         pm_completed: 0, pm_overdue: 0, avg_resolution_hours: null, resolved_count: 0,
@@ -315,9 +338,11 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  private todayStr(): string {
-    return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
-      .toISOString().split('T')[0];
+  /** A date in plant time, `offset` days from today. The old helper
+   *  converted back to UTC, so before 05:30 IST "today" was yesterday. */
+  private istDate(offset: number): string {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' })
+      .format(new Date(Date.now() + offset * 86_400_000));
   }
 
   get trendChart(): any {

@@ -18,14 +18,16 @@ export class PreventiveDashboardService {
   }
 
   getPreventive(params: {
-    date?: string;
+    from?: string;
+    to?: string;
     machine_id?: number | null;
     search?: string;
     page?: number;
     limit?: number;
   }): Observable<any> {
     const query: any = {};
-    if (params.date)       query.date       = params.date;
+    if (params.from)       query.from       = params.from;
+    if (params.to)         query.to         = params.to;
     if (params.machine_id) query.machine_id = params.machine_id;
     if (params.search)     query.search     = params.search;
     if (params.page)       query.page       = params.page;

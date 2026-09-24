@@ -49,10 +49,42 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     { key: 'ended_at', label: 'Closed Time' }
   ];
 
+  /* ── KPI card drill-down ──
+     A card opens the alarms behind its number in the Alarms Details table
+     below. The server narrows the table only (?show=), never the cards or
+     charts, so the other cards keep their figures while one is selected.
+     Max Duration is not a subset: it sorts the table longest first. */
+  drillKind: '' | 'critical' | 'normal' | 'open' | 'longest' = '';
+  private scrollToTable = false;
+
+  readonly drillLabels: Record<string, string> = {
+    critical: 'critical alarms only',
+    normal:   'normal alarms only',
+    open:     'open alarms only — not yet closed',
+    longest:  'every alarm, longest first'
+  };
+
+  drill(kind: 'all' | 'critical' | 'normal' | 'open' | 'longest'): void {
+    const next = kind === 'all' || kind === this.drillKind ? '' : kind;   // same card again: back to all
+    if (next === 'longest') { this.sort = 'duration_seconds'; this.dir = 'desc'; }
+    else if (this.drillKind === 'longest') { this.sort = ''; this.dir = 'desc'; }
+    this.drillKind = next;
+    this.page = 1;
+    this.scrollToTable = true;
+    this.load();
+  }
+
+  /** What the server narrows the table to; "longest" is a sort, not a subset. */
+  private get show(): string {
+    return this.drillKind === 'longest' ? '' : this.drillKind;
+  }
+
   /** Click a header to sort by it; again to flip the direction. */
   sortBy(key: string): void {
     if (this.sort === key) this.dir = this.dir === 'desc' ? 'asc' : 'desc';
     else { this.sort = key; this.dir = ['machine_serial_no', 'shift_name', 'alarm_code', 'message'].includes(key) ? 'asc' : 'desc'; }
+    // a header sort replaces the Max Duration card's ordering
+    if (this.drillKind === 'longest') this.drillKind = '';
     this.page = 1;
     this.load();
   }
@@ -129,7 +161,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
 
   reset(): void {
     this.f = this.blankFilters();
-    this.page = 1; this.sort = ''; this.dir = 'desc';
+    this.page = 1; this.sort = ''; this.dir = 'desc'; this.drillKind = '';
     this.load();
   }
 
@@ -145,7 +177,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     this.errorMsg = '';
     this.cdr.markForCheck();
 
-    this.svc.getAlarms({ ...this.f, sort: this.sort || null, dir: this.dir, page: this.page, limit: this.limit })
+    this.svc.getAlarms({ ...this.f, show: this.show, sort: this.sort || null, dir: this.dir, page: this.page, limit: this.limit })
       .pipe(takeUntil(this.destroy$), catchError(err => {
         this.errorMsg = err?.error?.message || 'Unable to load alarm data.';
         return of(null);
@@ -187,6 +219,20 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     this.severitySeries = [Number(d.by_severity.critical) || 0, Number(d.by_severity.normal) || 0];
 
     this.cdr.markForCheck();
+    if (this.scrollToTable) { this.scrollToTable = false; this.revealTable(); }
+  }
+
+  /** After a card click: bring the table into view and move focus to its
+   *  heading, so a keyboard or screen-reader user lands on the results too. */
+  private revealTable(): void {
+    setTimeout(() => {
+      const section = document.getElementById('alDetails');
+      const heading = document.getElementById('alDetailsTitle');
+      if (!section || !heading) return;
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      section.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      heading.focus({ preventScroll: true });
+    });
   }
 
   /*
@@ -215,7 +261,8 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     this.exporting = format;
     this.cdr.markForCheck();
 
-    this.svc.exportAs(format, this.f)
+    // the file is what the table shows: same card narrowing, same order
+    this.svc.exportAs(format, { ...this.f, show: this.show, sort: this.sort || null, dir: this.dir })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: blob => {

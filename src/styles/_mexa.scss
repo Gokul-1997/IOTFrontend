@@ -267,6 +267,47 @@ html, body { background: var(--mexa-ground); }
   color: var(--mexa-ink-3);
 }
 
+/* A KPI card that opens the records behind its number. A real <button>, so
+   it is reachable by keyboard and announced as pressable; the "View" cue is
+   always visible because a touch screen has no hover to reveal it. */
+button.mexa-kpi {
+  font: inherit; text-align: left; width: 100%;
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+button.mexa-kpi:hover { border-color: var(--mexa-blue); box-shadow: 0 4px 14px rgba(43, 58, 143, .12); }
+button.mexa-kpi:focus-visible { outline: 3px solid var(--mexa-navy); outline-offset: 2px; }
+button.mexa-kpi[aria-pressed="true"] {
+  border-color: var(--mexa-navy);
+  box-shadow: 0 0 0 2px var(--mexa-navy) inset, 0 4px 14px rgba(43, 58, 143, .14);
+}
+.mexa-kpi-go {
+  margin-top: auto; padding-top: .45rem;
+  display: inline-flex; align-items: center; gap: .15rem;
+  font-size: .78rem; font-weight: 600;
+  color: var(--mexa-navy);
+}
+:root[data-theme="dark"] .mexa-kpi-go, .dark .mexa-kpi-go { color: #9fb3ff; }
+:root[data-theme="dark"] button.mexa-kpi[aria-pressed="true"], .dark button.mexa-kpi[aria-pressed="true"] {
+  border-color: #9fb3ff; box-shadow: 0 0 0 2px #9fb3ff inset;
+}
+@media (prefers-reduced-motion: reduce) { button.mexa-kpi { transition: none; } }
+
+/* Where a card click scrolls to: clear of the sticky top bar, so the
+   heading the user is taken to is not hidden underneath it. */
+.mexa-scroll-target { scroll-margin-top: 5.5rem; }
+
+/* "Showing: critical alarms only · Show all" above a table a card narrowed. */
+.mexa-drill {
+  display: flex; align-items: center; flex-wrap: wrap; gap: .5rem;
+  margin: 0 0 .7rem; padding: .45rem .7rem;
+  border-radius: 10px;
+  background: var(--mexa-row-alt);
+  font-size: .85rem; color: var(--mexa-ink-2);
+}
+.mexa-drill strong { color: var(--mexa-ink); }
+
 /* Direction is stated with an arrow as well as a colour, so the meaning
    survives for a reader who cannot separate red from green. */
 .mexa-delta { font-weight: 700; }
@@ -509,7 +550,8 @@ html, body { background: var(--mexa-ground); }
 
 .mexa-oeecards {
   display: grid; gap: .85rem;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  /* five to a row on a laptop: ten tiles to a page are two full rows */
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
 }
 .mexa-oeecard {
   /* Was a solid block of saturated colour per grade. Four of those side by
@@ -544,32 +586,116 @@ html, body { background: var(--mexa-ground); }
 .mexa-oeecard-metrics .num { color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
 .mexa-oeecard-metrics > div { display: flex; justify-content: space-between; gap: .5rem; }
 
-/* The four grade bands, now an accent rather than a fill. The same values
-   the band legend prints, so the key and the tiles agree. */
-.mexa-grade-excellent { --band: #15803d; }
-.mexa-grade-good      { --band: #2f2d8f; }
-.mexa-grade-avg       { --band: #b45309; }
-.mexa-grade-poor      { --band: #c32b3f; }
-
-/* The design fills each machine card with its grade colour. White text on
-   every fill is at least 4.5:1; "no cycle time" uses slate-500 for the same
-   reason rather than the lighter key dot. */
-.mexa-oeecard.mexa-oeecard-solid { background: var(--band); border-color: var(--band); }
-.mexa-oeecard-solid.mexa-grade-unknown { --band: #64748b; }
-.mexa-oeecard-solid .mexa-oeecard-name,
-.mexa-oeecard-solid .mexa-oeecard-grade,
-.mexa-oeecard-solid .mexa-oeecard-metrics,
-.mexa-oeecard-solid .mexa-oeecard-metrics .num,
-.mexa-oeecard-solid .mexa-oeering-pct,
-.mexa-oeecard-solid .mexa-oeering-cap { color: #fff; }
-.mexa-oeecard-solid .mexa-oeecard-grade::before { background: #fff; }
-/* On a filled card the ring is white on a faint track, and its hole is the
-   card colour — the plain ring would be the fill's own colour on white. */
-.mexa-oeecard-solid .mexa-oeering {
-  background: conic-gradient(#fff var(--pct, 0%), rgba(255, 255, 255, .28) 0);
+/* The four grade bands. --band is the solid (ring, bars, key dot);
+   --band-soft the tile's ground; --band-ink the grade word, dark enough to
+   read on that ground. The same values the band legend prints, so the key
+   and the tiles agree. */
+.mexa-grade-excellent { --band: #15803d; --band-ink: #11652f; }
+.mexa-grade-good      { --band: #2f2d8f; --band-ink: #2f2d8f; }
+.mexa-grade-avg       { --band: #b45309; --band-ink: #8a3f06; }
+.mexa-grade-poor      { --band: #c32b3f; --band-ink: #a11f31; }
+.mexa-grade-unknown   { --band: #64748b; --band-ink: #475467; }
+.mexa-grade-excellent, .mexa-grade-good, .mexa-grade-avg, .mexa-grade-poor, .mexa-grade-unknown {
+  --band-soft: color-mix(in srgb, var(--band) 8%, var(--mexa-card));
 }
-.mexa-oeecard-solid .mexa-oeering::after { background: var(--band); }
-.mexa-oeecard-solid .mexa-oeering-cap { opacity: .9; }
+:root[data-theme="dark"], .dark {
+  .mexa-grade-excellent { --band: #22a55a; --band-ink: #7fdca3; }
+  .mexa-grade-good      { --band: #7d7ae6; --band-ink: #bdbbff; }
+  .mexa-grade-avg       { --band: #d9822b; --band-ink: #f5c28a; }
+  .mexa-grade-poor      { --band: #e05266; --band-ink: #ffa9b4; }
+  .mexa-grade-unknown   { --band: #8391a7; --band-ink: #c3cad6; }
+  .mexa-grade-excellent, .mexa-grade-good, .mexa-grade-avg, .mexa-grade-poor, .mexa-grade-unknown {
+    --band-soft: color-mix(in srgb, var(--band) 14%, var(--mexa-card));
+  }
+}
+
+/* ── Machine tile, tinted (OEE dashboard, 2026-09-24) ──────────
+   The design filled each tile with its grade colour. On the real fleet
+   every machine is "Needs Improvement", so the fill turned the page into a
+   wall of alarm red that said nothing machine-to-machine. The grade is now
+   a tint of the tile, the ring and a labelled word; the readings keep the
+   normal ink, and Availability / Performance / Quality are bars in the
+   colours the KPI row and the trend use for them. */
+.mexa-oeecard.mexa-oeecard-tint {
+  background: var(--band-soft);
+  border: 1px solid color-mix(in srgb, var(--band) 24%, transparent);
+  gap: .6rem;
+}
+.mexa-oeecard-status {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-size: .72rem; font-weight: 600; color: var(--mexa-ink-2); white-space: nowrap;
+}
+.mexa-oeecard-status::before {
+  content: ''; width: .5rem; height: .5rem; border-radius: 50%;
+  background: var(--dot, #94a3b8);
+}
+.mexa-oeecard-tint .mexa-oeering { width: 4.2rem; height: 4.2rem; }
+.mexa-oeecard-tint .mexa-oeering::after { background: var(--band-soft); }
+.mexa-oeecard-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  font-size: .75rem; font-weight: 700; color: var(--band-ink);
+}
+.mexa-oeecard-foot small { font-weight: 600; color: var(--mexa-ink-3); }
+
+/* Availability / Performance / Quality as bars: a label and value over a
+   thin track. The value is printed, so the bar only reinforces it. */
+.mexa-apq { flex: 1; display: grid; gap: .4rem; min-width: 0; }
+.mexa-apq-row {
+  display: grid; grid-template-columns: 1fr auto; gap: .15rem .5rem;
+  font-size: .76rem; font-weight: 600; color: var(--mexa-ink-2);
+}
+.mexa-apq-row .num { color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
+.mexa-apq-bar {
+  grid-column: 1 / -1; height: 5px; border-radius: 99px; overflow: hidden;
+  background: color-mix(in srgb, var(--mexa-ink-3) 18%, transparent);
+}
+.mexa-apq-bar > i { display: block; height: 100%; width: var(--v, 0%); background: var(--c); border-radius: inherit; }
+
+/* The three OEE factors, one colour each, everywhere on the screen. */
+.mexa-factor-a { --c: #17b3a3; }
+.mexa-factor-p { --c: #3b9ae1; }
+.mexa-factor-q { --c: #9b7ec8; }
+.mexa-factor-oee { --c: #2f2d8f; }
+:root[data-theme="dark"] .mexa-factor-oee, .dark .mexa-factor-oee { --c: #8b88f0; }
+
+/* ── Where OEE is lost ─────────────────────────────────────────
+   Every planned hour split into good output and the three losses, as one
+   bar that always sums to 100%. The list under it carries the same figures
+   as text, so the bar is never the only way to read them. */
+.mexa-lossbar {
+  display: flex; height: 1.9rem; border-radius: 8px; overflow: hidden;
+  background: var(--mexa-rule); margin: .35rem 0 .9rem;
+}
+.mexa-lossbar > span { width: var(--w, 0%); background: var(--c); min-width: 0; }
+.mexa-lossbar > span + span { box-shadow: -2px 0 0 var(--mexa-card); }
+.mexa-losslist { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
+.mexa-losslist li {
+  display: grid; grid-template-columns: .8rem 1fr auto; align-items: start; gap: .6rem;
+  font-size: .86rem; color: var(--mexa-ink);
+}
+.mexa-losslist li > i { width: .8rem; height: .8rem; border-radius: 3px; background: var(--c); margin-top: .2rem; }
+.mexa-losslist li small { display: block; font-size: .76rem; color: var(--mexa-ink-3); }
+.mexa-losslist li strong { font-variant-numeric: tabular-nums; }
+/* the red of the Needs Improvement grade: --mexa-bad is 3.8:1 on white */
+.mexa-losslist li.is-biggest strong { color: #b42335; }
+:root[data-theme="dark"] .mexa-losslist li.is-biggest strong, .dark .mexa-losslist li.is-biggest strong { color: #ff9aa6; }
+.mexa-loss-verdict {
+  margin-top: .95rem; padding: .6rem .75rem; border-radius: 10px;
+  background: var(--mexa-row-alt); font-size: .84rem; color: var(--mexa-ink-2);
+}
+.mexa-loss-verdict strong { color: var(--mexa-ink); }
+
+/* A thin track under a KPI value: how far the value is toward 100%, with a
+   tick at the target where there is one. */
+.mexa-kpi-track {
+  position: relative; height: 5px; border-radius: 99px; margin-top: .55rem;
+  background: color-mix(in srgb, var(--mexa-ink-3) 18%, transparent);
+}
+.mexa-kpi-track > i { display: block; height: 100%; width: var(--v, 0%); border-radius: inherit; background: var(--c, var(--mexa-navy)); }
+.mexa-kpi-track > b {
+  position: absolute; top: -3px; bottom: -3px; left: var(--t); width: 2px;
+  background: var(--mexa-ink); border-radius: 1px;
+}
 
 /* ── Attention Required rows (Periodic dashboard) ─────────────
    A count in a coloured disc, a label, and a chevron. Rendered as

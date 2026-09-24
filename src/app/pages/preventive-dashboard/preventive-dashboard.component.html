@@ -17,8 +17,14 @@
       <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
     </select>
 
-    <label class="mexa-filter-label" for="pvDate">Date</label>
-    <input id="pvDate" type="date" class="mexa-date" [(ngModel)]="selectedDate" name="date">
+    <label class="mexa-filter-label" for="pvFrom">Date</label>
+    <input id="pvFrom" type="date" class="mexa-date" [(ngModel)]="fromDate" name="from"
+           [max]="toDate || today" aria-label="From date"
+           [attr.aria-invalid]="rangeError ? true : null" aria-describedby="pvRangeError">
+    <span class="mexa-filter-label" aria-hidden="true">–</span>
+    <input id="pvTo" type="date" class="mexa-date" [(ngModel)]="toDate" name="to"
+           [min]="fromDate" [max]="today" aria-label="To date"
+           [attr.aria-invalid]="rangeError ? true : null" aria-describedby="pvRangeError">
 
     <button type="submit" class="mexa-submit" [disabled]="loading">
       {{ loading ? 'Loading…' : 'Submit' }}
@@ -27,6 +33,7 @@
 </form>
 
 <!-- ══════════ STATES ══════════ -->
+<p *ngIf="rangeError" id="pvRangeError" class="mexa-note mexa-note-bad" role="alert">{{ rangeError }}</p>
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
 <!-- First load: placeholders shaped like the cards that are coming, so
      the page does not jump when the data lands. No values are shown —
@@ -168,7 +175,7 @@
     </section>
 
     <section class="mexa-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Top 5 Critical Alarm Reasons</h2>
+      <h2 class="mexa-card-title mexa-card-title-left">Top 5 Alarm Reasons</h2>
       <apx-chart *ngIf="reasonSeries.length"
         [series]="reasonSeries" [chart]="reasonChart.chart" [plotOptions]="reasonChart.plotOptions"
         [colors]="reasonChart.colors" [dataLabels]="reasonChart.dataLabels" [legend]="reasonChart.legend"

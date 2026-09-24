@@ -465,3 +465,67 @@ test('a servo with no temperature sensor reads as "--", never as 0 °C', async (
   await page.waitForTimeout(2000);
   await page.screenshot({ path: 'mexa-02-maintenance.png', fullPage: true });
 });
+
+/* A KPI card opens the alarms behind its number in Alarms Details: the
+   server narrows the table only (?show=), the card is marked pressed, a
+   line says what the table holds, and the same card again shows all. */
+test('Alarm Report: a card click narrows the table to that card', async ({ authedPage: page }) => {
+  const seen: string[] = [];
+  await mockApi(page);
+  page.on('request', (r: any) => { if (/\/dashboard\/alarms(\?|$)/.test(r.url())) seen.push(r.url()); });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/alarm-report');
+
+  const critical = page.locator('button.mexa-kpi').filter({ hasText: 'Critical' });
+  await expect(critical).toHaveAttribute('aria-pressed', 'false');
+  await critical.click();
+  await expect(critical).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => seen.at(-1)).toContain('show=critical');
+  await expect(page.locator('.mexa-drill')).toContainText('Showing critical alarms only');
+  // focus goes to the results, so a keyboard user lands there too
+  await expect(page.locator('#alDetailsTitle')).toBeFocused();
+
+  await critical.click();
+  await expect(critical).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('.mexa-drill')).toHaveCount(0);
+  await expect.poll(() => seen.at(-1)).not.toContain('show=');
+
+  // Max Duration sorts rather than narrows
+  await page.locator('button.mexa-kpi').filter({ hasText: 'Duration' }).click();
+  await expect.poll(() => seen.at(-1)).toContain('sort=duration_seconds');
+  expect(seen.at(-1)).toContain('dir=desc');
+  expect(seen.at(-1)).not.toContain('show=');
+});
+
+/* The design draws the Preventive date filter as a range ("18 Jun 2026 -
+   18 Jul 2026"); it was a single date. */
+test('Preventive: a From–To range, checked before it is sent', async ({ authedPage: page }) => {
+  const seen: string[] = [];
+  await mockApi(page);
+  page.on('request', (r: any) => { if (/\/dashboard\/preventive(\?|$)/.test(r.url())) seen.push(r.url()); });
+  await page.goto('/preventive-maintenance');
+
+  await expect.poll(() => seen.length).toBeGreaterThan(0);
+  const first = new URL(seen[0]);
+  expect(first.searchParams.get('from')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(first.searchParams.get('to')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(first.searchParams.has('date')).toBe(false);
+  // the last 7 days by default
+  const span = (Date.parse(first.searchParams.get('to')!) - Date.parse(first.searchParams.get('from')!)) / 86_400_000;
+  expect(span).toBe(6);
+
+  const before = seen.length;
+  await page.getByLabel('From date').fill('2026-09-24');
+  await page.getByLabel('To date').fill('2026-09-01');
+  await page.getByRole('button', { name: 'Submit' }).click();
+  await expect(page.getByRole('alert')).toHaveText('The start date must be on or before the end date.');
+  await expect(page.getByLabel('From date')).toHaveAttribute('aria-invalid', 'true');
+  expect(seen.length).toBe(before);
+
+  await page.getByLabel('From date').fill('2026-09-01');
+  await page.getByLabel('To date').fill('2026-09-24');
+  await page.getByRole('button', { name: 'Submit' }).click();
+  await expect.poll(() => seen.at(-1)).toContain('from=2026-09-01');
+  expect(seen.at(-1)).toContain('to=2026-09-24');
+  await expect(page.locator('#pvRangeError')).toHaveCount(0);
+});

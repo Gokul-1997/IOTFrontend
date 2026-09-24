@@ -70,65 +70,76 @@
     Alarms appear here as soon as the devices report an alarm code in their MQTT payload.
   </p>
 
-  <!-- ══════════ KPI TILES ══════════ -->
+  <!-- ══════════ KPI TILES ══════════
+       Each card opens the alarms behind its number in Alarms Details below
+       (Max Duration sorts it longest first). Same card again shows all. -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
+    <button type="button" class="mexa-kpi" (click)="drill('all')" aria-controls="alDetails">
+      <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total<br>Alarms</span>
         <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true">
           <mat-icon>notifications</mat-icon>
         </span>
-      </div>
-      <p class="mexa-kpi-value">{{ data.kpis.total }}</p>
-      <p class="mexa-kpi-sub">All alarms</p>
-    </div>
+      </span>
+      <span class="mexa-kpi-value">{{ data.kpis.total }}</span>
+      <span class="mexa-kpi-sub">All alarms</span>
+      <span class="mexa-kpi-go">View all <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span>
+    </button>
 
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
+    <button type="button" class="mexa-kpi" (click)="drill('critical')" aria-controls="alDetails"
+            [attr.aria-pressed]="drillKind === 'critical'">
+      <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Critical<br>Alarms</span>
         <span class="mexa-kpi-icon" style="background:#dc2626" aria-hidden="true">
-          <mat-icon>notification_important</mat-icon>
+          <mat-icon>error</mat-icon>
         </span>
-      </div>
-      <p class="mexa-kpi-value">{{ data.kpis.critical }}</p>
-      <p class="mexa-kpi-sub">{{ sharePct(data.kpis.critical, data.kpis.total) }} of total</p>
-    </div>
+      </span>
+      <span class="mexa-kpi-value">{{ data.kpis.critical }}</span>
+      <span class="mexa-kpi-sub">{{ sharePct(data.kpis.critical, data.kpis.total) }} of total</span>
+      <span class="mexa-kpi-go">{{ drillKind === 'critical' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span>
+    </button>
 
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
+    <button type="button" class="mexa-kpi" (click)="drill('normal')" aria-controls="alDetails"
+            [attr.aria-pressed]="drillKind === 'normal'">
+      <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Normal<br>Alarms</span>
         <span class="mexa-kpi-icon" style="background:#17b3a3" aria-hidden="true">
-          <mat-icon>notifications_active</mat-icon>
+          <mat-icon>notifications_none</mat-icon>
         </span>
-      </div>
-      <p class="mexa-kpi-value">{{ data.kpis.normal }}</p>
-      <p class="mexa-kpi-sub">{{ sharePct(data.kpis.normal, data.kpis.total) }} of total</p>
-    </div>
+      </span>
+      <span class="mexa-kpi-value">{{ data.kpis.normal }}</span>
+      <span class="mexa-kpi-sub">{{ sharePct(data.kpis.normal, data.kpis.total) }} of total</span>
+      <span class="mexa-kpi-go">{{ drillKind === 'normal' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span>
+    </button>
 
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
+    <button type="button" class="mexa-kpi" (click)="drill('open')" aria-controls="alDetails"
+            [attr.aria-pressed]="drillKind === 'open'">
+      <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Open<br>Alarms</span>
         <span class="mexa-kpi-icon" style="background:#4a76c8" aria-hidden="true">
           <mat-icon>pending</mat-icon>
         </span>
-      </div>
-      <p class="mexa-kpi-value">{{ data.kpis.open }}</p>
-      <p class="mexa-kpi-sub">{{ sharePct(data.kpis.open, data.kpis.total) }} of total</p>
-    </div>
+      </span>
+      <span class="mexa-kpi-value">{{ data.kpis.open }}</span>
+      <span class="mexa-kpi-sub">{{ sharePct(data.kpis.open, data.kpis.total) }} of total</span>
+      <span class="mexa-kpi-go">{{ drillKind === 'open' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span>
+    </button>
 
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
+    <button type="button" class="mexa-kpi" (click)="drill('longest')" aria-controls="alDetails"
+            [attr.aria-pressed]="drillKind === 'longest'">
+      <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Max<br>Duration</span>
         <span class="mexa-kpi-icon" style="background:#6b7280" aria-hidden="true">
           <mat-icon>timelapse</mat-icon>
         </span>
-      </div>
-      <p class="mexa-kpi-value">{{ hms(data.kpis.max_duration_seconds) }}</p>
+      </span>
+      <span class="mexa-kpi-value">{{ hms(data.kpis.max_duration_seconds) }}</span>
       <!-- the alarm behind the figure, as the design names it -->
-      <p class="mexa-kpi-sub truncate" [title]="data.kpis.longest?.message || ''">
+      <span class="mexa-kpi-sub truncate" [title]="data.kpis.longest?.message || ''">
         {{ data.kpis.longest ? data.kpis.longest.message + ' · ' + data.kpis.longest.machine_serial_no : 'Average ' + duration(data.kpis.avg_duration_seconds) }}
-      </p>
-    </div>
+      </span>
+      <span class="mexa-kpi-go">{{ drillKind === 'longest' ? 'Showing' : 'View' }} longest first <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span>
+    </button>
   </div>
 
   <!-- ══════════ ROW 2 ══════════ -->
@@ -211,9 +222,9 @@
   </div>
 
   <!-- ══════════ ALARMS DETAILS ══════════ -->
-  <section class="mexa-card">
+  <section class="mexa-card mexa-scroll-target" id="alDetails" aria-labelledby="alDetailsTitle">
     <div class="mexa-tablebar">
-      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Alarms Details</h2>
+      <h2 id="alDetailsTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left" style="margin:0">Alarms Details</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="alSearch">Search alarms</label>
         <input id="alSearch" type="search" class="mexa-search" placeholder="Search"
@@ -232,6 +243,12 @@
         <button type="button" class="mexa-pagebtn" (click)="reset()">Reset</button>
       </span>
     </div>
+
+    <!-- what a KPI card narrowed the table to, and the way back -->
+    <p *ngIf="drillKind" class="mexa-drill" role="status">
+      <span>Showing <strong>{{ drillLabels[drillKind] }}</strong> · {{ data.alarms.total }} {{ data.alarms.total === 1 ? 'alarm' : 'alarms' }}</span>
+      <button type="button" class="mexa-pagebtn" (click)="drill('all')">Show all</button>
+    </p>
 
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table">
