@@ -914,6 +914,12 @@ $radius: 10px;
 
 }
 
+/* The red border still marks the alarm; the flashing stops for anyone who
+   has asked their system for less motion (WCAG 2.3.3). */
+@media (prefers-reduced-motion: reduce) {
+  .alarm-blink, .dark .alarm-blink { animation: none; }
+}
+
 
 .dark .alarm-blink .menu-default {
    background-color: transparent;

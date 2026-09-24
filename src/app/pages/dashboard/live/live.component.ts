@@ -70,6 +70,20 @@ export class LiveComponent implements OnInit, OnDestroy {
   /* ── Socket-owned state ── */
   liveStatus       = 'UNKNOWN';
   liveMode         = '';
+
+  /* The alarm flag, kept apart from Running / Idle exactly as the machine
+     list keeps it: a CNC in alarm usually stops, so its status reads IDLE
+     while the alarm is on. This page used to show only the status, so a
+     machine the list was flashing red read a plain "IDLE" here. */
+  liveAlarm        = false;
+  /** Open alarms on this machine (code, text, since when), from the API. */
+  activeAlarms: any[] = [];
+  /** When the socket last delivered for this machine (ms). While that is
+   *  under a minute old the socket owns status, mode, spindle, feed and the
+   *  alarm; after a minute's silence the 30 s poll takes them back — the
+   *  same rule as the machine list, so the two pages cannot disagree. */
+  private lastSocketMs = 0;
+  private get socketLive(): boolean { return Date.now() - this.lastSocketMs < 60_000; }
   liveSpindleLoad  = 0;
   liveFeed         = 0;
   livePartCount    = 0;
@@ -79,7 +93,6 @@ export class LiveComponent implements OnInit, OnDestroy {
   currentDate      = new Date();
   currentTime      = '';
   currentDateStr   = '';
-  socketHasUpdated = false;   // true after first socket message for this machine
   private clockInterval: any;
 
   /* ── Chart series ── */
@@ -115,21 +128,19 @@ export class LiveComponent implements OnInit, OnDestroy {
 
     this.initCharts();
 
-    /* ── Connect socket first, then join plant room ──
-       Must await connect() before joinPlant() —
-       otherwise socket is not ready and join is silently ignored */
-    // console.log('[SOCKET] connecting...');
-    await this.socketService.connect();
-    // console.log('[SOCKET] connected ✅');
-
+    /* ── Socket: connect, then join the plant room ──
+       joinPlant() must wait for the connection or the join is ignored — but
+       nothing else may wait on it. The socket is websocket-only; where that
+       cannot connect (a proxy or firewall on the shop network, the server
+       restarting) connect() rejects, and awaiting it here stopped ngOnInit
+       before the poll below was set up: the page stayed empty, never
+       refreshing. The 30 s poll is the floor; live updates are on top. */
     const user    = JSON.parse(localStorage.getItem('user') || '{}');
     const plantId = user?.plant_id;
-    if (plantId) {
-      this.socketService.joinPlant(plantId);
-      // console.log(`[SOCKET] joined plant room: plant:${plantId}`);
-    } else {
-      console.warn('[SOCKET] ⚠ no plant_id in localStorage — cannot join room');
-    }
+    if (!plantId) console.warn('[SOCKET] ⚠ no plant_id in localStorage — cannot join room');
+    this.socketService.connect()
+      .then(() => { if (plantId) this.socketService.joinPlant(plantId); })
+      .catch(err => console.warn('Live updates unavailable; refreshing every 30 s:', err?.message || err));
 
     // console.log(`[SOCKET] listening for machine_id: ${this.machineId}`);
 
@@ -206,13 +217,14 @@ export class LiveComponent implements OnInit, OnDestroy {
       : 0;
 
     /* Seed live values from API.
-       status/rpm/feed: socket owns after first message (instant updates).
+       status/rpm/feed: the socket owns them while it is live (instant
+                        updates); after a minute's silence this poll does.
        livePartCount:   API owns ALWAYS — socket sends raw counter which
                         doesn't include reset offsets, so would show wrong
                         values (e.g. 29 instead of 59 after a mid-shift reset).
                         30s API refresh is accurate enough for a part counter. */
     if (d.live) {
-      if (!this.socketHasUpdated) {
+      if (!this.socketLive) {
         this.liveStatus      = d.live.machine_status || 'UNKNOWN';
         this.liveMode        = d.live.mode           || '';
         this.liveSpindleLoad = Number(d.live.spindle_load || 0);
@@ -223,6 +235,12 @@ export class LiveComponent implements OnInit, OnDestroy {
 
       // Always update from API — adjusted for mid-shift counter resets
       this.livePartCount = Number(d.live.parts_count || 0);
+
+      /* Alarm: the socket owns the flag while it is live, as on the list;
+         otherwise this poll does. Which alarm it is always comes from the
+         API — the socket carries only the flag. */
+      if (!this.socketLive) this.liveAlarm = d.live.alarm === true;
+      this.activeAlarms = Array.isArray(d.live.active_alarms) ? d.live.active_alarms : [];
     }
 
     /* Update chart series */
@@ -262,9 +280,9 @@ export class LiveComponent implements OnInit, OnDestroy {
 
     this.zone.run(() => {
 
-      /* Mark that socket is now active for this machine —
-         API will no longer seed live values after this point */
-      this.socketHasUpdated = true;
+      /* The socket is live for this machine: for the next minute the API
+         poll leaves status, mode, spindle, feed and alarm to it */
+      this.lastSocketMs = Date.now();
 
       /* ── Status + Mode ── */
       if (data.machine_status !== undefined) {
@@ -272,6 +290,11 @@ export class LiveComponent implements OnInit, OnDestroy {
       }
       if (data.mode !== undefined) {
         this.liveMode = data.mode || '';
+      }
+
+      /* ── Alarm flag — the same test the list applies to the same message ── */
+      if (data.alarm !== undefined) {
+        this.liveAlarm = data.alarm === true;
       }
 
       /* ── Spindle Load → gauge percent ── */

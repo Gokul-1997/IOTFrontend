@@ -35,6 +35,9 @@ const POLL_MS               = 30_000;
 const OFFLINE_THRESHOLD_SEC = 60;   // 60s — tolerate brief network gaps in industrial environments
 const STALE_THRESHOLD_SEC   = 60;   // staleness sweep threshold — matches OFFLINE_THRESHOLD_SEC
 const ONLINE_CONFIRM_MS     = 5_000; // require 5s of continuous data before exiting OFFLINE
+/* How long the socket may be silent for a machine before the 30 s poll's
+   status and alarm are trusted instead. The same rule as the machine page. */
+const SOCKET_SILENT_MS      = 60_000;
 const PAGE_SIZE             = 6;
 const AUTO_PAGE_MS          = 10_000;
 
@@ -71,6 +74,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private updateScheduled         = false;
   // machine_id → wall-clock ms when machine first sent data after being OFFLINE
   private pendingOnlineMs  = new Map<number, number>();
+  /** When the socket last delivered for each machine (ms). */
+  private lastSocketMs     = new Map<number, number>();
 
   private visibilityHandler = () => {
     if (document.hidden) {
@@ -98,11 +103,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const user    = JSON.parse(localStorage.getItem('user') || '{}');
     const plantId = user?.plant_id;
 
-    await this.socketService.connect();
-
-    if (plantId) {
-      this.socketService.joinPlant(plantId);
-    }
+    /* Connect, then join the plant room — without making the poll wait. The
+       socket is websocket-only; where it cannot connect (a proxy or firewall
+       on the shop network, the server restarting) connect() rejects, and
+       awaiting it here stopped ngOnInit before the poll was set up: an empty
+       Live Dashboard that never refreshed. The poll is the floor; live
+       updates sit on top of it, and the poll takes over status and alarm
+       for any machine the socket goes quiet on (patchMetrics). */
+    this.socketService.connect()
+      .then(() => { if (plantId) this.socketService.joinPlant(plantId); })
+      .catch(err => console.warn('Live updates unavailable; refreshing every 30 s:', err?.message || err));
 
     /* ── 30s API poll ──────────────────────
        startWith(0) → fires instantly on init
@@ -260,8 +270,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (source.status !== undefined && source.status !== 'OFFLINE') {
       target.received_at = Math.floor(Date.now() / 1000);
     }
-    // ❌ status  → socket owns this (real-time); staleness timer handles offline detection
-    // ❌ alarm   → socket owns this
+    /* status and alarm: the socket owns them while it is delivering for this
+       machine. When it has been silent for a minute (no plant room, blocked
+       network, dropped connection) the poll is the freshest truth. Before,
+       both froze at the first load: an alarm that cleared kept the card red,
+       and the machine page — which polls the same API — disagreed with it. */
+    const lastSocket = this.lastSocketMs.get(target.machine_id) || 0;
+    if (Date.now() - lastSocket > SOCKET_SILENT_MS) {
+      if (source.alarm !== undefined) target.alarm = source.alarm === true;
+      if (source.status !== undefined && !this.pendingOnlineMs.has(target.machine_id)) {
+        target.status = source.status;
+      }
+    }
   }
 
   /* ════════════════════════════════════════
@@ -332,6 +352,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
             const machine = this.machineMap.get(update.machine_id);
             if (!machine) continue;
+            this.lastSocketMs.set(update.machine_id, Date.now());
 
             /* ── Resolve status from socket payload ── */
             const nowSec         = Math.floor(Date.now() / 1000);
