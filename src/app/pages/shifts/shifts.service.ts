@@ -26,4 +26,13 @@ export class ShiftsService {
   delete(id: number) {
     return this.http.delete(`${this.api}/${id}`);
   }
+
+  /** When the breaks happen, for the machine page's shift timeline. */
+  getBreaks(id: number) {
+    return this.http.get<any>(`${this.api}/${id}/breaks`);
+  }
+  /** Replaces the shift's break list — the server checks them together. */
+  saveBreaks(id: number, breaks: { break_name: string; start_time: string; end_time: string }[]) {
+    return this.http.put<any>(`${this.api}/${id}/breaks`, { breaks });
+  }
 }

@@ -20,4 +20,9 @@ export class DashboardService {
     return this.http.get(`${this.api}/live/${machineId}`);
   }
 
+  /** The current shift as Running / Idle / Alarm / Off periods, with its breaks. */
+  getTimeline(machineId: number): Observable<any> {
+    return this.http.get(`${this.api}/live/${machineId}/timeline`);
+  }
+
 }
