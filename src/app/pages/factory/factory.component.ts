@@ -1,3 +1,4 @@
+import { DataBarsComponent } from '../../shared/data-bars/data-bars.component';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -22,7 +23,7 @@ const POLL_MS = 60_000;
 @Component({
   selector: 'app-factory',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [ DataBarsComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './factory.component.html'
 })
 export class FactoryComponent implements OnInit, OnDestroy {
@@ -230,7 +231,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
       chart:  { type: 'bar', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 6, columnWidth: '45%' } },
       dataLabels: { enabled: true },
-      colors: ['#2B3990'],
+      colors: ['#3564df'],
       xaxis:  { categories: this.shiftCategories },
       yaxis:  { title: { text: 'Qty' } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
@@ -245,7 +246,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
       chart:  { height: 260, type: 'line', toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: [3, 0], curve: 'smooth' },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '45%' } },
-      colors: ['#9B3F70', '#2B3990'],
+      colors: ['#1b315b', '#3564df'],
       dataLabels: { enabled: false },
       xaxis:  { categories: this.trendCategories },
       yaxis: [
@@ -271,7 +272,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
     return {
       chart: { type: 'bar', height: 320, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '62%', distributed: true } },
-      colors: ['#9b7ec8', '#f5811f', '#3b9ae1', '#22c6d6', '#4a5a7a', '#8a63d2', '#f06a8a', '#17b3a3'],
+      colors: ['#9581cf', '#f5811f', '#3b9ae1', '#22c6d6', '#4a5a7a', '#8a63d2', '#f06a8a', '#38a994'],
       dataLabels: {
         enabled: true,
         // inside the bar, as in the mock, so long reason names keep their room
@@ -300,11 +301,11 @@ export class FactoryComponent implements OnInit, OnDestroy {
           hollow: { size: '42%' },
           track: { background: '#eceaf5', strokeWidth: '100%' },
           dataLabels: {
-            name: { fontSize: '1.1rem', offsetY: -6, color: '#1f2430' },
-            value: { fontSize: '1.9rem', fontWeight: 700, offsetY: 4, color: '#1f2430',
+            name: { fontSize: '1.1rem', offsetY: -6, color: '#18243b' },
+            value: { fontSize: '1.9rem', fontWeight: 700, offsetY: 4, color: '#18243b',
                      formatter: (v: number) => `${Math.round(v)}%` },
             total: {
-              show: true, label: 'OEE', fontSize: '1.1rem', color: '#1f2430',
+              show: true, label: 'OEE', fontSize: '1.1rem', color: '#18243b',
               // the middle shows OEE from the payload, not an average of
               // the three arcs, so it matches the tile above
               formatter: () => `${this.pct(this.data?.oee?.oee)}%`
@@ -312,7 +313,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
           }
         }
       },
-      colors: ['#9b7ec8', '#4a76c8', '#2b3a8f'],
+      colors: ['#9581cf', '#5f90e6', '#3564df'],
       labels: ['Availability', 'Performance', 'Quality'],
       stroke: { lineCap: 'round' },
       legend: { show: false },

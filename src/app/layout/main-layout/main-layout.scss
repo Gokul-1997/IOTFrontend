@@ -1,0 +1,7 @@
+:host { display: block; min-height: 100vh; background: var(--gokul-ground); }
+.gokul-shell { margin-left: 0; padding: 22px 28px 0; min-height: calc(100vh - 72px); display: flex; flex-direction: column; }
+.gokul-page { flex: 1; min-width: 0; outline: none; }
+.gokul-footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 28px 0 22px; margin-top: 20px; font-size: 10px; color: var(--gokul-muted); border-top: 1px solid var(--gokul-line); }
+.gokul-footer strong { color: var(--gokul-ink); font-weight: 650; }
+@media (max-width:1000px) { .gokul-shell { margin-left:0; min-height:calc(100vh - 70px); padding:24px 20px 0; } }
+@media (max-width:600px) { .gokul-shell { padding:20px 14px 0; } }

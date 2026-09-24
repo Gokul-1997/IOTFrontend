@@ -1,7 +1,8 @@
-import { Component, HostListener, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { IconComponent } from '../../shared/icon/icon';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 // import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 
@@ -10,11 +11,14 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-header',
   imports: [CommonModule, RouterModule, IconComponent],
   templateUrl: './header.component.html',
+  styleUrl: './header.component.scss',
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent implements OnInit, OnDestroy {
+  private routeSubscription?: Subscription;
+  homeRoute = "/dashboard";
 
   openMenu: string | null = null;
-  isDark = false;
+  isDark = document.documentElement.classList.contains('dark');
   showUserMenu = false;
   userName = 'Admin';
   userEmail = '';
@@ -25,17 +29,7 @@ export class HeaderComponent implements OnInit {
   isAdmin = false;
   isSntSuper = false;
 
-  // All menus with permission keys for filtering
-  /*
-   * Grouped deliberately. This was a flat list of fourteen top-level items,
-   * which no longer fitted the header: seven of them — Settings and Admin
-   * among them — sat outside the visible area with no scrollbar to hint at
-   * it, so they simply looked missing.
-   *
-   * Four dashboards and four analytics pages are the natural groups, and
-   * both sets already share a permission, so grouping costs nothing in
-   * access control and takes the bar from fourteen items to eight.
-   */
+  // Organize the workflow while retaining route permission boundaries.
   allMenus: any[] = [
     {
       label: 'Dashboards', icon: 'dashnew',
@@ -75,6 +69,8 @@ export class HeaderComponent implements OnInit {
         { label: 'Lines', path: '/lines', permission: 'page:lines' },
         { label: 'Shifts', path: '/shifts', permission: 'page:shifts' },
         { label: 'Operators', path: '/operators', permission: 'page:operators' },
+        { label: 'Plants', path: '/plants', permission: 'page:plants' },
+        { label: 'Machine Shifts', path: '/machine-shifts', permission: 'page:machine-shifts' },
         { label: '2FA Security', path: '/security/2fa', permission: 'page:security' }
       ]
     },
@@ -103,7 +99,7 @@ export class HeaderComponent implements OnInit {
     this.userEmail   = user.email || '';
     this.isSntSuper  = this.auth.isSntSuper();
     this.isAdmin     = this.auth.isAdmin();
-    this.userRole    = user.user_type === 'snt_super' ? 'S&T Super Admin'
+    this.userRole    = this.isSntSuper ? 'Platform Admin'
                      : user.roles?.includes('COMPANY_ADMIN') ? 'Company Admin'
                      : user.roles?.[0] || 'User';
     this.planName    = user.plan?.plan_name || '';
@@ -117,6 +113,16 @@ export class HeaderComponent implements OnInit {
     }
 
     this.buildMenus();
+    this.homeRoute = this.auth.getFirstAccessibleRoute();
+    this.openMenu = null;
+    this.routeSubscription = this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd) {
+        this.isMobileMenuOpen = false;
+        this.showUserMenu = false;
+        this.openMenu = null;
+        this.touch();
+      }
+    });
   }
 
   buildMenus() {
@@ -132,15 +138,34 @@ export class HeaderComponent implements OnInit {
 
         if (menu.children) {
           const filteredChildren = menu.children.filter((child: any) =>
-            this.auth.hasPermission(child.permission)
+            this.canAccess(child.permission)
           );
           return filteredChildren.length > 0 ? { ...menu, children: filteredChildren } : null;
         }
 
-        return this.auth.hasPermission(menu.permission) ? menu : null;
+        return this.canAccess(menu.permission) ? menu : null;
       })
       .filter(m => m !== null);
   }
+
+  ngOnDestroy() { this.routeSubscription?.unsubscribe(); }
+
+  private canAccess(permission: string): boolean {
+    // Keep navigation aligned with permissionGuard, including legacy ADMIN users.
+    if (this.auth.getRoles().includes('ADMIN') || this.auth.isCompanyAdmin()) {
+      const permissions = this.auth.getCompanyPermissions();
+      return permissions.length === 0 || permissions.some(p => p === permission || p.startsWith(permission + ':'));
+    }
+    return this.auth.hasPermission(permission);
+  }
+
+  get pageName(): string {
+    if (this.router.url.startsWith('/dashboard/live/')) return 'Machine workspace';
+    const pages = this.allMenus.flatMap(menu => menu.children || [menu]);
+    return pages.find(page => this.isActive(page.path))?.label || 'Workspace';
+  }
+
+  get initials(): string { return this.userName.slice(0, 2).toUpperCase(); }
 
   toggleUserMenu() { this.showUserMenu = !this.showUserMenu; this.touch(); }
 
@@ -154,31 +179,45 @@ export class HeaderComponent implements OnInit {
 
   navigate(menu: any) {
     this.router.navigate([menu.path]);
-    this.closeMenu();
+    this.isMobileMenuOpen = false;
+    this.touch();
   }
 
-  isActive(path: string) { return this.router.url.startsWith(path); }
+  isActive(path: string) { return this.router.url.split(/[?#]/)[0] === path; }
   isChildActive(children: any[]) { return children?.some(c => this.router.url.startsWith(c.path)); }
 
   toggleTheme() {
     this.isDark = !this.isDark;
     this.touch();
     document.documentElement.classList.toggle('dark', this.isDark);
+    localStorage.setItem('theme', this.isDark ? 'dark' : 'light');
   }
 
   isMobileMenuOpen = false;
-  toggleMobileMenu() { this.isMobileMenuOpen = !this.isMobileMenuOpen; this.touch(); }
+  toggleMobileMenu() {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+    this.touch();
+    if (!this.isMobileMenuOpen) document.getElementById('gokul-menu-toggle')?.focus();
+  }
 
   @HostListener('document:click', ['$event'])
   onClickOutside(event: MouseEvent) {
     const target = event.target as HTMLElement;
     const before = `${this.openMenu}|${this.showUserMenu}`;
-    if (!target.closest('nav'))             this.openMenu     = null;
     if (!target.closest('.user-menu-wrap')) this.showUserMenu = false;
+    if (!target.closest('.nav-group')) this.openMenu = null;
     // only repaint when something actually closed
     if (before !== `${this.openMenu}|${this.showUserMenu}`) this.touch();
   }
 
   @HostListener('document:keydown.escape')
-  onEsc() { this.openMenu = null; this.showUserMenu = false; this.touch(); }
+  onEsc() {
+    if (!this.isMobileMenuOpen && this.openMenu) {
+      (document.querySelector('.nav-group button[aria-expanded="true"]') as HTMLElement | null)?.focus();
+    }
+    this.showUserMenu = false;
+    this.openMenu = null;
+    if (this.isMobileMenuOpen) this.toggleMobileMenu();
+    this.touch();
+  }
 }

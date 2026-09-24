@@ -7,6 +7,7 @@ import { HeaderComponent } from '../header/header.component';
   standalone: true,
   imports: [RouterOutlet, HeaderComponent],
   templateUrl: './main-layout.html',
+  styleUrl: './main-layout.scss',
 })
 export class MainLayoutComponent {
   /** Read once rather than hard-coded, so the footer is not wrong in January. */

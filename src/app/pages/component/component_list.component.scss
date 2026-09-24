@@ -1,7 +1,7 @@
 @use 'sass:color';
 
 // ── shared enterprise variables ────────────────────────────────────────────
-$blue:   #3b5bdb;
+$blue:   #3564df;
 $red:    #e03131;
 $radius: 10px;
 
@@ -22,11 +22,11 @@ $radius: 10px;
 // ── BUTTONS ───────────────────────────────────────────────────────────────
 .btn-primary {
   display: inline-flex; align-items: center; gap: 6px;
-  background: #2b3990; color: #fff; border: none; border-radius: $radius;
+  background: #3564df; color: #fff; border: none; border-radius: $radius;
   padding: 0 20px; height: 42px; font-size: 0.875rem; font-weight: 600;
   cursor: pointer; transition: background 0.2s, box-shadow 0.2s;
   mat-icon { font-size: 18px; width: 18px; height: 18px; }
-  &:hover { background: #2f4ac4; box-shadow: 0 4px 12px rgba(59,91,219,0.35); }
+  &:hover { background: #244bb5; box-shadow: 0 4px 12px rgba(59,91,219,0.35); }
   &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
@@ -49,7 +49,7 @@ $radius: 10px;
 //     font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
 //     letter-spacing: 0.06em; color: #495057; white-space: nowrap; padding: 0 14px;
 //   }
-//   .mat-mdc-row.data-row { transition: background 0.15s; &:hover { background: #f1f3ff; } }
+//   .mat-mdc-row.data-row { transition: background 0.15s; &:hover { background: #f0f5ef; } }
 //   .mat-mdc-cell { font-size: 0.85rem; color: #343a40; padding: 10px 14px; white-space: nowrap; }
 // }
 
@@ -61,7 +61,7 @@ $radius: 10px;
 .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
 .badge-time { background: #e8f4fd; color: #1971c2; font-family: monospace; }
 
-.action-edit   { color: $blue !important; &:hover { background: #e8f0fe !important; } }
+.action-edit   { color: $blue !important; &:hover { background: #e6f3ed !important; } }
 .action-delete { color: $red  !important; &:hover { background: #fff0f0 !important; } }
 
 .empty-state {
@@ -81,5 +81,5 @@ $radius: 10px;
 :host-context(.dark) {
   .page-title h2 { color: #f1f3f5; }
   .search-box { background: #1e2a3a; border-color: #2d3f55; .search-input { color: #f1f3f5; } }
-  .table-card { background: #12203a; }
+  .table-card { background: #162237; }
 }

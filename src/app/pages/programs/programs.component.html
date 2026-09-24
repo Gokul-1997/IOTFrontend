@@ -409,8 +409,7 @@
         <ul class="text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#3e3e3e] rounded-lg px-4 py-3 mb-3 max-h-40 overflow-auto">
           <li *ngFor="let n of overwritePrompt.names" class="py-0.5">{{ n }}</li>
         </ul>
-        <!-- The reassuring half first: nothing is lost. Then the part that
-             still needs a human decision. -->
+
         <p class="ui-alert ui-alert-info">
           The program currently on {{ selectedMachine?.machine_serial_no }} will be read back and saved
           before the new one is sent. You can find it under <strong>Backups</strong> and send it again if

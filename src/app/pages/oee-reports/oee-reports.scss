@@ -66,15 +66,15 @@
   border-collapse: collapse;
 
   thead tr {
-    background: #DBE0FF;
-    border-bottom: 2px solid #DBE0FF;
+    background: #e7eee4;
+    border-bottom: 2px solid #e7eee4;
   }
 
   th {
     padding: 12px 14px;
     font-size: 14px;
     font-weight: 700;
-    color: #182052;
+    color: #173f36;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     white-space: nowrap;
@@ -158,9 +158,9 @@
   .filters-bar { background: #111 !important; }
 
   .data-table {
-    thead tr { background: #0f1c33; border-bottom-color: #1e2d45; }
+    thead tr { background: #162237; border-bottom-color: #22324a; }
     th { color: #8da5c4; }
-    td { color: #c8d8ea; border-bottom-color: #1e2d45; }
+    td { color: #c8d8ea; border-bottom-color: #22324a; }
     .data-row.alt td { background: #0d1a2e; }
   }
 

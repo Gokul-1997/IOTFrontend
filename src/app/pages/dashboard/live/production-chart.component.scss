@@ -1,0 +1,28 @@
+:host { display:block; min-width:0; }
+.chart-toolbar,.chart-summary,.chart-caption { display:flex; align-items:center; gap:9px; }
+.chart-toolbar { justify-content:space-between; flex-wrap:wrap; margin:0 0 10px; }
+.chart-summary { font-size:11px; color:var(--text-secondary); flex-wrap:wrap; }
+.chart-summary strong { font-size:28px; letter-spacing:-1px; color:var(--text-primary); }
+.peak { border-left:1px solid var(--border-color); padding-left:13px; margin-left:5px; }
+.peak b { color:var(--text-primary); }
+.chart-switch { display:flex; padding:3px; border-radius:7px; border:1px solid var(--border-color); background:var(--bg-secondary); }
+.chart-switch button { padding:5px 12px; font-size:10px; border-radius:4px; color:var(--text-secondary); }
+.chart-switch button[aria-pressed='true'] { background:var(--bg-card); color:var(--gokul-accent); box-shadow:0 1px 4px #0000000d; }
+.production-plot { width:100%; display:block; overflow:visible; }
+.axis line { stroke:var(--border-color); stroke-dasharray:4 5; }
+.axis text,.hour-label,.missing-label { fill:var(--text-secondary); font-size:10px; }
+.axis text:first-of-type { font-variant-numeric:tabular-nums; }
+.hour-bar { fill:var(--chart-blue); opacity:.78; }
+.hour-bar.selected,.hour-point:focus .hour-bar { opacity:1; }
+.hour-point { cursor:pointer; outline:none; }
+.hour-point:focus > rect:first-child { stroke:var(--gokul-accent); stroke-width:1; stroke-dasharray:3; }
+.line-series polyline { fill:none; stroke:var(--chart-blue); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+.hour-dot { fill:var(--chart-blue); stroke:var(--bg-card); stroke-width:2; }
+.hour-dot.selected { r:6; }
+.chart-caption { justify-content:space-between; color:var(--text-secondary); font-size:10px; gap:10px; margin-top:5px; flex-wrap:wrap; }
+.chart-data { margin-top:14px; font-size:11px; border-top:1px solid var(--border-color); padding-top:12px; }
+.chart-data summary { color:var(--gokul-accent); cursor:pointer; width:fit-content; }
+table { width:100%; border-collapse:collapse; margin-top:12px; }
+th,td { text-align:left; padding:7px; border-bottom:1px solid var(--border-color); }
+td { text-align:right; }
+@media (max-width:600px) { .plot-scroll { overflow-x:auto; } .production-plot { min-width:490px; } .chart-summary strong { font-size:24px; } .peak { margin-left:0; padding-left:8px; } }

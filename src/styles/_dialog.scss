@@ -5,7 +5,7 @@
    the app. Before this, the eleven modal files disagreed on:
 
      overlay   bg-black/80 · bg-black/40 · bg-black/60
-     surface   .bg-common · bg-white dark:bg-[#0f1c33] · bg-white
+     surface   .bg-common · bg-white dark:bg-[#162237] · bg-white
      inputs    .filter-select · hand-rolled Tailwind · bg-gray-100
      buttons   .btn-primary · bg-blue-600 · bg-gray-300
      close     an ✕ glyph · an SVG in a <span> · nothing at all
@@ -19,7 +19,7 @@
      label   #334155 on #fff 10.4:1   dark #d1d5db on #111 11.6:1
      helper  #64748b on #fff  4.8:1   dark #9ca3af on #111  7.6:1
      error   #dc2626 on #fff  4.8:1   dark #f87171 on #111  6.4:1
-     primary #fff on #2563eb  5.2:1
+     primary #fff on #3564df  5.2:1
    ============================================================ */
 
 /* ── shell ────────────────────────────────────────────────── */
@@ -144,7 +144,7 @@
   transition: background 0.15s, color 0.15s;
 }
 .ui-close:hover { background: #f1f5f9; color: #0f172a; }
-.ui-close:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.ui-close:focus-visible { outline: 2px solid #3564df; outline-offset: 2px; }
 .dark .ui-close:hover { background: #262626; color: #f1f5f9; }
 
 /* ── sections ─────────────────────────────────────────────── */
@@ -213,7 +213,7 @@
 .ui-input:focus,
 .ui-input:focus-visible {
   outline: none;
-  border-color: #2563eb;
+  border-color: #3564df;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
 
@@ -308,9 +308,9 @@ select.ui-input {
   transition: border-color 0.15s, background 0.15s;
 }
 .ui-toggle:hover { border-color: #9ca3af; background: #f8fafc; }
-.ui-toggle:has(input:checked) { border-color: #2563eb; background: #eff6ff; }
+.ui-toggle:has(input:checked) { border-color: #3564df; background: #eff6ff; }
 .ui-toggle:has(input:focus-visible) {
-  border-color: #2563eb;
+  border-color: #3564df;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
 .dark .ui-toggle { background: #1c1c1c; border-color: #3e3e3e; }
@@ -321,7 +321,7 @@ select.ui-input {
   width: 1rem;
   height: 1rem;
   margin-top: 0.0625rem;
-  accent-color: #2563eb;
+  accent-color: #3564df;
   flex: 0 0 auto;
   cursor: pointer;
 }
@@ -403,10 +403,10 @@ select.ui-input {
   min-height: 2.5rem;   /* comfortable touch target */
   white-space: nowrap;
 }
-.ui-btn:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.ui-btn:focus-visible { outline: 2px solid #3564df; outline-offset: 2px; }
 .ui-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
-.ui-btn-primary { color: #fff; background: #2563eb; }
+.ui-btn-primary { color: #fff; background: #3564df; }
 .ui-btn-primary:hover:not(:disabled) { background: #1d4ed8; }
 
 .ui-btn-danger { color: #fff; background: #dc2626; }
@@ -446,7 +446,7 @@ select.ui-input {
 .search-input:focus-visible,
 .rows-select:focus-visible {
   outline: none;
-  border-color: #2563eb;
+  border-color: #3564df;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
 .dark .filter-select:focus-visible,
@@ -490,7 +490,7 @@ select.ui-input {
   min-height: 2.25rem;
 }
 .ui-segment:hover:not(.is-active) { background: rgba(15, 23, 42, 0.05); color: #0f172a; }
-.ui-segment:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.ui-segment:focus-visible { outline: 2px solid #3564df; outline-offset: 2px; }
 
 .ui-segment.is-active {
   background: #fff;
@@ -608,7 +608,7 @@ select.ui-input {
 }
 .ui-tab:hover:not(.is-active) { background: #cfdcef; color: #0f172a; }
 .ui-tab:focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid #3564df;
   outline-offset: -2px;
 }
 

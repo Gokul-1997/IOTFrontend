@@ -1,4 +1,4 @@
-<!-- Phase 2 · Screen 4 — Periodic Maintenance Dashboard, MEXA design. -->
+
 
 <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
@@ -55,7 +55,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Scheduled<br>Ticket</span>
-        <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true">
+        <span class="mexa-kpi-icon" style="background:#3564df" aria-hidden="true">
           <mat-icon>assignment</mat-icon>
         </span>
       </div>
@@ -66,7 +66,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Due<br>Today</span>
-        <span class="mexa-kpi-icon" style="background:#17b3a3" aria-hidden="true">
+        <span class="mexa-kpi-icon" style="background:#38a994" aria-hidden="true">
           <mat-icon>event_available</mat-icon>
         </span>
       </div>
@@ -89,7 +89,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Completed</span>
-        <span class="mexa-kpi-icon" style="background:#9b7ec8" aria-hidden="true">
+        <span class="mexa-kpi-icon" style="background:#9581cf" aria-hidden="true">
           <mat-icon>event_note</mat-icon>
         </span>
       </div>
@@ -129,23 +129,8 @@
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Technician Workload</h2>
-      <div class="mexa-donutrow" *ngIf="workloadSeries.length; else noWorkload">
-        <apx-chart
-          [series]="workloadSeries" [chart]="workloadDonut.chart" [labels]="workloadDonut.labels"
-          [colors]="workloadDonut.colors" [dataLabels]="workloadDonut.dataLabels"
-          [plotOptions]="workloadDonut.plotOptions" [legend]="workloadDonut.legend"
-          [tooltip]="workloadDonut.tooltip" [noData]="workloadDonut.noData"></apx-chart>
-        <ul class="mexa-keylist">
-          <li *ngFor="let w of data.technician_workload; let i = index">
-            <span class="mexa-key-swatch" [style.--swatch]="donutColour(i)" aria-hidden="true"></span>
-            <span>
-              <span class="mexa-key-label">{{ w.technician }}</span>
-              <span class="mexa-key-value">
-                {{ w.open }} open<span *ngIf="w.overdue"> · {{ w.overdue }} overdue</span>
-              </span>
-            </span>
-          </li>
-        </ul>
+      <div class="comparison-panel" *ngIf="workloadSeries.length; else noWorkload">
+        <app-data-bars  [values]="workloadSeries" [labels]="workloadDonut.labels" [colors]="workloadDonut.colors"></app-data-bars>
       </div>
       <ng-template #noWorkload><p class="mexa-empty">No open tickets to assign.</p></ng-template>
     </section>

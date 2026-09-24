@@ -1,3 +1,4 @@
+import { DataBarsComponent } from '../../shared/data-bars/data-bars.component';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -25,7 +26,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 @Component({
   selector: 'app-oee-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [ DataBarsComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './oee-dashboard.component.html'
 })
 export class OeeDashboardComponent implements OnInit, OnDestroy {
@@ -270,7 +271,7 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   bandColour(band: string): string {
     switch (band) {
       case 'GOOD': return '#15803d';
-      case 'FAIR': return '#2f2d8f';
+      case 'FAIR': return '#3564df';
       case 'POOR': return '#b45309';
       default:     return '#64748b';
     }
@@ -292,7 +293,7 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
       chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '58%' } },
       // a fallback only: every point carries its own fillColor
-      colors: ['#2f2d8f'],
+      colors: ['#3564df'],
       dataLabels: { enabled: true, formatter: (v: number) => `${v}%`,
                     style: { fontSize: '.72rem', fontWeight: 700, colors: ['#fff'] } },
       // one series, and the axis names each machine — a legend would repeat it
@@ -310,7 +311,7 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
     return {
       chart:  { type: 'bar', height: 320, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { columnWidth: '65%', borderRadius: 2 } },
-      colors: ['#2563eb', '#7c3aed', '#0f766e'],
+      colors: ['#3564df', '#7c3aed', '#0f766e'],
       dataLabels: { enabled: false },
       legend: { position: 'top', horizontalAlign: 'right' },
       xaxis:  { categories: this.compCategories, labels: { rotate: -35, trim: true } },

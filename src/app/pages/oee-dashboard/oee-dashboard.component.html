@@ -1,4 +1,4 @@
-<!-- Phase 2 · Screen 8 — OEE Dashboard, MEXA design. -->
+
 
 <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
@@ -65,7 +65,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>OEE</span>
-        <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true">
+        <span class="mexa-kpi-icon" style="background:#3564df" aria-hidden="true">
           <mat-icon>settings</mat-icon>
         </span>
       </div>
@@ -85,7 +85,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>Availability</span>
-        <span class="mexa-kpi-icon" style="background:#17b3a3" aria-hidden="true">
+        <span class="mexa-kpi-icon" style="background:#38a994" aria-hidden="true">
           <mat-icon>schedule</mat-icon>
         </span>
       </div>
@@ -107,7 +107,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>Quality</span>
-        <span class="mexa-kpi-icon" style="background:#9b7ec8" aria-hidden="true">
+        <span class="mexa-kpi-icon" style="background:#9581cf" aria-hidden="true">
           <mat-icon>water_drop</mat-icon>
         </span>
       </div>
@@ -146,7 +146,7 @@
       <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Machine OEE</h2>
       <span class="mexa-bandlegend">
         <span><i style="--dot:#15803d"></i>&gt; {{ data.thresholds.good }}% (Excellent)</span>
-        <span><i style="--dot:#2f2d8f"></i>{{ data.thresholds.fair }}–{{ data.thresholds.good }}% (Good)</span>
+        <span><i style="--dot:#3564df"></i>{{ data.thresholds.fair }}–{{ data.thresholds.good }}% (Good)</span>
         <span><i style="--dot:#b45309"></i>&lt; {{ data.thresholds.fair }}% (Needs improvement)</span>
         <span><i style="--dot:#94a3b8"></i>Not measurable</span>
       </span>
@@ -160,14 +160,9 @@
         </div>
 
         <div class="mexa-oeecard-body">
-          <!-- the figure is printed inside; the ring is decoration -->
-          <span class="mexa-oeering" aria-hidden="true"
-                [style.--pct.%]="m.oee_pct || 0" [style.--ring-hole]="bandColour(m.band)">
-            <span class="mexa-oeering-text">
-              <span class="mexa-oeering-pct">{{ m.oee_pct === null ? '--' : m.oee_pct + '%' }}</span>
-              <span class="mexa-oeering-cap">OEE</span>
-            </span>
-          </span>
+
+          <div class="oee-score-readout"><span>OEE score</span><strong>{{ m.oee_pct === null ? '—' : m.oee_pct + '%' }}</strong>
+            <app-data-bars [values]="[m.oee_pct]" [labels]="['Equipment effectiveness']" [scaleMax]="100" unit="%" [colors]="[bandColour(m.band)]"></app-data-bars></div>
 
           <div class="mexa-oeecard-metrics">
             <div><span>Availability</span><span class="num">{{ pct(m.availability_pct) }}</span></div>

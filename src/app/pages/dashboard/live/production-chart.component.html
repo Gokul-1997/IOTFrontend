@@ -1,0 +1,21 @@
+<div class="chart-toolbar">
+  <div class="chart-summary"><strong>{{ total | number }}</strong><span>parts today</span><span class="peak">Peak <b>{{ peak | number }}</b> / hour</span></div>
+  <div class="chart-switch" role="group" aria-label="Production chart view"><button (click)="mode = 'bar'" [attr.aria-pressed]="mode === 'bar'">Bars</button><button (click)="mode = 'line'" [attr.aria-pressed]="mode === 'line'">Line</button></div>
+</div>
+<div class="plot-scroll">
+  <svg viewBox="0 0 720 232" class="production-plot" role="group" aria-label="Hourly production chart. Focus an hour for its exact count; use arrow keys to move between hours.">
+    <g class="axis"><g *ngFor="let tick of ticks"><line x1="52" x2="692" [attr.y1]="198 - tick / max * 166" [attr.y2]="198 - tick / max * 166"/><text x="40" [attr.y]="202 - tick / max * 166" text-anchor="end">{{ tick }}</text></g><text x="52" y="14">PARTS</text></g>
+    <g *ngIf="mode === 'line'" class="line-series"><polyline *ngFor="let segment of lines" [attr.points]="segment"/></g>
+    <g>
+      <g *ngFor="let point of points; let i = index" class="hour-point" tabindex="0" role="button" [attr.aria-label]="point.hour + ': ' + (point.produced === null ? 'not reported' : point.produced + ' parts')" [attr.aria-pressed]="selected === i" (focus)="select(i)" (mouseenter)="select(i)" (click)="select(i)" (keydown.enter)="select(i)" (keydown.space)="$event.preventDefault(); select(i)" (keydown)="move($event, i)">
+        <rect [attr.x]="point.x - 12" y="23" width="24" height="180" fill="transparent"/>
+        <rect *ngIf="mode === 'bar' && point.produced !== null" class="hour-bar" [class.selected]="selected === i" [attr.x]="point.x - barWidth / 2" [attr.y]="point.y" [attr.width]="barWidth" [attr.height]="Math.max(2, 198 - point.y)" rx="5"/>
+        <circle *ngIf="mode === 'line' && point.produced !== null" class="hour-dot" [class.selected]="selected === i" [attr.cx]="point.x" [attr.cy]="point.y" r="4"/>
+        <text *ngIf="point.produced === null" class="missing-label" [attr.x]="point.x" y="193" text-anchor="middle">—</text>
+        <text *ngIf="point.label" class="hour-label" [attr.x]="point.x" y="221" text-anchor="middle">{{ point.hour }}</text>
+      </g>
+    </g>
+  </svg>
+</div>
+<div class="chart-caption"><span aria-live="polite">{{ selected === null ? 'Select an hour to inspect production' : points[selected].hour + ' · ' + (points[selected].produced === null ? 'Not reported' : points[selected].produced + ' parts') }}</span><span>Today · IST</span></div>
+<details class="chart-data"><summary>View hourly data</summary><table><caption class="sr-only">Today's production by hour (IST)</caption><thead><tr><th scope="col">Hour</th><th scope="col">Parts produced</th></tr></thead><tbody><tr *ngFor="let row of rows"><th scope="row">{{ row.hour }}</th><td>{{ row.produced === null ? 'Not reported' : (row.produced | number) }}</td></tr></tbody></table></details>

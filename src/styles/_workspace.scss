@@ -1,52 +1,33 @@
-/* ─────────────────────────────────────────────────────────────
-   MEXA dashboard design system
-   Implements MEXA_DS_dashboard_UI_02.pdf.
-
-   Every dashboard shares one shell: a white app bar, a diagonal
-   indigo-to-crimson field, and white cards floating on it. The cards
-   carry the meaning; the field is what makes them read as cards rather
-   than as sections of a page.
-
-   Written as classes rather than Tailwind utilities because the same
-   nine components repeat on nine screens — a KPI tile described inline
-   nine times drifts by the third one.
-   ───────────────────────────────────────────────────────────── */
-
+/* Gokul analytics primitives. Existing component class names remain compatible. */
 html, body { background: var(--mexa-ground); }
 
 :root {
-  /* Chrome */
+  
   --mexa-bar:        rgba(58, 56, 140, .82);
-  --mexa-bar-solid:  #3a388c;
-  --mexa-submit:     #2f2d8f;
-  --mexa-submit-h:   #26247a;
+  --mexa-bar-solid:  #111b2d;
+  --mexa-submit:     #3564df;
+  --mexa-submit-h:   #244bb5;
 
-  /* The ground the cards sit on. Deliberately a quiet, slightly cool
-     neutral rather than the brand gradient: on a dashboard the data has to
-     carry the colour, and a saturated field makes every card compete with
-     its own background. The brand still reads — the title bar is indigo and
-     the accents are drawn from the same family. */
-  --mexa-ground:     #eef0f5;
+  
+  --mexa-ground:     #f4f6fa;
 
-  /* Surfaces */
+  
   --mexa-card:       #ffffff;
-  --mexa-ink:        #1f2430;
-  --mexa-ink-2:      #4b5262;
-  --mexa-ink-3:      #8992a5;
-  --mexa-rule:       #e3e6ef;
-  --mexa-thead:      #e6e5f6;
-  --mexa-row-alt:    #f5f4fc;
+  --mexa-ink:        #18243b;
+  --mexa-ink-2:      #53647c;
+  --mexa-ink-3:      #6b7890;
+  --mexa-rule:       #e2e7ef;
+  --mexa-thead:      #eef2f8;
+  --mexa-row-alt:    #f8faff;
 
-  /* The series palette the charts use, in the order the mock uses it. */
-  --mexa-navy:   #2b3a8f;
-  --mexa-blue:   #4a76c8;
-  --mexa-violet: #9b7ec8;
-  --mexa-teal:   #17b3a3;
+  
+  --mexa-navy:   #3564df;
+  --mexa-blue:   #5f90e6;
+  --mexa-violet: #9581cf;
+  --mexa-teal:   #38a994;
   --mexa-slate:  #6b7280;
 
-  /* Semantic. Separate from the series palette on purpose: a bar being
-     "the third series" and a machine being "critical" are different
-     kinds of statement and must not share a colour. */
+  
   --mexa-good:  #22c55e;
   --mexa-warn:  #f5a623;
   --mexa-bad:   #ef4444;
@@ -54,20 +35,18 @@ html, body { background: var(--mexa-ground); }
 }
 
 :root[data-theme="dark"], .dark {
-  --mexa-ground:  #0d0f15;
-  --mexa-card:    #161a23;
-  --mexa-ink:     #e8ebf2;
-  --mexa-ink-2:   #a8b0c2;
-  --mexa-ink-3:   #737d92;
-  --mexa-rule:    #252b39;
-  --mexa-thead:   #262a3a;
-  --mexa-row-alt: #212534;
+  --mexa-ground:  #0e1626;
+  --mexa-card:    #162237;
+  --mexa-ink:     #edf2fc;
+  --mexa-ink-2:   #b3c2dd;
+  --mexa-ink-3:   #91a5c4;
+  --mexa-rule:    #2c3b53;
+  --mexa-thead:   #22324a;
+  --mexa-row-alt: #1b2c45;
 }
 
-/* ── Shell ────────────────────────────────────────────────── */
-
 .mexa-shell {
-  min-height: calc(100vh - 4rem);      /* the app bar is 4rem */
+  min-height: calc(100vh - 4rem);      
   background: var(--mexa-ground);
   padding: 1rem 1.25rem 0;
   display: flex;
@@ -86,7 +65,6 @@ html, body { background: var(--mexa-ground); }
 }
 .mexa-footer strong { color: var(--mexa-ink-2); font-weight: 600; }
 
-/* "Last Updated" sits above the title bar, right-aligned, quiet. */
 .mexa-updated {
   display: flex;
   align-items: center;
@@ -97,11 +75,8 @@ html, body { background: var(--mexa-ground); }
   margin-bottom: .5rem;
 }
 
-/* ── Title bar ────────────────────────────────────────────── */
-
 .mexa-titlebar {
-  /* Solid now the field behind it is quiet: a translucent bar over a plain
-     ground reads as a mistake rather than as depth. */
+  
   background: var(--mexa-bar-solid);
   border-radius: 12px;
   padding: .85rem 1.15rem;
@@ -120,18 +95,14 @@ html, body { background: var(--mexa-ground); }
   letter-spacing: -.01em;
 }
 
-/* Pushes the filters to the right without a wrapper div. */
 .mexa-titlebar-spacer { flex: 1 1 auto; }
 
-/* Inline status legend, as on the OEE and Maintenance headers. */
 .mexa-legend { display: flex; flex-wrap: wrap; align-items: center; gap: .9rem; }
 .mexa-legend-item {
   display: inline-flex; align-items: center; gap: .4rem;
   color: #fff; font-size: .88rem; font-weight: 600;
 }
 .mexa-legend-dot { width: .7rem; height: .7rem; border-radius: 999px; flex: none; }
-
-/* ── Filters in the title bar ─────────────────────────────── */
 
 .mexa-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
 
@@ -152,10 +123,7 @@ html, body { background: var(--mexa-ground); }
   color: var(--mexa-ink);
   min-width: 9rem;
   cursor: pointer;
-  /* The chevron is drawn rather than relying on the native control, so
-     the field looks the same on every platform. background-color is set
-     separately from background-image: the `background` shorthand would
-     reset the position and size and tile the arrow. */
+  
   background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%231f2430'%3E%3Cpath d='M5.5 7.5l4.5 4.5 4.5-4.5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right .6rem center;
@@ -185,13 +153,10 @@ html, body { background: var(--mexa-ground); }
 .mexa-submit:disabled { opacity: .6; cursor: not-allowed; }
 .mexa-submit:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
-/* ── KPI tile ─────────────────────────────────────────────── */
-
 .mexa-kpis {
   display: grid;
   gap: .7rem;
-  /* Narrower track: six tiles fit one row on a laptop instead of wrapping to
-     two, which is what pushed the first chart below the fold. */
+  
   grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
   margin-bottom: .85rem;
 }
@@ -210,8 +175,7 @@ html, body { background: var(--mexa-ground); }
 }
 
 .mexa-kpi-label {
-  /* A label, not a heading: small, spaced, quiet — so the number below it
-     is unambiguously the thing being read. */
+  
   font-size: .72rem;
   font-weight: 600;
   letter-spacing: .05em;
@@ -221,11 +185,8 @@ html, body { background: var(--mexa-ground); }
   min-width: 0;
 }
 
-/* The coloured disc. Its colour is decoration — the label already says
-   what the number is — so it never carries meaning on its own. */
 .mexa-kpi-icon {
-  /* A rounded square rather than a disc: the discs read as six unrelated
-     status lights when the colour means nothing. */
+  
   width: 2.1rem; height: 2.1rem;
   border-radius: 9px;
   display: grid; place-items: center;
@@ -251,21 +212,16 @@ html, body { background: var(--mexa-ground); }
   color: var(--mexa-ink-3);
 }
 
-/* Direction is stated with an arrow as well as a colour, so the meaning
-   survives for a reader who cannot separate red from green. */
 .mexa-delta { font-weight: 700; }
 .mexa-delta-up   { color: var(--mexa-good); }
 .mexa-delta-down { color: var(--mexa-bad); }
-
-/* ── Card ─────────────────────────────────────────────────── */
 
 .mexa-card {
   background: var(--mexa-card);
   border: 1px solid var(--mexa-rule);
   border-radius: 14px;
   padding: 1rem 1.1rem 1.1rem;
-  /* A hairline separates a card from the ground; the heavy drop shadow it
-     replaces was doing that job because the ground was a gradient. */
+  
   box-shadow: 0 1px 2px rgba(17, 20, 45, .04);
   min-width: 0;
 }
@@ -278,15 +234,12 @@ html, body { background: var(--mexa-ground); }
   margin: 0 0 .85rem;
   text-align: center;
 }
-/* Tables and lists read better with the title on the left; charts are
-   centred, as in the mock. */
+
 .mexa-card-title-left { text-align: left; }
 
 .mexa-card-hint { font-size: .82rem; color: var(--mexa-ink-3); margin: -.5rem 0 .75rem; }
 
 .mexa-grid { display: grid; gap: 1rem; margin-bottom: 1rem; min-width: 0; }
-
-/* ── Table ────────────────────────────────────────────────── */
 
 .mexa-tablewrap { overflow-x: auto; }
 
@@ -322,7 +275,6 @@ html, body { background: var(--mexa-ground); }
 
 .mexa-empty { text-align: center; padding: 2.5rem 1rem; color: var(--mexa-ink-3); }
 
-/* Search box above a table */
 .mexa-search {
   border: 1px solid var(--mexa-rule);
   border-radius: 10px;
@@ -353,8 +305,6 @@ html, body { background: var(--mexa-ground); }
 .mexa-pagebtn:disabled { opacity: .4; cursor: not-allowed; }
 .mexa-pagebtn:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 1px; }
 
-/* ── Badges ───────────────────────────────────────────────── */
-
 .mexa-badge {
   display: inline-block;
   padding: .25rem .7rem;
@@ -367,9 +317,9 @@ html, body { background: var(--mexa-ground); }
 .mexa-badge-good    { background: #e7f8ee; color: #157347; border-color: #b7ebcb; }
 .mexa-badge-warn    { background: #fff5e0; color: #9a6100; border-color: #fbe2ab; }
 .mexa-badge-bad     { background: #fdeaec; color: #b42334; border-color: #f7c6cc; }
-.mexa-badge-info    { background: #e8f0fe; color: #1d4ed8; border-color: #c3d7fb; }
+.mexa-badge-info    { background: #e6f3ed; color: #1d4ed8; border-color: #c3d7fb; }
 .mexa-badge-violet  { background: #f1ebfb; color: #6d31c4; border-color: #ddcbf5; }
-.mexa-badge-neutral { background: #eef0f4; color: #4b5262; border-color: #dcdfe8; }
+.mexa-badge-neutral { background: #eef0f4; color: #53647c; border-color: #dcdfe8; }
 
 .dark .mexa-badge-good    { background: #10331f; color: #6fdba0; border-color: #1d5c38; }
 .dark .mexa-badge-warn    { background: #362a10; color: #f7c667; border-color: #5e4a1c; }
@@ -377,8 +327,6 @@ html, body { background: var(--mexa-ground); }
 .dark .mexa-badge-info    { background: #14243d; color: #8fb8f5; border-color: #1e3a63; }
 .dark .mexa-badge-violet  { background: #241a3d; color: #c0a3f0; border-color: #3c2a63; }
 .dark .mexa-badge-neutral { background: #262a36; color: #aab2c4; border-color: #363c4c; }
-
-/* ── Alerts on the field ──────────────────────────────────── */
 
 .mexa-note {
   background: var(--mexa-card);
@@ -393,8 +341,6 @@ html, body { background: var(--mexa-ground); }
 .mexa-note strong { color: var(--mexa-ink); }
 .mexa-note-warn { border-left-color: var(--mexa-warn); }
 .mexa-note-bad  { border-left-color: var(--mexa-bad); }
-
-/* ── Ranked list, as used by Top 5 panels ─────────────────── */
 
 .mexa-rank { list-style: none; margin: 0; padding: 0; }
 .mexa-rank li {
@@ -412,11 +358,6 @@ html, body { background: var(--mexa-ground); }
   .mexa-submit, .mexa-pagebtn { transition: none; }
 }
 
-/* ── Status chips that sit beside a dashboard title ───────────
-   The OEE and Maintenance screens put a live tally next to the
-   heading ("Running: 16  Idle: 02"). It rides in the title bar, so
-   the text is white and the only colour is the dot. */
-
 .mexa-statuschips {
   display: flex; flex-wrap: wrap; align-items: center;
   gap: .35rem 1.1rem;
@@ -432,11 +373,6 @@ html, body { background: var(--mexa-ground); }
   background: var(--chip, #fff); flex: none;
 }
 
-/* ── Tab pair (OEE: Analytics | Report) ───────────────────────
-   Tabs sit ON the card, so the active one shares the card's white
-   and loses its bottom edge; the inactive one is a muted lavender
-   tucked behind it. */
-
 .mexa-tabs {
   display: flex; gap: .25rem; margin: 0 auto -1px;
   width: max-content; position: relative; z-index: 1;
@@ -446,26 +382,18 @@ html, body { background: var(--mexa-ground); }
   padding: .7rem 2.5rem;
   border-radius: 12px 12px 0 0;
   font: inherit; font-size: 1rem; font-weight: 700;
-  background: #ded9ee; color: #8b86a3;
+  background: #e7eddf; color: #657361;
   transition: background .15s, color .15s;
 }
 .mexa-tab[aria-selected='true'] { background: #fff; color: var(--mexa-ink); }
 .mexa-tab:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
-/* ── Machine OEE tile (OEE dashboard, Analytics) ──────────────
-   A solid colour band per grade. White text on all four grades,
-   so the amber is darkened past what the mock shows to keep the
-   label above 4.5:1 — WCAG wins over an exact colour match. */
 
 .mexa-oeecards {
   display: grid; gap: .85rem;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
 }
 .mexa-oeecard {
-  /* Was a solid block of saturated colour per grade. Four of those side by
-     side read as a warning panel rather than a fleet, and forced every
-     figure on the tile to be white — so the numbers, which are the point,
-     had the same weight as the decoration. The grade now shows as an accent
-     and a labelled dot; the readings sit on the normal card surface. */
+  
   border-radius: 12px; padding: .85rem .95rem;
   background: var(--mexa-card);
   border: 1px solid var(--mexa-rule);
@@ -493,16 +421,10 @@ html, body { background: var(--mexa-ground); }
 .mexa-oeecard-metrics .num { color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
 .mexa-oeecard-metrics > div { display: flex; justify-content: space-between; gap: .5rem; }
 
-/* The four grade bands, now an accent rather than a fill. The same values
-   the band legend prints, so the key and the tiles agree. */
 .mexa-grade-excellent { --band: #15803d; }
-.mexa-grade-good      { --band: #2f2d8f; }
+.mexa-grade-good      { --band: #3564df; }
 .mexa-grade-avg       { --band: #b45309; }
 .mexa-grade-poor      { --band: #c32b3f; }
-
-/* ── Attention Required rows (Periodic dashboard) ─────────────
-   A count in a coloured disc, a label, and a chevron. Rendered as
-   buttons because each one filters the table below it. */
 
 .mexa-attention { display: grid; gap: .6rem; }
 .mexa-attention-row {
@@ -528,11 +450,6 @@ html, body { background: var(--mexa-ground); }
   .mexa-tab, .mexa-attention-row { transition: none; }
 }
 
-/* ── Key list: the two-line legend that sits beside a donut ───
-   .mexa-legend is white-on-gradient for the title bar; this one
-   lives inside a white card and stacks label over value, as the
-   Energy and Downtime screens do. */
-
 .mexa-keylist { display: grid; gap: .7rem; align-content: center; margin: 0; padding: 0; list-style: none; }
 .mexa-keylist li { display: flex; align-items: flex-start; gap: .6rem; }
 .mexa-keylist .mexa-key-swatch {
@@ -542,17 +459,11 @@ html, body { background: var(--mexa-ground); }
 .mexa-keylist .mexa-key-label { font-size: .88rem; font-weight: 700; color: var(--mexa-ink); }
 .mexa-keylist .mexa-key-value { display: block; font-size: .84rem; color: var(--mexa-ink-2); font-weight: 600; }
 
-/* A donut and its key side by side; stacks under ~520px. */
 .mexa-donutrow {
   display: grid; gap: 1rem; align-items: center;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 @media (max-width: 33rem) { .mexa-donutrow { grid-template-columns: 1fr; } }
-
-/* ── Contribution meter, as in the Downtime reason summary ────
-   Always paired with the number beside it: the bar is decoration,
-   the figure is the data. Hidden from assistive tech for that
-   reason. */
 
 .mexa-meter {
   display: inline-block; vertical-align: middle;
@@ -561,22 +472,13 @@ html, body { background: var(--mexa-ground); }
 }
 .mexa-meter-fill { display: block; height: 100%; background: var(--mexa-blue); border-radius: 999px; }
 
-/* ── OEE ring inside a machine tile ───────────────────────────
-   A conic gradient rather than twenty chart instances: the OEE
-   dashboard shows up to twenty machines at once, and twenty
-   ApexCharts on one screen is a visible stall on a shop-floor PC.
-   The percentage is printed in the middle, so the ring is
-   decoration and is hidden from assistive tech. */
-
 .mexa-oeering {
   flex: none; width: 4.6rem; height: 4.6rem; border-radius: 50%;
   display: grid; place-items: center;
   background: conic-gradient(var(--band, var(--mexa-navy)) var(--pct, 0%), var(--mexa-rule) 0);
   position: relative;
 }
-/* The hole is the card surface — inheriting would copy the conic gradient
-   itself. (The template still passes --ring-hole; it is no longer read, as
-   the tile is no longer a coloured block.) */
+
 .mexa-oeering::after {
   content: ''; position: absolute; inset: .58rem;
   border-radius: 50%; background: var(--mexa-card);
@@ -593,7 +495,6 @@ html, body { background: var(--mexa-ground); }
   color: var(--mexa-ink-3);
 }
 
-/* The band legend under the tile grid. */
 .mexa-bandlegend {
   display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1.1rem;
   font-size: .82rem; color: var(--mexa-ink-2);
@@ -603,13 +504,8 @@ html, body { background: var(--mexa-ground); }
   width: .62rem; height: .62rem; border-radius: 50%; background: var(--dot); flex: none;
 }
 
-/* A machine whose OEE cannot be computed at all — a missing cycle time,
-   not a bad score. Grey says "no reading", never "failing". */
 .mexa-grade-unknown { --band: #94a3b8; }
 
-/* ── Per-axis readout under a servo chart ─────────────────────
-   Each axis in words, including "--" for a silent one, so a gap in the
-   chart is never the only sign that a sensor is missing. */
 .mexa-axisrow {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem;
   margin: .5rem 0 0; padding: 0; list-style: none; text-align: center;
@@ -618,12 +514,6 @@ html, body { background: var(--mexa-ground); }
 .mexa-axisrow span { font-size: .75rem; color: var(--mexa-ink-3); }
 .mexa-axisrow strong { font-size: .95rem; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
 
-
-/* ── Charts ───────────────────────────────────────────────────
-   ApexCharts sizes itself from its parent's width at init. Left inline it
-   measures a shrink-to-fit box, which is why charts came out narrower than
-   their card and sat off-centre. */
-
 .mexa-card apx-chart {
   display: block;
   width: 100%;
@@ -631,17 +521,9 @@ html, body { background: var(--mexa-ground); }
 }
 .mexa-card .apexcharts-canvas { margin-inline: auto; }
 
-/* Charts share one height per row so cards in a grid line up on their
-   baselines rather than each card ending wherever its chart happens to. */
 .mexa-grid > .mexa-card { display: flex; flex-direction: column; }
 .mexa-grid > .mexa-card > apx-chart,
 .mexa-grid > .mexa-card > .mexa-donutrow { margin-top: auto; }
-
-/* ── Skeleton loading ─────────────────────────────────────────
-   A skeleton stands in for the shape of the content that is coming, so the
-   page does not reflow when it arrives and the reader is not asked to hold
-   an empty rectangle in mind. It never claims a value: no zeros, no dashes,
-   just the geometry. */
 
 .mexa-skel {
   position: relative;
@@ -666,7 +548,6 @@ html, body { background: var(--mexa-ground); }
 
 @keyframes mexa-shimmer { to { transform: translateX(100%); } }
 
-/* Motion here is decoration; the layout already communicates "loading". */
 @media (prefers-reduced-motion: reduce) {
   .mexa-skel::after { animation: none; }
 }
@@ -685,10 +566,6 @@ html, body { background: var(--mexa-ground); }
 .mexa-skel-donut { width: 9.5rem; height: 9.5rem; border-radius: 999px; margin: .5rem auto; }
 .mexa-skel-row   { height: 2.1rem; margin-bottom: .45rem; border-radius: 6px; }
 
-/* ── Small screens ────────────────────────────────────────────
-   The field and the card shadows cost real estate that a phone does not
-   have; the content keeps its gutters, everything else tightens. */
-
 @media (max-width: 640px) {
   .mexa-card  { padding: .8rem .85rem .9rem; border-radius: 14px; }
   .mexa-kpis  { grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: .55rem; }
@@ -698,18 +575,6 @@ html, body { background: var(--mexa-ground); }
   .mexa-kpi-icon svg, .mexa-kpi-icon mat-icon { width: 1.1rem; height: 1.1rem; font-size: 1.1rem; }
   .mexa-card-title { font-size: .98rem; }
 }
-
-
-/* ── Charts in dark mode ──────────────────────────────────────
-   ApexCharts paints axis, legend and title text a fixed grey (#6b7280)
-   picked against a white card. On the dark surface that measures 3.4:1 —
-   under WCAG 1.4.3's 4.5:1 for text — and no token in this file reaches it,
-   because the library writes the colour onto the SVG element itself rather
-   than inheriting it. So it is restated here, for both selectors the theme
-   supports.
-
-   Data labels printed inside a bar are deliberately left alone: they sit on
-   the series fill, not on the card, and are already white against it. */
 
 .dark, :root[data-theme="dark"] {
 
@@ -721,24 +586,12 @@ html, body { background: var(--mexa-ground); }
     fill: var(--mexa-ink-2) !important;
   }
 
-  /* the legend is HTML, not SVG */
+  
   .apexcharts-legend-text { color: var(--mexa-ink-2) !important; }
 
-  /* the grid is structure, not content — it stays recessive */
+  
   .apexcharts-gridline { stroke: rgba(148, 163, 184, .18); }
 }
-
-/* ── Filter controls in dark mode ─────────────────────────────
-   .mexa-select and .mexa-date set `background: #fff` outright while taking
-   their text from --mexa-ink, which becomes near-white in dark mode: the
-   selected value was white on white, about 1.1:1 — effectively invisible.
-   They take the card surface instead.
-
-   The chevron is a data-URI SVG with its ink baked in, so it is restated in
-   a light one; left as it was it would vanish into the new surface. Sized
-   with an inset shadow rather than a border, so the control does not change
-   size between themes, and color-scheme tells the browser to draw the native
-   date picker dark too. */
 
 .dark, :root[data-theme="dark"] {
 
@@ -755,18 +608,8 @@ html, body { background: var(--mexa-ground); }
   }
 }
 
-/* ── KPI icon: one tint, not six ──────────────────────────────
-   Every tile set its own saturated colour inline — six unrelated hues
-   carrying no meaning, which is most of why the KPI row read as decoration
-   rather than as figures. The stylesheet's own note already said the colour
-   was decorative; this makes that true by giving them all one quiet tint
-   with the glyph in the brand indigo. Declared with !important because the
-   colour is set inline on nine templates.
-
-   To bring the colours back, delete this block — nothing else depends on it. */
-
 .mexa-kpi-icon {
-  background: rgba(47, 45, 143, .09) !important;
+  background: rgba(53, 100, 223, .09) !important;
   color: var(--mexa-submit);
 }
 
@@ -775,12 +618,6 @@ html, body { background: var(--mexa-ground); }
   background: rgba(255, 255, 255, .07) !important;
   color: var(--mexa-ink-2);
 }
-
-/* ── Readout: a label and its reading ─────────────────────────
-   Most of the Maintenance screen is this shape — a machine's condition is a
-   list of named values, not a plot. Three of those lists were drawn as bar
-   charts of three numbers each, which filled a card with axes and gridlines
-   to carry what a row of text says better. */
 
 .mexa-readout { display: grid; gap: .55rem; margin: 0; }
 .mexa-readout > div {
@@ -791,12 +628,6 @@ html, body { background: var(--mexa-ground); }
   margin: 0; font-size: .92rem; font-weight: 600; color: var(--mexa-ink);
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
-
-/* ── Per-axis condition ───────────────────────────────────────
-   One row per axis so load, motor temperature and encoder temperature line
-   up across it. A silent sensor is a dash in its own column, which is what
-   made the charts unreadable: an axis with no reading simply had no bar,
-   and an empty slot looks identical to a zero. */
 
 .mexa-axistable { width: 100%; border-collapse: collapse; font-size: .86rem; }
 .mexa-axistable th {

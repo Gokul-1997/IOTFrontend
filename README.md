@@ -1,59 +1,64 @@
-# FrontendIOT
+# Gokul — Industrial Intelligence
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.3.
+A manufacturing operations workspace for live machine monitoring, production, OEE, maintenance, energy, and reporting. Built with Angular and packaged for the web or Electron desktop.
 
-## Development server
+## Development
 
-To start a local development server, run:
-
-```bash
-ng serve
+```sh
+npm ci
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Open http://localhost:4200. If another project already uses that port, run `npm start -- --port 4201` and open http://localhost:4201. Development connects to the existing local backend at http://localhost:8000. The backend must implement the existing API and Socket.IO contracts.
 
-## Code scaffolding
+## Gokul product identity
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+The dashboard preserves the original monitoring workflow: the top navigation and Dashboard title bar lead directly to six machine cards per page. Each card keeps the machine image, operator, part, component, utilization, target, achieved quantity, and run/idle times together, subject to the existing widget permissions. The full card opens the existing live-detail route; all permitted live readings remain visible together on that page.
 
-```bash
-ng generate component component-name
+Green Running, amber Idle, gray Offline, and red Alarm labels and card accents make states easy to distinguish. Status counts filter the cards in the original API order. An active alarm receives a red card while its underlying operating state remains labeled, so an alarmed running machine can still appear in the Running filter. The original automatic pagination is retained with a pause control. Failed image loads use a neutral machine placeholder, and failed API refreshes retain prior readings with a notice.
+
+The Gokul name, existing authentication, permissions, routes, APIs, polling, and sockets remain integrated. Chart appearance improvements on the existing analytics pages are retained. New visitors see light mode by default; the theme toggle preserves their chosen appearance. Shared styling is in `src/styles/_gokul.scss`, `src/styles/_operations.scss`, and `src/styles/_workspace.scss`.
+
+Product metadata and desktop identifiers are in `package.json`, the browser title and favicon are in `src/index.html` and `public/favicon.svg`, and desktop window metadata is in `electron/main.js`.
+
+## Independent deployment
+
+```sh
+npm run build
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Publish `dist/FrontendIOT/browser`. Configure your server to return `index.html` for frontend routes. Production defaults to the current origin: proxy `/api` to your backend and `/socket.io` to your Socket.IO server, including WebSocket upgrades.
 
-```bash
-ng generate --help
+For separate hosts, edit `public/config.js` before building (or the deployed `config.js` afterward):
+
+```js
+window.GOKUL_CONFIG = {
+  apiUrl: 'https://api.your-domain.com/api',
+  frontendUrl: 'https://your-domain.com',
+  socketUrl: 'https://api.your-domain.com'
+};
 ```
 
-## Building
+This configuration is public; it must not contain credentials or secrets. Configure the backend's allowed origins and password-reset links for your own domain. Production no longer points to the prior brand's servers.
 
-To build the project run:
+For a fully separate running product, provision your own backend and database, configure device/MQTT connections, email delivery, storage and credentials, and deploy to your own domain. Those services are outside this frontend repository. Existing backend role identifiers remain unchanged to preserve access control.
 
-```bash
-ng build
+## Desktop
+
+Set all three hosted service URLs in `public/config.js` before packaging; same-origin API defaults apply to web hosting only. The Electron app uses a local `app://` origin and requires its own hosted backend configuration.
+
+```sh
+npm run package:mac
+npm run package:win
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+The app name is **Gokul** and its application ID is `com.gokul.industrialintelligence`.
 
-## Running unit tests
+## Verification
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
+```sh
+npm run test:ci
+npm run e2e
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Playwright starts a local server automatically unless `BASE_URL` is supplied. Most browser tests stub the API and do not need a running backend. Browser installation: `npm run e2e:install`.

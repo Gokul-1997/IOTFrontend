@@ -1,4 +1,4 @@
-<!-- Phase 2 · Screen 1 — Overall Factory Dashboard, MEXA design. -->
+
 
 <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
@@ -7,7 +7,7 @@
 
 <!-- ══════════ TITLE BAR ══════════ -->
 <form class="mexa-titlebar" (ngSubmit)="submit()">
-  <h1 class="mexa-title">Overall Factory Dashboard</h1>
+  <h1 class="mexa-title">Production intelligence</h1>
   <span class="mexa-titlebar-spacer"></span>
 
   <div class="mexa-filters">
@@ -80,7 +80,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overall<br>OEE</span>
-        <span class="mexa-kpi-icon" style="background:#2b3a8f" aria-hidden="true">
+        <span class="mexa-kpi-icon" style="background:#3564df" aria-hidden="true">
           <mat-icon>settings</mat-icon>
         </span>
       </div>
@@ -110,7 +110,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overall<br>Production</span>
-        <span class="mexa-kpi-icon" style="background:#9b7ec8" aria-hidden="true">
+        <span class="mexa-kpi-icon" style="background:#9581cf" aria-hidden="true">
           <mat-icon>inventory_2</mat-icon>
         </span>
       </div>
@@ -130,7 +130,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Power<br>Consumption</span>
-        <span class="mexa-kpi-icon" style="background:#4a76c8" aria-hidden="true">
+        <span class="mexa-kpi-icon" style="background:#5f90e6" aria-hidden="true">
           <mat-icon>bolt</mat-icon>
         </span>
       </div>
@@ -141,50 +141,19 @@
   </div>
 
   <!-- ══════════ ROW 2 ══════════ -->
-  <div class="mexa-grid xl:grid-cols-4 lg:grid-cols-2">
+  <div class="mexa-grid lg:grid-cols-2">
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Overall OEE</h2>
-      <apx-chart *ngIf="oeeRadialSeries.length"
-        [series]="oeeRadialSeries" [chart]="oeeRadial.chart" [plotOptions]="oeeRadial.plotOptions"
-        [colors]="oeeRadial.colors" [labels]="oeeRadial.labels" [stroke]="oeeRadial.stroke"
-        [legend]="oeeRadial.legend" [noData]="oeeRadial.noData"></apx-chart>
-
-      <div class="grid grid-cols-3 gap-2 text-center mt-2">
-        <div>
-          <span class="mexa-rank-sub">Availability</span>
-          <p class="font-bold text-[--mexa-ink]">{{ pct(data.oee.availability) }}%</p>
-        </div>
-        <div>
-          <span class="mexa-rank-sub">Performance</span>
-          <p class="font-bold text-[--mexa-ink]">{{ pct(data.oee.performance) }}%</p>
-        </div>
-        <div>
-          <span class="mexa-rank-sub">Quality</span>
-          <p class="font-bold text-[--mexa-ink]">{{ pct(data.oee.quality) }}%</p>
-        </div>
-      </div>
+      <div class="production-score"><strong>{{ pct(data.oee.oee) }}%</strong><span *ngIf="data.oee.target != null">Target {{ data.oee.target }}%</span></div>
+      <app-data-bars [values]="oeeRadialSeries" [labels]="oeeRadial.labels" [colors]="oeeRadial.colors" unit="%" [scaleMax]="100"></app-data-bars>
     </section>
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Runtime vs Idle Time</h2>
-      <apx-chart *ngIf="runtimeSeries.length"
-        [series]="runtimeSeries" [chart]="runtimeDonut.chart" [labels]="runtimeDonut.labels"
-        [colors]="runtimeDonut.colors" [dataLabels]="runtimeDonut.dataLabels"
-        [plotOptions]="runtimeDonut.plotOptions" [legend]="runtimeDonut.legend"
-        [tooltip]="runtimeDonut.tooltip" [noData]="runtimeDonut.noData"></apx-chart>
+      <app-data-bars  *ngIf="runtimeSeries.length" [values]="runtimeSeries" [labels]="runtimeDonut.labels" [colors]="runtimeDonut.colors" [duration]="true"></app-data-bars>
       <p *ngIf="!runtimeSeries.length" class="mexa-empty">No run or idle time recorded.</p>
 
-      <div class="grid grid-cols-2 gap-2 text-center mt-1" *ngIf="runtimeSeries.length">
-        <div>
-          <span class="mexa-rank-sub">Run Time</span>
-          <p class="font-bold text-[--mexa-ink]">{{ hm(data.time.run_seconds) }}</p>
-        </div>
-        <div>
-          <span class="mexa-rank-sub">Idle Time</span>
-          <p class="font-bold text-[--mexa-ink]">{{ hm(data.time.idle_seconds) }}</p>
-        </div>
-      </div>
     </section>
 
     <section class="mexa-card">
@@ -201,7 +170,7 @@
       <h2 class="mexa-card-title">Energy Cost Analysis</h2>
 
       <div class="grid grid-cols-2 gap-2 mb-3">
-        <div class="rounded-xl p-3 text-white" style="background:#4a76c8">
+        <div class="rounded-xl p-3 text-white" style="background:#5f90e6">
           <span class="block text-xs opacity-90">Today's Cost</span>
           <p class="text-xl font-bold">{{ money(data.energy.cost_day) }}</p>
         </div>
@@ -217,7 +186,7 @@
 
       <apx-chart *ngIf="trendSeries.length"
         [series]="[trendSeries[0]]" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
-        [colors]="['#9b7ec8']" [dataLabels]="trendChart.dataLabels"
+        [colors]="['#9581cf']" [dataLabels]="trendChart.dataLabels"
         [xaxis]="trendChart.xaxis" [grid]="trendChart.grid"></apx-chart>
     </section>
   </div>
@@ -251,41 +220,13 @@
 
     <section class="mexa-card">
       <h2 class="mexa-card-title mexa-card-title-left">Alarm Summary</h2>
-      <apx-chart *ngIf="data.alarms.total > 0"
-        [series]="alarmSeries" [chart]="alarmDonut.chart" [labels]="alarmDonut.labels"
-        [colors]="alarmDonut.colors" [dataLabels]="alarmDonut.dataLabels"
-        [plotOptions]="alarmDonut.plotOptions" [legend]="alarmDonut.legend"
-        [noData]="alarmDonut.noData"></apx-chart>
+      <app-data-bars  *ngIf="data.alarms.total > 0" [values]="alarmSeries" [labels]="alarmDonut.labels" [colors]="alarmDonut.colors"></app-data-bars>
 
-      <!-- Stated plainly rather than shown as an empty ring: no alarms have
-           ever been recorded because the machines do not report them yet. -->
+
       <p *ngIf="data.alarms.total === 0" class="mexa-empty">
         No alarms recorded. Machines are not reporting alarm states yet.
       </p>
 
-      <ul class="mexa-rank mt-2" *ngIf="data.alarms.total > 0">
-        <li>
-          <span class="mexa-rank-name">
-            <span class="mexa-legend-dot inline-block" style="background:#f43f5e"></span>
-            Critical Alarms
-          </span>
-          <span class="mexa-rank-value">{{ data.alarms.critical }}</span>
-        </li>
-        <li>
-          <span class="mexa-rank-name">
-            <span class="mexa-legend-dot inline-block" style="background:#22c55e"></span>
-            Non Critical Alarms
-          </span>
-          <span class="mexa-rank-value">{{ data.alarms.non_critical }}</span>
-        </li>
-        <li>
-          <span class="mexa-rank-name">
-            <span class="mexa-legend-dot inline-block" style="background:#f5a623"></span>
-            Information
-          </span>
-          <span class="mexa-rank-value">{{ data.alarms.information }}</span>
-        </li>
-      </ul>
     </section>
   </div>
 </ng-container>

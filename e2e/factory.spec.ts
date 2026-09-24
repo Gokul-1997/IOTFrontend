@@ -73,7 +73,7 @@ test.describe('Factory Overall Dashboard', () => {
     await mockApi(page);
     await page.goto('/factory');
 
-    await expect(page.getByRole('heading', { name: /Overall Factory Dashboard/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Production intelligence/i })).toBeVisible();
 
     // machine state tiles: running and idle are the headline figures, and
     // the fleet size rides with them so the counts have a denominator
@@ -87,10 +87,10 @@ test.describe('Factory Overall Dashboard', () => {
     await expect(page.getByText('84%')).toBeVisible();
 
     // OEE headline + target. The figure now appears twice by design — the
-    // KPI tile and the radial's centre label — so the tile is named.
+    // KPI tile and the comparison panel — so the tile is named.
     await expect(page.locator('.mexa-kpi', { hasText: 'Overall' })
                      .getByText('61%')).toBeVisible();
-    await expect(page.getByText(/Target 85%/i)).toBeVisible();
+    await expect(page.locator('.mexa-kpi').getByText(/Target 85%/i)).toBeVisible();
 
     // energy, with the configured tariff applied
     await expect(page.getByText(/148\.25/)).toBeVisible();

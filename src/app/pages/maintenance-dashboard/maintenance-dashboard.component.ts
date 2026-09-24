@@ -1,3 +1,4 @@
+import { DataBarsComponent } from '../../shared/data-bars/data-bars.component';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -39,7 +40,7 @@ const SIGNAL_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-maintenance-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [ DataBarsComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './maintenance-dashboard.component.html'
 })
 export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
@@ -394,10 +395,10 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   }
 
   get tempTrendChart(): any {
-    return this.charts.memo('tempTrendChart', () => { return this.trendOptions('°C', ['#2f2d8f', '#4a76c8', '#9b7ec8', '#e8618c']); });
+    return this.charts.memo('tempTrendChart', () => { return this.trendOptions('°C', ['#3564df', '#5f90e6', '#9581cf', '#e8618c']); });
   }
   get irTrendChart(): any   {
-    return this.charts.memo('irTrendChart', () => { return this.trendOptions('Resistance', ['#4a76c8', '#2f2d8f', '#9b7ec8']); });
+    return this.charts.memo('irTrendChart', () => { return this.trendOptions('Resistance', ['#5f90e6', '#3564df', '#9581cf']); });
   }
 
   get hasCycleData(): boolean {
@@ -455,7 +456,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     return {
       chart:  { type: 'line', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: 3, curve: 'smooth' },
-      colors: ['#2563eb'],
+      colors: ['#3564df'],
       dataLabels: { enabled: false },
       markers: { size: 3 },
       xaxis:  { categories: this.cycleCategories, title: { text: 'Hour' } },

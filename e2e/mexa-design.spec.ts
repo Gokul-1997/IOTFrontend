@@ -62,8 +62,8 @@ test('factory dashboard renders in the MEXA design', async ({ authedPage: page }
   await page.goto('/factory');
 
   // the gradient field and the title bar are the design's two anchors
-  await expect(page.locator('.mexa-shell')).toBeVisible();
-  await expect(page.locator('.mexa-titlebar')).toContainText('Overall Factory Dashboard');
+  await expect(page.locator('.gokul-page')).toBeVisible();
+  await expect(page.locator('.mexa-titlebar')).toContainText('Production intelligence');
 
   // six tiles, in the order the design puts them
   await expect(page.locator('.mexa-kpi')).toHaveCount(6);

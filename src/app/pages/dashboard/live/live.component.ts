@@ -1,554 +1,276 @@
-import {
-  Component,
-  OnInit,
-  OnDestroy,
-  NgZone,
-  ChangeDetectorRef,
-  ChangeDetectionStrategy
-} from '@angular/core';
-
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { NgApexchartsModule } from 'ng-apexcharts';
+import { EMPTY, Subject, Subscription, catchError, distinctUntilChanged, map, merge, switchMap, takeUntil, timer } from 'rxjs';
 import { DashboardService } from '../dashboard.service';
+import { ChartsService } from '../../charts/charts.service';
 import { SocketService } from '../../../core/services/socket.service';
 import { AuthService } from '../../../core/services/auth.service';
-import {
-  Subject,
-  interval,
-  switchMap,
-  startWith,
-  takeUntil
-} from 'rxjs';
-import { CommonModule } from '@angular/common';
-
-/* ─────────────────────────────────────────
-   SOCKET  → machine_status, rpm, feed_rate ONLY
-             instant live needle updates
-
-   API 30s → run_time, idle_time, utilization,
-             achieved_qty, target_qty, oee,
-             quality, production data
-───────────────────────────────────────── */
+import { ProductionChartComponent, HourlyReading } from './production-chart.component';
 
 const POLL_MS = 30_000;
+const SOCKET_FRESH_MS = 45_000;
 
-/* Gauge max values */
-const SPINDLE_MAX  = 100;    // spindle load is 0–100 %
-const FEED_MAX     = 30000;  // max feed rate (mm/min) — set to match your machine spec
+/** Numeric sensors may be absent. Keep missing data distinct from a measured zero. */
+export function reading(value: unknown): number | null {
+  if ((typeof value !== 'number' && typeof value !== 'string') || String(value).trim() === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : null;
+}
+
+export function durationSeconds(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value === 'number' || /^\d+(\.\d+)?$/.test(String(value))) return reading(value);
+  const match = /^(\d+):([0-5]\d)(?::([0-5]\d))?$/.exec(String(value));
+  return match ? Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3] || 0) : null;
+}
 
 @Component({
   standalone: true,
   selector: 'app-live',
-  imports: [NgApexchartsModule, CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, ProductionChartComponent],
   templateUrl: './live.component.html',
+  styleUrls: ['./live.component.scss', './live-charts.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LiveComponent implements OnInit, OnDestroy {
-
   private destroy$ = new Subject<void>();
+  private refresh$ = new Subject<void>();
+  private hourlyRequest?: Subscription;
+  private clockInterval?: ReturnType<typeof setInterval>;
+  private socketFields = new Map<string, number>();
 
-  machineId!: number;
-
-  /* ── Gauge scale constants (exposed for template) ── */
-  readonly SPINDLE_MAX = SPINDLE_MAX;
-  readonly FEED_MAX    = FEED_MAX;
-
-  /* ── API-owned state ── */
-  machine:    any = {};
-  operator:   any = {};
-  job:        any = {};
-  oee:        any = {};
-  shift:      any = {};
-  quality:    any = {};
-  power:      any = {};
+  machineId = 0;
+  machine: any = {};
+  operator: any = {};
+  job: any = {};
+  oee: any = {};
+  shift: any = {};
+  quality: any = {};
+  power: any = {};
   production: any = {};
-
-  runTime   = '00:00:00';
-  idleTime  = '00:00:00';
-  utilization = 0;
-
-  /* ── Socket-owned state ── */
-  liveStatus       = 'UNKNOWN';
-  liveMode         = '';
-  liveSpindleLoad  = 0;
-  liveFeed         = 0;
-  livePartCount    = 0;
-
-
-  /* ── UI helpers ── */
-  currentDate      = new Date();
-  currentTime      = '';
-  currentDateStr   = '';
-  socketHasUpdated = false;   // true after first socket message for this machine
-  private clockInterval: any;
-
-  /* ── Chart series ── */
-  utilSeries:    number[] = [0];
-  oeeSeries:     number[] = [0];
-  spindleSeries: number[] = [0];
-  feedSeries:    number[] = [0];
-  timePieSeries: number[] = [0, 0];
-
-  /* ── Chart configs ── */
-  utilChart:    any;
-  oeeChart:     any;
-  spindleChart: any;
-  feedChart:    any;
-  timePieChart: any;
+  runTime: string | number | null = null;
+  idleTime: string | number | null = null;
+  liveStatus = 'UNKNOWN';
+  liveMode = '';
+  liveSpindleLoad: number | null = null;
+  liveFeed: number | null = null;
+  livePartCount: number | null = null;
+  alarmActive = false;
+  loading = true;
+  loadError = false;
+  lastUpdated: Date | null = null;
+  currentTime = '';
+  currentDateStr = '';
+  hourlyDate = '';
+  hourly: HourlyReading[] = [];
+  hourlyLoading = false;
+  hourlyError = false;
+  readonly FEED_SCALE = 45_000;
+  readonly number = reading;
 
   constructor(
-    private route:            ActivatedRoute,
+    private route: ActivatedRoute,
     private dashboardService: DashboardService,
-    private socketService:    SocketService,
-    private zone:             NgZone,
-    private cdr:              ChangeDetectorRef,
-    public  auth:             AuthService
+    private socketService: SocketService,
+    private zone: NgZone,
+    private cdr: ChangeDetectorRef,
+    public auth: AuthService,
+    private chartsService: ChartsService
   ) {}
 
-  /* ════════════════════════════════════════
-     INIT
-  ════════════════════════════════════════ */
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
+    // REST remains available even when the independent socket cannot connect.
+    void this.socketService.connect().catch(() => {});
+    const plantId = this.auth.getUser()?.plant_id;
+    if (plantId) this.socketService.joinPlant(plantId);
+    this.socketService.onMachineUpdate((data: any) => this.handleSocket(data));
 
-    const id      = this.route.snapshot.paramMap.get('id');
-    this.machineId = Number(id);
+    // Angular can reuse this component when moving directly between machine URLs.
+    this.route.paramMap.pipe(
+      map(params => Number(params.get('id'))), distinctUntilChanged(),
+      switchMap(id => {
+        this.resetMachine(id);
+        if (!Number.isInteger(id) || id <= 0) {
+          this.loading = false;
+          this.loadError = true;
+          return EMPTY;
+        }
+        return merge(timer(0, POLL_MS), this.refresh$).pipe(
+          switchMap(() => this.dashboardService.getMachineDetail(id).pipe(
+            catchError(() => {
+              this.loading = false;
+              this.loadError = true;
+              this.cdr.markForCheck();
+              return EMPTY;
+            })
+          ))
+        );
+      }), takeUntil(this.destroy$)
+    ).subscribe(res => this.applyApiData(res));
 
-    this.initCharts();
-
-    /* ── Connect socket first, then join plant room ──
-       Must await connect() before joinPlant() —
-       otherwise socket is not ready and join is silently ignored */
-    // console.log('[SOCKET] connecting...');
-    await this.socketService.connect();
-    // console.log('[SOCKET] connected ✅');
-
-    const user    = JSON.parse(localStorage.getItem('user') || '{}');
-    const plantId = user?.plant_id;
-    if (plantId) {
-      this.socketService.joinPlant(plantId);
-      // console.log(`[SOCKET] joined plant room: plant:${plantId}`);
-    } else {
-      console.warn('[SOCKET] ⚠ no plant_id in localStorage — cannot join room');
-    }
-
-    // console.log(`[SOCKET] listening for machine_id: ${this.machineId}`);
-
-    /* ── 30s API poll ── */
-    interval(POLL_MS)
-      .pipe(
-        startWith(0),
-        switchMap(() => this.dashboardService.getMachineDetail(this.machineId)),
-        takeUntil(this.destroy$)
-      )
-      .subscribe((res: any) => this.applyApiData(res));
-
-    /* ── Socket → status + rpm + feed ONLY ── */
-    this.socketService.onMachineUpdate((data: any) => {
-      this.handleSocket(data);
-    });
-
-    /* ── Live clock (IST) ── */
     const tick = () => {
       const now = new Date();
-      this.currentTime = now.toLocaleTimeString('en-IN', {
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-        hour12: true, timeZone: 'Asia/Kolkata'
-      });
-      this.currentDateStr = now.toLocaleDateString('en-IN', {
-        day: '2-digit', month: 'short', year: 'numeric',
-        timeZone: 'Asia/Kolkata'
-      });
+      this.currentTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+      this.currentDateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
       this.cdr.markForCheck();
     };
     tick();
     this.clockInterval = setInterval(tick, 1000);
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-    this.socketService.offMachineUpdate();
-    clearInterval(this.clockInterval);
-  }
-
-  /* ════════════════════════════════════════
-     API DATA
-     ✅ Owns: run_time, idle_time, utilization,
-              achieved_qty, target, oee, quality,
-              production, operator, job
-     ❌ Never touches: liveStatus, liveRPM, liveFeed
-  ════════════════════════════════════════ */
-  private applyApiData(res: any): void {
-
-    const d = res?.data;
-    if (!d) return;
-
-    this.machine    = d.machine    || this.machine;
-    this.operator   = d.operator  || this.operator;
-    this.job        = d.job       || this.job;
-    this.oee        = d.oee       || this.oee;
-    this.shift      = d.shift     || this.shift;
-    this.quality    = d.quality   || this.quality;
-    this.power      = d.power     || this.power;
-    this.production = d.production || this.production;
-
-    /* Metric fields — API is source of truth */
-    if (d.production) {
-      this.runTime  = d.production.run_time  || this.runTime;
-      this.idleTime = d.production.idle_time || this.idleTime;
-    }
-
-    /* Utilization: achieved/target × 100, capped at 100 */
-    const target   = d.job?.target_qty   || 0;
-    const achieved = d.job?.achieved_qty || 0;
-    this.utilization = target > 0
-      ? Math.min(Number(((achieved * 100) / target).toFixed(2)), 100)
-      : 0;
-
-    /* Seed live values from API.
-       status/rpm/feed: socket owns after first message (instant updates).
-       livePartCount:   API owns ALWAYS — socket sends raw counter which
-                        doesn't include reset offsets, so would show wrong
-                        values (e.g. 29 instead of 59 after a mid-shift reset).
-                        30s API refresh is accurate enough for a part counter. */
-    if (d.live) {
-      if (!this.socketHasUpdated) {
-        this.liveStatus      = d.live.machine_status || 'UNKNOWN';
-        this.liveMode        = d.live.mode           || '';
-        this.liveSpindleLoad = Number(d.live.spindle_load || 0);
-        this.liveFeed        = Number(d.live.feed_rate    || 0);
-        this.spindleSeries   = [this.spindleLoadToPercent(this.liveSpindleLoad)];
-        this.feedSeries      = [this.feedToPercent(this.liveFeed)];
-      }
-
-      // Always update from API — adjusted for mid-shift counter resets
-      this.livePartCount = Number(d.live.parts_count || 0);
-    }
-
-    /* Update chart series */
-    this.utilSeries = [this.utilization];
-    this.oeeSeries  = [Math.min(Number(this.oee?.oee || 0), 100)];
-
-    this.updateTimePie();
-    this.currentDate = new Date();
-
+  private resetMachine(id: number): void {
+    this.hourlyRequest?.unsubscribe();
+    this.machineId = id;
+    this.machine = {}; this.operator = {}; this.job = {}; this.oee = {};
+    this.shift = {}; this.quality = {}; this.power = {}; this.production = {};
+    this.runTime = null; this.idleTime = null;
+    this.liveStatus = 'UNKNOWN'; this.liveMode = '';
+    this.liveSpindleLoad = null; this.liveFeed = null; this.livePartCount = null;
+    this.alarmActive = false;
+    this.socketFields.clear();
+    this.loading = true; this.loadError = false; this.lastUpdated = null;
+    this.hourly = []; this.hourlyLoading = false; this.hourlyError = false;
+    this.hourlyDate = this.todayIST();
     this.cdr.markForCheck();
   }
 
-  /* ════════════════════════════════════════
-     SOCKET → machine_status, rpm, feed_rate,
-              parts_count (achieved_qty)
-     ❌ run_time    → NOT touched (API owns)
-     ❌ idle_time   → NOT touched (API owns)
-     ❌ utilization → NOT touched (API owns)
-  ════════════════════════════════════════ */
-  handleSocket(data: any): void {
+  refresh(): void {
+    if (this.machineId <= 0) return;
+    this.loading = true;
+    this.refresh$.next();
+  }
 
-    // console.log('[SOCKET] raw message received:', data);
-
-    /* Ensure Number comparison — socket payload may send id as string */
-    if (Number(data.machine_id) !== this.machineId) {
-      // console.log(`[SOCKET] ignored — machine_id ${data.machine_id} !== current ${this.machineId}`);
+  private applyApiData(res: any): void {
+    const data = res?.data ?? res;
+    this.loading = false;
+    if (!data || Array.isArray(data) || typeof data !== 'object' || !data.machine) {
+      this.loadError = true;
+      this.cdr.markForCheck();
       return;
     }
+    this.loadError = false;
+    this.machine = data.machine;
+    this.operator = data.operator || {};
+    this.job = data.job || {};
+    this.oee = data.oee || {};
+    this.shift = data.shift || {};
+    this.quality = data.quality || {};
+    this.power = data.power || {};
+    this.production = data.production || {};
+    this.runTime = data.production?.run_time ?? null;
+    this.idleTime = data.production?.idle_time ?? null;
 
-    // console.log(`[SOCKET] ✅ matched machine ${this.machineId} — applying:`, {
-    //   status:      data.machine_status,
-    //   rpm:         data.rpm,
-    //   feed_rate:   data.feed_rate,
-    //   parts_count: data.parts_count,
-    //   alarm:       data.alarm
-    // });
+    // Counters from REST include reset offsets. Never replace them with raw socket counts.
+    this.livePartCount = reading(data.live?.parts_count) ?? reading(this.job.achieved_qty);
+    const live = data.live || {};
+    const fresh = (field: string) => Date.now() - (this.socketFields.get(field) ?? 0) < SOCKET_FRESH_MS;
+    if (!fresh('machine_status')) this.liveStatus = this.normalizeStatus(live.machine_status);
+    if (!fresh('mode')) this.liveMode = live.mode || '';
+    if (!fresh('alarm')) this.alarmActive = this.isAlarm(live.alarm);
+    if (!fresh('spindle_load')) this.liveSpindleLoad = reading(live.spindle_load);
+    if (!fresh('feed_rate')) this.liveFeed = reading(live.feed_rate);
+    this.lastUpdated = new Date();
+    this.loadHourly();
+    this.cdr.markForCheck();
+  }
 
+  handleSocket(data: any): void {
+    if (!data || Number(data.machine_id) !== this.machineId) return;
     this.zone.run(() => {
-
-      /* Mark that socket is now active for this machine —
-         API will no longer seed live values after this point */
-      this.socketHasUpdated = true;
-
-      /* ── Status + Mode ── */
-      if (data.machine_status !== undefined) {
-        this.liveStatus = data.machine_status;
+      for (const key of ['machine_status', 'mode', 'alarm', 'spindle_load', 'feed_rate']) {
+        if (data[key] !== undefined) this.socketFields.set(key, Date.now());
       }
-      if (data.mode !== undefined) {
-        this.liveMode = data.mode || '';
-      }
-
-      /* ── Spindle Load → gauge percent ── */
-      if (data.spindle_load !== undefined) {
-        this.liveSpindleLoad = Number(data.spindle_load);
-        this.spindleSeries   = [this.spindleLoadToPercent(this.liveSpindleLoad)];
-      }
-
-      /* ── Feed rate → gauge percent ── */
-      if (data.feed_rate !== undefined) {
-        this.liveFeed   = Number(data.feed_rate);
-        this.feedSeries = [this.feedToPercent(this.liveFeed)];
-      }
-
-      /* ── Energy → update total_kwh in real-time ── */
-      if (data.energy != null) {
-        this.power = {
-          ...this.power,
-          total_kwh: Number(Number(data.energy).toFixed(3))
-        };
-      }
-
-      /* ── parts_count: API owns this (reset-adjusted) — socket skips ── */
-
-      this.currentDate = new Date();
+      if (data.machine_status !== undefined) this.liveStatus = this.normalizeStatus(data.machine_status);
+      if (data.mode !== undefined) this.liveMode = data.mode || '';
+      if (data.alarm !== undefined) this.alarmActive = this.isAlarm(data.alarm);
+      if (data.spindle_load !== undefined) this.liveSpindleLoad = reading(data.spindle_load);
+      if (data.feed_rate !== undefined) this.liveFeed = reading(data.feed_rate);
+      if (data.energy !== undefined) this.power = { ...this.power, total_kwh: reading(data.energy) };
       this.cdr.markForCheck();
-
-      // console.log('[SOCKET] cdr.markForCheck() called — UI should update');
     });
   }
 
-  /* ════════════════════════════════════════
-     GAUGE HELPERS
-     Convert raw values to 0–100% for ApexCharts
-     radialBar, while keeping true value for display
-  ════════════════════════════════════════ */
-
-  /** Spindle load is already 0–100 % — clamp to valid gauge range */
-  private spindleLoadToPercent(load: number): number {
-    return Math.min(Math.max(Number(load.toFixed(1)), 0), 100);
+  get canViewHourly(): boolean {
+    // Match the existing Charts page permission, including the legacy ADMIN role.
+    const company = this.auth.getCompanyPermissions();
+    const allowedByCompany = !company.length || company.some(p => p === 'page:charts' || p.startsWith('page:charts:'));
+    return allowedByCompany && (this.auth.isAdmin() || this.auth.hasPermission('page:charts'));
   }
 
-  /** Feed rate → 0–100% of arc (scale is 0–150% of FEED_MAX).
-   *  FEED_MAX = 100% of nominal feed = 66.7% of arc. */
-  private feedToPercent(feed: number): number {
-    return Math.min(Number(((feed / (FEED_MAX * 1.5)) * 100).toFixed(1)), 99.9);
+  loadHourly(): void {
+    if (!this.canViewHourly || this.machineId <= 0) return;
+    this.hourlyRequest?.unsubscribe();
+    const date = this.todayIST();
+    if (this.hourlyDate !== date) this.hourly = [];
+    this.hourlyDate = date;
+    this.hourlyLoading = true;
+    // Daily history is explicitly labeled Today; do not mix an overnight shift with a calendar day.
+    this.hourlyRequest = this.chartsService.getChartData({ machine_id: this.machineId, date }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: res => {
+        const rows = res?.data?.hourlyCount;
+        this.hourly = Array.isArray(rows) ? rows.map(row => ({ hour: String(row.hour ?? ''), produced: reading(row.produced) })) : [];
+        this.hourlyLoading = false;
+        this.hourlyError = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.hourlyLoading = false;
+        this.hourlyError = true;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
-  /* ════════════════════════════════════════
-     PURE-SVG GAUGE HELPERS
-     ViewBox "0 0 300 170", center (150,155), r=118
-     Half-circle: 0% = left (180°), 100% = right (0°)
-  ════════════════════════════════════════ */
-  readonly GCX = 150;
-  readonly GCY = 155;
-  readonly GR  = 118;
-
-  /** Feed override: 0–150% scale labels mapped to 0–100% arc positions */
-  readonly feedTicks = [
-    { pct:  0,    label: '0'    , red: false },
-    { pct: 16.7,  label: '25%'  , red: false },
-    { pct: 33.3,  label: '50%'  , red: false },
-    { pct: 50.0,  label: '75%'  , red: false },
-    { pct: 66.7,  label: '100%' , red: true  },
-    { pct: 83.3,  label: '125%' , red: false },
-    { pct: 100,   label: '150%' , red: false },
-  ];
-
-  private _gaugeAngle(pct: number): number {
-    return (180 - Math.max(0, Math.min(pct, 100)) * 1.8) * (Math.PI / 180);
+  private todayIST(): string { return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); }
+  private normalizeStatus(value: unknown): string {
+    const status = String(value || 'UNKNOWN').toUpperCase();
+    return ['RUNNING', 'IDLE', 'OFFLINE', 'ALARM'].includes(status) ? status : 'UNKNOWN';
   }
-
-  /** Full background half-arc */
-  get bgArc(): string {
-    const { GCX: cx, GCY: cy, GR: r } = this;
-    return `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
+  private isAlarm(value: unknown): boolean { return value === true || value === 1 || value === '1' || value === 'true'; }
+  get displayStatus(): string { return this.alarmActive ? 'ALARM' : this.liveStatus; }
+  get target(): number | null { return reading(this.job?.target_qty); }
+  get attainment(): number | null { return this.target && this.livePartCount !== null ? this.livePartCount / this.target * 100 : null; }
+  get remaining(): number | null { return this.target && this.livePartCount !== null ? Math.max(0, this.target - this.livePartCount) : null; }
+  get overTarget(): number { return this.target && this.livePartCount !== null ? Math.max(0, this.livePartCount - this.target) : 0; }
+  get recordedSeconds(): number { return (durationSeconds(this.runTime) ?? 0) + (durationSeconds(this.idleTime) ?? 0); }
+  get runningShare(): number { return this.recordedSeconds ? (durationSeconds(this.runTime) ?? 0) / this.recordedSeconds * 100 : 0; }
+  get timeComplete(): boolean { return durationSeconds(this.runTime) !== null && durationSeconds(this.idleTime) !== null; }
+  get qualityTotal(): number | null {
+    const accepted = reading(this.quality?.accepted), rejected = reading(this.quality?.rejected);
+    return accepted !== null && rejected !== null ? accepted + rejected : null;
   }
-
-  /** Foreground arc 0% → valuePct. Capped at 99.9 to avoid degenerate semicircle. */
-  gaugeArc(valuePct: number): string {
-    const pct = Math.max(0, Math.min(valuePct, 99.9));
-    if (pct <= 0) return '';
-    const { GCX: cx, GCY: cy, GR: r } = this;
-    const rad = this._gaugeAngle(pct);
-    const ex  = cx + r * Math.cos(rad);
-    const ey  = cy - r * Math.sin(rad);
-    return `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${ex.toFixed(1)} ${ey.toFixed(1)}`;
-  }
-
-  /** Needle tip coords (80% of arc radius) */
-  gaugeNeedle(valuePct: number): { x1: number; y1: number; x2: number; y2: number } {
-    const { GCX: cx, GCY: cy, GR: r } = this;
-    const rad = this._gaugeAngle(Math.max(0, Math.min(valuePct, 100)));
-    const len = r * 0.82;
-    return {
-      x1: cx, y1: cy,
-      x2: parseFloat((cx + len * Math.cos(rad)).toFixed(1)),
-      y2: parseFloat((cy - len * Math.sin(rad)).toFixed(1))
-    };
-  }
-
-  /** Point on the arc edge at given pct (for exact marker lines) */
-  gaugeArcPt(pct: number): { x: number; y: number } {
-    const { GCX: cx, GCY: cy, GR: r } = this;
-    const rad = this._gaugeAngle(Math.max(0, Math.min(pct, 100)));
-    return {
-      x: parseFloat((cx + r * Math.cos(rad)).toFixed(1)),
-      y: parseFloat((cy - r * Math.sin(rad)).toFixed(1))
-    };
-  }
-
-  /** Label position outside arc (default offset=20 px beyond arc edge) */
-  gaugeLabel(pct: number, offset = 32): { x: number; y: number } {
-    
-    const { GCX: cx, GCY: cy, GR: r } = this;
-    const rad = this._gaugeAngle(pct);
-    const lr  = r + offset;
-    return {
-      x: parseFloat((cx + lr * Math.cos(rad)).toFixed(1)),
-      y: parseFloat((cy - lr * Math.sin(rad)).toFixed(1))
-    };
-  }
-
-  /* ════════════════════════════════════════
-     TIME PIE
-  ════════════════════════════════════════ */
-  private updateTimePie(): void {
-
-    const r     = this.timeToSec(this.runTime);
-    const i     = this.timeToSec(this.idleTime);
-    const total = r + i;
-
-    if (total === 0) {
-      this.timePieSeries = [0, 100];
-      return;
-    }
-
-    this.timePieSeries = [
-      Number(((r / total) * 100).toFixed(1)),
-      Number(((i / total) * 100).toFixed(1))
+  get acceptedShare(): number { return this.qualityTotal ? Number(this.quality.accepted) / this.qualityTotal * 100 : 0; }
+  get oeeFactors(): { label: string; value: number | null; color: string }[] {
+    return [
+      { label: 'Availability', value: reading(this.oee?.availability), color: 'var(--chart-blue)' },
+      { label: 'Performance', value: reading(this.oee?.performance), color: 'var(--chart-violet)' },
+      { label: 'Quality', value: reading(this.oee?.quality), color: 'var(--chart-green)' }
     ];
   }
-
-  private timeToSec(t: string): number {
-    if (!t) return 0;
-    const p = t.split(':').map(Number);
-    return p[0] * 3600 + p[1] * 60 + (p[2] || 0);
+  boundedPercent(value: unknown): number { return Math.max(0, Math.min(100, reading(value) ?? 0)); }
+  formatDuration(value: unknown): string {
+    const seconds = durationSeconds(value);
+    if (seconds === null) return '—';
+    const total = Math.floor(seconds);
+    return `${String(Math.floor(total / 3600)).padStart(2, '0')}h ${String(Math.floor(total % 3600 / 60)).padStart(2, '0')}m ${String(total % 60).padStart(2, '0')}s`;
   }
-
-  /** "HH:MM:SS" → "06h 07m 00s" */
-  formatDuration(t: string): string {
-    if (!t) return '00h 00m 00s';
-    const p = t.split(':').map(Number);
-    const h = p[0] || 0;
-    const m = p[1] || 0;
-    const s = p[2] || 0;
-    return `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
-  }
-
   get setupTime(): string {
-    // Primary: MANUAL-mode seconds accumulated this shift (from production_hourly)
-    const manualSec = Number((this.production as any)?.manual_seconds || 0);
-    if (manualSec > 0) {
-      return this.formatDuration(String(manualSec));
-    }
-    // Fallback: setting_time_start/end from job
-    const start = this.job?.setting_time_start;
-    const end   = this.job?.setting_time_end;
-    if (start && end) {
-      const diffMs = new Date(end).getTime() - new Date(start).getTime();
-      if (diffMs > 0) {
-        const totalSec = Math.floor(diffMs / 1000);
-        return this.formatDuration(
-          `${String(Math.floor(totalSec/3600)).padStart(2,'0')}:` +
-          `${String(Math.floor((totalSec%3600)/60)).padStart(2,'0')}:` +
-          `${String(totalSec%60).padStart(2,'0')}`
-        );
-      }
-    }
-    return '--';
+    const seconds = reading(this.production?.manual_seconds);
+    if (seconds !== null) return this.formatDuration(seconds);
+    const start = this.job?.setting_time_start, end = this.job?.setting_time_end;
+    const delta = start && end ? (new Date(end).getTime() - new Date(start).getTime()) / 1000 : null;
+    return this.formatDuration(delta);
   }
-
-  /* ════════════════════════════════════════
-     CHART INIT
-     Enterprise speedometer style:
-     • Utilization / OEE  → full radialBar (–135° to 135°)
-     • Spindle / Feed     → half-arc gauge (–90° to 90°)
-       with colour zones: green → amber → red
-  ════════════════════════════════════════ */
-  private initCharts(): void {
-
-    /* ── Utilization ── */
-    this.utilChart = {
-      chart: { type: 'radialBar', height: 180},
-      plotOptions: {
-        radialBar: {
-          startAngle: -135,
-          endAngle:    135,
-          hollow: { size: '58%' },
-          track: { background: '#e8eaf0', strokeWidth: '97%' },
-          dataLabels: {
-            name: {
-              show: true,
-              offsetY: 18,
-              fontSize: '11px',
-              color: '#6b7280',
-              fontFamily: 'inherit'
-            },
-            value: {
-              show: true,
-              offsetY: -15,
-              fontSize: '24px',
-              fontWeight: '700',
-              color: '#3B4CCA',
-              fontFamily: 'inherit',
-              formatter: (val: number) => val + '%'
-            }
-          }
-        }
-      },
-      colors: ['#3B4CCA'],
-      fill: {
-        type: 'gradient',
-        gradient: {
-          shade: 'dark', type: 'horizontal',
-          gradientToColors: ['#9B3F70'], stops: [0, 100]
-        }
-      }
-    };
-
-    /* ── OEE — dashed-segment radialBar ── */
-    this.oeeChart = {
-      chart: { type: 'radialBar', height: 250, sparkline: { enabled: true } },
-      labels: ['OEE'],
-      plotOptions: {
-        radialBar: {
-          startAngle: -135,
-          endAngle:    135,
-          hollow: { size: '42%' },
-          track: {
-            show: true,
-            background: '#E0E0E0', // background: isDark ? '#1f2937' : '#e5e7eb',
-            strokeWidth: '100%',
-            opacity: 0.5,
-            margin: 0
-          },
-          dataLabels: {
-            name:  { show: false },
-            value: { show: false }   // value overlaid via HTML
-          }
-        }
-      },
-      dataLabels: { enabled: false },
-      fill:   { type: 'solid', colors: ['#3B4CCA'] },
-      stroke: { dashArray: 4 }
-    };
-
-    // const isDark = document.body.classList.contains('dark');
-    
-    /* ── Time Pie ── */
-    this.timePieChart = {
-  chart: { type: 'pie', height: 180 },
-  labels: ['Running', 'Idle'],
-  colors: ['#0CAD5D', '#dfb400'],
-  legend: { show: false },
-  stroke: { width: 1 },
-  dataLabels: {
-    minAngleToShowLabel: 15,
-    formatter: (v: any) => `${v.toFixed(1)}%`,
-    offset: -25,
-    style: {
-      fontSize: '14px',
-      fontWeight: 600,
-      colors: ['#fff'],
-
-    }
+  usePlaceholder(event: Event): void {
+    const image = event.target as HTMLImageElement;
+    const fallback = new URL('images/product/machine-placeholder.svg', document.baseURI).href;
+    if (image.src !== fallback) image.src = fallback;
   }
-};
+  ngOnDestroy(): void {
+    this.destroy$.next(); this.destroy$.complete();
+    this.hourlyRequest?.unsubscribe();
+    this.socketService.offMachineUpdate();
+    clearInterval(this.clockInterval);
   }
 }

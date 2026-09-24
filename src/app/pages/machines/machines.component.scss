@@ -42,7 +42,7 @@
 
   &:focus-within,
   &:focus {
-    border-color: #3b5bdb;
+    border-color: #3564df;
     // border-width: 2px;
     // box-shadow: 0 0 0 3px rgba(59, 91, 219, 0.1);
 
@@ -102,7 +102,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #2b3990;
+  background: #3564df;
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -116,7 +116,7 @@
   mat-icon { font-size: 18px; width: 18px; height: 18px; }
 
   &:hover {
-    background: #2f4ac4;
+    background: #244bb5;
     box-shadow: 0 4px 12px rgba(59, 91, 219, 0.35);
   }
 }
@@ -157,8 +157,8 @@
 }
 
 .badge-line {
-  background: #e8f0fe;
-  color: #3b5bdb;
+  background: #e6f3ed;
+  color: #3564df;
 }
 
 .badge-yes {
@@ -173,10 +173,10 @@
 
 // ── ACTION BUTTONS ─────────────────────────────────────────────────────────
 .action-edit {
-  color: #3b5bdb !important;
+  color: #3564df !important;
 
   &:hover {
-    background: #e8f0fe !important;
+    background: #e6f3ed !important;
   }
 }
 
@@ -245,7 +245,7 @@
 .copy-btn {
   opacity: 0;
   transition: opacity 0.2s ease;
-  color: #3b5bdb !important;
+  color: #3564df !important;
   font-size: 16px !important;
   width: 28px !important;
   height: 28px !important;
@@ -258,7 +258,7 @@
   }
 
   &:hover {
-    background: #e8f0fe !important;
+    background: #e6f3ed !important;
   }
 
   &:active {
@@ -272,10 +272,10 @@
 
 
 
-  .table-card { background: #12203a; }
+  .table-card { background: #162237; }
 
   .machines-table {
-    .mat-mdc-header-row { background: #0f1c33; border-bottom-color: #1e2d45; }
+    .mat-mdc-header-row { background: #162237; border-bottom-color: #22324a; }
     .mat-mdc-header-cell { color: #cbcbcb; }
     .mat-mdc-row.data-row:hover { background: #1a2d48; }
     .mat-mdc-cell { color: #cbcbcb; }

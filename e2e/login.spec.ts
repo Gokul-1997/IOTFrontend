@@ -17,7 +17,7 @@ test.describe('Login page — render', () => {
     await page.goto('/login');
     // At minimum some heading or brand text visible
     const heading = page.getByRole('heading').first();
-    await expect(heading.or(page.getByText(/sign in|login|welcome/i).first())).toBeVisible({ timeout: 8_000 });
+    await expect(heading.or(page.getByText(/sign in|login|welcome/i).first()).first()).toBeVisible({ timeout: 8_000 });
   });
 });
 
@@ -101,6 +101,7 @@ test.describe('Login page — API responses', () => {
   });
 
   test('TC-L-09 successful login (200) navigates away from /login', async ({ page }) => {
+    await page.routeWebSocket(/socket\.io/, socket => socket.close());
     const fakeUser = {
       id: 1, email: 'admin@x.com', username: 'admin',
       roles: ['ADMIN'], permissions: ['page:dashboard'],
@@ -108,22 +109,22 @@ test.describe('Login page — API responses', () => {
       user_type: 'ADMIN', is_snt_super: false, plan: null
     };
 
+    await page.route('**/api/**', r =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) })
+    );
+    const jwt = `${Buffer.from('{}').toString('base64url')}.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url')}.test`;
     await page.route('**/api/auth/login', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          accessToken: 'fake-jwt',
+          accessToken: jwt,
           refreshToken: 'fake-refresh',
           user: fakeUser
         })
       });
     });
 
-    // Stub any subsequent API calls
-    await page.route('**/api/**', r =>
-      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) })
-    );
 
     await page.goto('/login');
     await page.getByPlaceholder(/email/i).or(page.getByLabel(/email/i)).first().fill('admin@x.com');

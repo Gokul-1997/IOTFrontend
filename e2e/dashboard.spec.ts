@@ -43,7 +43,14 @@ const dashboardResponse = {
 };
 
 test.describe('Dashboard', () => {
-  test('renders the machine summary and per-machine cards', async ({ authedPage: page }) => {
+  test.beforeEach(async ({ authedPage: page }) => {
+    await page.addInitScript(() => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      user.permissions = ['page:dashboard', 'page:dashboard:status'];
+      localStorage.setItem('user', JSON.stringify(user));
+    });
+  });
+  test('renders the machine summary and original machine cards', async ({ authedPage: page }) => {
     await page.route('**/api/dashboard*', async route => {
       await route.fulfill({
         status: 200,
@@ -55,9 +62,9 @@ test.describe('Dashboard', () => {
     await page.goto('/dashboard');
 
     // Total counts
-    await expect(page.getByText(/Total\s*[:\-]?\s*3/i)).toBeVisible();
-    await expect(page.getByText(/Running\s*[:\-]?\s*2/i)).toBeVisible();
-    await expect(page.getByText(/Idle\s*[:\-]?\s*1/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Total 3/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Running 2/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Idle 1/ })).toBeVisible();
 
     // Machine cards
     await expect(page.getByText('VMC-1-F').first()).toBeVisible();
@@ -82,6 +89,55 @@ test.describe('Dashboard', () => {
     });
 
     await page.goto('/dashboard');
-    await expect(page.getByText(/Total\s*[:\-]?\s*0/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Total 0/ })).toBeVisible();
+  });
+});
+
+
+test.describe('Original machine card flow', () => {
+  test.beforeEach(async ({ authedPage: page }) => {
+    await page.addInitScript(() => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      user.roles = ['COMPANY_ADMIN'];
+      localStorage.setItem('user', JSON.stringify(user));
+    });
+    await page.route('**/api/**', route => route.fulfill({ json: { success: true, data: [] } }));
+    await page.route('**/api/dashboard?*', route => route.fulfill({ json: dashboardResponse }));
+  });
+
+  test('preserves API order, filters by state, and opens the selected machine', async ({ authedPage: page }) => {
+    await page.goto('/dashboard');
+    const cards = page.locator('.machine-card');
+    await expect(cards).toHaveCount(3);
+    await expect(cards.first()).toContainText('VMC-1-F');
+    await expect(cards.first()).toContainText('PartA');
+    await expect(cards.first()).toContainText('03:20:00');
+    await expect(cards.first()).toContainText('00:50:00');
+    await page.getByRole('button', { name: /^Alarm 1/ }).click();
+    await expect(cards).toHaveCount(1);
+    await expect(cards.first()).toHaveClass(/alarm/);
+    await expect(cards.first()).toContainText('VMC-3-F');
+    await cards.first().click();
+    await expect(page).toHaveURL(/\/dashboard\/live\/3$/);
+  });
+
+  test('shows status counts and complete machine cards on phones', async ({ authedPage: page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/dashboard');
+    await expect(page.locator('.machine-card')).toHaveCount(3);
+    await expect(page.getByRole('button', { name: /^Offline 0/ })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+  });
+
+  test('keeps prior cards when refresh fails and recovers on retry', async ({ authedPage: page }) => {
+    await page.goto('/dashboard');
+    await expect(page.locator('.machine-card')).toHaveCount(3);
+    await page.route('**/api/dashboard?*', route => route.fulfill({ status: 500, json: { message: 'Unavailable' } }));
+    await page.getByRole('button', { name: 'Refresh data' }).click();
+    await expect(page.getByRole('alert')).toContainText('last available readings remain visible');
+    await expect(page.locator('.machine-card')).toHaveCount(3);
+    await page.route('**/api/dashboard?*', route => route.fulfill({ json: dashboardResponse }));
+    await page.getByRole('button', { name: 'Retry', exact: true }).click();
+    await expect(page.getByRole('alert')).toHaveCount(0);
   });
 });

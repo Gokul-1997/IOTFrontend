@@ -8,12 +8,14 @@ import {
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { DashboardService } from './dashboard.service';
 import { SocketService } from '../../core/services/socket.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
   Subject,
+  EMPTY,
+  catchError,
   interval,
   switchMap,
   startWith,
@@ -41,8 +43,9 @@ const AUTO_PAGE_MS          = 10_000;
 @Component({
   standalone: true,
   selector: 'app-dashboard',
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -53,13 +56,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
   shift:    any   = {};
   currentTime    = '';
   currentDateStr = '';
+  loading = true;
+  loadError = false;
 
   /* ── pagination ── */
   currentPage = 1;
   readonly pageSize = PAGE_SIZE;
 
   /* ── status filter ── */
-  statusFilter: 'all' | 'running' | 'idle' | 'alarm' = 'all';
+  statusFilter: 'all' | 'running' | 'idle' | 'alarm' | 'offline' = 'all';
+  autoRotate = true;
+  updatedAt: Date | null = null;
 
   /* ── private ── */
   private destroy$         = new Subject<void>();
@@ -98,7 +105,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const user    = JSON.parse(localStorage.getItem('user') || '{}');
     const plantId = user?.plant_id;
 
-    await this.socketService.connect();
+    // Start REST polling immediately; SocketService remembers the plant room
+    // and joins it when the independent websocket connection succeeds.
+    void this.socketService.connect().catch(() => {});
 
     if (plantId) {
       this.socketService.joinPlant(plantId);
@@ -111,7 +120,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     interval(POLL_MS)
       .pipe(
         startWith(0),
-        switchMap(() => this.service.getLive()),
+        switchMap(() => this.service.getLive().pipe(catchError(() => {
+          this.loading = false;
+          this.loadError = true;
+          this.cdr.markForCheck();
+          return EMPTY;
+        }))),
         takeUntil(this.destroy$)
       )
       .subscribe((res: any) => this.applyApiResponse(res));
@@ -160,7 +174,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
      ❌ Never touches: status, alarm
   ════════════════════════════════════════ */
   private applyApiResponse(res: any): void {
+    this.loading = false;
+    this.loadError = false;
+    this.updatedAt = new Date();
 
+    res = res?.data ?? res ?? {};
     const incoming: any[] = res.machines || [];
     this.shift = res.shift || this.shift;
 
@@ -270,7 +288,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private fetchMetrics(): void {
     this.service.getLive()
       .pipe(takeUntil(this.destroy$))
-      .subscribe((res: any) => this.applyApiResponse(res));
+      .subscribe({
+        next: (res: any) => this.applyApiResponse(res),
+        error: () => { this.loading = false; this.loadError = true; this.cdr.markForCheck(); }
+      });
   }
 
   /* ════════════════════════════════════════
@@ -426,24 +447,50 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   get alarmCount(): number {
-    return this.machines.filter(m => m.alarm).length;
+    return this.machines.filter(m => m.alarm || m.status === 'ALARM').length;
   }
 
+  get offlineCount(): number { return this.machines.filter(m => m.status === 'OFFLINE').length; }
+
   get filteredMachines(): any[] {
-    switch (this.statusFilter) {
-      case 'running': return this.machines.filter(m => m.status === 'RUNNING');
-      case 'idle':    return this.machines.filter(m => m.status === 'IDLE');
-      case 'alarm':   return this.machines.filter(m => m.alarm);
-      default:        return this.machines;
-    }
+    // Preserve the original API order and operating-state filter behavior.
+    if (this.statusFilter === 'all') return this.machines;
+    if (this.statusFilter === 'alarm') return this.machines.filter(m => m.alarm || m.status === 'ALARM');
+    return this.machines.filter(m => m.status === this.statusFilter.toUpperCase());
+  }
+
+  refresh(): void {
+    if (this.loading) return;
+    this.loading = true;
+    this.fetchMetrics();
+  }
+
+  toggleRotation(): void { this.autoRotate = !this.autoRotate; this.resetAutoPageTimer(); }
+
+  cardState(machine: any): string {
+    if (machine.alarm || machine.status === 'ALARM') return 'alarm';
+    return ['RUNNING', 'IDLE', 'OFFLINE'].includes(machine.status) ? machine.status.toLowerCase() : 'unknown';
+  }
+
+  machinePlan(machine: any): number | null {
+    return machine.achieved_qty != null && Number(machine.target_qty) > 0
+      ? Number(machine.achieved_qty) / Number(machine.target_qty) * 100 : null;
+  }
+
+  usePlaceholder(event: Event): void {
+    const image = event.target as HTMLImageElement;
+    const fallback = new URL('images/product/machine-placeholder.svg', document.baseURI).href;
+    if (image.src !== fallback) image.src = fallback;
   }
 
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.filteredMachines.length / this.pageSize));
   }
 
+  get displayPage(): number { return Math.min(this.currentPage, this.totalPages); }
+
   get pagedMachines(): any[] {
-    const start = (this.currentPage - 1) * this.pageSize;
+    const start = (this.displayPage - 1) * this.pageSize;
     return this.filteredMachines.slice(start, start + this.pageSize);
   }
 
@@ -451,7 +498,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return Array.from({ length: this.totalPages }, (_, i) => i + 1);
   }
 
-  setFilter(f: 'all' | 'running' | 'idle' | 'alarm'): void {
+  setFilter(f: 'all' | 'running' | 'idle' | 'alarm' | 'offline'): void {
     // clicking the already-active filter OR clicking Total → reset to all
     this.statusFilter = (f === 'all' || this.statusFilter === f) ? 'all' : f;
     this.currentPage  = 1;
@@ -467,6 +514,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private startAutoPageTimer(): void {
+    if (!this.autoRotate) return;
     this.autoPageTimer = setInterval(() => {
       this.zone.run(() => {
         this.currentPage = this.currentPage >= this.totalPages ? 1 : this.currentPage + 1;
@@ -483,6 +531,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /* ════════════════════════════════════════
      HELPERS
   ════════════════════════════════════════ */
+  boundedPercent(value: unknown): number {
+    return Math.max(0, Math.min(100, Number(value) || 0));
+  }
+
   getLastSeen(last: string | null): string {
     if (!last) return 'No Data';
     const diff = (Date.now() - new Date(last).getTime()) / 1000;

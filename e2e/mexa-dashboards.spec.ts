@@ -354,7 +354,7 @@ for (const s of screens) {
     await page.setViewportSize({ width: 1600, height: 1200 });
     await page.goto(s.path);
 
-    await expect(page.locator('.mexa-shell')).toBeVisible();
+    await expect(page.locator('.gokul-page')).toBeVisible();
     await expect(page.locator('.mexa-titlebar')).toContainText(s.title);
     await expect(page.locator('.mexa-kpi')).toHaveCount(s.kpis);
 
@@ -363,6 +363,7 @@ for (const s of screens) {
     expect(await cards.count()).toBeGreaterThan(0);
 
     await page.waitForTimeout(2500);
+    await expect(page.locator('.apexcharts-radialbar, .apexcharts-pie')).toHaveCount(0);
     await page.screenshot({ path: s.file, fullPage: true });
 
     expect(errors, `console errors on ${s.path}`).toEqual([]);

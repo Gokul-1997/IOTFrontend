@@ -15,7 +15,7 @@ type AuthFixtures = {
 };
 
 /**
- * A structurally valid (unsigned) JWT with a far-future `exp`.
+ * A structurally valid (unsigned) JWT with a one-hour `exp` (inside the browser timer limit).
  * AppComponent calls AuthService.scheduleRefresh() on bootstrap, which
  * jwtDecode()s the stored token and logs out on any parse failure — so an
  * opaque string like 'stub-token' would clear storage and bounce the test
@@ -26,7 +26,7 @@ function stubJwt(): string {
   const b64 = (o: object) =>
     Buffer.from(JSON.stringify(o)).toString('base64')
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365;
+  const exp = Math.floor(Date.now() / 1000) + 60 * 60;
   return `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: '1', exp })}.e2e`;
 }
 
@@ -58,6 +58,7 @@ async function seedAuth(page: Page) {
 
 export const test = base.extend<AuthFixtures>({
   authedPage: async ({ page }, use) => {
+    await page.routeWebSocket(/socket\.io/, socket => socket.close());
     await seedAuth(page);
     await use(page);
   }

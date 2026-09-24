@@ -1,16 +1,5 @@
 <app-header></app-header>
-
-<!--
-  The gradient field every dashboard sits on. Putting it here rather than
-  on each page means a screen cannot be added and quietly miss it, and the
-  footer is written once instead of nine times.
--->
-<div class="mexa-shell">
-  <div class="mexa-page">
-    <router-outlet></router-outlet>
-  </div>
-
-  <footer class="mexa-footer">
-    Copyright {{ year }}. All Rights Reserved <strong>STM Mexa</strong>.
-  </footer>
+<div class="gokul-shell">
+  <main class="gokul-page" id="workspace-main" tabindex="-1"><router-outlet></router-outlet></main>
+  <footer class="gokul-footer"><span><strong>Gokul</strong> · Industrial Intelligence</span><span>© {{ year }} Gokul. All rights reserved.</span></footer>
 </div>

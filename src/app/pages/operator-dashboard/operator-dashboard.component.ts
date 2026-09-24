@@ -22,7 +22,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 @Component({
   selector: 'app-operator-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [ CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './operator-dashboard.component.html'
 })
 export class OperatorDashboardComponent implements OnInit, OnDestroy {
@@ -237,7 +237,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
     return {
       chart:  { type: 'bar', height: 300, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '65%' } },
-      colors: ['#2563eb'],
+      colors: ['#3564df'],
       dataLabels: { enabled: true },
       xaxis:  { categories: this.productionCategories, title: { text: 'Parts produced' } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
@@ -281,7 +281,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
       .slice(0, 5);
   }
 
-  private readonly palette = ['#2f2d8f', '#4a76c8', '#9b7ec8', '#17b3a3', '#6b7280'];
+  private readonly palette = ['#3564df', '#5f90e6', '#9581cf', '#38a994', '#6b7280'];
 
   /** Shared shape for the three horizontal Top-5 bars. */
   get barChart(): any {
@@ -322,7 +322,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
     return {
       chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 3, columnWidth: '62%' } },
-      colors: ['#3b9ae1', '#9b7ec8'],
+      colors: ['#3b9ae1', '#9581cf'],
       dataLabels: { enabled: false },
       legend: { position: 'bottom' },
       xaxis: { categories: this.apqCategories },

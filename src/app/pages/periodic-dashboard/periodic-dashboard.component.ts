@@ -1,3 +1,4 @@
+import { DataBarsComponent } from '../../shared/data-bars/data-bars.component';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -24,7 +25,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 @Component({
   selector: 'app-periodic-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [ DataBarsComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './periodic-dashboard.component.html'
 })
 export class PeriodicDashboardComponent implements OnInit, OnDestroy {
@@ -324,7 +325,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
       .filter((w: any) => Number(w.overdue) > 0).length;
   }
 
-  private readonly palette = ['#e8618c', '#17b3a3', '#f5a623', '#2f2d8f', '#4a76c8', '#9b7ec8'];
+  private readonly palette = ['#e8618c', '#38a994', '#f5a623', '#3564df', '#5f90e6', '#9581cf'];
 
   donutColour(i: number): string { return this.palette[i % this.palette.length]; }
 

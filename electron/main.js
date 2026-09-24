@@ -18,7 +18,7 @@ function createWindow() {
       webSecurity: true,
     },
     autoHideMenuBar: true,
-    title: 'IOT Dashboard',
+    title: 'Gokul | Industrial Intelligence',
     show: false,
   });
 
