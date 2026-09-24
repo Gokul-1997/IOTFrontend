@@ -20,10 +20,10 @@
     <!-- The design shows one date; energy is a counter difference, so a
          range is the only thing that can be measured. Both ends shown. -->
     <label class="mexa-filter-label" for="enFrom">Date</label>
-    <input id="enFrom" type="date" class="mexa-date" [(ngModel)]="f.from" name="from"
+    <input id="enFrom" type="date" appReportDate [rdBefore]="f.to" class="mexa-date" [(ngModel)]="f.from" name="from"
            aria-label="From date">
     <span class="mexa-filter-label" aria-hidden="true">–</span>
-    <input id="enTo" type="date" class="mexa-date" [(ngModel)]="f.to" name="to"
+    <input id="enTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to"
            aria-label="To date">
 
     <button type="submit" class="mexa-submit" [disabled]="loading">

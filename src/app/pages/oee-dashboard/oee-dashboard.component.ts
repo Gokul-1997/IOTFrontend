@@ -8,6 +8,7 @@ import { OeeDashboardService } from './oee-dashboard.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
+import { ReportDateDirective } from '../../shared/report-date.directive';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 8 — OEE Dashboard
@@ -34,7 +35,7 @@ interface Loss { key: 'a' | 'p' | 'q'; name: string; label: string; note: string
 @Component({
   selector: 'app-oee-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './oee-dashboard.component.html'
 })
 export class OeeDashboardComponent implements OnInit, OnDestroy {

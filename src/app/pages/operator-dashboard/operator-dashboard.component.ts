@@ -9,6 +9,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
+import { ReportDateDirective } from '../../shared/report-date.directive';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 7 — Operator Performance
@@ -29,7 +30,7 @@ type Board = 'score' | 'rejection' | 'downtime' | 'oee';
 @Component({
   selector: 'app-operator-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './operator-dashboard.component.html'
 })
 export class OperatorDashboardComponent implements OnInit, OnDestroy {

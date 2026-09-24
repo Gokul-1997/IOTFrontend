@@ -15,6 +15,7 @@ import { OeeReportsComponent } from '../oee-reports/oee-reports';
 import { MachineOeeReportComponent } from './machine-oee-report.component';
 import { AuthService } from '../../core/services/auth.service';
 import { UiTabsDirective } from '../../shared/ui-tabs.directive';
+import { ReportDateDirective } from '../../shared/report-date.directive';
 
 type Tab = ReportType | 'oee-records' | 'machine-oee';
 
@@ -73,7 +74,7 @@ const COL_DEFS: Record<ReportType, ColDef[]> = {
 @Component({
   standalone: true,
   selector: 'app-reports',
-  imports: [UiTabsDirective, CommonModule, FormsModule, OeeReportsComponent, MachineOeeReportComponent],
+  imports: [ReportDateDirective, UiTabsDirective, CommonModule, FormsModule, OeeReportsComponent, MachineOeeReportComponent],
   templateUrl: './reports.html',
   styleUrl: './reports.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -82,6 +83,34 @@ export class Reports implements OnInit {
 
   @ViewChild('colPanel') colPanelRef?: ElementRef;
   @ViewChild('colBtn')   colBtnRef?:   ElementRef;
+
+  /* ── One toolbar for every tab ──
+     The OEE Records and Machine OEE tabs used to draw their own search and
+     export row under this toolbar, whose buttons meanwhile acted on the
+     hidden Production report. The toolbar now exports whichever tab is
+     open, in the formats that tab has, under that tab's own permission. */
+  @ViewChild(OeeReportsComponent) oeeRecords?: OeeReportsComponent;
+  @ViewChild(MachineOeeReportComponent) machineOee?: MachineOeeReportComponent;
+
+  get canExportTab(): boolean {
+    if (this.isBuilt) return this.auth.hasWidget('reports', 'export');
+    if (this.activeTab === 'oee-records') return this.auth.hasWidget('oee-reports', 'export');
+    return this.auth.hasAction('analytics-oee', 'export');
+  }
+  /** Excel: the built reports and Machine OEE; OEE Records exports CSV only. */
+  get tabHasExcel(): boolean { return this.activeTab !== 'oee-records'; }
+  get tabLabel(): string { return this.tabs.find(t => t.id === this.activeTab)?.label || 'report'; }
+
+  toolbarCsv(): void {
+    if (this.isBuilt) this.exportCsv();
+    else if (this.activeTab === 'oee-records') this.oeeRecords?.exportCSV();
+    else this.machineOee?.export('csv');
+  }
+  toolbarExcel(): void {
+    if (this.isBuilt) this.downloadFullExcel();
+    else if (this.activeTab === 'machine-oee') this.machineOee?.export('xlsx');
+  }
+  toolbarPdf(): void { this.machineOee?.export('pdf'); }
 
   /* ── tabs ── */
   /* Every report lives here — the OEE Reports page and the OEE Dashboard's

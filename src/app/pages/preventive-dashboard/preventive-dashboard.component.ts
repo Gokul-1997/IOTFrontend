@@ -9,6 +9,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { ReportDateDirective, reportMinDate, plantToday } from '../../shared/report-date.directive';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 3 — Preventive Maintenance Dashboard
@@ -26,7 +27,7 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 @Component({
   selector: 'app-preventive-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
+  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
   templateUrl: './preventive-dashboard.component.html'
 })
 export class PreventiveDashboardComponent implements OnInit, OnDestroy {
@@ -110,8 +111,8 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
     const from = this.fromDate, to = this.toDate;
     if (!from || !to)  this.rangeError = 'Choose both a start and an end date.';
     else if (from > to) this.rangeError = 'The start date must be on or before the end date.';
-    else if ((Date.parse(to) - Date.parse(from)) / 86_400_000 + 1 > 366)
-                        this.rangeError = 'Choose a range of one year or less.';
+    else if (from < reportMinDate() || to > plantToday())
+                        this.rangeError = 'Choose dates within the last 3 months, up to today.';
     else                this.rangeError = '';
     return !this.rangeError;
   }

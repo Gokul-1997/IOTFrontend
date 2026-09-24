@@ -17,8 +17,8 @@
     <div class="toolbar-right">
       <div class="flex items-center gap-2 flex-wrap">
 
-      <!-- Column builder button -->
-      <div class="relative">
+      <!-- Column builder button — the built reports' columns -->
+      <div *ngIf="isBuilt" class="relative">
         <button
           #colBtn
           (click)="toggleColBuilder()"
@@ -78,10 +78,10 @@
         </div>
       </div>
 
-      <!-- Export CSV (selected columns) — controlled by widget:export -->
-      <button *ngIf="auth.hasWidget('reports', 'export')"
-        (click)="exportCsv()"
-        [disabled]="rows.length === 0 || selectedCount === 0 || rangeTooLong"
+      <!-- Export CSV — whichever tab is open, under that tab's permission -->
+      <button *ngIf="canExportTab" type="button"
+        (click)="toolbarCsv()" [attr.aria-label]="'Export CSV: ' + tabLabel"
+        [disabled]="isBuilt && (rows.length === 0 || selectedCount === 0 || rangeTooLong)"
         class="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium
                text-white shadow hover:bg-emerald-700 transition-colors disabled:opacity-40">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,10 +91,10 @@
         Export CSV
       </button>
 
-      <!-- Full Excel — controlled by widget:export -->
-      <button *ngIf="auth.hasWidget('reports', 'export')"
-        (click)="downloadFullExcel()"
-        [disabled]="rangeTooLong"
+      <!-- Excel — the built reports and Machine OEE -->
+      <button *ngIf="canExportTab && tabHasExcel" type="button"
+        (click)="toolbarExcel()" [attr.aria-label]="'Excel: ' + tabLabel"
+        [disabled]="isBuilt && rangeTooLong"
         class="flex items-center gap-2 rounded-lg disabled:opacity-40 bg-blue-600 px-4 py-2 text-sm font-medium
                text-white shadow hover:bg-blue-700 transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,8 +104,20 @@
         Excel
       </button>
 
-      <!-- Email the current report, with the columns as selected. -->
-      <button *ngIf="auth.hasWidget('reports', 'export')"
+      <!-- PDF — Machine OEE -->
+      <button *ngIf="canExportTab && activeTab === 'machine-oee'" type="button"
+        (click)="toolbarPdf()" aria-label="PDF: Machine OEE"
+        class="flex items-center gap-2 rounded-lg bg-slate-600 px-4 py-2 text-sm font-medium
+               text-white shadow hover:bg-slate-700 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+        </svg>
+        PDF
+      </button>
+
+      <!-- Email the current report, with the columns as selected — built reports -->
+      <button *ngIf="isBuilt && auth.hasWidget('reports', 'export')"
         type="button" (click)="sendByEmail()"
         [disabled]="emailing || selectedCount === 0"
         class="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium
@@ -160,14 +172,14 @@
       <!-- Date From -->
       <div class="flex flex-col gap-1">
         <label class="label_custom">Date From</label>
-        <input type="date" [(ngModel)]="filters.date_from"
+        <input type="date" appReportDate [rdBefore]="filters.date_to" [(ngModel)]="filters.date_from"
           class="filter-date" aria-label="Date From" />
       </div>
 
       <!-- Date To -->
       <div class="flex flex-col gap-1">
         <label class="label_custom">Date To</label>
-        <input type="date" [(ngModel)]="filters.date_to"
+        <input type="date" appReportDate [rdAfter]="filters.date_from" [(ngModel)]="filters.date_to"
           class="filter-date" aria-label="Date To" />
       </div>
 

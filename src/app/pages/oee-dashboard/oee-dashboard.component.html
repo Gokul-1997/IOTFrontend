@@ -26,9 +26,9 @@
     </select>
 
     <label class="mexa-filter-label" for="oeFrom">Date</label>
-    <input id="oeFrom" type="date" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
+    <input id="oeFrom" type="date" appReportDate [rdBefore]="f.to" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
     <span class="mexa-filter-label" aria-hidden="true">–</span>
-    <input id="oeTo" type="date" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
+    <input id="oeTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
 
     <button type="submit" class="mexa-submit" [disabled]="loading">
       {{ loading ? 'Loading…' : 'Submit' }}

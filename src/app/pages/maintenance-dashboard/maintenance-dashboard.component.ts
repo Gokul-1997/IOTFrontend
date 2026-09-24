@@ -7,6 +7,7 @@ import { Subject, interval, startWith, switchMap, takeUntil, catchError, of } fr
 import { MaintenanceDashboardService } from './maintenance-dashboard.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
+import { ReportDateDirective } from '../../shared/report-date.directive';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 2 — Maintenance Dashboard
@@ -39,7 +40,7 @@ const SIGNAL_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-maintenance-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './maintenance-dashboard.component.html'
 })
 export class MaintenanceDashboardComponent implements OnInit, OnDestroy {

@@ -27,6 +27,8 @@
   letter-spacing: 0.6px;
   text-transform: uppercase;
 }
+/* #39404e is 1.8:1 on the dark card — the labels all but vanished */
+:host-context(.dark) .filter-label { color: #c3cad6; }
 
 .filter-actions {
   display: flex;
@@ -167,3 +169,13 @@
   .badge-machine { background: #1e3a8a; color: #93c5fd; }
   .badge-shift-oee { background: #2e1065; color: #c4b5fd; }
 }
+
+/* OEE value by band — light and dark shades, each 4.5:1 or better on its rows */
+.metric-val.oee-excellent { color: #047857; }
+.metric-val.oee-good      { color: #1d4ed8; }
+.metric-val.oee-avg       { color: #b45309; }
+.metric-val.oee-poor      { color: #dc2626; }
+:host-context(.dark) .metric-val.oee-excellent { color: #34d399; }
+:host-context(.dark) .metric-val.oee-good      { color: #9db8ff; }
+:host-context(.dark) .metric-val.oee-avg       { color: #fbbf24; }
+:host-context(.dark) .metric-val.oee-poor      { color: #fca5a5; }

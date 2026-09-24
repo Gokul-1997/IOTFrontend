@@ -7,6 +7,7 @@ import { Subject, interval, startWith, switchMap, takeUntil, catchError, of } fr
 import { FactoryService } from './factory.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
+import { ReportDateDirective } from '../../shared/report-date.directive';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 1 — Factory Overall Dashboard
@@ -22,7 +23,7 @@ const POLL_MS = 60_000;
 @Component({
   selector: 'app-factory',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './factory.component.html'
 })
 export class FactoryComponent implements OnInit, OnDestroy {

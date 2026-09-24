@@ -10,6 +10,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
+import { ReportDateDirective } from '../../shared/report-date.directive';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 9 — Energy Monitoring
@@ -23,7 +24,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 @Component({
   selector: 'app-energy-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './energy-dashboard.component.html'
 })
 export class EnergyDashboardComponent implements OnInit, OnDestroy {

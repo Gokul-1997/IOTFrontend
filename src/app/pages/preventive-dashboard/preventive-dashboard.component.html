@@ -18,12 +18,12 @@
     </select>
 
     <label class="mexa-filter-label" for="pvFrom">Date</label>
-    <input id="pvFrom" type="date" class="mexa-date" [(ngModel)]="fromDate" name="from"
-           [max]="toDate || today" aria-label="From date"
+    <input id="pvFrom" type="date" appReportDate [rdBefore]="toDate" class="mexa-date" [(ngModel)]="fromDate" name="from"
+           aria-label="From date"
            [attr.aria-invalid]="rangeError ? true : null" aria-describedby="pvRangeError">
     <span class="mexa-filter-label" aria-hidden="true">–</span>
-    <input id="pvTo" type="date" class="mexa-date" [(ngModel)]="toDate" name="to"
-           [min]="fromDate" [max]="today" aria-label="To date"
+    <input id="pvTo" type="date" appReportDate [rdAfter]="fromDate" class="mexa-date" [(ngModel)]="toDate" name="to"
+           aria-label="To date"
            [attr.aria-invalid]="rangeError ? true : null" aria-describedby="pvRangeError">
 
     <button type="submit" class="mexa-submit" [disabled]="loading">

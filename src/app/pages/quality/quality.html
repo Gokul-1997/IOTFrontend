@@ -29,6 +29,7 @@
             (change)="onLineChange()"
             class="filter-select" aria-label="Line Name" >
 
+            <option [ngValue]="null">All lines</option>
             <option *ngFor="let l of lines" [ngValue]="l.id">
               {{ l.name }}
             </option>
@@ -46,9 +47,17 @@
             [(ngModel)]="selectedMachine"
             class="filter-select" aria-label="Machine Name" >
 
-            <option *ngFor="let m of machines" [ngValue]="m.id">
-              {{ m.machine_serial_no }}
-            </option>
+            <!-- All lines: grouped by line; one line: that line's machines -->
+            <ng-container *ngIf="selectedLine === null; else oneLine">
+              <optgroup *ngFor="let g of machineGroups" [label]="g.label">
+                <option *ngFor="let m of g.machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+              </optgroup>
+            </ng-container>
+            <ng-template #oneLine>
+              <option *ngFor="let m of machines" [ngValue]="m.id">
+                {{ m.machine_serial_no }}
+              </option>
+            </ng-template>
 
           </select>
         </div>
@@ -77,9 +86,8 @@
           </label>
 
           <input
-            type="date"
+            type="date" appReportDate
             [(ngModel)]="selectedDate"
-            [max]="today"
             class="filter-date" aria-label="Date" />
         </div>
 
@@ -259,10 +267,10 @@
                   <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 3c-1.69 0-3.16.72-4.22 1.87l1.4 1.4C7.37 16.55 8.63 16 10 16c1.37 0 2.63.55 3.54 1.46l1.4-1.4C13.87 14.9 12.63 14.27 12 14.27c-.03 0-.03.73 0 .73z"/>
                 </svg>
               </div>
-              <p class="text-sm text-red-500 font-medium mb-1">Rejected</p>
+              <p class="text-sm text-red-500 dark:text-red-400 font-medium mb-1">Rejected</p>
 
               <ng-container *ngIf="!editingRejected; else rejectedInput">
-                <p class="text-4xl font-bold text-red-500">{{ rejectedValue }}</p>
+                <p class="text-4xl font-bold text-red-500 dark:text-red-400">{{ rejectedValue }}</p>
               </ng-container>
               <ng-template #rejectedInput>
                 <input
@@ -271,7 +279,7 @@
                   [(ngModel)]="rejectedValue"
                   (keydown.enter)="saveRejected()"
                   (keydown.escape)="cancelRejected()"
-                  class="w-20 text-center text-3xl font-bold text-red-500
+                  class="w-20 text-center text-3xl font-bold text-red-500 dark:text-red-400
                          border-b-2 border-red-400 bg-transparent outline-none"
                   #rejectedInputRef aria-label="Rejected value" />
               </ng-template>
@@ -310,10 +318,10 @@
                   <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 3c-1.69 0-3.16.72-4.22 1.87l1.4 1.4C7.37 16.55 8.63 16 10 16c1.37 0 2.63.55 3.54 1.46l1.4-1.4C13.87 14.9 12.63 14.27 12 14.27c-.03 0-.03.73 0 .73z"/>
                 </svg>
               </div>
-              <p class="text-sm text-red-500 font-medium mb-1">Rework</p>
+              <p class="text-sm text-red-500 dark:text-red-400 font-medium mb-1">Rework</p>
 
               <ng-container *ngIf="!editingRework; else reworkInput">
-                <p class="text-4xl font-bold text-red-500">{{ reworkValue }}</p>
+                <p class="text-4xl font-bold text-red-500 dark:text-red-400">{{ reworkValue }}</p>
               </ng-container>
               <ng-template #reworkInput>
                 <input
@@ -322,7 +330,7 @@
                   [(ngModel)]="reworkValue"
                   (keydown.enter)="saveRework()"
                   (keydown.escape)="cancelRework()"
-                  class="w-20 text-center text-3xl font-bold text-red-500
+                  class="w-20 text-center text-3xl font-bold text-red-500 dark:text-red-400
                          border-b-2 border-red-400 bg-transparent outline-none" aria-label="Rework value" />
               </ng-template>
 

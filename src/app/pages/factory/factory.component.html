@@ -24,7 +24,7 @@
     </select>
 
     <label class="mexa-filter-label" for="fDate">Date</label>
-    <input id="fDate" type="date" class="mexa-date" [(ngModel)]="selectedDate" name="date" [max]="today">
+    <input id="fDate" type="date" appReportDate class="mexa-date" [(ngModel)]="selectedDate" name="date">
 
     <button type="submit" class="mexa-submit" [disabled]="loading">
       {{ loading ? 'Loading…' : 'Submit' }}

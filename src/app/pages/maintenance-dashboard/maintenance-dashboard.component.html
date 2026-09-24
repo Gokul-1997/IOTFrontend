@@ -51,7 +51,7 @@
     </span>
 
     <label class="mexa-filter-label" for="mtDate">Date</label>
-    <input id="mtDate" type="date" class="mexa-date" [(ngModel)]="selectedDate" name="date">
+    <input id="mtDate" type="date" appReportDate class="mexa-date" [(ngModel)]="selectedDate" name="date">
 
     <button type="submit" class="mexa-submit" [disabled]="loading">
       {{ loading ? 'Loading…' : 'Submit' }}

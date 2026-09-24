@@ -390,9 +390,11 @@ test('OEE dashboard has no Report tab; the machine table lives in Reports', asyn
   await table.getByRole('button', { name: /^Machine/ }).click();
   await expect(table.locator('th[aria-sort="ascending"]')).toHaveCount(1);
 
-  await page.getByRole('searchbox', { name: 'Search machines' }).fill('03');
-  await expect(table.locator('tbody tr')).toHaveCount(1);
-  await expect(table.locator('tbody tr')).toContainText('CNC-03');
+  // no second search-and-export row inside the tab: the Reports toolbar exports it
+  await expect(page.getByRole('searchbox', { name: 'Search machines' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Export CSV: Machine OEE' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Excel: Machine OEE' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'PDF: Machine OEE' })).toBeVisible();
 });
 
 test('Reports holds every report as a tab, and Analytics has one Reports entry', async ({ authedPage: page }) => {
@@ -514,18 +516,21 @@ test('Preventive: a From–To range, checked before it is sent', async ({ authed
   const span = (Date.parse(first.searchParams.get('to')!) - Date.parse(first.searchParams.get('from')!)) / 86_400_000;
   expect(span).toBe(6);
 
+  /* The two ends cannot cross: a To typed before the From is pulled up to
+     it (the three-month window, ReportDateDirective), so an inverted range
+     is never sent. Dates relative to today, so the test does not age out. */
+  const day = (back: number) => new Date(Date.now() + 330 * 60000 - back * 86_400_000).toISOString().slice(0, 10);
   const before = seen.length;
-  await page.getByLabel('From date').fill('2026-09-24');
-  await page.getByLabel('To date').fill('2026-09-01');
-  await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.getByRole('alert')).toHaveText('The start date must be on or before the end date.');
-  await expect(page.getByLabel('From date')).toHaveAttribute('aria-invalid', 'true');
+  await page.getByLabel('From date').fill(day(3));
+  await page.getByLabel('To date').fill(day(20));
+  await page.getByLabel('To date').blur();
+  await expect(page.getByLabel('To date')).toHaveValue(day(3));
   expect(seen.length).toBe(before);
 
-  await page.getByLabel('From date').fill('2026-09-01');
-  await page.getByLabel('To date').fill('2026-09-24');
+  await page.getByLabel('From date').fill(day(23));
+  await page.getByLabel('To date').fill(day(0));
   await page.getByRole('button', { name: 'Submit' }).click();
-  await expect.poll(() => seen.at(-1)).toContain('from=2026-09-01');
-  expect(seen.at(-1)).toContain('to=2026-09-24');
+  await expect.poll(() => seen.at(-1)).toContain(`from=${day(23)}`);
+  expect(seen.at(-1)).toContain(`to=${day(0)}`);
   await expect(page.locator('#pvRangeError')).toHaveCount(0);
 });

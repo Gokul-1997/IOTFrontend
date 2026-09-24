@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { ChartsService } from './charts.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ReportDateDirective } from '../../shared/report-date.directive';
 
 @Component({
   selector: 'app-charts',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgApexchartsModule],
+  imports: [ReportDateDirective, CommonModule, FormsModule, NgApexchartsModule],
   templateUrl: './charts.html',
   styleUrl: './charts.scss'
 })
