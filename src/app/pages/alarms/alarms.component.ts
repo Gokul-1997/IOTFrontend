@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AlarmService } from '../../core/services/alarm.service';
 import { TicketService } from '../../core/services/ticket.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-alarms',
@@ -31,6 +32,7 @@ export class AlarmsComponent implements OnInit {
     private alarmService: AlarmService,
     private ticketService: TicketService,
     private toast: ToastService,
+    private auth: AuthService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -48,6 +50,9 @@ export class AlarmsComponent implements OnInit {
     };
     return map[String(severity || '').trim().toUpperCase()] || 'MEDIUM';
   }
+
+  /** Resolving is its own grant, as the API checks it. */
+  get canResolve(): boolean { return this.auth.hasAction('alarms', 'resolve'); }
 
   ngOnInit() { this.load(); }
 

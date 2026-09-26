@@ -3,15 +3,14 @@ import { test, expect } from './fixtures/auth';
 const machineList = {
   success: true,
   data: [
+    // the shape GET /api/machines returns: the line's name comes back as `name`
     {
-      id: 1, machine_serial_no: 'VMC-1-F', machine_name: 'VMC 1',
-      status: 'RUNNING', plant_id: 1, plant_name: 'Plant A',
-      line_id: 2, line_name: 'Line 1', is_active: true
+      id: 1, machine_serial_no: 'VMC-1-F', model: 'VMC 850', controller: 'FANUC 0i-MF',
+      line_id: 2, name: 'Line 1', is_active: true
     },
     {
-      id: 2, machine_serial_no: 'VMC-2-F', machine_name: 'VMC 2',
-      status: 'IDLE', plant_id: 1, plant_name: 'Plant A',
-      line_id: 2, line_name: 'Line 1', is_active: true
+      id: 2, machine_serial_no: 'VMC-2-F', model: 'VMC 1050', controller: 'Mitsubishi M80',
+      line_id: 2, name: 'Line 1', is_active: false
     }
   ],
   meta: { page: 1, limit: 10, total: 2, totalPages: 1 }
@@ -24,7 +23,7 @@ const emptyList = {
 };
 
 function stubMachines(page: any, response = machineList) {
-  return page.route('**/api/machines*', r =>
+  return page.route('**/api/machines**', r =>
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(response) })
   );
 }
@@ -57,7 +56,7 @@ test.describe('Machines page', () => {
   });
 
   test('TC-M-04 shows 500 error gracefully', async ({ authedPage: page }) => {
-    await page.route('**/api/machines*', r =>
+    await page.route('**/api/machines**', r =>
       r.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ message: 'Server Error' }) })
     );
     await page.goto('/machines');
@@ -68,22 +67,22 @@ test.describe('Machines page', () => {
     await expect(page.getByText('VMC-1-F')).toHaveCount(0, { timeout: 10_000 });
   });
 
-  test('TC-M-05 plant name displayed on machine card', async ({ authedPage: page }) => {
+  test('TC-M-05 line, model and controller shown in the register', async ({ authedPage: page }) => {
     await stubMachines(page);
     await page.goto('/machines');
 
-    await expect(page.getByText('Plant A').first()).toBeVisible({ timeout: 10_000 });
+    const row = page.getByRole('row', { name: /VMC-1-F/ });
+    await expect(row).toBeVisible({ timeout: 10_000 });
+    await expect(row.getByText('Line 1')).toBeVisible();
+    await expect(row.getByText('VMC 850')).toBeVisible();
+    await expect(row.getByText('FANUC 0i-MF')).toBeVisible();
   });
 
-  test('TC-M-06 machine status visible on card', async ({ authedPage: page }) => {
+  test('TC-M-06 active switch reflects each machine', async ({ authedPage: page }) => {
     await stubMachines(page);
     await page.goto('/machines');
 
-    // At least one status indicator (RUNNING or IDLE) should appear
-    const running = page.getByText(/RUNNING/i).first();
-    const idle    = page.getByText(/IDLE/i).first();
-    const hasStatus = (await running.isVisible({ timeout: 8_000 }).catch(() => false)) ||
-                      (await idle.isVisible().catch(() => false));
-    expect(hasStatus).toBe(true);
+    await expect(page.getByRole('row', { name: /VMC-1-F/ }).getByRole('switch')).toBeChecked({ timeout: 10_000 });
+    await expect(page.getByRole('row', { name: /VMC-2-F/ }).getByRole('switch')).not.toBeChecked();
   });
 });

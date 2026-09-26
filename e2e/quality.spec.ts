@@ -1,13 +1,11 @@
 import { test, expect } from './fixtures/auth';
 
-const meta = {
-  success: true,
-  data: {
-    machines: [{ id: 1, machine_serial_no: 'VMC-1-F' }],
-    shifts:   [{ id: 5, shift_code: 'MS01', shift_name: 'Morning',
-                 start_time: '08:00', end_time: '20:00' }]
-  }
-};
+// The page's lookups: GET /api/lines, then /api/master/machines (All lines)
+// or /api/master/machines-by-line, then /api/master/shifts, then /api/quality.
+const lines    = { success: true, data: [{ id: 2, name: 'Line 1' }] };
+const machines = { success: true, data: [{ id: 1, machine_serial_no: 'VMC-1-F', line_id: 2 }] };
+const shifts   = { success: true, data: [{ id: 5, shift_code: 'MS01', shift_name: 'Morning',
+                                           start_time: '08:00', end_time: '20:00' }] };
 
 function qualityData(overrides: object = {}) {
   return {
@@ -22,10 +20,13 @@ function qualityData(overrides: object = {}) {
   };
 }
 
-function stubMeta(page: any) {
-  return page.route('**/api/quality/meta*', r =>
-    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(meta) })
-  );
+const json = (body: unknown, status = 200) =>
+  (r: any) => r.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+
+async function stubMeta(page: any) {
+  await page.route('**/api/lines**', json(lines));
+  await page.route('**/api/master/machines**', json(machines));
+  await page.route('**/api/master/shifts**', json(shifts));
 }
 
 test.describe('Quality page — data display', () => {
@@ -59,7 +60,8 @@ test.describe('Quality page — data display', () => {
     );
 
     await page.goto('/quality');
-    await expect(page.getByText(/74\.1|74\.10/)).toBeVisible({ timeout: 10_000 });
+    // OEE and Performance are both 74.1 here
+    await expect(page.getByText(/74\.1|74\.10/).first()).toBeVisible({ timeout: 10_000 });
   });
 
   test('TC-QP-04 shows zero produced gracefully', async ({ authedPage: page }) => {
@@ -92,16 +94,15 @@ test.describe('Quality page — error handling', () => {
     await expect(page.locator('body')).not.toContainText('Cannot read');
   });
 
-  test('TC-QP-11 meta 500 — page renders without data', async ({ authedPage: page }) => {
-    await page.route('**/api/quality/meta*', r =>
-      r.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ message: 'Server error' }) })
-    );
-    await page.route('**/api/quality*', r =>
-      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(qualityData()) })
-    );
+  test('TC-QP-11 line list 500 — machines still load and the page fills in', async ({ authedPage: page }) => {
+    await stubMeta(page);
+    await page.route('**/api/lines**', json({ message: 'Server error' }, 500));
+    await page.route('**/api/quality?**', json(qualityData()));
 
     await page.goto('/quality');
     await expect(page).toHaveURL(/\/quality/);
+    // the chain reached the quality figures: OEE card shows 74.1%
+    await expect(page.getByText('74.1%').first()).toBeVisible({ timeout: 10_000 });
   });
 
   test('TC-QP-12 submit quality entry — 200 success', async ({ authedPage: page }) => {

@@ -133,8 +133,12 @@ export class AuthService {
     return this.getRoles().includes('SNT_SUPER');
   }
 
+  /** ADMIN is the older name for the same role: the API
+   *  (access.middleware.js) and the route guard both treat it as a company
+   *  admin, so the buttons and widgets must too, or the page opens empty. */
   isCompanyAdmin(): boolean {
-    return this.getRoles().includes('COMPANY_ADMIN');
+    const roles = this.getRoles();
+    return roles.includes('COMPANY_ADMIN') || roles.includes('ADMIN');
   }
 
   isAdmin(): boolean {

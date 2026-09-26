@@ -59,7 +59,8 @@
               <span *ngIf="!alarm.is_resolved" class="px-2 py-1 bg-red-100 text-red-700 rounded-md text-xs font-medium">Active</span>
             </td>
             <td class="px-4 py-3">
-              <ng-container *ngIf="!alarm.is_resolved">
+              <!-- resolving is its own permission (page:alarms:resolve); the API refuses it otherwise -->
+              <ng-container *ngIf="!alarm.is_resolved && canResolve">
                 <div *ngIf="resolvingId === alarm.id" class="flex gap-2 items-center">
                   <input [(ngModel)]="resolveNote" placeholder="Resolution note" class="border rounded px-2 py-1 text-xs w-32 focus:outline-none focus:ring-1 focus:ring-blue-500" aria-label="Resolve note" />
                   <button (click)="resolve(alarm.id)" class="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700">Save</button>

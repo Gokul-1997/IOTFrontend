@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { stubJwt } from './fixtures/auth';
 
 /**
  * Login page — renders, validates, and handles API responses.
@@ -16,8 +17,8 @@ test.describe('Login page — render', () => {
   test('TC-L-02 page title or heading is present', async ({ page }) => {
     await page.goto('/login');
     // At minimum some heading or brand text visible
-    const heading = page.getByRole('heading').first();
-    await expect(heading.or(page.getByText(/sign in|login|welcome/i).first())).toBeVisible({ timeout: 8_000 });
+    const heading = page.getByRole('heading', { name: /sign in|login|welcome/i });
+    await expect(heading.first()).toBeVisible({ timeout: 8_000 });
   });
 });
 
@@ -108,22 +109,25 @@ test.describe('Login page — API responses', () => {
       user_type: 'ADMIN', is_snt_super: false, plan: null
     };
 
+    // Stub any other API call. Registered first: Playwright tries the most
+    // recently added route first, so the login stub below must come after.
+    await page.route('**/api/**', r =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) })
+    );
+
     await page.route('**/api/auth/login', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          accessToken: 'fake-jwt',
-          refreshToken: 'fake-refresh',
+          // a well-formed token: the app decodes it to schedule the refresh
+          // and signs out on one it cannot read
+          accessToken: stubJwt(),
+          refreshToken: stubJwt(),
           user: fakeUser
         })
       });
     });
-
-    // Stub any subsequent API calls
-    await page.route('**/api/**', r =>
-      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) })
-    );
 
     await page.goto('/login');
     await page.getByPlaceholder(/email/i).or(page.getByLabel(/email/i)).first().fill('admin@x.com');

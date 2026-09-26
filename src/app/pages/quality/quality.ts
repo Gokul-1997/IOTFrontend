@@ -69,12 +69,14 @@ export class Quality implements OnInit {
   // INITIAL LOAD FLOW
   ////////////////////////////////////////////////////
 
+  /* Each step hands on to the next. A failed step used to have no error
+     handler, so one refused request (the line list, say) left the whole page
+     empty; now lines fall back to none (All lines still lists every machine)
+     and a failed list simply shows as empty. */
   loadInitialData() {
-    this.service.getLines().subscribe(res => {
-      this.lines = res.data || [];
-      this.loadMachinesAndContinue();
-      this.cdr.detectChanges();
-
+    this.service.getLines().subscribe({
+      next: res => { this.lines = res?.data || []; this.loadMachinesAndContinue(); this.cdr.detectChanges(); },
+      error: () => { this.lines = []; this.loadMachinesAndContinue(); this.cdr.detectChanges(); }
     });
   }
 
@@ -108,32 +110,36 @@ export class Quality implements OnInit {
   }
 
   loadMachinesAndContinue() {
-    this.machines$().subscribe(res => {
-      this.machines = res.data || [];
-      this.machineGroups = this.groupMachines();
+    this.machines$().subscribe({
+      next: res => {
+        this.machines = res?.data || [];
+        this.machineGroups = this.groupMachines();
 
-      if (this.machines.length > 0) {
-        this.selectedMachine = this.machines[0].id;
+        if (this.machines.length > 0) {
+          this.selectedMachine = this.machines[0].id;
 
-        this.loadShiftsAndContinue();
-      }
-      this.cdr.detectChanges();
-
+          this.loadShiftsAndContinue();
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => { this.machines = []; this.machineGroups = []; this.cdr.detectChanges(); }
     });
   }
 
   loadShiftsAndContinue() {
-    this.service.getShifts().subscribe(res => {
-      this.shifts = res.data;
+    this.service.getShifts().subscribe({
+      next: res => {
+        this.shifts = res?.data || [];
 
-      if (this.shifts.length > 0) {
-        this.selectedShift = this.shifts[0].id;
+        if (this.shifts.length > 0) {
+          this.selectedShift = this.shifts[0].id;
 
-        // Finally call dashboard
-        this.loadDashboard();
-      }
-      this.cdr.detectChanges();
-
+          // Finally call dashboard
+          this.loadDashboard();
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => { this.shifts = []; this.cdr.detectChanges(); }
     });
   }
 
@@ -157,18 +163,20 @@ export class Quality implements OnInit {
       machine_id: this.selectedMachine,
       shift_id: this.selectedShift,
       date: this.selectedDate
-    }).subscribe(res => {
+    }).subscribe({
+      next: res => {
+        if (!res?.success) return;
 
-      if (!res.success) return;
+        this.dashboardData = res.data;
 
-      this.dashboardData = res.data;
+        this.rejectedValue = res.data.production?.reject ?? 0;
+        this.reworkValue = res.data.production?.rework ?? 0;
 
-      this.rejectedValue = res.data.production?.reject ?? 0;
-      this.reworkValue = res.data.production?.rework ?? 0;
-
-      this.updateChart(res.data.hourly || []);
-      this.cdr.detectChanges();
-
+        this.updateChart(res.data.hourly || []);
+        this.cdr.detectChanges();
+      },
+      // a failed read must not leave the previous machine's figures up
+      error: () => { this.dashboardData = null; this.updateChart([]); this.cdr.detectChanges(); }
     });
   }
 

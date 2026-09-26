@@ -48,8 +48,9 @@ test.describe('Shifts page', () => {
     await stubShifts(page);
     await page.goto('/shifts');
 
-    await expect(page.getByText(/08:00/).first()).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText(/20:00/).first()).toBeVisible();
+    // shown in 12-hour form: Morning 08:00 AM – 08:00 PM, Night the other way round
+    await expect(page.getByText(/08:00 AM\s*–\s*08:00 PM/).first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/08:00 PM\s*–\s*08:00 AM/).first()).toBeVisible();
   });
 
   test('TC-SH-04 empty state renders without crash', async ({ authedPage: page }) => {

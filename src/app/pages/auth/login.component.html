@@ -76,22 +76,29 @@ hover:scale-105 transition">
       <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5">
         <!-- Email -->
         <div>
-          <label class="text-sm text-gray-600 dark:text-gray-300"> Email </label>
-          <input type="email" formControlName="email" placeholder="Enter your email" class="filter-select"
+          <label for="login-email" class="text-sm text-gray-600 dark:text-gray-300"> Email </label>
+          <input id="login-email" type="email" formControlName="email" placeholder="Enter your email" class="filter-select"
+                   required autocomplete="email"
+                   [attr.aria-describedby]="form.get('email')?.invalid && form.get('email')?.touched ? 'login-email-error' : null"
+                   [attr.aria-invalid]="form.get('email')?.invalid && form.get('email')?.touched"
                    [class.border-red-500]="form.get('email')?.invalid && form.get('email')?.touched" />
-          <div *ngIf="form.get('email')?.touched && form.get('email')?.invalid" class="mt-1 text-xs text-red-500">
+          <div id="login-email-error" *ngIf="form.get('email')?.touched && form.get('email')?.invalid" class="mt-1 text-xs text-red-500">
             <span *ngIf="form.get('email')?.errors?.['required']">Email is required.</span>
             <span *ngIf="form.get('email')?.errors?.['email']">Enter a valid email address.</span>
           </div>
         </div>
         <!-- Password -->
         <div>
-          <label class="text-sm text-gray-600 dark:text-gray-300"> Password </label>
+          <label for="login-password" class="text-sm text-gray-600 dark:text-gray-300"> Password </label>
 <div class="relative">
 
   <input
+    id="login-password"
     [type]="showPassword ? 'text' : 'password'"
     formControlName="password"
+    required autocomplete="current-password"
+    [attr.aria-describedby]="form.get('password')?.invalid && form.get('password')?.touched ? 'login-password-error' : null"
+    [attr.aria-invalid]="form.get('password')?.invalid && form.get('password')?.touched"
     placeholder="Enter your password"
     class="filter-select"
     [class.border-red-500]="form.get('password')?.invalid && form.get('password')?.touched" />
@@ -148,7 +155,7 @@ hover:scale-105 transition">
   </button>
 
 </div>
-          <div *ngIf="form.get('password')?.touched && form.get('password')?.invalid" class="mt-1 text-xs text-red-500">
+          <div id="login-password-error" *ngIf="form.get('password')?.touched && form.get('password')?.invalid" class="mt-1 text-xs text-red-500">
             <span *ngIf="form.get('password')?.errors?.['required']">Password is required.</span>
             <span *ngIf="form.get('password')?.errors?.['minlength']">Password must be at least 6 characters.</span>
           </div>
@@ -159,7 +166,7 @@ hover:scale-105 transition">
         </div>
 
         <!-- API Error Banner -->
-        <div *ngIf="error"
+        <div *ngIf="error" role="alert"
           class="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 px-4 py-3">
           <svg class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round"

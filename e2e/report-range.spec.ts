@@ -17,9 +17,12 @@ const rows = [
     run_time: '00:52', idle_time: '00:08', produced_qty: 48, energy_kwh: 12.4 }
 ];
 
-/** date_from that makes the range exactly `days` long, ending today. */
+/** date_from that makes the range exactly `days` long, ending today — in
+ *  plant time (IST), as the app counts it. A UTC date is yesterday's until
+ *  05:30 IST, which failed this test every night after midnight. */
 function daysAgo(days: number): string {
-  return new Date(Date.now() - (days - 1) * 86_400_000).toISOString().slice(0, 10);
+  const IST_MS = 330 * 60 * 1000;
+  return new Date(Date.now() + IST_MS - (days - 1) * 86_400_000).toISOString().slice(0, 10);
 }
 
 test('report dates stay within the last three months, and a full window is fetched directly', async ({ authedPage: page }) => {
