@@ -179,7 +179,7 @@
               }">
               {{ m.status }}
             </span> -->
-            <span class="text-white inline-block text-xs font-semibold px-3 py-1 rounded-full mt-1 blink"
+            <span class="text-white inline-block text-xs font-semibold px-3 py-1 rounded-full mt-1"
               [ngClass]="{
                 'green':  m.status === 'RUNNING',
                 'yellow': m.status === 'IDLE',
@@ -318,7 +318,7 @@
     </button>
 
     <!-- Auto-advance indicator -->
-    <span class="text-xs text-gray-400 dark:text-gray-500 ml-2">
+    <span class="mexa-on-field text-xs ml-2">
       Auto: {{ currentPage }}/{{ totalPages }}
     </span>
 

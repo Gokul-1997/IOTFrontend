@@ -11,7 +11,6 @@ module.exports = {
       },
       fontFamily: {
         ubuntu: ['Ubuntu', 'sans-serif'],
-        franklin: ['Libre Franklin', 'sans-serif'],
       },
       keyframes: {
     blink: {

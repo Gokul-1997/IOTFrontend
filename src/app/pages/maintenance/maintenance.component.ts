@@ -9,7 +9,22 @@ import { MachinesService } from '../machines/machines.service';
   selector: 'app-maintenance',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './maintenance.component.html'
+  templateUrl: './maintenance.component.html',
+  styles: [`
+    .num-col { text-align: right; }
+    .mt-form { margin-bottom: 1rem; }
+    .mt-grid { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+    .mt-wide { grid-column: 1 / -1; }
+    .mt-actions { margin-top: .9rem; }
+    .mt-upcoming { margin-bottom: 1rem; }
+    .mt-upcoming ul { list-style: none; margin: .5rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
+    .row-link { background: none; border: 0; padding: 0; font: inherit; color: var(--mexa-ink); font-weight: 600; cursor: pointer; text-align: left; }
+    .row-link:hover { text-decoration: underline; }
+    .row-link:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 2px; border-radius: 4px; }
+    tr.is-clickable { cursor: pointer; }
+    .mt-history { border-left: 2px solid var(--mexa-rule); padding-left: .75rem; display: grid; gap: .5rem; margin-top: .5rem; font-size: .8rem; }
+    .mt-history .muted { color: var(--mexa-ink-3); }
+  `]
 })
 export class MaintenanceComponent implements OnInit {
   activeTab: 'tickets' | 'schedules' | 'logs' | 'mttr' = 'tickets';
@@ -129,18 +144,18 @@ export class MaintenanceComponent implements OnInit {
 
   ticketStatusClass(s: string) {
     const m: any = {
-      OPEN: 'bg-red-100 text-red-700',
-      ASSIGNED: 'bg-blue-100 text-blue-700',
-      IN_PROGRESS: 'bg-yellow-100 text-yellow-700',
-      RESOLVED: 'bg-green-100 text-green-700',
-      CLOSED: 'bg-gray-100 text-gray-700'
+      OPEN: 'mexa-badge-bad',
+      ASSIGNED: 'mexa-badge-info',
+      IN_PROGRESS: 'mexa-badge-warn',
+      RESOLVED: 'mexa-badge-good',
+      CLOSED: 'mexa-badge-neutral'
     };
-    return m[s] || 'bg-gray-100 text-gray-700';
+    return m[s] || 'mexa-badge-neutral';
   }
 
   priorityClass(p: string) {
-    const m: any = { LOW: 'bg-gray-100 text-gray-600', MEDIUM: 'bg-blue-100 text-blue-700', HIGH: 'bg-orange-100 text-orange-700', CRITICAL: 'bg-red-100 text-red-700' };
-    return m[p] || 'bg-gray-100 text-gray-600';
+    const m: any = { LOW: 'mexa-badge-neutral', MEDIUM: 'mexa-badge-info', HIGH: 'mexa-badge-warn', CRITICAL: 'mexa-badge-bad' };
+    return m[p] || 'mexa-badge-neutral';
   }
 
   // ── Schedules / Logs / MTTR (unchanged) ─────────────────────
@@ -185,7 +200,7 @@ export class MaintenanceComponent implements OnInit {
   }
 
   statusClass(s: string) {
-    const m: any = { SCHEDULED: 'bg-blue-100 text-blue-700', IN_PROGRESS: 'bg-yellow-100 text-yellow-700', COMPLETED: 'bg-green-100 text-green-700', CANCELLED: 'bg-gray-100 text-gray-700', OVERDUE: 'bg-red-100 text-red-700' };
-    return m[s] || 'bg-gray-100 text-gray-700';
+    const m: any = { SCHEDULED: 'mexa-badge-info', IN_PROGRESS: 'mexa-badge-warn', COMPLETED: 'mexa-badge-good', CANCELLED: 'mexa-badge-neutral', OVERDUE: 'mexa-badge-bad' };
+    return m[s] || 'mexa-badge-neutral';
   }
 }

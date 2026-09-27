@@ -1,4 +1,4 @@
-<div class="min-h-screen flex bg-gray-100 dark:bg-neutral-900">
+<div class="min-h-screen flex bg-white dark:bg-neutral-900">
   <!-- Dark mode toggle -->
   <button type="button" (click)="toggleDark()" aria-label="Switch light or dark theme" class="absolute top-6 right-6
 w-10 h-10
@@ -25,7 +25,7 @@ hover:scale-105 transition">
   <!-- LEFT CAROUSEL -->
   <div class="hidden lg:flex w-1/2 relative justify-center overflow-hidden pt-24 md:pt-4">
     <!-- Fixed gradient -->
-    <div class="absolute inset-0 bg-gradient-to-bl from-[#C5404A] via-[#5E3C79] to-[#4A2FA0]"></div>
+    <div class="absolute inset-0 stm-auth-field"></div>
     <!-- Carousel container -->
     <div (mouseenter)="pauseCarousel()" (mouseleave)="resumeCarousel()" (touchstart)="onTouchStart($event)"
       (touchend)="onTouchEnd($event)" (mousedown)="onMouseDown($event)" (mouseup)="onMouseUp($event)">
@@ -68,8 +68,7 @@ hover:scale-105 transition">
   <div class="flex flex-1 items-center justify-center px-6">
     <div class="w-full max-w-md">
       <!-- Logo -->
-      <img src="/images/logo/STM_Mexa_logo.svg" alt="STM Mexa" class="mb-8 dark:hidden" />
-      <img src="/images/logo/STM_Mexa_logo.svg" alt="STM Mexa" class="mb-8 hidden dark:block" />
+      <img src="/images/logo/STM_Mexa_logo.svg" alt="STM Mexa" class="mb-8" />
       <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-2"> Sign In </h2>
       <p class="text-gray-500 dark:text-gray-400 mb-6"> Enter your email and password to sign in </p>
       <!-- FORM -->

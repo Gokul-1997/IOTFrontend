@@ -59,7 +59,7 @@ test('Settings lists only the notifications the role can receive', async ({ page
   await seedAuth(page, { roles: ['SETTER'], permissions: ['page:programs:view'], company_permissions: company });
   await page.route('**/api/**', (r: any) => r.fulfill(ok({ notify_alarm: true })));
   await page.goto('/settings');
-  const rows = page.locator('div.divide-y p.font-medium');
+  const rows = page.getByRole('group', { name: 'Notification types' }).locator('.mexa-setting-label');
   await expect(rows).toHaveText(['Program transfer', 'System']);
 });
 
@@ -67,7 +67,7 @@ test('Settings lists every notification for a company admin', async ({ page }) =
   await seedAuth(page, { roles: ['COMPANY_ADMIN'], company_permissions: [] });
   await page.route('**/api/**', (r: any) => r.fulfill(ok({ notify_alarm: true })));
   await page.goto('/settings');
-  const rows = page.locator('div.divide-y p.font-medium');
+  const rows = page.getByRole('group', { name: 'Notification types' }).locator('.mexa-setting-label');
   await expect(rows).toHaveText(['Alarms', 'Maintenance', 'Tickets', 'Program transfer', 'System']);
 });
 

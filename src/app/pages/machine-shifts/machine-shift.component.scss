@@ -1,24 +1,8 @@
-select {
-  padding: 8px;
-  width: 300px;
-  margin-bottom: 15px;
-}
-
-.shift-list {
-  background: #fff;
-  padding: 15px;
-  border-radius: 4px;
-
-  div {
-    margin-bottom: 8px;
-  }
-
-  button {
-    margin-top: 15px;
-    padding: 10px;
-    background: #389e0d;
-    color: white;
-    border: none;
-    cursor: pointer;
-  }
-}
+.asg-form { max-width: 30rem; display: grid; gap: .9rem; }
+.ms-shifts { border: 0; margin: 0; padding: 0; display: grid; gap: .45rem; }
+.ms-shift { display: flex; align-items: center; gap: .6rem; padding: .55rem .7rem; border: 1px solid var(--mexa-rule); border-radius: 10px; cursor: pointer; color: var(--mexa-ink); font-size: .9rem; }
+.ms-shift:has(input:checked) { border-color: var(--mexa-submit); background: #eef0fb; }
+:host-context(.dark) .ms-shift:has(input:checked) { background: #1d2133; }
+.ms-shift input { accent-color: var(--mexa-submit); width: 1rem; height: 1rem; }
+.ms-shift small { color: var(--mexa-ink-3); }
+.ms-save { justify-self: start; margin-top: .4rem; }

@@ -8,7 +8,7 @@
       <h2 class="text-xl font-bold text-gray-800 dark:text-white/90">Reports</h2>
       
     </div>
-    <p class="text-xs text-gray-400 mt-0.5">{{ nowDisplay() }}</p>
+    <p class="mexa-subtitle">{{ nowDisplay() }}</p>
     </div>
     </div>
 
@@ -82,8 +82,7 @@
       <button *ngIf="canExportTab" type="button"
         (click)="toolbarCsv()" [attr.aria-label]="'Export CSV: ' + tabLabel"
         [disabled]="isBuilt && (rows.length === 0 || selectedCount === 0 || rangeTooLong)"
-        class="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium
-               text-white shadow hover:bg-emerald-700 transition-colors disabled:opacity-40">
+        class="ui-btn ui-btn-ghost">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -95,8 +94,7 @@
       <button *ngIf="canExportTab && tabHasExcel" type="button"
         (click)="toolbarExcel()" [attr.aria-label]="'Excel: ' + tabLabel"
         [disabled]="isBuilt && rangeTooLong"
-        class="flex items-center gap-2 rounded-lg disabled:opacity-40 bg-blue-600 px-4 py-2 text-sm font-medium
-               text-white shadow hover:bg-blue-700 transition-colors">
+        class="ui-btn ui-btn-ghost">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
@@ -120,8 +118,7 @@
       <button *ngIf="isBuilt && auth.hasWidget('reports', 'export')"
         type="button" (click)="sendByEmail()"
         [disabled]="emailing || selectedCount === 0"
-        class="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium
-               text-white shadow hover:bg-indigo-700 transition-colors disabled:opacity-40">
+        class="ui-btn ui-btn-ghost">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
@@ -138,9 +135,7 @@
   <!-- ══════════════════════════════════════════════
        TABS
   ══════════════════════════════════════════════ -->
-  <p class="text-center text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">
-    Step 1 — choose a report
-  </p>
+  <p class="mexa-on-field rep-step">Step 1 — choose a report</p>
   <div class="ui-tabs ui-tabs-center" role="tablist" uiTabs aria-label="Report type">
     <button *ngFor="let tab of tabs"
             type="button" role="tab" class="ui-tab"
@@ -150,7 +145,7 @@
             [attr.aria-controls]="'panel-' + tab.id"
             [attr.tabindex]="activeTab === tab.id ? 0 : -1"
             (click)="setTab(tab.id)">
-      <span class="ui-tab-icon" aria-hidden="true">{{ tab.icon }}</span>{{ tab.label }}
+      {{ tab.label }}
     </button>
   </div>
 <div *ngIf="activeTab === 'oee-records'" class="ui-tabpanel shadow-xl" role="tabpanel"
@@ -257,8 +252,7 @@
                           dark:bg-gray-800 px-3 py-2 text-sm"/>
             <button type="button" (click)="sendByEmail()"
                     [disabled]="emailing || selectedCount === 0"
-                    class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white
-                           shadow hover:bg-amber-700 disabled:opacity-40">
+                    class="ui-btn ui-btn-primary">
               {{ emailing ? 'Sending…' : 'Email this report' }}
             </button>
           </div>
@@ -316,16 +310,10 @@
        KPI CARDS
   ══════════════════════════════════════════════ -->
   <!-- KPI CARDS — controlled by widget:kpi -->
-  <div *ngIf="auth.hasWidget('reports', 'kpi')" class="grid grid-cols-2 lg:grid-cols-4 gap-4 my-5">
-    <div *ngFor="let kpi of kpis"
-      [class]="'rounded-xl border p-2 flex items-center gap-3 ' + kpiColorClass(kpi.color)">
-      <span class="text-2xl">{{ kpi.icon }}</span>
-      <div>
-        <p class="text-base text-gray-800 font-medium">{{ kpi.label }}</p>
-        <p [class]="'text-xl font-bold ' + kpiTextClass(kpi.color)">
-          {{ kpi.value }}<span class="text-base font-normal ml-1 text-gray-700">{{ kpi.unit }}</span>
-        </p>
-      </div>
+  <div *ngIf="auth.hasWidget('reports', 'kpi')" class="mexa-kpis rep-kpis">
+    <div *ngFor="let kpi of kpis" class="mexa-kpi">
+      <span class="mexa-kpi-label">{{ kpi.label }}</span>
+      <p class="mexa-kpi-value">{{ kpi.value }}<small>{{ kpi.unit }}</small></p>
     </div>
   </div>
 

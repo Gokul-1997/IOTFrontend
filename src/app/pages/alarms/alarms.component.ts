@@ -10,7 +10,11 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-alarms',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './alarms.component.html'
+  templateUrl: './alarms.component.html',
+  styles: [`
+    .alarm-msg { max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .alarm-note { width: 11rem; min-height: 1.875rem; padding: .25rem .55rem; font-size: .8rem; }
+  `]
 })
 export class AlarmsComponent implements OnInit {
   alarms: any[] = [];
@@ -117,10 +121,10 @@ export class AlarmsComponent implements OnInit {
      LOW/MEDIUM/HIGH wording are kept so no severity shows up unstyled. */
   severityClass(severity: string) {
     const map: any = {
-      CRITICAL: 'bg-red-100 text-red-700', HIGH: 'bg-orange-100 text-orange-700',
-      NORMAL: 'bg-yellow-100 text-yellow-700', MEDIUM: 'bg-yellow-100 text-yellow-700',
-      LOW: 'bg-blue-100 text-blue-700', INFORMATION: 'bg-blue-100 text-blue-700'
+      CRITICAL: 'mexa-badge-bad', HIGH: 'mexa-badge-bad',
+      NORMAL: 'mexa-badge-warn', MEDIUM: 'mexa-badge-warn',
+      LOW: 'mexa-badge-info', INFORMATION: 'mexa-badge-info'
     };
-    return map[String(severity || '').toUpperCase()] || 'bg-gray-100 text-gray-700';
+    return map[String(severity || '').toUpperCase()] || 'mexa-badge-neutral';
   }
 }

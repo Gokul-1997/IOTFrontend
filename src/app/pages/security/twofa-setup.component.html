@@ -1,79 +1,76 @@
-<div class="p-6 max-w-lg mx-auto">
-  <h1 class="text-2xl font-bold text-gray-800 mb-2">Two-Factor Authentication</h1>
-  <p class="text-sm text-gray-500 mb-6">Add an extra layer of security to your account</p>
+<div class="mexa-titlebar">
+  <div>
+    <h1 class="mexa-title">Two-Factor Authentication</h1>
+    <p class="mexa-subtitle">Add an extra layer of security to your account</p>
+  </div>
+</div>
 
+<div class="tf-wrap">
   <!-- Status -->
-  <div *ngIf="step === 'status'" class="bg-white rounded-xl shadow-sm border p-6">
+  <section *ngIf="step === 'status'" class="mexa-card">
     <ng-container *ngIf="status?.enabled; else notEnabled">
-      <div class="flex items-center gap-3 p-4 bg-green-50 rounded-lg mb-6">
-        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-          <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-          </svg>
-        </div>
+      <div class="tf-state is-on">
+        <span class="tf-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        </span>
         <div>
-          <p class="font-semibold text-green-800">2FA is Enabled</p>
-          <p class="text-xs text-green-600">Enabled on {{ status.enabled_at | date:'mediumDate' }}</p>
+          <p class="tf-state-title">2FA is on</p>
+          <p class="tf-state-sub">Turned on {{ status.enabled_at | date:'mediumDate' }}</p>
         </div>
       </div>
-      <button (click)="disable()" class="w-full px-4 py-2 border border-red-300 text-red-600 rounded-lg text-sm hover:bg-red-50 transition-colors">
-        Disable 2FA
-      </button>
+      <button type="button" (click)="disable()" class="ui-btn ui-btn-danger-ghost tf-full">Turn off 2FA</button>
     </ng-container>
     <ng-template #notEnabled>
-      <div class="flex items-center gap-3 p-4 bg-yellow-50 rounded-lg mb-6">
-        <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-          <svg class="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 5a7 7 0 110 14A7 7 0 0112 5z"/>
-          </svg>
-        </div>
+      <div class="tf-state is-off">
+        <span class="tf-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M12 5a7 7 0 110 14A7 7 0 0112 5z"/></svg>
+        </span>
         <div>
-          <p class="font-semibold text-yellow-800">2FA is Not Enabled</p>
-          <p class="text-xs text-yellow-600">Your account is less secure without it</p>
+          <p class="tf-state-title">2FA is off</p>
+          <p class="tf-state-sub">Your account is less secure without it</p>
         </div>
       </div>
-      <button (click)="startSetup()" [disabled]="loading" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors disabled:opacity-60">
-        {{ loading ? 'Setting up...' : 'Enable 2FA' }}
+      <button type="button" (click)="startSetup()" [disabled]="loading" class="ui-btn ui-btn-primary tf-full">
+        {{ loading ? 'Setting up…' : 'Turn on 2FA' }}
       </button>
     </ng-template>
-  </div>
+  </section>
 
-  <!-- Setup / QR Code -->
-  <div *ngIf="step === 'setup'" class="bg-white rounded-xl shadow-sm border p-6">
-    <h2 class="font-semibold text-gray-800 mb-4">Scan QR Code</h2>
-    <p class="text-sm text-gray-600 mb-4">Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)</p>
-    <div class="flex justify-center mb-4">
-      <img [src]="qrDataUrl" alt="QR Code" class="w-48 h-48 border rounded-lg" />
+  <!-- Setup / QR code -->
+  <section *ngIf="step === 'setup'" class="mexa-card">
+    <h2 class="mexa-card-title mexa-card-title-left">Scan the QR code</h2>
+    <p class="mexa-card-hint tf-hint">Scan it with your authenticator app (Google Authenticator, Authy or similar).</p>
+    <div class="tf-qr"><img [src]="qrDataUrl" alt="QR code for your authenticator app" width="192" height="192" /></div>
+    <div class="tf-key">
+      <p class="tf-key-label">Or enter this key by hand</p>
+      <p class="tf-key-value">{{ secret }}</p>
     </div>
-    <div class="bg-gray-50 rounded-lg p-3 mb-4">
-      <p class="text-xs text-gray-500 mb-1">Manual entry key:</p>
-      <p class="font-mono text-sm font-bold text-gray-800 break-all">{{ secret }}</p>
+    <div class="ui-field">
+      <label class="ui-label" for="tf-code">6-digit code from the app</label>
+      <input id="tf-code" [(ngModel)]="token" maxlength="6" inputmode="numeric" autocomplete="one-time-code"
+        class="ui-input tf-code" [attr.aria-invalid]="!!error" [attr.aria-describedby]="error ? 'tf-err' : null" />
+      <p *ngIf="error" id="tf-err" class="ui-error" role="alert">{{ error }}</p>
     </div>
-    <input [(ngModel)]="token" placeholder="Enter 6-digit code from app" maxlength="6"
-      class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3 text-center text-lg tracking-widest" />
-    <p *ngIf="error" class="text-red-500 text-xs mb-3">{{ error }}</p>
-    <button (click)="enable()" [disabled]="loading" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors disabled:opacity-60">
-      {{ loading ? 'Verifying...' : 'Verify & Enable' }}
+    <button type="button" (click)="enable()" [disabled]="loading" class="ui-btn ui-btn-primary tf-full tf-gap">
+      {{ loading ? 'Verifying…' : 'Verify and turn on' }}
     </button>
-  </div>
+  </section>
 
-  <!-- Backup Codes -->
-  <div *ngIf="step === 'backup'" class="bg-white rounded-xl shadow-sm border p-6">
-    <div class="flex items-center gap-2 mb-4">
-      <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-      </svg>
-      <h2 class="font-semibold text-green-700">2FA Enabled Successfully!</h2>
+  <!-- Backup codes -->
+  <section *ngIf="step === 'backup'" class="mexa-card">
+    <div class="tf-state is-on">
+      <span class="tf-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      </span>
+      <div><p class="tf-state-title">2FA is on</p></div>
     </div>
-    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-      <p class="text-sm font-semibold text-yellow-800 mb-2">&#9888; Save these backup codes</p>
-      <p class="text-xs text-yellow-700 mb-3">If you lose access to your authenticator, use these one-time codes. Each code can only be used once.</p>
-      <div class="grid grid-cols-2 gap-2">
-        <code *ngFor="let code of backupCodes" class="bg-white border rounded px-3 py-2 text-xs font-mono text-gray-800 text-center">{{ code }}</code>
-      </div>
+    <div class="ui-alert ui-alert-warn">
+      <strong>Save these backup codes.</strong>
+      If you lose your authenticator, each of these codes signs you in once.
     </div>
-    <button (click)="step='status'" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors">
-      Done &mdash; I've saved my codes
-    </button>
-  </div>
+    <div class="tf-codes">
+      <code *ngFor="let code of backupCodes">{{ code }}</code>
+    </div>
+    <button type="button" (click)="step='status'" class="ui-btn ui-btn-primary tf-full">Done, I've saved my codes</button>
+  </section>
 </div>

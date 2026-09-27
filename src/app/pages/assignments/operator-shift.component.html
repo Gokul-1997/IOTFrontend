@@ -1,27 +1,33 @@
-<h2>Operator → Shift Assignment</h2>
+<div class="mexa-titlebar">
+  <div>
+    <h1 class="mexa-title">Operator → Shift</h1>
+    <p class="mexa-subtitle">Put an operator on a shift from a given date</p>
+  </div>
+</div>
 
-<form [formGroup]="form" (ngSubmit)="submit()" class="form">
+<form [formGroup]="form" (ngSubmit)="submit()" class="mexa-card asg-form">
+  <div class="ui-field">
+    <label class="ui-label" for="os-operator">Operator</label>
+    <select id="os-operator" class="ui-input" formControlName="operator_id">
+      <option value="">Select operator</option>
+      <option *ngFor="let o of operators" [value]="o.id">{{ o.operator_name }}</option>
+    </select>
+  </div>
 
-  <label>Operator</label>
-  <select formControlName="operator_id" aria-label="Operator" >
-    <option value="">Select Operator</option>
-    <option *ngFor="let o of operators" [value]="o.id">
-      {{ o.operator_name }}
-    </option>
-  </select>
+  <div class="ui-field">
+    <label class="ui-label" for="os-shift">Shift</label>
+    <select id="os-shift" class="ui-input" formControlName="shift_id">
+      <option value="">Select shift</option>
+      <option *ngFor="let s of shifts" [value]="s.id">{{ s.shift_name }} ({{ s.start_time }} – {{ s.end_time }})</option>
+    </select>
+  </div>
 
-  <label>Shift</label>
-  <select formControlName="shift_id" aria-label="Shift" >
-    <option value="">Select Shift</option>
-    <option *ngFor="let s of shifts" [value]="s.id">
-      {{ s.shift_name }} ({{ s.start_time }} - {{ s.end_time }})
-    </option>
-  </select>
+  <div class="ui-field">
+    <label class="ui-label" for="os-from">Effective from</label>
+    <input id="os-from" class="ui-input" type="date" formControlName="effective_from" />
+  </div>
 
-  <label>Effective From</label>
-  <input type="date" formControlName="effective_from" aria-label="Effective From" />
-
-  <button type="submit" [disabled]="saving" *ngIf="auth.hasAction('assignments', 'create')">
-    {{ saving ? 'Saving...' : 'Assign Shift' }}
+  <button type="submit" class="ui-btn ui-btn-primary" [disabled]="saving" *ngIf="auth.hasAction('assignments', 'create')">
+    {{ saving ? 'Saving…' : 'Assign shift' }}
   </button>
 </form>

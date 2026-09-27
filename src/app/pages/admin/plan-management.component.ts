@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { CompanyService } from '../../core/services/company.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
+import { AdminTabsComponent } from './admin-tabs.component';
 
 /*
  * Plans — the catalogue a company is assigned from.
@@ -21,7 +22,7 @@ import { AuthService } from '../../core/services/auth.service';
 @Component({
   selector: 'app-plan-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, AdminTabsComponent],
   templateUrl: './plan-management.component.html'
 })
 export class PlanManagementComponent implements OnInit {

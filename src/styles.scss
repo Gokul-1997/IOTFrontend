@@ -13,9 +13,9 @@
 // MEXA dashboard design system — the shell, tiles, cards and tables that
 // every Phase 2 dashboard shares.
 @use './styles/mexa';
-@import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@100;200;300;400;500;600;700;800;900&family=Ubuntu:wght@300;400;500;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Questrial&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800&display=swap');
+// Ubuntu is the STM MEXA face (the design PDF uses it throughout). Libre
+// Franklin, Questrial and Nunito Sans were loaded here too and used nowhere.
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap');
 
 
 html {
@@ -58,35 +58,28 @@ body {
 
 body {
   @apply text-gray-900 bg-no-repeat font-ubuntu dark:text-white transition-colors duration-300;
-  background: var(--mexa-ground);
+  background: #2b3990 var(--stm-field) no-repeat;
+  background-size: 100% 100%;
 }
 
-/* The ground for the pages that predate the MEXA screens. It was its own
-   indigo-to-crimson gradient, which left the app with two different grounds
-   depending on which page you were on — and put white cards on a saturated
-   field. It now takes the same neutral as .mexa-shell so every page reads as
-   one product. The coloured top bar on these pages is unchanged; that is
-   where the brand lives. */
+/* The pages that predate the MEXA screens sit on the same STM field as the
+   dashboards (.mexa-shell paints it), so this wrapper paints nothing. */
 .bg-wrapper {
   min-height: 100vh;
-  background: var(--mexa-ground);
-  padding-top: 15px;
-}
-.dark .bg-wrapper {
-  background: var(--mexa-ground);
+  background: transparent;
   padding-top: 15px;
 }
 /* flex-wrap + gap are load-bearing: this bar is on 16 pages and, without
    wrapping, its title and action buttons pushed past a 390px phone viewport
    and made every one of those pages scroll sideways. */
+/* The same see-through indigo bar as .mexa-titlebar: one title bar across
+   the app. */
 .bg-top-bar{
-  @apply bg-gradient-to-r from-[#2B3990] to-[#9B3F70]
-  text-white rounded-xl px-2 md:px-4 py-2 mb-3
-            flex flex-wrap items-center justify-between gap-2 shadow-xl
-}
-
-.dark .bg-top-bar{
-  background: #111111;
+  @apply text-white px-2 md:px-4 py-2 mb-3
+            flex flex-wrap items-center justify-between gap-2;
+  background: var(--mexa-bar);
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 14px;
 }
 
 .bg-top-bar h2{
@@ -419,26 +412,23 @@ h4 {
   background-color: #EAEDFF
 }
 .dark .menu-default {
-    background-color: #000000;
+    background-color: #0d0f15;
 }
+/* Machine card (Live Dashboard, machine page): a white card lifted off the
+   STM field, its state shown by a coloured stripe along the top — the same
+   four colours as everywhere else. It was a 10px coloured frame, which read
+   as heavy and made every offline machine a grey slab. */
 .border-big {
-  border-width: 10px;
+  border: 0 !important;
+  border-top: 6px solid var(--card-status, #94a3b8) !important;
+  background-color: var(--mexa-card) !important;
+  border-radius: 18px !important;
+  box-shadow: var(--mexa-card-shadow) !important;
 
-  &.green-full {
-    border-color: #15803d;
-  }
-
-  &.yellow-full {
-    border-color: #a16207;
-  }
-
-  &.red-full {
-    border-color: #dc2626;
-  }
-
-  &.gray-full {
-    border-color: #6e6e6e
-  }
+  &.green-full  { --card-status: #22c55e; }
+  &.yellow-full { --card-status: #f5a623; }
+  &.red-full    { --card-status: #e03131; }
+  &.gray-full   { --card-status: #94a3b8; }
 }
 
 /* Overlay */
@@ -548,7 +538,7 @@ h4 {
 
   .subtitle {
     font-size: 1rem;
-    color: #aaa4cd;
+    color: var(--mexa-on-field-2);
   }
 }
 .page-wrapper{
@@ -872,47 +862,21 @@ $radius: 10px;
   font-size: 13px;
 }
 
-@keyframes alarmBlink {
-  0% {
-    background-color: #fff;
-  }
-
-  50% {
-    background-color: #ef4444;
-
-  }
-
-  100% {
-    background-color: #fff;
-  }
-}
-
+/* An alarm: red stripe and a red ring that pulses outward. The whole card
+   used to flash red and white every second, which made its figures
+   unreadable exactly when someone needs to read them. */
 .alarm-blink {
-  animation: alarmBlink 1s infinite;
-  border: 10px solid #dc2626!important;
-
+  --card-status: #e03131;
+  border-top-color: #e03131 !important;
+  box-shadow: 0 0 0 2px #e03131, var(--mexa-card-shadow) !important;
+  animation: alarmPulse 1.4s ease-out infinite;
+}
+@keyframes alarmPulse {
+  0%   { box-shadow: 0 0 0 2px #e03131, 0 0 0 2px rgba(224, 49, 49, .55), var(--mexa-card-shadow); }
+  100% { box-shadow: 0 0 0 2px #e03131, 0 0 0 14px rgba(224, 49, 49, 0), var(--mexa-card-shadow); }
 }
 
-@keyframes alarmBlinkDark {
-  0% {
-    background-color: #111;
-  }
-
-  50% {
-    background-color: #b94d4d;
-    color: #fff;
-  }
-
-  100% {
-    background-color: #111;
-  }
-}
-
-.dark .alarm-blink {
-  animation: alarmBlinkDark 1s infinite;
-  border: 10px solid #dc2626;
-
-}
+.dark .alarm-blink { animation: alarmPulse 1.4s ease-out infinite; }
 
 /* The red border still marks the alarm; the flashing stops for anyone who
    has asked their system for less motion (WCAG 2.3.3). */
@@ -972,7 +936,7 @@ input[type="date"]::after {
 }
 .btn-apply {
   padding: 9px 18px;
-  background: #4f46e5;   /* white text 4.5 → 6.3 */
+  background: #2b3990;   /* STM navy; white text 9.6:1 */
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -985,7 +949,7 @@ input[type="date"]::after {
   align-items: center;
   gap: 5px;
 
-  &:hover:not(:disabled) { background: #4f46e5; }
+  &:hover:not(:disabled) { background: #223070; }
   &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
@@ -1052,14 +1016,14 @@ html.dark {
   flex-wrap: wrap;
 }
 
-// Table card container
+// Table card container — the same lifted white card as .mexa-card
 .table-card {
-  background: #fff;
-  border-radius: 14px;
+  background: var(--mexa-card);
+  border-radius: 18px;
+  box-shadow: var(--mexa-card-shadow) !important;
   overflow: hidden;
   position: relative;
 }
-.dark .table-card { background: #12203a; }
 
 // Loading spinner overlay
 .loading-overlay {

@@ -441,18 +441,6 @@ export class Reports implements OnInit {
     ];
   }
 
-  kpiColorClass(c: string): string {
-    return ({ blue: 'bg-blue-200 border-blue-200', green: 'bg-green-200 border-green-200',
-              yellow: 'bg-amber-100 border-amber-100', purple: 'bg-purple-200 border-purple-200' } as any)[c]
-      || 'bg-gray-200 border-gray-200';
-  }
-
-  kpiTextClass(c: string): string {
-    return ({ blue: 'text-blue-700', green: 'text-green-700',
-              yellow: 'text-amber-700', purple: 'text-purple-700' } as any)[c]
-      || 'text-gray-700';
-  }
-
   /* ── helpers ── */
   minOf(a: number, b: number): number { return Math.min(a, b); }
 

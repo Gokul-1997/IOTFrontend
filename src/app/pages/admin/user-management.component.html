@@ -1,46 +1,26 @@
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-
-  <!-- Admin Tab Navigation -->
-  <div class="flex gap-1 mb-6 bg-white dark:bg-gray-800 rounded-xl shadow p-1 w-fit">
-    <a *ngIf="auth.isSntSuper()" routerLink="/admin/companies" routerLinkActive="bg-blue-600 text-white"
-       class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-      Companies
-    </a>
-    <a *ngIf="auth.isSntSuper()" routerLink="/admin/plans" routerLinkActive="bg-blue-600 text-white"
-       class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-      Plans
-    </a>
-    <a routerLink="/admin/users" routerLinkActive="bg-blue-600 text-white"
-       class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-      {{ auth.isSntSuper() ? 'Company Admins' : 'Users' }}
-    </a>
-    <a *ngIf="!auth.isSntSuper()" routerLink="/admin/roles" routerLinkActive="bg-blue-600 text-white"
-       class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-      Roles & Permissions
-    </a>
-  </div>
-
-  <!-- Card -->
-  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">{{ auth.isSntSuper() ? 'Company Admins' : 'User Management' }}</h1>
-        <p class="text-sm text-gray-500 mt-1" *ngIf="!auth.isSntSuper()">Create your company's users and give each one a role</p>
+<div>
+  <div class="mexa-titlebar">
+    <div>
+        <h1 class="mexa-title">{{ auth.isSntSuper() ? 'Company Admins' : 'User Management' }}</h1>
+        <p class="mexa-subtitle" *ngIf="!auth.isSntSuper()">Create your company's users and give each one a role</p>
         <!-- S&T sees one admin per company, the one made with the company.
              Anyone else, a second full-access admin included, the company adds. -->
-        <p class="text-sm text-gray-500 mt-1" *ngIf="auth.isSntSuper()">One admin per company, created with the company. The admin adds everyone else, including anyone else who needs full access.</p>
-      </div>
-      <button *ngIf="!auth.isSntSuper()" (click)="openCreateModal()"
-        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+        <p class="mexa-subtitle" *ngIf="auth.isSntSuper()">One admin per company, created with the company. The admin adds everyone else, including anyone else who needs full access.</p>
+    </div>
+    <span class="mexa-titlebar-spacer"></span>
+    <button type="button" *ngIf="!auth.isSntSuper()" (click)="openCreateModal()"
+        class="ui-btn ui-btn-primary">
         + Create User
       </button>
-    </div>
+  </div>
+
+  <app-admin-tabs></app-admin-tabs>
+
+  <div class="mexa-card">
 
     <!-- Loading -->
     <div *ngIf="loading && users.length === 0" class="flex justify-center py-12">
-      <div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      <span class="ui-spinner admin-spin" role="status" aria-label="Loading"></span>
     </div>
 
     <!-- Empty -->
@@ -54,25 +34,25 @@
     </div>
 
     <!-- Users Table -->
-    <div *ngIf="!loading && users.length > 0" class="overflow-x-auto">
-      <table class="w-full border-collapse">
+    <div *ngIf="!loading && users.length > 0" class="mexa-tablewrap" tabindex="0" role="region" aria-label="Users">
+      <table class="mexa-table">
         <thead>
-          <tr class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">#</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">User</th>
-            <th *ngIf="auth.isSntSuper()" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Company</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Roles</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Status</th>
-            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Actions</th>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">User</th>
+            <th scope="col" *ngIf="auth.isSntSuper()" >Company</th>
+            <th scope="col">Roles</th>
+            <th scope="col">Status</th>
+            <th scope="col" class="admin-center">Actions</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+        <tbody>
           <tr *ngFor="let user of users; let i = index"
               class="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
             <td class="px-4 py-3 text-sm text-gray-400">{{ i + 1 }}</td>
             <td class="px-4 py-3">
               <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-semibold text-sm">
+                <div class="admin-avatar" aria-hidden="true">
                   {{ user.username.charAt(0).toUpperCase() }}
                 </div>
                 <div>
@@ -83,7 +63,7 @@
             </td>
             <td *ngIf="auth.isSntSuper()" class="px-4 py-3">
               <span *ngIf="user.company_name"
-                    class="px-2 py-0.5 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 text-xs rounded-full font-medium">
+                    class="mexa-badge mexa-badge-neutral">
                 {{ user.company_name }}
               </span>
               <!-- a user with no company can log in but belongs to no tenant -->
@@ -93,7 +73,7 @@
             <td class="px-4 py-3">
               <div class="flex flex-wrap gap-1">
                 <span *ngFor="let role of user.roles"
-                      class="px-2 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs rounded-full font-medium">
+                      class="mexa-badge mexa-badge-info">
                   {{ role.role_name }}
                 </span>
                 <span *ngIf="!user.roles || user.roles.length === 0"
@@ -103,34 +83,27 @@
             <td class="px-4 py-3">
               <!-- A disabled company shuts out everyone in it, whatever their own account says -->
               <span *ngIf="user.company_active === false"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs rounded-full"
+                    class="mexa-badge mexa-badge-bad"
                     title="Nobody in this company can sign in until it is turned back on, on the Companies page">
-                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                 Company disabled
               </span>
-              <span *ngIf="user.company_active !== false" [class]="user.is_active
-                ? 'inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs rounded-full'
-                : 'inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs rounded-full'">
-                <span class="w-1.5 h-1.5 rounded-full" [class]="user.is_active ? 'bg-green-500' : 'bg-red-500'"></span>
+              <span *ngIf="user.company_active !== false" class="mexa-badge" [ngClass]="user.is_active ? 'mexa-badge-good' : 'mexa-badge-bad'">
                 {{ user.is_active ? 'Active' : 'Inactive' }}
               </span>
             </td>
             <td class="px-4 py-3 text-center">
               <div class="flex items-center justify-center gap-2">
                 <button (click)="openEditModal(user)"
-                  class="px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 font-medium">
+                  class="ui-btn ui-btn-ghost ui-btn-xs">
                   Edit
                 </button>
-                <button (click)="toggleUserActive(user)"
-                  [class]="user.is_active
-                    ? 'px-3 py-1.5 bg-amber-500 text-white text-xs rounded-lg hover:bg-amber-600 font-medium'
-                    : 'px-3 py-1.5 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 font-medium'">
+                <button (click)="toggleUserActive(user)" class="ui-btn ui-btn-ghost ui-btn-xs">
                   {{ user.is_active ? 'Disable' : 'Enable' }}
                 </button>
                 <!-- A company's admin goes only with the company: S&T can't add
                      another, so deleting this one would leave nobody to run it -->
                 <button *ngIf="!auth.isSntSuper()" (click)="deleteUser(user)"
-                  class="px-3 py-1.5 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600 font-medium">
+                  class="ui-btn ui-btn-danger-ghost ui-btn-xs">
                   Delete
                 </button>
               </div>

@@ -14,7 +14,29 @@ import { NotificationService } from '../../core/services/notification.service';
   selector: 'app-notifications',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './notifications.component.html'
+  templateUrl: './notifications.component.html',
+  styles: [`
+    .nt-pad { padding: 1rem; }
+    .nt-retry { margin-top: .75rem; }
+    .nt-list { list-style: none; margin: 0; padding: 0; }
+    .nt-list li + li { border-top: 1px solid var(--mexa-rule); }
+    .nt-item { width: 100%; display: flex; align-items: flex-start; gap: .75rem; padding: .9rem 1.1rem; text-align: left;
+               background: none; border: 0; font: inherit; cursor: pointer; color: inherit; }
+    .nt-item:hover { background: var(--mexa-row-alt); }
+    .nt-item:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: -2px; }
+    .nt-item.is-unread { background: #f1f2fb; }
+    :host-context(.dark) .nt-item.is-unread { background: #1d2133; }
+    .nt-dot { margin-top: .4rem; width: .55rem; height: .55rem; border-radius: 999px; flex: none; }
+    .nt-dot.is-alarm { background: var(--mexa-bad); }
+    .nt-dot.is-warning { background: var(--mexa-warn); }
+    .nt-dot.is-info { background: var(--mexa-info); }
+    .nt-body { min-width: 0; flex: 1; }
+    .nt-head { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+    .nt-title { font-size: .9rem; font-weight: 600; color: var(--mexa-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nt-item.is-unread .nt-title { font-weight: 700; }
+    .nt-time { font-size: .78rem; color: var(--mexa-ink-3); flex: none; }
+    .nt-msg { display: block; font-size: .85rem; color: var(--mexa-ink-2); margin-top: .15rem; }
+  `]
 })
 export class NotificationsComponent implements OnInit {
 
@@ -104,9 +126,9 @@ export class NotificationsComponent implements OnInit {
 
   dotClass(type: string): string {
     switch (type) {
-      case 'ALARM':   return 'bg-red-500';
-      case 'WARNING': return 'bg-amber-500';
-      default:        return 'bg-blue-500';
+      case 'ALARM':   return 'is-alarm';
+      case 'WARNING': return 'is-warning';
+      default:        return 'is-info';
     }
   }
 }

@@ -3,7 +3,7 @@
   <!-- HEADER -->
   <div class="bg-top-bar
             text-white rounded-xl px-4 py-2 mb-3
-            flex flex-wrap items-center justify-between  shadow-xl">
+            flex flex-wrap items-center justify-between">
 
     <!-- Left: machine serial + status dot + status word -->
     <div class="flex items-center gap-3">
@@ -86,7 +86,7 @@
   <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
 
     <!-- MACHINE CARD -->
-    <div class="xl:col-span-6 bg-white dark:bg-[#111111] rounded-xl border-big green-full p-2 flex flex-col md:flex-row gap-6 shadow-xl"
+    <div class="xl:col-span-6 mexa-lift rounded-xl border-big p-2 flex flex-col md:flex-row gap-6 "
     [ngClass]="{
         'green-full':  liveStatus === 'RUNNING',
         'yellow-full': liveStatus === 'IDLE',
@@ -192,7 +192,7 @@
 
 
     <!-- TIME INFO -->
-    <div class="xl:col-span-3 bg-white dark:bg-[#111111] rounded-xl  p-2  shadow-xl">
+    <div class="xl:col-span-3 mexa-lift rounded-xl  p-2  ">
       <h3 class="text-base font-semibold text-center mb-2">Time Info</h3>
       <div class="-mt-2">
       <apx-chart
@@ -224,7 +224,7 @@
 
 
     <!-- MACHINE STATUS / UTILIZATION -->
-    <div class="xl:col-span-3 bg-white dark:bg-[#111111] rounded-xl  p-2  shadow-xl">
+    <div class="xl:col-span-3 mexa-lift rounded-xl  p-2  ">
 
       <h3 class="text-base font-semibold text-center mb-2">Machine Status</h3>
 
@@ -321,7 +321,7 @@
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 ">
 
     <!-- ══════════════ OEE ══════════════ -->
-    <div class="bg-white dark:bg-[#111111] rounded-xl  p-2 flex flex-col items-center  shadow-xl">
+    <div class="mexa-lift rounded-xl  p-2 flex flex-col items-center  ">
       <h3 class="text-base font-semibold text-center mb-2">OEE</h3>
 
       <div class="flex items-center justify-center w-full overflow-hidden">
@@ -378,7 +378,7 @@
     <!-- ══════════════ SPINDLE LOAD ══════════════
          0–150%: the load meter passes 100% on an overload (226% was
          recorded), which the old 0–100% dial could not show. -->
-    <div *ngIf="auth.hasWidget('dashboard:live', 'spindle-speed-chart')" class="bg-white dark:bg-[#111111] rounded-xl p-3 flex flex-col items-center shadow-xl">
+    <div *ngIf="auth.hasWidget('dashboard:live', 'spindle-speed-chart')" class="mexa-lift rounded-xl p-3 flex flex-col items-center ">
       <h3 class="text-base font-semibold self-start">Spindle Load</h3>
       <app-needle-gauge class="max-w-[340px]"
         [value]="liveSpindleLoad" [min]="0" [max]="150" [majorStep]="25" [minorPerMajor]="5"
@@ -392,7 +392,7 @@
          The controllers send the actual feed (mm/min), not the override %:
          the old "Feed Override" dial divided mm/min by a guessed 45,000, so a
          cutting feed of 96 mm/min read 0%. -->
-    <div *ngIf="auth.hasWidget('dashboard:live', 'feed-override-chart')" class="bg-white dark:bg-[#111111] rounded-xl p-3 flex flex-col items-center shadow-xl">
+    <div *ngIf="auth.hasWidget('dashboard:live', 'feed-override-chart')" class="mexa-lift rounded-xl p-3 flex flex-col items-center ">
       <h3 class="text-base font-semibold self-start">Feed Rate</h3>
       <app-needle-gauge class="max-w-[340px]"
         [value]="liveFeed" [min]="0" [max]="FEED_SCALE" [majorStep]="1000" [minorPerMajor]="4"
@@ -404,11 +404,6 @@
       <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Feed override % is not reported by the controller</p>
     </div>
 
-  </div>
-
-  <!-- FOOTER -->
-  <div class="text-center text-xs text-gray-400 mt-6 pb-4">
-    Copyright 2026. All Rights Reserved STM Mexa.
   </div>
 
 </div>

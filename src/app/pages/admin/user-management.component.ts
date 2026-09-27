@@ -6,11 +6,12 @@ import { AdminService } from './admin.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MachinesService } from '../machines/machines.service';
+import { AdminTabsComponent } from './admin-tabs.component';
 
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, AdminTabsComponent],
   templateUrl: './user-management.component.html',
   changeDetection: ChangeDetectionStrategy.Default
 })

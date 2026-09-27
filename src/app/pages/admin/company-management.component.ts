@@ -6,11 +6,12 @@ import { RouterModule } from '@angular/router';
 import { CompanyService } from '../../core/services/company.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
+import { AdminTabsComponent } from './admin-tabs.component';
 
 @Component({
   selector: 'app-company-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, AdminTabsComponent],
   templateUrl: './company-management.component.html',
 })
 export class CompanyManagementComponent implements OnInit {

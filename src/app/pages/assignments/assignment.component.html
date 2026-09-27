@@ -1,27 +1,33 @@
-<h2>Operator → Machine Assignment</h2>
+<div class="mexa-titlebar">
+  <div>
+    <h1 class="mexa-title">Operator → Machine</h1>
+    <p class="mexa-subtitle">Assign an operator to the machine they run</p>
+  </div>
+</div>
 
-<form [formGroup]="form" (ngSubmit)="submit()" class="form">
+<form [formGroup]="form" (ngSubmit)="submit()" class="mexa-card asg-form">
+  <div class="ui-field">
+    <label class="ui-label" for="asg-operator">Operator</label>
+    <select id="asg-operator" class="ui-input" formControlName="operator_id">
+      <option value="">Select operator</option>
+      <option *ngFor="let o of operators" [value]="o.id">{{ o.operator_name }}</option>
+    </select>
+  </div>
 
-  <label>Operator</label>
-  <select formControlName="operator_id" aria-label="Operator" >
-    <option value="">Select Operator</option>
-    <option *ngFor="let o of operators" [value]="o.id">
-      {{ o.operator_name }}
-    </option>
-  </select>
+  <div class="ui-field">
+    <label class="ui-label" for="asg-machine">Machine</label>
+    <select id="asg-machine" class="ui-input" formControlName="machine_id">
+      <option value="">Select machine</option>
+      <option *ngFor="let m of machines" [value]="m.id">{{ m.machine_serial_no }}</option>
+    </select>
+  </div>
 
-  <label>Machine</label>
-  <select formControlName="machine_id" aria-label="Machine" >
-    <option value="">Select Machine</option>
-    <option *ngFor="let m of machines" [value]="m.id">
-      {{ m.machine_serial_no }}
-    </option>
-  </select>
+  <div class="ui-field">
+    <label class="ui-label" for="asg-from">Assigned from</label>
+    <input id="asg-from" class="ui-input" type="date" formControlName="assigned_from" />
+  </div>
 
-  <label>Assigned From</label>
-  <input type="date" formControlName="assigned_from" aria-label="Assigned From" />
-
-  <button type="submit" [disabled]="saving" *ngIf="auth.hasAction('assignments', 'create')">
-    {{ saving ? 'Saving...' : 'Assign' }}
+  <button type="submit" class="ui-btn ui-btn-primary" [disabled]="saving" *ngIf="auth.hasAction('assignments', 'create')">
+    {{ saving ? 'Saving…' : 'Assign' }}
   </button>
 </form>
