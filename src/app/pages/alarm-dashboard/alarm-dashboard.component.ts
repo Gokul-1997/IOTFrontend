@@ -341,13 +341,13 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   get trendChart(): any {
     return this.charts.memo('trendChart', () => {
     return {
-      chart:  { type: 'line', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'line', height: 180, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: {},
       stroke: { width: 3, curve: 'smooth' },
       markers: { size: 4 },
       colors: ['#e03131', '#f59f00'],
       dataLabels: { enabled: false },
-      legend: { position: 'top', horizontalAlign: 'right' },
+      legend: { position: 'top', horizontalAlign: 'right', show:false },
       xaxis:  { categories: this.trendCategories },
       yaxis:  { title: { text: 'No. of Alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
@@ -360,14 +360,15 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   get machineChart(): any {
     return this.charts.memo('machineChart', () => {
     return {
-      chart:  { type: 'bar', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'bar', height:180, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
       colors: this.palette,
       dataLabels: { enabled: false },
       // distributed repeats every machine in the legend; the axis names them
       legend: { show: false },
       xaxis:  { categories: this.machineCategories },
-      yaxis:  { title: { text: 'No. of Alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
+      yaxis:  { title: { text: 'No. of Alarms' }, 
+      labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'dark' },
       noData: { text: 'No alarms in this period' }

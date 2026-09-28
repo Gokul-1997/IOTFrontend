@@ -6,31 +6,33 @@
      engineer decides whether to stop a spindle from this page; an invented
      gauge here is worse than an empty one. -->
 
-<p class="mexa-updated" *ngIf="updatedAt">
-  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Last Updated: {{ updatedAt }}
-</p>
+
 
 <!-- ══════════ TITLE BAR ══════════ -->
 <form class="mexa-titlebar" (ngSubmit)="submit()">
+  <div class="flex gap-2">
   <h1 class="mexa-title">Maintenance Dashboard</h1>
-
+<p class="mexa-updated" *ngIf="updatedAt">
+  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
+  Last Updated:<br> {{ updatedAt }}
+</p>
+</div>
   <!-- One machine, named. The fleet counts that used to sit here belong on
        the Factory screen; here they described a different machine from the
        one every card below was reporting. -->
-  <div class="mexa-statuschips" *ngIf="focusName">
+  <!-- <div class="mexa-statuschips" *ngIf="focusName">
     <span class="mexa-statuschip" style="--chip:#2f2d8f">{{ focusName }}</span>
     <span class="mexa-badge" *ngIf="focusRow" [ngClass]="statusBadge(rowStatus(focusRow))">
       {{ statusWord(rowStatus(focusRow)) }}
     </span>
-  </div>
+  </div> -->
 
   <!-- the bands every gauge below is coloured by -->
-  <span class="mexa-legend text-white text-sm" aria-label="Condition bands">
+  <!-- <span class="mexa-legend text-white text-sm" aria-label="Condition bands">
     <span class="mexa-legend-item"><span class="mexa-legend-dot" style="background:#22c55e"></span>Healthy</span>
     <span class="mexa-legend-item"><span class="mexa-legend-dot" style="background:#f5a623"></span>Stable</span>
     <span class="mexa-legend-item"><span class="mexa-legend-dot" style="background:#e03131"></span>Critical</span>
-  </span>
+  </span> -->
 
   <span class="mexa-titlebar-spacer"></span>
 

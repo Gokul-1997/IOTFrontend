@@ -91,7 +91,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   flex-direction: column;
 }
 
-@media (min-width: 1024px) { .mexa-shell { padding: 1.25rem 1.75rem 0; } }
+@media (min-width: 1024px) { .mexa-shell { padding: .7rem 1.75rem 0; } }
 
 .mexa-page { flex: 1 1 auto; min-width: 0; }
 
@@ -111,25 +111,27 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   gap: .4rem;
   font-size: .82rem;
   color: var(--mexa-on-field-2);
-  margin-bottom: .5rem;
+  // margin-bottom: .5rem;
+  line-height: 16px;
 }
 
 /* ── Title bar ────────────────────────────────────────────── */
 
 .mexa-titlebar {
   background: var(--mexa-bar);
-  border: 1px solid rgba(255, 255, 255, .08);
+  // border: 1px solid rgba(255, 255, 255, .08);
   border-radius: 14px;
-  padding: .85rem 1.15rem;
-  margin-bottom: 1rem;
+  padding: .5rem;
+  margin-bottom: .5rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: .75rem 1rem;
+  justify-content: space-between;
 }
 
 .mexa-title {
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: #fff;
   margin: 0;
@@ -167,7 +169,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
 
 /* ── Filters in the title bar ─────────────────────────────── */
 
-.mexa-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
+.mexa-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; justify-content: end;}
 
 /* Phones: the wrapping row put each label at the end of the previous line,
    next to the wrong control ("All ▾ Shift"). Two columns instead — every
@@ -200,7 +202,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   font-size: .9rem;
   font-weight: 600;
   color: var(--mexa-ink);
-  min-width: 9rem;
+  min-width: 1rem;
   cursor: pointer;
   /* The chevron is drawn rather than relying on the native control, so
      the field looks the same on every platform. background-color is set
@@ -243,20 +245,20 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   /* Narrower track: six tiles fit one row on a laptop instead of wrapping to
      two, which is what pushed the first chart below the fold. */
   grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
-  margin-bottom: .85rem;
+  margin-bottom: .6rem;
 }
 
 .mexa-kpi {
   background: var(--mexa-card);
   border: 0;
   border-radius: 16px;
-  padding: .9rem 1rem;
+  padding: .5rem;
   box-shadow: var(--mexa-card-shadow);
   min-width: 0;
 }
 
 .mexa-kpi-head {
-  display: flex; align-items: flex-start; justify-content: space-between; gap: .6rem;
+  display: flex; align-items: center; justify-content: space-between; gap: .6rem;
 }
 
 .mexa-kpi-label {
@@ -267,7 +269,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   letter-spacing: .05em;
   text-transform: uppercase;
   color: var(--mexa-ink-3);
-  line-height: 1.35;
+  line-height: 1;
   min-width: 0;
 }
 
@@ -289,14 +291,14 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   font-weight: 700;
   color: var(--mexa-ink);
   line-height: 1.15;
-  margin-top: .45rem;
+  // margin-top: .45rem;
   letter-spacing: -.02em;
   font-variant-numeric: tabular-nums;
 }
 .mexa-kpi-value small { font-size: .95rem; font-weight: 600; color: var(--mexa-ink-3); margin-left: .25rem; }
 
 .mexa-kpi-sub {
-  margin-top: .3rem;
+  // margin-top: .3rem;
   font-size: .82rem;
   color: var(--mexa-ink-3);
 }
@@ -305,7 +307,8 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
    it is reachable by keyboard and announced as pressable; the "View" cue is
    always visible because a touch screen has no hover to reveal it. */
 button.mexa-kpi {
-  font: inherit; text-align: left; width: 100%;
+  font: inherit; text-align: left; 
+  // width: 100%;
   cursor: pointer;
   display: flex; flex-direction: column;
   transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
@@ -354,7 +357,7 @@ button.mexa-kpi[aria-pressed="true"] {
   background: var(--mexa-card);
   border: 0;
   border-radius: 18px;
-  padding: 1rem 1.1rem 1.1rem;
+  padding: .5rem;
   /* On the STM field the card is lifted by a soft shadow, as in the design */
   box-shadow: var(--mexa-card-shadow);
   min-width: 0;
@@ -365,7 +368,7 @@ button.mexa-kpi[aria-pressed="true"] {
   font-weight: 650;
   letter-spacing: .01em;
   color: var(--mexa-ink);
-  margin: 0 0 .85rem;
+  // margin: 0 0 .85rem;
   text-align: center;
 }
 /* Tables and lists read better with the title on the left; charts are
@@ -377,13 +380,13 @@ button.mexa-kpi[aria-pressed="true"] {
 .stm-auth-card { box-shadow: 0 24px 60px rgba(18, 14, 64, .35); }
 
 /* Lift a Tailwind-built card onto the field the same way as .mexa-card */
-.mexa-lift { background: var(--mexa-card) !important; border-radius: 18px !important; box-shadow: var(--mexa-card-shadow) !important; }
+.mexa-lift { background: var(--mexa-card) !important; border-radius: 12px !important; box-shadow: var(--mexa-card-shadow) !important; }
 
 /* A card whose table runs edge to edge (list pages) */
 .mexa-card-flush { padding: 0; overflow: hidden; }
 .mexa-card-flush > .mexa-tablewrap { padding: .35rem .6rem .2rem; }
 .mexa-card-flush > .mexa-tablebar { padding: .6rem 1rem .8rem; }
-.mexa-card + .mexa-card { margin-top: 1rem; }
+// .mexa-card + .mexa-card { margin-top: 1rem; }
 
 /* A filter row at the top of a card */
 .mexa-cardbar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem .75rem; padding: .85rem 1rem; border-bottom: 1px solid var(--mexa-rule); }
@@ -423,7 +426,7 @@ button.mexa-kpi[aria-pressed="true"] {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: .88rem;
+  font-size: .8rem;
   min-width: 40rem;
 }
 
@@ -439,7 +442,7 @@ button.mexa-kpi[aria-pressed="true"] {
 .mexa-table thead th:last-child  { border-radius: 0 9px 9px 0; }
 
 .mexa-table tbody td {
-  padding: .75rem .8rem;
+  padding: .2rem;
   color: var(--mexa-ink-2);
   border-bottom: 1px solid var(--mexa-rule);
   vertical-align: middle;
@@ -464,7 +467,7 @@ button.mexa-kpi[aria-pressed="true"] {
 .mexa-search {
   border: 1px solid var(--mexa-rule);
   border-radius: 10px;
-  padding: .5rem .85rem;
+  padding: .2rem .85rem;
   font: inherit;
   font-size: .9rem;
   background: var(--mexa-card);
@@ -475,12 +478,12 @@ button.mexa-kpi[aria-pressed="true"] {
 
 .mexa-tablebar {
   display: flex; flex-wrap: wrap; align-items: center; gap: .75rem;
-  justify-content: space-between; margin-bottom: .85rem;
+  justify-content: space-between; margin-bottom: .2rem;
 }
 
 .mexa-pager {
   display: flex; flex-wrap: wrap; align-items: center; gap: .75rem;
-  justify-content: space-between; padding-top: .9rem;
+  justify-content: space-between; padding-top: .3rem;
   font-size: .84rem; color: var(--mexa-ink-3);
 }
 .mexa-pagebtn {
@@ -498,7 +501,7 @@ button.mexa-kpi[aria-pressed="true"] {
 
 .mexa-badge {
   display: inline-block;
-  padding: .25rem .7rem;
+  padding: .1rem .7rem;
   border-radius: 999px;
   font-size: .78rem;
   font-weight: 700;
@@ -523,13 +526,12 @@ button.mexa-kpi[aria-pressed="true"] {
 
 .mexa-note {
   background: var(--mexa-card);
-  border-radius: 13px;
-  padding: .85rem 1.1rem;
-  margin-bottom: 1rem;
-  font-size: .9rem;
-  color: var(--mexa-ink-2);
-  border-left: 4px solid var(--mexa-info);
-  border: 1px solid var(--mexa-rule);
+    border-radius: 5px;
+    padding: 0.3rem .5rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: var(--mexa-ink-2);
+    border-left: 7px solid var(--mexa-rule);
 }
 .mexa-note strong { color: var(--mexa-ink); }
 .mexa-note-warn { border-left-color: var(--mexa-warn); }
@@ -546,7 +548,7 @@ button.mexa-kpi[aria-pressed="true"] {
 .mexa-rank li:last-child { border-bottom: 0; }
 .mexa-rank-n { color: var(--mexa-ink-3); font-size: .8rem; margin-right: .35rem; }
 .mexa-rank-name { font-size: .9rem; color: var(--mexa-ink); font-weight: 600; min-width: 0; }
-.mexa-rank-sub { display: block; font-size: .78rem; color: var(--mexa-ink-3); font-weight: 400; }
+.mexa-rank-sub { display: flex; font-size: .78rem; color: var(--mexa-ink-3); font-weight: 400; gap:5px; align-items: center; justify-content: center;}
 .mexa-rank-value { font-size: .86rem; color: var(--mexa-ink-2); white-space: nowrap; font-weight: 600; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -987,6 +989,7 @@ a.mexa-pill { text-decoration: none; }
   .mexa-kpi   { padding: .75rem .8rem; }
   .mexa-kpi-value { font-size: 1.6rem; }
   .mexa-kpi-icon  { width: 2.1rem; height: 2.1rem; }
+  .mexa-kpi-icon  .green{ width: 2.1rem; height: 2.1rem; }
   .mexa-kpi-icon svg, .mexa-kpi-icon mat-icon { width: 1.1rem; height: 1.1rem; font-size: 1.1rem; }
   .mexa-card-title { font-size: .98rem; }
 }
@@ -1059,7 +1062,28 @@ a.mexa-pill { text-decoration: none; }
 
 .mexa-kpi-icon {
   background: rgba(47, 45, 143, .09) !important;
-  color: var(--mexa-submit);
+  color: #ffffff;
+}
+.mexa-kpi-icon.green{
+  background: #22c55e!important;
+}
+.mexa-kpi-icon.yellow{
+  background: #F59E0B!important;
+}
+.mexa-kpi-icon.navy{
+  background: #384BCA!important;
+}
+.mexa-kpi-icon.sky{
+  background: #0EA5E9!important;
+}
+.mexa-kpi-icon.purple{
+  background: #9365B0!important;
+}
+.mexa-kpi-icon.blue{
+  background: #4B6CB7!important;
+}
+.mexa-kpi-icon.red{
+  background: #EF4136!important;
 }
 
 .dark .mexa-kpi-icon,
@@ -1141,3 +1165,26 @@ a.mexa-pill { text-decoration: none; }
 .dark .apexcharts-datalabels-group .apexcharts-datalabel-label,
 .dark .apexcharts-datalabels-group .apexcharts-datalabel-value { fill: var(--mexa-ink) !important; }
 .dark .apexcharts-radialbar-track .apexcharts-radialbar-area { stroke: #262a3a !important; }
+.circ{
+  width: 10px;
+  height: 10px;
+  border-radius: 100px;
+  display: inline;
+  flex: 0 0 10px;
+}
+
+.circ.avail{
+  background-color: #2B3990;
+}
+.circ.perf{
+  background-color: #4B6CB7;
+}
+.circ.qual{
+  background-color: #9365B0;
+}
+.circ.run{
+  background-color: #25B483;
+}
+.circ.idle{
+  background-color: #FCC047;
+}

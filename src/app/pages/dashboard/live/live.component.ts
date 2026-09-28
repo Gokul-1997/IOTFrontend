@@ -413,7 +413,7 @@ export class LiveComponent implements OnInit, OnDestroy {
 
     /* ── Utilization ── */
     this.utilChart = {
-      chart: { type: 'radialBar', height: 180},
+      chart: { type: 'radialBar', height: 120},
       plotOptions: {
         radialBar: {
           startAngle: -135,
@@ -481,7 +481,7 @@ export class LiveComponent implements OnInit, OnDestroy {
     
     /* ── Time Pie ── */
     this.timePieChart = {
-  chart: { type: 'pie', height: 180 },
+  chart: { type: 'pie', height: 120 },
   labels: ['Running', 'Idle'],
   colors: ['#0CAD5D', '#dfb400'],
   legend: { show: false },

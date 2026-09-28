@@ -684,6 +684,6 @@ select.ui-input {
    or falling back to the hamburger on a 1280px laptop, would both be worse
    than losing an icon. */
 @media (min-width: 1280px) and (max-width: 1439.98px) {
-  .nav-scroll .nav-btn app-icon { display: none; }
+  // .nav-scroll .nav-btn app-icon { display: none; }
   .nav-scroll .nav-btn { padding-left: 10px; padding-right: 10px; }
 }

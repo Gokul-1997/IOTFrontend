@@ -1,18 +1,22 @@
 <!-- Phase 2 · Screen 5 — Alarm Report Dashboard, MEXA design. -->
 
-<p class="mexa-updated" *ngIf="updatedAt">
+
+
+<!-- ══════════ TITLE BAR ══════════ -->
+
+<form class="" (ngSubmit)="submit()">
+   <div class="mexa-titlebar">
+  <h1 class="mexa-title">Alarm Report Dashboard</h1>
+  <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
   Last Updated: {{ updatedAt }}
 </p>
 
-<!-- ══════════ TITLE BAR ══════════ -->
-<form class="mexa-titlebar" (ngSubmit)="submit()">
-  <h1 class="mexa-title">Alarm Report Dashboard</h1>
-  <span class="mexa-titlebar-spacer"></span>
+ </div>
 
-  <div class="mexa-filters">
+  <div class="mexa-filters mb-2">
     <label class="mexa-filter-label" for="alMachine">Machine Name</label>
-    <select id="alMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
+    <select id="alMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine" style="width: 5rem;">
       <option [ngValue]="null">All</option>
       <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
     </select>
@@ -31,7 +35,7 @@
     </select>
 
     <label class="mexa-filter-label" for="alType">Alarm Type</label>
-    <select id="alType" class="mexa-select sm:max-w-[12rem]" [(ngModel)]="f.alarm_type" name="alarmType">
+    <select id="alType" class="mexa-select sm:max-w-[12rem]" [(ngModel)]="f.alarm_type" name="alarmType" style="width: 5rem;">
       <option value="">All</option>
       <option *ngFor="let t of data?.facets?.types || []" [value]="t">{{ t }}</option>
     </select>
@@ -45,7 +49,9 @@
       {{ loading ? 'Loading…' : 'Submit' }}
     </button>
   </div>
+  
 </form>
+
 
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
@@ -77,59 +83,59 @@
     <button type="button" class="mexa-kpi" (click)="drill('all')" aria-controls="alDetails">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total<br>Alarms</span>
-        <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true">
+        <span class="mexa-kpi-icon navy" style="background:#2f2d8f" aria-hidden="true">
           <mat-icon>notifications</mat-icon>
         </span>
       </span>
       <span class="mexa-kpi-value">{{ data.kpis.total }}</span>
       <span class="mexa-kpi-sub">All alarms</span>
-      <span class="mexa-kpi-go">View all <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span>
+      <!-- <span class="mexa-kpi-go">View all <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
     <button type="button" class="mexa-kpi" (click)="drill('critical')" aria-controls="alDetails"
             [attr.aria-pressed]="drillKind === 'critical'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Critical<br>Alarms</span>
-        <span class="mexa-kpi-icon" style="background:#dc2626" aria-hidden="true">
+        <span class="mexa-kpi-icon red" style="background:#dc2626" aria-hidden="true">
           <mat-icon>error</mat-icon>
         </span>
       </span>
       <span class="mexa-kpi-value">{{ data.kpis.critical }}</span>
       <span class="mexa-kpi-sub">{{ sharePct(data.kpis.critical, data.kpis.total) }} of total</span>
-      <span class="mexa-kpi-go">{{ drillKind === 'critical' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span>
+      <!-- <span class="mexa-kpi-go">{{ drillKind === 'critical' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
     <button type="button" class="mexa-kpi" (click)="drill('normal')" aria-controls="alDetails"
             [attr.aria-pressed]="drillKind === 'normal'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Normal<br>Alarms</span>
-        <span class="mexa-kpi-icon" style="background:#17b3a3" aria-hidden="true">
+        <span class="mexa-kpi-icon sky" style="background:#17b3a3" aria-hidden="true">
           <mat-icon>notifications_none</mat-icon>
         </span>
       </span>
       <span class="mexa-kpi-value">{{ data.kpis.normal }}</span>
       <span class="mexa-kpi-sub">{{ sharePct(data.kpis.normal, data.kpis.total) }} of total</span>
-      <span class="mexa-kpi-go">{{ drillKind === 'normal' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span>
+      <!-- <span class="mexa-kpi-go">{{ drillKind === 'normal' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
     <button type="button" class="mexa-kpi" (click)="drill('open')" aria-controls="alDetails"
             [attr.aria-pressed]="drillKind === 'open'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Open<br>Alarms</span>
-        <span class="mexa-kpi-icon" style="background:#4a76c8" aria-hidden="true">
+        <span class="mexa-kpi-icon blue" style="background:#4a76c8" aria-hidden="true">
           <mat-icon>pending</mat-icon>
         </span>
       </span>
       <span class="mexa-kpi-value">{{ data.kpis.open }}</span>
       <span class="mexa-kpi-sub">{{ sharePct(data.kpis.open, data.kpis.total) }} of total</span>
-      <span class="mexa-kpi-go">{{ drillKind === 'open' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span>
+      <!-- <span class="mexa-kpi-go">{{ drillKind === 'open' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
     <button type="button" class="mexa-kpi" (click)="drill('longest')" aria-controls="alDetails"
             [attr.aria-pressed]="drillKind === 'longest'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Max<br>Duration</span>
-        <span class="mexa-kpi-icon" style="background:#6b7280" aria-hidden="true">
+        <span class="mexa-kpi-icon purple" style="background:#6b7280" aria-hidden="true">
           <mat-icon>timelapse</mat-icon>
         </span>
       </span>
@@ -138,7 +144,7 @@
       <span class="mexa-kpi-sub truncate" [title]="data.kpis.longest?.message || ''">
         {{ data.kpis.longest ? data.kpis.longest.message + ' · ' + data.kpis.longest.machine_serial_no : 'Average ' + duration(data.kpis.avg_duration_seconds) }}
       </span>
-      <span class="mexa-kpi-go">{{ drillKind === 'longest' ? 'Showing' : 'View' }} longest first <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span>
+      <!-- <span class="mexa-kpi-go">{{ drillKind === 'longest' ? 'Showing' : 'View' }} longest first <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
   </div>
 
@@ -147,12 +153,14 @@
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Top 5 Alarms By Machine</h2>
-      <apx-chart *ngIf="machineSeries.length"
+      <div >
+      <apx-chart class="-mb-12 " *ngIf="machineSeries.length"
         [series]="machineSeries" [chart]="machineChart.chart" [plotOptions]="machineChart.plotOptions"
         [colors]="machineChart.colors" [dataLabels]="machineChart.dataLabels"
         [xaxis]="machineChart.xaxis" [yaxis]="machineChart.yaxis" [grid]="machineChart.grid"
         [legend]="machineChart.legend" [tooltip]="machineChart.tooltip"
         [noData]="machineChart.noData"></apx-chart>
+        </div>
       <p *ngIf="!machineSeries.length" class="mexa-empty">No alarms in this period.</p>
     </section>
 
@@ -211,7 +219,7 @@
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Alarms Trend {{ data.trend_by === 'hour' ? '(By Hour)' : '(By Day)' }}</h2>
-      <apx-chart *ngIf="trendSeries.length"
+      <apx-chart class="-mb-10 " *ngIf="trendSeries.length"
         [series]="trendSeries" [chart]="trendChart.chart" [plotOptions]="trendChart.plotOptions"
         [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels" [stroke]="trendChart.stroke"
         [markers]="trendChart.markers" [legend]="trendChart.legend"

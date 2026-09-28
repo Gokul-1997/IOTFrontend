@@ -29,7 +29,7 @@ export interface GaugeZone { from: number; to: number; color: string; }
     .scale { fill: var(--mexa-ink-2, #4b5262); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
     .needle { fill: var(--mexa-ink, #1f2430); }
     .hub-hole { fill: var(--gauge-hole, #fff); }
-    .value { fill: var(--mexa-ink, #1f2430); font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .value { fill: var(--mexa-ink, #1f2430); font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
     .needle-turn {
       transform-box: view-box;
       transition: transform .7s cubic-bezier(.2, .8, .25, 1);

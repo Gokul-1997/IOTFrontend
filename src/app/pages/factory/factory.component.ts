@@ -237,7 +237,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
   get shiftChart(): any {
     return this.charts.memo('shiftChart', () => {
     return {
-      chart:  { type: 'bar', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'bar', height: 150, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 6, columnWidth: '45%' } },
       dataLabels: { enabled: true },
       colors: ['#2B3990'],
@@ -332,7 +332,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
   get oeeRadial(): any {
     return this.charts.memo('oeeRadial', () => {
     return {
-      chart: { type: 'radialBar', height: 300, fontFamily: 'inherit' },
+      chart: { type: 'radialBar', height: 220, fontFamily: 'inherit' },
       plotOptions: {
         radialBar: {
           startAngle: -168, endAngle: 168,
@@ -363,13 +363,13 @@ export class FactoryComponent implements OnInit, OnDestroy {
   get runtimeDonut(): any {
     return this.charts.memo('runtimeDonut', () => {
     return {
-      chart: { type: 'donut', height: 280, fontFamily: 'inherit' },
+      chart: { type: 'donut', height: 200, fontFamily: 'inherit' },
       labels: ['Run Time', 'Idle Time'],
       colors: ['#22c55e', '#f5a623'],
       dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%`,
                     style: { fontSize: '1rem', fontWeight: 700 } },
       plotOptions: { pie: { donut: { size: '58%' } } },
-      legend: { position: 'bottom', fontSize: '.9rem' },
+      legend: { position: 'bottom', fontSize: '.9rem', show:false },
       tooltip: { y: { formatter: (v: number) => this.hm(v) } },
       noData: { text: 'No run or idle time recorded' }
     };
@@ -379,7 +379,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
   get alarmDonut(): any {
     return this.charts.memo('alarmDonut', () => {
     return {
-      chart: { type: 'donut', height: 280, fontFamily: 'inherit' },
+      chart: { type: 'donut', height: 200, fontFamily: 'inherit' },
       labels: ['Critical', 'Non critical', 'Information'],
       colors: ['#f43f5e', '#22c55e', '#f5a623'],
       dataLabels: { enabled: true, formatter: (_v: number, o: any) => o.w.config.series[o.seriesIndex] },
@@ -390,7 +390,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
                    formatter: () => String(this.data?.alarms?.total ?? 0) }
         } } }
       },
-      legend: { position: 'bottom', fontSize: '.9rem' },
+      legend: { position: 'bottom', fontSize: '.9rem', show:false },
       noData: { text: 'No alarms recorded' }
     };
   });

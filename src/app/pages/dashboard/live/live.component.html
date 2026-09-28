@@ -7,7 +7,7 @@
 
     <!-- Left: machine serial + status dot + status word -->
     <div class="flex items-center gap-3">
-      <h2 class="text-xl font-bold text-white">
+      <h2 class="text-xl font-medium text-white">
         {{ machine?.machine_serial_no || machine?.name || 'Machine' }}
       </h2>
       <span class="flex items-center gap-1.5">
@@ -83,7 +83,7 @@
   </div>
 
   <!-- TOP GRID -->
-  <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
+  <div class="grid grid-cols-1 xl:grid-cols-12 gap-2">
 
     <!-- MACHINE CARD -->
     <div class="xl:col-span-6 mexa-lift rounded-xl border-big p-2 flex flex-col md:flex-row gap-6 "
@@ -104,38 +104,41 @@
       <div class="w-full md:w-1/2">
         <img [src]="machine?.image || '/images/product/machine_login_02.png'"
              [alt]="'Machine ' + (machine?.machine_serial_no || '')"
-             class="rounded-lg w-full object-contain h-60">
+             class="rounded-lg w-full object-contain h-44">
       </div>
 
       <div class="w-full md:w-1/2 bg-blue-50 dark:bg-black rounded-xl p-2">
 
         <!-- Operator -->
-        <div class="space-y-1 text-sm mb-3">
+        <div class="space-y-1 text-sm mb-1">
           
-          <div class="flex gap-2">
-            <div class="bg-white dark:bg-[#111111]  rounded-lg p-3 flex flex-1 justify-between">
+          <div class="flex gap-2 ">
+            <div class="bg-white dark:bg-[#111111]  rounded-lg p-2 flex flex-1 justify-between items-center">
               
               <div>
               <p class="text-sm text-gray-500 dark:text-[#939393]">Operator</p>
               <p class="font-bold">{{ operator?.operator_name || '--' }}</p>
+              <div class="flex">
+                ID: <p class="font-bold">&nbsp;{{ operator?.employee_id || '--' }}</p>
+              </div>
               </div>
               <img src="/images/user/owner.png" alt="" class="h-12 w-12 rounded-full">
             </div>
-            <div class="bg-white dark:bg-[#111111]  rounded-lg p-3 flex flex-col flex-1">
+            <!-- <div class="bg-white dark:bg-[#111111]  rounded-lg p-3 flex flex-col flex-1">
               <p class="text-sm text-gray-500 dark:text-[#939393]">Employee Id</p>
               <p class="font-bold">{{ operator?.employee_id || '--' }}</p>
-            </div>
+            </div> -->
           </div>
         </div>
 
         <!-- Part / Comp. Id / Optn. No -->
-        <div class="space-y-1 text-sm mb-3">
+        <div class="space-y-1 text-sm mb-1">
           <div class=" flex gap-2">
-            <div class="bg-white dark:bg-[#111111]  rounded-lg p-3 flex flex-col flex-1">
+            <div class="bg-white dark:bg-[#111111]  rounded-lg p-2 flex flex-col flex-1">
             <span class="text-gray-700 dark:text-[#939393] mr-2">Part</span>
             <span class="font-bold">{{ job?.part_name || '--' }}</span>
             </div>
-            <div class="bg-white dark:bg-[#111111]  rounded-lg p-3 flex flex-col flex-1"><span class="text-gray-700 dark:text-[#939393] mr-2">Component Id</span>
+            <div class="bg-white dark:bg-[#111111]  rounded-lg p-2 flex flex-col flex-1"><span class="text-gray-700 dark:text-[#939393] mr-2">Component Id</span>
             <span class="font-bold">{{ job?.component_id || '--' }}</span>
           </div>
             <!-- <div class=""><span class="text-gray-500 mr-2">Operation No</span>
@@ -152,23 +155,7 @@
           </div>
         </div>
 
-        <!-- Plan / Actual -->
-        <div class="space-y-1 text-sm mb-3">
-          <div class=" flex gap-2">
-          <div class="bg-white dark:bg-[#111111]  rounded-lg p-3 flex flex-col flex-1">
-
-              <p class="text-gray-700 dark:text-[#939393] text-sm">Plan</p>
-              <p class="font-bold">{{ job?.target_qty || 0 }}</p>
-
-          </div>
-          <div class="bg-white dark:bg-[#111111]  rounded-lg p-3 flex flex-col flex-1">
-
-              <p class="text-gray-700 dark:text-[#939393] text-sm">Actual</p>
-              <p class="font-bold">{{ livePartCount || 0 }}</p>
-
-          </div>
-          </div>
-        </div>
+        
 
         <!-- Mode + Setup Time -->
         <div class="flex items-center justify-between text-sm">
@@ -192,9 +179,11 @@
 
 
     <!-- TIME INFO -->
-    <div class="xl:col-span-3 mexa-lift rounded-xl  p-2  ">
+     <div class="flex flex-col xl:col-span-3 justify-between">
+    <div class=" mexa-lift rounded-xl  p-2  ">
       <h3 class="text-base font-semibold text-center mb-2">Time Info</h3>
-      <div class="-mt-2">
+      <div class="flex gap-2">
+      <div class="-mt-2 w-1/2 ">
       <apx-chart
         [series]="timePieSeries"
         [chart]="timePieChart.chart"
@@ -204,25 +193,45 @@
         [dataLabels]="timePieChart.dataLabels">
       </apx-chart>
       </div>
-      <div class="flex justify-center gap-4">
+      <div class="flex flex-col justify-center gap-4 ">
         <div class="flex items-center gap-2">
           <span class="w-2 h-full rounded-md bg-green-500 flex-shrink-0"></span>
           <div>
             <p class="text-sm text-gray-700 dark:text-[#939393]">Running Time</p>
-            <p class="font-semibold text-xl leading-tight">{{ formatDuration(runTime) }}</p>
+            <p class="font-semibold text-lg leading-tight">{{ formatDuration(runTime) }}</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
           <span class="w-2 h-full rounded-md yellow flex-shrink-0"></span>
           <div>
             <p class="text-sm text-gray-700 dark:text-[#939393]">Idle Time</p>
-            <p class="font-semibold text-xl leading-tight">{{ formatDuration(idleTime) }}</p>
+            <p class="font-semibold text-lg leading-tight">{{ formatDuration(idleTime) }}</p>
           </div>
         </div>
       </div>
+      </div>
     </div>
+    <div class="mexa-lift rounded-sm">
+      <!-- Plan / Actual -->
+        <div class="space-y-1 text-sm mb-1">
+          <div class=" flex gap-2">
+          <div class="dark:bg-[#111111]  rounded-lg p-2 flex flex-1">
 
+              <p class="text-gray-700 dark:text-[#939393] text-sm">Plan :</p>
+              <p class="font-bold">&nbsp; {{ job?.target_qty || 0 }}</p>
 
+          </div>
+          <div class="dark:bg-[#111111]  rounded-lg p-2 flex flex-1">
+
+              <p class="text-gray-700 dark:text-[#939393] text-sm">Actual :</p>
+              <p class="font-bold">&nbsp; {{ livePartCount || 0 }}</p>
+
+          </div>
+          </div>
+        </div>
+    
+    </div>
+    </div>
     <!-- MACHINE STATUS / UTILIZATION -->
     <div class="xl:col-span-3 mexa-lift rounded-xl  p-2  ">
 
@@ -232,10 +241,10 @@
       <div class="flex items-center justify-between gap-2 -mt-6">
 
         <!-- Left: quality metrics -->
-        <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-1 -mr-5 ml-5 mt-4">
 
           <div class="flex items-center gap-3">
-            <span class="flex items-center justify-center w-9 h-9 rounded-full bg-green-500 flex-shrink-0 text-white">
+            <span class="flex items-center justify-center w-7 h-7 rounded-full bg-green-500 flex-shrink-0 text-white">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 ">
   <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
 </svg>
@@ -243,12 +252,12 @@
             </span>
             <div>
               <p class="text-sm text-gray-700 dark:text-[#939393] leading-none">Accepted</p>
-              <p class="text-xl font-bold text-gray-900 dark:text-white leading-tight">{{ quality?.accepted || 0 }}</p>
+              <p class="text-lg font-bold text-gray-900 dark:text-white leading-tight">{{ quality?.accepted || 0 }}</p>
             </div>
           </div>
 
           <div class="flex items-center gap-3">
-            <span class="flex items-center justify-center w-9 h-9 rounded-full bg-red-500 flex-shrink-0 text-white">
+            <span class="flex items-center justify-center w-7 h-7 rounded-full bg-red-500 flex-shrink-0 text-white">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
   <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
 </svg>
@@ -256,14 +265,14 @@
             </span>
             <div>
               <p class="text-sm text-gray-700 dark:text-[#939393] leading-none">Rejected</p>
-              <p class="text-xl font-bold text-gray-900 dark:text-white leading-tight">{{ quality?.rejected || 0 }}</p>
+              <p class="text-lg font-bold text-gray-900 dark:text-white leading-tight">{{ quality?.rejected || 0 }}</p>
             </div>
           </div>
 
         </div>
 
         <!-- Right: utilization radial chart -->
-        <div class="overflow-hidden">
+        <div class="overflow-hidden w-1/2">
           <div class="chart-align-center">
           <apx-chart
             [series]="utilSeries"
@@ -279,7 +288,7 @@
       </div>
 
       <!-- Power Consumption -->
-      <div *ngIf="auth.hasWidget('dashboard:live', 'power-consume')" class="border-t pt-3 dark:border-gray-700">
+      <div *ngIf="auth.hasWidget('dashboard:live', 'power-consume')" class="border-t pt-1 dark:border-gray-700">
         <p class="flex items-center gap-2 text-sm font-semibold mb-2 justify-center">
           <span class="flex items-center justify-center w-6 h-6 rounded-md bg-green-500">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="w-4 h-4">
@@ -318,7 +327,7 @@
   <app-shift-timeline [machineId]="machineId"></app-shift-timeline>
 
   <!-- BOTTOM GRID — OEE + Speedometers -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 ">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 ">
 
     <!-- ══════════════ OEE ══════════════ -->
     <div class="mexa-lift rounded-xl  p-2 flex flex-col items-center  ">
@@ -378,30 +387,34 @@
     <!-- ══════════════ SPINDLE LOAD ══════════════
          0–150%: the load meter passes 100% on an overload (226% was
          recorded), which the old 0–100% dial could not show. -->
-    <div *ngIf="auth.hasWidget('dashboard:live', 'spindle-speed-chart')" class="mexa-lift rounded-xl p-3 flex flex-col items-center ">
-      <h3 class="text-base font-semibold self-start">Spindle Load</h3>
-      <app-needle-gauge class="max-w-[340px]"
+    <div *ngIf="auth.hasWidget('dashboard:live', 'spindle-speed-chart')" class="mexa-lift rounded-xl p-2 flex flex-col items-center ">
+      <h3 class="text-base font-semibold">Spindle Load</h3>
+      <app-needle-gauge class="max-w-[300px] -mt-2"
         [value]="liveSpindleLoad" [min]="0" [max]="150" [majorStep]="25" [minorPerMajor]="5"
         [zones]="SPINDLE_ZONES" [tickLabel]="pctTick" [valueText]="spindleText"
         [ariaLabel]="'Spindle load ' + (liveSpindleLoad | number:'1.0-0') + ' percent, ' + spindleState.word"></app-needle-gauge>
-      <p class="text-sm font-bold -mt-1" [ngClass]="spindleState.cls">{{ spindleState.word }}</p>
-      <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Amber above 80% · red past 100% (overload)</p>
+      <div class="flex items-center gap-2 -mt-2">
+        <p class="text-sm font-bold " [ngClass]="spindleState.cls">{{ spindleState.word }}</p>
+      <p class="text-xs text-gray-600 dark:text-gray-400">| Amber above 80% · red past 100% (overload)</p>
+    </div>
     </div>
 
     <!-- ══════════════ FEED RATE ══════════════
          The controllers send the actual feed (mm/min), not the override %:
          the old "Feed Override" dial divided mm/min by a guessed 45,000, so a
          cutting feed of 96 mm/min read 0%. -->
-    <div *ngIf="auth.hasWidget('dashboard:live', 'feed-override-chart')" class="mexa-lift rounded-xl p-3 flex flex-col items-center ">
-      <h3 class="text-base font-semibold self-start">Feed Rate</h3>
-      <app-needle-gauge class="max-w-[340px]"
+    <div *ngIf="auth.hasWidget('dashboard:live', 'feed-override-chart')" class="mexa-lift rounded-xl p-2 flex flex-col items-center ">
+      <h3 class="text-base font-semibold">Feed Rate</h3>
+      <app-needle-gauge class="max-w-[300px] -mt-2"
         [value]="liveFeed" [min]="0" [max]="FEED_SCALE" [majorStep]="1000" [minorPerMajor]="4"
         fill="#3b82f6" [tickLabel]="kTick" [valueText]="feedText"
         [ariaLabel]="'Feed rate ' + (liveFeed | number:'1.0-0') + ' millimetres per minute'"></app-needle-gauge>
-      <p class="text-sm font-bold -mt-1 text-gray-700 dark:text-gray-300">
+      <div class="flex items-center gap-2 -mt-2">
+        <p class="text-sm font-bold text-gray-700 dark:text-gray-300">
         {{ liveFeed > FEED_SCALE ? 'Above the ' + (FEED_SCALE | number) + ' mm/min scale' : 'Actual feed' }}
       </p>
-      <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Feed override % is not reported by the controller</p>
+      <p class="text-xs text-gray-600 dark:text-gray-400">| Feed override % is not reported by the controller</p>
+   </div>
     </div>
 
   </div>
