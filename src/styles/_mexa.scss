@@ -84,7 +84,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
 
 .mexa-shell {
   min-height: calc(100vh - 4rem);      /* the app bar is 4rem */
-  background: var(--stm-field) no-repeat;
+  // background: var(--stm-field) no-repeat;
   background-size: 100% 100%;
   padding: 1rem 1.25rem 0;
   display: flex;
@@ -287,7 +287,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
 .mexa-kpi-icon svg, .mexa-kpi-icon mat-icon { width: 1.15rem; height: 1.15rem; font-size: 1.15rem; }
 
 .mexa-kpi-value {
-  font-size: 1.85rem;
+  font-size: 1.35rem;
   font-weight: 700;
   color: var(--mexa-ink);
   line-height: 1.15;
@@ -364,7 +364,7 @@ button.mexa-kpi[aria-pressed="true"] {
 }
 
 .mexa-card-title {
-  font-size: .95rem;
+  font-size: .9rem;
   font-weight: 650;
   letter-spacing: .01em;
   color: var(--mexa-ink);
@@ -391,7 +391,7 @@ button.mexa-kpi[aria-pressed="true"] {
 /* A filter row at the top of a card */
 .mexa-cardbar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem .75rem; padding: .85rem 1rem; border-bottom: 1px solid var(--mexa-rule); }
 
-.mexa-card-hint { font-size: .82rem; color: var(--mexa-ink-3); margin: -.5rem 0 .75rem; }
+.mexa-card-hint { font-size: .76rem; color: var(--mexa-ink-3); margin: -.5rem 0 .75rem; }
 
 .mexa-grid { display: grid; gap: 1rem; margin-bottom: 1rem; min-width: 0; }
 
@@ -435,7 +435,7 @@ button.mexa-kpi[aria-pressed="true"] {
   color: var(--mexa-ink);
   font-weight: 700;
   text-align: left;
-  padding: .7rem .8rem;
+  padding: .2rem;
   white-space: nowrap;
 }
 .mexa-table thead th:first-child { border-radius: 9px 0 0 9px; }
@@ -487,10 +487,10 @@ button.mexa-kpi[aria-pressed="true"] {
   font-size: .84rem; color: var(--mexa-ink-3);
 }
 .mexa-pagebtn {
-  background: none; border: 0; font: inherit; font-size: .86rem; font-weight: 600;
-  color: var(--mexa-ink-2); cursor: pointer; padding: .35rem .6rem; border-radius: 7px;
+  background: #98A2B3; border: 0; font: inherit; font-size: .86rem; font-weight: 500;
+  color:#fff; cursor: pointer; padding: .1rem .6rem; border-radius: 7px;
 }
-.mexa-pagebtn:hover:not(:disabled) { background: var(--mexa-row-alt); }
+.mexa-pagebtn:hover:not(:disabled) { background: #67768F; }
 .mexa-pagebtn:disabled { opacity: .4; cursor: not-allowed; }
 .mexa-pagebtn:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 1px; }
 .mexa-pagebtn[aria-current="page"] { border: 1px solid var(--mexa-rule); color: var(--mexa-submit); }
@@ -548,7 +548,11 @@ button.mexa-kpi[aria-pressed="true"] {
 .mexa-rank li:last-child { border-bottom: 0; }
 .mexa-rank-n { color: var(--mexa-ink-3); font-size: .8rem; margin-right: .35rem; }
 .mexa-rank-name { font-size: .9rem; color: var(--mexa-ink); font-weight: 600; min-width: 0; }
-.mexa-rank-sub { display: flex; font-size: .78rem; color: var(--mexa-ink-3); font-weight: 400; gap:5px; align-items: center; justify-content: center;}
+.mexa-rank-sub { 
+  display: flex; font-size: .78rem; color: var(--mexa-ink-3); font-weight: 400; gap:5px; 
+  // align-items: center; 
+  // justify-content: center;
+}
 .mexa-rank-value { font-size: .86rem; color: var(--mexa-ink-2); white-space: nowrap; font-weight: 600; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -801,7 +805,7 @@ a.mexa-pill { text-decoration: none; }
 .mexa-attention { display: grid; gap: .6rem; }
 .mexa-attention-row {
   display: flex; align-items: center; gap: .85rem; width: 100%;
-  padding: .7rem .9rem;
+  padding: .3rem .9rem;
   background: #f4f4f8; border: 0; border-radius: 12px;
   font: inherit; text-align: left; cursor: pointer;
   transition: background .15s;
@@ -813,7 +817,7 @@ a.mexa-pill { text-decoration: none; }
   display: grid; place-items: center;
   color: #fff; font-weight: 800; font-size: .95rem;
 }
-.mexa-attention-label { flex: 1; min-width: 0; }
+.mexa-attention-label { flex: 1; min-width: 0; line-height: 16px;}
 .mexa-attention-label strong { display: block; font-size: .92rem; color: var(--mexa-ink); }
 .mexa-attention-label span   { font-size: .78rem; color: var(--mexa-ink-3); }
 .mexa-attention-row .mexa-chev { color: var(--mexa-ink-3); flex: none; }
@@ -929,7 +933,7 @@ a.mexa-pill { text-decoration: none; }
    baselines rather than each card ending wherever its chart happens to. */
 .mexa-grid > .mexa-card { display: flex; flex-direction: column; }
 .mexa-grid > .mexa-card > apx-chart,
-.mexa-grid > .mexa-card > .mexa-donutrow { margin-top: auto; }
+// .mexa-grid > .mexa-card > .mexa-donutrow { margin-top: auto; }
 
 /* ── Skeleton loading ─────────────────────────────────────────
    A skeleton stands in for the shape of the content that is coming, so the
@@ -940,7 +944,7 @@ a.mexa-pill { text-decoration: none; }
 .mexa-skel {
   position: relative;
   overflow: hidden;
-  background: var(--mexa-rule);
+  // background: var(--mexa-rule);
   border-radius: 8px;
 }
 
@@ -1085,6 +1089,10 @@ a.mexa-pill { text-decoration: none; }
 .mexa-kpi-icon.red{
   background: #EF4136!important;
 }
+.mexa-kpi-icon.grey{
+  background: #6b7280!important;
+}
+
 
 .dark .mexa-kpi-icon,
 :root[data-theme="dark"] .mexa-kpi-icon {
@@ -1187,4 +1195,11 @@ a.mexa-pill { text-decoration: none; }
 }
 .circ.idle{
   background-color: #FCC047;
+}
+.mexa-shell {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+header > div{
+    max-width: 1400px;
 }

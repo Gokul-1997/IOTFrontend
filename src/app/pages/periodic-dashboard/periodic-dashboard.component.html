@@ -1,15 +1,19 @@
 <!-- Phase 2 · Screen 4 — Periodic Maintenance Dashboard, MEXA design. -->
 
-<p class="mexa-updated" *ngIf="updatedAt">
+<!-- <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
   Last Updated: {{ updatedAt }}
-</p>
+</p> -->
 
 <!-- ══════════ TITLE BAR ══════════ -->
 <form class="mexa-titlebar" (ngSubmit)="submit()">
+<div class="flex gap-2">
   <h1 class="mexa-title">Periodic Maintenance Dashboard</h1>
-  <span class="mexa-titlebar-spacer"></span>
-
+  <p class="mexa-updated" *ngIf="updatedAt">
+  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
+  Last Updated: <br> {{ updatedAt }}
+</p>
+</div>
   <div class="mexa-filters">
     <label class="mexa-filter-label" for="peMachine">Machine</label>
     <select id="peMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine">
@@ -55,7 +59,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Scheduled<br>Ticket</span>
-        <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true">
+        <span class="mexa-kpi-icon navy" style="background:#2f2d8f" aria-hidden="true">
           <mat-icon>assignment</mat-icon>
         </span>
       </div>
@@ -66,7 +70,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Due<br>Today</span>
-        <span class="mexa-kpi-icon" style="background:#17b3a3" aria-hidden="true">
+        <span class="mexa-kpi-icon green" style="background:#17b3a3" aria-hidden="true">
           <mat-icon>event_available</mat-icon>
         </span>
       </div>
@@ -76,7 +80,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overdue</span>
-        <span class="mexa-kpi-icon" style="background:#dc2626" aria-hidden="true">
+        <span class="mexa-kpi-icon red" style="background:#dc2626" aria-hidden="true">
           <mat-icon>event_busy</mat-icon>
         </span>
       </div>
@@ -89,7 +93,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Completed</span>
-        <span class="mexa-kpi-icon" style="background:#9b7ec8" aria-hidden="true">
+        <span class="mexa-kpi-icon purple" style="background:#9b7ec8" aria-hidden="true">
           <mat-icon>event_note</mat-icon>
         </span>
       </div>
@@ -100,7 +104,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Compliance</span>
-        <span class="mexa-kpi-icon" style="background:#6b7280" aria-hidden="true">
+        <span class="mexa-kpi-icon blue" style="background:#6b7280" aria-hidden="true">
           <mat-icon>fact_check</mat-icon>
         </span>
       </div>
@@ -118,12 +122,14 @@
 
     <section class="mexa-card">
       <h2 class="mexa-card-title mexa-card-title-left">Maintenance Compliance Trend (%)</h2>
-      <apx-chart *ngIf="trendSeries.length"
+      <div class="-mt-3">
+      <apx-chart class="-mb-8" *ngIf="trendSeries.length"
         [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
         [colors]="trendChart.colors" [markers]="trendChart.markers"
         [dataLabels]="trendChart.dataLabels" [xaxis]="trendChart.xaxis"
         [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
         [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
+        </div>
       <p *ngIf="!trendSeries.length" class="mexa-empty">No completed cycles yet.</p>
     </section>
 

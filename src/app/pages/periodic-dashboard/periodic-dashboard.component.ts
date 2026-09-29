@@ -456,7 +456,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
   get trendChart(): any {
     return this.charts.memo('trendChart', () => {
     return {
-      chart:  { type: 'line', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'line', height: 200, toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: 3, curve: 'smooth' },
       colors: ['#0f766e'],
       markers: { size: 4 },

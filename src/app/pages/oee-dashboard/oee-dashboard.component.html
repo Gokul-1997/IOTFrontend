@@ -1,21 +1,23 @@
 <!-- Phase 2 · Screen 8 — OEE Dashboard, MEXA design. -->
 
-<p class="mexa-updated" *ngIf="updatedAt">
-  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Last Updated: {{ updatedAt }}
-</p>
+
 
 <!-- ══════════ TITLE BAR ══════════ -->
 <form class="mexa-titlebar" (ngSubmit)="submit()">
   <h1 class="mexa-title">OEE Dashboard</h1>
-
+  <div class="flex flex-col">
+    <p class="mexa-updated" *ngIf="updatedAt">
+  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
+  Last Updated: {{ updatedAt }}
+</p>
   <div class="mexa-statuschips" *ngIf="data">
     <span class="mexa-statuschip" style="--chip:#22c55e">Running: {{ data.status_counts.RUNNING }}</span>
     <span class="mexa-statuschip" style="--chip:#f5a623">Idle: {{ data.status_counts.IDLE }}</span>
     <span class="mexa-statuschip" style="--chip:#e03131">Alarm: {{ data.status_counts.ALARM }}</span>
     <span class="mexa-statuschip" style="--chip:#94a3b8">Offline: {{ data.status_counts.OFFLINE }}</span>
   </div>
-
+  
+</div>
   <span class="mexa-titlebar-spacer"></span>
 
   <div class="mexa-filters">
@@ -66,7 +68,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>OEE</span>
-        <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true">
+        <span class="mexa-kpi-icon navy" style="background:#2f2d8f" aria-hidden="true">
           <mat-icon>settings</mat-icon>
         </span>
       </div>
@@ -90,7 +92,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>Availability</span>
-        <span class="mexa-kpi-icon" style="background:#17b3a3" aria-hidden="true">
+        <span class="mexa-kpi-icon green" style="background:#17b3a3" aria-hidden="true">
           <mat-icon>schedule</mat-icon>
         </span>
       </div>
@@ -105,7 +107,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>Performance</span>
-        <span class="mexa-kpi-icon" style="background:#3b9ae1" aria-hidden="true">
+        <span class="mexa-kpi-icon sky" style="background:#3b9ae1" aria-hidden="true">
           <mat-icon>speed</mat-icon>
         </span>
       </div>
@@ -120,7 +122,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>Quality</span>
-        <span class="mexa-kpi-icon" style="background:#9b7ec8" aria-hidden="true">
+        <span class="mexa-kpi-icon purple" style="background:#9b7ec8" aria-hidden="true">
           <mat-icon>water_drop</mat-icon>
         </span>
       </div>
@@ -135,7 +137,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total<br>Production</span>
-        <span class="mexa-kpi-icon" style="background:#6b7280" aria-hidden="true">
+        <span class="mexa-kpi-icon blue " style="background:#6b7280" aria-hidden="true">
           <mat-icon>inventory_2</mat-icon>
         </span>
       </div>
@@ -146,7 +148,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total<br>Downtime</span>
-        <span class="mexa-kpi-icon" style="background:#f5a623" aria-hidden="true">
+        <span class="mexa-kpi-icon yellow" style="background:#f5a623" aria-hidden="true">
           <mat-icon>timer_off</mat-icon>
         </span>
       </div>

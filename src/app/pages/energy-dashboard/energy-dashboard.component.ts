@@ -215,7 +215,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   get trendChart(): any {
     return this.charts.memo('trendChart', () => {
     return {
-      chart:  { type: 'area', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'area', height: 200, toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: 2, curve: 'smooth' },
       fill:   { type: 'gradient', gradient: { shadeIntensity: 0.3, opacityFrom: 0.35, opacityTo: 0.05 } },
       colors: ['#b45309'],

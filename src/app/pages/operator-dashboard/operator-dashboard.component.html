@@ -1,16 +1,17 @@
 <!-- Phase 2 · Screen 7 — Operator Performance Dashboard, MEXA design. -->
 
-<p class="mexa-updated" *ngIf="updatedAt">
+
+
+<!-- ══════════ TITLE BAR ══════════ -->
+<form class="" (ngSubmit)="submit()">
+  <div class="mexa-titlebar flex justify-between">
+  <h1 class="mexa-title">Operator Performance Dashboard</h1>
+  <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
   Last Updated: {{ updatedAt }}
 </p>
-
-<!-- ══════════ TITLE BAR ══════════ -->
-<form class="mexa-titlebar" (ngSubmit)="submit()">
-  <h1 class="mexa-title">Operator Performance Dashboard</h1>
-  <span class="mexa-titlebar-spacer"></span>
-
-  <div class="mexa-filters">
+</div>
+  <div class="mexa-filters mb-2">
     <label class="mexa-filter-label" for="opShift">Shift</label>
     <select id="opShift" class="mexa-select" [(ngModel)]="f.shift_id" name="shift">
       <option [ngValue]="null">All</option>
@@ -72,7 +73,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total<br>Operators</span>
-        <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true"><mat-icon>groups</mat-icon></span>
+        <span class="mexa-kpi-icon navy" style="background:#2f2d8f" aria-hidden="true"><mat-icon>groups</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.attribution.operators }}</p>
       <p class="mexa-kpi-sub" *ngIf="data.bands.unrated">{{ data.bands.unrated }} with nothing measured</p>
@@ -81,7 +82,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Excellent<br>Performer</span>
-        <span class="mexa-kpi-icon" style="background:#22c55e" aria-hidden="true"><mat-icon>star</mat-icon></span>
+        <span class="mexa-kpi-icon green" style="background:#22c55e" aria-hidden="true"><mat-icon>star</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.bands.excellent }}</p>
       <p class="mexa-kpi-sub">Score {{ data.score_bands.excellent }}% and above</p>
@@ -90,7 +91,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Good<br>Performer</span>
-        <span class="mexa-kpi-icon" style="background:#3b9ae1" aria-hidden="true"><mat-icon>verified</mat-icon></span>
+        <span class="mexa-kpi-icon sky" style="background:#3b9ae1" aria-hidden="true"><mat-icon>verified</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.bands.good }}</p>
       <p class="mexa-kpi-sub">Score {{ data.score_bands.good }}–{{ data.score_bands.excellent }}%</p>
@@ -99,7 +100,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Avg<br>Performer</span>
-        <span class="mexa-kpi-icon" style="background:#9b7ec8" aria-hidden="true"><mat-icon>shield</mat-icon></span>
+        <span class="mexa-kpi-icon purple" style="background:#9b7ec8" aria-hidden="true"><mat-icon>shield</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.bands.average }}</p>
       <p class="mexa-kpi-sub">Score {{ data.score_bands.average }}–{{ data.score_bands.good }}%</p>
@@ -108,7 +109,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Who Needs<br>Help</span>
-        <span class="mexa-kpi-icon" style="background:#6b7280" aria-hidden="true"><mat-icon>help</mat-icon></span>
+        <span class="mexa-kpi-icon blue" style="background:#6b7280" aria-hidden="true"><mat-icon>help</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.bands.needs_help }}</p>
       <p class="mexa-kpi-sub">Score below {{ data.score_bands.average }}%</p>
@@ -150,7 +151,7 @@
         [colors]="rejectionChart.colors" [dataLabels]="rejectionChart.dataLabels" [legend]="rejectionChart.legend"
         [xaxis]="rejectionChart.xaxis" [yaxis]="rejectionChart.yaxis" [grid]="rejectionChart.grid"
         [tooltip]="rejectionChart.tooltip" [noData]="rejectionChart.noData"></apx-chart>
-      <p *ngIf="noRejects" class="mexa-card-hint !mt-1">No rejects or rework were entered for this period.</p>
+      <!-- <p *ngIf="noRejects" class="mexa-card-hint !mt-1">No rejects or rework were entered for this period.</p> -->
       <p *ngIf="!rows('rejection').length" class="mexa-empty">Nothing produced, so there is no rejection rate.</p>
     </section>
 

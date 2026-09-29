@@ -308,7 +308,7 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
   get hourlyChart(): any {
     return this.charts.memo('hourlyChart', () => {
     return {
-      chart:  { type: 'line', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'line', height: 200, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: {},
       stroke: { width: 3, curve: 'smooth' },
       markers: { size: 4 },
