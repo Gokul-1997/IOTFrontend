@@ -12,7 +12,7 @@
    nine times drifts by the third one.
    ───────────────────────────────────────────────────────────── */
 
-html, body { background: var(--mexa-ground); }
+// html, body { background: var(--mexa-ground); }
 /* the field spans the whole page, as the design draws it — navy at the
    bottom left, crimson at the top right, however long the page is */
 body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100%; min-height: 100%; }

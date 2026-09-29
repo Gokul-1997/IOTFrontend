@@ -56,9 +56,30 @@ body {
 @tailwind components;
 @tailwind utilities;
 
+// body {
+//   @apply text-gray-900 bg-no-repeat font-ubuntu dark:text-white transition-colors duration-300;
+//   background: #2b3990 var(--stm-field) center top / cover no-repeat;
+//   background-attachment: fixed;
+//   background-size: 100% 100%;
+// }
+
 body {
-  @apply text-gray-900 bg-no-repeat font-ubuntu dark:text-white transition-colors duration-300;
-  background: #2b3990 var(--stm-field) no-repeat;
+  @apply text-gray-900 font-ubuntu dark:text-white transition-colors duration-300;
+  position: relative;
+}
+
+
+/* Background layer */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+
+  background-color: #2b3990;
+  background-image: var(--stm-field);
+  background-position: center top;
+  background-repeat: no-repeat;
   background-size: 100% 100%;
 }
 
