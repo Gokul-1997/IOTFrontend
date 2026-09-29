@@ -393,14 +393,14 @@ select.ui-input {
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  padding: 0.5625rem 1.125rem;
+  padding: 0.15rem 1.125rem;
   font-size: 0.875rem;
   font-weight: 600;
   border-radius: 9px;
   border: 1px solid transparent;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
-  min-height: 2.5rem;   /* comfortable touch target */
+  // min-height: 2.5rem;   /* comfortable touch target */
   white-space: nowrap;
 }
 .ui-btn:focus-visible { outline: 2px solid #2b3990; outline-offset: 2px; }

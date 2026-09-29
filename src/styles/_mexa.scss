@@ -444,15 +444,17 @@ button.mexa-kpi[aria-pressed="true"] {
   text-align: left;
   padding: .2rem;
   white-space: nowrap;
+  font-size: 13px;
 }
-.mexa-table thead th:first-child { border-radius: 9px 0 0 9px; }
-.mexa-table thead th:last-child  { border-radius: 0 9px 9px 0; }
+// .mexa-table thead th:first-child { border-radius: 9px 0 0 9px; }
+// .mexa-table thead th:last-child  { border-radius: 0 9px 9px 0; }
 
 .mexa-table tbody td {
   padding: .2rem;
   color: var(--mexa-ink-2);
   border-bottom: 1px solid var(--mexa-rule);
   vertical-align: middle;
+  font-size: 13px;
 }
 .mexa-table tbody tr:nth-child(even) { background: var(--mexa-row-alt); }
 .mexa-table tbody tr:last-child td { border-bottom: 0; }
