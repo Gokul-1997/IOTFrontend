@@ -269,7 +269,7 @@
   </div>
 
   <!-- ══════════ ROW 3 ══════════ -->
-  <div class="mexa-grid xl:grid-cols-3 lg:grid-cols-2">
+  <div class="mexa-grid xl:grid-cols-4 lg:grid-cols-2">
 
     <section class="mexa-card">
       <h2 class="mexa-card-title mexa-card-title-left">Downtime Reasons</h2>
@@ -285,7 +285,7 @@
       </p>
     </section>
 
-    <section class="mexa-card xl:w-auto">
+    <section class="mexa-card xl:col-span-2 lg:col-span-1">
       <h2 class="mexa-card-title mexa-card-title-left">Production Trend</h2>
       <apx-chart *ngIf="trendSeries.length"
         [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
@@ -295,7 +295,7 @@
       <p *ngIf="!trendSeries.length" class="mexa-empty">No hourly data for this period.</p>
     </section>
 
-    <section class="mexa-card xl:w-3/4">
+    <section class="mexa-card ">
       <h2 class="mexa-card-title mexa-card-title-left">Alarm Summary</h2>
       <div class="flex flex-col">
       <apx-chart *ngIf="data.alarms.total > 0"

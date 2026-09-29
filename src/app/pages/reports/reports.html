@@ -311,9 +311,12 @@
   ══════════════════════════════════════════════ -->
   <!-- KPI CARDS — controlled by widget:kpi -->
   <div *ngIf="auth.hasWidget('reports', 'kpi')" class="mexa-kpis rep-kpis">
-    <div *ngFor="let kpi of kpis" class="mexa-kpi">
+    <div *ngFor="let kpi of kpis" class="mexa-kpi repcard flex items-center">
+      <div class="bg-white/20 rounded-sm p-2 mr-2">{{ kpi.icon }}</div>
+      <div>
       <span class="mexa-kpi-label">{{ kpi.label }}</span>
       <p class="mexa-kpi-value">{{ kpi.value }}<small>{{ kpi.unit }}</small></p>
+      </div>
     </div>
   </div>
 
@@ -369,7 +372,7 @@
 
     <!-- Data table -->
     <div *ngIf="!loading && rows.length > 0 && selectedCount > 0" class="overflow-x-auto" tabindex="0" role="region" aria-label="Report table — scroll sideways to see every column">
-      <table class="w-full text-sm">
+      <table class="w-full text-sm mexa-table">
         <thead>
           <tr class="">
             <th class="">#</th>

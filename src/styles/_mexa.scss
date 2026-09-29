@@ -252,9 +252,16 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   background: var(--mexa-card);
   border: 0;
   border-radius: 16px;
-  padding: .5rem;
+  padding: .5rem 1rem;
   box-shadow: var(--mexa-card-shadow);
   min-width: 0;
+}
+.rep-kpis .mexa-kpi.repcard {
+  color: #fff;
+  &:nth-child(1) { background: #1e3a8a !important; }
+  &:nth-child(2) { background: #0EA5E9 !important; }
+  &:nth-child(3) { background: #9365B0 !important; }
+  &:nth-child(4) { background: #4B6CB7 !important; }
 }
 
 .mexa-kpi-head {
@@ -268,7 +275,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   font-weight: 600;
   letter-spacing: .05em;
   text-transform: uppercase;
-  color: var(--mexa-ink-3);
+  // color: var(--mexa-ink-3);
   line-height: 1;
   min-width: 0;
 }
@@ -289,13 +296,13 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
 .mexa-kpi-value {
   font-size: 1.35rem;
   font-weight: 700;
-  color: var(--mexa-ink);
+  // color: var(--mexa-ink);
   line-height: 1.15;
   // margin-top: .45rem;
   letter-spacing: -.02em;
   font-variant-numeric: tabular-nums;
 }
-.mexa-kpi-value small { font-size: .95rem; font-weight: 600; color: var(--mexa-ink-3); margin-left: .25rem; }
+.mexa-kpi-value small { font-size: .95rem; font-weight: 600; margin-left: .25rem; }
 
 .mexa-kpi-sub {
   // margin-top: .3rem;
@@ -988,7 +995,8 @@ a.mexa-pill { text-decoration: none; }
    have; the content keeps its gutters, everything else tightens. */
 
 @media (max-width: 640px) {
-  .mexa-card  { padding: .8rem .85rem .9rem; border-radius: 14px; }
+  .mexa-card  { padding: .8rem .85rem .9rem;
+     border-radius: 14px; }
   .mexa-kpis  { grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: .55rem; }
   .mexa-kpi   { padding: .75rem .8rem; }
   .mexa-kpi-value { font-size: 1.6rem; }
@@ -1203,3 +1211,9 @@ a.mexa-pill { text-decoration: none; }
 header > div{
     max-width: 1400px;
 }
+
+// @media (max-width: 420px){
+//   .mexa-shell{
+//     padding:0 !important
+//   }
+// }

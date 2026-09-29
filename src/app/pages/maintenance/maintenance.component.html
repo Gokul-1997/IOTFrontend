@@ -1,7 +1,7 @@
 <div class="mexa-titlebar">
-  <div>
+  <div class="flex gap-2">
     <h1 class="mexa-title">Maintenance</h1>
-    <p class="mexa-subtitle">Schedule and track machine maintenance</p>
+    <p class="mexa-subtitle">    ( Schedule and track machine maintenance )</p>
   </div>
   <span class="mexa-titlebar-spacer"></span>
   <button *ngIf="activeTab === 'tickets'" type="button" class="ui-btn ui-btn-primary" (click)="showTicketForm=!showTicketForm">+ Create ticket</button>
@@ -28,7 +28,7 @@
 
 <!-- Tickets -->
 <div *ngIf="activeTab === 'tickets'" role="tabpanel">
-  <div *ngIf="showTicketForm" class="mexa-card mt-form">
+  <div *ngIf="showTicketForm" class="mexa-card mt-form p-4">
     <h2 class="mexa-card-title mexa-card-title-left">Create maintenance ticket</h2>
     <div class="mt-grid">
       <div class="ui-field">
