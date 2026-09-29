@@ -3,8 +3,8 @@ import { test, expect } from './fixtures/auth';
 /*
  * The Maintenance screen on a phone and in dark mode.
  *
- * This screen is denser than the others — a per-axis table, two donuts and a
- * trend — so it is the one most likely to push the page sideways at 390px.
+ * This screen is denser than the others — nine gauges, fan and battery tiles,
+ * three charts — so it is the one most likely to push the page sideways at 390px.
  */
 
 const ok = (data: any) => ({ status: 'success', data });
@@ -29,7 +29,12 @@ const maintenance = ok({
     sequence_number: 100, received_at: new Date().toISOString(), run_seconds: 16338,
     servo_load_x: 5, servo_load_y: 6, servo_load_z: 6, servo_temp_x: 27
   }],
-  condition_trend: []
+  condition_trend: [],
+  cycle_trend: [
+    { hour_start: '2026-06-18T03:30:00.000Z', produced: 40, cycle_seconds: 45.2 },
+    { hour_start: '2026-06-18T04:30:00.000Z', produced: 0,  cycle_seconds: null },
+    { hour_start: '2026-06-18T05:30:00.000Z', produced: 38, cycle_seconds: 48.6 }
+  ]
 });
 
 async function mockApi(page: any) {
@@ -43,7 +48,7 @@ test('fits a phone without scrolling sideways', async ({ authedPage: page }) => 
   await mockApi(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/maintenance-dashboard');
-  await expect(page.locator('.mexa-kpi').first()).toBeVisible();
+  await expect(page.locator('.mt-machine')).toBeVisible();
   await page.waitForTimeout(1500);
 
   const overflow = await page.evaluate(() =>
@@ -51,7 +56,7 @@ test('fits a phone without scrolling sideways', async ({ authedPage: page }) => 
   expect(overflow, 'horizontal overflow in px').toBeLessThanOrEqual(1);
 
   const widest = await page.evaluate(() => Math.max(
-    ...Array.from(document.querySelectorAll('.mexa-card, .mexa-kpi'))
+    ...Array.from(document.querySelectorAll('.mexa-card'))
       .map(el => Math.round(el.getBoundingClientRect().right))));
   expect(widest).toBeLessThanOrEqual(390);
 
@@ -62,7 +67,7 @@ test('gauge captions stay legible in dark mode', async ({ authedPage: page }) =>
   await mockApi(page);
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/maintenance-dashboard');
-  await expect(page.locator('.mexa-kpi').first()).toBeVisible();
+  await expect(page.locator('.mt-machine')).toBeVisible();
   await page.evaluate(() => document.documentElement.classList.add('dark'));
   await page.waitForTimeout(600);
 
@@ -88,18 +93,20 @@ test('gauge captions stay legible in dark mode', async ({ authedPage: page }) =>
   expect(report!.ratio).toBeGreaterThanOrEqual(4.5);
 });
 
-/* Cycle Time was taken off this screen on 2026-09-21: cycle time per part is
-   a production measure, and this dashboard is about machine condition. The
-   backend no longer computes it either, so a chart left behind would draw
-   from a field that is never sent. */
-test('there is no Cycle Time chart', async ({ authedPage: page }) => {
+/* Cycle Time is back on this screen (2026-09-29), as the client's design
+   draws it: run time per part, hour by hour, from production_hourly. Only
+   hours that finished a part are plotted — an idle hour has no cycle time. */
+test('cycle time shows hour by hour, with the latest as the current cycle', async ({ authedPage: page }) => {
   await mockApi(page);
   await page.setViewportSize({ width: 1500, height: 1200 });
   await page.goto('/maintenance-dashboard');
-  await expect(page.locator('.mexa-kpi').first()).toBeVisible();
+  await expect(page.locator('.mt-machine')).toBeVisible();
 
-  await expect(page.getByText(/Cycle Time/i)).toHaveCount(0);
-  await expect(page.getByText(/Seconds per part/i)).toHaveCount(0);
+  const card = page.locator('.mexa-card').filter({ has: page.getByRole('heading', { name: 'Cycle Time (Sec)' }) });
+  await expect(card).toContainText('Current Cycle Time: 48.6 Sec');
+  // two hours with parts are drawn; the idle hour is not a point at zero
+  await expect(card.locator('.apexcharts-series path.apexcharts-line')).toHaveCount(1);
+  await expect(card.locator('.apexcharts-xaxis-label')).toHaveCount(2);
   // the screen still shows what it is for
   await expect(page.getByText('Alarm Summary')).toBeVisible();
 });

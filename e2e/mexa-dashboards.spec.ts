@@ -328,7 +328,8 @@ async function mockApi(page: any) {
 
 /** Every screen must show the field, a title bar and at least one KPI tile. */
 const screens: { path: string; title: string; kpis: number; file: string }[] = [
-  { path: '/maintenance-dashboard',  title: 'Maintenance Dashboard',             kpis: 6, file: 'mexa-02-maintenance.png' },
+  // the design's Maintenance screen has no KPI row: machine card, gauges, fans
+  { path: '/maintenance-dashboard',  title: 'Maintenance Dashboard',             kpis: 0, file: 'mexa-02-maintenance.png' },
   { path: '/preventive-maintenance', title: 'Preventive Maintenance Dashboard',  kpis: 5, file: 'mexa-03-preventive.png' },
   { path: '/periodic-maintenance',   title: 'Periodic Maintenance Dashboard',    kpis: 5, file: 'mexa-04-periodic.png' },
   { path: '/alarm-report',           title: 'Alarm Report Dashboard',            kpis: 5, file: 'mexa-05-alarms.png' },
@@ -458,11 +459,11 @@ test('a servo with no temperature sensor reads as "--", never as 0 °C', async (
   // the claim this test exists to defend
   await expect(servo).not.toContainText('0.0 °C');
 
-  // what the data lacks is named; what arrives is not
-  const gaps = page.locator('.mexa-card')
-    .filter({ has: page.getByRole('heading', { name: 'Fans & Batteries' }) });
-  await expect(gaps).toContainText('Encoder temperature');
-  await expect(gaps).not.toContainText('Servo load per axis');
+  // what the data lacks says so in its own place; what arrives is drawn
+  const spindle = page.locator('.mexa-card')
+    .filter({ has: page.getByRole('heading', { name: /Spindle RPM/ }) });
+  await expect(spindle).toContainText('Encoder temperature not reported');
+  await expect(servo.locator('.mt-word').first()).not.toHaveText('Not reported');
 
   await page.waitForTimeout(2000);
   await page.screenshot({ path: 'mexa-02-maintenance.png', fullPage: true });

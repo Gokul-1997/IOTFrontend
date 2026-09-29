@@ -27,12 +27,12 @@
     </span>
   </div> -->
 
-  <!-- the bands every gauge below is coloured by -->
-  <!-- <span class="mexa-legend text-white text-sm" aria-label="Condition bands">
+  <!-- the bands every gauge below is coloured by, as in the design -->
+  <span class="mexa-legend mt-legend" aria-label="Condition bands">
     <span class="mexa-legend-item"><span class="mexa-legend-dot" style="background:#22c55e"></span>Healthy</span>
     <span class="mexa-legend-item"><span class="mexa-legend-dot" style="background:#f5a623"></span>Stable</span>
     <span class="mexa-legend-item"><span class="mexa-legend-dot" style="background:#e03131"></span>Critical</span>
-  </span> -->
+  </span>
 
   <span class="mexa-titlebar-spacer"></span>
 
@@ -63,282 +63,204 @@
 
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
-<!-- First load: placeholders shaped like the cards that are coming, so
-     the page does not jump when the data lands. No values are shown —
-     a placeholder reading would be a claim about a machine. -->
+<!-- First load: placeholders shaped like the cards that are coming. No
+     values — a placeholder reading would be a claim about a machine. -->
 <ng-container *ngIf="loading && !data">
-  <app-skeleton kind="kpis" [count]="6" label="Loading dashboard"></app-skeleton>
-  <div class="mexa-grid lg:grid-cols-2">
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
+  <div class="mt-row1">
+    <section class="mexa-card" *ngFor="let i of [1,2,3,4]"><app-skeleton kind="chart" label="Loading dashboard"></app-skeleton></section>
   </div>
 </ng-container>
 
 <ng-container *ngIf="data">
+<ng-container *ngIf="focusRow as r">
 
-  <!-- ══════════ KPI TILES ══════════ -->
-  <div class="mexa-kpis">
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Machine<br>Status</span>
-        <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true">
-          <mat-icon>precision_manufacturing</mat-icon>
+  <!-- ══════════ ROW 1 — machine · spindle · servo · fans & batteries (the design's top row) ══════════ -->
+  <div class="mt-row1">
+
+    <!-- the machine: photo, state, and the job on it -->
+    <section class="mexa-card mt-machine" aria-labelledby="mtName">
+      <div class="mt-machine-head">
+        <h2 id="mtName" class="mt-machine-name">{{ r.machine_serial_no }}</h2>
+        <span class="mt-state" [ngClass]="'is-' + rowStatus(r).toLowerCase()">
+          <span class="mt-state-dot" aria-hidden="true"></span>{{ stateWord(rowStatus(r)) }}
         </span>
       </div>
-      <p class="mexa-kpi-value" style="font-size:1.6rem">
-        {{ focusRow ? statusWord(rowStatus(focusRow)) : '--' }}
+      <img class="mt-machine-img" [src]="r.image_url || '/images/product/machine_login_02.png'"
+           [alt]="'Photo of ' + r.machine_serial_no" loading="lazy" />
+      <p class="mt-lastseen" *ngIf="rowStatus(r) === 'OFFLINE'">
+        {{ r.received_at ? 'Last reading ' + (r.received_at | date:'d MMM, h:mm a') : 'No reading in this window' }}
       </p>
-      <p class="mexa-kpi-sub">
-        {{ focusRow?.received_at ? 'Last seen ' + (focusRow.received_at | date:'HH:mm:ss') : 'Not reporting' }}
-      </p>
-    </div>
-
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Spindle<br>Load</span>
-        <span class="mexa-kpi-icon" style="background:#17b3a3" aria-hidden="true">
-          <mat-icon>speed</mat-icon>
-        </span>
-      </div>
-      <!-- a missing sensor is a dash, never 0% -->
-      <p class="mexa-kpi-value">{{ reading(focusRow?.spindle_load, '%', 0) }}</p>
-      <p class="mexa-kpi-sub">Feed rate {{ focusRow?.feed_rate ?? '--' }}</p>
-    </div>
-
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Machine<br>OEE</span>
-        <span class="mexa-kpi-icon" style="background:#9b7ec8" aria-hidden="true">
-          <mat-icon>settings</mat-icon>
-        </span>
-      </div>
-      <p class="mexa-kpi-value">{{ pct(data.oee.oee) }}</p>
-      <p class="mexa-kpi-sub">A {{ pct(data.oee.availability) }} · P {{ pct(data.oee.performance) }}</p>
-    </div>
-
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Run<br>Time</span>
-        <span class="mexa-kpi-icon" style="background:#22c55e" aria-hidden="true">
-          <mat-icon>schedule</mat-icon>
-        </span>
-      </div>
-      <p class="mexa-kpi-value">{{ hm(data.production.run_seconds) }}</p>
-      <p class="mexa-kpi-sub">Idle {{ hm(data.production.idle_seconds) }}</p>
-    </div>
-
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Parts<br>Produced</span>
-        <span class="mexa-kpi-icon" style="background:#4a76c8" aria-hidden="true">
-          <mat-icon>inventory_2</mat-icon>
-        </span>
-      </div>
-      <p class="mexa-kpi-value">{{ data.production.produced }}</p>
-      <p class="mexa-kpi-sub">{{ focusRow?.part_name || 'No part set' }}</p>
-    </div>
-
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Alarms<br>Today</span>
-        <span class="mexa-kpi-icon" style="background:#f5a623" aria-hidden="true">
-          <mat-icon>notifications</mat-icon>
-        </span>
-      </div>
-      <p class="mexa-kpi-value">{{ data.alarms.total }}</p>
-      <p class="mexa-kpi-sub">{{ data.alarms.open }} still open</p>
-    </div>
-  </div>
-
-  <!-- ══════════ ROW 2 — machine, spindle, servo, fans & batteries (the design's row) ══════════ -->
-  <ng-template #gaugeTpl let-g="g" let-label="label" let-word="word">
-    <div class="text-center min-w-0">
-      <p class="text-sm font-semibold text-[--mexa-ink] leading-tight">{{ label }}</p>
-      <apx-chart [series]="g.series" [chart]="g.chart" [colors]="g.colors"
-                 [plotOptions]="g.plotOptions" [stroke]="g.stroke"></apx-chart>
-      <p class="text-sm font-semibold mt-1" [ngClass]="bandText(word)">{{ word }}</p>
-    </div>
-  </ng-template>
-  <ng-template #noGauge let-label="label">
-    <div class="text-center min-w-0">
-      <p class="text-sm font-semibold text-[--mexa-ink] leading-tight">{{ label }}</p>
-      <p class="text-2xl font-bold text-[--mexa-ink-3] py-6" aria-label="not reported">--</p>
-      <p class="text-xs text-[--mexa-ink-3]">Not reported</p>
-    </div>
-  </ng-template>
-
-  <div class="mexa-grid lg:grid-cols-2 2xl:grid-cols-4 items-stretch">
-
-    <!-- Identity and the job it is running. -->
-    <section class="mexa-card" *ngIf="focusRow as r">
-      <div class="mexa-tablebar">
-        <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">{{ r.machine_serial_no }}</h2>
-        <span class="mexa-badge" [ngClass]="statusBadge(rowStatus(r))">{{ statusWord(rowStatus(r)) }}</span>
-      </div>
-
-      <dl class="mexa-readout">
-        <div><dt>Machine ID</dt><dd>{{ r.machine_id }}</dd></div>
+      <dl class="mt-facts">
+        <div><dt>Machine Id</dt><dd>{{ r.machine_id }}</dd></div>
         <div><dt>Component ID</dt><dd>{{ r.component_id || '--' }}</dd></div>
         <div><dt>Operator</dt><dd>{{ r.operator_name || 'Unassigned' }}</dd></div>
         <div><dt>Operation Number</dt><dd>{{ r.sequence_number != null ? 'N' + r.sequence_number : '--' }}</dd></div>
         <div><dt>Part</dt><dd>{{ r.part_name || '--' }}</dd></div>
         <div><dt>Run Time</dt><dd>{{ hm(r.run_seconds) }}</dd></div>
-        <div><dt>Target quantity</dt><dd>{{ r.target_qty ?? '--' }}</dd></div>
       </dl>
     </section>
 
-    <!-- Spindle: load, temperature and insulation resistance, then the encoders -->
-    <section class="mexa-card" *ngIf="focusRow as r" aria-labelledby="mtSpindle">
-      <h2 id="mtSpindle" class="mexa-card-title !mb-2 rounded-lg bg-[--mexa-row-alt] py-2 !text-[#3a4ab8] dark:!text-[#b9b6ff]">
+    <!-- spindle: load, temperature, insulation resistance, then the encoders -->
+    <section class="mexa-card" aria-labelledby="mtSpindle">
+      <h2 id="mtSpindle" class="mt-chip">
         Spindle RPM : {{ r.spindle_speed != null ? (r.spindle_speed | number:'1.0-0') : '--' }}
       </h2>
-      <div class="grid grid-cols-3 gap-1">
-        <ng-container *ngIf="r.spindle_load != null; else sl">
-          <ng-container *ngTemplateOutlet="gaugeTpl; context: { g: gauge('sLoad', r.spindle_load, '%', 100, LOAD_BANDS), label: 'Spindle Load', word: band(r.spindle_load, LOAD_BANDS) }"></ng-container>
-        </ng-container>
-        <ng-template #sl><ng-container *ngTemplateOutlet="noGauge; context: { label: 'Spindle Load' }"></ng-container></ng-template>
-
-        <ng-container *ngIf="r.spindle_motor_temp != null; else st">
-          <ng-container *ngTemplateOutlet="gaugeTpl; context: { g: gauge('sTemp', r.spindle_motor_temp, '°C', 120, TEMP_BANDS), label: 'Spindle Temp', word: band(r.spindle_motor_temp, TEMP_BANDS) }"></ng-container>
-        </ng-container>
-        <ng-template #st><ng-container *ngTemplateOutlet="noGauge; context: { label: 'Spindle Temp' }"></ng-container></ng-template>
-
-        <!-- insulation resistance: the collector states no unit or healthy range yet -->
-        <div class="text-center min-w-0">
-          <p class="text-sm font-semibold text-[--mexa-ink] leading-tight">Spindle IR</p>
-          <p class="text-2xl font-bold py-6" [class.text-[--mexa-ink-3]]="r.spindle_insulation_res == null">
-            {{ reading(r.spindle_insulation_res, '') }}
-          </p>
-          <p class="text-xs text-[--mexa-ink-3]" *ngIf="r.spindle_insulation_res == null">Not reported</p>
+      <div class="mt-gauges">
+        <div class="mt-gauge">
+          <p class="mt-gauge-label">Spindle Load</p>
+          <app-condition-gauge [value]="r.spindle_load" [max]="150" [zones]="LOAD_ZONES" unit="%"
+            [ariaLabel]="'Spindle load ' + reading(r.spindle_load, '%', 0)"></app-condition-gauge>
+          <p class="mt-word" [ngClass]="bandText(band(r.spindle_load, LOAD_BANDS))">{{ band(r.spindle_load, LOAD_BANDS) || 'Not reported' }}</p>
+        </div>
+        <div class="mt-gauge">
+          <p class="mt-gauge-label">Spindle Temp</p>
+          <app-condition-gauge [value]="r.spindle_motor_temp" [max]="120" [zones]="TEMP_ZONES" unit="°C"
+            [ariaLabel]="'Spindle temperature ' + reading(r.spindle_motor_temp, '°C', 0)"></app-condition-gauge>
+          <p class="mt-word" [ngClass]="bandText(band(r.spindle_motor_temp, TEMP_BANDS))">{{ band(r.spindle_motor_temp, TEMP_BANDS) || 'Not reported' }}</p>
+        </div>
+        <div class="mt-gauge">
+          <p class="mt-gauge-label">Spindle IR</p>
+          <app-condition-gauge [value]="r.spindle_insulation_res" [max]="200" [zones]="IR_ZONES" unit=" MΩ"
+            [ariaLabel]="'Spindle insulation resistance ' + reading(r.spindle_insulation_res, 'megohm', 0)"></app-condition-gauge>
+          <p class="mt-word" [ngClass]="bandText(bandLow(r.spindle_insulation_res, IR_BANDS))">{{ bandLow(r.spindle_insulation_res, IR_BANDS) || 'Not reported' }}</p>
         </div>
       </div>
-
       <ng-container *ngIf="anyReading([r.encoder_temp_x, r.encoder_temp_y, r.encoder_temp_z]); else noEnc">
         <apx-chart *ngIf="axisBars('enc', [r.encoder_temp_x, r.encoder_temp_y, r.encoder_temp_z], ['Encoder Temp X', 'Encoder Temp Y', 'Encoder Temp Z'], '°C') as b"
           [series]="b.series" [chart]="b.chart" [plotOptions]="b.plotOptions" [colors]="b.colors"
           [dataLabels]="b.dataLabels" [legend]="b.legend" [xaxis]="b.xaxis" [yaxis]="b.yaxis"
           [grid]="b.grid" [tooltip]="b.tooltip"></apx-chart>
       </ng-container>
-      <ng-template #noEnc><p class="mexa-card-hint text-center !mt-3">No encoder temperature reported.</p></ng-template>
+      <ng-template #noEnc><p class="mexa-empty">Encoder temperature not reported.</p></ng-template>
     </section>
 
-    <!-- Servo: load and motor temperature per axis -->
-    <section class="mexa-card" *ngIf="focusRow as r" aria-labelledby="mtServo">
+    <!-- servo: load per axis, then motor temperature per axis -->
+    <section class="mexa-card" aria-labelledby="mtServo">
       <h2 id="mtServo" class="mexa-card-title">Servo Details</h2>
-      <div class="grid grid-cols-3 gap-1">
-        <ng-container *ngFor="let a of ['x','y','z']">
-          <ng-container *ngIf="r['servo_load_' + a] != null; else noLoad">
-            <ng-container *ngTemplateOutlet="gaugeTpl; context: { g: gauge('load' + a, r['servo_load_' + a], '%', 100, LOAD_BANDS), label: 'Servo Load ' + a.toUpperCase(), word: band(r['servo_load_' + a], LOAD_BANDS) }"></ng-container>
-          </ng-container>
-          <ng-template #noLoad><ng-container *ngTemplateOutlet="noGauge; context: { label: 'Servo Load ' + a.toUpperCase() }"></ng-container></ng-template>
-        </ng-container>
+      <div class="mt-gauges">
+        <div class="mt-gauge" *ngFor="let a of ['x','y','z']">
+          <p class="mt-gauge-label">Servo Load {{ a.toUpperCase() }}</p>
+          <app-condition-gauge [value]="r['servo_load_' + a]" [max]="150" [zones]="LOAD_ZONES" unit="%"
+            [ariaLabel]="'Servo load ' + a.toUpperCase() + ' ' + reading(r['servo_load_' + a], '%', 0)"></app-condition-gauge>
+          <p class="mt-word" [ngClass]="bandText(band(r['servo_load_' + a], LOAD_BANDS))">{{ band(r['servo_load_' + a], LOAD_BANDS) || 'Not reported' }}</p>
+        </div>
       </div>
-
       <ng-container *ngIf="anyReading([r.servo_temp_x, r.servo_temp_y, r.servo_temp_z]); else noServoTemp">
         <apx-chart *ngIf="axisBars('servoT', [r.servo_temp_x, r.servo_temp_y, r.servo_temp_z], ['Servo Temp X', 'Servo Temp Y', 'Servo Temp Z'], '°C') as b"
           [series]="b.series" [chart]="b.chart" [plotOptions]="b.plotOptions" [colors]="b.colors"
           [dataLabels]="b.dataLabels" [legend]="b.legend" [xaxis]="b.xaxis" [yaxis]="b.yaxis"
           [grid]="b.grid" [tooltip]="b.tooltip"></apx-chart>
-        <!-- the one-servo case, said in words -->
-        <p *ngIf="servoTempMissing" class="mexa-card-hint text-center !mt-0">{{ servoTempMissing }} not reporting a temperature.</p>
+        <p *ngIf="servoTempMissing" class="mexa-card-hint mt-center">{{ servoTempMissing }} not reporting a temperature.</p>
       </ng-container>
-      <ng-template #noServoTemp><p class="mexa-card-hint text-center !mt-3">No servo temperature reported.</p></ng-template>
+      <ng-template #noServoTemp><p class="mexa-empty">Servo temperature not reported.</p></ng-template>
     </section>
 
-    <!-- Fans and batteries, as tiles -->
-    <section class="mexa-card" *ngIf="focusRow as r" aria-labelledby="mtCool">
-      <h2 id="mtCool" class="mexa-card-title">Fans &amp; Batteries</h2>
-      <div *ngIf="fanList.length" class="grid grid-cols-3 gap-2 mb-3">
-        <div *ngFor="let f of fanList" class="rounded-lg border border-[--mexa-rule] p-2 text-center">
-          <mat-icon aria-hidden="true" class="text-[--mexa-ink-2]">mode_fan</mat-icon>
-          <p class="text-xs font-semibold text-[--mexa-ink] capitalize">{{ f.name }}</p>
-          <p class="text-xs" [ngClass]="bandText(f.value === 'OK' || f.value === 'true' ? 'Healthy' : f.value)">{{ f.value }}</p>
+    <!-- fans and batteries -->
+    <div class="mt-cooling">
+      <section class="mexa-card mt-fans" aria-label="Cooling fans">
+        <div class="mt-fan" *ngFor="let f of fanTiles">
+          <svg class="mt-fan-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+              <path d="M12 12c0-4 1.2-7 3.6-7 2.4 0 3 3.2.6 5.2-1.3 1.1-2.8 1.5-4.2 1.8Z"/>
+              <path d="M12 12c3.5 2 5.4 4.5 4.2 6.6-1.2 2.1-4.3 1-4.9-2-.4-1.7 0-3.2.7-4.6Z"/>
+              <path d="M12 12c-3.5 2-6.7 2.4-7.9.3-1.2-2.1 1.3-4.2 4.2-3.2 1.6.6 2.7 1.7 3.7 2.9Z"/>
+              <circle cx="12" cy="12" r="1.4"/>
+            </g>
+          </svg>
+          <p class="mt-fan-name">{{ f.name }}</p>
+          <p class="mt-fan-place" *ngIf="f.place">{{ f.place }}</p>
+          <p class="mt-word" [ngClass]="bandText(f.status)">{{ f.status }}</p>
         </div>
-      </div>
-      <p *ngIf="!fanList.length" class="mexa-card-hint text-center">This controller reports no fan status.</p>
+      </section>
 
-      <div class="grid grid-cols-2 gap-2">
-        <div class="rounded-lg border border-[--mexa-rule] p-3 text-center">
-          <p class="text-sm font-semibold text-[--mexa-ink]">CNC battery</p>
-          <p class="text-2xl font-bold" [class.text-[--mexa-ink-3]]="r.cnc_battery_voltage == null">{{ reading(r.cnc_battery_voltage, 'v', 2) }}</p>
-          <p class="text-xs text-[--mexa-ink-3]" *ngIf="r.cnc_battery_voltage == null">Not reported</p>
-        </div>
-        <div class="rounded-lg border border-[--mexa-rule] p-3 text-center">
-          <p class="text-sm font-semibold text-[--mexa-ink]">APC battery</p>
-          <p class="text-2xl font-bold" [class.text-[--mexa-ink-3]]="r.apc_battery_voltage == null">{{ reading(r.apc_battery_voltage, 'v', 2) }}</p>
-          <p class="text-xs text-[--mexa-ink-3]" *ngIf="r.apc_battery_voltage == null">Not reported</p>
-        </div>
+      <div class="mt-tiles">
+        <section class="mexa-card mt-tile" aria-label="CNC fans">
+          <svg class="mt-fan-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+              <path d="M12 12c0-4 1.2-7 3.6-7 2.4 0 3 3.2.6 5.2-1.3 1.1-2.8 1.5-4.2 1.8Z"/>
+              <path d="M12 12c3.5 2 5.4 4.5 4.2 6.6-1.2 2.1-4.3 1-4.9-2-.4-1.7 0-3.2.7-4.6Z"/>
+              <path d="M12 12c-3.5 2-6.7 2.4-7.9.3-1.2-2.1 1.3-4.2 4.2-3.2 1.6.6 2.7 1.7 3.7 2.9Z"/>
+              <circle cx="12" cy="12" r="1.4"/>
+            </g>
+          </svg>
+          <p class="mt-tile-name">CNC Fans</p>
+          <p class="mt-word" [ngClass]="bandText(fansOverall)">{{ fansOverall }}</p>
+        </section>
+        <section class="mexa-card mt-tile" aria-label="CNC battery">
+          <p class="mt-tile-name">CNC battery</p>
+          <p class="mt-tile-value">
+            <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><path d="M4.5 10h5M4.5 13.5h5M4.5 17h5" stroke="currentColor" stroke-width="1.6"/></svg>
+            <span>{{ r.cnc_battery_voltage != null ? (r.cnc_battery_voltage | number:'1.2-2') + ' v' : '--' }}</span>
+          </p>
+          <p class="mt-word" [ngClass]="bandText(bandLow(r.cnc_battery_voltage, BATTERY_BANDS))">{{ bandLow(r.cnc_battery_voltage, BATTERY_BANDS) || 'Not reported' }}</p>
+        </section>
+        <section class="mexa-card mt-tile" aria-label="APC battery">
+          <p class="mt-tile-name">APC battery</p>
+          <p class="mt-tile-value">
+            <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><path d="M4.5 10h5M4.5 13.5h5M4.5 17h5" stroke="currentColor" stroke-width="1.6"/></svg>
+            <span>{{ r.apc_battery_voltage != null ? (r.apc_battery_voltage | number:'1.2-2') + ' v' : '--' }}</span>
+          </p>
+          <p class="mt-word" [ngClass]="bandText(bandLow(r.apc_battery_voltage, BATTERY_BANDS))">{{ bandLow(r.apc_battery_voltage, BATTERY_BANDS) || 'Not reported' }}</p>
+        </section>
       </div>
+    </div>
+  </div>
 
-      <!-- measured by the API: listed only while nothing has sent a value -->
-      <ng-container *ngIf="missingSignals.length">
-        <h3 class="mexa-card-title mexa-card-title-left" style="margin:1rem 0 .4rem; font-size:.8rem">Not reported by this machine</h3>
-        <p class="mexa-card-hint !m-0">{{ missingSignals.join(' · ') }}</p>
+  <!-- ══════════ ROW 2 — cycle time · condition trend · alarm summary ══════════ -->
+  <div class="mt-row2">
+
+    <section class="mexa-card" aria-labelledby="mtCycle">
+      <div class="mexa-card-head">
+        <h2 id="mtCycle" class="mexa-card-title mexa-card-title-left">Cycle Time ({{ cycleUnit }})</h2>
+        <span class="mt-current">Current Cycle Time: <strong>{{ currentCycle != null ? currentCycle + ' ' + cycleUnit : '--' }}</strong></span>
+      </div>
+      <apx-chart *ngIf="cycleSeries.length; else noCycle"
+        [series]="cycleSeries" [chart]="cycleChart.chart" [stroke]="cycleChart.stroke" [markers]="cycleChart.markers"
+        [colors]="cycleChart.colors" [dataLabels]="cycleChart.dataLabels" [legend]="cycleChart.legend"
+        [xaxis]="cycleChart.xaxis" [yaxis]="cycleChart.yaxis" [grid]="cycleChart.grid"
+        [tooltip]="cycleChart.tooltip" [noData]="cycleChart.noData"></apx-chart>
+      <ng-template #noCycle><p class="mexa-empty">No parts made in this window, so no cycle time yet.</p></ng-template>
+    </section>
+
+    <section class="mexa-card" aria-labelledby="mtTrend">
+      <h2 id="mtTrend" class="mexa-card-title mexa-card-title-left">
+        {{ trendIsIr ? 'Servo Motor Insulation Resistance Trend' : 'Servo Motor Temperature Trend' }}
+      </h2>
+      <p *ngIf="!trendIsIr && data.unavailable?.includes('insulation_resistance')" class="mexa-card-hint mt-hint">
+        Insulation resistance is not reported by this controller; servo temperature is shown instead.
+      </p>
+      <apx-chart *ngIf="trendIsIr"
+        [series]="irTrendSeries" [chart]="irTrendChart.chart" [stroke]="irTrendChart.stroke"
+        [markers]="irTrendChart.markers" [colors]="irTrendChart.colors"
+        [dataLabels]="irTrendChart.dataLabels" [legend]="irTrendChart.legend"
+        [xaxis]="irTrendChart.xaxis" [yaxis]="irTrendChart.yaxis" [grid]="irTrendChart.grid"
+        [tooltip]="irTrendChart.tooltip" [noData]="irTrendChart.noData"></apx-chart>
+      <apx-chart *ngIf="!trendIsIr && tempTrendSeries.length"
+        [series]="tempTrendSeries" [chart]="tempTrendChart.chart" [stroke]="tempTrendChart.stroke"
+        [markers]="tempTrendChart.markers" [colors]="tempTrendChart.colors"
+        [dataLabels]="tempTrendChart.dataLabels" [legend]="tempTrendChart.legend"
+        [xaxis]="tempTrendChart.xaxis" [yaxis]="tempTrendChart.yaxis" [grid]="tempTrendChart.grid"
+        [tooltip]="tempTrendChart.tooltip" [noData]="tempTrendChart.noData"></apx-chart>
+      <p *ngIf="!trendIsIr && !tempTrendSeries.length" class="mexa-empty">No temperature reported for this machine in this window.</p>
+    </section>
+
+    <section class="mexa-card" aria-labelledby="mtAlarms">
+      <h2 id="mtAlarms" class="mexa-card-title mexa-card-title-left">Alarm Summary</h2>
+      <ng-container *ngIf="data.alarms.total; else noAlarms">
+        <apx-chart
+          [series]="alarmSeries" [chart]="alarmDonut.chart" [labels]="alarmDonut.labels"
+          [colors]="alarmDonut.colors" [dataLabels]="alarmDonut.dataLabels"
+          [plotOptions]="alarmDonut.plotOptions" [legend]="alarmDonut.legend"
+          [tooltip]="alarmDonut.tooltip" [noData]="alarmDonut.noData"></apx-chart>
+        <ul class="mt-alarmlist">
+          <li><span class="mt-dot" style="background:#e03131" aria-hidden="true"></span><span>Critical Alarms</span><strong>{{ alarmShare(data.alarms.critical) }}</strong></li>
+          <li><span class="mt-dot" style="background:#22c55e" aria-hidden="true"></span><span>Non Critical Alarms</span><strong>{{ alarmShare(data.alarms.non_critical) }}</strong></li>
+          <li><span class="mt-dot" style="background:#f5a623" aria-hidden="true"></span><span>Info</span><strong>{{ alarmShare(data.alarms.information) }}</strong></li>
+        </ul>
       </ng-container>
+      <ng-template #noAlarms><p class="mexa-empty">No alarms in this window.</p></ng-template>
     </section>
   </div>
 
-  <!-- ══════════ BOTTOM ROW — condition trend, alarm summary ══════════ -->
-  <div class="mexa-grid xl:grid-cols-3 items-start">
-  <section class="mexa-card xl:col-span-2">
-    <h2 class="mexa-card-title mexa-card-title-left">Temperature &amp; Insulation Resistance Trend</h2>
-
-
-    <p *ngIf="!hasConditionTrend" class="mexa-empty">
-      No temperature or insulation resistance reported for this machine in this window.
-    </p>
-
-    <div class="mexa-grid lg:grid-cols-2" style="margin:0" *ngIf="hasConditionTrend">
-      <div>
-        <h3 class="mexa-card-hint">Temperature (°C)</h3>
-        <apx-chart *ngIf="tempTrendSeries.length"
-          [series]="tempTrendSeries" [chart]="tempTrendChart.chart" [stroke]="tempTrendChart.stroke"
-          [markers]="tempTrendChart.markers" [colors]="tempTrendChart.colors"
-          [dataLabels]="tempTrendChart.dataLabels" [legend]="tempTrendChart.legend"
-          [xaxis]="tempTrendChart.xaxis" [yaxis]="tempTrendChart.yaxis" [grid]="tempTrendChart.grid"
-          [tooltip]="tempTrendChart.tooltip" [noData]="tempTrendChart.noData"></apx-chart>
-        <p *ngIf="!tempTrendSeries.length" class="mexa-empty">No temperature reported in this window.</p>
-      </div>
-      <div>
-        <h3 class="mexa-card-hint">Servo motor insulation resistance</h3>
-        <apx-chart *ngIf="irTrendSeries.length"
-          [series]="irTrendSeries" [chart]="irTrendChart.chart" [stroke]="irTrendChart.stroke"
-          [markers]="irTrendChart.markers" [colors]="irTrendChart.colors"
-          [dataLabels]="irTrendChart.dataLabels" [legend]="irTrendChart.legend"
-          [xaxis]="irTrendChart.xaxis" [yaxis]="irTrendChart.yaxis" [grid]="irTrendChart.grid"
-          [tooltip]="irTrendChart.tooltip" [noData]="irTrendChart.noData"></apx-chart>
-        <p *ngIf="!irTrendSeries.length" class="mexa-empty">No insulation resistance reported in this window.</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="mexa-card">
-    <h2 class="mexa-card-title mexa-card-title-left">Alarm Summary</h2>
-    <div class="mexa-donutrow" *ngIf="data.alarms.total; else noAlarms">
-      <apx-chart
-        [series]="alarmSeries" [chart]="alarmDonut.chart" [labels]="alarmDonut.labels"
-        [colors]="alarmDonut.colors" [dataLabels]="alarmDonut.dataLabels"
-        [plotOptions]="alarmDonut.plotOptions" [legend]="alarmDonut.legend"
-        [tooltip]="alarmDonut.tooltip" [noData]="alarmDonut.noData"></apx-chart>
-      <ul class="mexa-keylist">
-        <li>
-          <span class="mexa-key-swatch" style="--swatch:#e03131" aria-hidden="true"></span>
-          <span><span class="mexa-key-label">Critical Alarms</span><span class="mexa-key-value">{{ data.alarms.critical }}</span></span>
-        </li>
-        <li>
-          <span class="mexa-key-swatch" style="--swatch:#22c55e" aria-hidden="true"></span>
-          <span><span class="mexa-key-label">Non Critical Alarms</span><span class="mexa-key-value">{{ data.alarms.non_critical }}</span></span>
-        </li>
-        <li>
-          <span class="mexa-key-swatch" style="--swatch:#f5a623" aria-hidden="true"></span>
-          <span><span class="mexa-key-label">Information</span><span class="mexa-key-value">{{ data.alarms.information }}</span></span>
-        </li>
-      </ul>
-    </div>
-    <ng-template #noAlarms><p class="mexa-empty">No alarms in this window.</p></ng-template>
-  </section>
-  </div>
-
+</ng-container>
 </ng-container>

@@ -44,15 +44,15 @@ test.describe('Operators page', () => {
     await expect(page.getByText('John Doe')).toHaveCount(0, { timeout: 10_000 });
   });
 
-  test('TC-OP-04 navigates to create page on Add button click', async ({ authedPage: page }) => {
+  /* Add opens the operator form as a dialog on this page, as Machines and
+     Shifts do. */
+  test('TC-OP-04 Add opens the operator form', async ({ authedPage: page }) => {
     await stubOperators(page);
     await page.goto('/operators');
 
-    const addBtn = page.getByRole('button', { name: /add|create|new operator/i }).first();
-    if (await addBtn.isVisible({ timeout: 5_000 })) {
-      await addBtn.click();
-      await expect(page).toHaveURL(/\/operators\/create/);
-    }
+    await page.getByRole('button', { name: 'Add' }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page).toHaveURL(/\/operators$/);
   });
 
   test('TC-OP-05 handles 500 server error gracefully', async ({ authedPage: page }) => {

@@ -139,11 +139,7 @@ test.describe('Login page — API responses', () => {
 
   test('TC-L-10 forgot password link is visible and clickable', async ({ page }) => {
     await page.goto('/login');
-    const forgotLink = page.getByRole('link', { name: /forgot.*(password)?/i })
-      .or(page.getByText(/forgot.*(password)?/i).first());
-    if (await forgotLink.isVisible({ timeout: 5_000 })) {
-      await forgotLink.click();
-      await expect(page).toHaveURL(/\/forgot-password/);
-    }
+    await page.getByRole('link', { name: /forgot password/i }).click();
+    await expect(page).toHaveURL(/\/forgot-password/);
   });
 });

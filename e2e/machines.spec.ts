@@ -44,15 +44,16 @@ test.describe('Machines page', () => {
     await expect(page.getByText('VMC-1-F')).toHaveCount(0, { timeout: 10_000 });
   });
 
-  test('TC-M-03 navigates to create page on Add button click', async ({ authedPage: page }) => {
+  /* Add opens the machine form as a dialog on this page (there is no
+     /machines/create page); isVisible() does not wait, so the old version
+     checked nothing whenever the list had not drawn yet. */
+  test('TC-M-03 Add opens the machine form', async ({ authedPage: page }) => {
     await stubMachines(page);
     await page.goto('/machines');
 
-    const addBtn = page.getByRole('button', { name: /add|create|new machine/i }).first();
-    if (await addBtn.isVisible({ timeout: 5_000 })) {
-      await addBtn.click();
-      await expect(page).toHaveURL(/\/machines\/create/);
-    }
+    await page.getByRole('button', { name: 'Add' }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page).toHaveURL(/\/machines$/);
   });
 
   test('TC-M-04 shows 500 error gracefully', async ({ authedPage: page }) => {

@@ -60,15 +60,18 @@ test.describe('Shifts page', () => {
     await expect(page.getByText('Morning')).toHaveCount(0, { timeout: 10_000 });
   });
 
-  test('TC-SH-05 navigates to create shift page', async ({ authedPage: page }) => {
+  /* Add opens the Create Shift form as a dialog on this page. The old test
+     expected a /shifts/create page and only checked it when isVisible() —
+     which does not wait — happened to find the button already drawn, so it
+     passed when it checked nothing and failed when it checked. */
+  test('TC-SH-05 Add opens the Create Shift form', async ({ authedPage: page }) => {
     await stubShifts(page);
     await page.goto('/shifts');
 
-    const addBtn = page.getByRole('button', { name: /add|create|new shift/i }).first();
-    if (await addBtn.isVisible({ timeout: 5_000 })) {
-      await addBtn.click();
-      await expect(page).toHaveURL(/\/shifts\/create/);
-    }
+    await page.getByRole('button', { name: 'Add' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Create Shift' });
+    await expect(dialog).toBeVisible();
+    await expect(page).toHaveURL(/\/shifts$/);
   });
 
   test('TC-SH-06 handles 500 server error without crashing', async ({ authedPage: page }) => {
