@@ -175,8 +175,14 @@
   <div class="mexa-grid lg:grid-cols-2">
 
     <section class="mexa-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Upcoming Maintenance</h2>
-      <div class="mexa-tablewrap">
+      <div class="mexa-card-head">
+        <h2 class="mexa-card-title mexa-card-title-left">Upcoming Maintenance</h2>
+        <span class="mexa-seg" role="group" aria-label="Upcoming Maintenance: due">
+          <button type="button" *ngFor="let w of ['today','week','month']" [attr.aria-pressed]="upcomingWindow === w"
+                  (click)="upcomingWindow = $any(w)">{{ w === 'today' ? 'Today' : w === 'week' ? 'This Week' : 'This Month' }}</button>
+        </span>
+      </div>
+      <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
         <table class="mexa-table" style="min-width:0">
           <caption class="sr-only">Maintenance due next, soonest first</caption>
           <thead>
@@ -190,7 +196,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let u of data.upcoming; let i = index">
+            <tr *ngFor="let u of upcomingRows; let i = index">
               <td class="num">{{ i + 1 }}</td>
               <td class="strong">{{ u.machine_serial_no }}</td>
               <td>
@@ -211,7 +217,7 @@
                 </span>
               </td>
             </tr>
-            <tr *ngIf="!data.upcoming.length">
+            <tr *ngIf="!upcomingRows.length">
               <td colspan="6" class="mexa-empty">Nothing due.</td>
             </tr>
           </tbody>
@@ -221,7 +227,7 @@
 
     <section class="mexa-card">
       <h2 class="mexa-card-title mexa-card-title-left">Maintenance Type Wise Summary</h2>
-      <div class="mexa-tablewrap">
+      <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
         <table class="mexa-table" style="min-width:0">
           <caption class="sr-only">Open and completed work by frequency band</caption>
           <thead>
@@ -268,7 +274,7 @@
         <label class="sr-only" for="peSearch">Search tickets</label>
         <input id="peSearch" type="search" class="mexa-search" placeholder="Search"
                [(ngModel)]="search" name="search" (ngModelChange)="onSearchInput()">
-        <span class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
+        <span *ngIf="canExport" class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
           <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">
             {{ exporting === 'xlsx' ? '…' : 'Excel' }}
           </button>
@@ -294,7 +300,7 @@
       </button>
     </p>
 
-    <div class="mexa-tablewrap">
+    <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table">
         <caption class="sr-only">Periodic maintenance tickets, newest due first</caption>
         <thead>
@@ -390,7 +396,7 @@
       </div>
     </form>
 
-    <div class="mexa-tablewrap">
+    <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table">
         <caption class="sr-only">Configured maintenance schedules</caption>
         <thead>

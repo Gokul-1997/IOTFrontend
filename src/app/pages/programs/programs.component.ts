@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ProgramService } from '../../core/services/program.service';
 import { MachinesService } from '../machines/machines.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 import { SocketService } from '../../core/services/socket.service';
 import { UiTabsDirective } from '../../shared/ui-tabs.directive';
 import { MatIconModule } from '@angular/material/icon';
@@ -90,8 +91,18 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     private machinesService: MachinesService,
     private toast: ToastService,
     private socket: SocketService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private auth: AuthService
   ) {}
+
+  /* Each action shows only when the role holds it and the company was
+     granted it — what the API checks. Before, every button showed to
+     everyone who could open the page, and pressing one the role lacked (a
+     SETTER sending to a machine, say) answered "Permission denied". */
+  get canUpload():   boolean { return this.auth.hasAction('programs', 'upload'); }
+  get canTransfer(): boolean { return this.auth.hasAction('programs', 'transfer'); }
+  get canFetch():    boolean { return this.auth.hasAction('programs', 'fetch'); }
+  get canDelete():   boolean { return this.auth.hasAction('programs', 'delete'); }
 
   /**
    * The app runs zoneless (Angular 21, no zone.js), so an HTTP response or a

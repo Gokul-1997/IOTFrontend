@@ -29,8 +29,6 @@ const maintenance = ok({
     sequence_number: 100, received_at: new Date().toISOString(), run_seconds: 16338,
     servo_load_x: 5, servo_load_y: 6, servo_load_z: 6, servo_temp_x: 27
   }],
-  cycle_time_trend: Array.from({ length: 6 }, (_, i) => ({
-    hour_start: `2026-06-18T${String(5 + i).padStart(2, '0')}:30:00.000Z`, avg_cycle_seconds: 25 + i * 3 })),
   condition_trend: []
 });
 
@@ -60,7 +58,7 @@ test('fits a phone without scrolling sideways', async ({ authedPage: page }) => 
   await page.screenshot({ path: 'mexa-maintenance-mobile.png', fullPage: true });
 });
 
-test('axis readings stay legible in dark mode', async ({ authedPage: page }) => {
+test('gauge captions stay legible in dark mode', async ({ authedPage: page }) => {
   await mockApi(page);
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/maintenance-dashboard');
@@ -69,7 +67,8 @@ test('axis readings stay legible in dark mode', async ({ authedPage: page }) => 
   await page.waitForTimeout(600);
 
   const report = await page.evaluate(() => {
-    const cell = document.querySelector('.mexa-axistable td') as HTMLElement | null;
+    // the "Servo Load X" caption above a gauge
+    const cell = [...document.querySelectorAll('.mexa-card p')].find(p => p.textContent?.trim() === 'Servo Load X') as HTMLElement | undefined;
     const card = document.querySelector('.mexa-card') as HTMLElement | null;
     if (!cell || !card) return null;
     const lum = (rgb: string) => {
@@ -83,8 +82,24 @@ test('axis readings stay legible in dark mode', async ({ authedPage: page }) => 
   });
 
   await page.screenshot({ path: 'mexa-maintenance-dark.png', fullPage: true });
-  console.log('dark-mode axis cell:', JSON.stringify(report));
-  expect(report, 'no axis table found').not.toBeNull();
+  console.log('dark-mode gauge caption:', JSON.stringify(report));
+  expect(report, 'no gauge caption found').not.toBeNull();
   expect(report!.card, 'dark mode did not apply').not.toBe('rgb(255, 255, 255)');
   expect(report!.ratio).toBeGreaterThanOrEqual(4.5);
+});
+
+/* Cycle Time was taken off this screen on 2026-09-21: cycle time per part is
+   a production measure, and this dashboard is about machine condition. The
+   backend no longer computes it either, so a chart left behind would draw
+   from a field that is never sent. */
+test('there is no Cycle Time chart', async ({ authedPage: page }) => {
+  await mockApi(page);
+  await page.setViewportSize({ width: 1500, height: 1200 });
+  await page.goto('/maintenance-dashboard');
+  await expect(page.locator('.mexa-kpi').first()).toBeVisible();
+
+  await expect(page.getByText(/Cycle Time/i)).toHaveCount(0);
+  await expect(page.getByText(/Seconds per part/i)).toHaveCount(0);
+  // the screen still shows what it is for
+  await expect(page.getByText('Alarm Summary')).toBeVisible();
 });

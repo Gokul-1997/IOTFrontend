@@ -15,7 +15,7 @@
         <div class="flex flex-col md:flex-row gap-2 items-center">
           <label class="text-sm font-medium text-white">Machine</label>
           <select [(ngModel)]="selectedMachine"
-            class="filter-select">
+            class="filter-select" aria-label="Machine" >
             <option [ngValue]="null">All Machines</option>
             <option *ngFor="let m of machines" [ngValue]="m.id">
               {{ m.machine_serial_no }}
@@ -27,7 +27,7 @@
         <div class="flex flex-col md:flex-row gap-2 items-center">
           <label class="text-sm font-medium text-white">Shift</label>
           <select [(ngModel)]="selectedShift"
-            class="filter-select">
+            class="filter-select" aria-label="Shift" >
             <option [ngValue]="null">All Shifts</option>
             <option *ngFor="let s of shifts" [ngValue]="s.id">
               {{ s.shift_name || s.shift_code }}
@@ -39,7 +39,7 @@
         <div class="flex flex-col md:flex-row gap-2 items-center">
           <label class="text-sm font-medium text-white">Date</label>
           <input type="date" [(ngModel)]="selectedDate" [max]="today"
-            class="filter-date" />
+            class="filter-date" aria-label="Date" />
         </div>
 
         <!-- Submit -->

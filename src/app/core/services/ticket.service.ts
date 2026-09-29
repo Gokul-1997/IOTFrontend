@@ -14,4 +14,6 @@ export class TicketService {
   updateStatus(id: number, status: string, note?: string) { return this.http.patch<any>(`${this.api}/${id}/status`, { status, note }); }
   assignTicket(id: number, assigned_to: number) { return this.http.patch<any>(`${this.api}/${id}/assign`, { assigned_to }); }
   getSummary() { return this.http.get<any>(`${this.api}/summary`); }
+  /** The company's active users, for the assignee dropdown. */
+  getAssignees() { return this.http.get<any>(`${this.api}/assignees`); }
 }

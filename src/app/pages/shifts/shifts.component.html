@@ -21,11 +21,11 @@
         <mat-icon class="search-icon">search</mat-icon>
         <input type="text" [(ngModel)]="search" (ngModelChange)="onSearchInput()"
           placeholder="Search code / name…" class="search-input" />
-        <button *ngIf="search" mat-icon-button class="clear-btn" (click)="search=''; applyFilter()">
+        <button *ngIf="search" mat-icon-button class="clear-btn" (click)="search=''; applyFilter()" aria-label="Clear search" title="Clear search">
           <mat-icon>close</mat-icon>
         </button>
       </div>
-      <button class="btn-primary" (click)="openCreate()" *ngIf="auth.hasAction('shifts', 'create')">
+      <button class="btn-primary" (click)="openCreate()" *ngIf="auth.hasAction('shifts', 'create')" aria-label="Add" title="Add">
         <mat-icon>add</mat-icon>
         New Shift
       </button>
@@ -93,10 +93,10 @@
         <ng-container matColumnDef="actions" [stickyEnd]="true">
           <th mat-header-cell *matHeaderCellDef class="col-actions">Actions</th>
           <td mat-cell *matCellDef="let r" class="col-actions">
-            <button mat-icon-button class="action-edit" (click)="openEdit(r)" matTooltip="Edit" *ngIf="auth.hasAction('shifts', 'edit')">
+            <button mat-icon-button class="action-edit" (click)="openEdit(r)" matTooltip="Edit" *ngIf="auth.hasAction('shifts', 'edit')" aria-label="Edit">
               <mat-icon>edit</mat-icon>
             </button>
-            <button mat-icon-button class="action-delete" (click)="confirmDelete(r)" matTooltip="Delete" *ngIf="auth.hasAction('shifts', 'delete')">
+            <button mat-icon-button class="action-delete" (click)="confirmDelete(r)" matTooltip="Delete" *ngIf="auth.hasAction('shifts', 'delete')" aria-label="Delete" title="Delete">
               <mat-icon>delete_outline</mat-icon>
             </button>
           </td>

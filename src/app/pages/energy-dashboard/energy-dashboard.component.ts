@@ -3,10 +3,12 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { EnergyDashboardService } from './energy-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 
@@ -22,7 +24,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 @Component({
   selector: 'app-energy-dashboard',
   standalone: true,
-  imports: [ DataBarsComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [DataBarsComponent, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './energy-dashboard.component.html'
 })
 export class EnergyDashboardComponent implements OnInit, OnDestroy {
@@ -41,10 +43,6 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   updatedAt = '';
   exporting = '';
 
-  showSettings = false;
-  savingSettings = false;
-  settingsForm: any = { machine_id: null, cost_per_kwh: null, currency: 'INR', overload_kw: null };
-  settings: any[] = [];
 
   trendSeries: any[] = [];
   trendCategories: string[] = [];
@@ -61,8 +59,14 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   constructor(
     private svc: EnergyDashboardService,
     private toast: ToastService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private auth: AuthService
   ) {}
+
+  /** Export is its own grant — a company can have this page without being able to take data off it. */
+  get canExport(): boolean { return this.auth.hasAction('analytics-energy', 'export'); }
+  get canEditSettings(): boolean { return this.auth.hasAction('analytics-energy', 'settings'); }
+
 
   ngOnInit(): void {
     this.svc.getMeta()
@@ -73,7 +77,6 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       .pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => { this.page = 1; this.load(); });
 
-    this.loadSettings();
     this.load();
   }
 
@@ -137,9 +140,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
     this.shiftDonutSeries = (d.by_shift || []).map((s: any) => Number(s.kwh) || 0);
     this.shiftTotal = this.shiftDonutSeries.reduce((a, b) => a + b, 0);
 
-    this.monthCategories = (d.by_month || []).map((m: any) =>
-      new Date(m.month).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }));
-    this.monthSeries = [{ name: 'Cost', data: (d.by_month || []).map((m: any) => m.cost ?? m.kwh) }];
+    this.buildCostTrend();
 
     this.cdr.markForCheck();
   }
@@ -162,31 +163,6 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
     };
   }
 
-  loadSettings(): void {
-    this.svc.getSettings()
-      .pipe(takeUntil(this.destroy$), catchError(() => of(null)))
-      .subscribe(res => { this.settings = res?.data ?? []; this.cdr.markForCheck(); });
-  }
-
-  saveSettings(): void {
-    this.savingSettings = true;
-    this.cdr.markForCheck();
-    this.svc.saveSettings(this.settingsForm)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.savingSettings = false;
-          this.toast.success('Energy settings saved');
-          this.loadSettings();
-          this.load();
-        },
-        error: err => {
-          this.savingSettings = false;
-          this.cdr.markForCheck();
-          this.toast.error(err?.error?.message || 'Could not save the settings');
-        }
-      });
-  }
 
   export(format: 'xlsx' | 'csv' | 'pdf'): void {
     this.exporting = format;
@@ -304,6 +280,52 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   });
   }
 
+  /** Energy Cost Trend grouping: the design's Day | Week | Month. */
+  costBy: 'day' | 'week' | 'month' = 'day';
+
+  setCostBy(p: string): void {
+    this.costBy = p as any;
+    this.buildCostTrend();
+    this.charts.bump();
+    this.cdr.markForCheck();
+  }
+
+  /* Priced at the company tariff when one is set; otherwise the bars are kWh
+     and say so. It used to plot kWh under a "Cost" title. Days come from the
+     daily trend, weeks are those days summed, months are the API's own. */
+  private buildCostTrend(): void {
+    const d = this.data;
+    const rate = d?.rate_per_kwh ?? null;
+    const price = (kwh: number) => rate != null ? Number((kwh * rate).toFixed(2)) : Number(kwh.toFixed(2));
+    let rows: { label: string; kwh: number }[] = [];
+    if (this.costBy === 'month') {
+      rows = (d?.by_month || []).map((m: any) => ({
+        label: new Date(m.month).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }), kwh: Number(m.kwh) || 0 }));
+    } else {
+      const days = (d?.trend || []).filter((t: any) => t.machines > 0);
+      if (this.costBy === 'day') {
+        rows = days.map((t: any) => ({ label: new Date(t.day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }), kwh: Number(t.kwh) || 0 }));
+      } else {
+        const weeks = new Map<string, number>();
+        for (const t of days) {
+          const dt = new Date(t.day);
+          const monday = new Date(dt); monday.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
+          const key = monday.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+          weeks.set(key, (weeks.get(key) || 0) + (Number(t.kwh) || 0));
+        }
+        rows = [...weeks.entries()].map(([label, kwh]) => ({ label: `Wk ${label}`, kwh }));
+      }
+    }
+    this.monthCategories = rows.map(r => r.label);
+    this.monthSeries = rows.length ? [{ name: rate != null ? 'Cost' : 'kWh', data: rows.map(r => price(r.kwh)) }] : [];
+  }
+
+  /** "↑ 12.5%" / "↓ 3.4%". */
+  change(v: number | null | undefined): string {
+    if (v === null || v === undefined) return '';
+    return `${v > 0 ? '↑' : v < 0 ? '↓' : ''} ${Math.abs(v)}%`;
+  }
+
   get monthChart(): any {
     return this.charts.memo('monthChart', () => {
     return {
@@ -313,7 +335,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       dataLabels: { enabled: false },
       legend: { show: false },
       xaxis: { categories: this.monthCategories },
-      yaxis: { title: { text: `Cost (${this.data?.currency || 'INR'})` } },
+      yaxis: { title: { text: this.data?.rate_per_kwh != null ? `Cost (${this.data?.currency || 'INR'})` : 'kWh' } },
       grid:  { borderColor: 'rgba(148,163,184,.25)' },
       tooltip: { theme: 'dark' },
       noData: { text: 'Nothing recorded by month' }

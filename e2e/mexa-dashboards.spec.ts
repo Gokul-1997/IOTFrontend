@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures/auth';
+import { test, expect, seedAuth } from './fixtures/auth';
 
 /*
  * Renders all eight Phase 2 dashboards in the MEXA design and screenshots
@@ -58,10 +58,6 @@ const maintenance = ok({
       target_qty: null, operator_name: null, machine_status: null, alarm: null,
       spindle_load: null, feed_rate: null, received_at: null, run_seconds: 0 }
   ],
-  cycle_time_trend: Array.from({ length: 9 }, (_, i) => ({
-    hour_start: `2026-06-18T0${i}:00:00.000Z`,
-    avg_cycle_seconds: i === 4 ? null : 25 + i * 2.5
-  })),
   condition_trend: [],
   unavailable: ['encoder_temperature', 'battery_status', 'insulation_resistance', 'fan_amplifier_status']
 });
@@ -339,7 +335,7 @@ const screens: { path: string; title: string; kpis: number; file: string }[] = [
   { path: '/downtime-analysis',      title: 'Downtime Reason Analysis',          kpis: 6, file: 'mexa-06-downtime.png' },
   { path: '/operator-performance',   title: 'Operator Performance Dashboard',    kpis: 5, file: 'mexa-07-operator.png' },
   { path: '/oee-dashboard',          title: 'OEE Dashboard',                     kpis: 6, file: 'mexa-08-oee.png' },
-  { path: '/energy-dashboard',       title: 'Energy Dashboard',                  kpis: 5, file: 'mexa-09-energy.png' }
+  { path: '/energy-dashboard',       title: 'Energy Dashboard',                  kpis: 6, file: 'mexa-09-energy.png' }
 ];
 
 for (const s of screens) {
@@ -370,19 +366,48 @@ for (const s of screens) {
   });
 }
 
-test('OEE dashboard has no Report view — reports belong to the Report page', async ({ authedPage: page }) => {
+/* The agreement's machine-wise OEE table — search, sorting, paging — is a
+   tab of Reports, beside the other OEE reports, so there is one place for
+   every report. The OEE Dashboard is the analytics view only. (It was a
+   "Report" tab on the dashboard until 2026-09-22.) */
+test('OEE dashboard has no Report tab; the machine table lives in Reports', async ({ authedPage: page }) => {
   await mockApi(page);
   await page.setViewportSize({ width: 1600, height: 1200 });
   await page.goto('/oee-dashboard');
+  await expect(page.locator('.mexa-oeecard').first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'OEE Trend' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Report' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Machine Wise OEE Summary' })).toHaveCount(0);
 
-  // the analytics content is all that remains
-  await expect(page.locator('.mexa-oeecard')).toHaveCount(4);
+  await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
+  await page.goto('/reports?tab=machine-oee');
+  await expect(page.getByRole('tab', { name: /Machine OEE/ })).toHaveAttribute('aria-selected', 'true');
+  const table = page.locator('.mexa-table');
+  await expect(table.getByText('CNC-01')).toBeVisible();
+  await expect(table.getByRole('button', { name: /Availability \(%\)/ })).toBeVisible();
+  await expect(table.getByRole('button', { name: /Rework/ })).toBeVisible();
+  // highest OEE first, as the dashboard ranks them
+  await expect(table.locator('tbody tr').first()).toContainText('CNC-01');
+  await table.getByRole('button', { name: /^Machine/ }).click();
+  await expect(table.locator('th[aria-sort="ascending"]')).toHaveCount(1);
 
-  // the tab strip and the machine-summary table were removed from this screen
-  await expect(page.locator('.mexa-tabs')).toHaveCount(0);
-  await expect(page.getByRole('tab')).toHaveCount(0);
-  await expect(page.locator('.mexa-table')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Excel' })).toHaveCount(0);
+  await page.getByRole('searchbox', { name: 'Search machines' }).fill('03');
+  await expect(table.locator('tbody tr')).toHaveCount(1);
+  await expect(table.locator('tbody tr')).toContainText('CNC-03');
+});
+
+test('Reports holds every report as a tab, and Analytics has one Reports entry', async ({ authedPage: page }) => {
+  await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
+  await mockApi(page);
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  await page.goto('/reports');
+  const tabs = page.getByRole('tablist', { name: 'Report type' }).getByRole('tab');
+  await expect(tabs).toHaveText([/Production/, /OEE Hourly/, /Shift OEE/, /OEE Records/, /Machine OEE/]);
+
+  await page.getByRole('button', { name: 'Analytics' }).first().click();
+  const menu = page.locator('.nav-dropdown');
+  await expect(menu.getByRole('link', { name: 'Reports', exact: true })).toBeVisible();
+  await expect(menu.getByRole('link', { name: 'OEE', exact: true })).toHaveCount(0);
 });
 
 test('Periodic Attention Required filters the ticket table', async ({ authedPage: page }) => {
@@ -422,24 +447,19 @@ test('a servo with no temperature sensor reads as "--", never as 0 °C', async (
   await page.setViewportSize({ width: 1600, height: 1200 });
   await page.goto('/maintenance-dashboard');
 
-  /* The per-axis readings live in one table now — the two bar charts they
-     used to be drew three numbers each and could not show a silent sensor,
-     which is the whole point here. */
-  const axes = page.locator('.mexa-card')
-    .filter({ has: page.getByRole('heading', { name: 'Axis Condition' }) });
+  /* The design's Servo Details card: a gauge per axis for load, bars for
+     temperature. The silent axes are said in words, never drawn as 0 °C. */
+  const servo = page.locator('.mexa-card')
+    .filter({ has: page.getByRole('heading', { name: 'Servo Details' }) });
 
-  await expect(axes).toContainText('27.0 °C');
-  await expect(axes).toContainText('Y, Z not reporting a temperature');
+  await expect(servo).toContainText('Servo Load X');
+  await expect(servo).toContainText('Y, Z not reporting a temperature');
   // the claim this test exists to defend
-  await expect(axes).not.toContainText('0.0 °C');
-
-  // the silent axes are dashes, in their own cells
-  const yRow = axes.locator('tbody tr').nth(1);
-  await expect(yRow).toContainText('--');
+  await expect(servo).not.toContainText('0.0 °C');
 
   // what the data lacks is named; what arrives is not
   const gaps = page.locator('.mexa-card')
-    .filter({ has: page.getByRole('heading', { name: 'Power & Cooling' }) });
+    .filter({ has: page.getByRole('heading', { name: 'Fans & Batteries' }) });
   await expect(gaps).toContainText('Encoder temperature');
   await expect(gaps).not.toContainText('Servo load per axis');
 

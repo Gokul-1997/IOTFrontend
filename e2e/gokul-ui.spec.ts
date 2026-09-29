@@ -11,7 +11,7 @@ test('Gokul navigation opens management pages and remembers the selected theme',
   await expect(page).toHaveTitle('Gokul | Industrial Intelligence');
   await expect(page.getByRole('link', { name: 'Gokul home' })).toBeVisible();
   await expect(page.locator('body')).not.toContainText(/\bSTM\b|\bMEXA\b/);
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'Master', exact: true }).click();
   await page.getByRole('link', { name: 'Machines', exact: true }).click();
   await expect(page).toHaveURL(/\/machines$/);
   await page.getByRole('button', { name: 'Switch to dark theme' }).click();
@@ -31,7 +31,7 @@ test('phone navigation closes on Escape and route selection without horizontal o
   await expect(opener).toBeFocused();
   await expect(page.getByRole('navigation', { name: 'Main navigation' })).not.toBeVisible();
   await opener.click();
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'Master', exact: true }).click();
   await page.getByRole('link', { name: 'Machines', exact: true }).click();
   await expect(page).toHaveURL(/\/machines$/);
   await expect(page.getByRole('navigation', { name: 'Main navigation' })).not.toBeVisible();
@@ -48,7 +48,7 @@ test('restricted users only see permitted navigation', async ({ authedPage: page
   });
   await page.goto('/quality');
   await expect(page.getByRole('button', { name: 'Dashboards', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Settings', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Master', exact: true })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Admin', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Analytics', exact: true }).click();
   await expect(page.getByRole('link', { name: 'Quality', exact: true })).toBeVisible();

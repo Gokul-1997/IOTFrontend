@@ -9,8 +9,21 @@
     </div>
   </nav>
   <div class="header-actions">
-    <button class="header-icon" [attr.aria-label]="isDark ? 'Switch to light theme' : 'Switch to dark theme'" (click)="toggleTheme()"><app-icon aria-hidden="true" [name]="isDark ? 'sun' : 'moon'" [size]="19"></app-icon></button>
-    <div class="user-menu-wrap"><button class="user-trigger" [attr.aria-expanded]="showUserMenu" aria-controls="account-menu" (click)="toggleUserMenu()"><span class="avatar">{{ initials }}</span><span class="user-copy"><strong>{{ userName }}</strong><small>{{ userRole }}</small></span><span class="chevron" aria-hidden="true">⌄</span></button><div *ngIf="showUserMenu" id="account-menu" class="account-menu"><strong>{{ userName }}</strong><p>{{ userEmail }}</p><button (click)="logout()">Sign out <span>↗</span></button></div></div>
-    <button id="gokul-menu-toggle" class="header-icon mobile-toggle" [attr.aria-label]="isMobileMenuOpen ? 'Close navigation' : 'Open navigation'" [attr.aria-expanded]="isMobileMenuOpen" aria-controls="gokul-navigation" (click)="toggleMobileMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path *ngIf="!isMobileMenuOpen" d="M4 6h16M4 12h16M4 18h16"/><path *ngIf="isMobileMenuOpen" d="m6 6 12 12M6 18 18 6"/></svg></button>
+    <button type="button" class="header-icon" [attr.aria-pressed]="theme.isDark()" [attr.aria-label]="theme.isDark() ? 'Switch to light theme' : 'Switch to dark theme'" (click)="toggleTheme()"><app-icon aria-hidden="true" [name]="theme.isDark() ? 'sun' : 'moon'" [size]="19"></app-icon></button>
+    <!-- S&T belongs to no company and is sent no notifications -->
+    <app-notification-bell *ngIf="!isSntSuper"></app-notification-bell>
+    <div class="user-menu-wrap">
+      <button type="button" class="user-trigger" aria-haspopup="menu" [attr.aria-expanded]="showUserMenu" aria-controls="account-menu" [attr.aria-label]="'Account menu for ' + userName" (click)="toggleUserMenu()"><span class="avatar">{{ initials }}</span><span class="user-copy"><strong>{{ userName }}</strong><small>{{ userRole }}</small></span><span class="chevron" aria-hidden="true">⌄</span></button>
+      <div *ngIf="showUserMenu" id="account-menu" class="account-menu">
+        <strong>{{ userName }}</strong><p>{{ userEmail }}</p>
+        <a routerLink="/profile" (click)="closeUserMenu()">My Profile</a>
+        <!-- Settings holds notification choices; S&T gets no notifications -->
+        <a *ngIf="!isSntSuper" routerLink="/settings" (click)="closeUserMenu()">Settings</a>
+        <a routerLink="/security/2fa" (click)="closeUserMenu()">Security (2FA)</a>
+        <a *ngIf="!isSntSuper" routerLink="/notifications" (click)="closeUserMenu()">Notifications</a>
+        <button type="button" (click)="logout()">Sign out <span aria-hidden="true">↗</span></button>
+      </div>
+    </div>
+    <button type="button" id="gokul-menu-toggle" class="header-icon mobile-toggle" [attr.aria-label]="isMobileMenuOpen ? 'Close navigation' : 'Open navigation'" [attr.aria-expanded]="isMobileMenuOpen" aria-controls="gokul-navigation" (click)="toggleMobileMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path *ngIf="!isMobileMenuOpen" d="M4 6h16M4 12h16M4 18h16"/><path *ngIf="isMobileMenuOpen" d="m6 6 12 12M6 18 18 6"/></svg></button>
   </div>
 </header>

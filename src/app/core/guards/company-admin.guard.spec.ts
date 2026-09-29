@@ -12,7 +12,7 @@
 
 import { TestBed } from '@angular/core/testing';
 import { Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { companyAdminGuard } from './company-admin.guard';
+import { companyAdminGuard, companyRolesGuard } from './company-admin.guard';
 
 const fakeRoute = {} as ActivatedRouteSnapshot;
 const fakeState = { url: '/admin/users' } as RouterStateSnapshot;
@@ -59,13 +59,13 @@ describe('companyAdminGuard', () => {
   test('blocks VIEWER → redirects to /dashboard', () => {
     seedUser(['VIEWER']);
     expect(runGuard()).toBe(false);
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/dashboard']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
   });
 
   test('blocks OPERATOR → redirects to /dashboard', () => {
     seedUser(['OPERATOR']);
     expect(runGuard()).toBe(false);
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/dashboard']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
   });
 
   test('no stored user → redirects to /login', () => {
@@ -82,6 +82,49 @@ describe('companyAdminGuard', () => {
   test('a user with no roles at all is blocked', () => {
     localStorage.setItem('user', JSON.stringify({ username: 'x' }));
     expect(runGuard()).toBe(false);
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/dashboard']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
+  });
+});
+
+/*
+ * The Roles page is the company admin's alone. Each company owns its roles;
+ * S&T creates the company and its admin and sets Manage Access, and takes no
+ * action on roles — so S&T is sent to its own landing page.
+ */
+describe('companyRolesGuard', () => {
+  const runRoles = () => TestBed.runInInjectionContext(() => companyRolesGuard(fakeRoute, fakeState));
+
+  test('allows COMPANY_ADMIN', () => {
+    seedUser(['COMPANY_ADMIN']);
+    expect(runRoles()).toBe(true);
+    expect(routerSpy.navigate).not.toHaveBeenCalled();
+  });
+
+  test('allows ADMIN', () => {
+    seedUser(['ADMIN']);
+    expect(runRoles()).toBe(true);
+  });
+
+  test('sends SNT_SUPER to /admin/companies — there is nothing for S&T to do here', () => {
+    seedUser(['SNT_SUPER']);
+    expect(runRoles()).toBe(false);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/admin/companies']);
+  });
+
+  test('blocks an ordinary role → /dashboard', () => {
+    seedUser(['SUPERVISOR']);
+    expect(runRoles()).toBe(false);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
+  });
+
+  test('no stored user → /login', () => {
+    expect(runRoles()).toBe(false);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  test('corrupt stored user → /login, never access', () => {
+    localStorage.setItem('user', '{not json');
+    expect(runRoles()).toBe(false);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
   });
 });

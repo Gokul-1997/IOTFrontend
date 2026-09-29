@@ -15,7 +15,7 @@ html, body { background: var(--mexa-ground); }
   --mexa-card:       #ffffff;
   --mexa-ink:        #18243b;
   --mexa-ink-2:      #53647c;
-  --mexa-ink-3:      #6b7890;
+  --mexa-ink-3:      #616d83;
   --mexa-rule:       #e2e7ef;
   --mexa-thead:      #eef2f8;
   --mexa-row-alt:    #f8faff;
@@ -105,6 +105,22 @@ html, body { background: var(--mexa-ground); }
 .mexa-legend-dot { width: .7rem; height: .7rem; border-radius: 999px; flex: none; }
 
 .mexa-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
+
+/* Phones: the wrapping row put each label at the end of the previous line,
+   next to the wrong control ("All ▾ Shift"). Two columns instead — every
+   label beside its own control — with the buttons across the full width. */
+@media (max-width: 640px) {
+  .mexa-filters {
+    display: grid; grid-template-columns: auto minmax(0, 1fr);
+    align-items: center; gap: .55rem .75rem; width: 100%;
+  }
+  .mexa-filters .mexa-select,
+  .mexa-filters .mexa-date { width: 100%; min-width: 0; }
+  .mexa-filters > button,
+  .mexa-filters .mexa-submit { grid-column: 1 / -1; width: 100%; justify-content: center; }
+  /* the "–" between the two dates reads as its own label, aligned right */
+  .mexa-filters .mexa-filter-label[aria-hidden="true"] { justify-self: end; }
+}
 
 .mexa-filter-label {
   color: #fff; font-size: .9rem; font-weight: 600; white-space: nowrap;
@@ -241,6 +257,25 @@ html, body { background: var(--mexa-ground); }
 
 .mexa-grid { display: grid; gap: 1rem; margin-bottom: 1rem; min-width: 0; }
 
+.mexa-card-head {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  margin-bottom: .6rem;
+}
+.mexa-card-head .mexa-card-title { margin: 0; }
+
+.mexa-seg {
+  display: inline-flex; flex: none; border: 1px solid var(--mexa-rule);
+  border-radius: 999px; padding: 2px; background: var(--mexa-row-alt);
+}
+.mexa-seg button {
+  background: none; border: 0; font: inherit; font-size: .74rem; font-weight: 650;
+  color: var(--mexa-ink-3); padding: .2rem .6rem; border-radius: 999px; cursor: pointer;
+  white-space: nowrap;
+}
+.mexa-seg button[aria-pressed="true"] { background: var(--mexa-card); color: var(--mexa-submit); box-shadow: 0 1px 2px rgba(17,20,45,.08); }
+.dark .mexa-seg button[aria-pressed="true"] { color: #b9b6ff; }
+.mexa-seg button:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 1px; }
+
 .mexa-tablewrap { overflow-x: auto; }
 
 .mexa-table {
@@ -273,6 +308,15 @@ html, body { background: var(--mexa-ground); }
 .mexa-table .num { font-variant-numeric: tabular-nums; }
 .mexa-table .strong { color: var(--mexa-ink); font-weight: 600; }
 
+/* Sortable column: the whole header is the button; the arrow says which way. */
+.mexa-sort {
+  background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer;
+  display: inline-flex; align-items: center; gap: .25rem; white-space: nowrap;
+}
+.mexa-sort:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 2px; border-radius: 4px; }
+.mexa-sort-arrow { font-size: .7rem; color: var(--mexa-ink-3); }
+.mexa-sort[aria-current="true"] .mexa-sort-arrow { color: var(--mexa-submit); }
+
 .mexa-empty { text-align: center; padding: 2.5rem 1rem; color: var(--mexa-ink-3); }
 
 .mexa-search {
@@ -304,6 +348,9 @@ html, body { background: var(--mexa-ground); }
 .mexa-pagebtn:hover:not(:disabled) { background: var(--mexa-row-alt); }
 .mexa-pagebtn:disabled { opacity: .4; cursor: not-allowed; }
 .mexa-pagebtn:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 1px; }
+.mexa-pagebtn[aria-current="page"] { border: 1px solid var(--mexa-rule); color: var(--mexa-submit); }
+.mexa-pagesize { display: inline-flex; align-items: center; gap: .5rem; }
+.mexa-pagesize select { padding: .3rem 1.6rem .3rem .6rem; min-width: 0; }
 
 .mexa-badge {
   display: inline-block;
@@ -425,6 +472,21 @@ html, body { background: var(--mexa-ground); }
 .mexa-grade-good      { --band: #3564df; }
 .mexa-grade-avg       { --band: #b45309; }
 .mexa-grade-poor      { --band: #c32b3f; }
+
+.mexa-oeecard.mexa-oeecard-solid { background: var(--band); border-color: var(--band); }
+.mexa-oeecard-solid.mexa-grade-unknown { --band: #64748b; }
+.mexa-oeecard-solid .mexa-oeecard-name,
+.mexa-oeecard-solid .mexa-oeecard-grade,
+.mexa-oeecard-solid .mexa-oeecard-metrics,
+.mexa-oeecard-solid .mexa-oeecard-metrics .num,
+.mexa-oeecard-solid .mexa-oeering-pct,
+.mexa-oeecard-solid .mexa-oeering-cap { color: #fff; }
+.mexa-oeecard-solid .mexa-oeecard-grade::before { background: #fff; }
+.mexa-oeecard-solid .mexa-oeering {
+  background: conic-gradient(#fff var(--pct, 0%), rgba(255, 255, 255, .28) 0);
+}
+.mexa-oeecard-solid .mexa-oeering::after { background: var(--band); }
+.mexa-oeecard-solid .mexa-oeering-cap { opacity: .9; }
 
 .mexa-attention { display: grid; gap: .6rem; }
 .mexa-attention-row {
@@ -643,3 +705,21 @@ html, body { background: var(--mexa-ground); }
 .mexa-axistable td.axis { font-weight: 700; width: 2.5rem; }
 .mexa-axistable .mexa-meter { width: 2.75rem; margin-right: .45rem; }
 .mexa-axistable .dim { color: var(--mexa-ink-3); }
+
+/* ── Keyboard focus, everywhere ───────────────────────────────
+   WCAG 2.4.7: whatever has focus must show it. :where() keeps this at zero
+   specificity, so a component's own focus style still wins; this only fills
+   the gaps (icon buttons, table scrollers, links in menus). */
+:where(a, button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid #3564df;
+  outline-offset: 2px;
+}
+:where(.dark) :where(a, button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline-color: #b9b6ff;
+}
+.mexa-tablewrap:focus-visible { border-radius: 10px; }
+
+/* Attention Required rows were a fixed light grey, so in dark mode their
+   light text sat on it at 1.1:1. They follow the theme now. */
+.dark .mexa-attention-row { background: var(--mexa-row-alt); }
+.dark .mexa-attention-row:hover { background: var(--mexa-thead); }

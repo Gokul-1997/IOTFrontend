@@ -17,7 +17,6 @@ import { MachinesService } from '../machines/machines.service';
 export class UserManagementComponent implements OnInit {
   users: any[] = [];
   roles: any[] = [];
-  companies: any[] = [];
   /** Every machine in the company — the pool a user can be made supervisor of. */
   machines: any[] = [];
   loading = false;
@@ -29,7 +28,6 @@ export class UserManagementComponent implements OnInit {
     username: '',
     email: '',
     password: '',
-    company_id: null as number | null,
     role_ids: [] as number[],
     supervised_machine_ids: [] as number[]
   };
@@ -39,7 +37,6 @@ export class UserManagementComponent implements OnInit {
     email: '',
     password: '',
     is_active: true,
-    company_id: null as number | null,
     role_ids: [] as number[],
     supervised_machine_ids: [] as number[]
   };
@@ -55,6 +52,9 @@ export class UserManagementComponent implements OnInit {
 
   ngOnInit() {
     this.loadUsers();
+    /* S&T only edits each company's admin — name, email, password, active —
+       so it needs neither the company's roles nor its machines. */
+    if (this.auth.isSntSuper()) return;
     this.loadRoles();
     this.loadMachines();
   }
@@ -96,33 +96,17 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
-  /** Company name for a user row, when the list endpoint did not include it. */
-  companyName(companyId: number | null): string {
-    if (!companyId) return '';
-    return this.companies.find(c => c.id === companyId)?.company_name || '';
+  /** The roles on a user row, as text — for S&T, who sees them read-only. */
+  roleNames(user: any): string {
+    return (user?.roles || []).map((r: any) => r.role_name).join(', ') || 'No role';
   }
 
-  /* Machines belong to a company, so the supervised-machine list has to
-     follow the company the user is being created in — otherwise a super
-     admin would tick machines from whichever company loaded first. */
-  onCreateCompanyChange() {
-    this.createForm.supervised_machine_ids = [];
-    this.cdr.detectChanges();
-  }
-
-  loadCompanies() {
-    this.adminService.getCompanies().subscribe({
-      next: res => {
-        this.companies = [...res];
-        this.cdr.detectChanges();
-      },
-      error: () => this.toastService.error('Failed to load companies')
-    });
-  }
-
+  /* Only a company admin creates users. A company's own admin is made with
+     the company, on the Companies page; anyone else — a second full-access
+     admin included — the company admin adds here. */
   openCreateModal() {
     this.createForm = {
-      username: '', email: '', password: '', company_id: null,
+      username: '', email: '', password: '',
       role_ids: [], supervised_machine_ids: []
     };
     this.showCreateModal = true;
@@ -225,11 +209,9 @@ export class UserManagementComponent implements OnInit {
       return;
     }
 
-    /* Caught here rather than by the API, which answers "Company is
-       required when creating a user" only after the form has been filled
-       in and submitted. */
-    if (this.auth.isSntSuper() && !this.createForm.company_id) {
-      this.toastService.error('Select the company this user belongs to');
+    // the API refuses a user with no role; say so before submitting
+    if (!this.createForm.role_ids.length) {
+      this.toastService.error('Choose a role for this user');
       return;
     }
 
@@ -250,19 +232,25 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
+  /** The roles the user had when the form opened, to tell whether they changed. */
+  private originalRoleIds: number[] = [];
+
   openEditModal(user: any) {
     this.selectedUser = user;
+    this.originalRoleIds = (user.roles || []).map((r: any) => r.id);
     this.editForm = {
       username: user.username,
       email: user.email,
       password: '',
       is_active: user.is_active,
-      company_id: user.company_id || null,
       role_ids: user.roles?.map((r: any) => r.id) || [],
       supervised_machine_ids: []
     };
     this.showEditModal = true;
     this.cdr.detectChanges();
+
+    // S&T edits no machines, so it has nothing to fetch
+    if (this.auth.isSntSuper()) return;
 
     // The list endpoint doesn't carry supervised machines, so tick the
     // boxes once the detail arrives rather than holding the modal shut.
@@ -299,9 +287,13 @@ export class UserManagementComponent implements OnInit {
     const updateData: any = {
       username: this.editForm.username,
       email: this.editForm.email,
-      is_active: this.editForm.is_active,
-      supervised_machine_ids: this.editForm.supervised_machine_ids
+      is_active: this.editForm.is_active
     };
+    /* S&T changes an admin's own details only — never the company, and no
+       machines: the API refuses anything else from S&T. */
+    if (!this.auth.isSntSuper()) {
+      updateData.supervised_machine_ids = this.editForm.supervised_machine_ids;
+    }
     if (this.editForm.password.trim()) {
       updateData.password = this.editForm.password;
     }
@@ -324,10 +316,27 @@ export class UserManagementComponent implements OnInit {
       });
     };
 
+    /* The role was re-sent on every save, changed or not. Now it is sent only
+       when it changed — and never by S&T, who sees it read-only: S&T cannot
+       hand out a company's roles, so re-sending one would refuse the whole
+       save and leave S&T unable even to reset a password. */
+    const same = (a: number[], b: number[]) =>
+      a.length === b.length && [...a].sort().every((v, i) => v === [...b].sort()[i]);
+    const roleChanged = !this.auth.isSntSuper() && !same(this.originalRoleIds, this.editForm.role_ids);
+
+    if (!roleChanged) { doUpdate(); return; }
+
+    if (!this.editForm.role_ids.length) {
+      this.toastService.error('Choose a role for this user');
+      this.loading = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.adminService.assignRolesToUser(this.selectedUser.id, this.editForm.role_ids).subscribe({
       next: () => doUpdate(),
-      error: () => {
-        this.toastService.error('Role assignment failed');
+      error: err => {
+        this.toastService.error(err.error?.message || 'Role assignment failed');
         this.loading = false;
         this.cdr.detectChanges();
       }
@@ -365,10 +374,5 @@ export class UserManagementComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
-  }
-
-  getCompanyName(companyId: number): string {
-    const c = this.companies.find(co => co.id === companyId);
-    return c ? c.company_name : '—';
   }
 }

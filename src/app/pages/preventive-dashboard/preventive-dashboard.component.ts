@@ -9,6 +9,7 @@ import { PreventiveDashboardService } from './preventive-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
+import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 3 — Preventive Maintenance Dashboard
@@ -26,7 +27,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 @Component({
   selector: 'app-preventive-dashboard',
   standalone: true,
-  imports: [ DataBarsComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [DataBarsComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
   templateUrl: './preventive-dashboard.component.html'
 })
 export class PreventiveDashboardComponent implements OnInit, OnDestroy {
@@ -41,7 +42,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   today        = this.todayStr();
   search       = '';
   page         = 1;
-  readonly limit = 10;
+  limit = 10;
 
   /* ── state ── */
   data: any = null;
@@ -109,6 +110,10 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
     this.page = 1;
     this.load();
   }
+
+  /** From the shared pager: jump to a page, or change how many rows a page holds. */
+  goTo(p: number): void { this.page = p; this.load(); }
+  setLimit(n: number): void { this.limit = n || 10; this.page = 1; this.load(); }
 
   changePage(delta: number): void {
     const next = this.page + delta;

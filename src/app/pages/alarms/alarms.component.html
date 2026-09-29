@@ -9,7 +9,7 @@
   <!-- Filters -->
   <div class="bg-white rounded-xl shadow-sm border p-4 mb-6 flex gap-4 flex-wrap">
     <select [(ngModel)]="filter.is_resolved" (change)="filter.page=1; load()"
-      class="border rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      class="border rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Status" >
       <option value="false">Active Alarms</option>
       <option value="true">Resolved</option>
       <option value="">All</option>
@@ -61,7 +61,7 @@
             <td class="px-4 py-3">
               <ng-container *ngIf="!alarm.is_resolved">
                 <div *ngIf="resolvingId === alarm.id" class="flex gap-2 items-center">
-                  <input [(ngModel)]="resolveNote" placeholder="Resolution note" class="border rounded px-2 py-1 text-xs w-32 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                  <input [(ngModel)]="resolveNote" placeholder="Resolution note" class="border rounded px-2 py-1 text-xs w-32 focus:outline-none focus:ring-1 focus:ring-blue-500" aria-label="Resolve note" />
                   <button (click)="resolve(alarm.id)" class="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700">Save</button>
                   <button (click)="resolvingId=null" class="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300">Cancel</button>
                 </div>

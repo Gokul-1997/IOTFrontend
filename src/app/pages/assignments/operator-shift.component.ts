@@ -38,8 +38,17 @@ export class OperatorShiftComponent implements OnInit {
     });
   /* Zoneless: an HTTP response resolving does not schedule a render, so a
      callback that changes what is on screen has to say so itself. */
-    this.operatorService.getAll().subscribe(d => { this.operators = d; this.cdr.markForCheck(); });
-    this.shiftService.getShifts().subscribe(d => { this.shifts = d; this.cdr.markForCheck(); });
+    /* Both APIs answer { data: [...] }. The whole object was used as the list,
+       so the dropdowns were empty and Angular threw NG0900 trying to loop over
+       it. Operators are paged: ask for all of them. */
+    this.operatorService.getAll({ limit: 500 }).subscribe((d: any) => {
+      this.operators = Array.isArray(d) ? d : (d?.data || []);
+      this.cdr.markForCheck();
+    });
+    this.shiftService.getShifts().subscribe((d: any) => {
+      this.shifts = Array.isArray(d) ? d : (d?.data || []);
+      this.cdr.markForCheck();
+    });
   }
 
   submit() {

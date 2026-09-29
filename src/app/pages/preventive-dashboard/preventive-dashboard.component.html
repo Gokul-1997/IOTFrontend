@@ -167,7 +167,7 @@
       </span>
     </div>
 
-    <div class="mexa-tablewrap">
+    <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table">
         <caption class="sr-only">Preventive maintenance tickets raised from alarms</caption>
         <thead>
@@ -211,16 +211,9 @@
       </table>
     </div>
 
-    <div class="mexa-pager" *ngIf="data.tickets.total > 0">
-      <span aria-live="polite">Showing: {{ data.tickets.data.length }} of {{ data.tickets.total }}</span>
-      <span class="inline-flex items-center gap-2">
-        <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
-                [disabled]="data.tickets.page <= 1">‹ Previous</button>
-        <span>{{ data.tickets.page }} / {{ data.tickets.totalPages }}</span>
-        <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
-                [disabled]="data.tickets.page >= data.tickets.totalPages">Next ›</button>
-      </span>
-    </div>
+    <app-mexa-pager [page]="data.tickets.page" [totalPages]="data.tickets.totalPages" [total]="data.tickets.total"
+                    [shown]="data.tickets.data.length" [limit]="limit"
+                    (pageChange)="goTo($event)" (limitChange)="setLimit($event)"></app-mexa-pager>
   </section>
 
   <!-- ══════════ ALARM RULES ══════════ -->
@@ -265,7 +258,7 @@
       </div>
     </form>
 
-    <div class="mexa-tablewrap">
+    <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table">
         <caption class="sr-only">Configured alarm rules</caption>
         <thead>

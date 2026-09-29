@@ -184,6 +184,44 @@ describe('AuthService.hasPermission', () => {
   });
 });
 
+// A regular role needs the page on the role AND on its company. The menu used
+// to look at the role only, so it kept offering pages the company had lost —
+// pages the API now refuses.
+describe('AuthService.hasPermission — role and company together', () => {
+  test('shows a page the role holds and the company was granted', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-oee:view'], company_permissions: ['page:analytics-oee:view'] });
+    expect(service.hasPermission('page:analytics-oee')).toBe(true);
+  });
+
+  test('hides a page the role holds but the company was not granted', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-oee:view'], company_permissions: ['page:analytics-energy:view'] });
+    expect(service.hasPermission('page:analytics-oee')).toBe(false);
+  });
+
+  test('hides a page the company has but the role does not', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-oee:view'], company_permissions: ['page:analytics-oee:view', 'page:analytics-energy:view'] });
+    expect(service.hasPermission('page:analytics-energy')).toBe(false);
+  });
+
+  test('a company with no grants at all is fresh and unrestricted', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-oee:view'], company_permissions: [] });
+    expect(service.hasPermission('page:analytics-oee')).toBe(true);
+  });
+
+  test('a company that lost one dashboard loses only that one', () => {
+    const grants = ['page:analytics-oee:view', 'page:analytics-alarms:view'];
+    seedUser({ roles: ['MANAGER'], permissions: [...grants, 'page:analytics-energy:view'], company_permissions: grants });
+    expect(service.hasPermission('page:analytics-oee')).toBe(true);
+    expect(service.hasPermission('page:analytics-alarms')).toBe(true);
+    expect(service.hasPermission('page:analytics-energy')).toBe(false);
+  });
+
+  test('SNT_SUPER still sees everything regardless of grants', () => {
+    seedUser({ roles: ['SNT_SUPER'], permissions: [], company_permissions: ['page:other:view'] });
+    expect(service.hasPermission('page:analytics-oee')).toBe(true);
+  });
+});
+
 // ── hasAction ─────────────────────────────────────────────────────────────────
 
 describe('AuthService.hasAction', () => {
@@ -193,7 +231,7 @@ describe('AuthService.hasAction', () => {
   });
 
   test('exact key match: page:machines:create', () => {
-    seedUser({ roles: ['ADMIN'], permissions: ['page:machines:create'] });
+    seedUser({ roles: ['ADMIN'], permissions: ['page:machines:create'], company_permissions: ['page:machines:create'] });
     expect(service.hasAction('machines', 'create')).toBe(true);
   });
 
@@ -215,6 +253,43 @@ describe('AuthService.hasAction', () => {
 });
 
 // ── hasWidget ─────────────────────────────────────────────────────────────────
+
+describe('AuthService.hasAction — role and company together', () => {
+  test('a regular role needs the action on the role AND on its company', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-energy:export'], company_permissions: ['page:analytics-energy:export'] });
+    expect(service.hasAction('analytics-energy', 'export')).toBe(true);
+  });
+
+  test('view granted, export not: the Export button stays hidden', () => {
+    seedUser({
+      roles: ['MANAGER'],
+      permissions: ['page:analytics-energy:view', 'page:analytics-energy:export'],
+      company_permissions: ['page:analytics-energy:view']
+    });
+    expect(service.hasAction('analytics-energy', 'view')).toBe(true);
+    expect(service.hasAction('analytics-energy', 'export')).toBe(false);
+  });
+
+  test('Tariff settings is separate from export', () => {
+    seedUser({
+      roles: ['MANAGER'],
+      permissions: ['page:analytics-energy:export', 'page:analytics-energy:settings'],
+      company_permissions: ['page:analytics-energy:export']
+    });
+    expect(service.hasAction('analytics-energy', 'export')).toBe(true);
+    expect(service.hasAction('analytics-energy', 'settings')).toBe(false);
+  });
+
+  test('a company with no grants is fresh — the role decides', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-energy:export'], company_permissions: [] });
+    expect(service.hasAction('analytics-energy', 'export')).toBe(true);
+  });
+
+  test('the role still has to hold it even when the company has it', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-energy:view'], company_permissions: ['page:analytics-energy:view', 'page:analytics-energy:export'] });
+    expect(service.hasAction('analytics-energy', 'export')).toBe(false);
+  });
+});
 
 describe('AuthService.hasWidget', () => {
   test('SNT_SUPER can see all widgets', () => {
@@ -297,7 +372,7 @@ describe('AuthService.getFirstAccessibleRoute', () => {
       roles: ['COMPANY_ADMIN'],
       company_permissions: ['page:oee-reports:view']
     });
-    expect(service.getFirstAccessibleRoute()).toBe('/oee-reports');
+    expect(service.getFirstAccessibleRoute()).toBe('/reports');
   });
 
   test('regular user routes to first matching permission', () => {
@@ -324,7 +399,63 @@ describe('AuthService.getFirstAccessibleRoute', () => {
   });
 });
 
+/* The landing list used to stop at a handful of pages, so a role whose only
+   page was further down the menu signed in to "Access Denied" although the
+   menu offered it a page. These are the default roles as production holds
+   them (company S AND T). */
+describe('AuthService.getFirstAccessibleRoute — every default role lands on a page it has', () => {
+  const company = ['page:programs:view', 'page:programs:upload', 'page:quality:view', 'page:quality:edit',
+    'page:analytics-oee:view', 'page:analytics-operators:view', 'page:operators:view', 'page:maintenance:view'];
+
+  test.each([
+    ['SETTER — Program Transfer only', ['page:programs:view', 'page:programs:upload', 'machine.view'], '/programs'],
+    ['QUALITY — OEE dashboard and Quality', ['page:analytics-oee:view', 'page:quality:view', 'line.view'], '/oee-dashboard'],
+    ['a role with Quality alone', ['page:quality:view'], '/quality'],
+    ['HR — Operator Performance and Operators', ['page:analytics-operators:view', 'page:operators:view', 'operator.view'], '/operator-performance'],
+    ['a role with Maintenance tickets alone', ['page:maintenance:view'], '/maintenance'],
+  ])('%s', (_label, permissions, landing) => {
+    seedUser({ roles: ['CUSTOM'], permissions, company_permissions: company });
+    expect(service.getFirstAccessibleRoute()).toBe(landing);
+  });
+
+  test('a page the company was not granted is skipped, not landed on', () => {
+    seedUser({ roles: ['CUSTOM'], permissions: ['page:programs:view', 'page:quality:view'],
+               company_permissions: ['page:quality:view'] });
+    expect(service.getFirstAccessibleRoute()).toBe('/quality');
+  });
+});
+
 // ── logout ────────────────────────────────────────────────────────────────────
+
+describe('AuthService.getFirstAccessibleRoute — the nine dashboards', () => {
+  test('a role with only OEE lands on the OEE dashboard, not on /no-access', () => {
+    seedUser({ roles: ['MANAGER'], permissions: ['page:analytics-oee:view'], company_permissions: [] });
+    expect(service.getFirstAccessibleRoute()).toBe('/oee-dashboard');
+  });
+
+  test('a company admin whose company was granted only Alarms lands on Alarms', () => {
+    seedUser({ roles: ['COMPANY_ADMIN'], company_permissions: ['page:analytics-alarms:view'] });
+    expect(service.getFirstAccessibleRoute()).toBe('/alarm-report');
+  });
+
+  test('skips a dashboard the role holds but the company was not granted', () => {
+    seedUser({
+      roles: ['MANAGER'],
+      permissions: ['page:analytics-factory:view', 'page:analytics-oee:view'],
+      company_permissions: ['page:analytics-oee:view']
+    });
+    expect(service.getFirstAccessibleRoute()).toBe('/oee-dashboard');
+  });
+
+  test('the live dashboard still comes first when the user has it', () => {
+    seedUser({
+      roles: ['MANAGER'],
+      permissions: ['page:dashboard:view', 'page:analytics-oee:view'],
+      company_permissions: []
+    });
+    expect(service.getFirstAccessibleRoute()).toBe('/dashboard');
+  });
+});
 
 describe('AuthService.logout', () => {
   test('clears localStorage and navigates to /login', () => {
@@ -364,5 +495,96 @@ describe('AuthService.getCompanyPermissions', () => {
   test('returns [] when no user stored', () => {
     clearSession();
     expect(service.getCompanyPermissions()).toEqual([]);
+  });
+});
+
+// ── refresh carries the current grants ────────────────────────────────────────
+
+/*
+ * hasPermission / hasAction / hasWidget read `permissions` and
+ * `company_permissions` from the user object saved at login, and nothing ever
+ * rewrote them — a page revoked in Manage Access stayed usable in the UI until
+ * the person signed out and back in. The refresh response now carries both.
+ */
+describe('AuthService.refreshToken — grants', () => {
+  /** A structurally valid JWT that expires in 30s, so scheduleRefresh sees
+   *  refreshTime <= 0 and arms no timer. */
+  const soonJwt = () => {
+    const b64 = (o: object) => btoa(JSON.stringify(o)).replace(/=+$/, '');
+    return `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ exp: Math.floor(Date.now() / 1000) + 30 })}.sig`;
+  };
+
+  function refresh(body: Record<string, unknown>) {
+    const http = TestBed.inject(HttpTestingController);
+    localStorage.setItem('refreshToken', 'rt');
+    service.refreshToken().subscribe();
+    http.expectOne(r => r.url.includes('/auth/refresh')).flush({ accessToken: soonJwt(), ...body });
+  }
+
+  test('a page revoked since login disappears from the stored user', () => {
+    // COMPANY_ADMIN is the role whose gating is decided by company_permissions
+    seedUser({ roles: ['COMPANY_ADMIN'], company_permissions: ['page:dashboard:view', 'page:reports:view'] });
+    expect(service.hasPermission('page:reports')).toBe(true);
+
+    refresh({ company_permissions: ['page:dashboard:view'] });
+
+    expect(service.getCompanyPermissions()).toEqual(['page:dashboard:view']);
+    expect(service.hasPermission('page:reports')).toBe(false);
+  });
+
+  test('role permissions are refreshed too', () => {
+    seedUser({ roles: ['SUPERVISOR'], permissions: ['page:machines:view'] });
+    refresh({ permissions: ['page:machines:view', 'page:quality:view'] });
+    expect(service.getPermissions()).toContain('page:quality:view');
+  });
+
+  test('an older API that returns only a token leaves the lists alone', () => {
+    // an empty company list reads as "unrestricted" — blanking it would
+    // silently grant everything
+    seedUser({ company_permissions: ['page:dashboard:view'], permissions: ['page:dashboard:view'] });
+    refresh({});
+    expect(service.getCompanyPermissions()).toEqual(['page:dashboard:view']);
+    expect(service.getPermissions()).toEqual(['page:dashboard:view']);
+  });
+
+  test('other fields on the stored user survive the merge', () => {
+    seedUser({ company_id: 4, username: 'admin1', plan: { plan_code: 'PRO' } });
+    refresh({ company_permissions: ['page:dashboard:view'] });
+    const u = service.getUser();
+    expect(u.company_id).toBe(4);
+    expect(u.username).toBe('admin1');
+    expect(u.plan).toEqual({ plan_code: 'PRO' });
+  });
+
+  test('a stored token is replaced', () => {
+    seedUser();
+    refresh({});
+    expect(localStorage.getItem('token')).not.toBe('fake-token');
+  });
+
+  describe('grantsChanged$ — what the header listens to', () => {
+    test('fires when the grants differ', () => {
+      seedUser({ company_permissions: ['page:a:view', 'page:b:view'] });
+      const seen = vi.fn();
+      service.grantsChanged$.subscribe(seen);
+      refresh({ company_permissions: ['page:a:view'] });
+      expect(seen).toHaveBeenCalledTimes(1);
+    });
+
+    test('does not fire when nothing changed', () => {
+      seedUser({ company_permissions: ['page:a:view'], permissions: ['page:a:view'] });
+      const seen = vi.fn();
+      service.grantsChanged$.subscribe(seen);
+      refresh({ company_permissions: ['page:a:view'], permissions: ['page:a:view'] });
+      expect(seen).not.toHaveBeenCalled();
+    });
+
+    test('a reordered but identical list is not a change', () => {
+      seedUser({ company_permissions: ['page:a:view', 'page:b:view'] });
+      const seen = vi.fn();
+      service.grantsChanged$.subscribe(seen);
+      refresh({ company_permissions: ['page:b:view', 'page:a:view'] });
+      expect(seen).not.toHaveBeenCalled();
+    });
   });
 });

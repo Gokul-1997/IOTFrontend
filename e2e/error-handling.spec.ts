@@ -4,7 +4,7 @@
  * Network calls are intercepted — no live backend needed.
  */
 
-import { test, expect } from './fixtures/auth';
+import { test, expect, seedAuth } from './fixtures/auth';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -70,7 +70,7 @@ test.describe('Quality — API error handling', () => {
   });
 });
 
-// ── OEE Reports errors ────────────────────────────────────────────────────────
+// ── OEE Reports errors (the OEE Records tab of Reports) ──────────────────────
 
 test.describe('OEE Reports — API error handling', () => {
   test('TC-ERR-20 500 on /api/oee/reports — shows no data rows', async ({ authedPage: page }) => {
@@ -79,18 +79,20 @@ test.describe('OEE Reports — API error handling', () => {
       data: { lines: [], machines: [], shifts: [] }
     });
     await stub(page, '**/api/oee/reports*', 500, { message: 'DB error' });
-    await page.goto('/oee-reports');
+    await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
+    await page.goto('/reports?tab=oee-records');
 
-    await expect(page).toHaveURL(/\/oee-reports/);
+    await expect(page).toHaveURL(/\/reports\?tab=oee-records/);
     await expect(page.getByText('VMC-1-F')).toHaveCount(0, { timeout: 10_000 });
   });
 
   test('TC-ERR-21 meta endpoint 404 — page does not crash', async ({ authedPage: page }) => {
     await stub(page, '**/api/oee/meta*', 404, { message: 'Not found' });
     await stub(page, '**/api/oee/reports*', 200, { success: true, data: [], pagination: { total: 0 } });
-    await page.goto('/oee-reports');
+    await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
+    await page.goto('/reports?tab=oee-records');
 
-    await expect(page).toHaveURL(/\/oee-reports/);
+    await expect(page).toHaveURL(/\/reports\?tab=oee-records/);
   });
 });
 

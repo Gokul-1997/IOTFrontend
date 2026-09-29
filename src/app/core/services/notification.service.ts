@@ -28,4 +28,12 @@ export class NotificationService {
   markAllRead() {
     return this.http.post(`${this.api}/mark-all-read`, {}).pipe();
   }
+
+  getPreferences() {
+    return this.http.get<any>(`${this.api}/preferences`);
+  }
+
+  updatePreferences(patch: Record<string, boolean>) {
+    return this.http.put<any>(`${this.api}/preferences`, patch);
+  }
 }

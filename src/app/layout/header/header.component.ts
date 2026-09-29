@@ -4,21 +4,22 @@ import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { IconComponent } from '../../shared/icon/icon';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
-// import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
+import { ThemeService } from '../../core/services/theme.service';
+import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 
 @Component({
   standalone: true,
   selector: 'app-header',
-  imports: [CommonModule, RouterModule, IconComponent],
+  imports: [CommonModule, RouterModule, IconComponent, NotificationBellComponent],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   private routeSubscription?: Subscription;
+  private grantsSub?: Subscription;
   homeRoute = "/dashboard";
 
   openMenu: string | null = null;
-  isDark = document.documentElement.classList.contains('dark');
   showUserMenu = false;
   userName = 'Admin';
   userEmail = '';
@@ -35,35 +36,37 @@ export class HeaderComponent implements OnInit, OnDestroy {
       label: 'Dashboards', icon: 'dashnew',
       children: [
         { label: 'Live Dashboard', path: '/dashboard', permission: 'page:dashboard' },
-        { label: 'Factory Overall', path: '/factory', permission: 'page:dashboard' },
-        { label: 'Maintenance', path: '/maintenance-dashboard', permission: 'page:dashboard' },
-        { label: 'Preventive', path: '/preventive-maintenance', permission: 'page:dashboard' },
-        { label: 'Periodic', path: '/periodic-maintenance', permission: 'page:dashboard' },
-        { label: 'Alarms', path: '/alarm-report', permission: 'page:dashboard' },
-        { label: 'Downtime', path: '/downtime-analysis', permission: 'page:dashboard' },
-        { label: 'Operators', path: '/operator-performance', permission: 'page:dashboard' },
-        { label: 'OEE', path: '/oee-dashboard', permission: 'page:dashboard' },
-        { label: 'Energy', path: '/energy-dashboard', permission: 'page:dashboard' }
+        { label: 'Factory Overall', path: '/factory', permission: 'page:analytics-factory' },
+        { label: 'Maintenance', path: '/maintenance-dashboard', permission: 'page:analytics-maintenance' },
+        { label: 'Preventive', path: '/preventive-maintenance', permission: 'page:analytics-preventive' },
+        { label: 'Periodic', path: '/periodic-maintenance', permission: 'page:analytics-periodic' },
+        { label: 'Alarms', path: '/alarm-report', permission: 'page:analytics-alarms' },
+        { label: 'Downtime', path: '/downtime-analysis', permission: 'page:analytics-downtime' },
+        { label: 'Operators', path: '/operator-performance', permission: 'page:analytics-operators' },
+        { label: 'OEE', path: '/oee-dashboard', permission: 'page:analytics-oee' },
+        { label: 'Energy', path: '/energy-dashboard', permission: 'page:analytics-energy' }
       ]
     },
     {
       label: 'Analytics', icon: 'donutnew',
       children: [
-        { label: 'OEE', path: '/oee-reports', permission: 'page:oee-reports' },
-        { label: 'Reports', path: '/reports', permission: 'page:reports' },
+        // one Reports page holds every report, the OEE ones included
+        { label: 'Reports', path: '/reports', permission: ['page:reports', 'page:oee-reports'] },
         { label: 'Charts', path: '/charts', permission: 'page:charts' },
-        { label: 'Quality', path: '/quality', permission: 'page:quality' }
+        { label: 'Quality', path: '/quality', permission: 'page:quality' },
+        { label: 'Maintenance Report', path: '/maintenance-report', permission: 'page:maintenance-report' }
       ]
     },
     { label: 'Alarms', path: '/alarms', icon: 'alerts', permission: 'page:alarms' },
     { label: 'Downtime', path: '/downtime', icon: 'downtime', permission: 'page:downtime' },
     { label: 'Maintenance', path: '/maintenance', icon: 'maintenance', permission: 'page:maintenance' },
-    { label: 'Production Plans', path: '/production-plans', icon: 'plans', permission: 'page:production-plans' },
     {
-      label: 'Settings', icon: 'gearnew',
+      /* "Master", as the design names it: the company's setup data. It was
+         labelled "Settings", the same word as a person's own Settings page. */
+      label: 'Master', icon: 'gearnew',
       children: [
         { label: 'Machines', path: '/machines', permission: 'page:machines' },
-        { label: 'Program Transfer', path: '/programs', permission: 'page:machines' },
+        { label: 'Program Transfer', path: '/programs', permission: 'page:programs' },
         { label: 'Component', path: '/component', permission: 'page:component' },
         { label: 'Job', path: '/job', permission: 'page:job' },
         { label: 'Lines', path: '/lines', permission: 'page:lines' },
@@ -71,7 +74,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
         { label: 'Operators', path: '/operators', permission: 'page:operators' },
         { label: 'Plants', path: '/plants', permission: 'page:plants' },
         { label: 'Machine Shifts', path: '/machine-shifts', permission: 'page:machine-shifts' },
-        { label: '2FA Security', path: '/security/2fa', permission: 'page:security' }
+        // Tariff & limits, moved off the Energy Dashboard into its own page
+        { label: 'Energy Tariff', path: '/energy-tariff', permission: 'page:analytics-energy:settings' }
+        /* 2FA Security moved to the account menu: it is about the person, and
+           with no permission it made this menu appear for every role. */
       ]
     },
     { label: 'Admin', path: '/admin/users', icon: 'shield', adminOnly: true } 
@@ -82,6 +88,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private auth: AuthService,
+    public  theme: ThemeService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -92,6 +99,13 @@ export class HeaderComponent implements OnInit, OnDestroy {
    * the user menu did nothing. Every handler that changes them has to say so.
    */
   private touch() { this.cdr.markForCheck(); }
+
+  /** Closes the user-menu dropdown after a link inside it is followed —
+   *  public because the template calls it directly. */
+  closeUserMenu(): void {
+    this.showUserMenu = false;
+    this.touch();
+  }
 
   ngOnInit() {
     const user = this.auth.getUser();
@@ -123,6 +137,18 @@ export class HeaderComponent implements OnInit, OnDestroy {
         this.touch();
       }
     });
+
+    // A refresh that brought different grants: rebuild, so a page the company
+    // just lost stops appearing in the bar without a reload.
+    this.grantsSub = this.auth.grantsChanged$.subscribe(() => {
+      this.buildMenus();
+      this.touch();
+    });
+  }
+
+  ngOnDestroy() {
+    this.routeSubscription?.unsubscribe();
+    this.grantsSub?.unsubscribe();
   }
 
   buildMenus() {
@@ -138,17 +164,16 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
         if (menu.children) {
           const filteredChildren = menu.children.filter((child: any) =>
-            this.canAccess(child.permission)
+            this.allowed(child.permission)
           );
           return filteredChildren.length > 0 ? { ...menu, children: filteredChildren } : null;
         }
 
-        return this.canAccess(menu.permission) ? menu : null;
+        return this.allowed(menu.permission) ? menu : null;
       })
       .filter(m => m !== null);
   }
 
-  ngOnDestroy() { this.routeSubscription?.unsubscribe(); }
 
   private canAccess(permission: string): boolean {
     // Keep navigation aligned with permissionGuard, including legacy ADMIN users.
@@ -174,6 +199,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.auth.logout();
   }
 
+  /** No permission, one, or any of several (a page more than one grant opens). */
+  private allowed(p: string | string[] | undefined): boolean {
+    if (!p) return true;
+    return Array.isArray(p) ? p.some(k => this.canAccess(k)) : this.canAccess(p);
+  }
+
   toggleMenu(label: string) { this.openMenu = this.openMenu === label ? null : label; this.touch(); }
   closeMenu() { this.openMenu = null; this.touch(); }
 
@@ -186,12 +217,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
   isActive(path: string) { return this.router.url.split(/[?#]/)[0] === path; }
   isChildActive(children: any[]) { return children?.some(c => this.router.url.startsWith(c.path)); }
 
-  toggleTheme() {
-    this.isDark = !this.isDark;
-    this.touch();
-    document.documentElement.classList.toggle('dark', this.isDark);
-    localStorage.setItem('theme', this.isDark ? 'dark' : 'light');
-  }
+  /* State and persistence now live in ThemeService — before this, isDark
+     was a plain component field, always initialised to false, with nothing
+     reading or writing localStorage. It survived route changes (the header
+     sits outside <router-outlet>) but not a reload or a new tab: dark mode
+     never actually stuck. */
+  toggleTheme() { this.theme.toggle(); }
 
   isMobileMenuOpen = false;
   toggleMobileMenu() {

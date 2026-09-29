@@ -144,7 +144,7 @@
 
     <section class="mexa-card">
       <h2 class="mexa-card-title mexa-card-title-left">Downtime By Reason Summary</h2>
-      <div class="mexa-tablewrap">
+      <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
         <table class="mexa-table" style="min-width:0">
           <caption class="sr-only">Downtime reasons, largest first</caption>
           <thead>
@@ -217,7 +217,7 @@
         <label class="sr-only" for="dtSearch">Search downtime events</label>
         <input id="dtSearch" type="search" class="mexa-search" placeholder="Search"
                [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
-        <span class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
+        <span *ngIf="canExport" class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
           <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">
             {{ exporting === 'xlsx' ? '…' : 'Excel' }}
           </button>
@@ -232,7 +232,7 @@
       </span>
     </div>
 
-    <div class="mexa-tablewrap">
+    <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table">
         <caption class="sr-only">Downtime events matching the current filters, newest first</caption>
         <thead>
@@ -276,15 +276,8 @@
       </table>
     </div>
 
-    <div class="mexa-pager" *ngIf="data.events.total > 0">
-      <span aria-live="polite">Showing: {{ data.events.data.length }} of {{ data.events.total }}</span>
-      <span class="inline-flex items-center gap-2">
-        <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
-                [disabled]="data.events.page <= 1">‹ Previous</button>
-        <span>{{ data.events.page }} / {{ data.events.totalPages }}</span>
-        <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
-                [disabled]="data.events.page >= data.events.totalPages">Next ›</button>
-      </span>
-    </div>
+    <app-mexa-pager [page]="data.events.page" [totalPages]="data.events.totalPages" [total]="data.events.total"
+                    [shown]="data.events.data.length" [limit]="limit"
+                    (pageChange)="goTo($event)" (limitChange)="setLimit($event)"></app-mexa-pager>
   </section>
 </ng-container>

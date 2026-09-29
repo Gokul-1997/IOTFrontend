@@ -1,4 +1,3 @@
-import { DataBarsComponent } from '../../shared/data-bars/data-bars.component';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -26,7 +25,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 @Component({
   selector: 'app-oee-dashboard',
   standalone: true,
-  imports: [ DataBarsComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './oee-dashboard.component.html'
 })
 export class OeeDashboardComponent implements OnInit, OnDestroy {
@@ -38,7 +37,16 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   shifts: any[] = [];
   f: any = this.blankFilters();
   page = 1;
-  readonly limit = 20;
+  /* Every machine in one response: the cards page
+     through them on screen, 5 cards and N rows at a time. */
+  readonly limit = 200;
+
+  /** Machine cards, five to a page as the design shows them. */
+  readonly cardsPerPage = 5;
+  cardPage = 1;
+
+  /** Machines by OEE: the design's Top 5 / Bottom 5. */
+  rankWhich: 'top' | 'bottom' = 'top';
 
   data: any = null;
   loading = false;
@@ -115,7 +123,10 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
 
     this.trendCategories = (d.trend || []).map((t: any) =>
       new Date(t.day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
-    this.trendSeries = [{ name: 'Availability %', data: (d.trend || []).map((t: any) => t.availability_pct) }];
+    // OEE per day, each day worked out from its own totals by the API
+    this.trendSeries = (d.trend || []).some((t: any) => t.oee_pct != null)
+      ? [{ name: 'OEE', data: (d.trend || []).map((t: any) => t.oee_pct) }] : [];
+    this.cardPage = 1;
 
     /* Only machines with a computable OEE go on the comparison chart —
        plotting a null as a zero bar would read as a failing machine. */
@@ -129,7 +140,8 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
 
     /* Machines by OEE, best first. Only machines with a computable OEE —
        a null plotted as zero would read as a failing machine. */
-    const ranked = [...withOee].sort((a: any, b: any) => b.oee_pct - a.oee_pct).slice(0, 5);
+    const byOee = [...withOee].sort((a: any, b: any) => b.oee_pct - a.oee_pct);
+    const ranked = this.rankWhich === 'top' ? byOee.slice(0, 5) : byOee.reverse().slice(0, 5);
     /* Per-point colour, carrying each machine's grade band — the same colour
        its tile above uses. This chart used to rely on Apex's per-bar colour
        cycling, which assigns colour by a bar's POSITION: the top bar was navy
@@ -140,7 +152,7 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
       data: ranked.map((m: any) => ({
         x: m.machine_serial_no,
         y: m.oee_pct,
-        fillColor: this.bandColour(m.band)
+        fillColor: this.bandColour(this.grade(m))
       }))
     }] : [];
 
@@ -231,13 +243,15 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   get trendChart(): any {
     return this.charts.memo('trendChart', () => {
     return {
-      chart:  { type: 'area', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
-      stroke: { width: 2, curve: 'smooth' },
-      fill:   { type: 'gradient', gradient: { shadeIntensity: 0.3, opacityFrom: 0.35, opacityTo: 0.05 } },
-      colors: ['#0f766e'],
-      dataLabels: { enabled: false },
-      xaxis:  { categories: this.trendCategories },
-      yaxis:  { min: 0, max: 100, title: { text: 'Availability %' },
+      chart:  { type: 'line', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
+      stroke: { width: 2.5, curve: 'straight' },
+      fill:   { type: 'solid' },
+      markers: { size: 5 },
+      colors: ['#3564df'],
+      dataLabels: { enabled: true, formatter: (v: number | null) => v == null ? '' : `${v}%`, offsetY: -6,
+                    background: { enabled: false }, style: { fontSize: '.72rem', colors: ['#3564df'] } },
+      xaxis:  { categories: this.trendCategories, title: { text: 'Time' } },
+      yaxis:  { min: 0, max: 100, title: { text: 'OEE (%)' },
                 labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'dark' },
@@ -258,6 +272,47 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
 
   absPct(v: number): string { return `${Math.abs(v)}%`; }
 
+  /* ── the design's four grades, on OEE ──
+     > 85 Excellent · 75–85 Good · 60–75 Avg · < 60 Needs Improvement */
+  grade(m: any): string {
+    const v = m?.oee_pct;
+    if (v === null || v === undefined) return 'UNKNOWN';
+    return v >= 85 ? 'EXCELLENT' : v >= 75 ? 'GOOD' : v >= 60 ? 'AVG' : 'POOR';
+  }
+  gradeTile(g: string): string {
+    return ({ EXCELLENT: 'mexa-grade-excellent', GOOD: 'mexa-grade-good', AVG: 'mexa-grade-avg', POOR: 'mexa-grade-poor' } as any)[g] || 'mexa-grade-unknown';
+  }
+  gradeWord(g: string): string {
+    return ({ EXCELLENT: 'Excellent', GOOD: 'Good', AVG: 'Avg', POOR: 'Needs Improvement' } as any)[g] || 'No cycle time';
+  }
+
+  /* ── machine cards ── */
+  get cardTotalPages(): number { return Math.max(1, Math.ceil((this.data?.machines?.data?.length || 0) / this.cardsPerPage)); }
+  get pageCards(): any[] {
+    const rows = this.data?.machines?.data || [];
+    return rows.slice((this.cardPage - 1) * this.cardsPerPage, this.cardPage * this.cardsPerPage);
+  }
+  cardGo(p: number): void { this.cardPage = p; this.cdr.markForCheck(); }
+
+  setRank(which: 'top' | 'bottom'): void {
+    if (this.rankWhich === which) return;
+    this.rankWhich = which;
+    this.apply({ status: 'success', data: this.data });   // rebuild the bars from what is loaded
+  }
+
+  /** "↑ 3.18%" / "↓ 1.32%" from a signed change in percentage points. */
+  change(v: number | null | undefined): string {
+    if (v === null || v === undefined) return '';
+    return `${v > 0 ? '↑' : v < 0 ? '↓' : ''} ${Math.abs(v)}%`;
+  }
+
+  /** HH:MM:SS, hours running past 24, as the design writes durations. */
+  hms(seconds: number | null | undefined): string {
+    const n = Math.max(0, Math.round(Number(seconds) || 0));
+    const pad = (v: number) => String(v).padStart(2, '0');
+    return `${pad(Math.floor(n / 3600))}:${pad(Math.floor((n % 3600) / 60))}:${pad(n % 60)}`;
+  }
+
   bandTile(band: string): string {
     switch (band) {
       case 'GOOD': return 'mexa-grade-excellent';
@@ -270,9 +325,11 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   /** The tile's solid colour, passed to the ring so its hole matches. */
   bandColour(band: string): string {
     switch (band) {
+      case 'EXCELLENT': return '#15803d';
+      case 'AVG':       return '#b45309';
       case 'GOOD': return '#15803d';
       case 'FAIR': return '#3564df';
-      case 'POOR': return '#b45309';
+      case 'POOR': return '#c32b3f';
       default:     return '#64748b';
     }
   }

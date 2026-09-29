@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures/auth';
+import { test, expect, seedAuth } from './fixtures/auth';
 
 /**
  * Screen 10 — supervisor authorisation on program transfer.
@@ -78,6 +78,13 @@ type Handlers = {
  * to 401 against the real API — which logs the stub user out mid-test.
  */
 async function mockApi(page: any, handlers: Handlers = {}) {
+  /* A user who may send programs. The page now shows each action only to a
+     role holding it (a SETTER without Transfer gets no Send button), and the
+     default stub user holds no Program Transfer permission at all. */
+  await seedAuth(page, {
+    roles: ['SETTER'],
+    permissions: ['page:programs:view', 'page:programs:upload', 'page:programs:transfer', 'page:programs:fetch', 'machine.view']
+  });
   await page.route('**/api/**', (route: any) => {
     const url = route.request().url();
 
@@ -191,4 +198,27 @@ test.describe('Program transfer — supervisor authorisation', () => {
     await expect(page.getByText(/administrator must assign one/i)).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Supervisor Authorisation' })).toBeHidden();
   });
+});
+
+/* A role without Transfer (the SETTER in a company not granted it) is told
+   so, instead of being shown a Send button that answers "Permission denied". */
+test('a role without Transfer or Delete sees neither button, and is told why', async ({ page }) => {
+  await seedAuth(page, {
+    roles: ['SETTER'],
+    permissions: ['page:programs:view', 'page:programs:upload', 'page:programs:fetch', 'machine.view']
+  });
+  await page.route('**/api/**', (route: any) => {
+    const url = route.request().url();
+    if (/\/programs\?|\/programs$/.test(url)) {
+      return route.fulfill(json({ status: 'success', data: [{ id: 11, name: 'O1001', file_name: 'O1001.nc', file_size: 399 }], total: 1 }));
+    }
+    return route.fulfill(json({ status: 'success', success: true, data: [] }));
+  });
+  await page.goto('/programs');
+  await expect(page.getByText('O1001', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Send to Machine/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Delete' })).toHaveCount(0);
+  await expect(page.getByText('Sending to a machine is not part of your role.')).toBeVisible();
+  // what the role does hold is still there
+  await expect(page.getByRole('button', { name: /Upload Program/ })).toBeVisible();
 });

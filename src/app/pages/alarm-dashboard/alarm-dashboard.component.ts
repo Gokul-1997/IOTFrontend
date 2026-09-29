@@ -7,8 +7,10 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { AlarmDashboardService } from './alarm-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
+import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 5 — Alarm Dashboard & Reports
@@ -22,7 +24,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 @Component({
   selector: 'app-alarm-dashboard',
   standalone: true,
-  imports: [ DataBarsComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [DataBarsComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
   templateUrl: './alarm-dashboard.component.html'
 })
 export class AlarmDashboardComponent implements OnInit, OnDestroy {
@@ -35,7 +37,29 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   shifts: any[] = [];
   f: any = this.blankFilters();
   page = 1;
-  readonly limit = 20;
+  limit = 10;
+  sort = '';
+  dir: 'asc' | 'desc' = 'desc';
+
+  /** Table columns, in the design's order; `key` is what the server sorts by. */
+  readonly columns = [
+    { key: 'machine_serial_no', label: 'Machine Name' }, { key: 'shift_name', label: 'Shift' },
+    { key: 'alarm_code', label: 'Alarm Code' }, { key: 'message', label: 'Alarm Name' },
+    { key: 'severity', label: 'Severity' }, { key: 'status', label: 'Status' },
+    { key: 'duration_seconds', label: 'Duration (HH:MM:SS)' }, { key: 'started_at', label: 'Generated Time' },
+    { key: 'ended_at', label: 'Closed Time' }
+  ];
+
+  /** Click a header to sort by it; again to flip the direction. */
+  sortBy(key: string): void {
+    if (this.sort === key) this.dir = this.dir === 'desc' ? 'asc' : 'desc';
+    else { this.sort = key; this.dir = ['machine_serial_no', 'shift_name', 'alarm_code', 'message'].includes(key) ? 'asc' : 'desc'; }
+    this.page = 1;
+    this.load();
+  }
+  ariaSort(key: string): string { return this.sort !== key ? 'none' : this.dir === 'asc' ? 'ascending' : 'descending'; }
+  goTo(p: number): void { this.page = p; this.load(); }
+  setLimit(n: number): void { this.limit = n || 10; this.page = 1; this.load(); }
 
   /* ── state ── */
   data: any = null;
@@ -62,8 +86,12 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   constructor(
     private svc: AlarmDashboardService,
     private toast: ToastService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private auth: AuthService
   ) {}
+
+  /** Export is its own grant — a company can have this page without being able to take data off it. */
+  get canExport(): boolean { return this.auth.hasAction('analytics-alarms', 'export'); }
 
   ngOnInit(): void {
     this.svc.getMeta()
@@ -102,7 +130,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
 
   reset(): void {
     this.f = this.blankFilters();
-    this.page = 1;
+    this.page = 1; this.sort = ''; this.dir = 'desc';
     this.load();
   }
 
@@ -118,7 +146,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     this.errorMsg = '';
     this.cdr.markForCheck();
 
-    this.svc.getAlarms({ ...this.f, page: this.page, limit: this.limit })
+    this.svc.getAlarms({ ...this.f, sort: this.sort || null, dir: this.dir, page: this.page, limit: this.limit })
       .pipe(takeUntil(this.destroy$), catchError(err => {
         this.errorMsg = err?.error?.message || 'Unable to load alarm data.';
         return of(null);
@@ -141,8 +169,10 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
       ? new Date(d.updated_at).toLocaleString('en-IN', { hour12: true })
       : '';
 
-    this.trendCategories = (d.trend || []).map((t: any) =>
-      new Date(t.day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
+    // one day selected: hour by hour, as the design's "Alarms Trend (By Hour)"
+    this.trendCategories = (d.trend || []).map((t: any) => d.trend_by === 'hour'
+      ? `${String(t.hour).padStart(2, '0')}:00`
+      : new Date(t.day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
     this.trendSeries = [
       { name: 'Critical', data: (d.trend || []).map((t: any) => t.critical) },
       { name: 'Normal',   data: (d.trend || []).map((t: any) => t.total - t.critical) }
@@ -216,6 +246,13 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
    *  problem, the other is a normal empty result. */
   get isUnconfigured(): boolean {
     return !!this.data && this.data.kpis.total === 0 && this.data.facets.types.length === 0;
+  }
+
+  /** HH:MM:SS, as the design writes a duration; hours run past 24. */
+  hms(seconds: number | null | undefined): string {
+    const n = Math.max(0, Math.round(Number(seconds) || 0));
+    const pad = (v: number) => String(v).padStart(2, '0');
+    return `${pad(Math.floor(n / 3600))}:${pad(Math.floor((n % 3600) / 60))}:${pad(n % 60)}`;
   }
 
   duration(seconds: number | null | undefined): string {

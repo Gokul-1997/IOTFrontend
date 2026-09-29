@@ -26,12 +26,12 @@
           (ngModelChange)="onSearchInput()"
           placeholder="Search serial, model, line…"
           class="search-input" />
-        <button *ngIf="search" mat-icon-button class="clear-btn" (click)="search=''; onSearchInput()">
+        <button *ngIf="search" mat-icon-button class="clear-btn" (click)="search=''; onSearchInput()" aria-label="Clear search" title="Clear search">
           <mat-icon>close</mat-icon>
         </button>
       </div>
       <!-- New Machine — only if user has create permission -->
-      <button *ngIf="auth.hasAction('machines', 'create')" class="btn-primary" (click)="openCreate()">
+      <button *ngIf="auth.hasAction('machines', 'create')" class="btn-primary" (click)="openCreate()" aria-label="Add" title="Add">
         <mat-icon>add</mat-icon>
         New Machine
       </button>
@@ -71,7 +71,7 @@
         <ng-container matColumnDef="image_url">
           <th mat-header-cell *matHeaderCellDef class=" thead-custm">Image</th>
           <td mat-cell *matCellDef="let r">
-            <img *ngIf="r.image_url" [src]="r.image_url" class="machine-thumb" />
+            <img *ngIf="r.image_url" [src]="r.image_url" [alt]="r.machine_serial_no || 'Machine'" class="machine-thumb" />
             <span *ngIf="!r.image_url" class="no-image">—</span>
           </td>
         </ng-container>
@@ -173,7 +173,7 @@
               mat-icon-button
               class="copy-btn"
               (click)="copyApiKey(r.api_key)"
-              matTooltip="Copy API Key">
+              matTooltip="Copy API Key" aria-label="Copy API Key">
               <mat-icon>content_copy</mat-icon>
             </button>
           </td>
@@ -196,10 +196,10 @@
         <ng-container matColumnDef="actions" [stickyEnd]="true">
           <th mat-header-cell *matHeaderCellDef class="col-actions thead-custm">Actions</th>
           <td mat-cell *matCellDef="let r" class="col-actions">
-            <button *ngIf="auth.hasAction('machines', 'edit')" mat-icon-button class="action-edit" (click)="openEdit(r)" matTooltip="Edit">
+            <button *ngIf="auth.hasAction('machines', 'edit')" mat-icon-button class="action-edit" (click)="openEdit(r)" matTooltip="Edit" aria-label="Edit" title="Edit">
               <mat-icon>edit</mat-icon>
             </button>
-            <button *ngIf="auth.hasAction('machines', 'delete')" mat-icon-button class="action-delete" (click)="confirmDelete(r)" matTooltip="Delete">
+            <button *ngIf="auth.hasAction('machines', 'delete')" mat-icon-button class="action-delete" (click)="confirmDelete(r)" matTooltip="Delete" aria-label="Delete" title="Delete">
               <mat-icon>delete_outline</mat-icon>
             </button>
           </td>

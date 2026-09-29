@@ -3,7 +3,7 @@
 <form [formGroup]="form">
   <label>Machine</label>
 
-  <select formControlName="machine_id" (change)="loadConfig()">
+  <select formControlName="machine_id" (change)="loadConfig()" aria-label="Machine" >
     <option value="">Select Machine</option>
     <option *ngFor="let m of machines" [value]="m.id">
       {{ m.machine_serial_no }}
@@ -18,8 +18,7 @@
     <input
       type="checkbox"
       [checked]="selectedShifts.includes(s.id)"
-      (change)="toggleShift(s.id, $any($event.target).checked)"
-    />
+      (change)="toggleShift(s.id, $any($event.target).checked)" aria-label="Select row" />
     {{ s.shift_name }} ({{ s.start_time }} - {{ s.end_time }})
   </div>
 

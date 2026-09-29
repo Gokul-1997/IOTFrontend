@@ -6,7 +6,7 @@
  */
 
 import { test as base, expect, Page } from '@playwright/test';
-import { test as authedTest } from './fixtures/auth';
+import { test as authedTest, seedAuth } from './fixtures/auth';
 
 // ── unauthenticated fixture (no localStorage seed) ────────────────────────────
 
@@ -23,6 +23,8 @@ test.describe('Route guards — unauthenticated', () => {
     '/quality',
     '/charts',
     '/oee-reports',
+    '/reports',
+    '/energy-tariff',
     '/job',
     '/component',
     '/plants',
@@ -82,12 +84,15 @@ authedTest.describe('Authenticated navigation', () => {
     await expect(page).toHaveURL(/\/machines/);
   });
 
-  authedTest('TC-NAV-AUTH-03 /oee-reports loads without /login redirect', async ({ authedPage: page }) => {
+  // OEE Reports is a tab of Reports now; old links and bookmarks land on it
+  authedTest('TC-NAV-AUTH-03 /oee-reports opens Reports on the OEE Records tab', async ({ authedPage: page }) => {
     await page.route('**/api/oee/**', r =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) })
     );
+    await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
     await page.goto('/oee-reports');
-    await expect(page).toHaveURL(/\/oee-reports/);
+    await expect(page).toHaveURL(/\/reports\?tab=oee-records$/);
+    await expect(page.getByRole('tab', { name: /OEE Records/ })).toHaveAttribute('aria-selected', 'true');
   });
 
   authedTest('TC-NAV-AUTH-04 root path / redirects to a valid page', async ({ authedPage: page }) => {

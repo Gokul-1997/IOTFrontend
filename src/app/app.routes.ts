@@ -1,9 +1,11 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Routes, Router } from '@angular/router';
+import { AuthService } from './core/services/auth.service';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
 import { sntSuperGuard } from './core/guards/snt-super.guard';
-import { companyAdminGuard } from './core/guards/company-admin.guard';
-import { permissionGuard } from './core/guards/permission.guard';
+import { companyAdminGuard, companyRolesGuard, companyUserGuard } from './core/guards/company-admin.guard';
+import { permissionGuard, anyPermissionGuard } from './core/guards/permission.guard';
 
 export const routes: Routes = [
 
@@ -19,16 +21,25 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
 
+      /* Every page here is guarded by the key Manage Access grants for it.
+         The nine Phase 2 dashboards each have their own (page:analytics-*);
+         they all used to share page:dashboard, so none could be sold or
+         revoked on its own. alarms, downtime and maintenance
+         and programs had catalogue modules and menu entries but NO guard, so
+         un-granting them hid the menu item and left the URL open. */
       { path: 'dashboard', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
-      { path: 'factory', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/factory/factory.component').then(m => m.FactoryComponent) },
-      { path: 'maintenance-dashboard', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/maintenance-dashboard/maintenance-dashboard.component').then(m => m.MaintenanceDashboardComponent) },
-      { path: 'preventive-maintenance', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/preventive-dashboard/preventive-dashboard.component').then(m => m.PreventiveDashboardComponent) },
-      { path: 'periodic-maintenance', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/periodic-dashboard/periodic-dashboard.component').then(m => m.PeriodicDashboardComponent) },
-      { path: 'alarm-report', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/alarm-dashboard/alarm-dashboard.component').then(m => m.AlarmDashboardComponent) },
-      { path: 'downtime-analysis', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/downtime-dashboard/downtime-dashboard.component').then(m => m.DowntimeDashboardComponent) },
-      { path: 'operator-performance', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/operator-dashboard/operator-dashboard.component').then(m => m.OperatorDashboardComponent) },
-      { path: 'oee-dashboard', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/oee-dashboard/oee-dashboard.component').then(m => m.OeeDashboardComponent) },
-      { path: 'energy-dashboard', canActivate: [permissionGuard('page:dashboard')], loadComponent: () => import('./pages/energy-dashboard/energy-dashboard.component').then(m => m.EnergyDashboardComponent) },
+      { path: 'factory', canActivate: [permissionGuard('page:analytics-factory')], loadComponent: () => import('./pages/factory/factory.component').then(m => m.FactoryComponent) },
+      { path: 'maintenance-dashboard', canActivate: [permissionGuard('page:analytics-maintenance')], loadComponent: () => import('./pages/maintenance-dashboard/maintenance-dashboard.component').then(m => m.MaintenanceDashboardComponent) },
+      { path: 'preventive-maintenance', canActivate: [permissionGuard('page:analytics-preventive')], loadComponent: () => import('./pages/preventive-dashboard/preventive-dashboard.component').then(m => m.PreventiveDashboardComponent) },
+      { path: 'periodic-maintenance', canActivate: [permissionGuard('page:analytics-periodic')], loadComponent: () => import('./pages/periodic-dashboard/periodic-dashboard.component').then(m => m.PeriodicDashboardComponent) },
+      { path: 'alarm-report', canActivate: [permissionGuard('page:analytics-alarms')], loadComponent: () => import('./pages/alarm-dashboard/alarm-dashboard.component').then(m => m.AlarmDashboardComponent) },
+      { path: 'downtime-analysis', canActivate: [permissionGuard('page:analytics-downtime')], loadComponent: () => import('./pages/downtime-dashboard/downtime-dashboard.component').then(m => m.DowntimeDashboardComponent) },
+      { path: 'operator-performance', canActivate: [permissionGuard('page:analytics-operators')], loadComponent: () => import('./pages/operator-dashboard/operator-dashboard.component').then(m => m.OperatorDashboardComponent) },
+      { path: 'oee-dashboard', canActivate: [permissionGuard('page:analytics-oee')], loadComponent: () => import('./pages/oee-dashboard/oee-dashboard.component').then(m => m.OeeDashboardComponent) },
+      // Tariff & Limits: its own page (it sat at the foot of the Energy Dashboard)
+      { path: 'energy-tariff', canActivate: [permissionGuard('page:analytics-energy:settings')], loadComponent: () => import('./pages/energy-tariff/energy-tariff.component').then(m => m.EnergyTariffComponent) },
+      { path: 'energy-dashboard', canActivate: [permissionGuard('page:analytics-energy')], loadComponent: () => import('./pages/energy-dashboard/energy-dashboard.component').then(m => m.EnergyDashboardComponent) },
+      { path: 'maintenance-report', canActivate: [permissionGuard('page:maintenance-report')], loadComponent: () => import('./pages/maintenance-report/maintenance-report.component').then(m => m.MaintenanceReportComponent) },
       { path: 'dashboard/live/:id', canActivate: [permissionGuard('page:dashboard:live')], loadComponent: () => import('./pages/dashboard/live/live.component').then(m => m.LiveComponent) },
 
       { path: 'component', canActivate: [permissionGuard('page:component')], loadComponent: () => import('./pages/component/component_list.component').then(m => m.ComponentList) },
@@ -52,19 +63,26 @@ export const routes: Routes = [
 
       { path: 'lines', canActivate: [permissionGuard('page:lines')], loadComponent: () => import('./pages/lines/lines.component').then(m => m.LinesComponent) },
 
-      { path: 'reports', canActivate: [permissionGuard('page:reports')], loadComponent: () => import('./pages/reports/reports').then(m => m.Reports) },
-      { path: 'oee-reports', canActivate: [permissionGuard('page:oee-reports')], loadComponent: () => import('./pages/oee-reports/oee-reports').then(m => m.OeeReportsComponent) },
+      { path: 'reports', canActivate: [anyPermissionGuard(['page:reports', 'page:oee-reports'])], loadComponent: () => import('./pages/reports/reports').then(m => m.Reports) },
+      // One Reports page: the old OEE Reports address opens its tab there
+      { path: 'oee-reports', pathMatch: 'full', redirectTo: () => inject(Router).createUrlTree(['/reports'], { queryParams: { tab: 'oee-records' } }) },
       { path: 'charts', canActivate: [permissionGuard('page:charts')], loadComponent: () => import('./pages/charts/charts').then(m => m.Charts) },
       { path: 'quality', canActivate: [permissionGuard('page:quality')], loadComponent: () => import('./pages/quality/quality').then(m => m.Quality) },
       { path: 'job', canActivate: [permissionGuard('page:job')], loadComponent: () => import('./pages/job/job-list.component').then(m => m.JobListComponent) },
 
-      { path: 'programs', loadComponent: () => import('./pages/programs/programs.component').then(m => m.ProgramsComponent) },
+      { path: 'programs', canActivate: [permissionGuard('page:programs')], loadComponent: () => import('./pages/programs/programs.component').then(m => m.ProgramsComponent) },
 
-      { path: 'alarms', loadComponent: () => import('./pages/alarms/alarms.component').then(m => m.AlarmsComponent) },
-      { path: 'downtime', loadComponent: () => import('./pages/downtime/downtime.component').then(m => m.DowntimeComponent) },
-      { path: 'maintenance', loadComponent: () => import('./pages/maintenance/maintenance.component').then(m => m.MaintenanceComponent) },
-      { path: 'production-plans', loadComponent: () => import('./pages/production-plans/production-plans.component').then(m => m.ProductionPlansComponent) },
+      { path: 'alarms', canActivate: [permissionGuard('page:alarms')], loadComponent: () => import('./pages/alarms/alarms.component').then(m => m.AlarmsComponent) },
+      { path: 'downtime', canActivate: [permissionGuard('page:downtime')], loadComponent: () => import('./pages/downtime/downtime.component').then(m => m.DowntimeComponent) },
+      { path: 'maintenance', canActivate: [permissionGuard('page:maintenance')], loadComponent: () => import('./pages/maintenance/maintenance.component').then(m => m.MaintenanceComponent) },
       { path: 'security/2fa', loadComponent: () => import('./pages/security/twofa-setup.component').then(m => m.TwofaSetupComponent) },
+
+      /* Every authenticated user reaches these — no permission key, because
+         "view my own profile" and "change my own theme" are not a page a
+         role can be denied. */
+      { path: 'profile',       loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent) },
+      { path: 'settings',      canActivate: [companyUserGuard], loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
+      { path: 'notifications', canActivate: [companyUserGuard], loadComponent: () => import('./pages/notifications/notifications.component').then(m => m.NotificationsComponent) },
 
       // ADMIN ROUTES (SNT_SUPER / COMPANY_ADMIN / ADMIN)
       {
@@ -74,7 +92,7 @@ export const routes: Routes = [
           { path: 'companies', canActivate: [sntSuperGuard], loadComponent: () => import('./pages/admin/company-management.component').then(m => m.CompanyManagementComponent) },
           { path: 'plans', canActivate: [sntSuperGuard], loadComponent: () => import('./pages/admin/plan-management.component').then(m => m.PlanManagementComponent) },
           { path: 'users', canActivate: [companyAdminGuard], loadComponent: () => import('./pages/admin/user-management.component').then(m => m.UserManagementComponent) },
-          { path: 'roles', canActivate: [companyAdminGuard], loadComponent: () => import('./pages/admin/role-management.component').then(m => m.RoleManagementComponent) },
+          { path: 'roles', canActivate: [companyRolesGuard], loadComponent: () => import('./pages/admin/role-management.component').then(m => m.RoleManagementComponent) },
           { path: '', redirectTo: 'users', pathMatch: 'full' }
         ]
       },
@@ -82,8 +100,10 @@ export const routes: Routes = [
       // NO ACCESS
       { path: 'no-access', loadComponent: () => import('./pages/no-access/no-access.component').then(m => m.NoAccessComponent) },
 
-      // DEFAULT
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+      // DEFAULT — the first page this person can open. It was always the
+      // Live Dashboard, so any role without that page (Quality, Setter, HR)
+      // opened the app on "Access Denied".
+      { path: '', pathMatch: 'full', redirectTo: () => inject(AuthService).getFirstAccessibleRoute() }
     ]
   },
 

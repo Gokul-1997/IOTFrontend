@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { AdminService } from './admin.service';
 import { ToastService } from '../../core/services/toast.service';
-import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-role-management',
@@ -21,22 +20,38 @@ export class RoleManagementComponent implements OnInit {
   showCreateModal = false;
   showPagesModal = false;
   selectedRole: any = null;
-  seeding = false;
 
   createForm = { role_name: '' };
   selectedPermIds: Set<number> = new Set();
 
+  /* Copy a role into a new one the company owns */
+  showCopyModal = false;
+  copySource: any = null;
+  copyName = '';
+  copying = false;
+
   constructor(
     private adminService: AdminService,
     private toastService: ToastService,
-    private cdr: ChangeDetectorRef,
-    public auth: AuthService
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     this.loadRoles();
     this.loadPermissions();
   }
+
+  /* The roles model: S&T creates the company and its admin and sets what it
+     can use (Manage Access); the company starts with its own copy of the
+     default roles, and its admin manages every one of them. Only a company
+     admin reaches this page (companyRolesGuard). */
+
+  /** Any company role can be copied; Company Admin's access is Manage Access, not pages. */
+  canCopy(role: any): boolean {
+    return !role.is_system;
+  }
+
+  isCompanyAdminRole(role: any): boolean { return role.is_system && role.role_name === 'COMPANY_ADMIN'; }
 
   loadRoles() {
     this.loading = true;
@@ -66,23 +81,6 @@ export class RoleManagementComponent implements OnInit {
     });
   }
 
-  seedPages() {
-    this.seeding = true;
-    this.cdr.detectChanges();
-    this.adminService.seedPagePermissions().subscribe({
-      next: () => {
-        this.toastService.success('Page permissions seeded successfully');
-        this.seeding = false;
-        this.loadPermissions();
-      },
-      error: () => {
-        this.toastService.error('Failed to seed page permissions');
-        this.seeding = false;
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
   getModulesByGroup(group: string): any[] {
     return this.permissionModules.filter(m => m.group === group);
   }
@@ -106,9 +104,9 @@ export class RoleManagementComponent implements OnInit {
     }
     this.loading = true;
     this.cdr.detectChanges();
-    this.adminService.createRole(this.createForm).subscribe({
+    this.adminService.createRole({ role_name: this.createForm.role_name.trim() }).subscribe({
       next: () => {
-        this.toastService.success('Role created successfully');
+        this.toastService.success('Role created. Now choose what it can open.');
         this.closeCreateModal();
         this.loadRoles();
       },
@@ -122,6 +120,10 @@ export class RoleManagementComponent implements OnInit {
 
   // ── Permission Assignment Modal ──
   openPagesModal(role: any) {
+    // The template disables this for system roles; guard the method too, so a
+    // stale click or a direct call cannot open an editor whose Save the API
+    // will refuse.
+    if (role?.is_system) return;
     this.selectedRole = role;
     this.selectedPermIds = new Set(
       (role.permissions || [])
@@ -190,14 +192,11 @@ export class RoleManagementComponent implements OnInit {
 
   savePageAccess() {
     if (!this.selectedRole) return;
-    // Keep non-page permissions, add selected page permissions
-    const nonPagePermIds = (this.selectedRole.permissions || [])
-      .filter((p: any) => !p.permission_key?.startsWith('page:'))
-      .map((p: any) => p.id);
-    const allPermIds = [...nonPagePermIds, ...Array.from(this.selectedPermIds)];
+    // Pages only. The API keys those pages need are worked out by the server.
+    const pageIds = Array.from(this.selectedPermIds);
     this.loading = true;
     this.cdr.detectChanges();
-    this.adminService.assignPermissionsToRole(this.selectedRole.id, allPermIds).subscribe({
+    this.adminService.assignPermissionsToRole(this.selectedRole.id, pageIds).subscribe({
       next: () => {
         this.toastService.success('Permissions updated successfully');
         this.closePagesModal();
@@ -211,8 +210,53 @@ export class RoleManagementComponent implements OnInit {
     });
   }
 
+  // ── Copy ──
+  openCopyModal(role: any) {
+    if (!this.canCopy(role)) return;
+    this.copySource = role;
+    this.copyName = `${role.role_name} COPY`;
+    this.showCopyModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeCopyModal() {
+    this.showCopyModal = false;
+    this.copySource = null;
+    this.copyName = '';
+    this.cdr.detectChanges();
+  }
+
+  copyRole() {
+    const name = this.copyName.trim();
+    if (!this.copySource || !name) {
+      this.toastService.error('Give the new role a name');
+      return;
+    }
+    this.copying = true;
+    this.cdr.detectChanges();
+    this.adminService.copyRole(this.copySource.id, { role_name: name }).subscribe({
+      next: (res: any) => {
+        this.copying = false;
+        // say what was left out, and why, rather than letting it look complete
+        const skipped = res?.skipped || 0;
+        this.toastService.success(
+          `"${res?.role?.role_name || name}" created from ${res?.from || this.copySource.role_name}` +
+          (skipped ? ` — ${skipped} permission${skipped === 1 ? '' : 's'} left out because your plan does not include ${skipped === 1 ? 'it' : 'them'}` : '')
+        );
+        this.closeCopyModal();
+        this.loadRoles();
+      },
+      error: err => {
+        this.copying = false;
+        this.toastService.error(err.error?.message || 'Could not copy the role');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   // ── Delete ──
   deleteRole(role: any) {
+    if (role.is_system) return;
     if (!confirm(`Delete role "${role.role_name}"? This cannot be undone.`)) return;
     this.loading = true;
     this.cdr.detectChanges();
@@ -221,8 +265,9 @@ export class RoleManagementComponent implements OnInit {
         this.toastService.success('Role deleted');
         this.loadRoles();
       },
-      error: () => {
-        this.toastService.error('Failed to delete role');
+      error: err => {
+        // e.g. "assigned to 3 active users — move them first"
+        this.toastService.error(err.error?.message || 'Failed to delete role');
         this.loading = false;
         this.cdr.detectChanges();
       }
@@ -235,8 +280,11 @@ export class RoleManagementComponent implements OnInit {
     if (!pages.length) return '';
     // Group by module and show unique module names
     const moduleSet = new Set<string>();
-    pages.forEach((p: any) => moduleSet.add(p.permission_key.split(':')[1]));
-    return Array.from(moduleSet).map(m => m.charAt(0).toUpperCase() + m.slice(1)).join(', ');
+    pages.forEach((p: any) => moduleSet.add(this.moduleOf(p.permission_key)));
+    // the names people see in the menu, not keys like "analytics-oee"
+    return Array.from(moduleSet)
+      .map(m => this.permissionModules.find(x => x.module === m)?.label || m.charAt(0).toUpperCase() + m.slice(1))
+      .join(', ');
   }
 
   getPageCount(role: any): number {
@@ -244,9 +292,14 @@ export class RoleManagementComponent implements OnInit {
     const modules = new Set(
       (role.permissions || [])
         .filter((p: any) => p.permission_key?.startsWith('page:'))
-        .map((p: any) => p.permission_key.split(':')[1])
+        .map((p: any) => this.moduleOf(p.permission_key))
     );
     return modules.size;
+  }
+
+  /** page:dashboard:live:view → "dashboard:live" (the module, whatever its depth). */
+  private moduleOf(key: string): string {
+    return key.split(':').slice(1, -1).join(':');
   }
 
   getActionCount(role: any): number {

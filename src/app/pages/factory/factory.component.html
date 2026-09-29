@@ -84,7 +84,7 @@
           <mat-icon>settings</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ pct(data.oee.oee) }}%</p>
+      <p class="mexa-kpi-value">{{ pctText(data.oee.oee) }}</p>
       <!-- 61% on its own says nothing; the target is what makes it a
            judgement, so it travels with the figure. -->
       <p class="mexa-kpi-sub" *ngIf="data.oee.target != null">
@@ -114,23 +114,21 @@
           <mat-icon>inventory_2</mat-icon>
         </span>
       </div>
-      <!-- No plan is not a plan of zero: percent is null and the tile says
-           so, rather than printing "4600 of 0 planned". -->
-      <p class="mexa-kpi-value">
-        {{ data.production.percent === null ? '--' : pct(data.production.percent) + '%' }}
-      </p>
-      <p class="mexa-kpi-sub" *ngIf="data.production.percent !== null">
-        {{ data.production.produced }} of {{ data.production.planned }} planned
-      </p>
-      <p class="mexa-kpi-sub" *ngIf="data.production.percent === null">
-        {{ data.production.produced }} produced · No plan set
-      </p>
+      <!-- share of target when any machine has a job target; the count otherwise -->
+      <ng-container *ngIf="data.production.target_pct !== null && data.production.target_pct !== undefined; else rawCount">
+        <p class="mexa-kpi-value">{{ data.production.target_pct }}%</p>
+        <p class="mexa-kpi-sub">{{ data.production.actual }} of {{ data.production.target }} target · {{ data.production.produced }} pieces</p>
+      </ng-container>
+      <ng-template #rawCount>
+        <p class="mexa-kpi-value">{{ data.production.produced }}</p>
+        <p class="mexa-kpi-sub">pieces · no job target set</p>
+      </ng-template>
     </div>
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Power<br>Consumption</span>
-        <span class="mexa-kpi-icon" style="background:#5f90e6" aria-hidden="true">
+        <span class="mexa-kpi-icon" style="background:#3564df" aria-hidden="true">
           <mat-icon>bolt</mat-icon>
         </span>
       </div>
@@ -145,7 +143,7 @@
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Overall OEE</h2>
-      <div class="production-score"><strong>{{ pct(data.oee.oee) }}%</strong><span *ngIf="data.oee.target != null">Target {{ data.oee.target }}%</span></div>
+      <div class="production-score"><strong>{{ pctText(data.oee.oee) }}</strong><span *ngIf="data.oee.target != null">Target {{ data.oee.target }}%</span></div>
       <app-data-bars [values]="oeeRadialSeries" [labels]="oeeRadial.labels" [colors]="oeeRadial.colors" unit="%" [scaleMax]="100"></app-data-bars>
     </section>
 
@@ -164,30 +162,66 @@
         [xaxis]="shiftChart.xaxis" [yaxis]="shiftChart.yaxis" [grid]="shiftChart.grid"
         [tooltip]="shiftChart.tooltip"></apx-chart>
       <p *ngIf="!shiftSeries.length" class="mexa-empty">No production recorded by shift.</p>
+
+      <!-- Actual vs Target: each shift's output on machines with a job
+           target, against the sum of those targets -->
+      <div *ngIf="data.production.target" class="border-t border-[--mexa-rule] pt-3 mt-1">
+        <h3 class="mexa-card-title mexa-card-title-left !mb-2">Actual vs Target</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div *ngFor="let s of data.shiftwise; let i = index">
+            <p class="text-sm font-semibold text-[--mexa-ink]">{{ s.shift_code }}</p>
+            <div class="h-2.5 rounded-full bg-[--mexa-row-alt] overflow-hidden my-1.5" role="progressbar"
+                 [attr.aria-valuenow]="s.actual" aria-valuemin="0" [attr.aria-valuemax]="s.target"
+                 [attr.aria-label]="s.shift_code + ' actual against target'">
+              <div class="h-full rounded-full" [style.width.%]="targetBar(s.actual, s.target)"
+                   [style.background]="i % 2 ? '#9581cf' : '#3564df'"></div>
+            </div>
+            <p class="text-sm text-[--mexa-ink-2] tabular-nums">{{ s.actual | number }} / {{ s.target | number }} Units</p>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Energy Cost Analysis</h2>
 
       <div class="grid grid-cols-2 gap-2 mb-3">
-        <div class="rounded-xl p-3 text-white" style="background:#5f90e6">
-          <span class="block text-xs opacity-90">Today's Cost</span>
+        <div class="rounded-xl p-3 text-white" style="background:#3564df">
+          <span class="block text-xs">Today's Cost</span>
           <p class="text-xl font-bold">{{ money(data.energy.cost_day) }}</p>
+          <span *ngIf="data.energy.day_vs_yesterday_pct !== null" class="block text-xs">
+            {{ change(data.energy.day_vs_yesterday_pct) }} vs Yesterday
+          </span>
         </div>
         <div class="rounded-xl p-3 text-white" style="background:#6b7280">
-          <span class="block text-xs opacity-90">Monthly Cost</span>
+          <span class="block text-xs">Monthly Cost</span>
           <p class="text-xl font-bold">{{ money(data.energy.cost_month) }}</p>
+          <span *ngIf="data.energy.month_vs_last_pct !== null" class="block text-xs">
+            {{ change(data.energy.month_vs_last_pct) }} vs Last Month
+          </span>
         </div>
       </div>
 
-      <p class="mexa-card-hint text-center" *ngIf="data.energy.month_kwh !== null">
+      <p class="mexa-card-hint text-right" *ngIf="data.energy.cost_per_part !== null">
+        {{ money(data.energy.cost_per_part) }} / unit
+        <span *ngIf="data.energy.cost_per_part_vs_yesterday_pct !== null"
+              [class.text-red-600]="data.energy.cost_per_part_vs_yesterday_pct > 0"
+              [class.text-emerald-600]="data.energy.cost_per_part_vs_yesterday_pct < 0">
+          {{ change(data.energy.cost_per_part_vs_yesterday_pct) }}</span> vs yesterday
+      </p>
+      <p class="mexa-card-hint text-center" *ngIf="data.energy.cost_per_part === null">
         {{ data.energy.month_kwh }} kWh this month
       </p>
 
-      <apx-chart *ngIf="trendSeries.length"
-        [series]="[trendSeries[0]]" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
-        [colors]="['#9581cf']" [dataLabels]="trendChart.dataLabels"
-        [xaxis]="trendChart.xaxis" [grid]="trendChart.grid"></apx-chart>
+      <h3 class="mexa-card-title mexa-card-title-left !mb-1">Energy Consumption Trend</h3>
+      <apx-chart *ngIf="energySeries.length"
+        [series]="energySeries" [chart]="energyChart.chart" [stroke]="energyChart.stroke"
+        [colors]="energyChart.colors" [markers]="energyChart.markers" [dataLabels]="energyChart.dataLabels"
+        [xaxis]="energyChart.xaxis" [yaxis]="energyChart.yaxis" [grid]="energyChart.grid"
+        [tooltip]="energyChart.tooltip"></apx-chart>
+      <p *ngIf="!energySeries.length" class="mexa-card-hint text-center !mt-2">
+        No machine is reporting an energy reading yet.
+      </p>
     </section>
   </div>
 
@@ -212,7 +246,7 @@
       <h2 class="mexa-card-title mexa-card-title-left">Production Trend</h2>
       <apx-chart *ngIf="trendSeries.length"
         [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
-        [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
+        [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels" [markers]="trendChart.markers"
         [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
         [legend]="trendChart.legend" [tooltip]="trendChart.tooltip"></apx-chart>
       <p *ngIf="!trendSeries.length" class="mexa-empty">No hourly data for this period.</p>
