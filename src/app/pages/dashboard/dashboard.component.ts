@@ -1,3 +1,5 @@
+import { MatIconModule } from '@angular/material/icon';
+import { CncMachineComponent } from '../../shared/cnc-machine/cnc-machine.component';
 import {
   Component,
   OnInit,
@@ -46,7 +48,7 @@ const AUTO_PAGE_MS          = 10_000;
 @Component({
   standalone: true,
   selector: 'app-dashboard',
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, MatIconModule, CncMachineComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -487,6 +489,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   toggleRotation(): void { this.autoRotate = !this.autoRotate; this.resetAutoPageTimer(); }
+
+  /** The status pill's colour for a card state. */
+  pillClass(machine: any): string {
+    return ({ running: 'run', idle: 'idle', alarm: 'alarm' } as Record<string, string>)[this.cardState(machine)] || 'disc';
+  }
 
   cardState(machine: any): string {
     if (machine.alarm || machine.status === 'ALARM') return 'alarm';

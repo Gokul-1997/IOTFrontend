@@ -1,0 +1,42 @@
+/* html body: out-ranks the plain `body` rules earlier in styles.scss and
+   the client's stylesheet (a black fallback and the STM field). */
+html { min-height: 100%; background: var(--page); }
+html body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--page);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+:root.dark body, :root[data-theme="dark"] body { background: var(--page); }
+
+h1, h2, h3, h4, h5, h6 { font-family: var(--font); }
+button, input, select, textarea, optgroup { font-family: inherit; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+
+:where(a, button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+::selection { background: rgba(0, 106, 181, .2); color: inherit; }
+.num { font-variant-numeric: tabular-nums; }
+.mono, code, kbd, samp { font-family: var(--mono); }
+
+/* Material icons: thin line glyphs (Material Symbols Outlined, set as the
+   default in app.config), the same weight everywhere. */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Anyone who asked for less motion gets none: every animation in this
+   theme (the band's lines, entrances, the machine drawings) stops. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

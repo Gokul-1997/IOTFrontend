@@ -1,0 +1,12 @@
+/* The MaduraCoats visual language, loaded last in styles.scss so it sets
+   the look over every earlier layer (the client's MEXA sheets, the older
+   master-page styles and Tailwind's utilities). */
+@use 'fonts';
+@use 'tokens';
+@use 'base';
+@use 'motion';
+@use 'shell';
+@use 'components';
+@use 'floor';
+@use 'charts';
+@use 'auth';

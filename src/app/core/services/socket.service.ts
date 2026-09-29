@@ -1,4 +1,4 @@
-import { Injectable, NgZone } from '@angular/core';
+import { Injectable, NgZone, signal } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
@@ -14,6 +14,9 @@ export class SocketService {
   private refreshing = false;   // guard: only one token refresh at a time
 
   private plantId?: number;
+
+  /** True while the live connection is up — the header's LIVE indicator. */
+  readonly connected = signal(false);
 
   constructor(
     private zone:   NgZone,
@@ -45,6 +48,7 @@ export class SocketService {
       this.socket.on('connect', () => {
         console.log('✅ Socket connected:', this.socket.id);
         this.refreshing = false;
+        this.connected.set(true);
 
         if (this.plantId) {
           this.joinPlant(this.plantId);
@@ -53,6 +57,7 @@ export class SocketService {
 
       this.socket.on('disconnect', (reason) => {
         console.log('⚠ Socket disconnected:', reason);
+        this.connected.set(false);
       });
 
       /*
@@ -223,6 +228,7 @@ export class SocketService {
 
     this.socket.removeAllListeners();
     this.socket.disconnect();
+    this.connected.set(false);
     (this.socket as any) = null;
     this.plantId       = undefined;
     this.isConnecting  = false;

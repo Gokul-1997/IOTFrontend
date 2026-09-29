@@ -5,28 +5,16 @@
       <span><strong>Gokul<span class="brand-dot">.</span></strong><small>Industrial intelligence</small></span>
     </a>
     <div class="story-content">
-      <span class="eyebrow story-eyebrow"><span></span> A clearer view of your factory</span>
-      <h1 id="story-title">See the floor.<br>Shape what’s <em>next.</em></h1>
-      <p>Bring your machines, production and performance into one connected workspace.</p>
-      <div class="network-art" aria-hidden="true">
-        <svg viewBox="0 0 570 220" fill="none">
-          <path d="M32 178h84V70h130v108h110V70h174" stroke="#455e84" stroke-width="1.5"/>
-          <path d="M32 178h84V70h130" stroke="#a9c7ff" stroke-width="2" stroke-dasharray="5 7"/>
-          <path d="M0 209h570M0 16h570" stroke="#354661" stroke-dasharray="2 8"/>
-          <rect x="31" y="127" width="106" height="82" rx="10" fill="#1d2d48" stroke="#536f98"/>
-          <path d="M55 182v-26l16 10v-15l17 10v-18h24v39H55Z" stroke="#b1bdd3" stroke-width="1.5"/>
-          <path d="M62 181v-9m12 9v-7m13 7v-7m14 7v-27" stroke="#b1bdd3" stroke-width="1.5"/>
-          <rect x="207" y="28" width="98" height="84" rx="10" fill="#a9c7ff"/>
-          <path d="M226 78V61h12v17m10 0V46h12v32m10 0V55h12v23" stroke="#18243b" stroke-width="3"/>
-          <rect x="320" y="140" width="96" height="68" rx="10" fill="#1d2d48" stroke="#536f98"/>
-          <path d="m339 176 13-9 13 12 13-18 18 7" stroke="#a9c7ff" stroke-width="2"/>
-          <circle cx="503" cy="70" r="29" fill="#1d2d48" stroke="#536f98"/>
-          <path d="m492 70 8 8 14-16" stroke="#a9c7ff" stroke-width="2"/>
-          <circle cx="166" cy="70" r="5" fill="#a9c7ff"/>
-          <circle cx="356" cy="112" r="5" fill="#a9c7ff"/>
-          <circle cx="447" cy="70" r="4" fill="#7197cc"/>
-        </svg>
-        <div class="network-labels"><span>Connect</span><span>Understand</span><span>Improve</span></div>
+      <div class="story-facts"><span><mat-icon aria-hidden="true">sensors</mat-icon>Live from every machine</span><span><mat-icon aria-hidden="true">notification_important</mat-icon>Alarms as they happen</span><span><mat-icon aria-hidden="true">insights</mat-icon>OEE, shift by shift</span></div>
+      <h1 id="story-title">Every machine, every part,<br>every shift — in view<span class="dot" aria-hidden="true"></span></h1>
+      <p>Watch the floor live, catch alarms the moment they are raised, and see where every minute of the shift went — utilisation, downtime and output, machine by machine.</p>
+      <div class="story-demo" aria-hidden="true">
+        <app-cnc-machine [status]="demoStatus" code="VMC-DEMO" [load]="demoStatus === 'RUNNING' ? demoLoad : null" [parts]="demoParts"></app-cnc-machine>
+        <div class="demo-readout">
+          <span class="tx-pill" [class.run]="demoStatus === 'RUNNING'" [class.idle]="demoStatus !== 'RUNNING'"><i></i>{{ demoStatus === 'RUNNING' ? 'Running' : 'Idle' }}</span>
+          <span><b>{{ demoParts }}</b> parts this shift</span>
+          <span><b>{{ demoStatus === 'RUNNING' ? demoLoad + '%' : '—' }}</b> spindle load</span>
+        </div>
       </div>
     </div>
     <footer class="story-footer"><span>Built around your operations.</span><span>G / 01</span></footer>

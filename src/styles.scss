@@ -14,9 +14,7 @@
 // MEXA dashboard design system — the shell, tiles, cards and tables that
 // every Phase 2 dashboard shares.
 @use './styles/workspace';
-// Ubuntu is the STM MEXA face (the design PDF uses it throughout). Libre
-// Franklin, Questrial and Nunito Sans were loaded here too and used nowhere.
-@import url('https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap');
+// Text is Manrope, served from /fonts by the theme (styles/theme/_fonts.scss).
 
 
 html {
@@ -1250,10 +1248,7 @@ html.dark {
     white-space: nowrap;
 }
 
-@include meta.load-css("./styles/gokul");
 
-@include meta.load-css("./styles/auth");
-@include meta.load-css("./styles/operations");
 
 /* ══════════ Contrast corrections (WCAG 2.1 AA, 4.5:1 for text) ══════════
    Measured with axe on every page at phone, tablet and desktop widths, in
@@ -1303,3 +1298,7 @@ html.dark [class~="bg-blue-600"][class~="text-white"] { color: #fff; }
 @media (prefers-reduced-motion: reduce) {
   .blink { animation: none !important; }
 }
+
+/* ══════════ The look: the MaduraCoats visual language ══════════
+   Loaded last, so it sets the look over every layer above. */
+@include meta.load-css("./styles/theme");

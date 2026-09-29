@@ -9,6 +9,8 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ProductionChartComponent, HourlyReading } from './production-chart.component';
 import { ShiftTimelineComponent } from './shift-timeline.component';
 import { NeedleGaugeComponent, GaugeZone } from '../../../shared/needle-gauge/needle-gauge.component';
+import { CncMachineComponent } from '../../../shared/cnc-machine/cnc-machine.component';
+import { MatIconModule } from '@angular/material/icon';
 
 const POLL_MS = 30_000;
 const SOCKET_FRESH_MS = 45_000;
@@ -30,9 +32,8 @@ export function durationSeconds(value: unknown): number | null {
 @Component({
   standalone: true,
   selector: 'app-live',
-  imports: [CommonModule, RouterModule, ProductionChartComponent, NeedleGaugeComponent, ShiftTimelineComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, ProductionChartComponent, NeedleGaugeComponent, ShiftTimelineComponent, CncMachineComponent],
   templateUrl: './live.component.html',
-  styleUrls: ['./live.component.scss', './live-charts.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LiveComponent implements OnInit, OnDestroy {
@@ -246,6 +247,10 @@ export class LiveComponent implements OnInit, OnDestroy {
     return ['RUNNING', 'IDLE', 'OFFLINE', 'ALARM'].includes(status) ? status : 'UNKNOWN';
   }
   private isAlarm(value: unknown): boolean { return value === true || value === 1 || value === '1' || value === 'true'; }
+  /** The status pill's colour for a machine status. */
+  statePill(status: string): string {
+    return ({ RUNNING: 'run', IDLE: 'idle', ALARM: 'alarm' } as Record<string, string>)[status] || 'disc';
+  }
   get displayStatus(): string { return this.alarmActive ? 'ALARM' : this.liveStatus; }
   get spindleState(): { word: string; cls: string } {
     const v = this.liveSpindleLoad;

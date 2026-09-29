@@ -1,35 +1,86 @@
 <div class="machine-dashboard">
-  <header class="dashboard-bar">
-    <div class="dashboard-title"><span class="dashboard-icon" aria-hidden="true">▦</span><div><h1>Dashboard</h1><p>Live machine status</p></div></div>
-    <div class="dashboard-clock"><span class="shift-name">{{ shift.shift_code || 'Current shift' }}</span><span>{{ currentDateStr }}</span><strong>{{ currentTime }}</strong><span class="timezone">IST</span></div>
-    <button class="dashboard-refresh" (click)="refresh()" [disabled]="loading" aria-label="Refresh data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 6M4 12l2 6a7 7 0 0 0 12-1"/></svg><span>{{ loading ? 'Refreshing…' : 'Refresh' }}</span></button>
+  <header class="tx-titlebar floor-band">
+    <div class="band-main">
+      <h1 class="tx-title">Live Dashboard</h1>
+      <div class="tx-legend machine-status-filters" *ngIf="auth.hasWidget('dashboard', 'status'); else plainNote" role="group" aria-label="Filter machines by status">
+        <button type="button" class="tx-legend-item status-filter all" [class.on]="statusFilter === 'all'" [attr.aria-pressed]="statusFilter === 'all'" (click)="setFilter('all')"><i class="tx-legend-dot all" aria-hidden="true"></i>Total <b>{{ machines.length }}</b></button>
+        <button type="button" class="tx-legend-item status-filter running" [class.on]="statusFilter === 'running'" [attr.aria-pressed]="statusFilter === 'running'" (click)="setFilter('running')"><i class="tx-legend-dot run" aria-hidden="true"></i>Running <b>{{ runningCount }}</b></button>
+        <button type="button" class="tx-legend-item status-filter idle" [class.on]="statusFilter === 'idle'" [attr.aria-pressed]="statusFilter === 'idle'" (click)="setFilter('idle')"><i class="tx-legend-dot idle" aria-hidden="true"></i>Idle <b>{{ idleCount }}</b></button>
+        <button type="button" class="tx-legend-item status-filter alarm" [class.on]="statusFilter === 'alarm'" [attr.aria-pressed]="statusFilter === 'alarm'" (click)="setFilter('alarm')"><i class="tx-legend-dot alarm" aria-hidden="true"></i>Alarm <b>{{ alarmCount }}</b></button>
+        <button type="button" class="tx-legend-item status-filter offline" [class.on]="statusFilter === 'offline'" [attr.aria-pressed]="statusFilter === 'offline'" (click)="setFilter('offline')"><i class="tx-legend-dot disc" aria-hidden="true"></i>Offline <b>{{ offlineCount }}</b></button>
+      </div>
+      <ng-template #plainNote><p class="tx-subtitle">Every machine, as it runs</p></ng-template>
+    </div>
+    <div class="tx-filters floor-actions">
+      <span class="floor-clock"><span class="shift-name">{{ shift.shift_code || 'Current shift' }}</span><span>{{ currentDateStr }}</span><strong>{{ currentTime }}</strong><small>IST</small></span>
+      <span class="tx-updated" *ngIf="updatedAt"><mat-icon aria-hidden="true">sync</mat-icon>updated {{ updatedAt | date:'h:mm:ss a' }}</span>
+      <button type="button" class="tx-btn tx-btn-ghost" (click)="refresh()" [disabled]="loading" aria-label="Refresh data"><mat-icon aria-hidden="true" [class.spin]="loading">refresh</mat-icon><span>{{ loading ? 'Refreshing…' : 'Refresh' }}</span></button>
+    </div>
   </header>
 
-  <section class="machine-status-filters" *ngIf="auth.hasWidget('dashboard', 'status')" aria-label="Filter machines by status">
-    <button class="status-filter all" [class.selected]="statusFilter === 'all'" [attr.aria-pressed]="statusFilter === 'all'" (click)="setFilter('all')"><span class="filter-symbol" aria-hidden="true">▦</span><span>Total<strong>{{ machines.length }}</strong></span><small>All machines</small></button>
-    <button class="status-filter running" [class.selected]="statusFilter === 'running'" [attr.aria-pressed]="statusFilter === 'running'" (click)="setFilter('running')"><span class="filter-symbol" aria-hidden="true">▶</span><span>Running<strong>{{ runningCount }}</strong></span><small>In production</small></button>
-    <button class="status-filter idle" [class.selected]="statusFilter === 'idle'" [attr.aria-pressed]="statusFilter === 'idle'" (click)="setFilter('idle')"><span class="filter-symbol" aria-hidden="true">Ⅱ</span><span>Idle<strong>{{ idleCount }}</strong></span><small>Waiting</small></button>
-    <button class="status-filter offline" [class.selected]="statusFilter === 'offline'" [attr.aria-pressed]="statusFilter === 'offline'" (click)="setFilter('offline')"><span class="filter-symbol" aria-hidden="true">○</span><span>Offline<strong>{{ offlineCount }}</strong></span><small>No connection</small></button>
-    <button class="status-filter alarm" [class.selected]="statusFilter === 'alarm'" [attr.aria-pressed]="statusFilter === 'alarm'" (click)="setFilter('alarm')"><span class="filter-symbol" aria-hidden="true">!</span><span>Alarm<strong>{{ alarmCount }}</strong></span><small>Needs attention</small></button>
-  </section>
-  <div class="dashboard-notice" *ngIf="loadError" role="alert">The latest refresh was unsuccessful. {{ machines.length ? 'The last available readings remain visible.' : 'Check the connection and try again.' }} <button (click)="refresh()">Retry</button></div>
-  <div class="grid-context"><span>{{ statusFilter === 'all' ? 'All machines' : (statusFilter | titlecase) + ' machines' }} <b>{{ filteredMachines.length }}</b><button *ngIf="statusFilter !== 'all'" (click)="setFilter('all')">Show all ×</button></span><span>{{ loading ? 'Updating readings…' : 'Select a machine to see live details' }}</span></div>
+  <div class="tx-notice warn dashboard-notice" *ngIf="loadError" role="alert"><span>The latest refresh was unsuccessful. {{ machines.length ? 'The last available readings remain visible.' : 'Check the connection and try again.' }}</span> <button type="button" (click)="refresh()">Retry</button></div>
 
-  <section class="machine-grid" aria-label="Machine cards">
-    <a *ngFor="let m of pagedMachines; trackBy: trackByMachine" class="machine-card" [ngClass]="cardState(m)" [class.alarm-blink]="cardState(m) === 'alarm'" [routerLink]="['/dashboard/live', m.machine_id]" [attr.aria-label]="'Open ' + m.machine_serial_no + ', ' + cardState(m)">
-      <header class="machine-card-header"><div><span class="machine-heading-icon" aria-hidden="true">▥</span><h2>{{ m.machine_serial_no || 'Machine ' + m.machine_id }}</h2></div><span class="machine-state"><i aria-hidden="true"></i>{{ cardState(m) | uppercase }}</span></header>
-      <div class="machine-card-content">
-        <div class="machine-picture"><img [src]="m.image_url || 'images/product/machine-placeholder.svg'" [alt]="m.machine_serial_no || 'Industrial machine'" (error)="usePlaceholder($event)" loading="lazy"><span class="alarm-operating-state" *ngIf="(m.alarm || m.status === 'ALARM') && (m.status === 'RUNNING' || m.status === 'IDLE' || m.status === 'OFFLINE')">Machine {{ m.status | lowercase }} · alarm active</span><span class="machine-image-label" *ngIf="!m.alarm && m.status !== 'ALARM'">{{ cardState(m) === 'unknown' ? 'Awaiting machine status' : 'Machine ' + (m.status | lowercase) }}</span></div>
-        <dl class="machine-details" *ngIf="auth.hasWidget('dashboard', 'operator')"><div><dt>Operator</dt><dd [title]="m.operator_name || 'Unassigned'">{{ m.operator_name || 'Unassigned' }}</dd></div><div><dt>Part name</dt><dd [title]="m.part_name || 'No active part'">{{ m.part_name || 'No active part' }}</dd></div><div><dt>Component ID</dt><dd [title]="m.component_id || '—'">{{ m.component_id || '—' }}</dd></div></dl>
-        <div class="machine-measures">
-          <div class="machine-utilization" *ngIf="auth.hasWidget('dashboard', 'utilization')"><div class="utilization-dial"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="40" class="utilization-track"/><circle cx="50" cy="50" r="40" class="utilization-value" pathLength="100" [attr.stroke-dasharray]="boundedPercent(m.utilization) + ' 100'" transform="rotate(-90 50 50)"/></svg><strong>{{ m.utilization == null ? '—' : (m.utilization | number:'1.0-1') + '%' }}</strong></div><span>Utilization</span></div>
-          <div class="machine-quantities"><div *ngIf="auth.hasWidget('dashboard', 'target')"><span>Target</span><strong>{{ m.target_qty == null ? '—' : (m.target_qty | number) }}</strong></div><div *ngIf="auth.hasWidget('dashboard', 'partcount')"><span>Achieved</span><strong class="achieved-value">{{ m.achieved_qty == null ? '—' : (m.achieved_qty | number) }}</strong></div></div>
+  <div class="tx-section-head grid-context">
+    <h2>{{ statusFilter === 'all' ? 'All machines' : (statusFilter | titlecase) + ' machines' }}</h2>
+    <span>{{ filteredMachines.length }} machine{{ filteredMachines.length === 1 ? '' : 's' }} · {{ loading ? 'updating readings…' : 'select a machine for its live details' }}</span>
+    <button *ngIf="statusFilter !== 'all'" type="button" class="tx-link" (click)="setFilter('all')">Show all</button>
+  </div>
+
+  <section class="floor-grid" aria-label="Machine cards">
+    <a *ngFor="let m of pagedMachines; let i = index; trackBy: trackByMachine" class="machine-card floor-card" [ngClass]="cardState(m)" [class.alarm-blink]="cardState(m) === 'alarm'" [style.--i]="i"
+       [routerLink]="['/dashboard/live', m.machine_id]" [attr.aria-label]="'Open ' + m.machine_serial_no + ', ' + cardState(m)">
+      <header class="floor-card-head">
+        <span class="machine-picture"><img [src]="m.image_url || 'images/product/machine-placeholder.svg'" [alt]="m.machine_serial_no || 'Industrial machine'" (error)="usePlaceholder($event)" loading="lazy"></span>
+        <div class="floor-card-name">
+          <h2>{{ m.machine_serial_no || 'Machine ' + m.machine_id }}</h2>
+          <p *ngIf="(m.alarm || m.status === 'ALARM') && (m.status === 'RUNNING' || m.status === 'IDLE' || m.status === 'OFFLINE'); else plainState" class="alarm-operating-state">Machine {{ m.status | lowercase }} · alarm active</p>
+          <ng-template #plainState><p>{{ cardState(m) === 'unknown' ? 'Awaiting machine status' : 'Machine ' + (m.status | lowercase) }}</p></ng-template>
         </div>
+        <span class="machine-state tx-pill" [ngClass]="pillClass(m)"><i aria-hidden="true"></i>{{ cardState(m) | uppercase }}</span>
+      </header>
+
+      <div class="floor-card-body">
+        <app-cnc-machine class="floor-drawing" [status]="m.status" [alarm]="!!m.alarm" [code]="m.machine_serial_no || ''" [parts]="m.achieved_qty"></app-cnc-machine>
+        <dl class="machine-details tx-kv" *ngIf="auth.hasWidget('dashboard', 'operator')">
+          <dt>Operator</dt><dd [title]="m.operator_name || 'Unassigned'">{{ m.operator_name || 'Unassigned' }}</dd>
+          <dt>Part</dt><dd [title]="m.part_name || 'No active part'">{{ m.part_name || 'No active part' }}</dd>
+          <dt>Component</dt><dd [title]="m.component_id || '—'" class="mono">{{ m.component_id || '—' }}</dd>
+        </dl>
       </div>
-      <div class="machine-time-row" *ngIf="auth.hasWidget('dashboard', 'runtime')"><div class="run-time"><span><i aria-hidden="true">▶</i>Run time</span><strong>{{ m.run_time || '—' }}</strong></div><div class="idle-time"><span><i aria-hidden="true">Ⅱ</i>Idle time</span><strong>{{ m.idle_time || '—' }}</strong></div></div>
-      <footer class="machine-card-footer"><div class="machine-target-progress" *ngIf="auth.hasWidget('dashboard', 'partcount') && auth.hasWidget('dashboard', 'target')"><div><span>Production target</span><strong>{{ machinePlan(m) === null ? 'No target set' : (machinePlan(m) | number:'1.0-1') + '%' }}</strong></div><div class="production-track" aria-hidden="true"><i [style.width.%]="boundedPercent(machinePlan(m))"></i></div></div><span class="open-machine">Live details <span aria-hidden="true">↗</span></span></footer>
+
+      <div class="floor-stats machine-quantities">
+        <div *ngIf="auth.hasWidget('dashboard', 'target')"><span>Target</span><strong>{{ m.target_qty == null ? '—' : (m.target_qty | number) }}</strong></div>
+        <div *ngIf="auth.hasWidget('dashboard', 'partcount')"><span>Made</span><strong class="achieved-value">{{ m.achieved_qty == null ? '—' : (m.achieved_qty | number) }}</strong></div>
+        <div *ngIf="auth.hasWidget('dashboard', 'utilization')" class="machine-utilization"><span>Utilisation</span><strong>{{ m.utilization == null ? '—' : (m.utilization | number:'1.0-1') + '%' }}</strong></div>
+      </div>
+      <div class="floor-stats machine-time-row" *ngIf="auth.hasWidget('dashboard', 'runtime')">
+        <div class="run-time"><span><i class="tx-legend-dot run" aria-hidden="true"></i>Run time</span><strong class="mono">{{ m.run_time || '—' }}</strong></div>
+        <div class="idle-time"><span><i class="tx-legend-dot idle" aria-hidden="true"></i>Idle time</span><strong class="mono">{{ m.idle_time || '—' }}</strong></div>
+      </div>
+
+      <footer class="machine-card-footer">
+        <div class="machine-target-progress" *ngIf="auth.hasWidget('dashboard', 'partcount') && auth.hasWidget('dashboard', 'target')">
+          <div><span>Production target</span><strong>{{ machinePlan(m) === null ? 'No target set' : (machinePlan(m) | number:'1.0-1') + '%' }}</strong></div>
+          <div class="tx-meter" [class.done]="(machinePlan(m) ?? 0) >= 100" aria-hidden="true"><span [style.width.%]="boundedPercent(machinePlan(m))"></span></div>
+        </div>
+        <span class="open-machine">Live details <mat-icon aria-hidden="true">arrow_forward</mat-icon></span>
+      </footer>
     </a>
   </section>
-  <div class="dashboard-empty" *ngIf="!pagedMachines.length" role="status"><span aria-hidden="true">▦</span><h2>{{ loading ? 'Loading machines…' : machines.length ? 'No ' + statusFilter + ' machines' : loadError ? 'Unable to load machines' : 'No machines connected yet' }}</h2><p>{{ loading ? 'Current readings will appear here.' : machines.length ? 'Choose another status to see your machines.' : 'Your connected machines will appear here when data is available.' }}</p><button *ngIf="machines.length" (click)="setFilter('all')">Show all machines</button></div>
-  <footer class="dashboard-pagination" *ngIf="totalPages > 1"><button (click)="goToPage(displayPage - 1)" [disabled]="displayPage === 1" aria-label="Previous page">‹ Prev</button><button *ngFor="let p of pageNumbers" (click)="goToPage(p)" [class.current]="p === displayPage" [attr.aria-current]="p === displayPage ? 'page' : null" [attr.aria-label]="'Page ' + p">{{ p }}</button><button (click)="goToPage(displayPage + 1)" [disabled]="displayPage === totalPages" aria-label="Next page">Next ›</button><button class="rotation-toggle" (click)="toggleRotation()" [attr.aria-pressed]="autoRotate">{{ autoRotate ? 'Pause auto-advance' : 'Resume auto-advance' }}</button><span>{{ displayPage }} / {{ totalPages }}</span></footer>
+
+  <div class="tx-empty dashboard-empty" *ngIf="!pagedMachines.length" role="status">
+    <strong>{{ loading ? 'Loading machines…' : machines.length ? 'No ' + statusFilter + ' machines' : loadError ? 'Unable to load machines' : 'No machines connected yet' }}</strong>
+    {{ loading ? 'Current readings will appear here.' : machines.length ? 'Choose another status to see your machines.' : 'Your connected machines will appear here when data is available.' }}
+    <div *ngIf="machines.length"><button type="button" class="tx-btn tx-btn-ghost" (click)="setFilter('all')">Show all machines</button></div>
+  </div>
+
+  <footer class="mexa-pager dashboard-pagination" *ngIf="totalPages > 1">
+    <span>Page {{ displayPage }} of {{ totalPages }}</span>
+    <div class="pager-buttons">
+      <button type="button" class="mexa-pagebtn" (click)="goToPage(displayPage - 1)" [disabled]="displayPage === 1" aria-label="Previous page">‹ Prev</button>
+      <button type="button" class="mexa-pagebtn" *ngFor="let p of pageNumbers" (click)="goToPage(p)" [class.current]="p === displayPage" [attr.aria-current]="p === displayPage ? 'page' : null" [attr.aria-label]="'Page ' + p">{{ p }}</button>
+      <button type="button" class="mexa-pagebtn" (click)="goToPage(displayPage + 1)" [disabled]="displayPage === totalPages" aria-label="Next page">Next ›</button>
+    </div>
+    <button type="button" class="tx-btn tx-btn-ghost tx-btn-sm rotation-toggle" (click)="toggleRotation()" [attr.aria-pressed]="autoRotate"><mat-icon aria-hidden="true">{{ autoRotate ? 'pause' : 'play_arrow' }}</mat-icon>{{ autoRotate ? 'Pause auto-advance' : 'Resume auto-advance' }}</button>
+  </footer>
 </div>

@@ -6,11 +6,14 @@ import { Subscription } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
+import { MatIconModule } from '@angular/material/icon';
+import { SocketService } from '../../core/services/socket.service';
+import { BRAND } from '../../brand';
 
 @Component({
   standalone: true,
   selector: 'app-header',
-  imports: [CommonModule, RouterModule, IconComponent, NotificationBellComponent],
+  imports: [CommonModule, RouterModule, IconComponent, NotificationBellComponent, MatIconModule],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
 })
@@ -18,6 +21,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private routeSubscription?: Subscription;
   private grantsSub?: Subscription;
   homeRoute = "/dashboard";
+  readonly brand = BRAND;
+  /** The app bar gains a shadow once the page scrolls under it. */
+  scrolled = false;
 
   openMenu: string | null = null;
   showUserMenu = false;
@@ -35,26 +41,26 @@ export class HeaderComponent implements OnInit, OnDestroy {
     {
       label: 'Dashboards', icon: 'dashnew',
       children: [
-        { label: 'Live Dashboard', path: '/dashboard', permission: 'page:dashboard' },
-        { label: 'Factory Overall', path: '/factory', permission: 'page:analytics-factory' },
-        { label: 'Maintenance', path: '/maintenance-dashboard', permission: 'page:analytics-maintenance' },
-        { label: 'Preventive', path: '/preventive-maintenance', permission: 'page:analytics-preventive' },
-        { label: 'Periodic', path: '/periodic-maintenance', permission: 'page:analytics-periodic' },
-        { label: 'Alarms', path: '/alarm-report', permission: 'page:analytics-alarms' },
-        { label: 'Downtime', path: '/downtime-analysis', permission: 'page:analytics-downtime' },
-        { label: 'Operators', path: '/operator-performance', permission: 'page:analytics-operators' },
-        { label: 'OEE', path: '/oee-dashboard', permission: 'page:analytics-oee' },
-        { label: 'Energy', path: '/energy-dashboard', permission: 'page:analytics-energy' }
+        { label: 'Live Dashboard', path: '/dashboard', permission: 'page:dashboard', icon: 'monitoring', hint: 'Every machine, as it runs' },
+        { label: 'Factory Overall', path: '/factory', permission: 'page:analytics-factory', icon: 'factory', hint: 'The whole plant at a glance' },
+        { label: 'Maintenance', path: '/maintenance-dashboard', permission: 'page:analytics-maintenance', icon: 'build', hint: 'Machine condition and health' },
+        { label: 'Preventive', path: '/preventive-maintenance', permission: 'page:analytics-preventive', icon: 'event_available', hint: 'Planned maintenance' },
+        { label: 'Periodic', path: '/periodic-maintenance', permission: 'page:analytics-periodic', icon: 'event_repeat', hint: 'Recurring checks' },
+        { label: 'Alarms', path: '/alarm-report', permission: 'page:analytics-alarms', icon: 'notifications_active', hint: 'Alarm report' },
+        { label: 'Downtime', path: '/downtime-analysis', permission: 'page:analytics-downtime', icon: 'timer_off', hint: 'Why machines stopped' },
+        { label: 'Operators', path: '/operator-performance', permission: 'page:analytics-operators', icon: 'badge', hint: 'Operator performance' },
+        { label: 'OEE', path: '/oee-dashboard', permission: 'page:analytics-oee', icon: 'speed', hint: 'Availability × performance × quality' },
+        { label: 'Energy', path: '/energy-dashboard', permission: 'page:analytics-energy', icon: 'bolt', hint: 'Consumption and cost' }
       ]
     },
     {
       label: 'Analytics', icon: 'donutnew',
       children: [
         // one Reports page holds every report, the OEE ones included
-        { label: 'Reports', path: '/reports', permission: ['page:reports', 'page:oee-reports'] },
-        { label: 'Charts', path: '/charts', permission: 'page:charts' },
-        { label: 'Quality', path: '/quality', permission: 'page:quality' },
-        { label: 'Maintenance Report', path: '/maintenance-report', permission: 'page:maintenance-report' }
+        { label: 'Reports', path: '/reports', permission: ['page:reports', 'page:oee-reports'], icon: 'description', hint: 'Production and OEE reports' },
+        { label: 'Charts', path: '/charts', permission: 'page:charts', icon: 'bar_chart', hint: 'Part-wise run, idle and counts' },
+        { label: 'Quality', path: '/quality', permission: 'page:quality', icon: 'verified', hint: 'Produced, rejected, accepted' },
+        { label: 'Maintenance Report', path: '/maintenance-report', permission: 'page:maintenance-report', icon: 'receipt_long', hint: 'The maintenance ticket record' }
       ]
     },
     { label: 'Alarms', path: '/alarms', icon: 'alerts', permission: 'page:alarms' },
@@ -65,17 +71,17 @@ export class HeaderComponent implements OnInit, OnDestroy {
          labelled "Settings", the same word as a person's own Settings page. */
       label: 'Master', icon: 'gearnew',
       children: [
-        { label: 'Machines', path: '/machines', permission: 'page:machines' },
-        { label: 'Program Transfer', path: '/programs', permission: 'page:programs' },
-        { label: 'Component', path: '/component', permission: 'page:component' },
-        { label: 'Job', path: '/job', permission: 'page:job' },
-        { label: 'Lines', path: '/lines', permission: 'page:lines' },
-        { label: 'Shifts', path: '/shifts', permission: 'page:shifts' },
-        { label: 'Operators', path: '/operators', permission: 'page:operators' },
-        { label: 'Plants', path: '/plants', permission: 'page:plants' },
-        { label: 'Machine Shifts', path: '/machine-shifts', permission: 'page:machine-shifts' },
+        { label: 'Machines', path: '/machines', permission: 'page:machines', icon: 'precision_manufacturing', hint: 'Machines and their setup' },
+        { label: 'Program Transfer', path: '/programs', permission: 'page:programs', icon: 'upload_file', hint: 'Send programs to machines' },
+        { label: 'Component', path: '/component', permission: 'page:component', icon: 'category', hint: 'Parts and components' },
+        { label: 'Job', path: '/job', permission: 'page:job', icon: 'work', hint: 'Jobs on machines' },
+        { label: 'Lines', path: '/lines', permission: 'page:lines', icon: 'linear_scale', hint: 'Production lines' },
+        { label: 'Shifts', path: '/shifts', permission: 'page:shifts', icon: 'schedule', hint: 'Shift times and breaks' },
+        { label: 'Operators', path: '/operators', permission: 'page:operators', icon: 'groups', hint: 'People on the floor' },
+        { label: 'Plants', path: '/plants', permission: 'page:plants', icon: 'domain', hint: 'Sites' },
+        { label: 'Machine Shifts', path: '/machine-shifts', permission: 'page:machine-shifts', icon: 'event_note', hint: 'Shift calendar per machine' },
         // Tariff & limits, moved off the Energy Dashboard into its own page
-        { label: 'Energy Tariff', path: '/energy-tariff', permission: 'page:analytics-energy:settings' }
+        { label: 'Energy Tariff', path: '/energy-tariff', permission: 'page:analytics-energy:settings', icon: 'payments', hint: 'Cost per kWh and limits' }
         /* 2FA Security moved to the account menu: it is about the person, and
            with no permission it made this menu appear for every role. */
       ]
@@ -89,6 +95,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private router: Router,
     private auth: AuthService,
     public  theme: ThemeService,
+    public  socket: SocketService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -229,6 +236,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
     this.touch();
     if (!this.isMobileMenuOpen) document.getElementById('gokul-menu-toggle')?.focus();
+  }
+
+  @HostListener('window:scroll')
+  onScroll() {
+    const scrolled = window.scrollY > 4;
+    if (scrolled !== this.scrolled) { this.scrolled = scrolled; this.touch(); }
   }
 
   @HostListener('document:click', ['$event'])

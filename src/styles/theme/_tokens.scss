@@ -1,0 +1,210 @@
+/* ─────────────────────────────────────────────────────────────
+   Design tokens — the MaduraCoats visual language: clean white
+   surfaces, a deep industrial blue, a navy title band with flowing
+   lines, a cyan accent dot, Manrope, square-cornered controls.
+
+   Status colours are RESERVED for machine state (run / idle /
+   alarm / offline) and never colour a chart series.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: light;
+
+  /* brand */
+  --brand: #006ab5;
+  --brand-h: #005da9;
+  --brand-navy: #0a1f3d;
+  --brand-cyan: #04b2e2;
+
+  /* page: a light ground, and a navy band with flowing lines behind each page title */
+  --page: #f2f5f8;
+  --hero-bg: linear-gradient(180deg, #06244a 0%, #0a2f5c 55%, #0b3a6f 100%);
+  --hero-threads: url('/brand/threads.svg');
+  --on-hero: #ffffff;
+  --on-hero-2: rgba(255, 255, 255, .82);
+  --hero-control: rgba(255, 255, 255, .10);
+  --hero-control-line: rgba(255, 255, 255, .28);
+
+  /* surfaces & ink */
+  --card: #ffffff;
+  --card-2: #f5f7fa;
+  --ink: #1a1f22;
+  --ink-2: #3d454d;
+  --ink-3: #5a6570;            /* ≥ 4.6:1 on white and on --page */
+  --rule: #e1e7ee;
+  --thead: #eaf1f6;
+  --row-alt: #f7f9fb;
+  --appbar: #ffffff;
+  --shadow: 0 1px 2px rgba(10, 31, 61, .04), 0 4px 14px rgba(10, 31, 61, .05);
+  --shadow-lift: 0 2px 6px rgba(10, 31, 61, .06), 0 14px 32px rgba(10, 31, 61, .11);
+  --shadow-lg: 0 18px 48px rgba(10, 31, 61, .22);
+
+  /* actions */
+  --primary: #006ab5;
+  --primary-h: #005da9;
+  --primary-soft: #e7f1f9;
+  --accent: #04b2e2;
+  --focus: #006ab5;
+  --link: #006ab5;
+
+  /* machine state — never a series colour */
+  --st-run: #0ca30c;
+  --st-idle: #fab219;
+  --st-alarm: #d03b3b;
+  --st-disc: #8a8f9c;
+  --st-run-soft: #e6f6e6;
+  --st-idle-soft: #fff4dc;
+  --st-alarm-soft: #fbe7e7;
+  --st-disc-soft: #eef0f3;
+  --st-run-ink: #006300;
+  --st-idle-ink: #7a5200;
+  --st-alarm-ink: #a92525;
+  --st-disc-ink: #4e5361;
+
+  --sev-critical: #d03b3b;
+  --sev-high: #ec835a;
+  --sev-medium: #fab219;
+  --sev-info: #006ab5;
+
+  /* charts — the brand blue in slot 1 */
+  --chart-surface: #ffffff;
+  --chart-grid: #e6ebf0;
+  --chart-axis: #c5cfd8;
+  --chart-muted: #5f6b76;
+  --series-1: #006ab5; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+  --series-5: #e87ba4; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
+  --seq-100: #d9eaf7; --seq-200: #b3d4ee; --seq-300: #85b9e2; --seq-400: #4f98d2;
+  --seq-500: #1f79c0; --seq-600: #005b9e; --seq-700: #003f70;
+
+  /* machine drawing */
+  --steel-1: #e2e7ee; --steel-2: #bcc5d0; --steel-3: #8f99a6; --steel-4: #5a6472;
+  --frame: #c9d1db; --frame-dark: #7a8493; --machine-bg: #f4f7fa;
+  --glass: rgba(170, 214, 245, .28); --glass-line: rgba(255, 255, 255, .55);
+  --hmi: #0a1f3d; --hmi-ink: #7fe0ff;
+
+  --radius: 6px;
+  --radius-sm: 4px;
+  --font: 'Manrope', 'Open Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Ubuntu Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --gutter: 1rem;
+  --appbar-h: 4.5rem;
+}
+@media (min-width: 1024px) { :root { --gutter: 2rem; } }
+
+:root.dark, :root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #08111d;
+  --hero-bg: linear-gradient(180deg, #03101f 0%, #061a33 60%, #082247 100%);
+  --card: #0f1b2b;
+  --card-2: #142234;
+  --ink: #e8eef5;
+  --ink-2: #b1bfcd;
+  --ink-3: #93a3b4;            /* ≥ 5:1 on the dark cards */
+  --rule: #1f2e42;
+  --thead: #16283e;
+  --row-alt: #122032;
+  --appbar: #0b1522;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 22px rgba(0, 0, 0, .35);
+  --shadow-lift: 0 2px 6px rgba(0, 0, 0, .45), 0 16px 34px rgba(0, 0, 0, .45);
+  --primary: #2f8fd8;
+  --primary-h: #3d9be0;
+  --primary-soft: #11304f;
+  --focus: #7fc6ff;
+  --link: #7fc6ff;
+
+  --st-run-soft: #103220; --st-idle-soft: #3a2e10; --st-alarm-soft: #3d1717; --st-disc-soft: #1f2a38;
+  --st-run-ink: #47d147; --st-idle-ink: #fcc64f; --st-alarm-ink: #ff8a8a; --st-disc-ink: #b3bdc9;
+  --st-disc: #6b7686;
+  --sev-info: #3d9be0;
+
+  --chart-surface: #0f1b2b;
+  --chart-grid: #1e2d40;
+  --chart-axis: #2c3e55;
+  --chart-muted: #97a6b6;
+  --series-1: #3d9be0; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+  --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+  --seq-100: #102a45; --seq-200: #123f6b; --seq-300: #11589a; --seq-400: #1f79c0;
+  --seq-500: #4f98d2; --seq-600: #85b9e2; --seq-700: #c2dcf1;
+
+  --steel-1: #34404f; --steel-2: #2a3542; --steel-3: #202a36; --steel-4: #151d27;
+  --frame: #26323f; --frame-dark: #4d5b6d; --machine-bg: #0c1622;
+  --glass: rgba(80, 150, 210, .16); --glass-line: rgba(255, 255, 255, .18);
+  --hmi: #03101f;
+}
+
+/* ── The names the existing pages already read ───────────────
+   Every older token family points at the tokens above, so pages
+   built for the earlier looks pick up this one untouched. Declared
+   on :root and on the dark root with doubled specificity, so an
+   older stylesheet that sets them on .dark cannot win. */
+:root:root, :root.dark:root, :root[data-theme="dark"]:root {
+  /* the client's MEXA system */
+  --mexa-ground: var(--page);
+  --mexa-card: var(--card);
+  --mexa-ink: var(--ink);
+  --mexa-ink-2: var(--ink-2);
+  --mexa-ink-3: var(--ink-3);
+  --mexa-rule: var(--rule);
+  --mexa-thead: var(--thead);
+  --mexa-row-alt: var(--row-alt);
+  --mexa-navy: var(--series-1);
+  --mexa-blue: var(--seq-400);
+  --mexa-violet: var(--series-7);
+  --mexa-teal: var(--series-3);
+  --mexa-slate: var(--st-disc);
+  --mexa-submit: var(--primary);
+  --mexa-submit-h: var(--primary-h);
+  --mexa-bar: var(--hero-bg);
+  --mexa-bar-solid: var(--brand-navy);
+  --mexa-on-field: var(--ink);
+  --mexa-on-field-2: var(--ink-3);
+  --mexa-card-shadow: var(--shadow);
+  --mexa-good: var(--st-run);
+  --mexa-warn: var(--st-idle);
+  --mexa-bad: var(--st-alarm);
+  --mexa-info: var(--sev-info);
+  --stm-field: none;
+
+  /* the earlier local look */
+  --gokul-accent: var(--primary);
+  --gokul-accent-hover: var(--primary-h);
+  --gokul-ground: var(--page);
+  --gokul-surface: var(--card);
+  --gokul-ink: var(--ink);
+  --gokul-muted: var(--ink-3);
+  --gokul-line: var(--rule);
+  --gokul-tint: var(--primary-soft);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-3);
+  --bg-card: var(--card);
+  --bg-secondary: var(--page);
+  --border-color: var(--rule);
+  --color-brand-primary: var(--primary);
+  --color-bg-light-gray: var(--page);
+  --chart-blue: var(--series-1);
+  --chart-violet: var(--series-7);
+  --chart-green: var(--st-run);
+  --chart-amber: var(--st-idle);
+  --chart-red: var(--st-alarm);
+
+  /* Angular Material */
+  --mat-sys-primary: var(--primary);
+  --mat-sys-on-primary: #ffffff;
+  --mat-sys-primary-container: var(--primary-soft);
+  --mat-sys-on-primary-container: var(--ink);
+  --mat-sys-surface: var(--card);
+  --mat-sys-on-surface: var(--ink);
+  --mat-sys-on-surface-variant: var(--ink-2);
+  --mat-sys-surface-container: var(--card);
+  --mat-sys-surface-container-low: var(--card);
+  --mat-sys-surface-container-high: var(--card);
+  --mat-sys-surface-container-highest: var(--card-2);
+  --mat-sys-outline: var(--ink-3);
+  --mat-sys-outline-variant: var(--rule);
+}
+
+/* Material's type scale, in the one family */
+@each $role in (display, headline, title, body, label) {
+  @each $size in (small, medium, large) {
+    :root { --mat-sys-#{$role}-#{$size}-font: var(--font); }
+  }
+}
