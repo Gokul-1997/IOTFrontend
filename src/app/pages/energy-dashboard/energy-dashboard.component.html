@@ -1,15 +1,16 @@
+<!-- Phase 2 · Screen 9 — Energy Dashboard, MEXA design. -->
 
 
-<p class="mexa-updated" *ngIf="updatedAt">
-  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Last Updated: {{ updatedAt }}
-</p>
 
 <!-- ══════════ TITLE BAR ══════════ -->
 <form class="mexa-titlebar" (ngSubmit)="submit()">
+  <div class="flex gap-2">
   <h1 class="mexa-title">Energy Dashboard</h1>
-  <span class="mexa-titlebar-spacer"></span>
-
+  <p class="mexa-updated" *ngIf="updatedAt">
+  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
+  Last Updated: <br>{{ updatedAt }}
+</p>
+</div>
   <div class="mexa-filters">
     <label class="mexa-filter-label" for="enMachine">Machine</label>
     <select id="enMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
@@ -20,10 +21,10 @@
     <!-- The design shows one date; energy is a counter difference, so a
          range is the only thing that can be measured. Both ends shown. -->
     <label class="mexa-filter-label" for="enFrom">Date</label>
-    <input id="enFrom" type="date" class="mexa-date" [(ngModel)]="f.from" name="from"
+    <input id="enFrom" type="date" appReportDate [rdBefore]="f.to" class="mexa-date" [(ngModel)]="f.from" name="from"
            aria-label="From date">
     <span class="mexa-filter-label" aria-hidden="true">–</span>
-    <input id="enTo" type="date" class="mexa-date" [(ngModel)]="f.to" name="to"
+    <input id="enTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to"
            aria-label="To date">
 
     <button type="submit" class="mexa-submit" [disabled]="loading">
@@ -78,7 +79,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Energy<br>Consumed</span>
-        <span class="mexa-kpi-icon" style="background:#3564df" aria-hidden="true">
+        <span class="mexa-kpi-icon navy" style="background:#2f2d8f" aria-hidden="true">
           <mat-icon>battery_charging_full</mat-icon>
         </span>
       </div>
@@ -97,7 +98,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Energy<br>Cost</span>
-        <span class="mexa-kpi-icon" style="background:#5f90e6" aria-hidden="true">
+        <span class="mexa-kpi-icon blue" style="background:#4a76c8" aria-hidden="true">
           <mat-icon>account_balance_wallet</mat-icon>
         </span>
       </div>
@@ -108,7 +109,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Energy<br>per Part</span>
-        <span class="mexa-kpi-icon" style="background:#9581cf" aria-hidden="true">
+        <span class="mexa-kpi-icon purple" style="background:#9b7ec8" aria-hidden="true">
           <mat-icon>bolt</mat-icon>
         </span>
       </div>
@@ -119,7 +120,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overall<br>Volts</span>
-        <span class="mexa-kpi-icon" style="background:#9581cf" aria-hidden="true"><mat-icon>electrical_services</mat-icon></span>
+        <span class="mexa-kpi-icon blue" style="background:#9b7ec8" aria-hidden="true"><mat-icon>electrical_services</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ num(data.kpis.avg_voltage) }}<small *ngIf="data.kpis.avg_voltage != null">V</small></p>
       <p class="mexa-kpi-sub">{{ data.kpis.avg_voltage == null ? 'Not reported by the devices' : 'Average over the period' }}</p>
@@ -128,7 +129,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overall<br>AMPs</span>
-        <span class="mexa-kpi-icon" style="background:#38a994" aria-hidden="true"><mat-icon>power</mat-icon></span>
+        <span class="mexa-kpi-icon green" style="background:#17b3a3" aria-hidden="true"><mat-icon>power</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ num(data.kpis.avg_current) }}<small *ngIf="data.kpis.avg_current != null">A</small></p>
       <p class="mexa-kpi-sub">{{ data.kpis.avg_current == null ? 'Not reported by the devices' : 'Average over the period' }}</p>
@@ -137,7 +138,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overload<br>Alerts</span>
-        <span class="mexa-kpi-icon" [style.background]="data.kpis.overload_alerts > 0 ? '#dc2626' : '#6b7280'"
+        <span class="mexa-kpi-icon grey" [style.background]="data.kpis.overload_alerts > 0 ? '#dc2626' : '#6b7280'"
               aria-hidden="true">
           <mat-icon>warning</mat-icon>
         </span>
@@ -170,8 +171,22 @@
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Energy by Shift</h2>
-      <div class="comparison-panel" *ngIf="data.by_shift.length; else noShift">
-        <app-data-bars  [values]="shiftDonutSeries" [labels]="shiftDonut.labels" [colors]="shiftDonut.colors" unit="kWh"></app-data-bars>
+      <div class="mexa-donutrow" *ngIf="data.by_shift.length; else noShift">
+        <apx-chart
+          [series]="shiftDonutSeries" [chart]="shiftDonut.chart" [labels]="shiftDonut.labels"
+          [colors]="shiftDonut.colors" [dataLabels]="shiftDonut.dataLabels"
+          [plotOptions]="shiftDonut.plotOptions" [legend]="shiftDonut.legend"
+          [tooltip]="shiftDonut.tooltip" [noData]="shiftDonut.noData"></apx-chart>
+
+        <ul class="mexa-keylist">
+          <li *ngFor="let s of data.by_shift; let i = index">
+            <span class="mexa-key-swatch" [style.--swatch]="donutColour(i)" aria-hidden="true"></span>
+            <span>
+              <span class="mexa-key-label">{{ s.shift_name }}</span>
+              <span class="mexa-key-value">{{ sharePct(s.kwh, shiftTotal) }} ({{ s.kwh }} kWh)</span>
+            </span>
+          </li>
+        </ul>
       </div>
       <ng-template #noShift><p class="mexa-empty">Nothing recorded by shift.</p></ng-template>
     </section>

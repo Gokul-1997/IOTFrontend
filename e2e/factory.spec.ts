@@ -73,7 +73,7 @@ test.describe('Factory Overall Dashboard', () => {
     await mockApi(page);
     await page.goto('/factory');
 
-    await expect(page.getByRole('heading', { name: /Production intelligence/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Overall Factory Dashboard/i })).toBeVisible();
 
     // machine state tiles: running and idle are the headline figures, and
     // the fleet size rides with them so the counts have a denominator

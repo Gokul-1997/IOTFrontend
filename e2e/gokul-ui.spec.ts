@@ -77,7 +77,7 @@ test('machine detail renders API measurements when the socket is unavailable', a
   await expect(page.locator('.oee-number')).toContainText('67.3');
   await expect(page.locator('.time-values')).toContainText('02h 30m 00s');
   await expect(page.locator('.machine-panel')).toBeVisible();
-  await expect(page.locator('.telemetry-panel').filter({ hasText: 'Spindle load' })).toContainText('50.0');
+  await expect(page.locator('.telemetry-panel').filter({ hasText: 'Spindle load' })).toContainText('50%');
   await expect(page.locator('.telemetry-panel').filter({ hasText: 'Feed rate' })).toContainText('1,500');
   await expect(page.locator('.machine-tabs')).toHaveCount(0);
 });

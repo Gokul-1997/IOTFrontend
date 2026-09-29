@@ -1,26 +1,29 @@
-<h2>Machine → Shift Configuration</h2>
-
-<form [formGroup]="form">
-  <label>Machine</label>
-
-  <select formControlName="machine_id" (change)="loadConfig()" aria-label="Machine" >
-    <option value="">Select Machine</option>
-    <option *ngFor="let m of machines" [value]="m.id">
-      {{ m.machine_serial_no }}
-    </option>
-  </select>
-</form>
-
-<div class="shift-list" *ngIf="form.value.machine_id">
-  <h4>Available Shifts</h4>
-
-  <div *ngFor="let s of shifts">
-    <input
-      type="checkbox"
-      [checked]="selectedShifts.includes(s.id)"
-      (change)="toggleShift(s.id, $any($event.target).checked)" aria-label="Select row" />
-    {{ s.shift_name }} ({{ s.start_time }} - {{ s.end_time }})
+<div class="mexa-titlebar">
+  <div>
+    <h1 class="mexa-title">Machine → Shifts</h1>
+    <p class="mexa-subtitle">Choose which shifts each machine runs</p>
   </div>
+</div>
 
-  <button (click)="save()">Save Configuration</button>
+<div class="mexa-card asg-form">
+  <form [formGroup]="form">
+    <div class="ui-field">
+      <label class="ui-label" for="ms-machine">Machine</label>
+      <select id="ms-machine" class="ui-input" formControlName="machine_id" (change)="loadConfig()">
+        <option value="">Select machine</option>
+        <option *ngFor="let m of machines" [value]="m.id">{{ m.machine_serial_no }}</option>
+      </select>
+    </div>
+  </form>
+
+  <fieldset class="ms-shifts" *ngIf="form.value.machine_id">
+    <legend class="ui-label">Shifts this machine runs</legend>
+    <label *ngFor="let s of shifts" class="ms-shift">
+      <input type="checkbox" [checked]="selectedShifts.includes(s.id)"
+        (change)="toggleShift(s.id, $any($event.target).checked)" />
+      <span>{{ s.shift_name }} <small>({{ s.start_time }} – {{ s.end_time }})</small></span>
+    </label>
+    <p *ngIf="!shifts.length" class="ui-hint">No shifts yet. Add them under Master → Shifts.</p>
+    <button type="button" class="ui-btn ui-btn-primary ms-save" (click)="save()">Save configuration</button>
+  </fieldset>
 </div>

@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { NgApexchartsModule, ChartComponent } from "ng-apexcharts";
 import { QualityService } from './quality.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ReportDateDirective, plantToday } from '../../shared/report-date.directive';
 
 @Component({
   selector: 'app-quality',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgApexchartsModule],
+  imports: [ReportDateDirective, CommonModule, FormsModule, NgApexchartsModule],
   templateUrl: './quality.html',
   styleUrl: './quality.scss'
 })
@@ -20,11 +21,14 @@ export class Quality implements OnInit {
   machines: any[] = [];
   shifts: any[] = [];
 
-  selectedLine!: number;
+  /* All lines by default. The machine list followed the first line, so the
+     page opened on Bay 5 and its 4 machines and the other 16 were only
+     found by changing the line. */
+  selectedLine: number | null = null;
   selectedMachine!: number;
   selectedShift!: number;
 
-  today = new Date().toISOString().split('T')[0];
+  today = plantToday();
   selectedDate!: string;
 
   dashboardData: any = null;
@@ -55,8 +59,7 @@ export class Quality implements OnInit {
   ) { }
 
   ngOnInit() {
-    const today = new Date().toISOString().split('T')[0];
-    this.selectedDate = today;
+    this.selectedDate = plantToday();   // toISOString() is UTC: yesterday before 05:30 IST
 
     this.loadInitialData();
 
@@ -66,46 +69,77 @@ export class Quality implements OnInit {
   // INITIAL LOAD FLOW
   ////////////////////////////////////////////////////
 
+  /* Each step hands on to the next. A failed step used to have no error
+     handler, so one refused request (the line list, say) left the whole page
+     empty; now lines fall back to none (All lines still lists every machine)
+     and a failed list simply shows as empty. */
   loadInitialData() {
-    this.service.getLines().subscribe(res => {
-      this.lines = res.data;
-
-      if (this.lines.length > 0) {
-        this.selectedLine = this.lines[0].id;
-
-        this.loadMachinesAndContinue();
-      }
-      this.cdr.detectChanges();
-
+    this.service.getLines().subscribe({
+      next: res => { this.lines = res?.data || []; this.loadMachinesAndContinue(); this.cdr.detectChanges(); },
+      error: () => { this.lines = []; this.loadMachinesAndContinue(); this.cdr.detectChanges(); }
     });
   }
 
+  /** All lines, or the chosen one. */
+  private machines$() {
+    return this.selectedLine === null
+      ? this.service.getAllMachines()
+      : this.service.getMachinesByLine(this.selectedLine);
+  }
+
+  /** With All lines, the machine list is grouped by line so a machine is
+   *  found where it stands; machines on no line come last. Built when the
+   *  machines load — a getter handed <option>s a new array on every check,
+   *  and re-creating the options inside an ngModel select re-set its value
+   *  and asked for another check, over and over (NG0103). */
+  machineGroups: { label: string; machines: any[] }[] = [];
+
+  private groupMachines(): { label: string; machines: any[] }[] {
+    const byLine = new Map<number | null, any[]>();
+    for (const m of this.machines) {
+      const k = m.line_id ?? null;
+      if (!byLine.has(k)) byLine.set(k, []);
+      byLine.get(k)!.push(m);
+    }
+    const named = this.lines
+      .filter(l => byLine.has(l.id))
+      .map(l => ({ label: l.name, machines: byLine.get(l.id)! }));
+    const known = new Set(this.lines.map(l => l.id));
+    const rest = this.machines.filter(m => m.line_id == null || !known.has(m.line_id));
+    return rest.length ? [...named, { label: 'No line', machines: rest }] : named;
+  }
+
   loadMachinesAndContinue() {
-    this.service.getMachinesByLine(this.selectedLine).subscribe(res => {
-      this.machines = res.data;
+    this.machines$().subscribe({
+      next: res => {
+        this.machines = res?.data || [];
+        this.machineGroups = this.groupMachines();
 
-      if (this.machines.length > 0) {
-        this.selectedMachine = this.machines[0].id;
+        if (this.machines.length > 0) {
+          this.selectedMachine = this.machines[0].id;
 
-        this.loadShiftsAndContinue();
-      }
-      this.cdr.detectChanges();
-
+          this.loadShiftsAndContinue();
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => { this.machines = []; this.machineGroups = []; this.cdr.detectChanges(); }
     });
   }
 
   loadShiftsAndContinue() {
-    this.service.getShifts().subscribe(res => {
-      this.shifts = res.data;
+    this.service.getShifts().subscribe({
+      next: res => {
+        this.shifts = res?.data || [];
 
-      if (this.shifts.length > 0) {
-        this.selectedShift = this.shifts[0].id;
+        if (this.shifts.length > 0) {
+          this.selectedShift = this.shifts[0].id;
 
-        // Finally call dashboard
-        this.loadDashboard();
-      }
-      this.cdr.detectChanges();
-
+          // Finally call dashboard
+          this.loadDashboard();
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => { this.shifts = []; this.cdr.detectChanges(); }
     });
   }
 
@@ -129,18 +163,20 @@ export class Quality implements OnInit {
       machine_id: this.selectedMachine,
       shift_id: this.selectedShift,
       date: this.selectedDate
-    }).subscribe(res => {
+    }).subscribe({
+      next: res => {
+        if (!res?.success) return;
 
-      if (!res.success) return;
+        this.dashboardData = res.data;
 
-      this.dashboardData = res.data;
+        this.rejectedValue = res.data.production?.reject ?? 0;
+        this.reworkValue = res.data.production?.rework ?? 0;
 
-      this.rejectedValue = res.data.production?.reject ?? 0;
-      this.reworkValue = res.data.production?.rework ?? 0;
-
-      this.updateChart(res.data.hourly || []);
-      this.cdr.detectChanges();
-
+        this.updateChart(res.data.hourly || []);
+        this.cdr.detectChanges();
+      },
+      // a failed read must not leave the previous machine's figures up
+      error: () => { this.dashboardData = null; this.updateChart([]); this.cdr.detectChanges(); }
     });
   }
 
@@ -222,16 +258,17 @@ export class Quality implements OnInit {
   ////////////////////////////////////////////////////
 
   onLineChange() {
-    this.service.getMachines(this.selectedLine).subscribe(res => {
+    this.machines$().subscribe(res => {
       this.machines = res.data || [];
+      this.machineGroups = this.groupMachines();
       this.selectedMachine = this.machines[0]?.id;
 
       if (this.selectedMachine) {
         this.loadDashboard();
       } else {
         this.dashboardData = null;
-        this.cdr.detectChanges();
       }
+      this.cdr.detectChanges();
     });
   }
 }

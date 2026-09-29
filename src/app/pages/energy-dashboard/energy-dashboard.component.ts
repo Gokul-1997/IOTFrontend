@@ -1,4 +1,3 @@
-import { DataBarsComponent } from '../../shared/data-bars/data-bars.component';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,6 +10,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
+import { ReportDateDirective } from '../../shared/report-date.directive';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 9 — Energy Monitoring
@@ -24,7 +24,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 @Component({
   selector: 'app-energy-dashboard',
   standalone: true,
-  imports: [DataBarsComponent, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './energy-dashboard.component.html'
 })
 export class EnergyDashboardComponent implements OnInit, OnDestroy {
@@ -215,7 +215,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   get trendChart(): any {
     return this.charts.memo('trendChart', () => {
     return {
-      chart:  { type: 'area', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'area', height: 200, toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: 2, curve: 'smooth' },
       fill:   { type: 'gradient', gradient: { shadeIntensity: 0.3, opacityFrom: 0.35, opacityTo: 0.05 } },
       colors: ['#b45309'],
@@ -230,7 +230,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   }
 
   /** The MEXA palette, in the order the design cycles it. */
-  private readonly palette = ['#3564df', '#5f90e6', '#9581cf', '#38a994', '#6b7280', '#f5811f'];
+  private readonly palette = ['#2f2d8f', '#4a76c8', '#9b7ec8', '#17b3a3', '#6b7280', '#f5811f'];
 
   donutColour(i: number): string { return this.palette[i % this.palette.length]; }
 

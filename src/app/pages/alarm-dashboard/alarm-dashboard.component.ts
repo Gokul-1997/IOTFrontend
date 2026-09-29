@@ -1,4 +1,3 @@
-import { DataBarsComponent } from '../../shared/data-bars/data-bars.component';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,6 +10,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { ReportDateDirective } from '../../shared/report-date.directive';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 5 — Alarm Dashboard & Reports
@@ -24,7 +24,7 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 @Component({
   selector: 'app-alarm-dashboard',
   standalone: true,
-  imports: [DataBarsComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
+  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
   templateUrl: './alarm-dashboard.component.html'
 })
 export class AlarmDashboardComponent implements OnInit, OnDestroy {
@@ -50,10 +50,42 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     { key: 'ended_at', label: 'Closed Time' }
   ];
 
+  /* ── KPI card drill-down ──
+     A card opens the alarms behind its number in the Alarms Details table
+     below. The server narrows the table only (?show=), never the cards or
+     charts, so the other cards keep their figures while one is selected.
+     Max Duration is not a subset: it sorts the table longest first. */
+  drillKind: '' | 'critical' | 'normal' | 'open' | 'longest' = '';
+  private scrollToTable = false;
+
+  readonly drillLabels: Record<string, string> = {
+    critical: 'critical alarms only',
+    normal:   'normal alarms only',
+    open:     'open alarms only — not yet closed',
+    longest:  'every alarm, longest first'
+  };
+
+  drill(kind: 'all' | 'critical' | 'normal' | 'open' | 'longest'): void {
+    const next = kind === 'all' || kind === this.drillKind ? '' : kind;   // same card again: back to all
+    if (next === 'longest') { this.sort = 'duration_seconds'; this.dir = 'desc'; }
+    else if (this.drillKind === 'longest') { this.sort = ''; this.dir = 'desc'; }
+    this.drillKind = next;
+    this.page = 1;
+    this.scrollToTable = true;
+    this.load();
+  }
+
+  /** What the server narrows the table to; "longest" is a sort, not a subset. */
+  private get show(): string {
+    return this.drillKind === 'longest' ? '' : this.drillKind;
+  }
+
   /** Click a header to sort by it; again to flip the direction. */
   sortBy(key: string): void {
     if (this.sort === key) this.dir = this.dir === 'desc' ? 'asc' : 'desc';
     else { this.sort = key; this.dir = ['machine_serial_no', 'shift_name', 'alarm_code', 'message'].includes(key) ? 'asc' : 'desc'; }
+    // a header sort replaces the Max Duration card's ordering
+    if (this.drillKind === 'longest') this.drillKind = '';
     this.page = 1;
     this.load();
   }
@@ -130,7 +162,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
 
   reset(): void {
     this.f = this.blankFilters();
-    this.page = 1; this.sort = ''; this.dir = 'desc';
+    this.page = 1; this.sort = ''; this.dir = 'desc'; this.drillKind = '';
     this.load();
   }
 
@@ -146,7 +178,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     this.errorMsg = '';
     this.cdr.markForCheck();
 
-    this.svc.getAlarms({ ...this.f, sort: this.sort || null, dir: this.dir, page: this.page, limit: this.limit })
+    this.svc.getAlarms({ ...this.f, show: this.show, sort: this.sort || null, dir: this.dir, page: this.page, limit: this.limit })
       .pipe(takeUntil(this.destroy$), catchError(err => {
         this.errorMsg = err?.error?.message || 'Unable to load alarm data.';
         return of(null);
@@ -188,6 +220,20 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     this.severitySeries = [Number(d.by_severity.critical) || 0, Number(d.by_severity.normal) || 0];
 
     this.cdr.markForCheck();
+    if (this.scrollToTable) { this.scrollToTable = false; this.revealTable(); }
+  }
+
+  /** After a card click: bring the table into view and move focus to its
+   *  heading, so a keyboard or screen-reader user lands on the results too. */
+  private revealTable(): void {
+    setTimeout(() => {
+      const section = document.getElementById('alDetails');
+      const heading = document.getElementById('alDetailsTitle');
+      if (!section || !heading) return;
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      section.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      heading.focus({ preventScroll: true });
+    });
   }
 
   /*
@@ -216,7 +262,8 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     this.exporting = format;
     this.cdr.markForCheck();
 
-    this.svc.exportAs(format, this.f)
+    // the file is what the table shows: same card narrowing, same order
+    this.svc.exportAs(format, { ...this.f, show: this.show, sort: this.sort || null, dir: this.dir })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: blob => {
@@ -280,7 +327,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   }
 
   /** The MEXA palette, in the order the design cycles it. */
-  private readonly palette = ['#3564df', '#5f90e6', '#9581cf', '#38a994', '#6b7280', '#f5811f'];
+  private readonly palette = ['#2f2d8f', '#4a76c8', '#9b7ec8', '#17b3a3', '#6b7280', '#f5811f'];
 
   donutColour(i: number): string { return this.palette[i % this.palette.length]; }
 
@@ -294,13 +341,13 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   get trendChart(): any {
     return this.charts.memo('trendChart', () => {
     return {
-      chart:  { type: 'line', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'line', height: 180, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: {},
       stroke: { width: 3, curve: 'smooth' },
       markers: { size: 4 },
       colors: ['#e03131', '#f59f00'],
       dataLabels: { enabled: false },
-      legend: { position: 'top', horizontalAlign: 'right' },
+      legend: { position: 'top', horizontalAlign: 'right', show:false },
       xaxis:  { categories: this.trendCategories },
       yaxis:  { title: { text: 'No. of Alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
@@ -313,14 +360,15 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   get machineChart(): any {
     return this.charts.memo('machineChart', () => {
     return {
-      chart:  { type: 'bar', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'bar', height:180, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
       colors: this.palette,
       dataLabels: { enabled: false },
       // distributed repeats every machine in the legend; the axis names them
       legend: { show: false },
       xaxis:  { categories: this.machineCategories },
-      yaxis:  { title: { text: 'No. of Alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
+      yaxis:  { title: { text: 'No. of Alarms' }, 
+      labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'dark' },
       noData: { text: 'No alarms in this period' }
@@ -349,7 +397,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     return {
       chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
       labels: ['Critical', 'Normal'],
-      colors: ['#e03131', '#38a994'],
+      colors: ['#e03131', '#17b3a3'],
       plotOptions: { pie: { donut: { size: '62%' } } },
       dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%` },
       legend: { show: false },

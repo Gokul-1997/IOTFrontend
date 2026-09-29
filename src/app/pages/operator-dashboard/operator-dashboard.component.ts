@@ -9,6 +9,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
+import { ReportDateDirective } from '../../shared/report-date.directive';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 7 — Operator Performance
@@ -29,7 +30,7 @@ type Board = 'score' | 'rejection' | 'downtime' | 'oee';
 @Component({
   selector: 'app-operator-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './operator-dashboard.component.html'
 })
 export class OperatorDashboardComponent implements OnInit, OnDestroy {
@@ -242,7 +243,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
 
   /* ── charts ── */
 
-  private readonly palette = ['#3564df', '#5f90e6', '#9581cf', '#38a994', '#6b7280'];
+  private readonly palette = ['#2f2d8f', '#4a76c8', '#9b7ec8', '#17b3a3', '#6b7280'];
 
   private hbar(key: string, board: Board, axisTitle: string, fmt: (v: number) => string, fixedMax?: number): any {
     return this.charts.memo(key, () => {
@@ -289,7 +290,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
         ],
         chart: { type: 'bar', height: 260, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
         plotOptions: { bar: { borderRadius: 2, columnWidth: '62%' } },
-        colors: ['#3564df', '#5f90e6', '#9581cf'],
+        colors: ['#2f2d8f', '#4a76c8', '#9b7ec8'],
         dataLabels: { enabled: false },
         legend: { position: 'bottom', markers: { shape: 'circle' } },
         xaxis: { categories: rows.map((r: any) => r.operator_name), labels: { rotate: -30, trim: true } },
@@ -313,7 +314,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
 
   /** Label colour for the theme in use — the labels sit outside the bars, on the card. */
   private get ink(): string {
-    return document.documentElement.classList.contains('dark') ? '#e8ebf2' : '#18243b';
+    return document.documentElement.classList.contains('dark') ? '#e8ebf2' : '#1f2430';
   }
 
   private fix(v: number): string { return Number.isInteger(v) ? String(v) : Number(v).toFixed(1); }

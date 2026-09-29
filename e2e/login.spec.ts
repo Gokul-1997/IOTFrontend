@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { stubJwt } from './fixtures/auth';
 
 /**
  * Login page — renders, validates, and handles API responses.
@@ -16,8 +17,8 @@ test.describe('Login page — render', () => {
   test('TC-L-02 page title or heading is present', async ({ page }) => {
     await page.goto('/login');
     // At minimum some heading or brand text visible
-    const heading = page.getByRole('heading').first();
-    await expect(heading.or(page.getByText(/sign in|login|welcome/i).first()).first()).toBeVisible({ timeout: 8_000 });
+    const heading = page.getByRole('heading', { name: /sign in|login|welcome/i });
+    await expect(heading.first()).toBeVisible({ timeout: 8_000 });
   });
 });
 
@@ -109,22 +110,25 @@ test.describe('Login page — API responses', () => {
       user_type: 'ADMIN', is_snt_super: false, plan: null
     };
 
+    // Stub any other API call. Registered first: Playwright tries the most
+    // recently added route first, so the login stub below must come after.
     await page.route('**/api/**', r =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) })
     );
-    const jwt = `${Buffer.from('{}').toString('base64url')}.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url')}.test`;
+
     await page.route('**/api/auth/login', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          accessToken: jwt,
-          refreshToken: 'fake-refresh',
+          // a well-formed token: the app decodes it to schedule the refresh
+          // and signs out on one it cannot read
+          accessToken: stubJwt(),
+          refreshToken: stubJwt(),
           user: fakeUser
         })
       });
     });
-
 
     await page.goto('/login');
     await page.getByPlaceholder(/email/i).or(page.getByLabel(/email/i)).first().fill('admin@x.com');
@@ -136,11 +140,7 @@ test.describe('Login page — API responses', () => {
 
   test('TC-L-10 forgot password link is visible and clickable', async ({ page }) => {
     await page.goto('/login');
-    const forgotLink = page.getByRole('link', { name: /forgot.*(password)?/i })
-      .or(page.getByText(/forgot.*(password)?/i).first());
-    if (await forgotLink.isVisible({ timeout: 5_000 })) {
-      await forgotLink.click();
-      await expect(page).toHaveURL(/\/forgot-password/);
-    }
+    await page.getByRole('link', { name: /forgot password/i }).click();
+    await expect(page).toHaveURL(/\/forgot-password/);
   });
 });

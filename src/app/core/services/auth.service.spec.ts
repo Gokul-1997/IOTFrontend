@@ -14,7 +14,7 @@ function seedUser(overrides: Record<string, unknown> = {}) {
   const user = {
     id: 1,
     email: 'test@example.com',
-    roles: ['ADMIN'],
+    roles: ['MANAGER'],
     permissions: ['page:dashboard', 'page:machines'],
     company_permissions: ['page:dashboard', 'page:machines:view'],
     user_type: 'ADMIN',
@@ -128,6 +128,27 @@ describe('AuthService role checks', () => {
     expect(service.isCompanyAdmin()).toBe(true);
   });
 
+  // ADMIN is the older name for the role; the API and the route guard both
+  // read it as a company admin, so the buttons and widgets must as well
+  test('legacy ADMIN role gets the company admin buttons and widgets', () => {
+    seedUser({ roles: ['ADMIN'], permissions: [], company_permissions: [] });
+    expect(service.isCompanyAdmin()).toBe(true);
+    expect(service.hasAction('job', 'delete')).toBe(true);
+    expect(service.hasWidget('charts', 'partwise-chart')).toBe(true);
+  });
+
+  test('legacy ADMIN is still limited to what the company was granted', () => {
+    seedUser({ roles: ['ADMIN'], permissions: [], company_permissions: ['page:job', 'page:job:view'] });
+    expect(service.hasAction('job', 'view')).toBe(true);
+    expect(service.hasAction('job', 'delete')).toBe(false);
+    expect(service.hasPermission('page:charts')).toBe(false);
+  });
+
+  test('MANAGER is not a company admin', () => {
+    seedUser({ roles: ['MANAGER'] });
+    expect(service.isCompanyAdmin()).toBe(false);
+  });
+
   test('isAdmin returns true for SNT_SUPER', () => {
     seedUser({ roles: ['SNT_SUPER'] });
     expect(service.isAdmin()).toBe(true);
@@ -158,17 +179,17 @@ describe('AuthService.hasPermission', () => {
   });
 
   test('exact match returns true for regular user', () => {
-    seedUser({ roles: ['ADMIN'], permissions: ['page:dashboard'] });
+    seedUser({ roles: ['MANAGER'], permissions: ['page:dashboard'] });
     expect(service.hasPermission('page:dashboard')).toBe(true);
   });
 
   test('prefix match returns true (page:machines matches page:machines:view)', () => {
-    seedUser({ roles: ['ADMIN'], permissions: ['page:machines:view'] });
+    seedUser({ roles: ['MANAGER'], permissions: ['page:machines:view'] });
     expect(service.hasPermission('page:machines')).toBe(true);
   });
 
   test('returns false when permission not in list', () => {
-    seedUser({ roles: ['ADMIN'], permissions: ['page:dashboard'] });
+    seedUser({ roles: ['MANAGER'], permissions: ['page:dashboard'] });
     expect(service.hasPermission('page:machines')).toBe(false);
   });
 
@@ -231,12 +252,12 @@ describe('AuthService.hasAction', () => {
   });
 
   test('exact key match: page:machines:create', () => {
-    seedUser({ roles: ['ADMIN'], permissions: ['page:machines:create'], company_permissions: ['page:machines:create'] });
+    seedUser({ roles: ['MANAGER'], permissions: ['page:machines:create'], company_permissions: ['page:machines:create'] });
     expect(service.hasAction('machines', 'create')).toBe(true);
   });
 
   test('missing key returns false', () => {
-    seedUser({ roles: ['ADMIN'], permissions: ['page:machines:view'] });
+    seedUser({ roles: ['MANAGER'], permissions: ['page:machines:view'] });
     expect(service.hasAction('machines', 'create')).toBe(false);
   });
 
@@ -304,7 +325,7 @@ describe('AuthService.hasWidget', () => {
 
   test('regular user sees widget when company allows and user has permission', () => {
     seedUser({
-      roles: ['ADMIN'],
+      roles: ['MANAGER'],
       permissions: ['page:dashboard:partcount'],
       company_permissions: ['page:dashboard:partcount']
     });
@@ -313,7 +334,7 @@ describe('AuthService.hasWidget', () => {
 
   test('regular user blocked when company_permissions does not include widget', () => {
     seedUser({
-      roles: ['ADMIN'],
+      roles: ['MANAGER'],
       permissions: ['page:dashboard:partcount'],
       company_permissions: ['page:dashboard:oee']
     });
@@ -322,7 +343,7 @@ describe('AuthService.hasWidget', () => {
 
   test('regular user blocked when they lack role permission', () => {
     seedUser({
-      roles: ['ADMIN'],
+      roles: ['MANAGER'],
       permissions: ['page:dashboard:oee'],
       company_permissions: []
     });
@@ -377,14 +398,14 @@ describe('AuthService.getFirstAccessibleRoute', () => {
 
   test('regular user routes to first matching permission', () => {
     seedUser({
-      roles: ['ADMIN'],
+      roles: ['MANAGER'],
       permissions: ['page:machines:view']
     });
     expect(service.getFirstAccessibleRoute()).toBe('/machines');
   });
 
   test('regular user gets /no-access when no matching permissions', () => {
-    seedUser({ roles: ['ADMIN'], permissions: [] });
+    seedUser({ roles: ['MANAGER'], permissions: [] });
     expect(service.getFirstAccessibleRoute()).toBe('/no-access');
   });
 

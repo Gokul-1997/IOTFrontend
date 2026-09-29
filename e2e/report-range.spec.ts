@@ -17,12 +17,15 @@ const rows = [
     run_time: '00:52', idle_time: '00:08', produced_qty: 48, energy_kwh: 12.4 }
 ];
 
-/** date_from that makes the range exactly `days` long, ending today. */
+/** date_from that makes the range exactly `days` long, ending today — in
+ *  plant time (IST), as the app counts it. A UTC date is yesterday's until
+ *  05:30 IST, which failed this test every night after midnight. */
 function daysAgo(days: number): string {
-  return new Date(Date.now() - (days - 1) * 86_400_000).toISOString().slice(0, 10);
+  const IST_MS = 330 * 60 * 1000;
+  return new Date(Date.now() + IST_MS - (days - 1) * 86_400_000).toISOString().slice(0, 10);
 }
 
-test('a range longer than three months is emailed, not fetched', async ({ authedPage: page }) => {
+test('report dates stay within the last three months, and a full window is fetched directly', async ({ authedPage: page }) => {
   const dataCalls: string[] = [];
   const emailCalls: any[] = [];
   // Reports opens for a role holding a report; the fixture's legacy ADMIN holds none
@@ -52,28 +55,27 @@ test('a range longer than three months is emailed, not fetched', async ({ authed
   await expect(page.locator('table')).toBeVisible();
   expect(dataCalls.length, 'the default range is fetched').toBeGreaterThan(0);
 
+  /* Report dates stop at the last three months (92 days), and a typed date
+     earlier than that is pulled back into the window — so a full window is
+     always fetched directly, never tipped into the "too long" path. */
+  const from = page.locator('input.filter-date').first();
+  await expect(from).toHaveAttribute('min', daysAgo(92));
+  await from.fill(daysAgo(200));
+  await from.blur();
+  await expect(from).toHaveValue(daysAgo(92));
+  await expect(page.getByText(/too long to show on screen/i)).toHaveCount(0);
+
   const before = dataCalls.length;
+  await page.getByRole('button', { name: /apply|search|submit/i }).first().click();
+  await expect.poll(() => dataCalls.length).toBeGreaterThan(before);
+  expect(new URL(dataCalls.at(-1)!).searchParams.get('date_from')).toBe(daysAgo(92));
 
-  // widen the range past the limit — ngModel updates the getter immediately
-  await page.locator('input.filter-date').first().fill(daysAgo(200));
-  await page.locator('input.filter-date').first().blur();
-
-  const banner = page.getByText(/too long to show on screen/i);
-  await expect(banner).toBeVisible();
-
-  // and nothing was requested for a range the server would refuse
-  expect(dataCalls.length, 'an over-long range must not be fetched').toBe(before);
-
-  // "No data found" would blame the data; the banner explains the range
-  await expect(page.getByText('No data found')).toHaveCount(0);
-
-  await page.getByRole('button', { name: /email this report/i }).click();
-
-  await expect(page.getByText(/will be emailed to/i)).toBeVisible();
-  expect(emailCalls, 'the email request carries type, range and columns').toHaveLength(1);
+  // the toolbar's Email sends the same in-window report
+  await page.getByRole('button', { name: 'Email' }).click();
+  await expect.poll(() => emailCalls.length).toBe(1);
   expect(emailCalls[0].type).toBe('production');
   expect(emailCalls[0].columns.length).toBeGreaterThan(0);
-  expect(emailCalls[0].date_from).toBe(daysAgo(200));
+  expect(emailCalls[0].date_from).toBe(daysAgo(92));
 
   // the Report page is Tailwind-styled rather than MEXA; it shares the shell,
   // so it is worth a look whenever the ground changes

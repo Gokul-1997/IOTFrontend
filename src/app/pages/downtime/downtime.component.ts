@@ -7,7 +7,20 @@ import { DowntimeService } from '../../core/services/downtime.service';
   selector: 'app-downtime',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './downtime.component.html'
+  templateUrl: './downtime.component.html',
+  styles: [`
+    .num-col { text-align: right; }
+    .reason-form { margin-bottom: 1rem; }
+    .reason-grid { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
+    .reason-actions { margin-top: .9rem; }
+    .reason-cards { display: grid; gap: .85rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
+    .reason-cards .mexa-card + .mexa-card { margin-top: 0; }
+    .reason-card { display: flex; align-items: center; gap: .8rem; }
+    .reason-code { width: 2.75rem; height: 2.75rem; flex: none; border-radius: 12px; display: grid; place-items: center;
+                   background: var(--mexa-row-alt); color: var(--mexa-submit); font-weight: 700; font-size: .85rem; }
+    .reason-body { min-width: 0; }
+    .reason-name { margin: 0 0 .25rem; font-weight: 600; color: var(--mexa-ink); }
+  `]
 })
 export class DowntimeComponent implements OnInit {
   activeTab: 'events' | 'reasons' | 'summary' = 'events';
@@ -83,7 +96,7 @@ export class DowntimeComponent implements OnInit {
   }
 
   categoryClass(cat: string) {
-    const m: any = { UNPLANNED: 'bg-red-100 text-red-700', PLANNED: 'bg-blue-100 text-blue-700', QUALITY: 'bg-purple-100 text-purple-700', CHANGEOVER: 'bg-yellow-100 text-yellow-700' };
-    return m[cat] || 'bg-gray-100 text-gray-700';
+    const m: any = { UNPLANNED: 'mexa-badge-bad', PLANNED: 'mexa-badge-info', QUALITY: 'mexa-badge-violet', CHANGEOVER: 'mexa-badge-warn' };
+    return m[cat] || 'mexa-badge-neutral';
   }
 }

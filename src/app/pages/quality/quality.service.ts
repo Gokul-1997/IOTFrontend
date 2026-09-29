@@ -21,6 +21,11 @@ export class QualityService {
         });
     }
 
+    /** Every active machine of the company, each with its line. */
+    getAllMachines() {
+        return this.http.get<any>(`${this.api}/master/machines`);
+    }
+
     getShifts() {
         return this.http.get<any>(`${this.api}/master/shifts`);
     }

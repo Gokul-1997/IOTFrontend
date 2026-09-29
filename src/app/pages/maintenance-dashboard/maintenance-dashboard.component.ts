@@ -1,4 +1,3 @@
-import { DataBarsComponent } from '../../shared/data-bars/data-bars.component';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -8,6 +7,8 @@ import { Subject, interval, startWith, switchMap, takeUntil, catchError, of } fr
 import { MaintenanceDashboardService } from './maintenance-dashboard.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
+import { ReportDateDirective } from '../../shared/report-date.directive';
+import { ConditionGaugeComponent, ConditionZone } from './condition-gauge.component';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 2 — Maintenance Dashboard
@@ -26,6 +27,16 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 
 const POLL_MS = 60_000;
 
+/* The six fan positions the design shows, as a FANUC cabinet has them. */
+const DESIGN_FANS = [
+  { name: 'Internal Fan 1', place: 'Power Supply · Spindle Motor' },
+  { name: 'Internal Fan 1', place: 'Servo Amplifier' },
+  { name: 'Internal Fan 2', place: 'Power Supply · Spindle Motor' },
+  { name: 'Internal Fan 2', place: 'Servo Amplifier' },
+  { name: 'Radiator Fan 1', place: 'Servo & Spindle Amplifier' },
+  { name: 'Radiator Fan 2', place: 'Servo & Spindle Amplifier' }
+];
+
 /** API key → the words a maintenance engineer would use. */
 const SIGNAL_LABELS: Record<string, string> = {
   servo_load_per_axis:   'Servo load per axis',
@@ -40,8 +51,9 @@ const SIGNAL_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-maintenance-dashboard',
   standalone: true,
-  imports: [ DataBarsComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
-  templateUrl: './maintenance-dashboard.component.html'
+  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, ConditionGaugeComponent],
+  templateUrl: './maintenance-dashboard.component.html',
+  styleUrl: './maintenance-dashboard.component.scss'
 })
 export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
 
@@ -64,7 +76,6 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
 
   /* ── chart ── */
   alarmSeries:     number[] = [];
-  spindleSeries:   number[] = [];
 
   /* Machine condition for the machine the card describes. Built once per
      response rather than in getters, so change detection does not hand the
@@ -84,6 +95,17 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   axisRows: { axis: string; load: number | null; temp: number | null; encoder: number | null }[] = [];
   tempTrendSeries: any[] = [];
   irTrendSeries:   any[] = [];
+
+  /* Cycle time, hour by hour (the design's bottom-left chart) */
+  cycleSeries: any[] = [];
+  cycleCategories: string[] = [];
+  cycleUnit: 'Sec' | 'Min' = 'Sec';
+  currentCycle: number | null = null;
+
+  /* Fan tiles: the controller's own list when it sends one, else the six
+     positions the design names, each marked "Not reported". */
+  fanTiles: { name: string; place: string; status: string }[] = [];
+  fansReported = false;
 
   private destroy$ = new Subject<void>();
 
@@ -197,11 +219,6 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       Number(d.alarms.information) || 0
     ];
 
-    /* A spindle at 0% and a spindle with no sensor look identical on a
-       gauge, so an absent reading gets no gauge at all. */
-    const load = this.focusRow?.spindle_load;
-    this.spindleSeries = load === null || load === undefined ? [] : [Number(load)];
-
     const axes = (prefix: string) => ['x', 'y', 'z'].map(a => ({
       axis: a.toUpperCase(),
       value: (this.focusRow?.[`${prefix}_${a}`] ?? null) as number | null
@@ -234,6 +251,26 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     this.fanList = fans && typeof fans === 'object' && !Array.isArray(fans)
       ? Object.entries(fans).map(([k, v]) => ({ name: k.replace(/_/g, ' '), value: String(v) }))
       : [];
+    this.fansReported = this.fanList.length > 0;
+    this.fanTiles = this.fansReported
+      ? this.fanList.slice(0, 6).map(f => ({ name: f.name, place: '', status: this.fanWord(f.value) }))
+      : DESIGN_FANS.map(f => ({ ...f, status: 'Not reported' }));
+
+    /* Cycle time: run time per part in each hour. Hours with no part are
+       left as gaps. Long-cycle machines (an HMC part can take an hour) read
+       in minutes; the design's seconds would put 4,000 on the axis. */
+    const cyc = (d.cycle_trend || []) as { hour_start: string; cycle_seconds: number | null }[];
+    const withParts = cyc.filter(c => c.cycle_seconds != null);
+    const maxSec = withParts.reduce((m, c) => Math.max(m, Number(c.cycle_seconds)), 0);
+    this.cycleUnit = maxSec > 600 ? 'Min' : 'Sec';
+    const k = this.cycleUnit === 'Min' ? 60 : 1;
+    // only hours that finished a part: a gap per idle hour broke the line into dots
+    this.cycleCategories = withParts.map(c => this.clockLabel(c.hour_start));
+    this.cycleSeries = withParts.length
+      ? [{ name: 'Cycle Time', data: withParts.map(c => Math.round((Number(c.cycle_seconds) / k) * 10) / 10) }]
+      : [];
+    const last = withParts[withParts.length - 1];
+    this.currentCycle = last ? Math.round((Number(last.cycle_seconds) / k) * 10) / 10 : null;
 
     /* Condition trend exists only when one machine is selected — averaging
        servo temperatures across a fleet describes no motor. A series is
@@ -349,32 +386,6 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   });
   }
 
-  get spindleGauge(): any {
-    return this.charts.memo('spindleGauge', () => {
-    const load = Number(this.spindleSeries[0] ?? 0);
-    return {
-      chart: { type: 'radialBar', height: 215, fontFamily: 'inherit' },
-      labels: ['Spindle Load'],
-      // the band the reading falls in, so colour and number agree
-      colors: [load >= 85 ? '#e03131' : load >= 60 ? '#f5a623' : '#22c55e'],
-      plotOptions: {
-        radialBar: {
-          hollow: { size: '62%' },
-          track: { background: 'rgba(148,163,184,.22)' },
-          dataLabels: {
-            name: { fontSize: '.8rem', offsetY: 18 },
-            value: { fontSize: '1.6rem', fontWeight: 700, offsetY: -12,
-                     formatter: (v: number) => `${Math.round(v)}%` }
-          }
-        }
-      },
-      stroke: { lineCap: 'round' },
-      legend: { show: false },
-      noData: { text: 'Not reporting' }
-    };
-  });
-  }
-
   /* ── gauges and bands, as the design draws them ──
 
      Healthy / Stable / Critical, the legend in the title bar. Load is a
@@ -383,6 +394,82 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
      a needle at 0 would read as a cold, idle motor. */
   readonly LOAD_BANDS = { stable: 60, critical: 85 };
   readonly TEMP_BANDS = { stable: 60, critical: 80 };
+  /* Insulation resistance and battery voltage are the other way round: a
+     low reading is the risk. FANUC flags motor insulation under 10 MΩ and
+     starts warning under 100 MΩ; a 3 V lithium cell is due for change
+     below 2.8 V. */
+  readonly IR_BANDS      = { stable: 100, critical: 10 };
+  readonly BATTERY_BANDS = { stable: 3.0, critical: 2.8 };
+
+  /* The gauges' three colours, in order of value */
+  readonly LOAD_ZONES: ConditionZone[] = [
+    { to: 60, color: '#22c55e' }, { to: 85, color: '#f5a623' }, { to: 150, color: '#e03131' }];
+  readonly TEMP_ZONES: ConditionZone[] = [
+    { to: 60, color: '#22c55e' }, { to: 80, color: '#f5a623' }, { to: 120, color: '#e03131' }];
+  readonly IR_ZONES: ConditionZone[] = [
+    { to: 10, color: '#e03131' }, { to: 100, color: '#f5a623' }, { to: 200, color: '#22c55e' }];
+
+  /** Healthy / Stable / Critical for a reading where lower is worse. */
+  bandLow(v: number | null | undefined, b: { stable: number; critical: number }): 'Healthy' | 'Stable' | 'Critical' | '' {
+    if (v === null || v === undefined || !Number.isFinite(Number(v))) return '';
+    const n = Number(v);
+    return n < b.critical ? 'Critical' : n < b.stable ? 'Stable' : 'Healthy';
+  }
+
+  /** A controller's fan value in the design's words. */
+  private fanWord(v: string): string {
+    const s = String(v).toLowerCase();
+    if (['ok', 'true', 'normal', 'healthy', '1', 'on'].includes(s)) return 'Healthy';
+    if (['warn', 'warning', 'stable', 'low'].includes(s)) return 'Stable';
+    if (['alarm', 'fail', 'failed', 'false', 'critical', 'error', 'stop', '0', 'off'].includes(s)) return 'Critical';
+    return v;
+  }
+
+  /** The fans as one word, for the "CNC Fans" tile: the worst of them. */
+  get fansOverall(): string {
+    if (!this.fansReported) return 'Not reported';
+    const words = this.fanTiles.map(f => f.status);
+    return words.includes('Critical') ? 'Critical' : words.includes('Stable') ? 'Stable' : 'Healthy';
+  }
+
+  /** The machine's state as the design's pill says it. */
+  stateWord(s: string): string {
+    return s === 'BREAKDOWN' ? 'Alarm' : this.statusWord(s);
+  }
+
+  /** "5 (8%)", as the design's alarm list reads. */
+  alarmShare(n: number): string {
+    const total = Number(this.data?.alarms?.total) || 0;
+    return total ? `${n} (${Math.round((n / total) * 100)}%)` : String(n);
+  }
+
+  /** "9:00 AM", as the design labels its hour axis. */
+  private clockLabel(iso: string): string {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime())
+      ? ''
+      : d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
+  }
+
+  get cycleChart(): any {
+    return this.charts.memo('cycleChart', () => ({
+      chart: { type: 'line', height: 250, toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false } },
+      stroke: { width: 3, curve: 'smooth' },
+      markers: { size: 4, strokeWidth: 2, colors: ['#fff'], strokeColors: '#2f2d8f' },
+      colors: ['#2f2d8f'],
+      dataLabels: { enabled: false },
+      legend: { show: true, position: 'bottom' },
+      xaxis: { categories: this.cycleCategories, title: { text: 'Hour' }, labels: { rotate: -45, hideOverlappingLabels: true } },
+      yaxis: { min: 0, title: { text: this.cycleUnit }, labels: { formatter: (v: number) => v == null ? '' : String(Math.round(v)) } },
+      grid: { borderColor: 'rgba(148,163,184,.25)' },
+      tooltip: { theme: 'dark', y: { formatter: (v: number | null) => v == null ? 'no part this hour' : `${v} ${this.cycleUnit.toLowerCase()}` } },
+      noData: { text: 'No parts made in this window' }
+    }));
+  }
+
+  /** The design's middle chart: insulation resistance when a controller
+   *  sends it, else the servo temperatures that are sent. */
+  get trendIsIr(): boolean { return this.irTrendSeries.length > 0; }
 
   band(v: number | null | undefined, b: { stable: number; critical: number }): 'Healthy' | 'Stable' | 'Critical' | '' {
     if (v === null || v === undefined || !Number.isFinite(Number(v))) return '';
@@ -399,22 +486,15 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
          : word === 'Healthy'  ? 'text-emerald-700 dark:text-emerald-400' : 'text-[--mexa-ink-3]';
   }
 
-  /** One reading against its full scale: 100 % for load, 120 °C for temperature. */
-  gauge(key: string, v: number | null | undefined, unit: string, max: number, bands: { stable: number; critical: number }): any {
-    return this.charts.memo(`gauge:${key}`, () => ({
-      value: v, unit, max, colors: [this.bandColour(this.band(v, bands))]
-    }));
-  }
-
   /** X / Y / Z as three bars, one colour per axis as in the design. */
   axisBars(key: string, values: (number | null)[], labels: string[], unit: string): any {
     return this.charts.memo(`bars:${key}`, () => ({
       series: [{ name: unit, data: values }],
       chart: { type: 'bar', height: 190, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
       plotOptions: { bar: { columnWidth: '55%', borderRadius: 4, distributed: true, dataLabels: { position: 'top' } } },
-      colors: ['#3564df', '#5f90e6', '#9581cf'],
+      colors: ['#2f2d8f', '#4a76c8', '#9b7ec8'],
       dataLabels: { enabled: true, offsetY: -18, formatter: (v: number | null) => v == null ? '--' : Number(v).toFixed(0),
-                    style: { fontSize: '.72rem', colors: [document.documentElement.classList.contains('dark') ? '#e8ebf2' : '#18243b'] } },
+                    style: { fontSize: '.72rem', colors: [document.documentElement.classList.contains('dark') ? '#e8ebf2' : '#1f2430'] } },
       legend: { show: false },
       // two lines ("Encoder" / "Temp X"), as the design sets them, so no label is dropped
       xaxis: { categories: labels.map(l => [l.slice(0, l.indexOf(' ')), l.slice(l.indexOf(' ') + 1)]),
@@ -455,10 +535,10 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   }
 
   get tempTrendChart(): any {
-    return this.charts.memo('tempTrendChart', () => { return this.trendOptions('°C', ['#3564df', '#5f90e6', '#9581cf', '#e8618c']); });
+    return this.charts.memo('tempTrendChart', () => { return this.trendOptions('°C', ['#2f2d8f', '#4a76c8', '#9b7ec8', '#e8618c']); });
   }
   get irTrendChart(): any   {
-    return this.charts.memo('irTrendChart', () => { return this.trendOptions('Resistance', ['#5f90e6', '#3564df', '#9581cf']); });
+    return this.charts.memo('irTrendChart', () => { return this.trendOptions('Resistance', ['#4a76c8', '#2f2d8f', '#9b7ec8']); });
   }
 
   /** Signals the API says it cannot supply, in readable form. */

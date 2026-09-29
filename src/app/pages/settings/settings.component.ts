@@ -19,7 +19,16 @@ interface PrefRow { key: string; label: string; hint: string; pages?: string[]; 
   selector: 'app-settings',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './settings.component.html'
+  templateUrl: './settings.component.html',
+  styles: [`
+    .set-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); align-items: start; }
+    .set-grid .mexa-card + .mexa-card { margin-top: 0; }
+    .set-hint { margin: -.4rem 0 .5rem; }
+    .set-text { min-width: 0; }
+    .set-ok { font-size: .8rem; color: #15803d; }
+    :host-context(.dark) .set-ok { color: #6fdba0; }
+    .set-retry { background: none; border: 0; padding: 0; font: inherit; text-decoration: underline; color: inherit; cursor: pointer; }
+  `]
 })
 export class SettingsComponent implements OnInit {
 

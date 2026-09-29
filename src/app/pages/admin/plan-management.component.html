@@ -1,40 +1,22 @@
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-
-  <!-- Admin Tab Navigation -->
-  <div class="flex gap-1 mb-6 bg-white dark:bg-gray-800 rounded-xl shadow p-1 w-fit">
-    <a *ngIf="auth.isSntSuper()" routerLink="/admin/companies" routerLinkActive="bg-blue-600 text-white"
-       class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-      Companies
-    </a>
-    <a *ngIf="auth.isSntSuper()" routerLink="/admin/plans" routerLinkActive="bg-blue-600 text-white"
-       class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-      Plans
-    </a>
-    <a routerLink="/admin/users" routerLinkActive="bg-blue-600 text-white"
-       class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-      Company Admins
-    </a>
-    <a *ngIf="!auth.isSntSuper()" routerLink="/admin/roles" routerLinkActive="bg-blue-600 text-white"
-       class="px-5 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-      Roles &amp; Permissions
-    </a>
-  </div>
-
-  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-
-    <div class="flex justify-between items-center mb-4">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Plans</h1>
-        <p class="text-sm text-gray-500 mt-1">The catalogue companies are assigned from — limits for users, plants and machines</p>
-      </div>
-      <button (click)="openCreate()"
-        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+<div>
+  <div class="mexa-titlebar">
+    <div>
+        <h1 class="mexa-title">Plans</h1>
+        <p class="mexa-subtitle">The catalogue companies are assigned from — limits for users, plants and machines</p>
+    </div>
+    <span class="mexa-titlebar-spacer"></span>
+    <button type="button" (click)="openCreate()"
+        class="ui-btn ui-btn-primary">
         + New Plan
       </button>
-    </div>
+  </div>
 
-    <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-3 mb-6">
-      <p class="text-sm text-indigo-700 dark:text-indigo-300">
+  <app-admin-tabs></app-admin-tabs>
+
+  <div class="mexa-card">
+
+    <div class="ui-alert ui-alert-info admin-info">
+      <p class="admin-info-text">
         A plan's limits are the ceiling. On the Companies screen you can set a lower custom limit per company,
         but never higher than the plan allows. Retiring a plan leaves existing companies untouched — it only
         stops the plan being assigned again.
@@ -42,7 +24,7 @@
     </div>
 
     <div *ngIf="loading && plans.length === 0" class="flex justify-center py-12">
-      <div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      <span class="ui-spinner admin-spin" role="status" aria-label="Loading"></span>
     </div>
 
     <div *ngIf="!loading && plans.length === 0" class="text-center py-12 text-gray-500">
@@ -50,18 +32,18 @@
       <p class="text-sm mt-1">Create a plan before assigning one to a company</p>
     </div>
 
-    <div *ngIf="plans.length > 0" class="overflow-x-auto">
-      <table class="w-full border-collapse">
+    <div *ngIf="plans.length > 0" class="mexa-tablewrap" tabindex="0" role="region" aria-label="Plans">
+      <table class="mexa-table">
         <thead>
-          <tr class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Plan</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Limits</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Companies</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Status</th>
-            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Actions</th>
+          <tr>
+            <th scope="col">Plan</th>
+            <th scope="col">Limits</th>
+            <th scope="col">Companies</th>
+            <th scope="col">Status</th>
+            <th scope="col" class="admin-center">Actions</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+        <tbody>
           <tr *ngFor="let plan of plans" class="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
             <td class="px-4 py-3">
               <div class="flex items-center gap-2">
@@ -80,22 +62,17 @@
               {{ companiesOn(plan.id) }}
             </td>
             <td class="px-4 py-3">
-              <span [class]="plan.is_active
-                ? 'inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs rounded-full'
-                : 'inline-flex items-center gap-1 px-2 py-0.5 bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300 text-xs rounded-full'">
+              <span class="mexa-badge" [ngClass]="plan.is_active ? 'mexa-badge-good' : 'mexa-badge-neutral'">
                 {{ plan.is_active ? 'Available' : 'Retired' }}
               </span>
             </td>
             <td class="px-4 py-3 text-center">
               <div class="flex items-center justify-center gap-2">
                 <button (click)="openEdit(plan)"
-                  class="px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 font-medium">
+                  class="ui-btn ui-btn-ghost ui-btn-xs">
                   Edit
                 </button>
-                <button (click)="toggleActive(plan)"
-                  [class]="plan.is_active
-                    ? 'px-3 py-1.5 bg-amber-500 text-white text-xs rounded-lg hover:bg-amber-600 font-medium'
-                    : 'px-3 py-1.5 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 font-medium'">
+                <button (click)="toggleActive(plan)" class="ui-btn ui-btn-ghost ui-btn-xs">
                   {{ plan.is_active ? 'Retire' : 'Make available' }}
                 </button>
               </div>

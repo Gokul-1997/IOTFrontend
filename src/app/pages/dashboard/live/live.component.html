@@ -1,14 +1,22 @@
 <div class="machine-workspace">
   <a routerLink="/dashboard" class="back-link">← All machines</a>
   <header class="live-heading">
-    <div><p class="eyebrow">MACHINE DASHBOARD</p><h1>{{ machine?.machine_serial_no || machine?.name || 'Machine' }} <span class="status-pill" [ngClass]="displayStatus.toLowerCase()"><i aria-hidden="true"></i>{{ displayStatus }}</span></h1><p class="heading-note">{{ alarmActive && liveStatus !== 'ALARM' ? 'Alarm active · Machine ' + (liveStatus | lowercase) : 'Production, performance and live machine readings' }}</p></div>
+    <div><p class="eyebrow">MACHINE DASHBOARD</p><h1>{{ machine?.machine_serial_no || machine?.name || 'Machine' }} <span class="status-pill" [ngClass]="liveStatus.toLowerCase()"><i aria-hidden="true"></i>{{ liveStatus }}</span><span *ngIf="alarmActive && liveStatus !== 'ALARM'" class="status-pill alarm"><i aria-hidden="true"></i>ALARM</span></h1><p class="heading-note">{{ alarmActive && liveStatus !== 'ALARM' ? 'Alarm active · Machine ' + (liveStatus | lowercase) : 'Production, performance and live machine readings' }}</p></div>
     <div class="heading-actions"><div class="shift-context"><span>{{ shift?.shift_code || 'Current shift' }} · {{ currentDateStr }}</span><strong>{{ currentTime }} <small>IST</small></strong></div><button class="refresh-button" (click)="refresh()" [disabled]="loading" aria-label="Refresh machine data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 6M4 12l2 6a7 7 0 0 0 12-1"/></svg>{{ loading ? 'Refreshing…' : 'Refresh' }}</button></div>
   </header>
   <div *ngIf="loading && !lastUpdated" class="notice" role="status">Loading machine readings…</div>
   <div *ngIf="loadError" class="notice warning" role="alert">{{ lastUpdated ? 'Refresh unsuccessful. Showing the last available readings.' : 'Machine readings are unavailable.' }} <button (click)="refresh()">Try again</button></div>
+  <div *ngIf="alarmActive" class="notice alarm" role="alert">
+    <strong>This machine is in alarm.</strong>
+    <ul *ngIf="activeAlarms.length; else alarmNoDetail">
+      <li *ngFor="let a of activeAlarms"><b>{{ a.alarm_code || 'Alarm' }}</b> {{ a.message || a.alarm_type }} <span>· since {{ a.started_at | date:'d MMM, h:mm a':'+0530' }}{{ a.severity ? ' · ' + (a.severity | titlecase) : '' }}</span></li>
+    </ul>
+    <ng-template #alarmNoDetail><p>The controller reports an alarm; its code has not been recorded yet.</p></ng-template>
+    <p *ngIf="liveStatus === 'IDLE'">Status shows IDLE because a machine in alarm stops cutting.</p>
+  </div>
 
   <div class="overview-grid">
-    <section class="panel machine-panel" aria-labelledby="machine-context-heading">
+    <section class="panel machine-panel" [class.alarm-blink]="alarmActive" aria-labelledby="machine-context-heading">
       <div class="panel-heading"><h2 id="machine-context-heading">Machine overview</h2><span class="panel-label">ID {{ machineId }}</span></div>
       <div class="machine-content"><div class="machine-visual"><img [src]="machine?.image_url || machine?.image || 'images/product/machine-placeholder.svg'" [alt]="machine?.machine_serial_no || 'Industrial machine'" (error)="usePlaceholder($event)"><span class="mode-label">{{ liveMode || 'Mode not reported' }}</span></div>
       <dl class="context-grid"><div><dt>Operator</dt><dd>{{ operator?.operator_name || 'Unassigned' }}</dd></div><div><dt>Employee ID</dt><dd>{{ operator?.employee_id || '—' }}</dd></div><div><dt>Current part</dt><dd>{{ job?.part_name || 'No active part' }}</dd></div><div><dt>Component ID</dt><dd>{{ job?.component_id || '—' }}</dd></div></dl></div>
@@ -31,6 +39,9 @@
     </section>
   </div>
 
+  <!-- running / idle / alarm / off across the shift, breaks marked -->
+  <app-shift-timeline [machineId]="machineId"></app-shift-timeline>
+
   <div class="performance-grid" [class.without-history]="!canViewHourly">
     <section *ngIf="canViewHourly" class="panel hourly-panel" aria-labelledby="hourly-heading">
       <div class="panel-heading"><div><h2 id="hourly-heading">Hourly production</h2><p class="panel-description">See when this machine produces the most</p></div><span class="panel-label">{{ hourlyDate }} · IST</span></div>
@@ -51,14 +62,20 @@
   <div class="telemetry-grid">
     <section *ngIf="auth.hasWidget('dashboard:live', 'spindle-speed-chart')" class="panel telemetry-panel" aria-labelledby="spindle-heading">
       <div class="panel-heading"><h2 id="spindle-heading">Spindle load</h2><span class="panel-label">CURRENT READING</span></div>
-      <div class="arc-gauge" role="img" [attr.aria-label]="'Spindle load: ' + (liveSpindleLoad === null ? 'not reported' : liveSpindleLoad + '%')"><svg viewBox="0 0 240 144" aria-hidden="true"><path class="gauge-track" d="M25 115 A95 95 0 0 1 215 115"/><path *ngIf="liveSpindleLoad !== null" class="gauge-value spindle-arc" d="M25 115 A95 95 0 0 1 215 115" pathLength="100" [attr.stroke-dasharray]="boundedPercent(liveSpindleLoad) + ' 100'"/><path class="gauge-ticks" d="M25 115h9M38 67l8 4M73 33l4 8M120 20v9M167 33l-4 8M202 67l-8 4M215 115h-9"/></svg><div class="telemetry-number">{{ liveSpindleLoad === null ? '—' : (liveSpindleLoad | number:'1.1-1') }}<span>% load</span></div></div>
-      <div class="gauge-scale"><span>0%</span><span>50%</span><span>100%</span></div><p class="metric-caption">{{ liveSpindleLoad === null ? 'Spindle load has not been reported' : liveSpindleLoad > 100 ? 'Reading exceeds the 100% display range' : 'Current spindle demand as a percentage' }}</p>
+      <app-needle-gauge class="needle"
+        [value]="liveSpindleLoad" [min]="0" [max]="150" [majorStep]="25" [minorPerMajor]="5"
+        [zones]="SPINDLE_ZONES" [tickLabel]="pctTick" [valueText]="spindleText"
+        [ariaLabel]="liveSpindleLoad === null ? 'Spindle load not reported' : 'Spindle load ' + (liveSpindleLoad | number:'1.0-0') + ' percent, ' + spindleState.word"></app-needle-gauge>
+      <p class="metric-caption"><b [ngClass]="spindleState.cls">{{ spindleState.word }}</b> · amber above 80%, red past 100% (overload)</p>
     </section>
 
     <section *ngIf="auth.hasWidget('dashboard:live', 'feed-override-chart')" class="panel telemetry-panel" aria-labelledby="feed-heading">
       <div class="panel-heading"><h2 id="feed-heading">Feed rate</h2><span class="panel-label">CURRENT READING</span></div>
-      <div class="arc-gauge" role="img" [attr.aria-label]="'Feed rate: ' + (liveFeed === null ? 'not reported' : liveFeed + ' millimetres per minute')"><svg viewBox="0 0 240 144" aria-hidden="true"><path class="gauge-track" d="M25 115 A95 95 0 0 1 215 115"/><path *ngIf="liveFeed !== null" class="gauge-value feed-arc" d="M25 115 A95 95 0 0 1 215 115" pathLength="100" [attr.stroke-dasharray]="boundedPercent((liveFeed / FEED_SCALE) * 100) + ' 100'"/><path class="gauge-ticks" d="M25 115h9M38 67l8 4M73 33l4 8M120 20v9M167 33l-4 8M202 67l-8 4M215 115h-9"/></svg><div class="telemetry-number">{{ liveFeed === null ? '—' : (liveFeed | number:'1.0-0') }}<span>mm/min</span></div></div>
-      <div class="gauge-scale"><span>0</span><span>22,500</span><span>45,000</span></div><p class="metric-caption">{{ liveFeed === null ? 'Feed rate has not been reported' : liveFeed > FEED_SCALE ? 'Reading exceeds the display range · mm/min' : 'Display range 0–45,000 mm/min' }}</p>
+      <app-needle-gauge class="needle"
+        [value]="liveFeed" [min]="0" [max]="FEED_SCALE" [majorStep]="1000" [minorPerMajor]="4"
+        fill="#3b82f6" [tickLabel]="kTick" [valueText]="feedText"
+        [ariaLabel]="'Feed rate ' + feedText(liveFeed)"></app-needle-gauge>
+      <p class="metric-caption">{{ liveFeed === null ? 'Feed rate has not been reported' : liveFeed > FEED_SCALE ? 'Above the ' + (FEED_SCALE | number) + ' mm/min scale' : 'Actual feed · Feed override % is not reported by the controller' }}</p>
     </section>
 
     <section *ngIf="auth.hasWidget('dashboard:live', 'power-consume')" class="panel energy-panel" aria-labelledby="energy-heading"><div class="panel-heading"><h2 id="energy-heading">Energy consumption</h2><span class="energy-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m13 2-9 12h7l-1 8 10-13h-8z"/></svg></span></div><div class="energy-stat"><span>{{ shift?.shift_code || 'Current shift' }}</span><strong>{{ number(power?.shift_kwh) === null ? '—' : (power.shift_kwh | number:'1.3-3') }} <small>kWh</small></strong></div><div class="energy-divider"></div><div class="energy-total"><span>Total recorded</span><strong>{{ number(power?.total_kwh) === null ? '—' : (power.total_kwh | number:'1.3-3') }} <small>kWh</small></strong></div><p class="metric-caption">Energy readings reported by this machine</p></section>

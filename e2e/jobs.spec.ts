@@ -21,13 +21,22 @@ const emptyJobs = {
   meta: { page: 1, limit: 10, total: 0, totalPages: 0 }
 };
 
-function stubBase(page: any, jobs = jobList) {
-  page.route('**/api/machines*', r =>
+// The page reads GET /api/jobs/current (the Active tab) and GET
+// /api/jobs/history (the History tab); stopping is POST /api/jobs/stop.
+async function stubJobs(page: any, current: any, history: any = emptyJobs) {
+  await page.route('**/api/machines**', r =>
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(machines) })
   );
-  page.route('**/api/jobs*', r =>
-    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(jobs) })
+  await page.route('**/api/jobs/current**', r =>
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(current) })
   );
+  await page.route('**/api/jobs/history**', r =>
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(history) })
+  );
+}
+
+function stubBase(page: any, jobs = jobList) {
+  return stubJobs(page, jobs);
 }
 
 test.describe('Job page', () => {
@@ -54,52 +63,57 @@ test.describe('Job page', () => {
   });
 
   test('TC-JB-04 stop job — 200 response clears job from list', async ({ authedPage: page }) => {
-    await stubBase(page);
+    let current: any = jobList;
+    let stopBody: any = null;
+    await page.route('**/api/machines**', r =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(machines) })
+    );
+    await page.route('**/api/jobs/current**', r =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(current) })
+    );
+    await page.route('**/api/jobs/history**', r =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(emptyJobs) })
+    );
+    await page.route('**/api/jobs/stop', r => {
+      stopBody = r.request().postDataJSON();
+      current = emptyJobs;               // the job is gone once stopped
+      return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+    });
 
     await page.goto('/job');
     await expect(page.getByText('PartA').first()).toBeVisible({ timeout: 10_000 });
 
-    // Mock the stop endpoint
-    await page.route('**/api/jobs/*/stop', r =>
-      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) })
-    );
-    // After stop, return empty list
-    await page.route('**/api/jobs*', r =>
-      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(emptyJobs) })
-    );
+    await page.getByRole('button', { name: /^stop$/i }).first().click();
+    await page.getByRole('button', { name: /yes, stop job/i }).click();
 
-    const stopBtn = page.getByRole('button', { name: /stop/i }).first();
-    if (await stopBtn.isVisible({ timeout: 5_000 })) {
-      await stopBtn.click();
-    }
+    await expect(page.getByText('PartA')).toHaveCount(0, { timeout: 10_000 });
+    expect(stopBody).toEqual({ machine_id: 1 });
   });
 
-  test('TC-JB-05 stop job — 422 (already stopped) handled gracefully', async ({ authedPage: page }) => {
+  test('TC-JB-05 stop job — 422 (already stopped) shows the reason and keeps the dialog', async ({ authedPage: page }) => {
     await stubBase(page);
-    await page.goto('/job');
-
-    await page.route('**/api/jobs/*/stop', r =>
+    await page.route('**/api/jobs/stop', r =>
       r.fulfill({
         status: 422,
         contentType: 'application/json',
         body: JSON.stringify({ success: false, message: 'No active job found' })
       })
     );
+    await page.goto('/job');
+    await expect(page.getByText('PartA').first()).toBeVisible({ timeout: 10_000 });
 
-    const stopBtn = page.getByRole('button', { name: /stop/i }).first();
-    if (await stopBtn.isVisible({ timeout: 5_000 })) {
-      await stopBtn.click();
-    }
+    await page.getByRole('button', { name: /^stop$/i }).first().click();
+    await page.getByRole('button', { name: /yes, stop job/i }).click();
 
-    // Page should not crash
+    await expect(page.getByText('No active job found')).toBeVisible();
     await expect(page).toHaveURL(/\/job/);
   });
 
   test('TC-JB-06 500 on job list — page does not crash', async ({ authedPage: page }) => {
-    await page.route('**/api/machines*', r =>
+    await page.route('**/api/machines**', r =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(machines) })
     );
-    await page.route('**/api/jobs*', r =>
+    await page.route('**/api/jobs/**', r =>
       r.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ message: 'Server error' }) })
     );
 
@@ -109,16 +123,7 @@ test.describe('Job page', () => {
   });
 
   test('TC-JB-07 pagination meta visible for multi-page lists', async ({ authedPage: page }) => {
-    await page.route('**/api/machines*', r =>
-      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(machines) })
-    );
-    await page.route('**/api/jobs*', r =>
-      r.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ ...jobList, meta: { page: 1, limit: 10, total: 25, totalPages: 3 } })
-      })
-    );
+    await stubJobs(page, { ...jobList, meta: { page: 1, limit: 10, total: 25, totalPages: 3 } });
 
     await page.goto('/job');
     await expect(page.getByText('VMC-1-F').first()).toBeVisible({ timeout: 10_000 });

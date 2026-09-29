@@ -132,37 +132,108 @@ test('chart text stays legible on the dark surface', async ({ authedPage: page }
 
 
 /*
- * The tile grid with a real fleet.
- *
- * Production has 20 active machines for the main company (the service returns
- * all 20 in one page), which is most of a screen of tiles before the first
- * chart. The grid opens compact and says how much it is holding back — a
- * "show more" that does not name its count leaves you unable to tell a
- * collapsed list from a short one.
+ * The tile grid with a real fleet: every machine, ten to a page, ranked best
+ * first, with the design's Top 5 / Bottom 5 as views of the same tiles. (It
+ * was five solid-colour cards to a page beside a chart repeating the same
+ * five machines; on the real fleet every card was the same alarm red.)
  */
-test('the machine cards go five to a page, as the design shows them', async ({ authedPage: page }) => {
+test('every machine, ten to a page, with Top 5 and Bottom 5', async ({ authedPage: page }) => {
+  // VMC-01 95% down to VMC-18 44%; VMC-19 and VMC-20 have no cycle time
   const fleet = Array.from({ length: 20 }, (_, i) => {
-    const pct = 95 - i * 3;
-    return machine(`VMC-${String(i + 1).padStart(2, '0')}`, pct,
-                   pct >= 85 ? 'GOOD' : pct >= 60 ? 'FAIR' : 'POOR');
+    const pct = i >= 18 ? null : 95 - i * 3;
+    return machine(`VMC-${String(i + 1).padStart(2, '0')}`, pct, 'X');
   });
   const twenty = ok({ ...oee.data, machines: { data: fleet, total: 20, page: 1, limit: 200, totalPages: 1 } });
 
-  await page.route('**/api/**', (r: any) => r.fulfill({ status: 200, contentType: 'application/json',
-    body: JSON.stringify({ status: 'success', success: true, data: [] }) }));
-  await page.route('**/api/charts/meta*', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(meta) }));
+  await mockApi(page);
   await page.route('**/api/dashboard/oee*', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(twenty) }));
-
   await page.setViewportSize({ width: 1600, height: 1200 });
   await page.goto('/oee-dashboard');
-  await expect(page.locator('.mexa-kpi').first()).toBeVisible();
 
-  await expect(page.locator('.mexa-oeecard')).toHaveCount(5);
+  const tiles = page.locator('.mexa-oeecard');
+  const names = page.locator('.mexa-oeecard-name');
+  await expect(tiles).toHaveCount(10);
   await expect(page.getByText('Total Machines 20')).toBeVisible();
-  // the four grades of the design, on each card's own OEE
-  await expect(page.locator('.mexa-oeecard').first()).toHaveClass(/mexa-grade-excellent/);
-  const pages = page.getByRole('navigation', { name: 'Machine pages' });
-  await pages.getByRole('button', { name: '4', exact: true }).click();
-  await expect(page.locator('.mexa-oeecard').first()).toContainText('VMC-16');
-  await expect(page.locator('.mexa-oeecard').first()).toHaveClass(/mexa-grade-poor/);
+  // the design's four grades, on each tile's own OEE, and a status on each
+  await expect(tiles.first()).toHaveClass(/mexa-grade-excellent/);
+  await expect(tiles.first()).toContainText('Running');
+  await expect(tiles.first()).toHaveClass(/mexa-oeecard-tint/);
+
+  await page.getByRole('navigation', { name: 'Machine pages' }).getByRole('button', { name: '2', exact: true }).click();
+  await expect(tiles.first()).toContainText('VMC-11');
+  await expect(tiles.first()).toHaveClass(/mexa-grade-avg/);        // 65%
+  await expect(tiles.nth(5)).toHaveClass(/mexa-grade-poor/);        // VMC-16, 50%
+  await expect(tiles.last()).toContainText('No cycle time');
+
+  const views = page.getByRole('group', { name: 'Machines to show' });
+  await views.getByRole('button', { name: 'Top 5' }).click();
+  await expect(views.getByRole('button', { name: 'Top 5' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(names).toHaveText(['VMC-01', 'VMC-02', 'VMC-03', 'VMC-04', 'VMC-05']);
+  await expect(page.getByRole('navigation', { name: 'Machine pages' })).toHaveCount(0);
+
+  // worst first, and a machine with no cycle time is not ranked as the worst
+  await views.getByRole('button', { name: 'Bottom 5' }).click();
+  await expect(names).toHaveText(['VMC-18', 'VMC-17', 'VMC-16', 'VMC-15', 'VMC-14']);
+
+  await views.getByRole('button', { name: /All 20/ }).click();
+  await expect(tiles).toHaveCount(10);
+  await expect(tiles.first()).toContainText('VMC-01');
+});
+
+/* OEE = A × P × Q, so planned time splits into good output and three
+   losses that always add to 100 — and the biggest is named. */
+test('where OEE is lost adds up to 100 and names the biggest loss', async ({ authedPage: page }) => {
+  const fleet = ok({ ...oee.data, kpis: { ...oee.data.kpis,
+    availability_pct: 50, performance_pct: 80, quality_pct: 90, oee_pct: 36, rejected: 40,
+    planned_seconds: 200 * 3600, run_seconds: 100 * 3600, idle_seconds: 60 * 3600 } });
+  await mockApi(page);
+  await page.route('**/api/dashboard/oee*', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fleet) }));
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/oee-dashboard');
+
+  const panel = page.getByRole('region', { name: 'Where OEE is lost' });
+  const rows = panel.locator('.mexa-losslist li');
+  await expect(rows).toHaveCount(4);
+  await expect(rows.nth(0)).toContainText('36.0%');
+  await expect(rows.nth(1)).toContainText('50.0 pts');   // 1 − 0.5
+  await expect(rows.nth(2)).toContainText('10.0 pts');   // 0.5 × 0.2
+  await expect(rows.nth(3)).toContainText('4.0 pts');    // 0.5 × 0.8 × 0.1
+  // the two hour figures on the page, reconciled
+  await expect(rows.nth(1)).toContainText('100 h 0 m (60 h 0 m idle, 40 h 0 m off or not reporting)');
+  await expect(rows.nth(1)).toHaveClass(/is-biggest/);
+  await expect(panel.locator('.mexa-loss-verdict')).toContainText('Biggest loss: Availability');
+  await expect(panel.locator('.mexa-loss-verdict')).toContainText('not running for 50% of their planned time');
+});
+
+test('the loss panel says what it needs when OEE cannot be computed', async ({ authedPage: page }) => {
+  const none = ok({ ...oee.data, kpis: { ...oee.data.kpis, performance_pct: null, oee_pct: null } });
+  await mockApi(page);
+  await page.route('**/api/dashboard/oee*', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(none) }));
+  await page.goto('/oee-dashboard');
+  const panel = page.getByRole('region', { name: 'Where OEE is lost' });
+  await expect(panel).toContainText('Needs a machine with a cycle time');
+  await expect(panel.locator('.mexa-lossbar')).toHaveCount(0);
+});
+
+test('fleet downtime reads in hours and minutes, not a 4-digit HH:MM:SS', async ({ authedPage: page }) => {
+  const week = ok({ ...oee.data, kpis: { ...oee.data.kpis, idle_seconds: 1594 * 3600 + 14 * 60 + 50 } });
+  await mockApi(page);
+  await page.route('**/api/dashboard/oee*', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(week) }));
+  await page.goto('/oee-dashboard');
+  const card = page.locator('.mexa-kpi').filter({ hasText: 'Downtime' });
+  await expect(card.locator('.mexa-kpi-value')).toHaveText('1,594 h 14 m');
+  await expect(card.locator('.mexa-kpi-value')).toHaveAttribute('title', '1594:14:50 (HH:MM:SS)');
+});
+
+test('the trend draws OEE against the target, with its three factors', async ({ authedPage: page }) => {
+  const days = Array.from({ length: 5 }, (_, i) => ({ day: `2026-06-${13 + i}T00:00:00.000Z`,
+    oee_pct: 20 + i, availability_pct: 30 + i, performance_pct: 80, quality_pct: 100 }));
+  await mockApi(page);
+  await page.route('**/api/dashboard/oee*', (r: any) => r.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify(ok({ ...oee.data, trend: days })) }));
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/oee-dashboard');
+  const trend = page.getByRole('region', { name: 'OEE Trend' });
+  await expect(trend.locator('.apexcharts-legend-text')).toHaveText(['OEE', 'Availability', 'Performance', 'Quality']);
+  await expect(trend.getByText('Target 85%')).toBeVisible();
 });

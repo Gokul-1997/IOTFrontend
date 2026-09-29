@@ -1,4 +1,3 @@
-import { DataBarsComponent } from '../../shared/data-bars/data-bars.component';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,6 +10,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { ReportDateDirective } from '../../shared/report-date.directive';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 6 — Downtime Reason Loss Analysis
@@ -27,7 +27,7 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 @Component({
   selector: 'app-downtime-dashboard',
   standalone: true,
-  imports: [DataBarsComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
+  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
   templateUrl: './downtime-dashboard.component.html'
 })
 export class DowntimeDashboardComponent implements OnInit, OnDestroy {
@@ -180,8 +180,8 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
        the KPI seconds rather than the reason table — a machine can be
        idle without anyone having entered a reason for it. */
     this.statusRows = [
-      { label: 'Running', seconds: Number(d.kpis.run_seconds)   || 0, colour: '#3564df' },
-      { label: 'Idle',    seconds: Number(d.kpis.idle_seconds)  || 0, colour: '#5f90e6' },
+      { label: 'Running', seconds: Number(d.kpis.run_seconds)   || 0, colour: '#2f2d8f' },
+      { label: 'Idle',    seconds: Number(d.kpis.idle_seconds)  || 0, colour: '#4a76c8' },
       { label: 'Alarm',   seconds: Number(d.kpis.alarm_seconds) || 0, colour: '#f5a623' }
     ].filter(r => r.seconds > 0);
     this.statusSeries = this.statusRows.map(r => r.seconds);
@@ -289,7 +289,7 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
       stroke: { width: [0, 3], curve: 'straight' },
       plotOptions: { bar: { columnWidth: '55%', borderRadius: 3 } },
       // the columns carry their own fillColor; this sets the line
-      colors: ['#3564df', '#1f2937'],
+      colors: ['#2f2d8f', '#1f2937'],
       dataLabels: { enabled: false },
       legend: { position: 'top', horizontalAlign: 'right' },
       xaxis:  { categories: this.paretoCategories, labels: { rotate: -35, trim: true } },
@@ -308,11 +308,11 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
   get hourlyChart(): any {
     return this.charts.memo('hourlyChart', () => {
     return {
-      chart:  { type: 'line', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'line', height: 200, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: {},
       stroke: { width: 3, curve: 'smooth' },
       markers: { size: 4 },
-      colors: ['#3564df'],
+      colors: ['#2f2d8f'],
       dataLabels: { enabled: false },
       xaxis:  { categories: this.hourlyCategories, title: { text: 'Time (Hour)' } },
       yaxis:  { title: { text: 'Hours down' }, labels: { formatter: (v: number) => v?.toFixed(1) } },
@@ -324,7 +324,7 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
   }
 
   /** The MEXA palette, in the order the design cycles it. */
-  private readonly palette = ['#3564df', '#9581cf', '#5f90e6', '#38a994', '#6b7280', '#f5811f'];
+  private readonly palette = ['#2f2d8f', '#9b7ec8', '#4a76c8', '#17b3a3', '#6b7280', '#f5811f'];
 
   donutColour(i: number): string { return this.palette[i % this.palette.length]; }
 

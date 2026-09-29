@@ -10,11 +10,12 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ReportDateDirective } from '../../shared/report-date.directive';
 
 @Component({
   standalone: true,
   selector: 'app-oee-reports',
-  imports: [
+  imports: [ReportDateDirective, 
     CommonModule, FormsModule,
     MatPaginatorModule, MatProgressSpinnerModule,
     MatIconModule, MatButtonModule, MatTooltipModule
@@ -201,6 +202,15 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
 
   /* Used for the figure's text as well as its bar, so each shade is the
      darker one that reads at least 4.5:1 on white (WCAG AA). */
+  /** The band as a class, so the stylesheet can give each a dark-mode
+   *  shade — an inline colour read 3.4:1 on the dark rows. */
+  oeeBand(oee: number): string {
+    if (oee >= 85) return 'oee-excellent';
+    if (oee >= 75) return 'oee-good';
+    if (oee >= 60) return 'oee-avg';
+    return 'oee-poor';
+  }
+
   getOeeColor(oee: number): string {
     if (oee >= 85) return '#047857';
     if (oee >= 75) return '#1d4ed8';

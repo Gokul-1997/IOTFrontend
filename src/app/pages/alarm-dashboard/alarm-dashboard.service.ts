@@ -22,7 +22,7 @@ export class AlarmDashboardService {
   private toQuery(f: any): any {
     const q: any = {};
     for (const k of ['from', 'to', 'machine_id', 'shift_id', 'alarm_type',
-                     'alarm_code', 'severity', 'search', 'sort', 'dir', 'page', 'limit']) {
+                     'alarm_code', 'severity', 'search', 'show', 'sort', 'dir', 'page', 'limit']) {
       if (f[k] !== null && f[k] !== undefined && f[k] !== '') q[k] = f[k];
     }
     return q;

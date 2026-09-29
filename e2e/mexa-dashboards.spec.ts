@@ -328,7 +328,8 @@ async function mockApi(page: any) {
 
 /** Every screen must show the field, a title bar and at least one KPI tile. */
 const screens: { path: string; title: string; kpis: number; file: string }[] = [
-  { path: '/maintenance-dashboard',  title: 'Maintenance Dashboard',             kpis: 6, file: 'mexa-02-maintenance.png' },
+  // the design's Maintenance screen has no KPI row: machine card, gauges, fans
+  { path: '/maintenance-dashboard',  title: 'Maintenance Dashboard',             kpis: 0, file: 'mexa-02-maintenance.png' },
   { path: '/preventive-maintenance', title: 'Preventive Maintenance Dashboard',  kpis: 5, file: 'mexa-03-preventive.png' },
   { path: '/periodic-maintenance',   title: 'Periodic Maintenance Dashboard',    kpis: 5, file: 'mexa-04-periodic.png' },
   { path: '/alarm-report',           title: 'Alarm Report Dashboard',            kpis: 5, file: 'mexa-05-alarms.png' },
@@ -359,7 +360,6 @@ for (const s of screens) {
     expect(await cards.count()).toBeGreaterThan(0);
 
     await page.waitForTimeout(2500);
-    await expect(page.locator('.apexcharts-radialbar, .apexcharts-pie')).toHaveCount(0);
     await page.screenshot({ path: s.file, fullPage: true });
 
     expect(errors, `console errors on ${s.path}`).toEqual([]);
@@ -391,9 +391,11 @@ test('OEE dashboard has no Report tab; the machine table lives in Reports', asyn
   await table.getByRole('button', { name: /^Machine/ }).click();
   await expect(table.locator('th[aria-sort="ascending"]')).toHaveCount(1);
 
-  await page.getByRole('searchbox', { name: 'Search machines' }).fill('03');
-  await expect(table.locator('tbody tr')).toHaveCount(1);
-  await expect(table.locator('tbody tr')).toContainText('CNC-03');
+  // no second search-and-export row inside the tab: the Reports toolbar exports it
+  await expect(page.getByRole('searchbox', { name: 'Search machines' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Export CSV: Machine OEE' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Excel: Machine OEE' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'PDF: Machine OEE' })).toBeVisible();
 });
 
 test('Reports holds every report as a tab, and Analytics has one Reports entry', async ({ authedPage: page }) => {
@@ -457,12 +459,79 @@ test('a servo with no temperature sensor reads as "--", never as 0 °C', async (
   // the claim this test exists to defend
   await expect(servo).not.toContainText('0.0 °C');
 
-  // what the data lacks is named; what arrives is not
-  const gaps = page.locator('.mexa-card')
-    .filter({ has: page.getByRole('heading', { name: 'Fans & Batteries' }) });
-  await expect(gaps).toContainText('Encoder temperature');
-  await expect(gaps).not.toContainText('Servo load per axis');
+  // what the data lacks says so in its own place; what arrives is drawn
+  const spindle = page.locator('.mexa-card')
+    .filter({ has: page.getByRole('heading', { name: /Spindle RPM/ }) });
+  await expect(spindle).toContainText('Encoder temperature not reported');
+  await expect(servo.locator('.mt-word').first()).not.toHaveText('Not reported');
 
   await page.waitForTimeout(2000);
   await page.screenshot({ path: 'mexa-02-maintenance.png', fullPage: true });
+});
+
+/* A KPI card opens the alarms behind its number in Alarms Details: the
+   server narrows the table only (?show=), the card is marked pressed, a
+   line says what the table holds, and the same card again shows all. */
+test('Alarm Report: a card click narrows the table to that card', async ({ authedPage: page }) => {
+  const seen: string[] = [];
+  await mockApi(page);
+  page.on('request', (r: any) => { if (/\/dashboard\/alarms(\?|$)/.test(r.url())) seen.push(r.url()); });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/alarm-report');
+
+  const critical = page.locator('button.mexa-kpi').filter({ hasText: 'Critical' });
+  await expect(critical).toHaveAttribute('aria-pressed', 'false');
+  await critical.click();
+  await expect(critical).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => seen.at(-1)).toContain('show=critical');
+  await expect(page.locator('.mexa-drill')).toContainText('Showing critical alarms only');
+  // focus goes to the results, so a keyboard user lands there too
+  await expect(page.locator('#alDetailsTitle')).toBeFocused();
+
+  await critical.click();
+  await expect(critical).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('.mexa-drill')).toHaveCount(0);
+  await expect.poll(() => seen.at(-1)).not.toContain('show=');
+
+  // Max Duration sorts rather than narrows
+  await page.locator('button.mexa-kpi').filter({ hasText: 'Duration' }).click();
+  await expect.poll(() => seen.at(-1)).toContain('sort=duration_seconds');
+  expect(seen.at(-1)).toContain('dir=desc');
+  expect(seen.at(-1)).not.toContain('show=');
+});
+
+/* The design draws the Preventive date filter as a range ("18 Jun 2026 -
+   18 Jul 2026"); it was a single date. */
+test('Preventive: a From–To range, checked before it is sent', async ({ authedPage: page }) => {
+  const seen: string[] = [];
+  await mockApi(page);
+  page.on('request', (r: any) => { if (/\/dashboard\/preventive(\?|$)/.test(r.url())) seen.push(r.url()); });
+  await page.goto('/preventive-maintenance');
+
+  await expect.poll(() => seen.length).toBeGreaterThan(0);
+  const first = new URL(seen[0]);
+  expect(first.searchParams.get('from')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(first.searchParams.get('to')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(first.searchParams.has('date')).toBe(false);
+  // the last 7 days by default
+  const span = (Date.parse(first.searchParams.get('to')!) - Date.parse(first.searchParams.get('from')!)) / 86_400_000;
+  expect(span).toBe(6);
+
+  /* The two ends cannot cross: a To typed before the From is pulled up to
+     it (the three-month window, ReportDateDirective), so an inverted range
+     is never sent. Dates relative to today, so the test does not age out. */
+  const day = (back: number) => new Date(Date.now() + 330 * 60000 - back * 86_400_000).toISOString().slice(0, 10);
+  const before = seen.length;
+  await page.getByLabel('From date').fill(day(3));
+  await page.getByLabel('To date').fill(day(20));
+  await page.getByLabel('To date').blur();
+  await expect(page.getByLabel('To date')).toHaveValue(day(3));
+  expect(seen.length).toBe(before);
+
+  await page.getByLabel('From date').fill(day(23));
+  await page.getByLabel('To date').fill(day(0));
+  await page.getByRole('button', { name: 'Submit' }).click();
+  await expect.poll(() => seen.at(-1)).toContain(`from=${day(23)}`);
+  expect(seen.at(-1)).toContain(`to=${day(0)}`);
+  await expect(page.locator('#pvRangeError')).toHaveCount(0);
 });

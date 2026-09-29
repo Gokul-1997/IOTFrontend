@@ -98,6 +98,59 @@
           </p>
         </div>
 
+        <!-- ── Break times: when the breaks happen, for the machine page's shift timeline ── -->
+        <fieldset class="ui-field mt-2 border-t border-gray-200 dark:border-gray-700 pt-4" aria-describedby="brkHint">
+          <legend class="ui-label !mb-1">Break times</legend>
+          <p id="brkHint" class="ui-hint !mt-0 mb-3">
+            When each break happens — shown on the machine page's shift timeline.
+            The Break minutes above is still what planned time uses.
+          </p>
+
+          <p *ngIf="!data" class="ui-hint">Create the shift first, then open it again to add its break times.</p>
+          <p *ngIf="data && !breaksAvailable" class="ui-hint">
+            Break times are not set up on this server yet (database update 028 is pending).
+          </p>
+          <p *ngIf="data && breaksAvailable && breaksLoading" class="ui-hint" aria-busy="true">Loading break times…</p>
+
+          <ng-container *ngIf="data && breaksAvailable && !breaksLoading">
+            <div *ngFor="let b of breaks; let i = index" class="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-end mb-2">
+              <div>
+                <label class="ui-label !text-xs" [for]="'brkName' + i">Name</label>
+                <input class="ui-input" [id]="'brkName' + i" [(ngModel)]="b.break_name" [ngModelOptions]="{ standalone: true }"
+                       maxlength="60" placeholder="e.g. Tea Break" autocomplete="off" />
+              </div>
+              <div>
+                <label class="ui-label !text-xs" [for]="'brkFrom' + i">From</label>
+                <input class="ui-input" type="time" [id]="'brkFrom' + i" [(ngModel)]="b.start_time" [ngModelOptions]="{ standalone: true }" />
+              </div>
+              <div>
+                <label class="ui-label !text-xs" [for]="'brkTo' + i">To</label>
+                <input class="ui-input" type="time" [id]="'brkTo' + i" [(ngModel)]="b.end_time" [ngModelOptions]="{ standalone: true }" />
+              </div>
+              <button type="button" class="ui-btn ui-btn-ghost !px-2" (click)="removeBreak(i)"
+                      [attr.aria-label]="'Remove ' + (b.break_name || 'break ' + (i + 1))">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <p *ngIf="!breaks.length" class="ui-hint">No break times yet.</p>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 mt-1">
+              <button type="button" class="ui-btn ui-btn-ghost" (click)="addBreak()" [disabled]="breaks.length >= MAX_BREAKS">
+                + Add break
+              </button>
+              <span *ngIf="breaks.length" class="ui-hint !mt-0"
+                    [ngClass]="{ 'text-amber-700 dark:text-amber-400': breaksTotal !== +form.value.break_minutes }">
+                These add up to {{ breaksTotal }} min{{ breaksTotal !== +form.value.break_minutes ? ' — Break minutes above is ' + form.value.break_minutes : '' }}.
+              </span>
+            </div>
+          </ng-container>
+
+          <p *ngIf="breaksError" class="ui-alert ui-alert-error mt-3" role="alert">{{ breaksError }}</p>
+        </fieldset>
+
         <div class="ui-field">
           <label class="ui-toggle">
             <input type="checkbox" formControlName="is_active" />

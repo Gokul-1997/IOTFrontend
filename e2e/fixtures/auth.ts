@@ -23,7 +23,7 @@ type AuthFixtures = {
  * to /login before the page ever renders. Only the payload is read
  * client-side; requests are mocked, so no signature is needed.
  */
-function stubJwt(): string {
+export function stubJwt(): string {
   const b64 = (o: object) =>
     Buffer.from(JSON.stringify(o)).toString('base64')
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');

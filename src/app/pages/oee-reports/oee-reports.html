@@ -1,7 +1,9 @@
 <div class="page-wrapper">
 
-  <!-- HEADER -->
-  <div class="bg-top-bar flex-wrap">
+  <!-- HEADER — its own search and Export CSV only as a page of its own. Inside
+       Reports (embedded) the Reports toolbar exports this tab, so a second
+       search-and-export row would repeat it. -->
+  <div *ngIf="!embedded" class="bg-top-bar flex-wrap">
     <div class="toolbar-left">
       <div class="page-title">
         <!-- <mat-icon class="title-icon">assessment</mat-icon> -->
@@ -58,12 +60,12 @@
 
     <div class="filter-item">
       <label class="filter-label">FROM DATE</label>
-      <input type="date" [(ngModel)]="fromDate" [max]="today" (change)="onDateChange()" class="filter-date" aria-label="From Date" />
+      <input type="date" appReportDate [rdBefore]="toDate" [(ngModel)]="fromDate" (change)="onDateChange()" class="filter-date" aria-label="From Date" />
     </div>
 
     <div class="filter-item">
       <label class="filter-label">TO DATE</label>
-      <input type="date" [(ngModel)]="toDate" [max]="today" (change)="onDateChange()" class="filter-date" aria-label="To Date" />
+      <input type="date" appReportDate [rdAfter]="fromDate" [(ngModel)]="toDate" (change)="onDateChange()" class="filter-date" aria-label="To Date" />
     </div>
 
     <div class="filter-actions">
@@ -143,7 +145,7 @@
 
             <td *ngIf="auth.hasWidget('oee-reports', 'oee')">
               <div class="metric-cell">
-                <span class="metric-val" [style.color]="getOeeColor(row.oee)">{{ row.oee }}%</span>
+                <span class="metric-val" [ngClass]="oeeBand(row.oee)">{{ row.oee }}%</span>
                 <div class="metric-bar">
                   <div class="metric-fill" [style.width]="getBarWidth(row.oee)"
                        [style.backgroundColor]="getOeeColor(row.oee)"></div>

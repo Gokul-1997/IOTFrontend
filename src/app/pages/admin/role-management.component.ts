@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { AdminService } from './admin.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AdminTabsComponent } from './admin-tabs.component';
 
 @Component({
   selector: 'app-role-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, AdminTabsComponent],
   templateUrl: './role-management.component.html',
   changeDetection: ChangeDetectionStrategy.Default
 })

@@ -7,6 +7,8 @@ import { ChartsService } from '../../charts/charts.service';
 import { SocketService } from '../../../core/services/socket.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProductionChartComponent, HourlyReading } from './production-chart.component';
+import { ShiftTimelineComponent } from './shift-timeline.component';
+import { NeedleGaugeComponent, GaugeZone } from '../../../shared/needle-gauge/needle-gauge.component';
 
 const POLL_MS = 30_000;
 const SOCKET_FRESH_MS = 45_000;
@@ -28,7 +30,7 @@ export function durationSeconds(value: unknown): number | null {
 @Component({
   standalone: true,
   selector: 'app-live',
-  imports: [CommonModule, RouterModule, ProductionChartComponent],
+  imports: [CommonModule, RouterModule, ProductionChartComponent, NeedleGaugeComponent, ShiftTimelineComponent],
   templateUrl: './live.component.html',
   styleUrls: ['./live.component.scss', './live-charts.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -57,6 +59,8 @@ export class LiveComponent implements OnInit, OnDestroy {
   liveFeed: number | null = null;
   livePartCount: number | null = null;
   alarmActive = false;
+  /** Open alarms on this machine (code, text, since when), from the API; the socket carries only the flag. */
+  activeAlarms: any[] = [];
   loading = true;
   loadError = false;
   lastUpdated: Date | null = null;
@@ -66,7 +70,19 @@ export class LiveComponent implements OnInit, OnDestroy {
   hourly: HourlyReading[] = [];
   hourlyLoading = false;
   hourlyError = false;
-  readonly FEED_SCALE = 45_000;
+  /* Spindle load on 0–150%: the load meter passes 100% on an overload.
+     Feed is the actual feed in mm/min; 0–6,000 holds almost all cutting
+     (90% of samples are under 2,500) — rapids pin the needle while the
+     number stays true. */
+  readonly FEED_SCALE = 6000;
+  readonly SPINDLE_ZONES: GaugeZone[] = [
+    { from: 80,  to: 100, color: '#f5a623' },   // high
+    { from: 100, to: 150, color: '#e03131' }    // overload
+  ];
+  readonly pctTick = (v: number) => `${v}%`;
+  readonly kTick = (v: number) => (v === 0 ? '0' : `${v / 1000}k`);
+  readonly spindleText = (v: number | null) => (v === null ? '--' : `${Math.round(v)}%`);
+  readonly feedText = (v: number | null) => (v === null ? '--' : `${Math.round(v).toLocaleString('en-IN')} mm/min`);
   readonly number = reading;
 
   constructor(
@@ -127,7 +143,7 @@ export class LiveComponent implements OnInit, OnDestroy {
     this.runTime = null; this.idleTime = null;
     this.liveStatus = 'UNKNOWN'; this.liveMode = '';
     this.liveSpindleLoad = null; this.liveFeed = null; this.livePartCount = null;
-    this.alarmActive = false;
+    this.alarmActive = false; this.activeAlarms = [];
     this.socketFields.clear();
     this.loading = true; this.loadError = false; this.lastUpdated = null;
     this.hourly = []; this.hourlyLoading = false; this.hourlyError = false;
@@ -168,6 +184,8 @@ export class LiveComponent implements OnInit, OnDestroy {
     if (!fresh('machine_status')) this.liveStatus = this.normalizeStatus(live.machine_status);
     if (!fresh('mode')) this.liveMode = live.mode || '';
     if (!fresh('alarm')) this.alarmActive = this.isAlarm(live.alarm);
+    // which alarm it is always comes from the API
+    this.activeAlarms = Array.isArray(live.active_alarms) ? live.active_alarms : [];
     if (!fresh('spindle_load')) this.liveSpindleLoad = reading(live.spindle_load);
     if (!fresh('feed_rate')) this.liveFeed = reading(live.feed_rate);
     this.lastUpdated = new Date();
@@ -229,6 +247,13 @@ export class LiveComponent implements OnInit, OnDestroy {
   }
   private isAlarm(value: unknown): boolean { return value === true || value === 1 || value === '1' || value === 'true'; }
   get displayStatus(): string { return this.alarmActive ? 'ALARM' : this.liveStatus; }
+  get spindleState(): { word: string; cls: string } {
+    const v = this.liveSpindleLoad;
+    if (v === null) return { word: 'Not reported', cls: 'text-gray-600 dark:text-gray-400' };
+    if (v > 100) return { word: 'Overload', cls: 'text-red-700 dark:text-red-400' };
+    if (v >= 80) return { word: 'High', cls: 'text-amber-700 dark:text-amber-400' };
+    return { word: 'Normal', cls: 'text-green-700 dark:text-green-400' };
+  }
   get target(): number | null { return reading(this.job?.target_qty); }
   get attainment(): number | null { return this.target && this.livePartCount !== null ? this.livePartCount / this.target * 100 : null; }
   get remaining(): number | null { return this.target && this.livePartCount !== null ? Math.max(0, this.target - this.livePartCount) : null; }

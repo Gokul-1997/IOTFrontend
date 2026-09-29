@@ -16,7 +16,21 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-profile',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
-  templateUrl: './profile.component.html'
+  templateUrl: './profile.component.html',
+  styles: [`
+    .prof-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); align-items: start; }
+    .prof-stack { display: grid; gap: 1rem; }
+    .prof-grid .mexa-card + .mexa-card, .prof-stack .mexa-card + .mexa-card { margin-top: 0; }
+    .prof-dl { display: grid; gap: 1rem 1.5rem; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); margin: 0; font-size: .9rem; }
+    .prof-dl dt { color: var(--mexa-ink-3); font-size: .8rem; }
+    .prof-dl dd { margin: .15rem 0 0; color: var(--mexa-ink); font-weight: 600; overflow-wrap: anywhere; }
+    .prof-form { display: grid; gap: .9rem; max-width: 26rem; }
+    .prof-form > .ui-btn, .prof-form > .ui-btn-row { justify-self: start; }
+    .prof-hint { margin: -.4rem 0 .9rem; }
+    .prof-ok { color: #15803d; font-size: .85rem; margin: .5rem 0 0; }
+    :host-context(.dark) .prof-ok { color: #6fdba0; }
+    .prof-retry { margin-top: .75rem; }
+  `]
 })
 export class ProfileComponent implements OnInit {
 
@@ -127,8 +141,14 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+  /** The role the header shows — the person's role, not the coarse
+   *  user_type ("company_user" is every company account, admin included). */
   roleLabel(userType: string): string {
-    if (!userType) return '--';
-    return userType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const roles = this.auth.getRoles();
+    if (userType === 'snt_super' || roles.includes('SNT_SUPER')) return 'S&T Super Admin';
+    if (roles.includes('COMPANY_ADMIN') || roles.includes('ADMIN')) return 'Company Admin';
+    const raw = roles[0] || userType;
+    if (!raw) return '--';
+    return raw.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
   }
 }

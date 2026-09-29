@@ -1,14 +1,16 @@
+<!-- Phase 2 · Screen 3 — Preventive Maintenance Dashboard, MEXA design. -->
 
 
-<p class="mexa-updated" *ngIf="updatedAt">
-  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Last Updated: {{ updatedAt }}
-</p>
 
 <!-- ══════════ TITLE BAR ══════════ -->
 <form class="mexa-titlebar" (ngSubmit)="submit()">
+  <div class="flex gap-2">
   <h1 class="mexa-title">Preventive Maintenance Dashboard</h1>
-  <span class="mexa-titlebar-spacer"></span>
+  <p class="mexa-updated" *ngIf="updatedAt">
+  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
+  Last Updated: <br>{{ updatedAt }}
+</p>
+</div>
 
   <div class="mexa-filters">
     <label class="mexa-filter-label" for="pvMachine">Machine</label>
@@ -17,8 +19,14 @@
       <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
     </select>
 
-    <label class="mexa-filter-label" for="pvDate">Date</label>
-    <input id="pvDate" type="date" class="mexa-date" [(ngModel)]="selectedDate" name="date">
+    <label class="mexa-filter-label" for="pvFrom">Date</label>
+    <input id="pvFrom" type="date" appReportDate [rdBefore]="toDate" class="mexa-date" [(ngModel)]="fromDate" name="from"
+           aria-label="From date"
+           [attr.aria-invalid]="rangeError ? true : null" aria-describedby="pvRangeError">
+    <span class="mexa-filter-label" aria-hidden="true">–</span>
+    <input id="pvTo" type="date" appReportDate [rdAfter]="fromDate" class="mexa-date" [(ngModel)]="toDate" name="to"
+           aria-label="To date"
+           [attr.aria-invalid]="rangeError ? true : null" aria-describedby="pvRangeError">
 
     <button type="submit" class="mexa-submit" [disabled]="loading">
       {{ loading ? 'Loading…' : 'Submit' }}
@@ -27,6 +35,7 @@
 </form>
 
 <!-- ══════════ STATES ══════════ -->
+<p *ngIf="rangeError" id="pvRangeError" class="mexa-note mexa-note-bad" role="alert">{{ rangeError }}</p>
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
 <!-- First load: placeholders shaped like the cards that are coming, so
      the page does not jump when the data lands. No values are shown —
@@ -46,9 +55,9 @@
   <!-- No rules means no tickets will ever be raised. A setup gap, not an
        empty result, so it is said in words with the fix attached. -->
   <p *ngIf="isUnconfigured" class="mexa-note mexa-note-warn">
-    <strong>No alarm rules are configured.</strong>
+    <strong class="text-red-500">No alarm rules are configured.</strong>
     Preventive tickets are raised from repeated critical alarms. Add a rule under
-    <strong>Alarm rules</strong> below before this screen can report anything.
+    <strong class="text-red-500">Alarm rules</strong> below before this screen can report anything.
   </p>
 
   <!-- ══════════ KPI TILES ══════════ -->
@@ -56,7 +65,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Critical<br>Alarms</span>
-        <span class="mexa-kpi-icon" style="background:#dc2626" aria-hidden="true">
+        <span class="mexa-kpi-icon red" style="background:#dc2626" aria-hidden="true">
           <mat-icon>notification_important</mat-icon>
         </span>
       </div>
@@ -67,7 +76,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Open PM<br>Tickets</span>
-        <span class="mexa-kpi-icon" style="background:#38a994" aria-hidden="true">
+        <span class="mexa-kpi-icon sky" style="background:#17b3a3" aria-hidden="true">
           <mat-icon>notifications_active</mat-icon>
         </span>
       </div>
@@ -78,7 +87,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Completed PM<br>Tickets</span>
-        <span class="mexa-kpi-icon" style="background:#9581cf" aria-hidden="true">
+        <span class="mexa-kpi-icon purple" style="background:#9b7ec8" aria-hidden="true">
           <mat-icon>task_alt</mat-icon>
         </span>
       </div>
@@ -89,7 +98,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Compliance</span>
-        <span class="mexa-kpi-icon" style="background:#6b7280" aria-hidden="true">
+        <span class="mexa-kpi-icon blue" style="background:#6b7280" aria-hidden="true">
           <mat-icon>fact_check</mat-icon>
         </span>
       </div>
@@ -100,7 +109,7 @@
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Avg. Resolution<br>Time</span>
-        <span class="mexa-kpi-icon" style="background:#3b9ae1" aria-hidden="true">
+        <span class="mexa-kpi-icon navy" style="background:#3b9ae1" aria-hidden="true">
           <mat-icon>hourglass_bottom</mat-icon>
         </span>
       </div>
@@ -113,26 +122,55 @@
   <div class="mexa-grid xl:grid-cols-4 lg:grid-cols-2">
 
     <section class="mexa-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Critical Alarm Trend</h2>
-      <apx-chart *ngIf="trendSeries.length"
+      <h2 class="mexa-card-title">Critical Alarm Trend</h2>
+      <div>
+      <apx-chart class="-mb-8" *ngIf="trendSeries.length"
         [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
         [fill]="trendChart.fill" [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
         [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
         [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
+        </div>
       <p *ngIf="!trendSeries.length" class="mexa-empty">No critical alarms in this period.</p>
     </section>
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Alarms by Severity</h2>
-      <div class="comparison-panel" *ngIf="severityTotal > 0; else noSeverity">
-        <app-data-bars  [values]="severitySeries" [labels]="severityDonut.labels" [colors]="severityDonut.colors"></app-data-bars>
+      <div class="mexa-donutrow mt-6" *ngIf="severityTotal > 0; else noSeverity">
+        <apx-chart
+          [series]="severitySeries" [chart]="severityDonut.chart" [labels]="severityDonut.labels"
+          [colors]="severityDonut.colors" [dataLabels]="severityDonut.dataLabels"
+          [plotOptions]="severityDonut.plotOptions" [legend]="severityDonut.legend"
+          [tooltip]="severityDonut.tooltip" [noData]="severityDonut.noData"></apx-chart>
+        <ul class="mexa-keylist">
+          <li>
+            <span class="mexa-key-swatch" style="--swatch:#e03131" aria-hidden="true"></span>
+            <span>
+              <span class="mexa-key-label">Critical</span>
+              <span class="mexa-key-value">{{ data.alarm_severity.critical }}</span>
+            </span>
+          </li>
+          <li>
+            <span class="mexa-key-swatch" style="--swatch:#17b3a3" aria-hidden="true"></span>
+            <span>
+              <span class="mexa-key-label">Non critical</span>
+              <span class="mexa-key-value">{{ data.alarm_severity.non_critical }}</span>
+            </span>
+          </li>
+          <li>
+            <span class="mexa-key-swatch" style="--swatch:#f5a623" aria-hidden="true"></span>
+            <span>
+              <span class="mexa-key-label">Information</span>
+              <span class="mexa-key-value">{{ data.alarm_severity.information }}</span>
+            </span>
+          </li>
+        </ul>
       </div>
       <ng-template #noSeverity><p class="mexa-empty">No alarms in this period.</p></ng-template>
     </section>
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Machine Wise Critical Alarms</h2>
-      <apx-chart *ngIf="machineSeries.length && machineCategories.length"
+      <apx-chart class="-mb-8" *ngIf="machineSeries.length && machineCategories.length"
         [series]="machineSeries" [chart]="machineChart.chart" [plotOptions]="machineChart.plotOptions"
         [colors]="machineChart.colors" [dataLabels]="machineChart.dataLabels" [legend]="machineChart.legend"
         [xaxis]="machineChart.xaxis" [yaxis]="machineChart.yaxis" [grid]="machineChart.grid"
@@ -141,8 +179,8 @@
     </section>
 
     <section class="mexa-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Top 5 Critical Alarm Reasons</h2>
-      <apx-chart *ngIf="reasonSeries.length"
+      <h2 class="mexa-card-title">Top 5 Alarm Reasons</h2>
+      <apx-chart class="-mb-8 -mt-4" *ngIf="reasonSeries.length"
         [series]="reasonSeries" [chart]="reasonChart.chart" [plotOptions]="reasonChart.plotOptions"
         [colors]="reasonChart.colors" [dataLabels]="reasonChart.dataLabels" [legend]="reasonChart.legend"
         [xaxis]="reasonChart.xaxis" [grid]="reasonChart.grid" [tooltip]="reasonChart.tooltip"

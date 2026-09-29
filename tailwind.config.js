@@ -12,8 +12,7 @@ module.exports = {
         indigo: { 50: '#f1f5ed', 100: '#e7eddf', 200: '#d2dfbf', 300: '#b8cd94', 400: '#93ad62', 500: '#779143', 600: '#527638', 700: '#41612c', 800: '#344c26', 900: '#253a1e' },
       },
       fontFamily: {
-        ubuntu: ['Avenir Next', 'Segoe UI', 'Arial', 'sans-serif'],
-        franklin: ['Avenir Next', 'Segoe UI', 'Arial', 'sans-serif'],
+        ubuntu: ['Ubuntu', 'sans-serif'],
       },
       keyframes: {
     blink: {

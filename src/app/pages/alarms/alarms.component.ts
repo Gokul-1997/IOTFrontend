@@ -3,12 +3,18 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AlarmService } from '../../core/services/alarm.service';
 import { TicketService } from '../../core/services/ticket.service';
+import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-alarms',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './alarms.component.html'
+  templateUrl: './alarms.component.html',
+  styles: [`
+    .alarm-msg { max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .alarm-note { width: 11rem; min-height: 1.875rem; padding: .25rem .55rem; font-size: .8rem; }
+  `]
 })
 export class AlarmsComponent implements OnInit {
   alarms: any[] = [];
@@ -29,8 +35,28 @@ export class AlarmsComponent implements OnInit {
   constructor(
     private alarmService: AlarmService,
     private ticketService: TicketService,
+    private toast: ToastService,
+    private auth: AuthService,
     private cdr: ChangeDetectorRef
   ) {}
+
+  /* A machine says how bad an alarm is in its own words — CRITICAL or NORMAL
+     here, INFORMATION on other controllers. A ticket's priority is a different
+     list (LOW / MEDIUM / HIGH / CRITICAL), so the severity cannot be sent as
+     one: a NORMAL alarm used to fail with a database enum error, and only a
+     CRITICAL alarm could be ticketed at all. The server translates too. */
+  private priorityFor(severity: string): string {
+    const map: Record<string, string> = {
+      CRITICAL: 'CRITICAL', FATAL: 'CRITICAL',
+      MAJOR: 'HIGH', HIGH: 'HIGH',
+      NORMAL: 'MEDIUM', WARNING: 'MEDIUM', MEDIUM: 'MEDIUM', 'NON-CRITICAL': 'MEDIUM',
+      MINOR: 'LOW', LOW: 'LOW', INFO: 'LOW', INFORMATION: 'LOW'
+    };
+    return map[String(severity || '').trim().toUpperCase()] || 'MEDIUM';
+  }
+
+  /** Resolving is its own grant, as the API checks it. */
+  get canResolve(): boolean { return this.auth.hasAction('alarms', 'resolve'); }
 
   ngOnInit() { this.load(); }
 
@@ -56,7 +82,11 @@ export class AlarmsComponent implements OnInit {
       next: () => { this.resolvingId = null; this.resolveNote = ''; this.load(); },
       /* A failure used to leave the resolve box open forever with no hint
          that nothing had happened. */
-      error: () => { this.resolvingId = null; this.cdr.markForCheck(); }
+      error: err => {
+        this.resolvingId = null;
+        this.toast.error(err?.error?.message || 'Could not resolve this alarm.');
+        this.cdr.markForCheck();
+      }
     });
   }
 
@@ -69,20 +99,32 @@ export class AlarmsComponent implements OnInit {
       title: `${alarm.alarm_type} on ${alarm.machine_serial_no}`,
       description: alarm.message || undefined,
       issue_type: 'ALARM',
-      // Alarm severity and ticket priority share the same LOW/MEDIUM/HIGH/CRITICAL set.
-      priority: alarm.severity
+      priority: this.priorityFor(alarm.severity)
     }).subscribe({
       next: () => {
         this.ticketedAlarmIds.add(alarm.id);
         this.creatingTicketId = null;
+        this.toast.success('Maintenance ticket raised');
         this.cdr.markForCheck();
       },
-      error: () => { this.creatingTicketId = null; this.cdr.markForCheck(); }
+      /* Silence told the user nothing: the button simply stopped spinning
+         while the ticket was never created. */
+      error: err => {
+        this.creatingTicketId = null;
+        this.toast.error(err?.error?.message || 'Could not raise a ticket for this alarm.');
+        this.cdr.markForCheck();
+      }
     });
   }
 
+  /* The machines send CRITICAL and NORMAL; INFORMATION and the older
+     LOW/MEDIUM/HIGH wording are kept so no severity shows up unstyled. */
   severityClass(severity: string) {
-    const map: any = { CRITICAL: 'bg-red-100 text-red-700', HIGH: 'bg-orange-100 text-orange-700', MEDIUM: 'bg-yellow-100 text-yellow-700', LOW: 'bg-blue-100 text-blue-700' };
-    return map[severity] || 'bg-gray-100 text-gray-700';
+    const map: any = {
+      CRITICAL: 'mexa-badge-bad', HIGH: 'mexa-badge-bad',
+      NORMAL: 'mexa-badge-warn', MEDIUM: 'mexa-badge-warn',
+      LOW: 'mexa-badge-info', INFORMATION: 'mexa-badge-info'
+    };
+    return map[String(severity || '').toUpperCase()] || 'mexa-badge-neutral';
   }
 }

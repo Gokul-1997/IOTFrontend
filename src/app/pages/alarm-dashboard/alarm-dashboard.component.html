@@ -1,18 +1,22 @@
+<!-- Phase 2 · Screen 5 — Alarm Report Dashboard, MEXA design. -->
 
 
-<p class="mexa-updated" *ngIf="updatedAt">
+
+<!-- ══════════ TITLE BAR ══════════ -->
+
+<form class="" (ngSubmit)="submit()">
+   <div class="mexa-titlebar">
+  <h1 class="mexa-title">Alarm Report Dashboard</h1>
+  <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
   Last Updated: {{ updatedAt }}
 </p>
 
-<!-- ══════════ TITLE BAR ══════════ -->
-<form class="mexa-titlebar" (ngSubmit)="submit()">
-  <h1 class="mexa-title">Alarm Report Dashboard</h1>
-  <span class="mexa-titlebar-spacer"></span>
+ </div>
 
-  <div class="mexa-filters">
+  <div class="mexa-filters mb-2">
     <label class="mexa-filter-label" for="alMachine">Machine Name</label>
-    <select id="alMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
+    <select id="alMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine" style="width: 5rem;">
       <option [ngValue]="null">All</option>
       <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
     </select>
@@ -31,21 +35,23 @@
     </select>
 
     <label class="mexa-filter-label" for="alType">Alarm Type</label>
-    <select id="alType" class="mexa-select sm:max-w-[12rem]" [(ngModel)]="f.alarm_type" name="alarmType">
+    <select id="alType" class="mexa-select sm:max-w-[12rem]" [(ngModel)]="f.alarm_type" name="alarmType" style="width: 5rem;">
       <option value="">All</option>
       <option *ngFor="let t of data?.facets?.types || []" [value]="t">{{ t }}</option>
     </select>
 
     <label class="mexa-filter-label" for="alFrom">Date</label>
-    <input id="alFrom" type="date" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
+    <input id="alFrom" type="date" appReportDate [rdBefore]="f.to" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
     <span class="mexa-filter-label" aria-hidden="true">–</span>
-    <input id="alTo" type="date" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
+    <input id="alTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
 
     <button type="submit" class="mexa-submit" [disabled]="loading">
       {{ loading ? 'Loading…' : 'Submit' }}
     </button>
   </div>
+  
 </form>
+
 
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
@@ -70,65 +76,76 @@
     Alarms appear here as soon as the devices report an alarm code in their MQTT payload.
   </p>
 
-  <!-- ══════════ KPI TILES ══════════ -->
+  <!-- ══════════ KPI TILES ══════════
+       Each card opens the alarms behind its number in Alarms Details below
+       (Max Duration sorts it longest first). Same card again shows all. -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
+    <button type="button" class="mexa-kpi" (click)="drill('all')" aria-controls="alDetails">
+      <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total<br>Alarms</span>
-        <span class="mexa-kpi-icon" style="background:#3564df" aria-hidden="true">
+        <span class="mexa-kpi-icon navy" style="background:#2f2d8f" aria-hidden="true">
           <mat-icon>notifications</mat-icon>
         </span>
-      </div>
-      <p class="mexa-kpi-value">{{ data.kpis.total }}</p>
-      <p class="mexa-kpi-sub">All alarms</p>
-    </div>
+      </span>
+      <span class="mexa-kpi-value">{{ data.kpis.total }}</span>
+      <span class="mexa-kpi-sub">All alarms</span>
+      <!-- <span class="mexa-kpi-go">View all <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
+    </button>
 
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
+    <button type="button" class="mexa-kpi" (click)="drill('critical')" aria-controls="alDetails"
+            [attr.aria-pressed]="drillKind === 'critical'">
+      <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Critical<br>Alarms</span>
-        <span class="mexa-kpi-icon" style="background:#dc2626" aria-hidden="true">
-          <mat-icon>notification_important</mat-icon>
+        <span class="mexa-kpi-icon red" style="background:#dc2626" aria-hidden="true">
+          <mat-icon>error</mat-icon>
         </span>
-      </div>
-      <p class="mexa-kpi-value">{{ data.kpis.critical }}</p>
-      <p class="mexa-kpi-sub">{{ sharePct(data.kpis.critical, data.kpis.total) }} of total</p>
-    </div>
+      </span>
+      <span class="mexa-kpi-value">{{ data.kpis.critical }}</span>
+      <span class="mexa-kpi-sub">{{ sharePct(data.kpis.critical, data.kpis.total) }} of total</span>
+      <!-- <span class="mexa-kpi-go">{{ drillKind === 'critical' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
+    </button>
 
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
+    <button type="button" class="mexa-kpi" (click)="drill('normal')" aria-controls="alDetails"
+            [attr.aria-pressed]="drillKind === 'normal'">
+      <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Normal<br>Alarms</span>
-        <span class="mexa-kpi-icon" style="background:#38a994" aria-hidden="true">
-          <mat-icon>notifications_active</mat-icon>
+        <span class="mexa-kpi-icon sky" style="background:#17b3a3" aria-hidden="true">
+          <mat-icon>notifications_none</mat-icon>
         </span>
-      </div>
-      <p class="mexa-kpi-value">{{ data.kpis.normal }}</p>
-      <p class="mexa-kpi-sub">{{ sharePct(data.kpis.normal, data.kpis.total) }} of total</p>
-    </div>
+      </span>
+      <span class="mexa-kpi-value">{{ data.kpis.normal }}</span>
+      <span class="mexa-kpi-sub">{{ sharePct(data.kpis.normal, data.kpis.total) }} of total</span>
+      <!-- <span class="mexa-kpi-go">{{ drillKind === 'normal' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
+    </button>
 
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
+    <button type="button" class="mexa-kpi" (click)="drill('open')" aria-controls="alDetails"
+            [attr.aria-pressed]="drillKind === 'open'">
+      <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Open<br>Alarms</span>
-        <span class="mexa-kpi-icon" style="background:#5f90e6" aria-hidden="true">
+        <span class="mexa-kpi-icon blue" style="background:#4a76c8" aria-hidden="true">
           <mat-icon>pending</mat-icon>
         </span>
-      </div>
-      <p class="mexa-kpi-value">{{ data.kpis.open }}</p>
-      <p class="mexa-kpi-sub">{{ sharePct(data.kpis.open, data.kpis.total) }} of total</p>
-    </div>
+      </span>
+      <span class="mexa-kpi-value">{{ data.kpis.open }}</span>
+      <span class="mexa-kpi-sub">{{ sharePct(data.kpis.open, data.kpis.total) }} of total</span>
+      <!-- <span class="mexa-kpi-go">{{ drillKind === 'open' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
+    </button>
 
-    <div class="mexa-kpi">
-      <div class="mexa-kpi-head">
+    <button type="button" class="mexa-kpi" (click)="drill('longest')" aria-controls="alDetails"
+            [attr.aria-pressed]="drillKind === 'longest'">
+      <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Max<br>Duration</span>
-        <span class="mexa-kpi-icon" style="background:#6b7280" aria-hidden="true">
+        <span class="mexa-kpi-icon purple" style="background:#6b7280" aria-hidden="true">
           <mat-icon>timelapse</mat-icon>
         </span>
-      </div>
-      <p class="mexa-kpi-value">{{ hms(data.kpis.max_duration_seconds) }}</p>
+      </span>
+      <span class="mexa-kpi-value">{{ hms(data.kpis.max_duration_seconds) }}</span>
       <!-- the alarm behind the figure, as the design names it -->
-      <p class="mexa-kpi-sub truncate" [title]="data.kpis.longest?.message || ''">
+      <span class="mexa-kpi-sub truncate" [title]="data.kpis.longest?.message || ''">
         {{ data.kpis.longest ? data.kpis.longest.message + ' · ' + data.kpis.longest.machine_serial_no : 'Average ' + duration(data.kpis.avg_duration_seconds) }}
-      </p>
-    </div>
+      </span>
+      <!-- <span class="mexa-kpi-go">{{ drillKind === 'longest' ? 'Showing' : 'View' }} longest first <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
+    </button>
   </div>
 
   <!-- ══════════ ROW 2 ══════════ -->
@@ -136,19 +153,34 @@
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Top 5 Alarms By Machine</h2>
-      <apx-chart *ngIf="machineSeries.length"
+      <div >
+      <apx-chart class="-mb-12 " *ngIf="machineSeries.length"
         [series]="machineSeries" [chart]="machineChart.chart" [plotOptions]="machineChart.plotOptions"
         [colors]="machineChart.colors" [dataLabels]="machineChart.dataLabels"
         [xaxis]="machineChart.xaxis" [yaxis]="machineChart.yaxis" [grid]="machineChart.grid"
         [legend]="machineChart.legend" [tooltip]="machineChart.tooltip"
         [noData]="machineChart.noData"></apx-chart>
+        </div>
       <p *ngIf="!machineSeries.length" class="mexa-empty">No alarms in this period.</p>
     </section>
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Alarms by Shift</h2>
-      <div class="comparison-panel" *ngIf="shiftDonutSeries.length; else noShift">
-        <app-data-bars  [values]="shiftDonutSeries" [labels]="shiftDonut.labels" [colors]="shiftDonut.colors"></app-data-bars>
+      <div class="mexa-donutrow" *ngIf="shiftDonutSeries.length; else noShift">
+        <apx-chart
+          [series]="shiftDonutSeries" [chart]="shiftDonut.chart" [labels]="shiftDonut.labels"
+          [colors]="shiftDonut.colors" [dataLabels]="shiftDonut.dataLabels"
+          [plotOptions]="shiftDonut.plotOptions" [legend]="shiftDonut.legend"
+          [tooltip]="shiftDonut.tooltip" [noData]="shiftDonut.noData"></apx-chart>
+        <ul class="mexa-keylist">
+          <li *ngFor="let s of data.by_shift; let i = index">
+            <span class="mexa-key-swatch" [style.--swatch]="donutColour(i)" aria-hidden="true"></span>
+            <span>
+              <span class="mexa-key-label">{{ s.shift_name }}</span>
+              <span class="mexa-key-value">{{ s.total }} ({{ sharePct(s.total, shiftTotal) }})</span>
+            </span>
+          </li>
+        </ul>
       </div>
       <ng-template #noShift><p class="mexa-empty">No alarms in this period.</p></ng-template>
     </section>
@@ -157,15 +189,37 @@
       <!-- The mock calls this "Alarm Type Distribution" but plots severity;
            named for what it actually shows. -->
       <h2 class="mexa-card-title">Alarm Severity Distribution</h2>
-      <div class="comparison-panel" *ngIf="data.kpis.total; else noSeverity">
-        <app-data-bars  [values]="severitySeries" [labels]="severityDonut.labels" [colors]="severityDonut.colors"></app-data-bars>
+      <div class="mexa-donutrow" *ngIf="data.kpis.total; else noSeverity">
+        <apx-chart
+          [series]="severitySeries" [chart]="severityDonut.chart" [labels]="severityDonut.labels"
+          [colors]="severityDonut.colors" [dataLabels]="severityDonut.dataLabels"
+          [plotOptions]="severityDonut.plotOptions" [legend]="severityDonut.legend"
+          [tooltip]="severityDonut.tooltip" [noData]="severityDonut.noData"></apx-chart>
+        <ul class="mexa-keylist">
+          <li>
+            <span class="mexa-key-swatch" style="--swatch:#e03131" aria-hidden="true"></span>
+            <span>
+              <span class="mexa-key-label">Critical</span>
+              <span class="mexa-key-value">{{ data.by_severity.critical }}
+                ({{ sharePct(data.by_severity.critical, data.kpis.total) }})</span>
+            </span>
+          </li>
+          <li>
+            <span class="mexa-key-swatch" style="--swatch:#17b3a3" aria-hidden="true"></span>
+            <span>
+              <span class="mexa-key-label">Normal</span>
+              <span class="mexa-key-value">{{ data.by_severity.normal }}
+                ({{ sharePct(data.by_severity.normal, data.kpis.total) }})</span>
+            </span>
+          </li>
+        </ul>
       </div>
       <ng-template #noSeverity><p class="mexa-empty">No alarms in this period.</p></ng-template>
     </section>
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Alarms Trend {{ data.trend_by === 'hour' ? '(By Hour)' : '(By Day)' }}</h2>
-      <apx-chart *ngIf="trendSeries.length"
+      <apx-chart class="-mb-10 " *ngIf="trendSeries.length"
         [series]="trendSeries" [chart]="trendChart.chart" [plotOptions]="trendChart.plotOptions"
         [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels" [stroke]="trendChart.stroke"
         [markers]="trendChart.markers" [legend]="trendChart.legend"
@@ -176,9 +230,9 @@
   </div>
 
   <!-- ══════════ ALARMS DETAILS ══════════ -->
-  <section class="mexa-card">
+  <section class="mexa-card mexa-scroll-target" id="alDetails" aria-labelledby="alDetailsTitle">
     <div class="mexa-tablebar">
-      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Alarms Details</h2>
+      <h2 id="alDetailsTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left" style="margin:0">Alarms Details</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="alSearch">Search alarms</label>
         <input id="alSearch" type="search" class="mexa-search" placeholder="Search"
@@ -197,6 +251,12 @@
         <button type="button" class="mexa-pagebtn" (click)="reset()">Reset</button>
       </span>
     </div>
+
+    <!-- what a KPI card narrowed the table to, and the way back -->
+    <p *ngIf="drillKind" class="mexa-drill" role="status">
+      <span>Showing <strong>{{ drillLabels[drillKind] }}</strong> · {{ data.alarms.total }} {{ data.alarms.total === 1 ? 'alarm' : 'alarms' }}</span>
+      <button type="button" class="mexa-pagebtn" (click)="drill('all')">Show all</button>
+    </p>
 
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table">

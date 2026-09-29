@@ -6,6 +6,7 @@ import { OeeDashboardService } from '../oee-dashboard/oee-dashboard.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { ReportDateDirective } from '../../shared/report-date.directive';
 
 /**
  * Machine Wise OEE Summary — one row per machine over a date range.
@@ -18,14 +19,14 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 @Component({
   selector: 'app-machine-oee-report',
   standalone: true,
-  imports: [CommonModule, FormsModule, MexaPagerComponent],
+  imports: [ReportDateDirective, CommonModule, FormsModule, MexaPagerComponent],
   template: `
   <div class="flex flex-wrap items-end gap-3 mb-4">
     <label class="flex flex-col text-xs font-semibold text-[--mexa-ink-2] gap-1">From
-      <input type="date" class="ui-input" [(ngModel)]="f.from" name="moFrom">
+      <input type="date" appReportDate [rdBefore]="f.to" class="ui-input" [(ngModel)]="f.from" name="moFrom">
     </label>
     <label class="flex flex-col text-xs font-semibold text-[--mexa-ink-2] gap-1">To
-      <input type="date" class="ui-input" [(ngModel)]="f.to" name="moTo">
+      <input type="date" appReportDate [rdAfter]="f.from" class="ui-input" [(ngModel)]="f.to" name="moTo">
     </label>
     <label class="flex flex-col text-xs font-semibold text-[--mexa-ink-2] gap-1">Shift
       <select class="ui-input" [(ngModel)]="f.shift_id" name="moShift">
@@ -34,14 +35,7 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
       </select>
     </label>
     <button type="button" class="ui-btn ui-btn-primary" (click)="load()" [disabled]="loading">{{ loading ? 'Loading…' : 'Apply' }}</button>
-    <span class="flex-1"></span>
-    <label class="sr-only" for="moSearch">Search machines</label>
-    <input id="moSearch" type="search" class="mexa-search" placeholder="Search" [(ngModel)]="search" name="moSearch" (ngModelChange)="page = 1">
-    <span *ngIf="canExport" class="inline-flex items-center gap-1" role="group" aria-label="Export the machine OEE report">
-      <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">{{ exporting === 'xlsx' ? '…' : 'Excel' }}</button>
-      <button type="button" class="mexa-pagebtn" (click)="export('csv')" [disabled]="exporting">{{ exporting === 'csv' ? '…' : 'CSV' }}</button>
-      <button type="button" class="mexa-pagebtn" (click)="export('pdf')" [disabled]="exporting">{{ exporting === 'pdf' ? '…' : 'PDF' }}</button>
-    </span>
+    <!-- no search or export row here: the Reports toolbar exports this tab -->
   </div>
 
   <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
@@ -92,7 +86,6 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
   f: any = { from: this.daysAgo(6), to: this.daysAgo(0), shift_id: null };
   shifts: any[] = [];
   rows: any[] = [];
-  search = '';
   loading = false;
   errorMsg = '';
   exporting = '';
@@ -140,10 +133,8 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
   }
 
   get filtered(): any[] {
-    const q = this.search.trim().toLowerCase();
-    const rows = this.rows.filter(m => !q || String(m.machine_serial_no).toLowerCase().includes(q));
     const k = this.sort, sign = this.dir === 'asc' ? 1 : -1;
-    return [...rows].sort((a, b) => {
+    return [...this.rows].sort((a, b) => {
       const x = a[k], y = b[k];
       if (x == null && y == null) return 0;
       if (x == null) return 1;
@@ -161,6 +152,7 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
   }
   aria(key: string): string { return this.sort !== key ? 'none' : this.dir === 'asc' ? 'ascending' : 'descending'; }
 
+  /** Called by the Reports toolbar. */
   export(format: 'xlsx' | 'csv' | 'pdf'): void {
     this.exporting = format; this.cdr.markForCheck();
     this.svc.exportAs(format, this.f).pipe(takeUntil(this.destroy$)).subscribe({

@@ -1,17 +1,45 @@
-/* Gokul analytics primitives. Existing component class names remain compatible. */
-html, body { background: var(--mexa-ground); }
+/* ─────────────────────────────────────────────────────────────
+   MEXA dashboard design system
+   Implements MEXA_DS_dashboard_UI_02.pdf.
+
+   Every dashboard shares one shell: a white app bar, a diagonal
+   indigo-to-crimson field, and white cards floating on it. The cards
+   carry the meaning; the field is what makes them read as cards rather
+   than as sections of a page.
+
+   Written as classes rather than Tailwind utilities because the same
+   nine components repeat on nine screens — a KPI tile described inline
+   nine times drifts by the third one.
+   ───────────────────────────────────────────────────────────── */
+
+// html, body { background: var(--mexa-ground); }
+/* the field spans the whole page, as the design draws it — navy at the
+   bottom left, crimson at the top right, however long the page is */
+body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100%; min-height: 100%; }
+.dark body, :root[data-theme="dark"] body { background-color: #0e1233; }
 
 :root {
-  
-  --mexa-bar:        rgba(58, 56, 140, .82);
-  --mexa-bar-solid:  #111b2d;
-  --mexa-submit:     #3564df;
-  --mexa-submit-h:   #244bb5;
+  /* Chrome. The title bar is see-through indigo, so the field shows
+     through its right-hand end as in the design. */
+  --mexa-bar:        linear-gradient(90deg, rgba(43, 57, 144, .92) 0%, rgba(58, 56, 140, .70) 55%, rgba(72, 50, 130, .45) 100%);
+  --mexa-bar-solid:  #3a388c;
+  --mexa-submit:     #2f2d8f;
+  --mexa-submit-h:   #26247a;
 
-  
-  --mexa-ground:     #f4f6fa;
+  /* The STM field: the diagonal navy-to-crimson of the logo, as the
+     client's design (MEXA_DS_dashboard_UI_02.pdf) draws it behind every
+     screen — navy at the bottom left, crimson at the top right. Every page
+     sits on it; white cards float on top and carry the data. (It was a flat
+     grey for a while; the client asked for the STM look on every page.)
+     --mexa-ground is the solid fallback and the colour of the few surfaces
+     that are not cards but must not be white. */
+  --stm-field:       linear-gradient(to top right, #2b3990 0%, #3f3a8c 30%, #6e3b78 62%, #b8404f 100%);
+  --mexa-ground:     #eef0f5;
+  --mexa-on-field:   #ffffff;
+  --mexa-on-field-2: rgba(255, 255, 255, .84);
+  --mexa-card-shadow: 0 10px 28px rgba(18, 14, 64, .18), 0 1px 3px rgba(18, 14, 64, .08);
 
-  
+  /* Surfaces */
   --mexa-card:       #ffffff;
   --mexa-ink:        #18243b;
   --mexa-ink-2:      #53647c;
@@ -35,25 +63,31 @@ html, body { background: var(--mexa-ground); }
 }
 
 :root[data-theme="dark"], .dark {
-  --mexa-ground:  #0e1626;
-  --mexa-card:    #162237;
-  --mexa-ink:     #edf2fc;
-  --mexa-ink-2:   #b3c2dd;
-  --mexa-ink-3:   #91a5c4;
-  --mexa-rule:    #2c3b53;
-  --mexa-thead:   #22324a;
-  --mexa-row-alt: #1b2c45;
+  /* the same field, deepened: still recognisably STM, dark enough that a
+     dark card reads as a card on it */
+  --stm-field:    linear-gradient(to top right, #0e1233 0%, #171a45 38%, #2a1840 68%, #461a2e 100%);
+  --mexa-bar:     linear-gradient(90deg, rgba(30, 36, 100, .85) 0%, rgba(30, 30, 80, .6) 60%, rgba(40, 24, 60, .4) 100%);
+  --mexa-card-shadow: 0 10px 28px rgba(0, 0, 0, .35), 0 1px 3px rgba(0, 0, 0, .3);
+  --mexa-ground:  #0d0f15;
+  --mexa-card:    #161a23;
+  --mexa-ink:     #e8ebf2;
+  --mexa-ink-2:   #a8b0c2;
+  --mexa-ink-3:   #949eb2;   /* 5.3:1 or better on the dark surfaces */
+  --mexa-rule:    #252b39;
+  --mexa-thead:   #262a3a;
+  --mexa-row-alt: #212534;
 }
 
 .mexa-shell {
-  min-height: calc(100vh - 4rem);      
-  background: var(--mexa-ground);
+  min-height: calc(100vh - 4rem);      /* the app bar is 4rem */
+  // background: var(--stm-field) no-repeat;
+  background-size: 100% 100%;
   padding: 1rem 1.25rem 0;
   display: flex;
   flex-direction: column;
 }
 
-@media (min-width: 1024px) { .mexa-shell { padding: 1.25rem 1.75rem 0; } }
+@media (min-width: 1024px) { .mexa-shell { padding: .7rem 1.75rem 0; } }
 
 .mexa-page { flex: 1 1 auto; min-width: 0; }
 
@@ -61,9 +95,9 @@ html, body { background: var(--mexa-ground); }
   padding: 1.75rem 0 1.25rem;
   text-align: right;
   font-size: .8rem;
-  color: var(--mexa-ink-3);
+  color: var(--mexa-on-field-2);
 }
-.mexa-footer strong { color: var(--mexa-ink-2); font-weight: 600; }
+.mexa-footer strong { color: var(--mexa-on-field); font-weight: 600; }
 
 .mexa-updated {
   display: flex;
@@ -71,24 +105,26 @@ html, body { background: var(--mexa-ground); }
   justify-content: flex-end;
   gap: .4rem;
   font-size: .82rem;
-  color: var(--mexa-ink-3);
-  margin-bottom: .5rem;
+  color: var(--mexa-on-field-2);
+  // margin-bottom: .5rem;
+  line-height: 16px;
 }
 
 .mexa-titlebar {
-  
-  background: var(--mexa-bar-solid);
-  border-radius: 12px;
-  padding: .85rem 1.15rem;
-  margin-bottom: 1rem;
+  background: var(--mexa-bar);
+  // border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 14px;
+  padding: .5rem;
+  margin-bottom: .5rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: .75rem 1rem;
+  justify-content: space-between;
 }
 
 .mexa-title {
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: #fff;
   margin: 0;
@@ -97,6 +133,25 @@ html, body { background: var(--mexa-ground); }
 
 .mexa-titlebar-spacer { flex: 1 1 auto; }
 
+/* A line under the title on list and settings pages ("Track and classify
+   machine downtime events") — on the bar, so white. */
+.mexa-subtitle { margin: .15rem 0 0; font-size: .84rem; color: var(--mexa-on-field-2); font-weight: 400; }
+.mexa-titlebar h1.mexa-title, .mexa-titlebar h2.mexa-title { font-family: inherit; }
+
+/* Actions in the title bar: a solid navy primary (as the design's Submit)
+   and a see-through secondary that reads on the indigo. */
+.mexa-titlebar .ui-btn-ghost {
+  color: #fff; background: rgba(255, 255, 255, .12); border-color: rgba(255, 255, 255, .28);
+}
+.mexa-titlebar .ui-btn-ghost:hover:not(:disabled) { background: rgba(255, 255, 255, .2); }
+.mexa-titlebar .ui-btn-primary { background: var(--mexa-submit); }
+.mexa-titlebar .ui-btn:focus-visible { outline-color: #fff; }
+
+/* Text and controls that sit on the field itself, outside any card */
+.mexa-on-field { color: var(--mexa-on-field-2); }
+.mexa-on-field strong { color: var(--mexa-on-field); }
+
+/* Inline status legend, as on the OEE and Maintenance headers. */
 .mexa-legend { display: flex; flex-wrap: wrap; align-items: center; gap: .9rem; }
 .mexa-legend-item {
   display: inline-flex; align-items: center; gap: .4rem;
@@ -104,7 +159,9 @@ html, body { background: var(--mexa-ground); }
 }
 .mexa-legend-dot { width: .7rem; height: .7rem; border-radius: 999px; flex: none; }
 
-.mexa-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
+/* ── Filters in the title bar ─────────────────────────────── */
+
+.mexa-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; justify-content: end;}
 
 /* Phones: the wrapping row put each label at the end of the previous line,
    next to the wrong control ("All ▾ Shift"). Two columns instead — every
@@ -137,7 +194,7 @@ html, body { background: var(--mexa-ground); }
   font-size: .9rem;
   font-weight: 600;
   color: var(--mexa-ink);
-  min-width: 9rem;
+  min-width: 1rem;
   cursor: pointer;
   
   background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%231f2430'%3E%3Cpath d='M5.5 7.5l4.5 4.5 4.5-4.5'/%3E%3C/svg%3E");
@@ -174,20 +231,27 @@ html, body { background: var(--mexa-ground); }
   gap: .7rem;
   
   grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
-  margin-bottom: .85rem;
+  margin-bottom: .6rem;
 }
 
 .mexa-kpi {
   background: var(--mexa-card);
-  border: 1px solid var(--mexa-rule);
-  border-radius: 12px;
-  padding: .9rem 1rem;
-  box-shadow: 0 1px 2px rgba(17, 20, 45, .04);
+  border: 0;
+  border-radius: 16px;
+  padding: .5rem 1rem;
+  box-shadow: var(--mexa-card-shadow);
   min-width: 0;
+}
+.rep-kpis .mexa-kpi.repcard {
+  color: #fff;
+  &:nth-child(1) { background: #1e3a8a !important; }
+  &:nth-child(2) { background: #0EA5E9 !important; }
+  &:nth-child(3) { background: #9365B0 !important; }
+  &:nth-child(4) { background: #4B6CB7 !important; }
 }
 
 .mexa-kpi-head {
-  display: flex; align-items: flex-start; justify-content: space-between; gap: .6rem;
+  display: flex; align-items: center; justify-content: space-between; gap: .6rem;
 }
 
 .mexa-kpi-label {
@@ -196,8 +260,8 @@ html, body { background: var(--mexa-ground); }
   font-weight: 600;
   letter-spacing: .05em;
   text-transform: uppercase;
-  color: var(--mexa-ink-3);
-  line-height: 1.35;
+  // color: var(--mexa-ink-3);
+  line-height: 1;
   min-width: 0;
 }
 
@@ -212,48 +276,108 @@ html, body { background: var(--mexa-ground); }
 .mexa-kpi-icon svg, .mexa-kpi-icon mat-icon { width: 1.15rem; height: 1.15rem; font-size: 1.15rem; }
 
 .mexa-kpi-value {
-  font-size: 1.85rem;
+  font-size: 1.35rem;
   font-weight: 700;
-  color: var(--mexa-ink);
+  // color: var(--mexa-ink);
   line-height: 1.15;
-  margin-top: .45rem;
+  // margin-top: .45rem;
   letter-spacing: -.02em;
   font-variant-numeric: tabular-nums;
 }
-.mexa-kpi-value small { font-size: .95rem; font-weight: 600; color: var(--mexa-ink-3); margin-left: .25rem; }
+.mexa-kpi-value small { font-size: .95rem; font-weight: 600; margin-left: .25rem; }
 
 .mexa-kpi-sub {
-  margin-top: .3rem;
+  // margin-top: .3rem;
   font-size: .82rem;
   color: var(--mexa-ink-3);
 }
 
+/* A KPI card that opens the records behind its number. A real <button>, so
+   it is reachable by keyboard and announced as pressable; the "View" cue is
+   always visible because a touch screen has no hover to reveal it. */
+button.mexa-kpi {
+  font: inherit; text-align: left; 
+  // width: 100%;
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+button.mexa-kpi:hover { border-color: var(--mexa-blue); box-shadow: 0 4px 14px rgba(43, 58, 143, .12); }
+button.mexa-kpi:focus-visible { outline: 3px solid var(--mexa-navy); outline-offset: 2px; }
+button.mexa-kpi[aria-pressed="true"] {
+  border-color: var(--mexa-navy);
+  box-shadow: 0 0 0 2px var(--mexa-navy) inset, 0 4px 14px rgba(43, 58, 143, .14);
+}
+.mexa-kpi-go {
+  margin-top: auto; padding-top: .45rem;
+  display: inline-flex; align-items: center; gap: .15rem;
+  font-size: .78rem; font-weight: 600;
+  color: var(--mexa-navy);
+}
+:root[data-theme="dark"] .mexa-kpi-go, .dark .mexa-kpi-go { color: #9fb3ff; }
+:root[data-theme="dark"] button.mexa-kpi[aria-pressed="true"], .dark button.mexa-kpi[aria-pressed="true"] {
+  border-color: #9fb3ff; box-shadow: 0 0 0 2px #9fb3ff inset;
+}
+@media (prefers-reduced-motion: reduce) { button.mexa-kpi { transition: none; } }
+
+/* Where a card click scrolls to: clear of the sticky top bar, so the
+   heading the user is taken to is not hidden underneath it. */
+.mexa-scroll-target { scroll-margin-top: 5.5rem; }
+
+/* "Showing: critical alarms only · Show all" above a table a card narrowed. */
+.mexa-drill {
+  display: flex; align-items: center; flex-wrap: wrap; gap: .5rem;
+  margin: 0 0 .7rem; padding: .45rem .7rem;
+  border-radius: 10px;
+  background: var(--mexa-row-alt);
+  font-size: .85rem; color: var(--mexa-ink-2);
+}
+.mexa-drill strong { color: var(--mexa-ink); }
+
+/* Direction is stated with an arrow as well as a colour, so the meaning
+   survives for a reader who cannot separate red from green. */
 .mexa-delta { font-weight: 700; }
 .mexa-delta-up   { color: var(--mexa-good); }
 .mexa-delta-down { color: var(--mexa-bad); }
 
 .mexa-card {
   background: var(--mexa-card);
-  border: 1px solid var(--mexa-rule);
-  border-radius: 14px;
-  padding: 1rem 1.1rem 1.1rem;
-  
-  box-shadow: 0 1px 2px rgba(17, 20, 45, .04);
+  border: 0;
+  border-radius: 18px;
+  padding: .5rem;
+  /* On the STM field the card is lifted by a soft shadow, as in the design */
+  box-shadow: var(--mexa-card-shadow);
   min-width: 0;
 }
 
 .mexa-card-title {
-  font-size: .95rem;
+  font-size: .9rem;
   font-weight: 650;
   letter-spacing: .01em;
   color: var(--mexa-ink);
-  margin: 0 0 .85rem;
+  // margin: 0 0 .85rem;
   text-align: center;
 }
 
 .mexa-card-title-left { text-align: left; }
 
-.mexa-card-hint { font-size: .82rem; color: var(--mexa-ink-3); margin: -.5rem 0 .75rem; }
+/* Sign-in, forgot and reset password: the STM field behind the brand panel */
+.stm-auth-field { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100%; }
+.stm-auth-card { box-shadow: 0 24px 60px rgba(18, 14, 64, .35); }
+
+/* Lift a Tailwind-built card onto the field the same way as .mexa-card */
+.mexa-lift { background: var(--mexa-card) !important; border-radius: 12px !important; box-shadow: var(--mexa-card-shadow) !important; }
+
+/* A card whose table runs edge to edge (list pages) */
+.mexa-card-flush { padding: 0; overflow: hidden; }
+.mexa-card-flush > .mexa-tablewrap { padding: .35rem .6rem .2rem; }
+.mexa-card-flush > .mexa-tablebar { padding: .6rem 1rem .8rem; }
+// .mexa-card + .mexa-card { margin-top: 1rem; }
+
+/* A filter row at the top of a card */
+.mexa-cardbar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem .75rem; padding: .85rem 1rem; border-bottom: 1px solid var(--mexa-rule); }
+
+.mexa-card-hint { font-size: .76rem; color: var(--mexa-ink-3); margin: -.5rem 0 .75rem; }
 
 .mexa-grid { display: grid; gap: 1rem; margin-bottom: 1rem; min-width: 0; }
 
@@ -282,7 +406,7 @@ html, body { background: var(--mexa-ground); }
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: .88rem;
+  font-size: .8rem;
   min-width: 40rem;
 }
 
@@ -291,17 +415,19 @@ html, body { background: var(--mexa-ground); }
   color: var(--mexa-ink);
   font-weight: 700;
   text-align: left;
-  padding: .7rem .8rem;
+  padding: .2rem;
   white-space: nowrap;
+  font-size: 13px;
 }
-.mexa-table thead th:first-child { border-radius: 9px 0 0 9px; }
-.mexa-table thead th:last-child  { border-radius: 0 9px 9px 0; }
+// .mexa-table thead th:first-child { border-radius: 9px 0 0 9px; }
+// .mexa-table thead th:last-child  { border-radius: 0 9px 9px 0; }
 
 .mexa-table tbody td {
-  padding: .75rem .8rem;
+  padding: .2rem;
   color: var(--mexa-ink-2);
   border-bottom: 1px solid var(--mexa-rule);
   vertical-align: middle;
+  font-size: 13px;
 }
 .mexa-table tbody tr:nth-child(even) { background: var(--mexa-row-alt); }
 .mexa-table tbody tr:last-child td { border-bottom: 0; }
@@ -322,7 +448,7 @@ html, body { background: var(--mexa-ground); }
 .mexa-search {
   border: 1px solid var(--mexa-rule);
   border-radius: 10px;
-  padding: .5rem .85rem;
+  padding: .2rem .85rem;
   font: inherit;
   font-size: .9rem;
   background: var(--mexa-card);
@@ -333,19 +459,19 @@ html, body { background: var(--mexa-ground); }
 
 .mexa-tablebar {
   display: flex; flex-wrap: wrap; align-items: center; gap: .75rem;
-  justify-content: space-between; margin-bottom: .85rem;
+  justify-content: space-between; margin-bottom: .2rem;
 }
 
 .mexa-pager {
   display: flex; flex-wrap: wrap; align-items: center; gap: .75rem;
-  justify-content: space-between; padding-top: .9rem;
+  justify-content: space-between; padding-top: .3rem;
   font-size: .84rem; color: var(--mexa-ink-3);
 }
 .mexa-pagebtn {
-  background: none; border: 0; font: inherit; font-size: .86rem; font-weight: 600;
-  color: var(--mexa-ink-2); cursor: pointer; padding: .35rem .6rem; border-radius: 7px;
+  background: #98A2B3; border: 0; font: inherit; font-size: .86rem; font-weight: 500;
+  color:#fff; cursor: pointer; padding: .1rem .6rem; border-radius: 7px;
 }
-.mexa-pagebtn:hover:not(:disabled) { background: var(--mexa-row-alt); }
+.mexa-pagebtn:hover:not(:disabled) { background: #67768F; }
 .mexa-pagebtn:disabled { opacity: .4; cursor: not-allowed; }
 .mexa-pagebtn:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 1px; }
 .mexa-pagebtn[aria-current="page"] { border: 1px solid var(--mexa-rule); color: var(--mexa-submit); }
@@ -354,7 +480,7 @@ html, body { background: var(--mexa-ground); }
 
 .mexa-badge {
   display: inline-block;
-  padding: .25rem .7rem;
+  padding: .1rem .7rem;
   border-radius: 999px;
   font-size: .78rem;
   font-weight: 700;
@@ -377,13 +503,12 @@ html, body { background: var(--mexa-ground); }
 
 .mexa-note {
   background: var(--mexa-card);
-  border-radius: 13px;
-  padding: .85rem 1.1rem;
-  margin-bottom: 1rem;
-  font-size: .9rem;
-  color: var(--mexa-ink-2);
-  border-left: 4px solid var(--mexa-info);
-  border: 1px solid var(--mexa-rule);
+    border-radius: 5px;
+    padding: 0.3rem .5rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: var(--mexa-ink-2);
+    border-left: 7px solid var(--mexa-rule);
 }
 .mexa-note strong { color: var(--mexa-ink); }
 .mexa-note-warn { border-left-color: var(--mexa-warn); }
@@ -398,7 +523,11 @@ html, body { background: var(--mexa-ground); }
 .mexa-rank li:last-child { border-bottom: 0; }
 .mexa-rank-n { color: var(--mexa-ink-3); font-size: .8rem; margin-right: .35rem; }
 .mexa-rank-name { font-size: .9rem; color: var(--mexa-ink); font-weight: 600; min-width: 0; }
-.mexa-rank-sub { display: block; font-size: .78rem; color: var(--mexa-ink-3); font-weight: 400; }
+.mexa-rank-sub { 
+  display: flex; font-size: .78rem; color: var(--mexa-ink-3); font-weight: 400; gap:5px; 
+  // align-items: center; 
+  // justify-content: center;
+}
 .mexa-rank-value { font-size: .86rem; color: var(--mexa-ink-2); white-space: nowrap; font-weight: 600; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -434,10 +563,61 @@ html, body { background: var(--mexa-ground); }
 }
 .mexa-tab[aria-selected='true'] { background: #fff; color: var(--mexa-ink); }
 .mexa-tab:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+/* ── Page tabs on the field (Downtime, Maintenance, Admin) ────
+   Pills, as the design's own top menu: see-through white on the
+   gradient, the selected one solid white with navy text. */
+.mexa-pills { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin: 0 0 1rem; }
+.mexa-pill {
+  appearance: none; cursor: pointer; font: inherit; font-size: .88rem; font-weight: 600;
+  display: inline-flex; align-items: center; gap: .45rem;
+  padding: .45rem 1.05rem; border-radius: 999px;
+  color: #fff; background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .3);
+  transition: background .15s, color .15s;
+}
+.mexa-pill:hover:not([aria-selected='true']):not([aria-current='page']) { background: rgba(255, 255, 255, .22); }
+.mexa-pill[aria-selected='true'], .mexa-pill[aria-current='page'] { background: #fff; color: var(--mexa-submit); border-color: #fff; }
+a.mexa-pill { text-decoration: none; }
+.mexa-pill:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.mexa-pill-count { font-size: .72rem; font-weight: 700; padding: .05rem .45rem; border-radius: 999px; background: rgba(255, 255, 255, .22); }
+.mexa-pill[aria-selected='true'] .mexa-pill-count { background: #e3e6f7; color: var(--mexa-submit); }
+.dark .mexa-pill[aria-selected='true'], .dark .mexa-pill[aria-current='page'] { background: var(--mexa-card); color: #c9cfff; border-color: transparent; }
+.dark .mexa-pill[aria-selected='true'] .mexa-pill-count { background: #262a3a; color: #c9cfff; }
+.mexa-pills-spacer { flex: 1 1 auto; }
+@media (prefers-reduced-motion: reduce) { .mexa-pill { transition: none; } }
+
+/* ── On/off switch (Settings) ─────────────────────────────────
+   Off track is #8a93a6: 3.1:1 against white, the minimum for a
+   control's outline (WCAG 1.4.11). */
+.mexa-switch {
+  position: relative; flex: none; width: 2.75rem; height: 1.5rem; padding: 0;
+  border: 0; border-radius: 999px; background: #8a93a6; cursor: pointer; transition: background .15s;
+}
+.mexa-switch::after {
+  content: ''; position: absolute; top: .25rem; left: .25rem; width: 1rem; height: 1rem;
+  border-radius: 999px; background: #fff; transition: transform .15s;
+}
+.mexa-switch[aria-checked='true'] { background: var(--mexa-submit); }
+.mexa-switch[aria-checked='true']::after { transform: translateX(1.25rem); }
+.mexa-switch:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 2px; }
+.dark .mexa-switch { background: #5b6478; }
+.dark .mexa-switch[aria-checked='true'] { background: #7f8cff; }
+@media (prefers-reduced-motion: reduce) { .mexa-switch, .mexa-switch::after { transition: none; } }
+
+/* A settings row: label and hint on the left, a control on the right */
+.mexa-setting { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .8rem 0; border-top: 1px solid var(--mexa-rule); }
+.mexa-setting:first-of-type { border-top: 0; }
+.mexa-setting-label { margin: 0; font-size: .9rem; font-weight: 600; color: var(--mexa-ink); }
+.mexa-setting-hint { margin: .1rem 0 0; font-size: .8rem; color: var(--mexa-ink-3); }
+
+/* ── Machine OEE tile (OEE dashboard, Analytics) ──────────────
+   A solid colour band per grade. White text on all four grades,
+   so the amber is darkened past what the mock shows to keep the
+   label above 4.5:1 — WCAG wins over an exact colour match. */
 
 .mexa-oeecards {
   display: grid; gap: .85rem;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  /* five to a row on a laptop: ten tiles to a page are two full rows */
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
 }
 .mexa-oeecard {
   
@@ -468,30 +648,121 @@ html, body { background: var(--mexa-ground); }
 .mexa-oeecard-metrics .num { color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
 .mexa-oeecard-metrics > div { display: flex; justify-content: space-between; gap: .5rem; }
 
-.mexa-grade-excellent { --band: #15803d; }
-.mexa-grade-good      { --band: #3564df; }
-.mexa-grade-avg       { --band: #b45309; }
-.mexa-grade-poor      { --band: #c32b3f; }
-
-.mexa-oeecard.mexa-oeecard-solid { background: var(--band); border-color: var(--band); }
-.mexa-oeecard-solid.mexa-grade-unknown { --band: #64748b; }
-.mexa-oeecard-solid .mexa-oeecard-name,
-.mexa-oeecard-solid .mexa-oeecard-grade,
-.mexa-oeecard-solid .mexa-oeecard-metrics,
-.mexa-oeecard-solid .mexa-oeecard-metrics .num,
-.mexa-oeecard-solid .mexa-oeering-pct,
-.mexa-oeecard-solid .mexa-oeering-cap { color: #fff; }
-.mexa-oeecard-solid .mexa-oeecard-grade::before { background: #fff; }
-.mexa-oeecard-solid .mexa-oeering {
-  background: conic-gradient(#fff var(--pct, 0%), rgba(255, 255, 255, .28) 0);
+/* The four grade bands. --band is the solid (ring, bars, key dot);
+   --band-soft the tile's ground; --band-ink the grade word, dark enough to
+   read on that ground. The same values the band legend prints, so the key
+   and the tiles agree. */
+.mexa-grade-excellent { --band: #15803d; --band-ink: #11652f; }
+.mexa-grade-good      { --band: #2f2d8f; --band-ink: #2f2d8f; }
+.mexa-grade-avg       { --band: #b45309; --band-ink: #8a3f06; }
+.mexa-grade-poor      { --band: #c32b3f; --band-ink: #a11f31; }
+.mexa-grade-unknown   { --band: #64748b; --band-ink: #475467; }
+.mexa-grade-excellent, .mexa-grade-good, .mexa-grade-avg, .mexa-grade-poor, .mexa-grade-unknown {
+  --band-soft: color-mix(in srgb, var(--band) 8%, var(--mexa-card));
 }
-.mexa-oeecard-solid .mexa-oeering::after { background: var(--band); }
-.mexa-oeecard-solid .mexa-oeering-cap { opacity: .9; }
+:root[data-theme="dark"], .dark {
+  .mexa-grade-excellent { --band: #22a55a; --band-ink: #7fdca3; }
+  .mexa-grade-good      { --band: #7d7ae6; --band-ink: #bdbbff; }
+  .mexa-grade-avg       { --band: #d9822b; --band-ink: #f5c28a; }
+  .mexa-grade-poor      { --band: #e05266; --band-ink: #ffa9b4; }
+  .mexa-grade-unknown   { --band: #8391a7; --band-ink: #c3cad6; }
+  .mexa-grade-excellent, .mexa-grade-good, .mexa-grade-avg, .mexa-grade-poor, .mexa-grade-unknown {
+    --band-soft: color-mix(in srgb, var(--band) 14%, var(--mexa-card));
+  }
+}
+
+/* ── Machine tile, tinted (OEE dashboard, 2026-09-24) ──────────
+   The design filled each tile with its grade colour. On the real fleet
+   every machine is "Needs Improvement", so the fill turned the page into a
+   wall of alarm red that said nothing machine-to-machine. The grade is now
+   a tint of the tile, the ring and a labelled word; the readings keep the
+   normal ink, and Availability / Performance / Quality are bars in the
+   colours the KPI row and the trend use for them. */
+.mexa-oeecard.mexa-oeecard-tint {
+  background: var(--band-soft);
+  border: 1px solid color-mix(in srgb, var(--band) 24%, transparent);
+  gap: .6rem;
+}
+.mexa-oeecard-status {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-size: .72rem; font-weight: 600; color: var(--mexa-ink-2); white-space: nowrap;
+}
+.mexa-oeecard-status::before {
+  content: ''; width: .5rem; height: .5rem; border-radius: 50%;
+  background: var(--dot, #94a3b8);
+}
+.mexa-oeecard-tint .mexa-oeering { width: 4.2rem; height: 4.2rem; }
+.mexa-oeecard-tint .mexa-oeering::after { background: var(--band-soft); }
+.mexa-oeecard-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  font-size: .75rem; font-weight: 700; color: var(--band-ink);
+}
+.mexa-oeecard-foot small { font-weight: 600; color: var(--mexa-ink-3); }
+
+/* Availability / Performance / Quality as bars: a label and value over a
+   thin track. The value is printed, so the bar only reinforces it. */
+.mexa-apq { flex: 1; display: grid; gap: .4rem; min-width: 0; }
+.mexa-apq-row {
+  display: grid; grid-template-columns: 1fr auto; gap: .15rem .5rem;
+  font-size: .76rem; font-weight: 600; color: var(--mexa-ink-2);
+}
+.mexa-apq-row .num { color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
+.mexa-apq-bar {
+  grid-column: 1 / -1; height: 5px; border-radius: 99px; overflow: hidden;
+  background: color-mix(in srgb, var(--mexa-ink-3) 18%, transparent);
+}
+.mexa-apq-bar > i { display: block; height: 100%; width: var(--v, 0%); background: var(--c); border-radius: inherit; }
+
+/* The three OEE factors, one colour each, everywhere on the screen. */
+.mexa-factor-a { --c: #17b3a3; }
+.mexa-factor-p { --c: #3b9ae1; }
+.mexa-factor-q { --c: #9b7ec8; }
+.mexa-factor-oee { --c: #2f2d8f; }
+:root[data-theme="dark"] .mexa-factor-oee, .dark .mexa-factor-oee { --c: #8b88f0; }
+
+/* ── Where OEE is lost ─────────────────────────────────────────
+   Every planned hour split into good output and the three losses, as one
+   bar that always sums to 100%. The list under it carries the same figures
+   as text, so the bar is never the only way to read them. */
+.mexa-lossbar {
+  display: flex; height: 1.9rem; border-radius: 8px; overflow: hidden;
+  background: var(--mexa-rule); margin: .35rem 0 .9rem;
+}
+.mexa-lossbar > span { width: var(--w, 0%); background: var(--c); min-width: 0; }
+.mexa-lossbar > span + span { box-shadow: -2px 0 0 var(--mexa-card); }
+.mexa-losslist { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
+.mexa-losslist li {
+  display: grid; grid-template-columns: .8rem 1fr auto; align-items: start; gap: .6rem;
+  font-size: .86rem; color: var(--mexa-ink);
+}
+.mexa-losslist li > i { width: .8rem; height: .8rem; border-radius: 3px; background: var(--c); margin-top: .2rem; }
+.mexa-losslist li small { display: block; font-size: .76rem; color: var(--mexa-ink-3); }
+.mexa-losslist li strong { font-variant-numeric: tabular-nums; }
+/* the red of the Needs Improvement grade: --mexa-bad is 3.8:1 on white */
+.mexa-losslist li.is-biggest strong { color: #b42335; }
+:root[data-theme="dark"] .mexa-losslist li.is-biggest strong, .dark .mexa-losslist li.is-biggest strong { color: #ff9aa6; }
+.mexa-loss-verdict {
+  margin-top: .95rem; padding: .6rem .75rem; border-radius: 10px;
+  background: var(--mexa-row-alt); font-size: .84rem; color: var(--mexa-ink-2);
+}
+.mexa-loss-verdict strong { color: var(--mexa-ink); }
+
+/* A thin track under a KPI value: how far the value is toward 100%, with a
+   tick at the target where there is one. */
+.mexa-kpi-track {
+  position: relative; height: 5px; border-radius: 99px; margin-top: .55rem;
+  background: color-mix(in srgb, var(--mexa-ink-3) 18%, transparent);
+}
+.mexa-kpi-track > i { display: block; height: 100%; width: var(--v, 0%); border-radius: inherit; background: var(--c, var(--mexa-navy)); }
+.mexa-kpi-track > b {
+  position: absolute; top: -3px; bottom: -3px; left: var(--t); width: 2px;
+  background: var(--mexa-ink); border-radius: 1px;
+}
 
 .mexa-attention { display: grid; gap: .6rem; }
 .mexa-attention-row {
   display: flex; align-items: center; gap: .85rem; width: 100%;
-  padding: .7rem .9rem;
+  padding: .3rem .9rem;
   background: #f4f4f8; border: 0; border-radius: 12px;
   font: inherit; text-align: left; cursor: pointer;
   transition: background .15s;
@@ -503,7 +774,7 @@ html, body { background: var(--mexa-ground); }
   display: grid; place-items: center;
   color: #fff; font-weight: 800; font-size: .95rem;
 }
-.mexa-attention-label { flex: 1; min-width: 0; }
+.mexa-attention-label { flex: 1; min-width: 0; line-height: 16px;}
 .mexa-attention-label strong { display: block; font-size: .92rem; color: var(--mexa-ink); }
 .mexa-attention-label span   { font-size: .78rem; color: var(--mexa-ink-3); }
 .mexa-attention-row .mexa-chev { color: var(--mexa-ink-3); flex: none; }
@@ -585,12 +856,12 @@ html, body { background: var(--mexa-ground); }
 
 .mexa-grid > .mexa-card { display: flex; flex-direction: column; }
 .mexa-grid > .mexa-card > apx-chart,
-.mexa-grid > .mexa-card > .mexa-donutrow { margin-top: auto; }
+// .mexa-grid > .mexa-card > .mexa-donutrow { margin-top: auto; }
 
 .mexa-skel {
   position: relative;
   overflow: hidden;
-  background: var(--mexa-rule);
+  // background: var(--mexa-rule);
   border-radius: 8px;
 }
 
@@ -629,11 +900,13 @@ html, body { background: var(--mexa-ground); }
 .mexa-skel-row   { height: 2.1rem; margin-bottom: .45rem; border-radius: 6px; }
 
 @media (max-width: 640px) {
-  .mexa-card  { padding: .8rem .85rem .9rem; border-radius: 14px; }
+  .mexa-card  { padding: .8rem .85rem .9rem;
+     border-radius: 14px; }
   .mexa-kpis  { grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: .55rem; }
   .mexa-kpi   { padding: .75rem .8rem; }
   .mexa-kpi-value { font-size: 1.6rem; }
   .mexa-kpi-icon  { width: 2.1rem; height: 2.1rem; }
+  .mexa-kpi-icon  .green{ width: 2.1rem; height: 2.1rem; }
   .mexa-kpi-icon svg, .mexa-kpi-icon mat-icon { width: 1.1rem; height: 1.1rem; font-size: 1.1rem; }
   .mexa-card-title { font-size: .98rem; }
 }
@@ -671,9 +944,34 @@ html, body { background: var(--mexa-ground); }
 }
 
 .mexa-kpi-icon {
-  background: rgba(53, 100, 223, .09) !important;
-  color: var(--mexa-submit);
+  background: rgba(47, 45, 143, .09) !important;
+  color: #ffffff;
 }
+.mexa-kpi-icon.green{
+  background: #22c55e!important;
+}
+.mexa-kpi-icon.yellow{
+  background: #F59E0B!important;
+}
+.mexa-kpi-icon.navy{
+  background: #384BCA!important;
+}
+.mexa-kpi-icon.sky{
+  background: #0EA5E9!important;
+}
+.mexa-kpi-icon.purple{
+  background: #9365B0!important;
+}
+.mexa-kpi-icon.blue{
+  background: #4B6CB7!important;
+}
+.mexa-kpi-icon.red{
+  background: #EF4136!important;
+}
+.mexa-kpi-icon.grey{
+  background: #6b7280!important;
+}
+
 
 .dark .mexa-kpi-icon,
 :root[data-theme="dark"] .mexa-kpi-icon {
@@ -723,3 +1021,58 @@ html, body { background: var(--mexa-ground); }
    light text sat on it at 1.1:1. They follow the theme now. */
 .dark .mexa-attention-row { background: var(--mexa-row-alt); }
 .dark .mexa-attention-row:hover { background: var(--mexa-thead); }
+
+/* ── Admin pages (Companies, Plans, Users, Roles) ─────────────── */
+.admin-info { display: block; margin-bottom: 1rem; }
+.admin-info-text { margin: 0; font-size: .85rem; }
+.admin-spin { display: block; margin: 2.5rem auto; width: 1.5rem; height: 1.5rem; color: var(--mexa-submit); }
+.mexa-table th.admin-center { text-align: center; }
+.admin-avatar {
+  width: 2rem; height: 2rem; border-radius: 999px; flex: none; display: grid; place-items: center;
+  background: #e3e6f7; color: var(--mexa-submit); font-weight: 700; font-size: .85rem;
+}
+.dark .admin-avatar { background: #262a3a; color: #c9cfff; }
+
+/* ── Charts in dark mode ──────────────────────────────────────
+   The ring and donut centre labels are set to the light theme's ink
+   in each chart's options, which left them near-invisible on a dark
+   card; the ring tracks stayed light grey. */
+.dark .apexcharts-datalabels-group .apexcharts-datalabel-label,
+.dark .apexcharts-datalabels-group .apexcharts-datalabel-value { fill: var(--mexa-ink) !important; }
+.dark .apexcharts-radialbar-track .apexcharts-radialbar-area { stroke: #262a3a !important; }
+.circ{
+  width: 10px;
+  height: 10px;
+  border-radius: 100px;
+  display: inline;
+  flex: 0 0 10px;
+}
+
+.circ.avail{
+  background-color: #2B3990;
+}
+.circ.perf{
+  background-color: #4B6CB7;
+}
+.circ.qual{
+  background-color: #9365B0;
+}
+.circ.run{
+  background-color: #25B483;
+}
+.circ.idle{
+  background-color: #FCC047;
+}
+.mexa-shell {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+header > div{
+    max-width: 1400px;
+}
+
+// @media (max-width: 420px){
+//   .mexa-shell{
+//     padding:0 !important
+//   }
+// }

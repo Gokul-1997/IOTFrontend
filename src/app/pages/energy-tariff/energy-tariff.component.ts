@@ -27,8 +27,8 @@ import { ToastService } from '../../core/services/toast.service';
     <a routerLink="/energy-dashboard" class="mexa-submit">Energy Dashboard</a>
   </form>
 
-  <section class="mexa-card" aria-labelledby="tfFormTitle">
-    <h2 id="tfFormTitle" class="mexa-card-title mexa-card-title-left">{{ editing ? 'Edit' : 'Set' }} a tariff</h2>
+  <section class="mexa-card p-4" aria-labelledby="tfFormTitle">
+    <h2 id="tfFormTitle" class="mexa-card-title mexa-card-title-left mt-2">{{ editing ? 'Edit' : 'Set' }} a tariff</h2>
     <p class="mexa-card-hint">
       Leave the machine as <strong>Company default</strong> to price every machine; a row for one machine overrides it.
       Cost appears on the Energy and Factory dashboards once a price is set.
@@ -64,8 +64,8 @@ import { ToastService } from '../../core/services/toast.service';
     <p id="tfError" class="text-sm text-red-700 dark:text-red-400 mt-2" role="alert" *ngIf="error">{{ error }}</p>
   </section>
 
-  <section class="mexa-card" aria-labelledby="tfListTitle">
-    <h2 id="tfListTitle" class="mexa-card-title mexa-card-title-left">Configured</h2>
+  <section class="mexa-card mt-3 p-4" aria-labelledby="tfListTitle">
+    <h2 id="tfListTitle" class="mexa-card-title mexa-card-title-left mb-2">Configured</h2>
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Configured tariffs">
       <table class="mexa-table">
         <caption class="sr-only">Configured energy tariffs and limits</caption>
