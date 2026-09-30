@@ -31,7 +31,7 @@
 .mt-state-dot { width: .55rem; height: .55rem; border-radius: 999px; background: #fff; }
 .mt-machine-img { display: block; width: 100%; object-fit: contain; margin: .6rem 0 .2rem; }
 .mt-lastseen { margin: 0 0 .3rem; text-align: center; font-size: .75rem; color: var(--mexa-ink-3); }
-.mt-facts { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem 1rem; margin: .5rem 0 0; }
+.mt-facts { display: grid; grid-template-columns: 1fr 1fr; gap: .2rem; margin: .5rem 0 0; }
 .mt-facts dt { font-size: .78rem; color: var(--mexa-ink-2); }
 .mt-facts dd { margin: .1rem 0 0; font-size: .9rem; font-weight: 700; color: var(--mexa-ink); overflow-wrap: anywhere; }
 
@@ -48,7 +48,7 @@
 .mt-center { text-align: center; }
 
 /* ── fans and batteries ── */
-.mt-cooling { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.mt-cooling { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
 .mt-fans { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem 0; }
 .mt-fan { text-align: center; padding: .15rem .35rem; min-width: 0; }
 .mt-fan:not(:nth-child(3n + 1)) { border-left: 1px solid var(--mexa-rule); }
@@ -66,8 +66,8 @@
 .mt-current { font-size: .82rem; color: var(--mexa-ink-2); white-space: nowrap; }
 .mt-current strong { color: var(--mexa-ink); }
 .mt-hint { margin: -.4rem 0 .4rem; }
-.mt-alarmlist { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; gap: .45rem; }
-.mt-alarmlist li { display: flex; align-items: center; gap: .5rem; font-size: .88rem; color: var(--mexa-ink); padding-bottom: .4rem; border-bottom: 1px solid var(--mexa-rule); }
+.mt-alarmlist { list-style: none; margin: 0 0 0; padding: 0; display: grid; gap: 3px; }
+.mt-alarmlist li { display: flex; align-items: center; gap: .5rem; font-size: .88rem; color: var(--mexa-ink); padding-bottom: .2rem; border-bottom: 1px solid var(--mexa-rule); }
 .mt-alarmlist li:last-child { border-bottom: 0; padding-bottom: 0; }
 .mt-alarmlist strong { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
 .mt-dot { width: .7rem; height: .7rem; border-radius: 999px; flex: none; }

@@ -134,7 +134,7 @@
         </div>
 
         <!-- MACHINE DETAILS -->
-        <div class="xl:col-span-3">
+        <div class="xl:col-span-2">
           <div class="menu-default rounded-xl p-3 space-y-2">
 
             <!-- <div>
@@ -176,12 +176,12 @@
         </div>
 
         <!-- METRICS -->
-        <div class="xl:col-span-6 space-y-4">
+        <div class="xl:col-span-7 space-y-4">
 
           <!-- ROW 1: OEE METRIC CARDS — controlled by widget:oee-metrics -->
           <div *ngIf="auth.hasWidget('quality', 'oee-metrics')" class="grid grid-cols-2 md:grid-cols-4 gap-3">
 
-            <div class="mexa-kpi">
+            <div class="mexa-kpi oee">
               <div class="mexa-kpi-head">
                 <span class="mexa-kpi-label">OEE achieved</span>
                 <span class="mexa-kpi-icon" aria-hidden="true">
@@ -191,7 +191,7 @@
               <p class="mexa-kpi-value">{{ dashboardData?.oee?.oee || 0 }}%</p>
             </div>
 
-            <div class="mexa-kpi">
+            <div class="mexa-kpi avail">
               <div class="mexa-kpi-head">
                 <span class="mexa-kpi-label">Availability</span>
                 <span class="mexa-kpi-icon" aria-hidden="true">
@@ -201,7 +201,7 @@
               <p class="mexa-kpi-value">{{ dashboardData?.oee?.availability || 0 }}%</p>
             </div>
 
-            <div class="mexa-kpi">
+            <div class="mexa-kpi perf">
               <div class="mexa-kpi-head">
                 <span class="mexa-kpi-label">Performance</span>
                 <span class="mexa-kpi-icon" aria-hidden="true">
@@ -211,7 +211,7 @@
               <p class="mexa-kpi-value">{{ dashboardData?.oee?.performance || 0 }}%</p>
             </div>
 
-            <div class="mexa-kpi">
+            <div class="mexa-kpi qual">
               <div class="mexa-kpi-head">
                 <span class="mexa-kpi-label">Quality</span>
                 <span class="mexa-kpi-icon" aria-hidden="true">

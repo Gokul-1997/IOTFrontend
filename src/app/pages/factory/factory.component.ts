@@ -379,7 +379,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
   get alarmDonut(): any {
     return this.charts.memo('alarmDonut', () => {
     return {
-      chart: { type: 'donut', height: 200, fontFamily: 'inherit' },
+      chart: { type: 'donut', height: 180, fontFamily: 'inherit' },
       labels: ['Critical', 'Non critical', 'Information'],
       colors: ['#f43f5e', '#22c55e', '#f5a623'],
       dataLabels: { enabled: true, formatter: (_v: number, o: any) => o.w.config.series[o.seriesIndex] },

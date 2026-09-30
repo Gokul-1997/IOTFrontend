@@ -57,7 +57,7 @@
 
   <!-- The attribution caveat is shown, not buried: a machine with two
        assigned operators appears in both of their rows. -->
-  <p *ngIf="data.attribution.shared_machines > 0" class="mexa-note">
+  <p *ngIf="data.attribution.shared_machines > 0" class="mexa-note mexa-note-note">
     {{ data.attribution.note }}
   </p>
 
@@ -72,7 +72,7 @@
   <div class="mexa-kpis">
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Total<br>Operators</span>
+        <span class="mexa-kpi-label">Total Operators</span>
         <span class="mexa-kpi-icon navy" style="background:#2f2d8f" aria-hidden="true"><mat-icon>groups</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.attribution.operators }}</p>
@@ -81,7 +81,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Excellent<br>Performer</span>
+        <span class="mexa-kpi-label">Excellent Performer</span>
         <span class="mexa-kpi-icon green" style="background:#22c55e" aria-hidden="true"><mat-icon>star</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.bands.excellent }}</p>
@@ -90,7 +90,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Good<br>Performer</span>
+        <span class="mexa-kpi-label">Good Performer</span>
         <span class="mexa-kpi-icon sky" style="background:#3b9ae1" aria-hidden="true"><mat-icon>verified</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.bands.good }}</p>
@@ -99,7 +99,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Avg<br>Performer</span>
+        <span class="mexa-kpi-label">Avg Performer</span>
         <span class="mexa-kpi-icon purple" style="background:#9b7ec8" aria-hidden="true"><mat-icon>shield</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.bands.average }}</p>
@@ -108,7 +108,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Who Needs<br>Help</span>
+        <span class="mexa-kpi-label">Who Needs Help</span>
         <span class="mexa-kpi-icon blue" style="background:#6b7280" aria-hidden="true"><mat-icon>help</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.bands.needs_help }}</p>

@@ -324,7 +324,7 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
         xaxis:  { categories: this.trendCategories },
         yaxis:  { min: 0, max: 100, tickAmount: 5, labels: { formatter: (v: number) => `${v?.toFixed(0)}%` } },
         grid:   { borderColor: 'rgba(148,163,184,.25)' },
-        tooltip:{ theme: 'dark', shared: true, intersect: false, y: { formatter: fmt } },
+        tooltip:{ theme: 'light', shared: true, intersect: false, y: { formatter: fmt } },
         noData: { text: 'No production recorded for this period' }
       };
     });

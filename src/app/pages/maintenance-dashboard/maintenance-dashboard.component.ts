@@ -367,7 +367,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   get alarmDonut(): any {
     return this.charts.memo('alarmDonut', () => {
     return {
-      chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
+      chart: { type: 'donut', height: 180, fontFamily: 'inherit' },
       labels: ['Critical', 'Non critical', 'Information'],
       colors: ['#e03131', '#22c55e', '#f5a623'],
       plotOptions: {

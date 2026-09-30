@@ -349,7 +349,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   get trendChart(): any {
     return this.charts.memo('trendChart', () => {
     return {
-      chart:  { type: 'area', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'area', height: 200, toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: 2, curve: 'smooth' },
       fill:   { type: 'gradient', gradient: { shadeIntensity: 0.3, opacityFrom: 0.4, opacityTo: 0.05 } },
       colors: ['#dc2626'],
@@ -368,7 +368,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   get machineChart(): any {
     return this.charts.memo('machineChart', () => {
     return {
-      chart:  { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'bar', height: 200, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
       colors: this.palette,
       dataLabels: { enabled: false },
@@ -444,14 +444,14 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   get reasonChart(): any {
     return this.charts.memo('reasonChart', () => {
     return {
-      chart: { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
-      plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '62%', distributed: true } },
+      chart: { type: 'bar', height: 200, toolbar: { show: false }, fontFamily: 'inherit' },
+      plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '80%', distributed: true } },
       colors: this.palette,
-      dataLabels: { enabled: true, style: { fontSize: '.72rem', fontWeight: 700, colors: ['#fff'] } },
+      dataLabels: { enabled: true, offsetY: 7, style: { fontSize: '.72rem', fontWeight: 700, colors: ['#fff'] } },
       legend: { show: false },
       xaxis: { categories: this.reasonCategories, title: { text: 'Occurrences' } },
       grid:  { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip: { theme: 'dark' },
+      tooltip: { theme: 'light' },
       noData: { text: 'No critical alarms in this period' }
     };
   });

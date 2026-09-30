@@ -267,7 +267,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
                  labels: { formatter: (v: any) => board === 'downtime' ? `${Math.round(Number(v))}h` : `${Math.round(Number(v))}` } },
         yaxis: { labels: { maxWidth: 110 }, title: { text: 'Operator name' } },
         grid: { borderColor: 'rgba(148,163,184,.25)', padding: { right: 12 } },
-        tooltip: { theme: 'dark', y: { formatter: (v: number) => fmt(v) } },
+        tooltip: { theme: 'light', y: { formatter: (v: number) => fmt(v) } },
         noData: { text: 'Nothing measured for this period' }
       };
     });
@@ -288,16 +288,17 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
           { name: 'P', data: col('efficiency_pct') },
           { name: 'Q', data: col('quality_rate_pct') }
         ],
-        chart: { type: 'bar', height: 260, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
+        chart: { type: 'bar', height: 220, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
         plotOptions: { bar: { borderRadius: 2, columnWidth: '62%' } },
         colors: ['#2f2d8f', '#4a76c8', '#9b7ec8'],
         dataLabels: { enabled: false },
         legend: { position: 'bottom', markers: { shape: 'circle' } },
-        xaxis: { categories: rows.map((r: any) => r.operator_name), labels: { rotate: -30, trim: true } },
+        xaxis: { categories: rows.map((r: any) => r.operator_name), 
+          labels: { rotate: -30, trim: true } },
         yaxis: { min: 0, max: 100, tickAmount: 5, labels: { formatter: (v: number) => `${Math.round(v)}%` } },
         grid: { borderColor: 'rgba(148,163,184,.25)' },
         tooltip: {
-          theme: 'dark', shared: true, intersect: false,
+          theme: 'light', shared: true, intersect: false,
           y: { formatter: (v: number | null) => v == null ? '--' : `${v}%` },
           // the OEE itself, which the three bars multiply to
           x: { formatter: (_: any, o: any) => {

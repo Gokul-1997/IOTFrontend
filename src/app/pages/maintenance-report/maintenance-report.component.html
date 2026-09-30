@@ -1,7 +1,7 @@
 <!-- Maintenance Report — the exportable ticket record, MEXA design. -->
 
-<p class="mexa-updated" *ngIf="updatedAt">
-  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
+<p class="mexa-updated mb-2" *ngIf="updatedAt">
+  <mat-icon class="!w-4 !h-4 !text-sm" aria-hidden="true">refresh</mat-icon>
   Last Updated: {{ updatedAt }}
 </p>
 
@@ -56,7 +56,7 @@
   <!-- Both caveats are shown, not buried: an average over three tickets is
        not the claim an average over three hundred is, and a ticket with no
        minutes entered still counts as a ticket. -->
-  <p *ngIf="data.kpis.downtime_note" class="mexa-note">{{ data.kpis.downtime_note }}</p>
+  <p *ngIf="data.kpis.downtime_note" class="mexa-note mexa-note-note">{{ data.kpis.downtime_note }}</p>
 
   <!-- ══════════ KPI TILES ══════════ -->
   <div class="mexa-kpis">
@@ -142,7 +142,7 @@
     </section>
   </div>
 
-  <section class="mexa-card">
+  <section class="mexa-card mb-4">
     <div class="mexa-tablebar">
       <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Stopped Time by Machine</h2>
       <span class="mexa-card-hint" style="margin:0">
@@ -159,7 +159,7 @@
   </section>
 
   <!-- ══════════ PER-MACHINE SUMMARY ══════════ -->
-  <section class="mexa-card">
+  <section class="mexa-card mb-4">
     <h2 class="mexa-card-title mexa-card-title-left">Machine Summary</h2>
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table">
@@ -190,7 +190,7 @@
   </section>
 
   <!-- ══════════ TICKET DETAIL ══════════ -->
-  <section class="mexa-card">
+  <section class="mexa-card mb-4">
     <div class="mexa-tablebar">
       <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Maintenance Tickets</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">

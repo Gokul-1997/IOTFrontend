@@ -233,7 +233,7 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy {
 
   get trendChart(): any {
     return this.charts.memo('trendChart', () => ({
-      chart:  { type: 'line', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'line', height: 200, toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: 3, curve: 'smooth' },
       colors: ['#c8384b', '#2f9e6f'],
       dataLabels: { enabled: false },
@@ -263,7 +263,7 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy {
 
   get typeChart(): any {
     return this.charts.memo('typeChart', () => ({
-      chart:  { type: 'donut', height: 280, fontFamily: 'inherit' },
+      chart:  { type: 'donut', height: 200, fontFamily: 'inherit' },
       labels: this.typeLabels,
       colors: ['#c8384b', '#e0a341', '#4a76c8', '#9b7ec8'],
       plotOptions: {
