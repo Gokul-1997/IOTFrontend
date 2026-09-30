@@ -45,7 +45,7 @@ const clock = new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-dig
               background: #fff; color: #1f2430; border: 1px solid #d5d9e4; box-shadow: 0 6px 18px rgba(17,20,45,.16); }
     .tl-tip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
                      border: 7px solid transparent; border-top-color: #fff; }
-    .tl-axis { position: relative; height: 18px; margin-top: 4px; }
+    .tl-axis { position: relative; height: 18px; margin: 4px 20px 0px 20px; }
     .tl-tick { position: absolute; top: 0; transform: translateX(-50%); font-size: 11px; font-weight: 600;
                color: var(--mexa-ink-3, #5d6679); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .tl-tick::before { content: ''; position: absolute; left: 50%; top: -4px; width: 1px; height: 4px; background: currentColor; }

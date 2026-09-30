@@ -364,19 +364,20 @@ button.mexa-kpi[aria-pressed="true"] {
   background: var(--mexa-card);
   border: 0;
   border-radius: 18px;
-  padding: .5rem;
+  padding: .8rem;
   /* On the STM field the card is lifted by a soft shadow, as in the design */
   box-shadow: var(--mexa-card-shadow);
   min-width: 0;
 }
 
 .mexa-card-title {
-  font-size: .9rem;
-  font-weight: 650;
-  letter-spacing: .01em;
-  color: var(--mexa-ink);
-  // margin: 0 0 .85rem;
-  text-align: center;
+      font-size: 0.9rem;
+    font-weight: 650;
+    letter-spacing: 0.01em;
+    color: var(--mexa-ink);
+    text-align: center;
+    // margin-bottom: 22px;
+    line-height: 25px;
 }
 /* Tables and lists read better with the title on the left; charts are
    centred, as in the mock. */
@@ -387,7 +388,7 @@ button.mexa-kpi[aria-pressed="true"] {
 .stm-auth-card { box-shadow: 0 24px 60px rgba(18, 14, 64, .35); }
 
 /* Lift a Tailwind-built card onto the field the same way as .mexa-card */
-.mexa-lift { background: var(--mexa-card) !important; border-radius: 12px !important; box-shadow: var(--mexa-card-shadow) !important; }
+.mexa-lift { background: var(--mexa-card) !important; border-radius: 12px !important; box-shadow: var(--mexa-card-shadow) !important; height: 100%; }
 
 /* A card whose table runs edge to edge (list pages) */
 .mexa-card-flush { padding: 0; overflow: hidden; }

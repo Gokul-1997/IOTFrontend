@@ -82,7 +82,7 @@
   <div class="mexa-kpis">
     <button type="button" class="mexa-kpi" (click)="drill('all')" aria-controls="alDetails">
       <span class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Total<br>Alarms</span>
+        <span class="mexa-kpi-label">Total Alarms</span>
         <span class="mexa-kpi-icon navy" style="background:#2f2d8f" aria-hidden="true">
           <mat-icon>notifications</mat-icon>
         </span>
@@ -95,7 +95,7 @@
     <button type="button" class="mexa-kpi" (click)="drill('critical')" aria-controls="alDetails"
             [attr.aria-pressed]="drillKind === 'critical'">
       <span class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Critical<br>Alarms</span>
+        <span class="mexa-kpi-label">Critical Alarms</span>
         <span class="mexa-kpi-icon red" style="background:#dc2626" aria-hidden="true">
           <mat-icon>error</mat-icon>
         </span>
@@ -108,7 +108,7 @@
     <button type="button" class="mexa-kpi" (click)="drill('normal')" aria-controls="alDetails"
             [attr.aria-pressed]="drillKind === 'normal'">
       <span class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Normal<br>Alarms</span>
+        <span class="mexa-kpi-label">Normal Alarms</span>
         <span class="mexa-kpi-icon sky" style="background:#17b3a3" aria-hidden="true">
           <mat-icon>notifications_none</mat-icon>
         </span>
@@ -121,7 +121,7 @@
     <button type="button" class="mexa-kpi" (click)="drill('open')" aria-controls="alDetails"
             [attr.aria-pressed]="drillKind === 'open'">
       <span class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Open<br>Alarms</span>
+        <span class="mexa-kpi-label">Open Alarms</span>
         <span class="mexa-kpi-icon blue" style="background:#4a76c8" aria-hidden="true">
           <mat-icon>pending</mat-icon>
         </span>
@@ -134,7 +134,7 @@
     <button type="button" class="mexa-kpi" (click)="drill('longest')" aria-controls="alDetails"
             [attr.aria-pressed]="drillKind === 'longest'">
       <span class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Max<br>Duration</span>
+        <span class="mexa-kpi-label">Max Duration</span>
         <span class="mexa-kpi-icon purple" style="background:#6b7280" aria-hidden="true">
           <mat-icon>timelapse</mat-icon>
         </span>

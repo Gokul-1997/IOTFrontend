@@ -28,13 +28,13 @@
   </div> -->
 
   <!-- the bands every gauge below is coloured by, as in the design -->
-  <span class="mexa-legend mt-legend" aria-label="Condition bands">
+  <!-- <span class="mexa-legend mt-legend" aria-label="Condition bands">
     <span class="mexa-legend-item"><span class="mexa-legend-dot" style="background:#22c55e"></span>Healthy</span>
     <span class="mexa-legend-item"><span class="mexa-legend-dot" style="background:#f5a623"></span>Stable</span>
     <span class="mexa-legend-item"><span class="mexa-legend-dot" style="background:#e03131"></span>Critical</span>
   </span>
 
-  <span class="mexa-titlebar-spacer"></span>
+  <span class="mexa-titlebar-spacer"></span> -->
 
   <div class="mexa-filters">
     <label class="mexa-filter-label" for="mtShift">Shift</label>
@@ -136,7 +136,7 @@
 
     <!-- servo: load per axis, then motor temperature per axis -->
     <section class="mexa-card" aria-labelledby="mtServo">
-      <h2 id="mtServo" class="mexa-card-title">Servo Details</h2>
+      <h2 id="mtServo" class="mexa-card-title mb-5">Servo Details</h2>
       <div class="mt-gauges">
         <div class="mt-gauge" *ngFor="let a of ['x','y','z']">
           <p class="mt-gauge-label">Servo Load {{ a.toUpperCase() }}</p>
@@ -226,9 +226,9 @@
       <h2 id="mtTrend" class="mexa-card-title mexa-card-title-left">
         {{ trendIsIr ? 'Servo Motor Insulation Resistance Trend' : 'Servo Motor Temperature Trend' }}
       </h2>
-      <p *ngIf="!trendIsIr && data.unavailable?.includes('insulation_resistance')" class="mexa-card-hint mt-hint">
+      <!-- <p *ngIf="!trendIsIr && data.unavailable?.includes('insulation_resistance')" class="mexa-card-hint mt-hint">
         Insulation resistance is not reported by this controller; servo temperature is shown instead.
-      </p>
+      </p> -->
       <apx-chart *ngIf="trendIsIr"
         [series]="irTrendSeries" [chart]="irTrendChart.chart" [stroke]="irTrendChart.stroke"
         [markers]="irTrendChart.markers" [colors]="irTrendChart.colors"

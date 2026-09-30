@@ -29,7 +29,7 @@
 .mt-state.is-idle      { background: #b45309; }
 .mt-state.is-breakdown { background: #c32b3f; }
 .mt-state-dot { width: .55rem; height: .55rem; border-radius: 999px; background: #fff; }
-.mt-machine-img { display: block; width: 100%; height: 150px; object-fit: contain; margin: .6rem 0 .2rem; }
+.mt-machine-img { display: block; width: 100%; object-fit: contain; margin: .6rem 0 .2rem; }
 .mt-lastseen { margin: 0 0 .3rem; text-align: center; font-size: .75rem; color: var(--mexa-ink-3); }
 .mt-facts { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem 1rem; margin: .5rem 0 0; }
 .mt-facts dt { font-size: .78rem; color: var(--mexa-ink-2); }
@@ -43,7 +43,7 @@
 :host-context(.dark) .mt-chip { color: #b9b6ff; }
 .mt-gauges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .25rem; margin-bottom: .25rem; }
 .mt-gauge { text-align: center; min-width: 0; }
-.mt-gauge-label { margin: 0 0 .15rem; font-size: .8rem; font-weight: 600; color: var(--mexa-ink); line-height: 1.2; min-height: 1.95em; }
+.mt-gauge-label { margin: 0 0 -12px 0; font-size: .8rem; font-weight: 600; color: var(--mexa-ink); line-height: 1.2; min-height: 1.95em; }
 .mt-word { margin: .1rem 0 0; font-size: .78rem; font-weight: 700; }
 .mt-center { text-align: center; }
 
