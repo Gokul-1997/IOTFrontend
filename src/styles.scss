@@ -14,7 +14,8 @@
 // MEXA dashboard design system — the shell, tiles, cards and tables that
 // every Phase 2 dashboard shares.
 @use './styles/workspace';
-// Text is Manrope, served from /fonts by the theme (styles/theme/_fonts.scss).
+// Text is IBM Plex Sans, titles and figures Space Grotesk, readouts IBM Plex
+// Mono — served from /fonts by the theme (styles/theme/_fonts.scss).
 
 
 html {
@@ -1299,6 +1300,6 @@ html.dark [class~="bg-blue-600"][class~="text-white"] { color: #fff; }
   .blink { animation: none !important; }
 }
 
-/* ══════════ The look: the MaduraCoats visual language ══════════
+/* ══════════ The look: Axis, the product's own visual language ══════════
    Loaded last, so it sets the look over every layer above. */
 @include meta.load-css("./styles/theme");

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10b981"/><stop offset="1" stop-color="#2f7bff"/></linearGradient>
+    <linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#10b981" stop-opacity="0"/><stop offset=".5" stop-color="#10b981" stop-opacity=".6"/><stop offset="1" stop-color="#10b981" stop-opacity="0"/></linearGradient>
+    <filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <clipPath id="c"><path d="M256 20l46 16v36c0 30-20 52-46 64-26-12-46-34-46-64V36Z"/></clipPath>
+  </defs>
+  <style>
+    .shield{fill:#fff;fill-opacity:.06;stroke:url(#a);stroke-width:2.6}
+    .scan{fill:url(#s);animation:s 2.6s ease-in-out infinite}
+    @keyframes s{0%,100%{transform:translateY(-10px)}50%{transform:translateY(100px)}}
+    .code{font:700 18px ui-monospace,Menlo,monospace;fill:#fff;letter-spacing:.2em}
+    .digit{animation:d 2.6s steps(1,end) infinite}
+    @keyframes d{50%{fill-opacity:.35}}
+  </style>
+  <!-- a second key to the account -->
+  <path class="shield" filter="url(#g)" d="M256 20l46 16v36c0 30-20 52-46 64-26-12-46-34-46-64V36Z"/>
+  <g clip-path="url(#c)"><rect class="scan" x="200" y="10" width="112" height="26"/></g>
+  <rect x="242" y="70" width="28" height="24" rx="4" fill="#fff" fill-opacity=".9"/>
+  <path d="M248 70v-8a8 8 0 0 1 16 0v8" stroke="#fff" stroke-width="3"/>
+  <g transform="translate(40 56)">
+    <rect width="130" height="44" rx="10" fill="#fff" fill-opacity=".07" stroke="#fff" stroke-opacity=".3"/>
+    <text class="code digit" x="14" y="29">482 915</text>
+  </g>
+</svg>

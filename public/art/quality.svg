@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .ring{stroke:#fff;stroke-opacity:.3;stroke-width:1.6}
+    .bull{fill:#16a34a}
+    .check{stroke:#fff;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40;animation:c 3s ease-in-out infinite}
+    @keyframes c{0%,15%{stroke-dashoffset:40}40%,85%{stroke-dashoffset:0}100%{stroke-dashoffset:40}}
+    .jaw{animation:j 3s ease-in-out infinite}
+    @keyframes j{0%,100%{transform:translateX(0)}50%{transform:translateX(-26px)}}
+    .cal{stroke:#14b8a6;stroke-width:2.2;stroke-linejoin:round}
+    .read{font:700 12px ui-monospace,Menlo,monospace;fill:#14b8a6}
+  </style>
+  <!-- measured, and within tolerance -->
+  <circle class="ring" cx="266" cy="80" r="56"/><circle class="ring" cx="266" cy="80" r="38"/>
+  <circle class="bull" cx="266" cy="80" r="22" filter="url(#g)"/>
+  <path class="check" d="M255 80l8 8 14-16"/>
+  <g transform="translate(34 40)">
+    <path class="cal" d="M0 0h140v18H26v44H10V18H0Z"/>
+    <g class="jaw"><path class="cal" d="M120 18h14v44h-14Z"/></g>
+    <path d="M30 9h86" stroke="#14b8a6" stroke-opacity=".6" stroke-width="1.2" stroke-dasharray="2 4"/>
+    <rect x="40" y="30" width="62" height="20" rx="4" fill="#fff" fill-opacity=".08" stroke="#14b8a6" stroke-opacity=".6"/>
+    <text class="read" x="47" y="44">25.00</text>
+  </g>
+</svg>

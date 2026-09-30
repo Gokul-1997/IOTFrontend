@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <linearGradient id="a" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#0ea5e9"/></linearGradient>
+    <filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .sheet{fill:#fff;fill-opacity:.06;stroke:#fff;stroke-opacity:.4;stroke-width:1.5}
+    .back{transform:rotate(-7deg);transform-origin:120px 90px}
+    .bar{fill:url(#a);transform-box:fill-box;transform-origin:bottom;animation:b 2.8s cubic-bezier(.2,.7,.2,1) infinite alternate}
+    .bar:nth-of-type(2){animation-delay:.2s}.bar:nth-of-type(3){animation-delay:.4s}.bar:nth-of-type(4){animation-delay:.6s}.bar:nth-of-type(5){animation-delay:.8s}
+    @keyframes b{from{transform:scaleY(.2)}to{transform:scaleY(1)}}
+    .pie{transform-origin:280px 80px;animation:p 8s linear infinite}
+    @keyframes p{to{transform:rotate(360deg)}}
+  </style>
+  <!-- reports: the sheets, their bars, their shares -->
+  <rect class="sheet back" x="54" y="30" width="130" height="104" rx="10"/>
+  <rect class="sheet" x="66" y="24" width="130" height="112" rx="10"/>
+  <path d="M82 42h60" stroke="#fff" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>
+  <g transform="translate(82 60)">
+    <rect class="bar" x="0" y="20" width="14" height="46" rx="3"/><rect class="bar" x="22" y="6" width="14" height="60" rx="3"/>
+    <rect class="bar" x="44" y="28" width="14" height="38" rx="3"/><rect class="bar" x="66" y="0" width="14" height="66" rx="3"/>
+    <rect class="bar" x="88" y="16" width="14" height="50" rx="3"/>
+  </g>
+  <g class="pie" filter="url(#g)">
+    <circle cx="280" cy="80" r="40" stroke="#6366f1" stroke-width="18" stroke-dasharray="110 252" pathLength="252"/>
+    <circle cx="280" cy="80" r="40" stroke="#0ea5e9" stroke-width="18" stroke-dasharray="70 252" stroke-dashoffset="-112" pathLength="252"/>
+    <circle cx="280" cy="80" r="40" stroke="#fff" stroke-opacity=".35" stroke-width="18" stroke-dasharray="66 252" stroke-dashoffset="-184" pathLength="252"/>
+  </g>
+</svg>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#06b6d4"/><stop offset="1" stop-color="#2f7bff"/></linearGradient>
+    <filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .belt{stroke:#fff;stroke-opacity:.45;stroke-width:1.6}
+    .roller{stroke:#fff;stroke-opacity:.55;stroke-width:1.6;transform-box:fill-box;transform-origin:center;animation:r 1.2s linear infinite}
+    @keyframes r{to{transform:rotate(360deg)}}
+    .box{fill:url(#a);animation:m 5s linear infinite}
+    .box.b{animation-delay:-1.66s}.box.c{animation-delay:-3.33s}
+    @keyframes m{0%{transform:translateX(0);opacity:0}8%{opacity:1}92%{opacity:1}100%{transform:translateX(220px);opacity:0}}
+    .st{fill:#fff;fill-opacity:.08;stroke:#fff;stroke-opacity:.35}
+    .ok{fill:#06b6d4;animation:k 1.66s steps(2,jump-none) infinite}
+    @keyframes k{50%{fill-opacity:.25}}
+  </style>
+  <!-- a production line, stations along a moving belt -->
+  <rect class="st" x="86" y="30" width="46" height="46" rx="8"/><rect class="st" x="166" y="30" width="46" height="46" rx="8"/><rect class="st" x="246" y="30" width="46" height="46" rx="8"/>
+  <circle class="ok" cx="109" cy="53" r="6" filter="url(#g)"/><circle class="ok" cx="189" cy="53" r="6" style="animation-delay:.5s" filter="url(#g)"/><circle class="ok" cx="269" cy="53" r="6" style="animation-delay:1s" filter="url(#g)"/>
+  <path class="belt" d="M60 100h250a14 14 0 0 1 0 28H60a14 14 0 0 1 0-28Z"/>
+  <g><circle class="roller" cx="60" cy="114" r="10"/><path class="roller" d="M50 114h20"/></g>
+  <g><circle class="roller" cx="310" cy="114" r="10"/><path class="roller" d="M300 114h20"/></g>
+  <rect class="box" x="72" y="86" width="20" height="14" rx="3"/>
+  <rect class="box b" x="72" y="86" width="20" height="14" rx="3"/>
+  <rect class="box c" x="72" y="86" width="20" height="14" rx="3"/>
+</svg>

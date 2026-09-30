@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <linearGradient id="a" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6a4dff"/><stop offset="1" stop-color="#2f7bff"/></linearGradient>
+    <filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .line{stroke:#fff;stroke-opacity:.55;stroke-width:1.6;stroke-linejoin:round}
+    .win{fill:#2f7bff;animation:w 3s ease-in-out infinite}
+    .win:nth-of-type(2n){animation-delay:.8s;fill:#6a4dff}.win:nth-of-type(3n){animation-delay:1.6s}
+    @keyframes w{50%{fill-opacity:.25}}
+    .puff{fill:#fff;fill-opacity:.0;transform-box:fill-box;transform-origin:center;animation:p 4s ease-out infinite}
+    .puff.b{animation-delay:1.3s}.puff.c{animation-delay:2.6s}
+    @keyframes p{0%{transform:translate(0,0) scale(.4);fill-opacity:.5}100%{transform:translate(18px,-46px) scale(1.6);fill-opacity:0}}
+    .belt{stroke:url(#a);stroke-width:3;stroke-linecap:round;stroke-dasharray:6 10;animation:b .9s linear infinite}
+    @keyframes b{to{stroke-dashoffset:-16}}
+    .box{fill:#fff;fill-opacity:.85;animation:m 4s linear infinite}
+    .box.b{animation-delay:-2s}
+    @keyframes m{from{transform:translateX(0)}to{transform:translateX(190px)}}
+  </style>
+  <!-- a saw-tooth hall, a chimney breathing, a line carrying parts -->
+  <path class="line" d="M60 128V70l40-22v22l40-22v22l40-22v22l40-22v80Z"/>
+  <path class="line" d="M232 128V44h18v84"/>
+  <circle class="puff" cx="241" cy="38" r="8"/><circle class="puff b" cx="241" cy="38" r="8"/><circle class="puff c" cx="241" cy="38" r="8"/>
+  <g>
+    <rect class="win" x="74" y="86" width="16" height="12" rx="2"/><rect class="win" x="98" y="86" width="16" height="12" rx="2"/>
+    <rect class="win" x="122" y="86" width="16" height="12" rx="2"/><rect class="win" x="146" y="86" width="16" height="12" rx="2"/>
+    <rect class="win" x="170" y="86" width="16" height="12" rx="2"/><rect class="win" x="194" y="86" width="16" height="12" rx="2"/>
+  </g>
+  <path class="belt" filter="url(#g)" d="M40 142h290"/>
+  <rect class="box" x="44" y="130" width="14" height="10" rx="2"/>
+  <rect class="box b" x="44" y="130" width="14" height="10" rx="2"/>
+  <path d="M40 150h290" stroke="#fff" stroke-opacity=".18" stroke-width="1.2"/>
+  <circle cx="300" cy="62" r="18" stroke="url(#a)" stroke-width="3" filter="url(#g)"/>
+  <path d="M292 62l6 6 11-12" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <radialGradient id="s"><stop offset="0" stop-color="#fde68a"/><stop offset="1" stop-color="#f59e0b"/></radialGradient>
+    <filter id="g" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .arc{stroke:#fff;stroke-opacity:.25;stroke-width:1.5;stroke-dasharray:3 6}
+    .orb{transform-origin:210px 130px;animation:o 8s linear infinite}
+    @keyframes o{from{transform:rotate(-90deg)}to{transform:rotate(270deg)}}
+    .star{fill:#fff;animation:t 2.4s ease-in-out infinite}
+    .star:nth-of-type(2){animation-delay:.6s}.star:nth-of-type(3){animation-delay:1.2s}.star:nth-of-type(4){animation-delay:1.8s}
+    @keyframes t{50%{fill-opacity:.15}}
+    .shift{fill:#fff;fill-opacity:.1}
+    .now{fill:#6366f1;animation:n 8s linear infinite}
+    @keyframes n{from{transform:translateX(0)}to{transform:translateX(118px)}}
+  </style>
+  <!-- the day's shifts, turning from morning to night -->
+  <path class="arc" d="M110 130a100 100 0 0 1 200 0"/>
+  <g class="orb">
+    <circle cx="210" cy="30" r="15" fill="url(#s)" filter="url(#g)"/>
+    <circle cx="210" cy="230" r="13" fill="#c7d2fe"/><circle cx="217" cy="225" r="11" fill="#10151e"/>
+  </g>
+  <g><circle class="star" cx="140" cy="44" r="1.8"/><circle class="star" cx="290" cy="38" r="1.6"/><circle class="star" cx="318" cy="82" r="1.8"/><circle class="star" cx="118" cy="86" r="1.5"/></g>
+  <path d="M100 130h220" stroke="#fff" stroke-opacity=".35" stroke-width="1.5"/>
+  <g transform="translate(40 30)">
+    <rect class="shift" width="44" height="12" rx="4"/><rect x="0" y="0" width="44" height="12" rx="4" fill="#f59e0b" fill-opacity=".7"/>
+    <rect class="shift" x="0" y="20" width="44" height="12" rx="4"/><rect x="0" y="20" width="30" height="12" rx="4" fill="#6366f1" fill-opacity=".7"/>
+    <rect class="shift" x="0" y="40" width="44" height="12" rx="4"/>
+  </g>
+</svg>

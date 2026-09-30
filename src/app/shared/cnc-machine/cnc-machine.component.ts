@@ -149,7 +149,7 @@ let uid = 0;
     .lamp.amber.on { fill: #ffb81c; }
     .lamp.green.on { fill: #2fe02f; }
     .frame { stroke: var(--frame-dark); stroke-width: .8; }
-    .roof { fill: var(--brand, #006ab5); }
+    .roof { fill: var(--accent, #5b3df5); transition: fill .4s; }
     .roof-edge { fill: rgba(0, 0, 0, .12); }
     .worklight { opacity: 0; transition: opacity .6s; }
     :host(.st-RUNNING) .worklight, :host(.st-IDLE) .worklight { opacity: 1; }
@@ -163,7 +163,7 @@ let uid = 0;
     .cut-mark { stroke: #fff; stroke-width: 1; opacity: .75; }
     .motor { fill: #6f839a; }
     .head { fill: #b8c6d6; stroke: #7d90a6; stroke-width: .6; }
-    .head-line { fill: var(--brand, #006ab5); opacity: .85; }
+    .head-line { fill: var(--accent, #5b3df5); opacity: .85; }
     .nose { fill: #7f92a8; }
     .holder { fill: #56687d; }
     .tool { fill: #e3e8ee; }

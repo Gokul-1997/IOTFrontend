@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd84d"/><stop offset="1" stop-color="#f97316"/></linearGradient>
+    <linearGradient id="f" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f5b301" stop-opacity="0"/><stop offset=".4" stop-color="#f5b301"/><stop offset="1" stop-color="#f97316"/></linearGradient>
+    <filter id="g" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .wave{stroke:url(#f);stroke-width:2.6;stroke-linecap:round;animation:w 2.2s linear infinite}
+    .wave.b{stroke-opacity:.35;animation-duration:3.4s}
+    @keyframes w{to{transform:translateX(-80px)}}
+    .bolt{fill:url(#a);animation:z 2.4s ease-in-out infinite}
+    @keyframes z{0%,100%{opacity:1}46%{opacity:1}50%{opacity:.35}54%{opacity:1}58%{opacity:.5}62%{opacity:1}}
+    .spark{fill:#ffd84d;transform-box:fill-box;transform-origin:center;animation:s 2.4s ease-out infinite}
+    .spark.b{animation-delay:.8s}.spark.c{animation-delay:1.6s}
+    @keyframes s{0%{transform:scale(0);opacity:1}60%{opacity:.8}100%{transform:scale(1.8) translateY(-8px);opacity:0}}
+  </style>
+  <!-- power flowing: a live waveform and the bolt that draws it -->
+  <clipPath id="c"><rect x="20" y="20" width="200" height="120" rx="10"/></clipPath>
+  <g clip-path="url(#c)">
+    <path class="wave" d="M20 80c10-30 30-30 40 0s30 30 40 0 30-30 40 0 30 30 40 0 30-30 40 0 30 30 40 0 30-30 40 0"/>
+    <path class="wave b" d="M20 96c10-18 30-18 40 0s30 18 40 0 30-18 40 0 30 18 40 0 30-18 40 0 30 18 40 0 30-18 40 0"/>
+  </g>
+  <path d="M20 128h200" stroke="#fff" stroke-opacity=".18"/>
+  <path class="bolt" filter="url(#g)" d="M276 22l-38 64h28l-12 52 42-70h-29Z"/>
+  <circle class="spark" cx="300" cy="44" r="3"/><circle class="spark b" cx="236" cy="104" r="3"/><circle class="spark c" cx="310" cy="112" r="2.6"/>
+</svg>

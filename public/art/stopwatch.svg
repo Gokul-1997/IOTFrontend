@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <linearGradient id="a" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#f97316"/><stop offset="1" stop-color="#f59e0b"/></linearGradient>
+    <filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .face{stroke:#fff;stroke-opacity:.5;stroke-width:1.8}
+    .tick{stroke:#fff;stroke-opacity:.35;stroke-width:2}
+    .hand{stroke:#f59e0b;stroke-width:3;stroke-linecap:round;transform-origin:256px 88px;animation:h 4s linear infinite}
+    @keyframes h{to{transform:rotate(360deg)}}
+    .lost{stroke:#f97316;stroke-width:8;stroke-linecap:round;stroke-dasharray:50 300;transform-origin:256px 88px;animation:l 4s linear infinite}
+    @keyframes l{from{stroke-dashoffset:0}to{stroke-dashoffset:-301}}
+    .bar{fill:url(#a);transform-box:fill-box;transform-origin:left;animation:g 3s ease-in-out infinite alternate}
+    .bar:nth-of-type(2){animation-delay:.3s}.bar:nth-of-type(3){animation-delay:.6s}.bar:nth-of-type(4){animation-delay:.9s}
+    @keyframes g{from{transform:scaleX(.35)}to{transform:scaleX(1)}}
+  </style>
+  <!-- where the time went: a stopwatch, and the reasons as bars -->
+  <circle class="face" cx="256" cy="88" r="46"/>
+  <rect x="248" y="30" width="16" height="10" rx="3" stroke="#fff" stroke-opacity=".5" stroke-width="1.6"/>
+  <path class="tick" d="M256 48v8M256 120v8M216 88h8M288 88h8"/>
+  <circle class="lost" cx="256" cy="88" r="38" pathLength="300" filter="url(#g)"/>
+  <path class="hand" d="M256 88V54" filter="url(#g)"/>
+  <circle cx="256" cy="88" r="5" fill="#fff"/>
+  <g transform="translate(36 38)">
+    <rect class="bar" x="0" y="0" width="130" height="14" rx="5"/>
+    <rect class="bar" x="0" y="24" width="98" height="14" rx="5"/>
+    <rect class="bar" x="0" y="48" width="70" height="14" rx="5"/>
+    <rect class="bar" x="0" y="72" width="46" height="14" rx="5"/>
+  </g>
+</svg>

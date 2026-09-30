@@ -6,32 +6,44 @@ html body {
   min-height: 100vh;
   font-family: var(--font);
   color: var(--ink);
-  background: var(--page);
+  /* engineering paper: a fine dot grid, and the page's own accent as a
+     soft light at the top */
+  background:
+    radial-gradient(1100px 420px at 78% -140px, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    radial-gradient(circle at 1px 1px, var(--grid-dot) 1px, transparent 1.4px) 0 0 / 22px 22px,
+    var(--page);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  transition: background-color .4s ease;
 }
-:root.dark body, :root[data-theme="dark"] body { background: var(--page); }
+:root.dark body, :root[data-theme="dark"] body {
+  background:
+    radial-gradient(1100px 420px at 78% -140px, color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%),
+    radial-gradient(circle at 1px 1px, var(--grid-dot) 1px, transparent 1.4px) 0 0 / 22px 22px,
+    var(--page);
+}
 
-h1, h2, h3, h4, h5, h6 { font-family: var(--font); }
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); letter-spacing: -.01em; }
 button, input, select, textarea, optgroup { font-family: inherit; }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 
 :where(a, button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
-  outline: 3px solid var(--focus);
+  outline: 3px solid color-mix(in srgb, var(--focus) 70%, transparent);
   outline-offset: 2px;
 }
-::selection { background: rgba(0, 106, 181, .2); color: inherit; }
+::selection { background: color-mix(in srgb, var(--accent) 26%, transparent); color: inherit; }
 .num { font-variant-numeric: tabular-nums; }
 .mono, code, kbd, samp { font-family: var(--mono); }
 
-/* Material icons: thin line glyphs (Material Symbols Outlined, set as the
-   default in app.config), the same weight everywhere. */
-.material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-}
+/* thin, even scrollbars in both themes */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--ink-3) 45%, transparent) transparent; }
 
-/* Anyone who asked for less motion gets none: every animation in this
-   theme (the band's lines, entrances, the machine drawings) stops. */
+/* Material icons: line glyphs (Material Symbols Outlined, the default set
+   registered in main.ts), one weight everywhere. */
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+/* Anyone who asked for less motion gets none: every animation here (the
+   headers' art, the entrances, the machine drawings, the counters) stops. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .001ms !important;

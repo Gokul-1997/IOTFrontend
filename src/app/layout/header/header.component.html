@@ -1,21 +1,23 @@
 <a class="skip-link" href="#workspace-main">Skip to workspace</a>
 <header class="tx-appbar" [class.scrolled]="scrolled">
   <a class="tx-brand" [routerLink]="homeRoute" [attr.aria-label]="brand.client + ' home'">
-    <span class="tx-brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M24 10a10 10 0 1 0 1 11v-5h-9" stroke="currentColor" stroke-width="4" stroke-linecap="square"/></svg></span>
+    <span class="tx-brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M24 10a10 10 0 1 0 1 11v-5h-9" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     <span class="tx-brand-text"><span class="tx-brand-name">{{ brand.client }}</span><span class="tx-brand-sub">{{ brand.product }}</span></span>
   </a>
 
   <nav id="gokul-navigation" class="tx-nav" [class.open]="isMobileMenuOpen" aria-label="Main navigation">
     <div class="tx-nav-item nav-group" *ngFor="let menu of menus; let i = index">
-      <a *ngIf="!menu.children" class="tx-nav-link" [routerLink]="menu.path" routerLinkActive="active" ariaCurrentWhenActive="page">{{ menu.label }}</a>
-      <button *ngIf="menu.children" type="button" class="tx-nav-link" [class.active]="isChildActive(menu.children)" [attr.aria-expanded]="openMenu === menu.label" [attr.aria-controls]="'top-menu-' + i" (click)="toggleMenu(menu.label)">{{ menu.label }}<mat-icon class="caret" aria-hidden="true">expand_more</mat-icon></button>
+      <a *ngIf="!menu.children" class="tx-nav-link" [routerLink]="menu.path" routerLinkActive="active" ariaCurrentWhenActive="page"><mat-icon class="nav-ico" aria-hidden="true">{{ menu.glyph }}</mat-icon>{{ menu.label }}</a>
+      <button *ngIf="menu.children" type="button" class="tx-nav-link" [class.active]="isChildActive(menu.children)" [attr.aria-expanded]="openMenu === menu.label" [attr.aria-controls]="'top-menu-' + i" (click)="toggleMenu(menu.label)"><mat-icon class="nav-ico" aria-hidden="true">{{ menu.glyph }}</mat-icon>{{ menu.label }}<mat-icon class="caret" aria-hidden="true">expand_more</mat-icon></button>
       <div *ngIf="menu.children && openMenu === menu.label" class="tx-menu nav-dropdown" [id]="'top-menu-' + i">
-        <a *ngFor="let child of menu.children" [routerLink]="child.path" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" ariaCurrentWhenActive="page" (click)="closeMenu()"><mat-icon aria-hidden="true">{{ child.icon || 'chevron_right' }}</mat-icon><span>{{ child.label }}<small *ngIf="child.hint" aria-hidden="true">{{ child.hint }}</small></span></a>
+        <!-- each entry wears the colour of the page it opens -->
+        <a *ngFor="let child of menu.children" [routerLink]="child.path" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" ariaCurrentWhenActive="page" [attr.data-to]="keyOf(child.path)" (click)="closeMenu()"><mat-icon aria-hidden="true">{{ child.icon || 'chevron_right' }}</mat-icon><span>{{ child.label }}<small *ngIf="child.hint" aria-hidden="true">{{ child.hint }}</small></span></a>
       </div>
     </div>
   </nav>
 
   <div class="tx-tools">
+    <button type="button" class="tx-jump" aria-haspopup="dialog" [attr.aria-label]="'Go to a page (' + shortcut + ')'" (click)="openPalette()"><mat-icon aria-hidden="true">travel_explore</mat-icon><span class="tx-jump-text" aria-hidden="true">Jump to…</span><kbd aria-hidden="true">{{ shortcut }}</kbd></button>
     <span class="tx-live" [class.on]="socket.connected()" [title]="socket.connected() ? 'Receiving live data from the machines' : 'Live data is reconnecting; pages still refresh every 30 seconds'"><i aria-hidden="true"></i>{{ socket.connected() ? 'Live' : 'Offline' }}</span>
     <button type="button" class="tx-iconbtn ghost" [attr.aria-pressed]="theme.isDark()" [attr.aria-label]="theme.isDark() ? 'Switch to light theme' : 'Switch to dark theme'" (click)="toggleTheme()"><app-icon aria-hidden="true" [name]="theme.isDark() ? 'sun' : 'moon'" [size]="19"></app-icon></button>
     <!-- S&T belongs to no company and is sent no notifications -->
@@ -23,17 +25,42 @@
     <div class="tx-nav-item user-menu-wrap">
       <button type="button" class="tx-avatar-btn user-trigger" aria-haspopup="menu" [attr.aria-expanded]="showUserMenu" aria-controls="account-menu" [attr.aria-label]="'Account menu for ' + userName" (click)="toggleUserMenu()"><span class="tx-avatar">{{ initials }}</span><span class="tx-user-copy"><strong>{{ userName }}</strong><small>{{ userRole }}</small></span></button>
       <div *ngIf="showUserMenu" id="account-menu" class="tx-menu right account-menu">
-        <div class="tx-menu-head"><strong>{{ userName }}</strong><small>{{ userEmail }}{{ userEmail && userRole ? ' · ' : '' }}{{ userRole }}</small></div>
+        <div class="tx-menu-head"><span class="tx-avatar" aria-hidden="true">{{ initials }}</span><span><strong>{{ userName }}</strong><small>{{ userEmail }}{{ userEmail && userRole ? ' · ' : '' }}{{ userRole }}</small></span></div>
         <hr>
-        <a routerLink="/profile" (click)="closeUserMenu()"><mat-icon aria-hidden="true">person</mat-icon>My Profile</a>
+        <a routerLink="/profile" data-to="profile" (click)="closeUserMenu()"><mat-icon aria-hidden="true">person</mat-icon>My Profile</a>
         <!-- Settings holds notification choices; S&T gets no notifications -->
-        <a *ngIf="!isSntSuper" routerLink="/settings" (click)="closeUserMenu()"><mat-icon aria-hidden="true">tune</mat-icon>Settings</a>
-        <a routerLink="/security/2fa" (click)="closeUserMenu()"><mat-icon aria-hidden="true">lock</mat-icon>Security (2FA)</a>
-        <a *ngIf="!isSntSuper" routerLink="/notifications" (click)="closeUserMenu()"><mat-icon aria-hidden="true">notifications</mat-icon>Notifications</a>
+        <a *ngIf="!isSntSuper" routerLink="/settings" data-to="settings" (click)="closeUserMenu()"><mat-icon aria-hidden="true">tune</mat-icon>Settings</a>
+        <a routerLink="/security/2fa" data-to="security" (click)="closeUserMenu()"><mat-icon aria-hidden="true">lock</mat-icon>Security (2FA)</a>
+        <a *ngIf="!isSntSuper" routerLink="/notifications" data-to="notifications" (click)="closeUserMenu()"><mat-icon aria-hidden="true">notifications</mat-icon>Notifications</a>
         <hr>
-        <button type="button" (click)="logout()"><mat-icon aria-hidden="true">logout</mat-icon>Sign out</button>
+        <button type="button" class="signout" (click)="logout()"><mat-icon aria-hidden="true">logout</mat-icon>Sign out</button>
       </div>
     </div>
     <button type="button" id="gokul-menu-toggle" class="tx-iconbtn ghost tx-burger mobile-toggle" [attr.aria-label]="isMobileMenuOpen ? 'Close navigation' : 'Open navigation'" [attr.aria-expanded]="isMobileMenuOpen" aria-controls="gokul-navigation" (click)="toggleMobileMenu()"><mat-icon aria-hidden="true">{{ isMobileMenuOpen ? 'close' : 'menu' }}</mat-icon></button>
   </div>
 </header>
+
+<!-- Go to a page: Ctrl/⌘ K anywhere, type part of a page's name, Enter.
+     Lists only the pages this person's menus offer. -->
+<ng-container *ngIf="paletteOpen">
+  <div class="tx-palette-scrim" (click)="closePalette()"></div>
+  <div class="tx-palette" role="dialog" aria-modal="true" aria-label="Go to a page">
+    <div class="tx-palette-field">
+      <mat-icon aria-hidden="true">travel_explore</mat-icon>
+      <input id="palette-input" type="text" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="palette-list"
+             [attr.aria-activedescendant]="paletteResults.length ? 'palette-opt-' + paletteIndex : null"
+             placeholder="Go to a page…" autocomplete="off" spellcheck="false" aria-label="Page name"
+             [value]="paletteQuery" (input)="onPaletteInput($event)" (keydown)="onPaletteKey($event)">
+      <kbd aria-hidden="true">Esc</kbd>
+    </div>
+    <ul id="palette-list" role="listbox" aria-label="Pages">
+      <li *ngFor="let r of paletteResults; let i = index; trackBy: trackPalette" role="option" [id]="'palette-opt-' + i"
+          [attr.aria-selected]="i === paletteIndex" [class.on]="i === paletteIndex" [attr.data-to]="r.key"
+          (mouseenter)="paletteIndex = i" (click)="goTo(r.path)">
+        <mat-icon aria-hidden="true">{{ r.icon }}</mat-icon><span><b>{{ r.label }}</b><small>{{ r.hint || r.section }}</small></span><em>{{ r.section }}</em>
+      </li>
+    </ul>
+    <p class="tx-palette-none" *ngIf="!paletteResults.length" role="status">No page matches “{{ paletteQuery }}”.</p>
+    <footer aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>Enter</kbd> open</span><span><kbd>Esc</kbd> close</span></footer>
+  </div>
+</ng-container>

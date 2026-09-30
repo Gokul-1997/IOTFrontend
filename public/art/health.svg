@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <linearGradient id="a" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#10b981" stop-opacity="0"/><stop offset=".35" stop-color="#10b981"/><stop offset="1" stop-color="#13c4b1"/></linearGradient>
+    <filter id="g" x="-40%" y="-80%" width="180%" height="260%"><feGaussianBlur stdDeviation="2.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .grid{stroke:#fff;stroke-opacity:.08;stroke-width:1}
+    .ecg{stroke:url(#a);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:260 400;animation:e 2.6s linear infinite}
+    @keyframes e{from{stroke-dashoffset:400}to{stroke-dashoffset:-260}}
+    .spindle{stroke:#fff;stroke-opacity:.6;stroke-width:1.6;stroke-linejoin:round}
+    .flute{stroke:#fff;stroke-opacity:.45;stroke-width:1.2;animation:f .35s linear infinite}
+    @keyframes f{to{transform:translateX(-6px)}}
+    .beat{fill:#10b981;transform-box:fill-box;transform-origin:center;animation:h 1.3s ease-in-out infinite}
+    @keyframes h{0%,100%{transform:scale(1)}15%{transform:scale(1.25)}30%{transform:scale(1)}45%{transform:scale(1.12)}}
+  </style>
+  <!-- a vital sign for the spindle -->
+  <path class="grid" d="M20 40h320M20 80h320M20 120h320M60 20v120M120 20v120M180 20v120M240 20v120M300 20v120"/>
+  <path class="ecg" filter="url(#g)" pathLength="660" d="M20 92h70l10-10 8 10h24l8-52 12 86 10-50 8 16h40l12-18 12 18h96"/>
+  <g transform="translate(276 26)">
+    <rect class="spindle" x="10" y="0" width="36" height="30" rx="5"/>
+    <rect class="spindle" x="20" y="30" width="16" height="12" rx="2"/>
+    <clipPath id="t"><rect x="23" y="42" width="10" height="26" rx="2"/></clipPath>
+    <rect x="23" y="42" width="10" height="26" rx="2" fill="#fff" fill-opacity=".15"/>
+    <g clip-path="url(#t)"><path class="flute" d="M18 68l18-26M24 68l18-26M30 68l18-26M36 68l18-26M12 68l18-26"/></g>
+  </g>
+  <path class="beat" filter="url(#g)" d="M304 128c-9-7-15-12-15-18a7 7 0 0 1 15-3 7 7 0 0 1 15 3c0 6-6 11-15 18Z"/>
+</svg>

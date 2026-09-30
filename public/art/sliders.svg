@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <filter id="g" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .track{stroke:#fff;stroke-opacity:.18;stroke-width:4;stroke-linecap:round}
+    .knob{fill:#fff;stroke-width:4;animation:k 3.6s ease-in-out infinite alternate}
+    .k1{stroke:#0ea5e9}.k2{stroke:#6a4dff;animation-delay:-1.2s}.k3{stroke:#13c4b1;animation-delay:-2.4s}
+    @keyframes k{from{transform:translateX(0)}to{transform:translateX(110px)}}
+    .sw{fill:#0ea5e9}
+    .dot{fill:#fff;animation:s 3s ease-in-out infinite}
+    @keyframes s{0%,40%{transform:translateX(0)}50%,90%{transform:translateX(18px)}100%{transform:translateX(0)}}
+  </style>
+  <!-- the way you like it -->
+  <path class="track" d="M170 44h150M170 80h150M170 116h150"/>
+  <circle class="knob k1" cx="180" cy="44" r="9" filter="url(#g)"/>
+  <circle class="knob k2" cx="200" cy="80" r="9" filter="url(#g)"/>
+  <circle class="knob k3" cx="190" cy="116" r="9" filter="url(#g)"/>
+  <g transform="translate(40 60)">
+    <rect class="sw" width="44" height="24" rx="12" fill-opacity=".85"/>
+    <circle class="dot" cx="12" cy="12" r="8"/>
+    <path d="M58 12h56" stroke="#fff" stroke-opacity=".4" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>

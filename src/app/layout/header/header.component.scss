@@ -1,6 +1,6 @@
 /* The bar's look lives in styles/theme/_shell.scss; the host only pins it. */
-:host { display: block; position: sticky; top: 0; z-index: 40; }
+:host { display: block; position: sticky; top: 0; z-index: 40; padding: .75rem var(--gutter) 0; }
 .tx-user-copy { display: flex; flex-direction: column; line-height: 1.2; max-width: 9rem; }
 .tx-user-copy strong { font-size: .8rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tx-user-copy small { font-size: .68rem; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (max-width: 1400px) { .tx-user-copy { display: none; } }
+@media (max-width: 1600px) { .tx-user-copy { display: none; } }

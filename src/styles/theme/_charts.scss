@@ -3,27 +3,34 @@
 /* ─────────────────────────────────────────────────────────────
    Charts. Each dashboard hands ApexCharts the client's palette in
    its own TypeScript; ApexCharts writes those colours onto the SVG
-   as attributes (fills as rgba(r,g,b,a), strokes as the hex given).
-   CSS outranks SVG presentation attributes, so the palette is
-   swapped here, once, for every chart: the brand blue first, then
-   the validated series colours; status colours become the status
-   palette. Axis text and grid lines follow the theme, so dark mode
-   reads.
+   as attributes (fills as rgba(r,g,b,a), strokes and gradient stops
+   as the hex given). CSS outranks SVG presentation attributes, so the
+   palette is swapped here, once, for every chart — and to the page's
+   own series: the first series is the page's accent, the second its
+   partner hue, so the Energy page's bars are amber and the OEE page's
+   are green without a line of chart code changing. Status colours
+   become the status palette. Axis text and grid lines follow the
+   theme, so dark mode reads.
    ───────────────────────────────────────────────────────────── */
 $remap: (
-  '47,45,143':   ('#2f2d8f', #006ab5),   /* navy     → brand blue */
-  '43,57,144':   ('#2b3990', #006ab5),
-  '74,118,200':  ('#4a76c8', #4f98d2),   /* blue     → light blue */
-  '59,154,225':  ('#3b9ae1', #4f98d2),   /* sky      → light blue */
-  '155,126,200': ('#9b7ec8', #4a3aa7),   /* violet   → deep violet */
-  '23,179,163':  ('#17b3a3', #1baf7a),   /* teal     → green-teal */
-  '232,97,140':  ('#e8618c', #e87ba4),   /* pink     → rose */
-  '245,129,31':  ('#f5811f', #eb6834),   /* orange   → orange */
-  '245,166,35':  ('#f5a623', #fab219),   /* idle     → idle */
-  '245,159,0':   ('#f59f00', #fab219),
-  '224,49,49':   ('#e03131', #d03b3b),   /* alarm    → alarm */
-  '34,197,94':   ('#22c55e', #0ca30c),   /* running  → run */
+  '47,45,143':   ('#2f2d8f', var(--series-1)),   /* navy    → the page's accent */
+  '43,57,144':   ('#2b3990', var(--series-1)),
+  '43,58,143':   ('#2b3a8f', var(--series-1)),
+  '74,118,200':  ('#4a76c8', var(--series-2)),   /* blue    → the page's partner */
+  '155,126,200': ('#9b7ec8', var(--series-3)),   /* violet  → violet */
+  '23,179,163':  ('#17b3a3', var(--series-4)),   /* teal    → teal */
+  '232,97,140':  ('#e8618c', var(--series-5)),   /* pink    → pink */
+  '240,106,138': ('#f06a8a', var(--series-5)),
+  '245,129,31':  ('#f5811f', var(--series-6)),   /* orange  → orange */
+  '59,154,225':  ('#3b9ae1', var(--series-7)),   /* sky     → sky */
+  '34,198,214':  ('#22c6d6', var(--series-8)),   /* cyan    → cyan */
+  '245,166,35':  ('#f5a623', var(--st-idle)),    /* idle    → idle */
+  '245,159,0':   ('#f59f00', var(--st-idle)),
+  '224,49,49':   ('#e03131', var(--st-alarm)),   /* alarm   → alarm */
+  '34,197,94':   ('#22c55e', var(--st-run)),     /* running → run */
 );
+
+:root { --series-7: #0ea5e9; --series-8: #06b6d4; }
 
 .apexcharts-canvas {
   @each $rgb, $pair in $remap {
@@ -31,37 +38,39 @@ $remap: (
     $to: list.nth($pair, 2);
     [fill="#{$hex}" i], [fill="rgba(#{$rgb},1)"] { fill: $to; }
     [stroke="#{$hex}" i], [stroke="rgba(#{$rgb},1)"] { stroke: $to; }
-    @each $a in (0.85,) {   /* the one partial opacity ApexCharts writes */
-      [fill="rgba(#{$rgb},#{$a})"] { fill: rgba($to, $a); }
-      [stroke="rgba(#{$rgb},#{$a})"] { stroke: rgba($to, $a); }
-    }
+    [stop-color="#{$hex}" i] { stop-color: $to; }
+    /* the one partial opacity ApexCharts writes */
+    [fill="rgba(#{$rgb},0.85)"] { fill: color-mix(in srgb, #{$to} 85%, transparent); }
+    [stroke="rgba(#{$rgb},0.85)"] { stroke: color-mix(in srgb, #{$to} 85%, transparent); }
   }
 
   text, .apexcharts-legend-text { font-family: var(--font) !important; }
+  .apexcharts-datalabels text, .apexcharts-datalabel-value, .apexcharts-datalabels-group text { font-family: var(--font-display) !important; }
   text[fill="#373d3f"], text[fill="#1f2430"], text[fill="#18243b"] { fill: var(--chart-muted); }
   .apexcharts-legend-text { color: var(--ink-2) !important; }
   [stroke="#e0e0e0"], [stroke="#b6b6b6"], [stroke="rgba(148,163,184,.25)"] { stroke: var(--chart-grid); }
+  .apexcharts-gridline { stroke-dasharray: 3 4; }
   .apexcharts-xaxis-tick, .apexcharts-xaxis line { stroke: var(--chart-axis); }
 }
 :root.dark .apexcharts-canvas text[fill="#fff"] { fill: #fff; }
-.apexcharts-tooltip { font-family: var(--font) !important; border-radius: 4px !important; box-shadow: var(--shadow-lg) !important; }
+.apexcharts-tooltip { font-family: var(--font) !important; border-radius: 12px !important; box-shadow: var(--shadow-lg) !important; overflow: hidden; }
 .apexcharts-tooltip.apexcharts-theme-light { background: var(--card) !important; border-color: var(--rule) !important; color: var(--ink); }
-.apexcharts-tooltip.apexcharts-theme-light .apexcharts-tooltip-title { background: var(--thead) !important; border-color: var(--rule) !important; }
+.apexcharts-tooltip.apexcharts-theme-light .apexcharts-tooltip-title { background: var(--thead) !important; border-color: var(--rule) !important; font-weight: 600; }
+.apexcharts-xaxistooltip, .apexcharts-yaxistooltip { border-radius: 8px !important; background: var(--card) !important; border-color: var(--rule) !important; color: var(--ink) !important; }
 
 /* the OEE factors and grades, drawn with CSS on the OEE and Reports pages */
 :root .mexa-factor-a, :root.dark .mexa-factor-a { --c: var(--series-3); }
-:root .mexa-factor-p, :root.dark .mexa-factor-p { --c: var(--seq-400); }
-:root .mexa-factor-q, :root.dark .mexa-factor-q { --c: var(--series-7); }
+:root .mexa-factor-p, :root.dark .mexa-factor-p { --c: var(--series-7); }
+:root .mexa-factor-q, :root.dark .mexa-factor-q { --c: var(--series-4); }
 :root .mexa-factor-oee, :root.dark .mexa-factor-oee { --c: var(--series-1); }
-:root .mexa-grade-good { --band: var(--brand); --band-ink: var(--brand); }
-:root.dark .mexa-grade-good { --band: #3d9be0; --band-ink: #9fd3ff; }
-.mexa-lossbar { border-radius: 3px !important; }
+:root .mexa-grade-good { --band: var(--accent-strong); --band-ink: var(--accent-strong); }
+:root.dark .mexa-grade-good { --band: var(--accent); --band-ink: var(--link); }
+.mexa-lossbar { border-radius: 999px !important; }
 
-/* KPI icons the client coloured with classes: the brand's soft circle */
+/* KPI icons the client coloured with classes: the page's gradient badge */
 .mexa-kpi-icon.navy, .mexa-kpi-icon.sky, .mexa-kpi-icon.purple, .mexa-kpi-icon.blue {
-  background: var(--primary-soft) !important; color: var(--primary) !important;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)) !important; color: #fff !important;
 }
-:root.dark :is(.mexa-kpi-icon.navy, .mexa-kpi-icon.sky, .mexa-kpi-icon.purple, .mexa-kpi-icon.blue) { color: #7fc6ff !important; }
 
-/* date fields on the band have room for the whole date and the picker */
+/* date fields in the header have room for the whole date and the picker */
 :is(.tx-titlebar, .mexa-titlebar, .bg-top-bar, form:has(> .mexa-titlebar + .mexa-filters)) :is(input[type="date"], .mexa-date, .filter-date) { min-width: 9.6rem; }

@@ -5,9 +5,9 @@
 .chart-summary strong { font-size:28px; letter-spacing:-1px; color:var(--text-primary); }
 .peak { border-left:1px solid var(--border-color); padding-left:13px; margin-left:5px; }
 .peak b { color:var(--text-primary); }
-.chart-switch { display:flex; padding:3px; border-radius:7px; border:1px solid var(--border-color); background:var(--bg-secondary); }
-.chart-switch button { padding:5px 12px; font-size:10px; border-radius:4px; color:var(--text-secondary); }
-.chart-switch button[aria-pressed='true'] { background:var(--bg-card); color:var(--gokul-accent); box-shadow:0 1px 4px #0000000d; }
+.chart-switch { display:flex; padding:3px; border-radius:10px; border:1px solid var(--border-color); background:var(--bg-secondary); }
+.chart-switch button { padding:5px 12px; font-size:11px; border-radius:6px; color:var(--text-secondary); }
+.chart-switch button[aria-pressed='true'] { background:var(--bg-card); color:var(--link, var(--gokul-accent)); font-weight:600; box-shadow:0 1px 4px #0000001a; }
 .production-plot { width:100%; display:block; overflow:visible; }
 .axis line { stroke:var(--border-color); stroke-dasharray:4 5; }
 .axis text,.hour-label,.missing-label { fill:var(--text-secondary); font-size:10px; }

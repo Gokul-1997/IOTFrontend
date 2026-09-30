@@ -1,8 +1,10 @@
-/* The MaduraCoats visual language, loaded last in styles.scss so it sets
-   the look over every earlier layer (the client's MEXA sheets, the older
-   master-page styles and Tailwind's utilities). */
+/* Axis — the product's own visual language (see _tokens.scss), loaded
+   last in styles.scss so it sets the look over every earlier layer (the
+   client's MEXA sheets, the older master-page styles and Tailwind's
+   utilities). Each page's identity comes from _pages.scss. */
 @use 'fonts';
 @use 'tokens';
+@use 'pages';
 @use 'base';
 @use 'motion';
 @use 'shell';

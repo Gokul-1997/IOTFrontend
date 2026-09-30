@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <linearGradient id="l" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0ea5e9"/><stop offset="1" stop-color="#6366f1"/></linearGradient>
+    <linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0ea5e9" stop-opacity=".35"/><stop offset="1" stop-color="#0ea5e9" stop-opacity="0"/></linearGradient>
+    <filter id="g" x="-40%" y="-80%" width="180%" height="260%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .axis{stroke:#fff;stroke-opacity:.25;stroke-width:1.4}
+    .grid{stroke:#fff;stroke-opacity:.08}
+    .line{stroke:url(#l);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:420;stroke-dashoffset:420;animation:d 4.5s ease-in-out infinite}
+    @keyframes d{0%{stroke-dashoffset:420}45%,85%{stroke-dashoffset:0}100%{stroke-dashoffset:0;opacity:0}}
+    .area{fill:url(#f);animation:a 4.5s ease-in-out infinite}
+    @keyframes a{0%,30%{opacity:0}55%,85%{opacity:1}100%{opacity:0}}
+    .pt{fill:#fff;transform-box:fill-box;transform-origin:center;animation:p 4.5s ease-in-out infinite}
+    @keyframes p{0%,40%{transform:scale(0)}50%,85%{transform:scale(1)}100%{transform:scale(0)}}
+  </style>
+  <!-- every hour, as a line -->
+  <path class="grid" d="M50 40h270M50 70h270M50 100h270"/>
+  <path class="axis" d="M50 24v108h276"/>
+  <path class="area" d="M50 118l40-26 36 14 38-44 40 18 38-38 44 20 40-26V132H50Z"/>
+  <path class="line" filter="url(#g)" d="M50 118l40-26 36 14 38-44 40 18 38-38 44 20 40-26"/>
+  <circle class="pt" cx="164" cy="62" r="4.5"/><circle class="pt" cx="242" cy="42" r="4.5" style="animation-delay:.2s"/><circle class="pt" cx="326" cy="36" r="4.5" style="animation-delay:.4s"/>
+</svg>

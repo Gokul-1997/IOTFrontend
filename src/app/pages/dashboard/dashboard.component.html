@@ -11,10 +11,31 @@
       </div>
       <ng-template #plainNote><p class="tx-subtitle">Every machine, as it runs</p></ng-template>
     </div>
+
+    <!-- the floor at a glance: one ring, each machine's state a share of it -->
+    <div class="floor-pulse" *ngIf="auth.hasWidget('dashboard', 'status')" role="img" [attr.aria-label]="pulseLabel">
+      <svg viewBox="0 0 132 132" aria-hidden="true">
+        <circle class="pulse-orbit" cx="66" cy="66" r="62"/>
+        <circle class="pulse-track" cx="66" cy="66" r="50"/>
+        <g transform="rotate(-90 66 66)">
+          <circle *ngFor="let s of floorSegments; trackBy: trackBySegment" class="pulse-seg" [ngClass]="s.state" cx="66" cy="66" r="50" pathLength="100"
+                  [attr.stroke-dasharray]="s.dash" [attr.stroke-dashoffset]="s.offset"/>
+        </g>
+      </svg>
+      <div class="pulse-core">
+        <ng-container *ngIf="floorUtilisation !== null && auth.hasWidget('dashboard', 'utilization'); else runningCore">
+          <strong>{{ floorUtilisation | number:'1.0-0' }}<small>%</small></strong><span>floor utilisation</span>
+        </ng-container>
+        <ng-template #runningCore><strong>{{ runningCount }}<small>/{{ machines.length }}</small></strong><span>running now</span></ng-template>
+      </div>
+    </div>
+
     <div class="tx-filters floor-actions">
-      <span class="floor-clock"><span class="shift-name">{{ shift.shift_code || 'Current shift' }}</span><span>{{ currentDateStr }}</span><strong>{{ currentTime }}</strong><small>IST</small></span>
-      <span class="tx-updated" *ngIf="updatedAt"><mat-icon aria-hidden="true">sync</mat-icon>updated {{ updatedAt | date:'h:mm:ss a' }}</span>
-      <button type="button" class="tx-btn tx-btn-ghost" (click)="refresh()" [disabled]="loading" aria-label="Refresh data"><mat-icon aria-hidden="true" [class.spin]="loading">refresh</mat-icon><span>{{ loading ? 'Refreshing…' : 'Refresh' }}</span></button>
+      <span class="floor-clock"><span class="clock-meta"><span class="shift-name">{{ shift.shift_code || 'Current shift' }}</span><span>{{ currentDateStr }}</span></span><span class="clock-time"><strong>{{ currentTime }}</strong><small>IST</small></span></span>
+      <span class="floor-refresh">
+        <span class="tx-updated" *ngIf="updatedAt"><mat-icon aria-hidden="true">sync</mat-icon>updated {{ updatedAt | date:'h:mm:ss a' }}</span>
+        <button type="button" class="tx-btn tx-btn-ghost" (click)="refresh()" [disabled]="loading" aria-label="Refresh data"><mat-icon aria-hidden="true" [class.spin]="loading">refresh</mat-icon><span>{{ loading ? 'Refreshing…' : 'Refresh' }}</span></button>
+      </span>
     </div>
   </header>
 
@@ -29,6 +50,8 @@
   <section class="floor-grid" aria-label="Machine cards">
     <a *ngFor="let m of pagedMachines; let i = index; trackBy: trackByMachine" class="machine-card floor-card" [ngClass]="cardState(m)" [class.alarm-blink]="cardState(m) === 'alarm'" [style.--i]="i"
        [routerLink]="['/dashboard/live', m.machine_id]" [attr.aria-label]="'Open ' + m.machine_serial_no + ', ' + cardState(m)">
+      <!-- the stack light: the machine's state, as the tower on the machine shows it -->
+      <span class="stack-light" aria-hidden="true"></span>
       <header class="floor-card-head">
         <span class="machine-picture"><img [src]="m.image_url || 'images/product/machine-placeholder.svg'" [alt]="m.machine_serial_no || 'Industrial machine'" (error)="usePlaceholder($event)" loading="lazy"></span>
         <div class="floor-card-name">
@@ -40,11 +63,11 @@
       </header>
 
       <div class="floor-card-body">
-        <app-cnc-machine class="floor-drawing" [status]="m.status" [alarm]="!!m.alarm" [code]="m.machine_serial_no || ''" [parts]="m.achieved_qty"></app-cnc-machine>
+        <div class="floor-bay"><app-cnc-machine class="floor-drawing" [status]="m.status" [alarm]="!!m.alarm" [code]="m.machine_serial_no || ''" [parts]="m.achieved_qty"></app-cnc-machine></div>
         <dl class="machine-details tx-kv" *ngIf="auth.hasWidget('dashboard', 'operator')">
-          <dt>Operator</dt><dd [title]="m.operator_name || 'Unassigned'">{{ m.operator_name || 'Unassigned' }}</dd>
-          <dt>Part</dt><dd [title]="m.part_name || 'No active part'">{{ m.part_name || 'No active part' }}</dd>
-          <dt>Component</dt><dd [title]="m.component_id || '—'" class="mono">{{ m.component_id || '—' }}</dd>
+          <div><dt>Operator</dt><dd [title]="m.operator_name || 'Unassigned'">{{ m.operator_name || 'Unassigned' }}</dd></div>
+          <div><dt>Part</dt><dd [title]="m.part_name || 'No active part'">{{ m.part_name || 'No active part' }}</dd></div>
+          <div><dt>Component</dt><dd [title]="m.component_id || '—'" class="mono">{{ m.component_id || '—' }}</dd></div>
         </dl>
       </div>
 
@@ -53,9 +76,12 @@
         <div *ngIf="auth.hasWidget('dashboard', 'partcount')"><span>Made</span><strong class="achieved-value">{{ m.achieved_qty == null ? '—' : (m.achieved_qty | number) }}</strong></div>
         <div *ngIf="auth.hasWidget('dashboard', 'utilization')" class="machine-utilization"><span>Utilisation</span><strong>{{ m.utilization == null ? '—' : (m.utilization | number:'1.0-1') + '%' }}</strong></div>
       </div>
-      <div class="floor-stats machine-time-row" *ngIf="auth.hasWidget('dashboard', 'runtime')">
-        <div class="run-time"><span><i class="tx-legend-dot run" aria-hidden="true"></i>Run time</span><strong class="mono">{{ m.run_time || '—' }}</strong></div>
-        <div class="idle-time"><span><i class="tx-legend-dot idle" aria-hidden="true"></i>Idle time</span><strong class="mono">{{ m.idle_time || '—' }}</strong></div>
+      <div class="floor-split machine-time-row" *ngIf="auth.hasWidget('dashboard', 'runtime')">
+        <div class="split-bar" aria-hidden="true"><span class="run" [style.flex-grow]="minutes(m.run_minutes)"></span><span class="idle" [style.flex-grow]="minutes(m.idle_minutes)"></span></div>
+        <div class="split-legend">
+          <div class="run-time"><span><i class="tx-legend-dot run" aria-hidden="true"></i>Run time</span><strong class="mono">{{ m.run_time || '—' }}</strong></div>
+          <div class="idle-time"><span><i class="tx-legend-dot idle" aria-hidden="true"></i>Idle time</span><strong class="mono">{{ m.idle_time || '—' }}</strong></div>
+        </div>
       </div>
 
       <footer class="machine-card-footer">
@@ -81,6 +107,8 @@
       <button type="button" class="mexa-pagebtn" *ngFor="let p of pageNumbers" (click)="goToPage(p)" [class.current]="p === displayPage" [attr.aria-current]="p === displayPage ? 'page' : null" [attr.aria-label]="'Page ' + p">{{ p }}</button>
       <button type="button" class="mexa-pagebtn" (click)="goToPage(displayPage + 1)" [disabled]="displayPage === totalPages" aria-label="Next page">Next ›</button>
     </div>
+    <!-- the floor turns its own pages, like a screen on the shop wall; the bar shows the next turn coming -->
+    <span class="page-timer" *ngIf="autoRotate" aria-hidden="true"><i *ngFor="let t of [pageTurn]" [style.animation-duration.ms]="autoPageMs"></i></span>
     <button type="button" class="tx-btn tx-btn-ghost tx-btn-sm rotation-toggle" (click)="toggleRotation()" [attr.aria-pressed]="autoRotate"><mat-icon aria-hidden="true">{{ autoRotate ? 'pause' : 'play_arrow' }}</mat-icon>{{ autoRotate ? 'Pause auto-advance' : 'Resume auto-advance' }}</button>
   </footer>
 </div>

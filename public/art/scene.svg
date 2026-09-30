@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" fill="none">
+  <!-- Still on purpose: a background image this size is redrawn whole on every
+       frame it moves. The motion on the sign-in page is on the card's edge. -->
+  <defs>
+    <linearGradient id="path" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6a4dff"/><stop offset=".55" stop-color="#2f7bff"/><stop offset="1" stop-color="#13c4b1"/></linearGradient>
+    <radialGradient id="tool"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="#9ff5ea"/><stop offset="1" stop-color="#13c4b1" stop-opacity="0"/></radialGradient>
+  </defs>
+  <g stroke="#fff" stroke-width="1.2" stroke-opacity=".06"><path d="M0 700H880M920 0V1000"/></g>
+  <!-- the blueprint rings around the card's corner -->
+  <g stroke="#fff" stroke-width="1.4" stroke-opacity=".09" stroke-dasharray="3 7">
+    <circle cx="1380" cy="300" r="210"/><circle cx="1380" cy="300" r="150"/>
+    <path d="M1380 70v60M1380 470v60M1150 300h60M1550 300h60"/>
+  </g>
+  <circle cx="1380" cy="300" r="120" stroke="#2f7bff" stroke-opacity=".16"/>
+  <!-- the contour the tool has cut around the card, the last stretch still lit -->
+  <path stroke="#fff" stroke-opacity=".07" stroke-width="1.4" d="M920 520 V800 Q920 860 980 860 H1470 Q1530 860 1530 800 V300 A150 150 0 0 0 1380 150 H960 Q920 150 920 190 V440"/>
+  <path stroke="url(#path)" stroke-opacity=".35" stroke-width="9" stroke-linecap="round" d="M1530 520 V300 A150 150 0 0 0 1380 150 H1180"/>
+  <path stroke="url(#path)" stroke-width="2.6" stroke-linecap="round" d="M1530 520 V300 A150 150 0 0 0 1380 150 H1180"/>
+  <circle cx="1180" cy="150" r="16" fill="url(#tool)"/>
+  <!-- the controller's readout -->
+  <g font-family="ui-monospace,Menlo,monospace" font-size="13" font-weight="500" fill="#cfe7ff" fill-opacity=".32" letter-spacing=".08em" transform="translate(120 900)">
+    <text>X 0482.150</text><text x="150">Y 0127.906</text><text x="300">Z -012.500</text><text x="450">S 8000</text><text x="560">F 1500</text>
+  </g>
+</svg>

@@ -9,6 +9,10 @@ import { NotificationBellComponent } from '../../shared/notification-bell/notifi
 import { MatIconModule } from '@angular/material/icon';
 import { SocketService } from '../../core/services/socket.service';
 import { BRAND } from '../../brand';
+import { pageKey } from '../page-identity';
+
+/** One destination in the "Go to a page" palette. */
+interface PaletteItem { label: string; path: string; hint: string; icon: string; section: string; key: string; }
 
 @Component({
   standalone: true,
@@ -39,7 +43,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   // Organize the workflow while retaining route permission boundaries.
   allMenus: any[] = [
     {
-      label: 'Dashboards', icon: 'dashnew',
+      label: 'Dashboards', icon: 'dashnew', glyph: 'space_dashboard',
       children: [
         { label: 'Live Dashboard', path: '/dashboard', permission: 'page:dashboard', icon: 'monitoring', hint: 'Every machine, as it runs' },
         { label: 'Factory Overall', path: '/factory', permission: 'page:analytics-factory', icon: 'factory', hint: 'The whole plant at a glance' },
@@ -54,7 +58,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
       ]
     },
     {
-      label: 'Analytics', icon: 'donutnew',
+      label: 'Analytics', icon: 'donutnew', glyph: 'insights',
       children: [
         // one Reports page holds every report, the OEE ones included
         { label: 'Reports', path: '/reports', permission: ['page:reports', 'page:oee-reports'], icon: 'description', hint: 'Production and OEE reports' },
@@ -63,13 +67,13 @@ export class HeaderComponent implements OnInit, OnDestroy {
         { label: 'Maintenance Report', path: '/maintenance-report', permission: 'page:maintenance-report', icon: 'receipt_long', hint: 'The maintenance ticket record' }
       ]
     },
-    { label: 'Alarms', path: '/alarms', icon: 'alerts', permission: 'page:alarms' },
-    { label: 'Downtime', path: '/downtime', icon: 'downtime', permission: 'page:downtime' },
-    { label: 'Maintenance', path: '/maintenance', icon: 'maintenance', permission: 'page:maintenance' },
+    { label: 'Alarms', path: '/alarms', icon: 'alerts', glyph: 'notifications_active', permission: 'page:alarms' },
+    { label: 'Downtime', path: '/downtime', icon: 'downtime', glyph: 'timer_off', permission: 'page:downtime' },
+    { label: 'Maintenance', path: '/maintenance', icon: 'maintenance', glyph: 'handyman', permission: 'page:maintenance' },
     {
       /* "Master", as the design names it: the company's setup data. It was
          labelled "Settings", the same word as a person's own Settings page. */
-      label: 'Master', icon: 'gearnew',
+      label: 'Master', icon: 'gearnew', glyph: 'tune',
       children: [
         { label: 'Machines', path: '/machines', permission: 'page:machines', icon: 'precision_manufacturing', hint: 'Machines and their setup' },
         { label: 'Program Transfer', path: '/programs', permission: 'page:programs', icon: 'upload_file', hint: 'Send programs to machines' },
@@ -86,7 +90,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
            with no permission it made this menu appear for every role. */
       ]
     },
-    { label: 'Admin', path: '/admin/users', icon: 'shield', adminOnly: true } 
+    { label: 'Admin', path: '/admin/users', icon: 'shield', glyph: 'admin_panel_settings', adminOnly: true }
   ];
 
   menus: any[] = [];
@@ -199,6 +203,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   get initials(): string { return this.userName.slice(0, 2).toUpperCase(); }
 
+  /** The identity key of the page a menu entry opens (its colour in the menu). */
+  keyOf(path: string): string { return pageKey(path); }
+
   toggleUserMenu() { this.showUserMenu = !this.showUserMenu; this.touch(); }
 
   logout() {
@@ -254,8 +261,106 @@ export class HeaderComponent implements OnInit, OnDestroy {
     if (before !== `${this.openMenu}|${this.showUserMenu}`) this.touch();
   }
 
+  /* ── Go to a page (Ctrl/⌘ K) ─────────────────────────────── */
+  paletteOpen = false;
+  paletteQuery = '';
+  paletteIndex = 0;
+  private paletteReturn: HTMLElement | null = null;
+  readonly shortcut = /Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘K' : 'Ctrl K';
+
+  /** Every page the menus offer this person (already permission-filtered), plus their own pages. */
+  get paletteItems(): PaletteItem[] {
+    const items: PaletteItem[] = [];
+    for (const menu of this.menus) {
+      if (menu.children) {
+        for (const c of menu.children) items.push({ label: c.label, path: c.path, hint: c.hint || '', icon: c.icon || 'chevron_right', section: menu.label, key: pageKey(c.path) });
+      } else {
+        items.push({ label: menu.label, path: menu.path, hint: '', icon: menu.glyph || 'chevron_right', section: 'Operations', key: pageKey(menu.path) });
+      }
+    }
+    items.push({ label: 'My Profile', path: '/profile', hint: 'Your account details', icon: 'person', section: 'Account', key: 'profile' });
+    if (!this.isSntSuper) items.push({ label: 'Settings', path: '/settings', hint: 'Appearance and notifications', icon: 'tune', section: 'Account', key: 'settings' });
+    items.push({ label: 'Security (2FA)', path: '/security/2fa', hint: 'Two-factor authentication', icon: 'lock', section: 'Account', key: 'security' });
+    if (!this.isSntSuper) items.push({ label: 'Notifications', path: '/notifications', hint: 'Everything sent to you', icon: 'notifications', section: 'Account', key: 'notifications' });
+    return items;
+  }
+
+  /** Matches on the name first, then on the description and the menu it sits in. */
+  get paletteResults(): PaletteItem[] {
+    const q = this.paletteQuery.trim().toLowerCase();
+    if (!q) return this.paletteItems;
+    const rank = (i: PaletteItem) => {
+      const name = i.label.toLowerCase();
+      if (name.startsWith(q)) return 0;
+      if (name.split(/\s+/).some(w => w.startsWith(q))) return 1;
+      if (name.includes(q)) return 2;
+      return `${i.hint} ${i.section}`.toLowerCase().includes(q) ? 3 : -1;
+    };
+    return this.paletteItems
+      .map(i => ({ i, r: rank(i) }))
+      .filter(x => x.r >= 0)
+      .sort((a, b) => a.r - b.r)
+      .map(x => x.i);
+  }
+
+  trackPalette(_i: number, item: PaletteItem): string { return item.path; }
+
+  openPalette(): void {
+    this.paletteReturn = document.activeElement as HTMLElement | null;
+    this.paletteOpen = true;
+    this.paletteQuery = '';
+    this.paletteIndex = 0;
+    this.openMenu = null;
+    this.showUserMenu = false;
+    this.isMobileMenuOpen = false;
+    this.touch();
+    setTimeout(() => document.getElementById('palette-input')?.focus());
+  }
+
+  closePalette(restoreFocus = true): void {
+    this.paletteOpen = false;
+    this.touch();
+    if (restoreFocus) this.paletteReturn?.focus?.();
+  }
+
+  onPaletteInput(event: Event): void {
+    this.paletteQuery = (event.target as HTMLInputElement).value;
+    this.paletteIndex = 0;
+    this.touch();
+  }
+
+  onPaletteKey(event: KeyboardEvent): void {
+    const count = this.paletteResults.length;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (count) this.paletteIndex = (this.paletteIndex + (event.key === 'ArrowDown' ? 1 : count - 1)) % count;
+      this.touch();
+      setTimeout(() => document.getElementById('palette-opt-' + this.paletteIndex)?.scrollIntoView({ block: 'nearest' }));
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      const target = this.paletteResults[this.paletteIndex];
+      if (target) this.goTo(target.path);
+    } else if (event.key === 'Tab') {
+      event.preventDefault();           // the palette is modal: focus stays in its field
+    }
+  }
+
+  goTo(path: string): void {
+    this.closePalette(false);
+    this.router.navigateByUrl(path);
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onShortcut(event: KeyboardEvent) {
+    if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      if (this.paletteOpen) this.closePalette(); else this.openPalette();
+    }
+  }
+
   @HostListener('document:keydown.escape')
   onEsc() {
+    if (this.paletteOpen) { this.closePalette(); return; }
     if (!this.isMobileMenuOpen && this.openMenu) {
       (document.querySelector('.nav-group button[aria-expanded="true"]') as HTMLElement | null)?.focus();
     }

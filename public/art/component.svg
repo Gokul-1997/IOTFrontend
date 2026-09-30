@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a855f7"/><stop offset="1" stop-color="#6366f1"/></linearGradient>
+    <filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .part{stroke:#fff;stroke-opacity:.6;stroke-width:1.6;stroke-linejoin:round}
+    .bolt{animation:b 3.6s ease-in-out infinite}
+    .washer{animation:w 3.6s ease-in-out infinite}
+    .nut{animation:n 3.6s ease-in-out infinite}
+    @keyframes b{0%,15%,85%,100%{transform:translateY(0)}45%,55%{transform:translateY(-22px)}}
+    @keyframes w{0%,15%,85%,100%{transform:translateY(0)}45%,55%{transform:translateY(8px)}}
+    @keyframes n{0%,15%,85%,100%{transform:translateY(0)}45%,55%{transform:translateY(26px)}}
+    .dim{stroke:#a855f7;stroke-width:1.4;stroke-dasharray:3 4;animation:d 3.6s ease-in-out infinite}
+    @keyframes d{0%,20%,80%,100%{opacity:0}45%,55%{opacity:1}}
+    .spec{font:600 10px ui-monospace,Menlo,monospace;fill:#fff;fill-opacity:.6}
+  </style>
+  <!-- a component, drawn apart and put back together -->
+  <g class="bolt" filter="url(#g)">
+    <path class="part" d="M250 30h40v14h-40Z" fill="url(#a)"/>
+    <path class="part" d="M262 44h16v56h-16Z"/>
+    <path d="M262 54h16M262 62h16M262 70h16M262 78h16M262 86h16" stroke="#fff" stroke-opacity=".35"/>
+  </g>
+  <g class="washer"><ellipse class="part" cx="270" cy="104" rx="24" ry="6"/></g>
+  <g class="nut"><path class="part" d="M252 112h36l6 10-6 10h-36l-6-10Z" fill="#6366f1" fill-opacity=".45"/></g>
+  <path class="dim" d="M312 30v102M306 30h12M306 132h12"/>
+  <g transform="translate(34 40)">
+    <text class="spec" x="0" y="10">PART  CMP-100</text>
+    <text class="spec" x="0" y="30">M12 × 60</text>
+    <text class="spec" x="0" y="50">ALLOY  EN8</text>
+    <path d="M0 64h120" stroke="#a855f7" stroke-opacity=".6" stroke-width="2"/>
+  </g>
+</svg>

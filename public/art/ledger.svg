@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .doc{fill:#fff;fill-opacity:.07;stroke:#fff;stroke-opacity:.45;stroke-width:1.6}
+    .ln{stroke:#fff;stroke-opacity:.4;stroke-width:3;stroke-linecap:round;stroke-dasharray:90;stroke-dashoffset:90;animation:t 4s ease-out infinite}
+    .ln:nth-of-type(2){animation-delay:.35s}.ln:nth-of-type(3){animation-delay:.7s}.ln:nth-of-type(4){animation-delay:1.05s}.ln:nth-of-type(5){animation-delay:1.4s}
+    @keyframes t{0%{stroke-dashoffset:90}30%,85%{stroke-dashoffset:0}100%{stroke-dashoffset:0;stroke-opacity:0}}
+    .ok{fill:#14b8a6}.wait{fill:#0ea5e9}
+    .wrench{stroke:#14b8a6;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;transform-origin:282px 84px;animation:w 2.6s ease-in-out infinite}
+    @keyframes w{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(18deg)}}
+  </style>
+  <!-- every maintenance ticket, written down -->
+  <rect class="doc" x="60" y="22" width="150" height="120" rx="10"/>
+  <rect x="60" y="22" width="150" height="26" rx="10" fill="#14b8a6" fill-opacity=".35"/>
+  <g>
+    <path class="ln" d="M96 64h92"/><path class="ln" d="M96 82h72"/><path class="ln" d="M96 100h86"/><path class="ln" d="M96 118h60"/>
+  </g>
+  <circle class="ok" cx="80" cy="64" r="5"/><circle class="ok" cx="80" cy="82" r="5"/><circle class="wait" cx="80" cy="100" r="5"/><circle class="ok" cx="80" cy="118" r="5"/>
+  <path class="wrench" filter="url(#g)" d="M268 112l30-30m6-22a14 14 0 0 1-18 18l-8-8a14 14 0 0 1 18-18l-7 7 3 5 5 3Z"/>
+</svg>

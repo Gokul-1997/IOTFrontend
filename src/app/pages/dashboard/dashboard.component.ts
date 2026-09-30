@@ -72,6 +72,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   statusFilter: 'all' | 'running' | 'idle' | 'alarm' | 'offline' = 'all';
   autoRotate = true;
   updatedAt: Date | null = null;
+  /** Counts page turns (automatic or not), so the countdown bar restarts with each. */
+  pageTurn = 0;
+  readonly autoPageMs = AUTO_PAGE_MS;
 
   /* ── private ── */
   private destroy$         = new Subject<void>();
@@ -475,6 +478,43 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   get offlineCount(): number { return this.machines.filter(m => m.status === 'OFFLINE').length; }
 
+  /** The floor ring's arcs: each state's share of the machines, in the
+   *  order the legend reads, as dash lengths on a pathLength-100 circle. */
+  get floorSegments(): { state: string; dash: string; offset: number }[] {
+    const total = this.machines.length;
+    if (!total) return [];
+    const gap = total > 1 ? 1.4 : 0;
+    let at = 0;
+    const out: { state: string; dash: string; offset: number }[] = [];
+    for (const state of ['running', 'idle', 'alarm', 'offline', 'unknown']) {
+      const share = this.machines.filter(m => this.cardState(m) === state).length / total * 100;
+      if (!share) continue;
+      const len = Math.max(share - (share < 100 ? gap : 0), 0.6);
+      out.push({ state, dash: `${len} ${100 - len}`, offset: -at });
+      at += share;
+    }
+    return out;
+  }
+
+  /** The floor's utilisation: the mean of the machines that report one. */
+  get floorUtilisation(): number | null {
+    const values = this.machines
+      .map(m => m.utilization)
+      .filter(v => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)))
+      .map(Number);
+    return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+  }
+
+  get pulseLabel(): string {
+    return `${this.runningCount} running, ${this.idleCount} idle, ${this.alarmCount} in alarm, ` +
+           `${this.offlineCount} offline, of ${this.machines.length} machines`;
+  }
+
+  trackBySegment(_index: number, s: { state: string }): string { return s.state; }
+
+  /** A minutes field as a non-negative number (the run/idle split's weights). */
+  minutes(value: unknown): number { return Math.max(0, Number(value) || 0); }
+
   get filteredMachines(): any[] {
     // Preserve the original API order and operating-state filter behavior.
     if (this.statusFilter === 'all') return this.machines;
@@ -543,9 +583,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private startAutoPageTimer(): void {
     if (!this.autoRotate) return;
+    this.pageTurn++;
     this.autoPageTimer = setInterval(() => {
       this.zone.run(() => {
         this.currentPage = this.currentPage >= this.totalPages ? 1 : this.currentPage + 1;
+        this.pageTurn++;
         this.cdr.markForCheck();
       });
     }, AUTO_PAGE_MS);

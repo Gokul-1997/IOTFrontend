@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f7bff"/><stop offset="1" stop-color="#13c4b1"/></linearGradient>
+    <filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .dim{stroke:#fff;stroke-opacity:.2;stroke-width:1.4}
+    .trace{stroke:url(#a);stroke-width:3;stroke-linecap:round;stroke-dasharray:90 510;animation:t 5s linear infinite}
+    @keyframes t{from{stroke-dashoffset:90}to{stroke-dashoffset:-510}}
+    .ring{stroke:#13c4b1;stroke-width:1.6;transform-box:fill-box;transform-origin:center;animation:r 2.8s ease-out infinite}
+    .ring.b{animation-delay:1.4s}
+    @keyframes r{from{transform:scale(.25);stroke-opacity:.9}to{transform:scale(1.7);stroke-opacity:0}}
+    .bar{fill:#2f7bff;transform-box:fill-box;transform-origin:bottom;animation:q 1.4s ease-in-out infinite alternate}
+    .bar:nth-of-type(2){animation-delay:.2s;fill:#13c4b1}.bar:nth-of-type(3){animation-delay:.45s}.bar:nth-of-type(4){animation-delay:.1s;fill:#13c4b1}.bar:nth-of-type(5){animation-delay:.3s}
+    @keyframes q{from{transform:scaleY(.25)}to{transform:scaleY(1)}}
+  </style>
+  <!-- the part being cut, and the toolpath running round it -->
+  <path id="p" class="dim" d="M44 34h150a20 20 0 0 1 20 20v52a20 20 0 0 1-20 20H44a20 20 0 0 1-20-20V54a20 20 0 0 1 20-20Z"/>
+  <circle class="dim" cx="82" cy="80" r="22"/>
+  <circle class="dim" cx="82" cy="80" r="11"/>
+  <rect class="dim" x="128" y="64" width="58" height="32" rx="16"/>
+  <path class="trace" pathLength="600" filter="url(#g)" d="M44 34h150a20 20 0 0 1 20 20v52a20 20 0 0 1-20 20H44a20 20 0 0 1-20-20V54a20 20 0 0 1 20-20Z"/>
+  <circle r="4.6" fill="#fff" filter="url(#g)"><animateMotion dur="5s" repeatCount="indefinite" rotate="auto" calcMode="linear"><mpath href="#p"/></animateMotion></circle>
+  <!-- the live signal -->
+  <circle class="ring" cx="296" cy="56" r="20"/>
+  <circle class="ring b" cx="296" cy="56" r="20"/>
+  <circle cx="296" cy="56" r="7" fill="#13c4b1" filter="url(#g)"/>
+  <g transform="translate(262 100)">
+    <rect class="bar" x="0" y="0" width="8" height="34" rx="3"/>
+    <rect class="bar" x="14" y="0" width="8" height="34" rx="3"/>
+    <rect class="bar" x="28" y="0" width="8" height="34" rx="3"/>
+    <rect class="bar" x="42" y="0" width="8" height="34" rx="3"/>
+    <rect class="bar" x="56" y="0" width="8" height="34" rx="3"/>
+  </g>
+</svg>

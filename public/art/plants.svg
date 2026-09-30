@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#10b981"/><stop offset="1" stop-color="#06b6d4"/></linearGradient>
+    <filter id="g" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .map{stroke:#fff;stroke-opacity:.12}
+    .land{fill:#fff;fill-opacity:.06;stroke:#fff;stroke-opacity:.3;stroke-width:1.4}
+    .pin{fill:url(#a);animation:d 3s cubic-bezier(.3,1.4,.5,1) infinite}
+    .pin.b{animation-delay:.5s}.pin.c{animation-delay:1s}
+    @keyframes d{0%{transform:translateY(-30px);opacity:0}20%{transform:translateY(0);opacity:1}85%{opacity:1}100%{opacity:0}}
+    .ring{stroke:#10b981;stroke-width:1.6;transform-box:fill-box;transform-origin:center;animation:r 3s ease-out infinite}
+    .ring.b{animation-delay:.5s}.ring.c{animation-delay:1s}
+    @keyframes r{0%,18%{transform:scale(.3);opacity:0}25%{opacity:1}70%,100%{transform:scale(1.6);opacity:0}}
+  </style>
+  <!-- sites on the map -->
+  <path class="map" d="M60 30h270M60 60h270M60 90h270M60 120h270M90 20v120M150 20v120M210 20v120M270 20v120"/>
+  <path class="land" d="M96 116c-8-20 10-40 30-46s22-26 46-28 40 12 52 26 44 8 58 26-6 34-40 36-44-6-70-2-68 8-76-12Z"/>
+  <ellipse class="ring" cx="150" cy="84" rx="12" ry="5"/><ellipse class="ring b" cx="222" cy="64" rx="12" ry="5"/><ellipse class="ring c" cx="262" cy="104" rx="12" ry="5"/>
+  <path class="pin" filter="url(#g)" d="M150 84c-9-10-14-17-14-24a14 14 0 0 1 28 0c0 7-5 14-14 24Zm0-19a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"/>
+  <path class="pin b" filter="url(#g)" d="M222 64c-9-10-14-17-14-24a14 14 0 0 1 28 0c0 7-5 14-14 24Zm0-19a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"/>
+  <path class="pin c" filter="url(#g)" d="M262 104c-9-10-14-17-14-24a14 14 0 0 1 28 0c0 7-5 14-14 24Zm0-19a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"/>
+</svg>

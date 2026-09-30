@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <filter id="g" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .track{stroke:#fff;stroke-opacity:.1;stroke-width:10}
+    .arc{stroke-width:10;stroke-linecap:round;fill:none;transform-origin:250px 80px;transform:rotate(-90deg);animation:a 3.2s cubic-bezier(.2,.7,.2,1) infinite alternate}
+    .a{stroke:#22c55e;stroke-dasharray:0 400}.p{stroke:#84cc16;stroke-dasharray:0 400;animation-name:p}.q{stroke:#14b8a6;stroke-dasharray:0 400;animation-name:q}
+    @keyframes a{to{stroke-dasharray:318 400}}
+    @keyframes p{to{stroke-dasharray:220 400}}
+    @keyframes q{to{stroke-dasharray:168 400}}
+    .t{font:700 20px system-ui,sans-serif;fill:#fff;text-anchor:middle}
+    .s{font:600 9px system-ui,sans-serif;fill:#fff;fill-opacity:.6;text-anchor:middle;letter-spacing:.12em}
+    .key{fill:#fff;fill-opacity:.55;font:600 11px system-ui,sans-serif}
+  </style>
+  <!-- availability × performance × quality, drawn as three rings -->
+  <circle class="track" cx="250" cy="80" r="62"/><circle class="track" cx="250" cy="80" r="46"/><circle class="track" cx="250" cy="80" r="30"/>
+  <circle class="arc a" cx="250" cy="80" r="62" filter="url(#g)"/>
+  <circle class="arc p" cx="250" cy="80" r="46" filter="url(#g)"/>
+  <circle class="arc q" cx="250" cy="80" r="30" filter="url(#g)"/>
+  <text class="t" x="250" y="86">OEE</text>
+  <g transform="translate(40 50)">
+    <rect width="10" height="10" rx="3" fill="#22c55e"/><text class="key" x="18" y="9">Availability</text>
+    <rect y="24" width="10" height="10" rx="3" fill="#84cc16"/><text class="key" x="18" y="33">Performance</text>
+    <rect y="48" width="10" height="10" rx="3" fill="#14b8a6"/><text class="key" x="18" y="57">Quality</text>
+  </g>
+</svg>

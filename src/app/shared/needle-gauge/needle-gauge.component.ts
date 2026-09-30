@@ -29,7 +29,7 @@ export interface GaugeZone { from: number; to: number; color: string; }
     .scale { fill: var(--mexa-ink-2, #4b5262); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
     .needle { fill: var(--mexa-ink, #1f2430); }
     .hub-hole { fill: var(--gauge-hole, #fff); }
-    .value { fill: var(--mexa-ink, #1f2430); font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .value { fill: var(--mexa-ink, #1f2430); font-family: var(--font-display, inherit); font-size: 17px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
     .needle-turn {
       transform-box: view-box;
       transition: transform .7s cubic-bezier(.2, .8, .25, 1);
@@ -42,9 +42,9 @@ export interface GaugeZone { from: number; to: number; color: string; }
     <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" role="img" [attr.aria-label]="ariaLabel">
       <!-- the band: grey stretches and coloured zones, a clean gap between them -->
       <path *ngFor="let p of bandPieces" [attr.d]="arc(p.from, p.to, true)" fill="none"
-            [class.track]="!p.color" [attr.stroke]="p.color" [attr.stroke-width]="BAND" stroke-linecap="butt"/>
+            [class.track]="!p.color" [style.stroke]="p.color" [attr.stroke-width]="BAND" stroke-linecap="butt"/>
       <path *ngIf="fill && value !== null && value > min" [attr.d]="arc(min, clamp(value))" fill="none"
-            [attr.stroke]="fill" [attr.stroke-width]="BAND" stroke-linecap="butt"/>
+            [style.stroke]="fill" [attr.stroke-width]="BAND" stroke-linecap="butt"/>
 
       <!-- tick ring inside the band -->
       <line *ngFor="let t of tickMarks" [attr.x1]="t.x1" [attr.y1]="t.y1" [attr.x2]="t.x2" [attr.y2]="t.y2"
@@ -71,7 +71,8 @@ export class NeedleGaugeComponent implements OnChanges {
   @Input() min = 0;
   @Input() max = 100;
   @Input() zones: GaugeZone[] = [];
-  /** Colour the band from min up to the reading (for a quantity with no good/bad zones). */
+  /** Colour the band from min up to the reading (for a quantity with no good/bad zones).
+   *  Applied as a style, so a CSS variable such as var(--series-1) works. */
   @Input() fill: string | null = null;
   @Input() majorStep = 25;
   @Input() minorPerMajor = 5;

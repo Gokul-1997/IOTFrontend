@@ -77,8 +77,8 @@ export class LiveComponent implements OnInit, OnDestroy {
      number stays true. */
   readonly FEED_SCALE = 6000;
   readonly SPINDLE_ZONES: GaugeZone[] = [
-    { from: 80,  to: 100, color: '#f5a623' },   // high
-    { from: 100, to: 150, color: '#e03131' }    // overload
+    { from: 80,  to: 100, color: 'var(--st-idle)' },    // high
+    { from: 100, to: 150, color: 'var(--st-alarm)' }    // overload
   ];
   readonly pctTick = (v: number) => `${v}%`;
   readonly kTick = (v: number) => (v === 0 ? '0' : `${v / 1000}k`);

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#13c4b1"/></linearGradient>
+    <filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .orbit{stroke:#fff;stroke-opacity:.18;stroke-dasharray:3 6;transform-origin:256px 80px;animation:o 14s linear infinite}
+    @keyframes o{to{transform:rotate(360deg)}}
+    .sat{transform-origin:256px 80px;animation:o 6s linear infinite}
+    .sat.b{animation-duration:9s;animation-direction:reverse}
+    .card{fill:#fff;fill-opacity:.07;stroke:#fff;stroke-opacity:.3}
+  </style>
+  <!-- you -->
+  <circle class="orbit" cx="256" cy="80" r="60"/>
+  <circle cx="256" cy="80" r="38" stroke="url(#a)" stroke-width="4" filter="url(#g)"/>
+  <circle cx="256" cy="70" r="12" fill="#fff" fill-opacity=".85"/>
+  <path d="M234 102a22 16 0 0 1 44 0" fill="#fff" fill-opacity=".85"/>
+  <g class="sat"><circle cx="316" cy="80" r="6" fill="#13c4b1" filter="url(#g)"/></g>
+  <g class="sat b"><circle cx="196" cy="80" r="5" fill="#6366f1" filter="url(#g)"/></g>
+  <rect class="card" x="40" y="46" width="120" height="68" rx="10"/>
+  <path d="M56 66h70M56 82h52M56 98h60" stroke="#fff" stroke-opacity=".4" stroke-width="3" stroke-linecap="round"/>
+</svg>

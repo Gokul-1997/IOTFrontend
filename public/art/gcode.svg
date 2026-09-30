@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" fill="none">
+  <defs>
+    <filter id="g" x="-40%" y="-80%" width="180%" height="260%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <style>
+    .win{fill:#070b10;stroke:#22d3ee;stroke-opacity:.5;stroke-width:1.4}
+    .code{font:600 11px ui-monospace,Menlo,monospace;fill:#7ff5e3}
+    .dim{fill:#94a3b8}
+    .l{opacity:0;animation:t 6s steps(1,end) infinite}
+    .l2{animation-delay:.6s}.l3{animation-delay:1.2s}.l4{animation-delay:1.8s}.l5{animation-delay:2.4s}
+    @keyframes t{0%{opacity:0}5%,90%{opacity:1}100%{opacity:0}}
+    .cur{fill:#22d3ee;animation:c .8s steps(2,jump-none) infinite}
+    @keyframes c{50%{opacity:0}}
+    .send{stroke:#6a4dff;stroke-width:2.6;stroke-linecap:round;stroke-dasharray:6 8;animation:s .9s linear infinite}
+    @keyframes s{to{stroke-dashoffset:-14}}
+    .mc{fill:#fff;fill-opacity:.07;stroke:#fff;stroke-opacity:.45;stroke-width:1.4}
+  </style>
+  <!-- a program, typed out and sent to the machine -->
+  <rect class="win" x="30" y="22" width="190" height="118" rx="10"/>
+  <circle cx="44" cy="34" r="3" fill="#ef4444"/><circle cx="54" cy="34" r="3" fill="#f59e0b"/><circle cx="64" cy="34" r="3" fill="#22c55e"/>
+  <text class="code" x="44" y="58"><tspan class="l l1">O1042 <tspan class="dim">(VALVE HSG)</tspan></tspan></text>
+  <text class="code" x="44" y="75"><tspan class="l l2">G21 G90 G17</tspan></text>
+  <text class="code" x="44" y="92"><tspan class="l l3">T01 M06 S12000 M03</tspan></text>
+  <text class="code" x="44" y="109"><tspan class="l l4">G01 X42.5 Y18.0 F1850</tspan></text>
+  <text class="code" x="44" y="126"><tspan class="l l5">G02 X60.0 R12.5</tspan></text>
+  <rect class="cur" x="180" y="118" width="7" height="11"/>
+  <path class="send" filter="url(#g)" d="M226 80h52"/>
+  <rect class="mc" x="284" y="46" width="52" height="68" rx="8"/>
+  <rect x="292" y="54" width="36" height="22" rx="3" fill="#22d3ee" fill-opacity=".35"/>
+  <path d="M296 90h28M296 100h20" stroke="#fff" stroke-opacity=".4" stroke-width="2.4" stroke-linecap="round"/>
+</svg>

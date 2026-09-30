@@ -10,8 +10,8 @@
         <span class="tx-updated"><mat-icon aria-hidden="true">sync</mat-icon>{{ lastUpdated ? 'updated ' + (lastUpdated | date:'h:mm:ss a':'+0530') : 'waiting for machine data' }}</span>
       </div>
     </div>
-    <div class="tx-filters">
-      <span class="floor-clock"><span class="shift-name">{{ shift?.shift_code || 'Current shift' }}</span><span>{{ currentDateStr }}</span><strong>{{ currentTime }}</strong><small>IST</small></span>
+    <div class="tx-filters floor-actions">
+      <span class="floor-clock"><span class="clock-meta"><span class="shift-name">{{ shift?.shift_code || 'Current shift' }}</span><span>{{ currentDateStr }}</span></span><span class="clock-time"><strong>{{ currentTime }}</strong><small>IST</small></span></span>
       <button type="button" class="tx-btn tx-btn-ghost" (click)="refresh()" [disabled]="loading" aria-label="Refresh machine readings"><mat-icon aria-hidden="true" [class.spin]="loading">refresh</mat-icon><span>Refresh</span></button>
     </div>
   </header>
@@ -34,11 +34,19 @@
     <section class="tx-card machine-panel" [class.alarm-blink]="alarmActive" aria-labelledby="machine-context-heading">
       <div class="tx-card-head">
         <h2 class="tx-card-title" id="machine-context-heading"><mat-icon aria-hidden="true">precision_manufacturing</mat-icon>Machine overview</h2>
-        <span class="tx-chip">ID {{ machineId }}</span>
+        <span class="twin-head-right">
+          <span class="machine-photo"><img [src]="machine?.image_url || machine?.image || 'images/product/machine-placeholder.svg'" [alt]="machine?.machine_serial_no || 'Industrial machine'" (error)="usePlaceholder($event)"></span>
+          <span class="tx-chip">ID {{ machineId }}</span>
+        </span>
       </div>
-      <div class="machine-stage">
+      <!-- the digital twin: the machine as it runs, its live readings called out around it
+           (the same readings the dials and tiles below carry for assistive technology) -->
+      <div class="machine-stage twin-stage" [ngClass]="'st-' + (alarmActive ? 'alarm' : (liveStatus | lowercase))">
         <app-cnc-machine [status]="liveStatus" [alarm]="alarmActive" [code]="machine?.machine_serial_no || ''" [load]="liveSpindleLoad" [parts]="livePartCount"></app-cnc-machine>
-        <div class="machine-photo"><img [src]="machine?.image_url || machine?.image || 'images/product/machine-placeholder.svg'" [alt]="machine?.machine_serial_no || 'Industrial machine'" (error)="usePlaceholder($event)"></div>
+        <span class="twin-hud hud-load" aria-hidden="true" [class.warn]="(liveSpindleLoad ?? 0) > 80" [class.bad]="(liveSpindleLoad ?? 0) > 100"><small>Spindle load</small><b>{{ spindleText(liveSpindleLoad) }}</b><i [style.width.%]="boundedPercent((liveSpindleLoad ?? 0) / 1.5)"></i></span>
+        <span class="twin-hud hud-feed" aria-hidden="true"><small>Feed</small><b>{{ liveFeed === null ? '--' : (liveFeed | number:'1.0-0') }}<em>mm/min</em></b><i [style.width.%]="boundedPercent((liveFeed ?? 0) / FEED_SCALE * 100)"></i></span>
+        <span class="twin-hud hud-parts" aria-hidden="true"><small>Parts this shift</small><b>{{ livePartCount === null ? '--' : (livePartCount | number) }}</b><i [style.width.%]="boundedPercent(attainment)"></i></span>
+        <span class="twin-hud hud-mode" aria-hidden="true"><small>Mode</small><b>{{ liveMode || '--' }}</b><i class="state"></i></span>
       </div>
       <dl class="tx-kv context-grid">
         <dt>Operator</dt><dd>{{ operator?.operator_name || 'Unassigned' }}</dd>
@@ -63,12 +71,15 @@
         <div class="tx-card-head"><h2 class="tx-card-title" id="feed-heading"><mat-icon aria-hidden="true">swap_horiz</mat-icon>Feed rate</h2><span class="tx-chip">mm/min</span></div>
         <app-needle-gauge class="dial"
           [value]="liveFeed" [min]="0" [max]="FEED_SCALE" [majorStep]="1000" [minorPerMajor]="4"
-          fill="#006ab5" [tickLabel]="kTick" [valueText]="feedText"
+          fill="var(--series-1)" [tickLabel]="kTick" [valueText]="feedText"
           [ariaLabel]="'Feed rate ' + feedText(liveFeed)"></app-needle-gauge>
         <p class="metric-caption">{{ liveFeed === null ? 'Feed rate has not been reported' : liveFeed > FEED_SCALE ? 'Above the ' + (FEED_SCALE | number) + ' mm/min scale' : 'Actual feed · Feed override % is not reported by the controller' }}</p>
       </section>
     </div>
   </div>
+
+  <!-- the shift so far, straight under the machine: running / idle / alarm / off, breaks marked -->
+  <app-shift-timeline [machineId]="machineId"></app-shift-timeline>
 
   <div class="tx-kpis machine-kpis">
     <div class="tx-kpi">
@@ -98,8 +109,6 @@
     </div>
   </div>
 
-  <!-- running / idle / alarm / off across the shift, breaks marked -->
-  <app-shift-timeline [machineId]="machineId"></app-shift-timeline>
 
   <div class="machine-grid-cards" [class.without-history]="!canViewHourly">
     <div class="machine-col">

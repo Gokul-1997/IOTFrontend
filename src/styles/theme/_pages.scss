@@ -1,0 +1,76 @@
+@use 'sass:map';
+
+/* ─────────────────────────────────────────────────────────────
+   Every page its own identity.
+
+   The layout writes the page's key onto <html data-page="…"> on each
+   navigation. Each key sets the page's accent pair, the text-safe
+   strong shade (≥ 4.5:1 with white), a partner hue for charts, the
+   small label above its title, and its own animated illustration in
+   the page header (public/art). Buttons, links, the first chart
+   series, the header's glow and the active menu all follow it.
+   ───────────────────────────────────────────────────────────── */
+$pages: (
+  /* live floor and the machine */
+  'live':              (accent: #2f7bff, accent-2: #13c4b1, strong: #1d5fd8, series-2: #13c4b1, eyebrow: 'Live · Shop floor',         art: 'live'),
+  'machine':           (accent: #13c4b1, accent-2: #2f7bff, strong: #0b7c70, series-2: #2f7bff, eyebrow: 'Live · Digital twin',       art: 'machine'),
+  /* analytics */
+  'factory':           (accent: #6a4dff, accent-2: #2f7bff, strong: #4a2fe0, series-2: #13c4b1, eyebrow: 'Analytics · Plant overview', art: 'factory'),
+  'maint-dash':        (accent: #10b981, accent-2: #13c4b1, strong: #047857, series-2: #2f7bff, eyebrow: 'Analytics · Machine health', art: 'health'),
+  'preventive':        (accent: #0ea5e9, accent-2: #6366f1, strong: #0369a1, series-2: #6366f1, eyebrow: 'Analytics · Planned care',   art: 'calendar'),
+  'periodic':          (accent: #a855f7, accent-2: #ec4899, strong: #7e22ce, series-2: #0ea5e9, eyebrow: 'Analytics · Recurring checks', art: 'cycle'),
+  'alarm-report':      (accent: #ef4444, accent-2: #f97316, strong: #c81e1e, series-2: #f97316, eyebrow: 'Analytics · Alarms',         art: 'radar'),
+  'downtime-analysis': (accent: #f59e0b, accent-2: #f97316, strong: #b45309, series-2: #6366f1, eyebrow: 'Analytics · Lost time',      art: 'stopwatch'),
+  'operator-perf':     (accent: #ec4899, accent-2: #8b5cf6, strong: #be185d, series-2: #8b5cf6, eyebrow: 'Analytics · People',         art: 'podium'),
+  'oee':               (accent: #22c55e, accent-2: #84cc16, strong: #15803d, series-2: #0ea5e9, eyebrow: 'Analytics · Effectiveness',  art: 'rings'),
+  'energy':            (accent: #f5b301, accent-2: #f97316, strong: #a15c07, series-2: #2f7bff, eyebrow: 'Analytics · Energy',         art: 'energy'),
+  'tariff':            (accent: #eab308, accent-2: #22c55e, strong: #a15c07, series-2: #22c55e, eyebrow: 'Master · Tariff & limits',   art: 'tariff'),
+  'maint-report':      (accent: #14b8a6, accent-2: #0ea5e9, strong: #0f766e, series-2: #0ea5e9, eyebrow: 'Analytics · Ticket record',  art: 'ledger'),
+  'reports':           (accent: #6366f1, accent-2: #0ea5e9, strong: #4338ca, series-2: #0ea5e9, eyebrow: 'Analytics · Reports',        art: 'reports'),
+  'charts':            (accent: #0ea5e9, accent-2: #6366f1, strong: #0369a1, series-2: #6366f1, eyebrow: 'Analytics · Charts',         art: 'charts'),
+  'quality':           (accent: #16a34a, accent-2: #14b8a6, strong: #15803d, series-2: #0ea5e9, eyebrow: 'Analytics · Quality',        art: 'quality'),
+  /* operations */
+  'alarms':            (accent: #f43f5e, accent-2: #ef4444, strong: #be123c, series-2: #f97316, eyebrow: 'Operations · Alarms',        art: 'bell'),
+  'downtime':          (accent: #f97316, accent-2: #f59e0b, strong: #c2410c, series-2: #6366f1, eyebrow: 'Operations · Downtime',      art: 'pause'),
+  'maintenance':       (accent: #14b8a6, accent-2: #10b981, strong: #0f766e, series-2: #2f7bff, eyebrow: 'Operations · Maintenance',   art: 'wrench'),
+  /* master data */
+  'machines':          (accent: #2f7bff, accent-2: #6a4dff, strong: #1d5fd8, series-2: #13c4b1, eyebrow: 'Master · Machines',          art: 'machines'),
+  'component':         (accent: #a855f7, accent-2: #6366f1, strong: #7e22ce, series-2: #0ea5e9, eyebrow: 'Master · Components',        art: 'component'),
+  'job':               (accent: #f97316, accent-2: #ef4444, strong: #c2410c, series-2: #2f7bff, eyebrow: 'Master · Jobs',              art: 'job'),
+  'lines':             (accent: #06b6d4, accent-2: #2f7bff, strong: #0e7490, series-2: #6366f1, eyebrow: 'Master · Production lines',  art: 'conveyor'),
+  'shifts':            (accent: #6366f1, accent-2: #f59e0b, strong: #4338ca, series-2: #f59e0b, eyebrow: 'Master · Shifts',            art: 'daynight'),
+  'operators':         (accent: #ec4899, accent-2: #f97316, strong: #be185d, series-2: #8b5cf6, eyebrow: 'Master · People',            art: 'badges'),
+  'plants':            (accent: #10b981, accent-2: #06b6d4, strong: #047857, series-2: #2f7bff, eyebrow: 'Master · Sites',             art: 'plants'),
+  'machine-shifts':    (accent: #8b5cf6, accent-2: #06b6d4, strong: #6d28d9, series-2: #06b6d4, eyebrow: 'Master · Machine calendar',  art: 'timeline'),
+  'assignments':       (accent: #f43f5e, accent-2: #8b5cf6, strong: #be123c, series-2: #8b5cf6, eyebrow: 'Master · Assignments',       art: 'links'),
+  'programs':          (accent: #22d3ee, accent-2: #6a4dff, strong: #0e7490, series-2: #6a4dff, eyebrow: 'Master · Program transfer', art: 'gcode'),
+  /* the person and the company */
+  'admin':             (accent: #6a4dff, accent-2: #ec4899, strong: #4a2fe0, series-2: #0ea5e9, eyebrow: 'Administration',             art: 'network'),
+  'profile':           (accent: #6366f1, accent-2: #13c4b1, strong: #4338ca, series-2: #13c4b1, eyebrow: 'Your account',               art: 'profile'),
+  'settings':          (accent: #0ea5e9, accent-2: #6a4dff, strong: #0369a1, series-2: #6a4dff, eyebrow: 'Your account · Settings',    art: 'sliders'),
+  'notifications':     (accent: #f97316, accent-2: #ec4899, strong: #c2410c, series-2: #ec4899, eyebrow: 'Your account · Notifications', art: 'inbox'),
+  'security':          (accent: #10b981, accent-2: #2f7bff, strong: #047857, series-2: #2f7bff, eyebrow: 'Your account · Security',    art: 'shield'),
+  'no-access':         (accent: #94a3b8, accent-2: #6a4dff, strong: #475569, series-2: #6a4dff, eyebrow: 'Access',                     art: 'lock'),
+);
+
+@each $key, $p in $pages {
+  :root[data-page="#{$key}"] {
+    --accent: #{map.get($p, accent)};
+    --accent-2: #{map.get($p, accent-2)};
+    --accent-strong: #{map.get($p, strong)};
+    --series-2: #{map.get($p, series-2)};
+    --eyebrow: "#{map.get($p, eyebrow)}";
+    --hero-art: url('/art/#{map.get($p, art)}.svg');
+  }
+  /* the menu entry that opens this page wears its colour */
+  :is(.tx-menu, .tx-palette) [data-to="#{$key}"] { --i-accent: #{map.get($p, strong)}; --i-glow: #{map.get($p, accent)}; }
+}
+
+/* tints and link colours follow the accent in each theme */
+:root { --accent-soft: color-mix(in srgb, var(--accent) 12%, #ffffff); }
+:root.dark, :root[data-theme="dark"] {
+  --accent-soft: color-mix(in srgb, var(--accent) 17%, #11161e);
+  --seq-100: color-mix(in srgb, var(--accent) 16%, #1b222d);
+  --link: color-mix(in srgb, var(--accent) 62%, #ffffff);
+  --focus: color-mix(in srgb, var(--accent) 70%, #ffffff);
+}
