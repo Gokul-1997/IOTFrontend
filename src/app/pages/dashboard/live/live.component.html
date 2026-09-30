@@ -104,10 +104,10 @@
       <div class="w-full md:w-1/2">
         <img [src]="machine?.image || '/images/product/machine_login_02.png'"
              [alt]="'Machine ' + (machine?.machine_serial_no || '')"
-             class="rounded-lg w-full object-contain h-44">
+             class="rounded-lg w-full object-contain machine_img_det">
       </div>
 
-      <div class="w-full md:w-1/2 bg-blue-50 dark:bg-black rounded-xl p-2">
+      <div class="w-full md:w-1/2 bg-blue-50 dark:bg-black rounded-xl p-2 operator_det">
 
         <!-- Operator -->
         <div class="space-y-1 text-sm mb-1">
@@ -179,7 +179,7 @@
 
 
     <!-- TIME INFO -->
-     <div class="flex flex-col xl:col-span-3 justify-between">
+     <div class="flex flex-col xl:col-span-3 justify-between time_info">
     <div class=" mexa-lift rounded-xl  p-2  ">
       <h3 class="text-base font-semibold text-center mb-2">Time Info</h3>
       <div class="flex gap-2">
@@ -233,7 +233,7 @@
     </div>
     </div>
     <!-- MACHINE STATUS / UTILIZATION -->
-    <div class="xl:col-span-3 mexa-lift rounded-xl  p-2  ">
+    <div class="xl:col-span-3 mexa-lift rounded-xl  p-2  machine_status">
 
       <h3 class="text-base font-semibold text-center mb-2">Machine Status</h3>
 
@@ -327,7 +327,7 @@
   <app-shift-timeline [machineId]="machineId"></app-shift-timeline>
 
   <!-- BOTTOM GRID — OEE + Speedometers -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 ">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 chart_med">
 
     <!-- ══════════════ OEE ══════════════ -->
     <div class="mexa-lift rounded-xl  p-2 flex flex-col items-center  ">

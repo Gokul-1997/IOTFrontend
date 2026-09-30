@@ -13,6 +13,7 @@
 // MEXA dashboard design system — the shell, tiles, cards and tables that
 // every Phase 2 dashboard shares.
 @use './styles/mexa';
+@use './styles/responsive';
 // Ubuntu is the STM MEXA face (the design PDF uses it throughout). Libre
 // Franklin, Questrial and Nunito Sans were loaded here too and used nowhere.
 @import url('https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap');

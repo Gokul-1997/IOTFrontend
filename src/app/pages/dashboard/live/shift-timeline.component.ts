@@ -58,7 +58,7 @@ const clock = new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-dig
     :host-context(.dark) .tl-bar:focus-visible { box-shadow: 0 0 0 3px #9fb3ff; }
   `],
   template: `
-  <section class="bg-white dark:bg-[#111111] rounded-xl p-2 shadow-xl mt-2" aria-labelledby="tlTitle">
+  <section class="bg-white dark:bg-[#111111] rounded-xl p-2 shadow-xl mt-2 shift_timeline" aria-labelledby="tlTitle">
     <h3 *ngIf="!data" id="tlTitle" class="text-base font-semibold mb-3">Shift Timeline</h3>
     <div *ngIf="loading && !data" class="h-9 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" aria-busy="true" aria-label="Loading the shift timeline"></div>
     <p *ngIf="error" class="text-sm text-red-700 dark:text-red-400" role="alert">{{ error }}</p>

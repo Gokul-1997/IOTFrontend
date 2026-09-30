@@ -1,0 +1,179 @@
+/* =========================================================
+   RESPONSIVE BREAKPOINTS
+   STM Mexa Dashboard
+   ========================================================= */
+
+
+/* ---------------------------------------------------------
+   EXTRA LARGE DESKTOP
+   1600px and above
+   Examples: 1920x1080, 2560x1440
+   --------------------------------------------------------- */
+
+@media (min-width: 1600px) {
+
+  .mexa-shell {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .mexa-page {
+    width: 100%;
+    max-width: 1800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .dashboard_machine_all {
+    height: 15rem;
+  }
+  .machine_title_lrg{
+    font-size: 1.2rem;
+  }
+  .menu-default{
+    height: 100%;
+    zoom: 1.2;
+  }
+  .bg-top-bar{
+    zoom: 1.2;
+  }
+  header{
+    zoom: 1.2;
+  }
+  .time{
+    zoom: 1.2;
+  }
+  .util{
+    zoom: 1.2;
+    gap: 12px;
+  }
+  .target{
+    gap: 12px;
+  }
+  .operator_det{
+    zoom:1.4
+  }
+  .time_info{
+    zoom:1.35
+  }
+  .machine_status{
+    zoom: 1.3;
+  }
+  .shift_timeline{
+    zoom: 1.3;
+  }
+  .chart_med{
+    zoom: 1.2;
+  }
+  .machine_img_det{
+    height: 16rem;
+  }
+}
+
+
+/* ---------------------------------------------------------
+   LARGE DESKTOP
+   1280px - 1599px
+   Examples: 1366x768, 1440x900, 1536x864
+   --------------------------------------------------------- */
+
+@media (min-width: 1280px) and (max-width: 1599px) {
+
+  .mexa-shell {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .mexa-page {
+    width: 100%;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .dashboard_machine_all {
+    height: 7rem;
+  }
+  .machine_img_det{
+    height: 10rem;
+  }
+ 
+}
+
+
+/* ---------------------------------------------------------
+   DESKTOP / LAPTOP
+   1024px - 1279px
+   Examples: 1024x768, 1152x864, 1280-ish layouts
+   --------------------------------------------------------- */
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+
+  .mexa-shell {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .mexa-page {
+    width: 100%;
+    max-width: none;
+  }
+
+}
+
+
+/* ---------------------------------------------------------
+   TABLET / SMALL LAPTOP
+   768px - 1023px
+   Examples: 768x1024, 800x1280, 1024-ish tablets
+   --------------------------------------------------------- */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+
+  .mexa-shell {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .mexa-page {
+    width: 100%;
+    max-width: none;
+  }
+
+}
+
+
+/* ---------------------------------------------------------
+   MOBILE
+   Below 768px
+   Examples: 375px, 390px, 414px, 430px, 480px
+   --------------------------------------------------------- */
+
+@media (max-width: 767px) {
+
+  .mexa-shell {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .mexa-page {
+    width: 100%;
+    max-width: none;
+  }
+
+}
+
+
+/* ---------------------------------------------------------
+   SMALL MOBILE
+   Below 480px
+   Examples: 320px, 360px, 375px
+   --------------------------------------------------------- */
+
+@media (max-width: 480px) {
+
+  .mexa-shell {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+}
