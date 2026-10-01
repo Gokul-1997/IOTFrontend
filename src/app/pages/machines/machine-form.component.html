@@ -35,10 +35,10 @@
 
         <!-- ══ 1. Identity ══ -->
         <section class="ui-section" aria-labelledby="mfSecIdentity">
-          <h3 id="mfSecIdentity" class="ui-section-title">Machine identity</h3>
-          <p class="ui-section-hint">How this machine is identified across dashboards and reports.</p>
+          <!-- <h3 id="mfSecIdentity" class="ui-section-title">Machine identity</h3>
+          <p class="ui-section-hint">How this machine is identified across dashboards and reports.</p> -->
 
-          <div class="grid grid-cols-1 sm:grid-cols-12 gap-5 mt-4">
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-5 mt-0">
 
             <!-- image well: the label wraps the input, so the whole card is the control -->
             <div class="sm:col-span-4 lg:col-span-3">
@@ -62,10 +62,11 @@
                     <span>Add a photo</span>
                   </span>
                 </ng-template>
-              </label>
-              <p id="mfImageHint" class="ui-hint">
+                <p id="mfImageHint" class="ui-hint">
                 {{ uploading ? 'Uploading…' : 'PNG or JPG. Optional.' }}
               </p>
+              </label>
+              
             </div>
 
             <div class="sm:col-span-8 lg:col-span-9 grid grid-cols-1 sm:grid-cols-2 gap-4 content-start">

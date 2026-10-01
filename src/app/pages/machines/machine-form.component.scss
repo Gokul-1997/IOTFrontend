@@ -17,13 +17,14 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 4.5 / 3;
   border: 1px dashed #cbd5e1;
   border-radius: 12px;
   background: #f8fafc;
   overflow: hidden;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
+      flex-direction: column;
 }
 .mf-image:hover { border-color: #2563eb; background: #eff6ff; }
 .mf-image:has(input:focus-visible) {
