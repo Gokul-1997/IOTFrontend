@@ -9,10 +9,38 @@
   </button>
 </div>
 
-<div class="mexa-pills" role="tablist" aria-label="Downtime views">
-  <button type="button" role="tab" class="mexa-pill" [attr.aria-selected]="activeTab === 'events'" (click)="setTab('events')">Events</button>
-  <button type="button" role="tab" class="mexa-pill" [attr.aria-selected]="activeTab === 'reasons'" (click)="setTab('reasons')">Reason codes</button>
-  <button type="button" role="tab" class="mexa-pill" [attr.aria-selected]="activeTab === 'summary'" (click)="setTab('summary')">Summary</button>
+<div class="ui-tabs ui-tabs-center" role="tablist" uiTabs aria-label="Downtime views">
+
+  <button type="button"
+          role="tab"
+          class="ui-tab"
+          [class.is-active]="activeTab === 'events'"
+          [attr.aria-selected]="activeTab === 'events'"
+          [attr.tabindex]="activeTab === 'events' ? 0 : -1"
+          (click)="setTab('events')">
+    Events
+  </button>
+
+  <button type="button"
+          role="tab"
+          class="ui-tab"
+          [class.is-active]="activeTab === 'reasons'"
+          [attr.aria-selected]="activeTab === 'reasons'"
+          [attr.tabindex]="activeTab === 'reasons' ? 0 : -1"
+          (click)="setTab('reasons')">
+    Reason codes
+  </button>
+
+  <button type="button"
+          role="tab"
+          class="ui-tab"
+          [class.is-active]="activeTab === 'summary'"
+          [attr.aria-selected]="activeTab === 'summary'"
+          [attr.tabindex]="activeTab === 'summary' ? 0 : -1"
+          (click)="setTab('summary')">
+    Summary
+  </button>
+
 </div>
 
 <!-- Events -->
@@ -50,7 +78,7 @@
 </div>
 
 <!-- Reason codes -->
-<div *ngIf="activeTab === 'reasons'" role="tabpanel">
+<div *ngIf="activeTab === 'reasons'" role="tabpanel" class="mexa-card">
   <div *ngIf="showReasonForm" class="mexa-card reason-form">
     <h2 class="mexa-card-title mexa-card-title-left">New reason code</h2>
     <div class="reason-grid">

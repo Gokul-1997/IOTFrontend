@@ -1,7 +1,7 @@
 <div class="mexa-titlebar">
-  <div>
+  <div class="flex gap-2 items-center">
     <h1 class="mexa-title">Notifications</h1>
-    <p class="mexa-subtitle">Everything sent to your account</p>
+    <p class="mexa-subtitle">( Everything sent to your account )</p>
   </div>
   <span class="mexa-titlebar-spacer"></span>
   <button type="button" class="ui-btn ui-btn-ghost" (click)="markAllRead()" [disabled]="loading || !notifications.length">
@@ -9,9 +9,28 @@
   </button>
 </div>
 
-<div class="mexa-pills" role="tablist" aria-label="Filter">
-  <button type="button" role="tab" class="mexa-pill" [attr.aria-selected]="!unreadOnly" (click)="setUnreadOnly(false)">All</button>
-  <button type="button" role="tab" class="mexa-pill" [attr.aria-selected]="unreadOnly" (click)="setUnreadOnly(true)">Unread</button>
+<div class="ui-tabs ui-tabs-center" role="tablist" aria-label="Filter">
+
+  <button type="button"
+          role="tab"
+          class="ui-tab"
+          [class.is-active]="!unreadOnly"
+          [attr.aria-selected]="!unreadOnly"
+          [attr.tabindex]="!unreadOnly ? 0 : -1"
+          (click)="setUnreadOnly(false)">
+    All
+  </button>
+
+  <button type="button"
+          role="tab"
+          class="ui-tab"
+          [class.is-active]="unreadOnly"
+          [attr.aria-selected]="unreadOnly"
+          [attr.tabindex]="unreadOnly ? 0 : -1"
+          (click)="setUnreadOnly(true)">
+    Unread
+  </button>
+
 </div>
 
 <div class="mexa-card mexa-card-flush">

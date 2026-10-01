@@ -19,15 +19,55 @@
   </ul>
 </div>
 
-<div class="mexa-pills" role="tablist" aria-label="Maintenance views">
-  <button type="button" role="tab" class="mexa-pill" [attr.aria-selected]="activeTab === 'tickets'" (click)="setTab('tickets')">Tickets</button>
-  <button type="button" role="tab" class="mexa-pill" [attr.aria-selected]="activeTab === 'schedules'" (click)="setTab('schedules')">Schedules</button>
-  <button type="button" role="tab" class="mexa-pill" [attr.aria-selected]="activeTab === 'logs'" (click)="setTab('logs')">Logs</button>
-  <button type="button" role="tab" class="mexa-pill" [attr.aria-selected]="activeTab === 'mttr'" (click)="setTab('mttr')">MTTR analysis</button>
+<div class="ui-tabs ui-tabs-center"
+     role="tablist"
+     uiTabs
+     aria-label="Maintenance views">
+
+  <button type="button"
+          role="tab"
+          class="ui-tab"
+          [class.is-active]="activeTab === 'tickets'"
+          [attr.aria-selected]="activeTab === 'tickets'"
+          [attr.tabindex]="activeTab === 'tickets' ? 0 : -1"
+          (click)="setTab('tickets')">
+    Tickets
+  </button>
+
+  <button type="button"
+          role="tab"
+          class="ui-tab"
+          [class.is-active]="activeTab === 'schedules'"
+          [attr.aria-selected]="activeTab === 'schedules'"
+          [attr.tabindex]="activeTab === 'schedules' ? 0 : -1"
+          (click)="setTab('schedules')">
+    Schedules
+  </button>
+
+  <button type="button"
+          role="tab"
+          class="ui-tab"
+          [class.is-active]="activeTab === 'logs'"
+          [attr.aria-selected]="activeTab === 'logs'"
+          [attr.tabindex]="activeTab === 'logs' ? 0 : -1"
+          (click)="setTab('logs')">
+    Logs
+  </button>
+
+  <button type="button"
+          role="tab"
+          class="ui-tab"
+          [class.is-active]="activeTab === 'mttr'"
+          [attr.aria-selected]="activeTab === 'mttr'"
+          [attr.tabindex]="activeTab === 'mttr' ? 0 : -1"
+          (click)="setTab('mttr')">
+    MTTR analysis
+  </button>
+
 </div>
 
 <!-- Tickets -->
-<div *ngIf="activeTab === 'tickets'" role="tabpanel">
+<div *ngIf="activeTab === 'tickets'" role="tabpanel" class="ui-tabpanel">
   <div *ngIf="showTicketForm" class="mexa-card mt-form p-4">
     <h2 class="mexa-card-title mexa-card-title-left">Create maintenance ticket</h2>
     <div class="mt-grid">

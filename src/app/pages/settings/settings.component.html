@@ -1,13 +1,19 @@
 <div class="mexa-titlebar">
-  <div>
+  <div class="flex justify-between w-full">
+    <div class="flex gap-2 items-center">
     <h1 class="mexa-title">Settings</h1>
-    <p class="mexa-subtitle">Appearance and notifications</p>
+    <p class="mexa-subtitle">( Appearance and notifications )</p>
+    </div>
+    <div>
+      <span *ngIf="saving" class="mexa-setting-hint">Saving…</span>
+      <span *ngIf="saveNote && !saving" class="set-ok" role="status">{{ saveNote }}</span>
+    </div>
   </div>
 </div>
 
-<div class="set-grid">
+<div class="set-grid w-1/2 mx-auto">
   <!-- Appearance -->
-  <section class="mexa-card">
+  <!-- <section class="mexa-card">
     <h2 class="mexa-card-title mexa-card-title-left">Appearance</h2>
     <div class="mexa-setting">
       <div>
@@ -17,16 +23,15 @@
       <button type="button" role="switch" class="mexa-switch" aria-labelledby="set-dark"
         [attr.aria-checked]="theme.isDark()" (click)="theme.toggle()"></button>
     </div>
-  </section>
+  </section> -->
 
   <!-- Notifications -->
   <section class="mexa-card">
     <div class="mexa-card-head">
-      <h2 class="mexa-card-title mexa-card-title-left">Notifications</h2>
-      <span *ngIf="saving" class="mexa-setting-hint">Saving…</span>
-      <span *ngIf="saveNote && !saving" class="set-ok" role="status">{{ saveNote }}</span>
+      <!-- <h2 class="mexa-card-title mexa-card-title-left">Notifications</h2> -->
+      
     </div>
-    <p class="mexa-card-hint set-hint">Choose which notifications reach you.</p>
+    <!-- <p class="mexa-card-hint set-hint">Choose which notifications reach you.</p> -->
 
     <div *ngIf="loading" class="mexa-empty" aria-busy="true" role="status">
       <span class="ui-spinner" aria-hidden="true"></span> Loading preferences…
@@ -48,5 +53,13 @@
     </div>
 
     <p *ngIf="saveErr" class="ui-error" role="alert">{{ saveErr }}</p>
+    <div class="mexa-setting">
+      <div>
+        <p class="mexa-setting-label" id="set-dark">Dark mode</p>
+        <p class="mexa-setting-hint">Applies everywhere and is remembered next time you sign in.</p>
+      </div>
+      <button type="button" role="switch" class="mexa-switch" aria-labelledby="set-dark"
+        [attr.aria-checked]="theme.isDark()" (click)="theme.toggle()"></button>
+    </div>
   </section>
 </div>

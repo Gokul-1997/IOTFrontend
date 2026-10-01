@@ -415,7 +415,7 @@ button.mexa-kpi[aria-pressed="true"] {
 
 /* A card whose table runs edge to edge (list pages) */
 .mexa-card-flush { padding: 0; overflow: hidden; }
-.mexa-card-flush > .mexa-tablewrap { padding: .35rem .6rem .2rem; }
+.mexa-card-flush > .mexa-tablewrap { padding: 1rem; }
 .mexa-card-flush > .mexa-tablebar { padding: .6rem 1rem .8rem; }
 // .mexa-card + .mexa-card { margin-top: 1rem; }
 
@@ -541,7 +541,7 @@ button.mexa-kpi[aria-pressed="true"] {
   padding: .1rem .7rem;
   border-radius: 999px;
   font-size: .78rem;
-  font-weight: 700;
+  font-weight: 400;
   white-space: nowrap;
   border: 1px solid transparent;
 }
@@ -686,7 +686,7 @@ a.mexa-pill { text-decoration: none; }
 @media (prefers-reduced-motion: reduce) { .mexa-switch, .mexa-switch::after { transition: none; } }
 
 /* A settings row: label and hint on the left, a control on the right */
-.mexa-setting { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .8rem 0; border-top: 1px solid var(--mexa-rule); }
+.mexa-setting { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .5rem 0; border-top: 1px solid var(--mexa-rule); }
 .mexa-setting:first-of-type { border-top: 0; }
 .mexa-setting-label { margin: 0; font-size: .9rem; font-weight: 600; color: var(--mexa-ink); }
 .mexa-setting-hint { margin: .1rem 0 0; font-size: .8rem; color: var(--mexa-ink-3); }

@@ -47,11 +47,12 @@
   border-radius: 16px;
   box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.28);
   overflow: hidden;
+  padding: 1rem;
 }
 
 .ui-dialog-sm { max-width: 26rem; padding: 1rem;}
-.ui-dialog-lg { max-width: 44rem; }
-.ui-dialog-xl { max-width: 60rem; }
+.ui-dialog-lg { max-width: 44rem; padding: 1rem; }
+.ui-dialog-xl { max-width: 60rem; padding: 1rem; }
 
 .dark .ui-dialog {
   background: #111;
@@ -86,7 +87,7 @@
   justify-content: space-between;
   gap: 1rem;
   border-bottom: 1px solid #e5e7eb;
-  padding: 1.125rem 1.5rem;
+  padding:0rem 0rem 0.5rem;
 }
 .ui-dialog-footer {
   display: flex;
@@ -94,7 +95,7 @@
   justify-content: flex-end;
   gap: 0.5rem;
   border-top: 1px solid #e5e7eb;
-  padding: 0.875rem 1.5rem;
+  padding: 0.875rem 0rem 0rem;
 }
 .dark .ui-dialog-header { border-bottom-color: #2e2e2e; }
 .dark .ui-dialog-footer { border-top-color: #2e2e2e; }
@@ -105,7 +106,7 @@
 .ui-dialog-body {
   flex: 1 1 auto;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: .5rem 0rem;
 }
 
 @media (max-width: 640px) {
@@ -138,7 +139,7 @@
   height: 2.25rem;
   border-radius: 9px;
   color: #64748b;
-  background: transparent;
+  background: #f0f2ff;
   border: 0;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
@@ -421,7 +422,7 @@ select.ui-input {
 .ui-btn-sm { padding: 0.4375rem 0.8125rem; font-size: 0.8125rem; min-height: 2.25rem; }
 /* Row actions in tables: quiet until they matter. A row of solid green,
    orange and red buttons on every line shouted louder than the data. */
-.ui-btn-xs { padding: 0.25rem 0.625rem; font-size: 0.78rem; min-height: 1.875rem; border-radius: 8px; }
+.ui-btn-xs { padding: 0.25rem 0.625rem; font-size: 0.78rem; min-height: 1.875rem; border-radius: 8px; font-weight: 500;}
 .ui-btn-danger-ghost { color: #b42334; background: #fff; border-color: #f0c2c8; }
 .ui-btn-danger-ghost:hover:not(:disabled) { background: #fdeaec; }
 .ui-btn-danger-ghost:focus-visible { outline-color: #b42334; }

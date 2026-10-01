@@ -1,30 +1,57 @@
 <div class="mexa-titlebar">
-  <div>
+  <div class="flex gap-2 items-center">
     <h1 class="mexa-title">My Profile</h1>
-    <p class="mexa-subtitle">Your account details and security</p>
+    <p class="mexa-subtitle">( Your account details and security )</p>
   </div>
 </div>
 
-<div>
+<div *ngIf="!loading && !errorMsg && profile">
 
-  <!-- ── loading ── -->
-  <div *ngIf="loading" class="mexa-card mexa-empty" aria-busy="true" role="status">
-    <span class="ui-spinner" aria-hidden="true"></span> Loading profile…
-  </div>
+  <!-- Profile Tabs -->
+  <div class="ui-tabs ui-tabs-center" role="tablist" uiTabs aria-label="Profile sections">
 
-  <!-- ── error ── -->
-  <div *ngIf="!loading && errorMsg" class="mexa-card" role="alert">
-    <div class="ui-alert ui-alert-error">{{ errorMsg }}</div>
-    <button type="button" (click)="load()" class="ui-btn ui-btn-ghost ui-btn-sm prof-retry">Try again</button>
-  </div>
+  <button
+    type="button"
+    role="tab"
+    class="ui-tab"
+    [class.is-active]="activeTab === 'account'"
+    [attr.aria-selected]="activeTab === 'account'"
+    (click)="activeTab = 'account'">
+    Account Details
+  </button>
 
-  <div *ngIf="!loading && !errorMsg && profile" class="prof-grid">
+  <button
+    type="button"
+    role="tab"
+    class="ui-tab"
+    [class.is-active]="activeTab === 'password'"
+    [attr.aria-selected]="activeTab === 'password'"
+    (click)="activeTab = 'password'">
+    Change Password
+  </button>
 
-    <!-- ══════════ ACCOUNT DETAILS ══════════ -->
-    <section class="mexa-card prof-card">
+  <button
+    type="button"
+    role="tab"
+    class="ui-tab"
+    [class.is-active]="activeTab === 'security'"
+    [attr.aria-selected]="activeTab === 'security'"
+    (click)="activeTab = 'security'">
+    Security
+  </button>
+
+</div>
+
+
+  <!-- Account Details -->
+  <section
+    *ngIf="activeTab === 'account'"
+    class="mexa-card prof-card w-1/2 mx-auto p-8">
+<!-- ══════════ ACCOUNT DETAILS ══════════ -->
+    <section class="prof-card">
       <div class="mexa-card-head">
-        <h2 class="mexa-card-title mexa-card-title-left">Account details</h2>
-        <button type="button" *ngIf="!editing" (click)="startEdit()" class="ui-btn ui-btn-ghost ui-btn-xs">Edit</button>
+        <h2 class="mexa-card-title mexa-card-title-left"></h2>
+        
       </div>
 
       <!-- view mode -->
@@ -69,12 +96,20 @@
 
       <p *ngIf="saveNote && !editing" class="prof-ok" role="status">{{ saveNote }}</p>
     </section>
+    <div class="text-right">
+<button type="button" *ngIf="!editing" (click)="startEdit()" class="ui-btn ui-btn-primary ui-btn-xs mt-4">Edit</button>
+  </div>
+</section>
 
-    <div class="prof-stack">
-    <!-- ══════════ CHANGE PASSWORD ══════════ -->
-    <section class="mexa-card prof-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Change password</h2>
-      <form (ngSubmit)="changePassword()" class="prof-form">
+
+  <!-- Change Password -->
+  <section
+    *ngIf="activeTab === 'password'"
+    class="mexa-card prof-card w-1/2 mx-auto">
+<!-- ══════════ CHANGE PASSWORD ══════════ -->
+    <section class="prof-card p-8">
+      <h2 class="mexa-card-title mexa-card-title-left"></h2>
+      <form (ngSubmit)="changePassword()" class="prof-form mx-auto">
         <div>
           <label for="pwCurrent" class="ui-label">Current password</label>
           <input id="pwCurrent" type="password" name="current" required autocomplete="current-password"
@@ -103,14 +138,47 @@
       </form>
     </section>
 
-    <!-- ══════════ SECURITY ══════════ -->
-    <section class="mexa-card prof-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Two-factor authentication</h2>
+  </section>
+
+
+  <!-- Security -->
+  <section
+    *ngIf="activeTab === 'security'"
+    class="mexa-card prof-card w-1/2 mx-auto">
+<!-- ══════════ SECURITY ══════════ -->
+    <section class="prof-card text-center p-8">
+      <h2 class="mexa-card-title mexa-card-title-left"></h2>
       <p class="mexa-card-hint prof-hint">Add an extra layer of security to your account.</p>
-      <a routerLink="/security/2fa" class="ui-btn ui-btn-ghost">
+      <a routerLink="/security/2fa" class="ui-btn ui-btn-primary">
         Manage 2FA →
       </a>
     </section>
+
+  </section>
+
+</div>
+
+<div>
+
+  <!-- ── loading ── -->
+  <div *ngIf="loading" class="mexa-card mexa-empty" aria-busy="true" role="status">
+    <span class="ui-spinner" aria-hidden="true"></span> Loading profile…
+  </div>
+
+  <!-- ── error ── -->
+  <div *ngIf="!loading && errorMsg" class="mexa-card" role="alert">
+    <div class="ui-alert ui-alert-error">{{ errorMsg }}</div>
+    <button type="button" (click)="load()" class="ui-btn ui-btn-ghost ui-btn-sm prof-retry">Try again</button>
+  </div>
+
+  <div *ngIf="!loading && !errorMsg && profile" class="prof-grid">
+
+    
+
+    <div class="prof-stack">
+    
+
+    
     </div>
   </div>
 </div>

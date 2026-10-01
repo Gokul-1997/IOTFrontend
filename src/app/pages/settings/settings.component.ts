@@ -25,7 +25,7 @@ interface PrefRow { key: string; label: string; hint: string; pages?: string[]; 
     .set-grid .mexa-card + .mexa-card { margin-top: 0; }
     .set-hint { margin: -.4rem 0 .5rem; }
     .set-text { min-width: 0; }
-    .set-ok { font-size: .8rem; color: #15803d; }
+    .set-ok { font-size: .8rem; color: #ffffff; }
     :host-context(.dark) .set-ok { color: #6fdba0; }
     .set-retry { background: none; border: 0; padding: 0; font: inherit; text-decoration: underline; color: inherit; cursor: pointer; }
   `]

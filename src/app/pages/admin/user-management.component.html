@@ -1,8 +1,8 @@
 <div>
   <div class="mexa-titlebar">
-    <div>
+    <div class="flex gap-2 items-center">
         <h1 class="mexa-title">{{ auth.isSntSuper() ? 'Company Admins' : 'User Management' }}</h1>
-        <p class="mexa-subtitle" *ngIf="!auth.isSntSuper()">Create your company's users and give each one a role</p>
+        <p class="mexa-subtitle" *ngIf="!auth.isSntSuper()">( Create your company's users and give each one a role )</p>
         <!-- S&T sees one admin per company, the one made with the company.
              Anyone else, a second full-access admin included, the company adds. -->
         <p class="mexa-subtitle" *ngIf="auth.isSntSuper()">One admin per company, created with the company. The admin adds everyone else, including anyone else who needs full access.</p>
