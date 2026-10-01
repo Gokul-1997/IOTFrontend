@@ -14,6 +14,9 @@
 // every Phase 2 dashboard shares.
 @use './styles/mexa';
 @use './styles/responsive';
+// Shared UX layer: header, phone menu, breadcrumb, filters on phones,
+// touch targets, focus, dialogs and empty/error states.
+@use './styles/ux';
 // Ubuntu is the STM MEXA face (the design PDF uses it throughout). Libre
 // Franklin, Questrial and Nunito Sans were loaded here too and used nowhere.
 @import url('https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap');
@@ -104,7 +107,7 @@ body::before {
   border-radius: 14px;
 }
 
-.bg-top-bar h2{
+.bg-top-bar h1, .bg-top-bar h2{
   @apply text-xl font-medium text-white
 }
 .bg-top-bar mat-icon{
@@ -551,7 +554,7 @@ h4 {
     color: #fff;
   }
 
-  h2 {
+  h1, h2 {
     margin: 0;
     font-size: 1.4rem;
     font-weight: 700;
@@ -581,9 +584,10 @@ $radius: 10px;
   &:focus-within { border-color: $blue; box-shadow: 0 0 0 3px rgba(59,91,219,0.1); }
   .search-icon { color: #adb5bd; font-size: 20px; width: 20px; height: 20px; }
   .search-input {
-    flex: 1; border: none; outline: none; font-size: 0.875rem;
+    /* the whole 40px box is the target, not a 21px line inside it */
+    flex: 1; align-self: stretch; border: none; outline: none; font-size: 0.875rem;
     background: transparent; color: #212529;
-    &::placeholder { color: #adb5bd; }
+    &::placeholder { color: #6b7280; }   /* #adb5bd was 2.1:1 */
   }
   .clear-btn { width: 28px; height: 28px; mat-icon { font-size: 16px; } }
 }
@@ -1227,7 +1231,7 @@ html.dark {
 }
 
 :host-context(.dark) {
-  .page-title h2 { color: #f1f3f5; }
+  .page-title h1, .page-title h2 { color: #f1f3f5; }
   .search-box { background: #1e2a3a; border-color: #2d3f55; .search-input { color: #f1f3f5; } }
   .table-card { background: #12203a; }
   // .ent-table {
@@ -1281,6 +1285,7 @@ html:not(.dark) [class~="text-slate-500"] { color: #55607a; }
 /* 3. Status text in green / red, and the MEXA ▲▼ deltas (2.3–3.8 → 4.8–5.0). */
 html:not(.dark) :is([class~="text-green-500"], [class~="text-green-600"]) { color: #15803d; }
 html:not(.dark) [class~="text-red-500"] { color: #dc2626; }
+html:not(.dark) [class~="text-emerald-600"] { color: #047857; }   /* 3.8 → 5.5 */
 html:not(.dark) .mexa-delta-up   { color: #15803d; }
 html:not(.dark) .mexa-delta-down { color: #dc2626; }
 

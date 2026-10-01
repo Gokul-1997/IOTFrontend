@@ -82,7 +82,7 @@ test('a role with no master data has no Master menu, and finds 2FA in the accoun
   await expect(page.getByRole('button', { name: 'Master' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Settings', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: /Account menu/ }).click();
-  await expect(page.getByRole('link', { name: 'Security (2FA)' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Security (2-step sign-in)' })).toBeVisible();
 });
 
 /* Reports is one page: each role sees the tabs it holds, and opens on the
@@ -125,7 +125,7 @@ test('Energy: whoever can set the tariff finds it in the top bar and under Maste
   await expect(page.locator('form.mexa-titlebar').getByRole('link', { name: 'Tariff & limits' })).toHaveAttribute('href', '/energy-tariff');
 
   await page.getByRole('button', { name: 'Master' }).click();
-  await page.locator('nav .absolute').getByRole('button', { name: 'Energy Tariff' }).click();
+  await page.locator('.nav-dropdown').getByRole('link', { name: 'Energy Tariff' }).click();
   await expect(page).toHaveURL(/\/energy-tariff$/);
   await expect(page.getByRole('heading', { name: 'Tariff & Limits' })).toBeVisible();
   await expect(page.getByLabel('Cost per kWh')).toBeVisible();

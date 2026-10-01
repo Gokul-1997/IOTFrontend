@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { NotificationService } from '../../core/services/notification.service';
@@ -8,48 +8,56 @@ import { NotificationService } from '../../core/services/notification.service';
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="relative">
-      <button type="button" (click)="togglePanel()" aria-label="Notifications" aria-haspopup="dialog"
-              class="relative p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-blue-600 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2b3990]">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.437L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-        </svg>
-        <span *ngIf="(notifService.unreadCount$ | async) as count"
-          class="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
-          {{ count > 99 ? '99+' : count }}
-        </span>
-      </button>
+    <div class="relative" (keydown.escape)="open && close(true)">
+      <ng-container *ngIf="{ n: (notifService.unreadCount$ | async) || 0 } as unread">
+        <button #bellBtn type="button" (click)="togglePanel()" class="hdr-icon-btn relative"
+                [attr.aria-expanded]="open" aria-controls="notif-panel"
+                [attr.aria-label]="unread.n ? 'Notifications, ' + unread.n + ' unread' : 'Notifications'">
+          <span class="material-icons" aria-hidden="true">{{ unread.n ? 'notifications_active' : 'notifications_none' }}</span>
+          <span *ngIf="unread.n" aria-hidden="true"
+            class="absolute -top-1 -right-1 flex items-center justify-center min-w-5 h-5 px-1 text-xs font-bold text-white bg-red-600 rounded-full">
+            {{ unread.n > 99 ? '99+' : unread.n }}
+          </span>
+        </button>
+      </ng-container>
 
-      <div *ngIf="open" class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-50">
-        <div class="flex items-center justify-between p-4 border-b">
+      <!-- a sheet across the top on a phone, a dropdown from the bell on wider screens -->
+      <div *ngIf="open" id="notif-panel" role="region" aria-label="Notifications"
+        class="fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:w-80
+               bg-white rounded-xl shadow-2xl border border-gray-100 z-50">
+        <div class="flex items-center justify-between gap-2 p-4 border-b">
           <h3 class="font-semibold text-gray-800">Notifications</h3>
-          <button (click)="markAllRead()" class="text-xs text-blue-600 hover:underline">Mark all read</button>
+          <button type="button" (click)="markAllRead()" class="ui-btn ui-btn-ghost ui-btn-sm">Mark all read</button>
         </div>
         <div class="max-h-80 overflow-y-auto divide-y divide-gray-50">
           <ng-container *ngIf="notifications.length > 0; else noNotifs">
-            <div *ngFor="let n of notifications"
-              class="flex items-start gap-3 p-3 cursor-pointer transition-colors"
+            <!-- each one is a button: Enter or a tap marks it read -->
+            <button type="button" *ngFor="let n of notifications"
+              class="w-full text-left flex items-start gap-3 p-3 transition-colors hover:bg-gray-50"
               [class.bg-blue-50]="!n.is_read"
               (click)="onRead(n)">
-              <div class="flex-shrink-0 mt-1">
-                <div *ngIf="n.type === 'ALARM'" class="w-2 h-2 rounded-full bg-red-500"></div>
-                <div *ngIf="n.type === 'WARNING'" class="w-2 h-2 rounded-full bg-yellow-500"></div>
-                <div *ngIf="n.type !== 'ALARM' && n.type !== 'WARNING'" class="w-2 h-2 rounded-full bg-blue-500"></div>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-800 truncate">{{ n.title }}</p>
-                <p class="text-xs text-gray-500 mt-0.5">{{ n.message }}</p>
-                <p class="text-xs text-gray-400 mt-1">{{ n.created_at | date:'short' }}</p>
-              </div>
-            </div>
+              <span class="material-icons text-[20px] flex-shrink-0 mt-0.5" aria-hidden="true"
+                [ngClass]="n.type === 'ALARM' ? 'text-red-600' : n.type === 'WARNING' ? 'text-amber-700' : 'text-blue-700'">
+                {{ n.type === 'ALARM' ? 'error' : n.type === 'WARNING' ? 'warning_amber' : 'info' }}
+              </span>
+              <span class="flex-1 min-w-0">
+                <span class="sr-only">{{ n.type === 'ALARM' ? 'Alarm' : n.type === 'WARNING' ? 'Warning' : 'Information' }}{{ n.is_read ? '' : ', unread' }}: </span>
+                <span class="block text-sm font-medium text-gray-800 truncate">{{ n.title }}</span>
+                <span class="block text-xs text-gray-600 mt-0.5">{{ n.message }}</span>
+                <span class="block text-xs text-gray-600 mt-1">{{ n.created_at | date:'d MMM, h:mm a' }}</span>
+              </span>
+              <span *ngIf="!n.is_read" class="w-2 h-2 mt-2 rounded-full bg-blue-600 flex-shrink-0" aria-hidden="true"></span>
+            </button>
           </ng-container>
           <ng-template #noNotifs>
-            <div class="p-6 text-center text-gray-400 text-sm">No notifications</div>
+            <div class="p-6 text-center text-gray-600 text-sm">
+              <span class="material-icons block text-[28px] text-gray-400 mb-1" aria-hidden="true">notifications_none</span>
+              No notifications yet. Alarms and warnings from your machines will show here.
+            </div>
           </ng-template>
         </div>
         <div class="p-3 border-t text-center">
-          <a routerLink="/notifications" class="text-xs text-blue-600 hover:underline" (click)="open=false">View all</a>
+          <a routerLink="/notifications" class="text-sm font-medium text-blue-700 hover:underline" (click)="open=false">View all notifications</a>
         </div>
       </div>
     </div>
@@ -59,7 +67,20 @@ export class NotificationBellComponent implements OnInit {
   open = false;
   notifications: any[] = [];
 
-  constructor(public notifService: NotificationService) {}
+  @ViewChild('bellBtn') bellBtn?: ElementRef<HTMLButtonElement>;
+
+  constructor(public notifService: NotificationService, private host: ElementRef<HTMLElement>) {}
+
+  /** A click anywhere else closes the panel. */
+  @HostListener('document:click', ['$event'])
+  onDocClick(ev: MouseEvent): void {
+    if (this.open && !this.host.nativeElement.contains(ev.target as Node)) this.open = false;
+  }
+
+  close(returnFocus: boolean): void {
+    this.open = false;
+    if (returnFocus) this.bellBtn?.nativeElement.focus();
+  }
 
   ngOnInit() { this.load(); }
 

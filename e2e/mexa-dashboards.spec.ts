@@ -407,9 +407,9 @@ test('Reports holds every report as a tab, and Analytics has one Reports entry',
   await expect(tabs).toHaveText([/Production/, /OEE Hourly/, /Shift OEE/, /OEE Records/, /Machine OEE/]);
 
   await page.getByRole('button', { name: 'Analytics' }).first().click();
-  const menu = page.locator('nav .absolute');
-  await expect(menu.getByRole('button', { name: 'Reports', exact: true })).toBeVisible();
-  await expect(menu.getByRole('button', { name: 'OEE', exact: true })).toHaveCount(0);
+  const menu = page.locator('.nav-dropdown');
+  await expect(menu.getByRole('link', { name: 'Reports', exact: true })).toBeVisible();
+  await expect(menu.getByRole('link', { name: 'OEE', exact: true })).toHaveCount(0);
 });
 
 test('Periodic Attention Required filters the ticket table', async ({ authedPage: page }) => {

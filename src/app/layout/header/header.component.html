@@ -1,239 +1,153 @@
-<header
-  class="sticky top-0 w-full z-50 py-0 bg-white dark:bg-black  shadow-xl">
+<header class="sticky top-0 w-full z-50 py-0 bg-white dark:bg-black shadow-xl">
 
-  <div class="flex items-center justify-between px-4 xl:px-8 mx-auto header_inner">
+  <div class="px-4 xl:px-8 mx-auto header_inner">
 
-    <!-- LEFT -->
-    <div class="flex items-center gap-4 shrink-0">
-      <img src="/images/logo/STM_Mexa_logo.svg" class="dark:hidden logo_top" alt="STM Mexa" />
-      <img src="/images/logo/STM_Mexa_logo.svg" class="hidden dark:block" alt="STM Mexa" />
-    </div>
+    <!-- LEFT: the logo goes to the first page this person may open -->
+    <a routerLink="/" class="app-brand" aria-label="STM Mexa, home">
+      <img src="/images/logo/STM_Mexa_logo.svg" class="logo_top" alt="STM Mexa" />
+    </a>
 
-    <!-- DESKTOP MENU -->
-    <nav class="nav-scroll hidden xl:flex items-center gap-1 min-w-0 flex-1 justify-center">
+    <!-- DESKTOP MENU (1280px and wider) -->
+    <nav class="nav-scroll hidden xl:flex items-center gap-1 min-w-0 flex-1 justify-center" aria-label="Main">
+      <ng-container *ngFor="let menu of menus; let i = index">
 
-      <ng-container *ngFor="let menu of menus">
-
-        <!-- NORMAL MENU -->
-        <button
-          *ngIf="!menu.children"
-          (click)="navigate(menu)"
-          class="nav-btn flex items-center gap-1"
-          [class.active]="isActive(menu.path)">
-          <app-icon [name]="menu.icon" [size]="20" class="text-white dark:text-white"></app-icon>
+        <!-- a page -->
+        <a *ngIf="!menu.children" [routerLink]="menu.path" (click)="closeMenu()"
+           class="nav-btn" [class.active]="isActive(menu.path)"
+           [attr.aria-current]="isActive(menu.path) ? 'page' : null">
+          <span class="material-icons" aria-hidden="true">{{ menu.icon }}</span>
           {{ menu.label }}
-        </button>
+        </a>
 
-        <!-- MASTER MENU -->
+        <!-- a group of pages -->
         <div *ngIf="menu.children" class="relative">
-
-          <button
-            (click)="toggleMenu(menu.label)"
-            class="nav-btn flex items-center gap-1"
-            [class.active]="isChildActive(menu.children)">
-            <app-icon [name]="menu.icon" [size]="20" class="text-white dark:text-white"></app-icon>
+          <button type="button" (click)="toggleMenu(menu.label)" #groupBtn
+                  class="nav-btn" [class.active]="isChildActive(menu.children)"
+                  aria-haspopup="true" [attr.aria-expanded]="openMenu === menu.label"
+                  [attr.aria-controls]="'nav-group-' + i">
+            <span class="material-icons" aria-hidden="true">{{ menu.icon }}</span>
             {{ menu.label }}
-
-            <svg class="w-3 h-3 transition-transform"
-                 [class.rotate-180]="openMenu === menu.label"
-                 viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd"
-                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.7a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"/>
-            </svg>
+            <span class="material-icons nav-chevron" aria-hidden="true">expand_more</span>
           </button>
 
-          <!-- DESKTOP DROPDOWN -->
-          <div *ngIf="openMenu === menu.label"
-               class="absolute mt-2 bg-white dark:bg-[#111] shadow-lg rounded-lg p-2 w-48 z-[999]">
-
-            <button
-              *ngFor="let child of menu.children"
-              (click)="navigate(child); closeMenu()"
-              class="block w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-              [class.active]="isActive(child.path)">
+          <div *ngIf="openMenu === menu.label" [id]="'nav-group-' + i" class="nav-dropdown"
+               (keydown.escape)="closeMenu(); groupBtn.focus()">
+            <a *ngFor="let child of menu.children" [routerLink]="child.path" (click)="closeMenu()"
+               class="nav-dd-item" [class.active]="isActive(child.path)"
+               [attr.aria-current]="isActive(child.path) ? 'page' : null">
+              <span class="material-icons" aria-hidden="true">{{ child.icon }}</span>
               {{ child.label }}
-            </button>
+            </a>
           </div>
         </div>
 
       </ng-container>
     </nav>
 
-    <!-- RIGHT SECTION -->
+    <!-- RIGHT -->
     <div class="flex items-center gap-1 shrink-0">
 
-      <!-- THEME TOGGLE -->
-      <button (click)="toggleTheme()" type="button"
+      <button (click)="toggleTheme()" type="button" class="hdr-icon-btn is-brand"
               [attr.aria-pressed]="theme.isDark()"
               [attr.aria-label]="theme.isDark() ? 'Switch to light theme' : 'Switch to dark theme'"
-              class="p-2 rounded-full bg-[#2b3990] dark:bg-[#111111]">
-        <app-icon
-          [name]="theme.isDark() ? 'sun' : 'moon'"
-          [size]="20"
-          class="text-white dark:text-white">
-        </app-icon>
+              [title]="theme.isDark() ? 'Light theme' : 'Dark theme'">
+        <span class="material-icons" aria-hidden="true">{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</span>
       </button>
 
-      <!-- NOTIFICATION BELL — S&T belongs to no company and is sent none -->
+      <!-- S&T belongs to no company and is sent no notifications -->
       <app-notification-bell *ngIf="!isSntSuper"></app-notification-bell>
 
-      <!-- USER DROPDOWN -->
+      <!-- ACCOUNT (desktop) -->
       <div class="user-menu-wrap hidden xl:block relative">
-        <button (click)="toggleUserMenu()" type="button" aria-haspopup="menu" [attr.aria-expanded]="showUserMenu"
-          [attr.aria-label]="'Account menu for ' + userName"
+        <button (click)="toggleUserMenu()" type="button" aria-haspopup="true" [attr.aria-expanded]="showUserMenu"
+          aria-controls="account-menu" [attr.aria-label]="'Account menu for ' + userName" #acctBtn
           class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-          <div class="h-9 w-9 rounded-full bg-[#2b3990] flex items-center justify-center text-white font-semibold text-sm">
+          <span class="h-9 w-9 rounded-full bg-[#2b3990] flex items-center justify-center text-white font-semibold text-sm" aria-hidden="true">
             {{ userName.charAt(0).toUpperCase() }}
-          </div>
-          <div class="text-left">
-            <p class="text-sm font-medium dark:text-white leading-none">{{ userName }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 leading-none mt-0.5">{{ userRole }}</p>
-          </div>
-          <svg class="w-4 h-4 text-gray-400 transition-transform" [class.rotate-180]="showUserMenu"
-            viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd"
-              d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.7a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"/>
-          </svg>
+          </span>
+          <span class="text-left">
+            <span class="block text-sm font-medium dark:text-white leading-none">{{ userName }}</span>
+            <span class="block text-xs text-gray-600 dark:text-gray-400 leading-none mt-0.5">{{ userRole }}</span>
+          </span>
+          <span class="material-icons nav-chevron text-gray-500" [style.transform]="showUserMenu ? 'rotate(180deg)' : null" aria-hidden="true">expand_more</span>
         </button>
 
-        <!-- Dropdown -->
-        <div *ngIf="showUserMenu"
-          class="absolute right-0 mt-2 w-52 bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-2 z-50">
+        <div *ngIf="showUserMenu" id="account-menu" (keydown.escape)="closeUserMenu(); acctBtn.focus()"
+          class="absolute right-0 mt-2 w-60 bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-2 z-50">
           <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
             <p class="text-sm font-semibold text-gray-800 dark:text-white">{{ userName }}</p>
-            <!-- <span class="text-xs px-1.5 py-0.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 rounded font-medium">{{ userRole }}</span> -->
-            <p *ngIf="userEmail" class="text-xs text-gray-500 dark:text-gray-400 truncate mt-1">{{ userEmail }}</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400">{{ userRole }}</p>
+            <p *ngIf="userEmail" class="text-xs text-gray-600 dark:text-gray-400 truncate mt-1">{{ userEmail }}</p>
           </div>
-          <!-- Before this the dropdown held only a name, an email and Sign
-               Out — no route to a user's own profile or settings existed
-               anywhere in the app. -->
-          <a routerLink="/profile" (click)="closeUserMenu()"
-            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
-            </svg>
-            My Profile
+          <a routerLink="/profile" (click)="closeUserMenu()" class="acct-item">
+            <span class="material-icons" aria-hidden="true">person_outline</span> My Profile
           </a>
-          <!-- Settings holds notification choices; S&T gets no notifications,
-               and the theme switch is in the header already -->
-          <a *ngIf="!isSntSuper" routerLink="/settings" (click)="closeUserMenu()"
-            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.751.43.992l1.005.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
-            Settings
+          <!-- Settings holds notification choices; S&T gets no notifications -->
+          <a *ngIf="!isSntSuper" routerLink="/settings" (click)="closeUserMenu()" class="acct-item">
+            <span class="material-icons" aria-hidden="true">settings</span> Settings
           </a>
-          <a routerLink="/security/2fa" (click)="closeUserMenu()"
-            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
-            </svg>
-            Security (2FA)
+          <a *ngIf="!isSntSuper" routerLink="/notifications" (click)="closeUserMenu()" class="acct-item">
+            <span class="material-icons" aria-hidden="true">notifications_none</span> Notifications
           </a>
-          <a *ngIf="!isSntSuper" routerLink="/notifications" (click)="closeUserMenu()"
-            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
-            </svg>
-            Notifications
+          <a routerLink="/security/2fa" (click)="closeUserMenu()" class="acct-item">
+            <span class="material-icons" aria-hidden="true">lock_outline</span> Security (2-step sign-in)
           </a>
           <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
-          <button (click)="logout()"
-            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#2b3990] hover:bg-red-50 dark:hover:bg-red-900/20 transition">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/>
-            </svg>
-            Sign Out
+          <button type="button" (click)="logout()" class="acct-item is-danger">
+            <span class="material-icons" aria-hidden="true">logout</span> Sign Out
           </button>
         </div>
       </div>
 
-      <!-- HAMBURGER  -->
-      <button type="button"
-        class="xl:hidden p-2 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2b3990]"
-        [attr.aria-label]="isMobileMenuOpen ? 'Close menu' : 'Open menu'" [attr.aria-expanded]="isMobileMenuOpen"
+      <!-- MENU BUTTON (below 1280px) -->
+      <button type="button" class="xl:hidden hdr-icon-btn" #menuBtn
+        aria-controls="mobile-menu" [attr.aria-expanded]="isMobileMenuOpen"
+        [attr.aria-label]="isMobileMenuOpen ? 'Close menu' : 'Open menu'"
         (click)="toggleMobileMenu()">
-
-        <svg *ngIf="!isMobileMenuOpen"
-             class="w-6 h-6 text-black dark:text-white"
-             fill="none"
-             stroke="currentColor"
-             viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-
-        <svg *ngIf="isMobileMenuOpen"
-             class="w-6 h-6 text-black dark:text-white"
-             fill="none"
-             stroke="currentColor"
-             viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M6 18L18 6M6 6l12 12" />
-        </svg>
-
+        <span class="material-icons" aria-hidden="true">{{ isMobileMenuOpen ? 'close' : 'menu' }}</span>
       </button>
 
     </div>
   </div>
 
-  <!-- MOBILE MENU -->
-  <div *ngIf="isMobileMenuOpen"
-       class="xl:hidden bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 px-4 py-4 space-y-3">
+  <!-- PHONE AND TABLET MENU -->
+  <nav *ngIf="isMobileMenuOpen" id="mobile-menu" class="xl:hidden mobile-menu" aria-label="Main"
+       (keydown.escape)="toggleMobileMenu(); menuBtn.focus()">
 
-    <ng-container *ngFor="let menu of menus">
-
-      <!-- NORMAL MENU -->
-      <button
-        *ngIf="!menu.children"
-        (click)="navigate(menu); toggleMobileMenu()"
-        class="block w-full text-left py-2 dark:text-white">
-        {{ menu.label }}
-      </button>
-
-      <!-- MASTER MENU -->
-      <div *ngIf="menu.children" class="space-y-2">
-
-        <div class="font-medium dark:text-white">
-          {{ menu.label }}
-        </div>
-
-        <button
-          *ngFor="let child of menu.children"
-          (click)="navigate(child); toggleMobileMenu()"
-          class="block w-full text-left pl-4 py-1 text-sm text-gray-600 dark:text-gray-300">
-          {{ child.label }}
-        </button>
-
+    <div class="mobile-menu-groups">
+      <div class="mm-section" *ngFor="let sec of phoneSections" role="group" [attr.aria-label]="sec.label">
+        <p class="mm-group" aria-hidden="true"><span class="material-icons">{{ sec.icon }}</span>{{ sec.label }}</p>
+        <a *ngFor="let item of sec.items" [routerLink]="item.path" (click)="toggleMobileMenu()"
+           class="mm-item" [class.active]="isActive(item.path)" [attr.aria-current]="isActive(item.path) ? 'page' : null">
+          <span class="material-icons" aria-hidden="true">{{ item.icon }}</span>
+          <span class="mm-text"><span class="mm-label">{{ item.label }}</span><span class="mm-hint" *ngIf="item.hint">{{ item.hint }}</span></span>
+        </a>
       </div>
-
-    </ng-container>
-
-    <!-- Mobile account links: the account dropdown is desktop-only, so
-         without these a phone had no way to Profile, Settings, Notifications
-         or Security. -->
-    <nav class="border-t border-gray-200 dark:border-gray-700 pt-3 mt-1 grid gap-1" aria-label="Account">
-      <p class="text-xs text-gray-500 dark:text-gray-400">{{ userName }} · {{ userRole }}</p>
-      <a routerLink="/profile" (click)="toggleMobileMenu()" class="py-2 text-sm text-gray-700 dark:text-gray-200">My Profile</a>
-      <a *ngIf="!isSntSuper" routerLink="/settings" (click)="toggleMobileMenu()" class="py-2 text-sm text-gray-700 dark:text-gray-200">Settings</a>
-      <a *ngIf="!isSntSuper" routerLink="/notifications" (click)="toggleMobileMenu()" class="py-2 text-sm text-gray-700 dark:text-gray-200">Notifications</a>
-      <a routerLink="/security/2fa" (click)="toggleMobileMenu()" class="py-2 text-sm text-gray-700 dark:text-gray-200">Security (2FA)</a>
-    </nav>
-
-    <!-- Mobile Logout -->
-    <div class="border-t border-gray-200 dark:border-gray-700 pt-3 mt-1">
-      <button type="button" (click)="logout()"
-        class="w-full flex items-center gap-3 py-2 text-sm text-red-600">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/>
-        </svg>
-        Sign Out
-      </button>
     </div>
 
-  </div>
-
+    <!-- account: the account dropdown is desktop-only -->
+    <div class="mm-section mm-account" role="group" aria-label="Account">
+      <p class="mm-who">{{ userName }} · {{ userRole }}</p>
+      <a *ngIf="adminItem" [routerLink]="adminItem.path" (click)="toggleMobileMenu()" class="mm-item"
+         [class.active]="isActive('/admin')" [attr.aria-current]="isActive('/admin') ? 'page' : null">
+        <span class="material-icons" aria-hidden="true">{{ adminItem.icon }}</span>
+        <span class="mm-text"><span class="mm-label">Admin</span><span class="mm-hint">Users, roles and access</span></span>
+      </a>
+      <a routerLink="/profile" (click)="toggleMobileMenu()" class="mm-item">
+        <span class="material-icons" aria-hidden="true">person_outline</span><span class="mm-label">My Profile</span>
+      </a>
+      <a *ngIf="!isSntSuper" routerLink="/settings" (click)="toggleMobileMenu()" class="mm-item">
+        <span class="material-icons" aria-hidden="true">settings</span><span class="mm-label">Settings</span>
+      </a>
+      <a *ngIf="!isSntSuper" routerLink="/notifications" (click)="toggleMobileMenu()" class="mm-item">
+        <span class="material-icons" aria-hidden="true">notifications_none</span><span class="mm-label">Notifications</span>
+      </a>
+      <a routerLink="/security/2fa" (click)="toggleMobileMenu()" class="mm-item">
+        <span class="material-icons" aria-hidden="true">lock_outline</span><span class="mm-label">Security (2-step sign-in)</span>
+      </a>
+      <button type="button" (click)="logout()" class="mm-item is-danger">
+        <span class="material-icons" aria-hidden="true">logout</span><span class="mm-label">Sign Out</span>
+      </button>
+    </div>
+  </nav>
 </header>

@@ -26,7 +26,8 @@ async function mockApi(page: any) {
 
 async function openDashboardsMenu(page: any) {
   await page.getByRole('button', { name: 'Dashboards' }).first().click();
-  return page.locator('nav .absolute');
+  // the open group; its entries are links, as they go to pages
+  return page.locator('.nav-dropdown');
 }
 
 test('menu offers only the dashboards the company was granted', async ({ page }) => {
@@ -40,13 +41,13 @@ test('menu offers only the dashboards the company was granted', async ({ page })
   await page.goto('/oee-dashboard');
 
   const menu = await openDashboardsMenu(page);
-  await expect(menu.getByRole('button', { name: 'OEE' })).toBeVisible();
-  await expect(menu.getByRole('button', { name: 'Alarms' })).toBeVisible();
+  await expect(menu.getByRole('link', { name: 'OEE' })).toBeVisible();
+  await expect(menu.getByRole('link', { name: 'Alarms' })).toBeVisible();
 
   // every other dashboard is gone — including Live, which is a different grant
   for (const label of ['Live Dashboard', 'Factory Overall', 'Maintenance', 'Preventive',
                        'Periodic', 'Downtime', 'Operators', 'Energy']) {
-    await expect(menu.getByRole('button', { name: label, exact: true }), `${label} must be hidden`).toHaveCount(0);
+    await expect(menu.getByRole('link', { name: label, exact: true }), `${label} must be hidden`).toHaveCount(0);
   }
   await page.screenshot({ path: 'mexa-dashboard-menu-restricted.png' });
 });
@@ -92,7 +93,7 @@ test('a company with no grants at all is unrestricted, as before', async ({ page
   await page.goto('/oee-dashboard');
   const menu = await openDashboardsMenu(page);
   for (const label of ['Live Dashboard', 'Factory Overall', 'Operators', 'Energy']) {
-    await expect(menu.getByRole('button', { name: label, exact: true })).toBeVisible();
+    await expect(menu.getByRole('link', { name: label, exact: true })).toBeVisible();
   }
 });
 

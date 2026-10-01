@@ -14,7 +14,8 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
   template: `
-    <nav class="ui-tabs ui-tabs-center" role="tablist" uiTabs aria-label="Admin sections">
+    <!-- page links, not tabs: each opens its own page, the current one has aria-current -->
+    <nav class="ui-tabs ui-tabs-center" aria-label="Admin sections">
 
   <a *ngIf="auth.isSntSuper()"
      class="ui-tab"

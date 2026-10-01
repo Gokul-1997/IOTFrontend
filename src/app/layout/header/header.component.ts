@@ -1,8 +1,8 @@
 import { Component, HostListener, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { IconComponent } from '../../shared/icon/icon';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { Subscription, filter } from 'rxjs';
+import { NAV_MENUS, NavItem, pathMatches } from '../nav-menu';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
@@ -10,7 +10,7 @@ import { NotificationBellComponent } from '../../shared/notification-bell/notifi
 @Component({
   standalone: true,
   selector: 'app-header',
-  imports: [CommonModule, RouterModule, IconComponent, NotificationBellComponent],
+  imports: [CommonModule, RouterModule, NotificationBellComponent],
   templateUrl: './header.component.html',
 })
 export class HeaderComponent implements OnInit, OnDestroy {
@@ -28,68 +28,16 @@ export class HeaderComponent implements OnInit, OnDestroy {
   isAdmin = false;
   isSntSuper = false;
 
-  // All menus with permission keys for filtering
-  /*
-   * Grouped deliberately. This was a flat list of fourteen top-level items,
-   * which no longer fitted the header: seven of them — Settings and Admin
-   * among them — sat outside the visible area with no scrollbar to hint at
-   * it, so they simply looked missing.
-   *
-   * Four dashboards and four analytics pages are the natural groups, and
-   * both sets already share a permission, so grouping costs nothing in
-   * access control and takes the bar from fourteen items to eight.
-   */
-  allMenus: any[] = [
-    {
-      label: 'Dashboards', icon: 'dashnew',
-      children: [
-        { label: 'Live Dashboard', path: '/dashboard', permission: 'page:dashboard' },
-        { label: 'Factory Overall', path: '/factory', permission: 'page:analytics-factory' },
-        { label: 'Maintenance', path: '/maintenance-dashboard', permission: 'page:analytics-maintenance' },
-        { label: 'Preventive', path: '/preventive-maintenance', permission: 'page:analytics-preventive' },
-        { label: 'Periodic', path: '/periodic-maintenance', permission: 'page:analytics-periodic' },
-        { label: 'Alarms', path: '/alarm-report', permission: 'page:analytics-alarms' },
-        { label: 'Downtime', path: '/downtime-analysis', permission: 'page:analytics-downtime' },
-        { label: 'Operators', path: '/operator-performance', permission: 'page:analytics-operators' },
-        { label: 'OEE', path: '/oee-dashboard', permission: 'page:analytics-oee' },
-        { label: 'Energy', path: '/energy-dashboard', permission: 'page:analytics-energy' }
-      ]
-    },
-    {
-      label: 'Analytics', icon: 'donutnew',
-      children: [
-        // one Reports page holds every report, the OEE ones included
-        { label: 'Reports', path: '/reports', permission: ['page:reports', 'page:oee-reports'] },
-        { label: 'Charts', path: '/charts', permission: 'page:charts' },
-        { label: 'Quality', path: '/quality', permission: 'page:quality' },
-        { label: 'Maintenance Report', path: '/maintenance-report', permission: 'page:maintenance-report' }
-      ]
-    },
-    { label: 'Alarms', path: '/alarms', icon: 'alerts', permission: 'page:alarms' },
-    { label: 'Downtime', path: '/downtime', icon: 'downtime', permission: 'page:downtime' },
-    { label: 'Maintenance', path: '/maintenance', icon: 'maintenance', permission: 'page:maintenance' },
-    {
-      /* "Master", as the design names it: the company's setup data. It was
-         labelled "Settings", the same word as a person's own Settings page. */
-      label: 'Master', icon: 'gearnew',
-      children: [
-        { label: 'Machines', path: '/machines', permission: 'page:machines' },
-        { label: 'Program Transfer', path: '/programs', permission: 'page:programs' },
-        { label: 'Component', path: '/component', permission: 'page:component' },
-        { label: 'Job', path: '/job', permission: 'page:job' },
-        { label: 'Lines', path: '/lines', permission: 'page:lines' },
-        { label: 'Shifts', path: '/shifts', permission: 'page:shifts' },
-        { label: 'Operators', path: '/operators', permission: 'page:operators' },
-        // Tariff & limits, moved off the Energy Dashboard into its own page
-        { label: 'Energy Tariff', path: '/energy-tariff', permission: 'page:analytics-energy:settings' }
-        /* 2FA Security moved to the account menu: it is about the person, and
-           with no permission it made this menu appear for every role. */
-      ]
-    },
-    { label: 'Admin', path: '/admin/users', icon: 'shield', adminOnly: true } 
-  ];
+  /** The menu, shared with the breadcrumb (layout/nav-menu.ts). */
+  allMenus: NavItem[] = NAV_MENUS.map(m => ({ ...m, children: m.children?.map(c => ({ ...c })) }));
 
-  menus: any[] = [];
+  menus: NavItem[] = [];
+  /** The phone menu in the desktop bar's order: each group under its own
+   *  heading, the single pages (Alarms, Downtime, Maintenance) together as
+   *  "Shop floor" where the first of them sits, Admin with the account. */
+  phoneSections: { label: string; icon: string; items: NavItem[] }[] = [];
+  adminItem: NavItem | null = null;
+  private routeSub?: Subscription;
 
   constructor(
     private router: Router,
@@ -134,6 +82,13 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
     this.buildMenus();
 
+    // a new page closes any open menu
+    this.routeSub = this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
+      if (this.isMobileMenuOpen || this.openMenu || this.showUserMenu) {
+        this.isMobileMenuOpen = false; this.openMenu = null; this.showUserMenu = false; this.touch();
+      }
+    });
+
     // A refresh that brought different grants: rebuild, so a page the company
     // just lost stops appearing in the bar without a reload.
     this.grantsSub = this.auth.grantsChanged$.subscribe(() => {
@@ -142,12 +97,13 @@ export class HeaderComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnDestroy() { this.grantsSub?.unsubscribe(); }
+  ngOnDestroy() { this.grantsSub?.unsubscribe(); this.routeSub?.unsubscribe(); }
 
   buildMenus() {
     // SNT_SUPER only sees Admin pages — no dashboard/reports/master
     if (this.isSntSuper) {
       this.menus = this.allMenus.filter(m => m.adminOnly);
+      this.splitForPhone();
       return;
     }
 
@@ -156,7 +112,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
         if (menu.adminOnly) return this.isAdmin ? menu : null;
 
         if (menu.children) {
-          const filteredChildren = menu.children.filter((child: any) =>
+          const filteredChildren = menu.children.filter((child: NavItem) =>
             this.allowed(child.permission)
           );
           return filteredChildren.length > 0 ? { ...menu, children: filteredChildren } : null;
@@ -164,7 +120,21 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
         return this.allowed(menu.permission) ? menu : null;
       })
-      .filter(m => m !== null);
+      .filter(m => m !== null) as NavItem[];
+    this.splitForPhone();
+  }
+
+  private splitForPhone() {
+    const sections: { label: string; icon: string; items: NavItem[] }[] = [];
+    let shopFloor: { label: string; icon: string; items: NavItem[] } | null = null;
+    this.adminItem = null;
+    for (const m of this.menus) {
+      if (m.adminOnly) { this.adminItem = m; continue; }
+      if (m.children) { sections.push({ label: m.label, icon: m.icon || 'apps', items: m.children }); continue; }
+      if (!shopFloor) { shopFloor = { label: 'Shop floor', icon: 'precision_manufacturing', items: [] }; sections.push(shopFloor); }
+      shopFloor.items.push(m);
+    }
+    this.phoneSections = sections;
   }
 
   toggleUserMenu() { this.showUserMenu = !this.showUserMenu; this.touch(); }
@@ -183,13 +153,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
   toggleMenu(label: string) { this.openMenu = this.openMenu === label ? null : label; this.touch(); }
   closeMenu() { this.openMenu = null; this.touch(); }
 
-  navigate(menu: any) {
-    this.router.navigate([menu.path]);
-    this.closeMenu();
-  }
-
-  isActive(path: string) { return this.router.url.startsWith(path); }
-  isChildActive(children: any[]) { return children?.some(c => this.router.url.startsWith(c.path)); }
+  /* Whole path segments: startsWith() lit "Maintenance" on the Maintenance
+     Dashboard and the Maintenance Report as well. */
+  isActive(path: string | undefined) { return pathMatches(this.router.url, path); }
+  isChildActive(children: NavItem[] | undefined) { return !!children?.some(c => pathMatches(this.router.url, c.path)); }
 
   /* State and persistence now live in ThemeService — before this, isDark
      was a plain component field, always initialised to false, with nothing
@@ -212,5 +179,5 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   @HostListener('document:keydown.escape')
-  onEsc() { this.openMenu = null; this.showUserMenu = false; this.touch(); }
+  onEsc() { this.openMenu = null; this.showUserMenu = false; this.isMobileMenuOpen = false; this.touch(); }
 }

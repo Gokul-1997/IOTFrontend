@@ -267,23 +267,25 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   background: rgba(255, 255, 255,0.1) !important;
   color: #ffffff;
 }
+/* Tile colours are the darkest shade of each hue that keeps white text at
+   4.5:1 (WCAG AA) — the brighter #0CAD5D / #0EA5E9 / #8B5CF6 read at 2.8–4.2:1. */
 .mexa-kpi.avail{
-  background: #0CAD5D;
+  background: #098447;
   color: #ffffff;
 }
 .mexa-kpi.perf{
-  background: #0EA5E9;
+  background: #0B7CAF;
   color: #ffffff;
 }
 .mexa-kpi.qual{
-  background: #8B5CF6;
+  background: #8452F5;
   color: #ffffff;
 }
 .rep-kpis .mexa-kpi.repcard {
   color: #fff;
   &:nth-child(1) { background: #1e3a8a !important; }
-  &:nth-child(2) { background: #0EA5E9 !important; }
-  &:nth-child(3) { background: #9365B0 !important; }
+  &:nth-child(2) { background: #0B7CAF !important; }
+  &:nth-child(3) { background: #9162AE !important; }
   &:nth-child(4) { background: #4B6CB7 !important; }
 }
 
@@ -524,13 +526,14 @@ button.mexa-kpi[aria-pressed="true"] {
   font-size: .84rem; color: var(--mexa-ink-3);
 }
 .mexa-pagebtn {
-  background: #98A2B3; border: 0; font: inherit; font-size: .86rem; font-weight: 500;
+  /* #68758D, not the lighter #98A2B3: white text needs 4.5:1 (it was 2.6:1) */
+  background: #68758D; border: 0; font: inherit; font-size: .86rem; font-weight: 500;
   color:#fff; cursor: pointer; padding: .1rem .6rem; border-radius: 7px;
 }
-.mexa-pagebtn:hover:not(:disabled) { background: #67768F; }
+.mexa-pagebtn:hover:not(:disabled) { background: #4F5A6E; }
 .mexa-pagebtn:disabled { opacity: .4; cursor: not-allowed; }
 .mexa-pagebtn:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 1px; }
-.mexa-pagebtn[aria-current="page"] { border: 1px solid var(--mexa-rule); color: var(--mexa-submit); }
+.mexa-pagebtn[aria-current="page"] { border: 1px solid var(--mexa-rule); color: var(--mexa-submit); background: #fff; font-weight: 700; }
 .mexa-pagesize { display: inline-flex; align-items: center; gap: .5rem; }
 .mexa-pagesize select { padding: .3rem 1.6rem .3rem .6rem; min-width: 0; }
 
