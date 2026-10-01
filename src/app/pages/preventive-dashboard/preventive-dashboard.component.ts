@@ -10,6 +10,8 @@ import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { ReportDateDirective, reportMinDate, plantToday } from '../../shared/report-date.directive';
+import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { updatedLabel } from '../../shared/updated-label';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 3 — Preventive Maintenance Dashboard
@@ -27,7 +29,7 @@ import { ReportDateDirective, reportMinDate, plantToday } from '../../shared/rep
 @Component({
   selector: 'app-preventive-dashboard',
   standalone: true,
-  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
+  imports: [FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
   templateUrl: './preventive-dashboard.component.html'
 })
 export class PreventiveDashboardComponent implements OnInit, OnDestroy {
@@ -175,9 +177,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
     }
 
     const d = this.data = this.normalise(res.data);
-    this.updatedAt = d.updated_at
-      ? new Date(d.updated_at).toLocaleString('en-IN', { hour12: true })
-      : '';
+    this.updatedAt = updatedLabel(d.updated_at);
 
     this.trendCategories = (d.alarm_trend || []).map((t: any) =>
       new Date(t.day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));

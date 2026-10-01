@@ -8,11 +8,11 @@
   <h1 class="mexa-title">Preventive Maintenance Dashboard</h1>
   <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Last Updated: <br>{{ updatedAt }}
+  Updated {{ updatedAt }}
 </p>
 </div>
 
-  <div class="mexa-filters">
+  <div class="mexa-filters" appFilterPanel>
     <label class="mexa-filter-label" for="pvMachine">Machine</label>
     <select id="pvMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine">
       <option [ngValue]="null">All</option>
@@ -75,7 +75,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Open PM<br>Tickets</span>
+        <span class="mexa-kpi-label">Open <abbr title="Preventive maintenance">PM</abbr><br>Tickets</span>
         <span class="mexa-kpi-icon sky" style="background:#17b3a3" aria-hidden="true">
           <mat-icon>notifications_active</mat-icon>
         </span>
@@ -86,7 +86,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Completed PM<br>Tickets</span>
+        <span class="mexa-kpi-label">Completed <abbr title="Preventive maintenance">PM</abbr><br>Tickets</span>
         <span class="mexa-kpi-icon purple" style="background:#9b7ec8" aria-hidden="true">
           <mat-icon>task_alt</mat-icon>
         </span>
@@ -192,7 +192,7 @@
   <!-- ══════════ PM TICKETS ══════════ -->
   <section class="mexa-card">
     <div class="mexa-tablebar">
-      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">PM Tickets (Alarm Based)</h2>
+      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Preventive maintenance tickets (raised by alarms)</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="pvSearch">Search tickets</label>
         <input id="pvSearch" type="search" class="mexa-search" placeholder="Search"

@@ -2,7 +2,7 @@
 
 <p class="mexa-updated mb-2" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-sm" aria-hidden="true">refresh</mat-icon>
-  Last Updated: {{ updatedAt }}
+  Updated {{ updatedAt }}
 </p>
 
 <!-- ══════════ TITLE BAR ══════════ -->
@@ -10,7 +10,7 @@
   <h1 class="mexa-title">Maintenance Report</h1>
   <span class="mexa-titlebar-spacer"></span>
 
-  <div class="mexa-filters">
+  <div class="mexa-filters" appFilterPanel>
     <label class="mexa-filter-label" for="mrMachine">Machine</label>
     <select id="mrMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
       <option [ngValue]="null">All</option>
@@ -95,7 +95,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Mean Time<br>to Repair</span>
+        <span class="mexa-kpi-label">Mean Time<br>to Repair <app-metric-help topic="mttr"></app-metric-help></span>
         <span class="mexa-kpi-icon" style="background:#4a76c8" aria-hidden="true">
           <mat-icon>timer</mat-icon>
         </span>
@@ -107,7 +107,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Recorded<br>Downtime</span>
+        <span class="mexa-kpi-label">Recorded<br>Downtime <app-metric-help topic="declared_downtime"></app-metric-help></span>
         <span class="mexa-kpi-icon" style="background:#e0a341" aria-hidden="true">
           <mat-icon>hourglass_bottom</mat-icon>
         </span>

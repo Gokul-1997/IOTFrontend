@@ -9,6 +9,8 @@ import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
+import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { updatedLabel } from '../../shared/updated-label';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 4 — Periodic Maintenance Dashboard
@@ -25,7 +27,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 @Component({
   selector: 'app-periodic-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [FilterPanelDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './periodic-dashboard.component.html'
 })
 export class PeriodicDashboardComponent implements OnInit, OnDestroy {
@@ -166,9 +168,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
     }
 
     const d = this.data = this.normalise(res.data);
-    this.updatedAt = d.updated_at
-      ? new Date(d.updated_at).toLocaleString('en-IN', { hour12: true })
-      : '';
+    this.updatedAt = updatedLabel(d.updated_at);
 
     this.trendCategories = (d.compliance_trend || []).map((t: any) =>
       new Date(t.week_start).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));

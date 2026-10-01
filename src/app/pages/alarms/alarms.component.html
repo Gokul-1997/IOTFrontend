@@ -4,7 +4,7 @@
     <p class="mexa-subtitle">( Monitor and resolve machine alarms and offline events )</p>
   </div>
   <span class="mexa-titlebar-spacer"></span>
-  <div class="mexa-filters">
+  <div class="mexa-filters" appFilterPanel>
     <label class="mexa-filter-label" for="alarm-status">Status</label>
     <select id="alarm-status" class="mexa-select" [(ngModel)]="filter.is_resolved" (change)="filter.page=1; load()">
       <option value="false">Active alarms</option>

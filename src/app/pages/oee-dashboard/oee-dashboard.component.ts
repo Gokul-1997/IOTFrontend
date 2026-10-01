@@ -9,6 +9,9 @@ import { ThemeService } from '../../core/services/theme.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
+import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { updatedLabel } from '../../shared/updated-label';
+import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 8 — OEE Dashboard
@@ -35,7 +38,7 @@ interface Loss { key: 'a' | 'p' | 'q'; name: string; label: string; note: string
 @Component({
   selector: 'app-oee-dashboard',
   standalone: true,
-  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [MetricHelpComponent, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './oee-dashboard.component.html'
 })
 export class OeeDashboardComponent implements OnInit, OnDestroy {
@@ -126,7 +129,7 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
     }
 
     const d = this.data = this.normalise(res.data);
-    this.updatedAt = d.updated_at ? new Date(d.updated_at).toLocaleString('en-IN', { hour12: true }) : '';
+    this.updatedAt = updatedLabel(d.updated_at);
 
     this.trendCategories = (d.trend || []).map((t: any) =>
       new Date(t.day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));

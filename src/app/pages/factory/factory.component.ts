@@ -8,6 +8,10 @@ import { FactoryService } from './factory.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
+import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { updatedLabel } from '../../shared/updated-label';
+import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
+import { compactQty, qty } from '../../shared/format-number';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 1 — Factory Overall Dashboard
@@ -23,7 +27,7 @@ const POLL_MS = 60_000;
 @Component({
   selector: 'app-factory',
   standalone: true,
-  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [MetricHelpComponent, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './factory.component.html'
 })
 export class FactoryComponent implements OnInit, OnDestroy {
@@ -123,9 +127,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
 
     const d = res.data;
     this.data = d;
-    this.updatedAt = d.updated_at
-      ? new Date(d.updated_at).toLocaleString('en-IN', { hour12: true })
-      : '';
+    this.updatedAt = updatedLabel(d.updated_at);
 
     /* shift-wise production, each shift labelled with its hours as the mock does */
     this.shiftCategories = (d.shiftwise || []).map((s: any) =>
@@ -276,13 +278,16 @@ export class FactoryComponent implements OnInit, OnDestroy {
       colors: ['#9b7ec8'],
       markers: { size: 4 },
       dataLabels: { enabled: false },
-      xaxis:  { categories: this.trendCategories, title: { text: 'Hour' }, labels: { rotate: -45, hideOverlappingLabels: true } },
-      yaxis:  { min: 0, title: { text: 'Units' } },
+      // a small chart: every fourth hour, level, instead of 24 slanted labels on top of each other
+      xaxis:  { categories: this.trendCategories, tickAmount: 6, title: { text: 'Hour' }, labels: { rotate: 0, hideOverlappingLabels: true } },
+      yaxis:  { min: 0, title: { text: 'Units' }, labels: { formatter: compactQty } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark', y: { formatter: (v: number) => `${v} kWh` } }
+      tooltip:{ theme: 'dark', y: { formatter: (v: number) => `${qty(v, 2)} kWh` } }
     };
   });
   }
+
+  readonly qty = qty;
 
   /** "08:00:00" → "08:00". */
   hhmm(t: string | null | undefined): string { return t ? String(t).slice(0, 5) : ''; }

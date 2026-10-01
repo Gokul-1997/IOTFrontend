@@ -14,7 +14,7 @@
   <h1 class="mexa-title">Maintenance Dashboard</h1>
 <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Last Updated:<br> {{ updatedAt }}
+  Updated {{ updatedAt }}
 </p>
 </div>
   <!-- One machine, named. The fleet counts that used to sit here belong on
@@ -36,7 +36,7 @@
 
   <span class="mexa-titlebar-spacer"></span> -->
 
-  <div class="mexa-filters">
+  <div class="mexa-filters" appFilterPanel>
     <label class="mexa-filter-label" for="mtShift">Shift</label>
     <select id="mtShift" class="mexa-select" [(ngModel)]="selectedShift" name="shift">
       <option [ngValue]="null">All</option>

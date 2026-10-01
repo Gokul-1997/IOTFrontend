@@ -5,11 +5,12 @@ import { AlarmService } from '../../core/services/alarm.service';
 import { TicketService } from '../../core/services/ticket.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
+import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 
 @Component({
   selector: 'app-alarms',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FilterPanelDirective, CommonModule, FormsModule],
   templateUrl: './alarms.component.html',
   styles: [`
     .alarm-msg { max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

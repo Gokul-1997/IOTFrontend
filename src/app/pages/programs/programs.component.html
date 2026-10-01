@@ -7,7 +7,7 @@
       <div class="page-title">
         <mat-icon class="title-icon">swap_horiz</mat-icon>
         <div>
-          <h2>Program Transfer</h2>
+          <h1>Program Transfer</h1>
         </div>
         <span class="subtitle">G-code between the server library and CNC controllers (DNC)</span>
       </div>
@@ -29,7 +29,7 @@
             aria-controls="panel-programs"
             [attr.tabindex]="tab === 'programs' ? 0 : -1"
             (click)="switchTab('programs')">
-      <span class="ui-tab-icon" aria-hidden="true">📁</span>Programs
+      <span class="ui-tab-icon material-icons" aria-hidden="true">folder</span>Programs
       <span class="ui-tab-count">{{ total }}</span>
     </button>
     <button type="button" role="tab" class="ui-tab" id="tab-history"
@@ -38,7 +38,7 @@
             aria-controls="panel-history"
             [attr.tabindex]="tab === 'history' ? 0 : -1"
             (click)="switchTab('history')">
-      <span class="ui-tab-icon" aria-hidden="true">🕓</span>Transfer History
+      <span class="ui-tab-icon material-icons" aria-hidden="true">history</span>Transfer History
       <span class="ui-tab-count">{{ transfersTotal }}</span>
     </button>
   </div>
@@ -114,8 +114,10 @@
             <thead class="bg-white border-b sticky top-0">
               <tr>
                 <th class="px-3 py-2 w-8">
-                  <input type="checkbox" [checked]="allSelected" (change)="toggleAll()"
-                         class="rounded border-gray-300" aria-label="Select all" />
+                  <label class="ux-check" title="Select all programs">
+                    <input type="checkbox" [checked]="allSelected" (change)="toggleAll()"
+                           class="rounded border-gray-300" aria-label="Select all programs" />
+                  </label>
                 </th>
                 <th class="px-3 py-2 text-left font-semibold text-gray-600">Program</th>
                 <th class="px-3 py-2 text-left font-semibold text-gray-600">Size</th>
@@ -127,8 +129,10 @@
               <tr *ngFor="let p of programs" class="hover:bg-gray-50 transition-colors"
                   [class.bg-blue-50]="isSelected(p.id)">
                 <td class="px-3 py-2">
-                  <input type="checkbox" [checked]="isSelected(p.id)" (change)="toggleProgram(p.id)"
-                         class="rounded border-gray-300" aria-label="Select row" />
+                  <label class="ux-check">
+                    <input type="checkbox" [checked]="isSelected(p.id)" (change)="toggleProgram(p.id)"
+                           class="rounded border-gray-300" [attr.aria-label]="'Select ' + p.name" />
+                  </label>
                 </td>
                 <td class="px-3 py-2">
                   <div class="font-medium text-gray-800">{{ p.name }}</div>

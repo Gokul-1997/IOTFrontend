@@ -10,6 +10,9 @@ import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
+import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { updatedLabel } from '../../shared/updated-label';
+import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 
 /* ─────────────────────────────────────────────────────────────
    Maintenance Report
@@ -24,7 +27,7 @@ import { ReportDateDirective } from '../../shared/report-date.directive';
 @Component({
   selector: 'app-maintenance-report',
   standalone: true,
-  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [MetricHelpComponent, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './maintenance-report.component.html'
 })
 export class MaintenanceReportComponent implements OnInit, OnDestroy {
@@ -120,7 +123,7 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy {
     }
 
     const d = this.data = this.normalise(res.data);
-    this.updatedAt = d.updated_at ? new Date(d.updated_at).toLocaleString('en-IN', { hour12: true }) : '';
+    this.updatedAt = updatedLabel(d.updated_at);
 
     const trend = d.trend || [];
     this.trendCategories = trend.map((t: any) => this.dayLabel(t.day));

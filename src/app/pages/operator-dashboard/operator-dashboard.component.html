@@ -8,10 +8,10 @@
   <h1 class="mexa-title">Operator Performance Dashboard</h1>
   <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Last Updated: {{ updatedAt }}
+  Updated {{ updatedAt }}
 </p>
 </div>
-  <div class="mexa-filters mb-2">
+  <div class="mexa-filters mb-2" appFilterPanel>
     <label class="mexa-filter-label" for="opShift">Shift</label>
     <select id="opShift" class="mexa-select" [(ngModel)]="f.shift_id" name="shift">
       <option [ngValue]="null">All</option>
@@ -171,7 +171,7 @@
 
     <section class="mexa-card" aria-labelledby="opOeeTitle">
       <div class="mexa-card-head">
-        <h2 id="opOeeTitle" class="mexa-card-title mexa-card-title-left">OEE</h2>
+        <h2 id="opOeeTitle" class="mexa-card-title mexa-card-title-left">OEE <app-metric-help topic="oee"></app-metric-help></h2>
         <ng-container *ngTemplateOutlet="seg; context: { board: 'oee', label: 'OEE' }"></ng-container>
       </div>
       <p class="mexa-card-hint">Availability, Performance and Quality, ranked by OEE</p>

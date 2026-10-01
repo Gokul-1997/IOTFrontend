@@ -5,7 +5,7 @@
 <div class="toolbar-left">
   <div class="flex items-center gap-4">
       <div>
-      <h2 class="text-xl font-bold text-gray-800 dark:text-white/90">Reports</h2>
+      <h1 class="text-xl font-bold text-gray-800 dark:text-white/90">Reports</h1>
       
     </div>
     <p class="mexa-subtitle">{{ nowDisplay() }}</p>
@@ -211,12 +211,12 @@
       <!-- Action buttons -->
       <div class="flex gap-2">
         <button (click)="applyFilters()"
-          class="btn-apply flex-1 min-w-0">
-          ✓ Apply
+          class="btn-apply flex-1 min-w-0 inline-flex items-center justify-center gap-1">
+          <span class="material-icons text-[18px]" aria-hidden="true">check</span> Apply
         </button>
         <button (click)="resetFilters()"
-          class="btn-clear flex-1 min-w-0">
-          ✕ Reset
+          class="btn-clear flex-1 min-w-0 inline-flex items-center justify-center gap-1">
+          <span class="material-icons text-[18px]" aria-hidden="true">restart_alt</span> Reset
         </button>
       </div>
 
@@ -232,7 +232,7 @@
          class="mt-3 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 p-4"
          role="status">
       <div class="flex items-start gap-3">
-        <span aria-hidden="true" class="text-xl leading-none">✉️</span>
+        <span aria-hidden="true" class="material-icons text-amber-800 dark:text-amber-200">mail</span>
         <div class="min-w-0 flex-1">
           <p class="text-sm font-semibold text-amber-900 dark:text-amber-200">
             This range covers {{ rangeDays }} days — too long to show on screen.
@@ -283,25 +283,25 @@
 
       <span *ngIf="filters.date_from !== filters.date_to"
         class="inline-flex items-center gap-1 rounded-full bg-blue-900 border border-blue-200 px-2.5 py-1 text-sm text-white">
-        📅 {{ filters.date_from }} → {{ filters.date_to }}
+        <span class="material-icons text-[16px]" aria-hidden="true">date_range</span> {{ filters.date_from }} → {{ filters.date_to }}
       </span>
 
       <span *ngIf="filters.machine_id"
         class="inline-flex items-center gap-1 rounded-full bg-purple-900 border border-purple-200 px-2.5 py-1 text-sm text-white">
-        🖥 {{ labelOf(machines, filters.machine_id) }}
-        <button (click)="filters.machine_id = ''; onMachineChange()" class="hover:text-yellow ml-0.5 text-sml">×</button>
+        <span class="material-icons text-[16px]" aria-hidden="true">precision_manufacturing</span> {{ labelOf(machines, filters.machine_id) }}
+        <button type="button" (click)="filters.machine_id = ''; onMachineChange()" class="chip-x" aria-label="Remove the machine filter"><span class="material-icons" aria-hidden="true">close</span></button>
       </span>
 
       <span *ngIf="filters.operator_id"
         class="inline-flex items-center gap-1 rounded-full bg-green-900 border border-green-200 px-2.5 py-1 text-sm text-white">
-        👤 {{ labelOf(operators, filters.operator_id) }}
-        <button (click)="filters.operator_id = ''" class="hover:text-yellow ml-0.5 text-sm">×</button>
+        <span class="material-icons text-[16px]" aria-hidden="true">person</span> {{ labelOf(operators, filters.operator_id) }}
+        <button type="button" (click)="filters.operator_id = ''" class="chip-x" aria-label="Remove the operator filter"><span class="material-icons" aria-hidden="true">close</span></button>
       </span>
 
       <span *ngIf="filters.shift_id"
         class="inline-flex items-center gap-1 rounded-full bg-amber-900 border border-amber-200 px-2.5 py-1 text-sm text-white">
-        🕐 {{ labelOf(shifts, filters.shift_id) }}
-        <button (click)="filters.shift_id = ''" class="hover:text-yellow ml-0.5 text-sm">×</button>
+        <span class="material-icons text-[16px]" aria-hidden="true">schedule</span> {{ labelOf(shifts, filters.shift_id) }}
+        <button type="button" (click)="filters.shift_id = ''" class="chip-x" aria-label="Remove the shift filter"><span class="material-icons" aria-hidden="true">close</span></button>
       </span>
     </div>
   </div>
@@ -312,9 +312,9 @@
   <!-- KPI CARDS — controlled by widget:kpi -->
   <div *ngIf="auth.hasWidget('reports', 'kpi')" class="mexa-kpis rep-kpis">
     <div *ngFor="let kpi of kpis" class="mexa-kpi repcard flex items-center">
-      <div class="bg-white/20 rounded-sm p-2 mr-2">{{ kpi.icon }}</div>
+      <div class="bg-white/20 rounded-sm p-2 mr-2 grid place-items-center" aria-hidden="true"><span class="material-icons text-[22px]">{{ kpi.icon }}</span></div>
       <div>
-      <span class="mexa-kpi-label">{{ kpi.label }}</span>
+      <span class="mexa-kpi-label">{{ kpi.label }} <app-metric-help [topic]="kpi.help"></app-metric-help></span>
       <p class="mexa-kpi-value">{{ kpi.value }}<small>{{ kpi.unit }}</small></p>
       </div>
     </div>
@@ -350,7 +350,7 @@
     <!-- No columns selected warning -->
     <div *ngIf="!loading && selectedCount === 0"
       class="px-4 py-3 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
-      <span>⚠️</span> No columns selected. Click <strong>Columns</strong> to choose what to display.
+      <span class="material-icons text-[18px] align-[-4px]" aria-hidden="true">warning_amber</span> No columns selected. Click <strong>Columns</strong> to choose what to display.
     </div>
 
     <!-- Loading -->
@@ -421,20 +421,20 @@
         Showing {{ (page - 1) * pageSize + 1 }}–{{ minOf(page * pageSize, rows.length) }} of {{ rows.length }}
       </p>
       <div class="flex items-center gap-1">
-        <button [disabled]="page === 1" (click)="page = page - 1"
-          class="px-2 py-1 rounded text-xs border border-gray-200 dark:border-gray-600
+        <button type="button" [disabled]="page === 1" (click)="page = page - 1" aria-label="Previous page"
+          class="min-w-8 min-h-8 px-2 py-1 rounded text-xs border border-gray-200 dark:border-gray-600
                  disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">‹</button>
         <ng-container *ngFor="let n of pageNumbers">
           <span *ngIf="n === -1" class="px-1 text-gray-400 text-xs">…</span>
-          <button *ngIf="n !== -1" (click)="page = n"
+          <button type="button" *ngIf="n !== -1" (click)="page = n" [attr.aria-label]="'Page ' + n" [attr.aria-current]="n === page ? 'page' : null"
             [class]="n === page
-              ? 'px-2.5 py-1 rounded text-xs font-semibold bg-blue-600 text-white'
-              : 'px-2.5 py-1 rounded text-xs border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300'">
+              ? 'min-w-8 min-h-8 px-2.5 py-1 rounded text-xs font-semibold bg-blue-600 text-white'
+              : 'min-w-8 min-h-8 px-2.5 py-1 rounded text-xs border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300'">
             {{ n }}
           </button>
         </ng-container>
-        <button [disabled]="page === totalPages" (click)="page = page + 1"
-          class="px-2 py-1 rounded text-xs border border-gray-200 dark:border-gray-600
+        <button type="button" [disabled]="page === totalPages" (click)="page = page + 1" aria-label="Next page"
+          class="min-w-8 min-h-8 px-2 py-1 rounded text-xs border border-gray-200 dark:border-gray-600
                  disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">›</button>
       </div>
     </div>

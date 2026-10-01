@@ -2,7 +2,7 @@
 
 <!-- <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Last Updated: {{ updatedAt }}
+  Updated {{ updatedAt }}
 </p> -->
 
 <!-- ══════════ TITLE BAR ══════════ -->
@@ -11,10 +11,10 @@
   <h1 class="mexa-title">Periodic Maintenance Dashboard</h1>
   <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Last Updated: <br> {{ updatedAt }}
+  Updated {{ updatedAt }}
 </p>
 </div>
-  <div class="mexa-filters">
+  <div class="mexa-filters" appFilterPanel>
     <label class="mexa-filter-label" for="peMachine">Machine</label>
     <select id="peMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine">
       <option [ngValue]="null">All</option>

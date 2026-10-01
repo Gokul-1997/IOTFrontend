@@ -5,11 +5,13 @@ import { NgApexchartsModule, ChartComponent } from "ng-apexcharts";
 import { QualityService } from './quality.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ReportDateDirective, plantToday } from '../../shared/report-date.directive';
+import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
+import { StateComponent } from '../../shared/state/state.component';
 
 @Component({
   selector: 'app-quality',
   standalone: true,
-  imports: [ReportDateDirective, CommonModule, FormsModule, NgApexchartsModule],
+  imports: [MetricHelpComponent, StateComponent, ReportDateDirective, CommonModule, FormsModule, NgApexchartsModule],
   templateUrl: './quality.html',
   styleUrl: './quality.scss'
 })
@@ -40,6 +42,10 @@ export class Quality implements OnInit {
   editingRework = false;
   private rejectedSnapshot = 0;
   private reworkSnapshot = 0;
+
+  /** The last load: an empty shift is an answer, a failed request is not. */
+  loadState: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
+  hourCount = 0;
 
   public hourPerformOptions: any = {
     series: [],
@@ -159,15 +165,17 @@ export class Quality implements OnInit {
 
     if (!this.selectedMachine || !this.selectedShift || !this.selectedDate) return;
 
+    this.loadState = 'loading';
     this.service.getDashboard({
       machine_id: this.selectedMachine,
       shift_id: this.selectedShift,
       date: this.selectedDate
     }).subscribe({
       next: res => {
-        if (!res?.success) return;
+        if (!res?.success) { this.loadState = 'error'; this.cdr.detectChanges(); return; }
 
         this.dashboardData = res.data;
+        this.loadState = 'ready';
 
         this.rejectedValue = res.data.production?.reject ?? 0;
         this.reworkValue = res.data.production?.rework ?? 0;
@@ -176,7 +184,7 @@ export class Quality implements OnInit {
         this.cdr.detectChanges();
       },
       // a failed read must not leave the previous machine's figures up
-      error: () => { this.dashboardData = null; this.updateChart([]); this.cdr.detectChanges(); }
+      error: () => { this.dashboardData = null; this.loadState = 'error'; this.updateChart([]); this.cdr.detectChanges(); }
     });
   }
 
@@ -237,6 +245,7 @@ export class Quality implements OnInit {
   ////////////////////////////////////////////////////
 
   updateChart(hourly: any[]) {
+    this.hourCount = hourly.length;
 
     const categories = hourly.map(h =>
       new Date(h.hour)

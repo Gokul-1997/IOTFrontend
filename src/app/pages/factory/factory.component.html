@@ -2,7 +2,7 @@
 <!-- 
 <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Last Updated: {{ updatedAt }}
+  Updated {{ updatedAt }}
 </p> -->
 
 <!-- ══════════ TITLE BAR ══════════ -->
@@ -11,12 +11,12 @@
   <h1 class="mexa-title">Overall Factory Dashboard</h1>
   <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Last Updated: <br> {{ updatedAt }}
+  Updated {{ updatedAt }}
 </p>
 </div>
   
 
-  <div class="mexa-filters">
+  <div class="mexa-filters" appFilterPanel>
     <label class="mexa-filter-label" for="fShift">Shift</label>
     <select id="fShift" class="mexa-select" [(ngModel)]="selectedShift" name="shift">
       <option [ngValue]="null">All</option>
@@ -59,7 +59,7 @@
   <div class="mexa-kpis">
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Machines<br>Running</span>
+        <span class="mexa-kpi-label">Machines<br>Running <app-metric-help topic="machine_status"></app-metric-help></span>
         <span class="mexa-kpi-icon green" aria-hidden="true">
           <mat-icon>play_arrow</mat-icon>
         </span>
@@ -85,7 +85,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Overall<br>OEE</span>
+        <span class="mexa-kpi-label">Overall<br>OEE <app-metric-help topic="oee"></app-metric-help></span>
         <span class="mexa-kpi-icon navy" style="background:#2b3a8f" aria-hidden="true">
           <mat-icon>settings</mat-icon>
         </span>
@@ -104,7 +104,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Overall<br>Utilization</span>
+        <span class="mexa-kpi-label">Overall<br>Utilisation <app-metric-help topic="running_share"></app-metric-help></span>
         <span class="mexa-kpi-icon sky" style="background:#3b9ae1" aria-hidden="true">
           <mat-icon>trending_up</mat-icon>
         </span>
@@ -115,7 +115,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Overall<br>Production</span>
+        <span class="mexa-kpi-label">Overall<br>Production <app-metric-help topic="production_vs_target"></app-metric-help></span>
         <span class="mexa-kpi-icon purple" style="background:#9b7ec8" aria-hidden="true">
           <mat-icon>inventory_2</mat-icon>
         </span>
@@ -139,7 +139,7 @@
         </span>
       </div>
       <p class="mexa-kpi-value">
-        {{ data.energy.kwh === null ? '--' : data.energy.kwh }}<small *ngIf="data.energy.kwh !== null">kWh</small>
+        {{ qty(data.energy.kwh, 2) }}<small *ngIf="data.energy.kwh !== null">kWh</small>
       </p>
     </div>
   </div>
@@ -158,15 +158,15 @@
 
       <div class="grid grid-cols-3 gap-2 text-center mt-2">
         <div>
-          <span class="mexa-rank-sub"><span class="circ avail"></span> Availability</span>
+          <span class="mexa-rank-sub"><span class="circ avail"></span> Availability <app-metric-help topic="availability"></app-metric-help></span>
           <p class="font-bold text-[--mexa-ink]">{{ pctText(data.oee.availability) }}</p>
         </div>
         <div>
-          <span class="mexa-rank-sub"><span class="circ perf"></span> Performance</span>
+          <span class="mexa-rank-sub"><span class="circ perf"></span> Performance <app-metric-help topic="performance"></app-metric-help></span>
           <p class="font-bold text-[--mexa-ink]">{{ pctText(data.oee.performance) }}</p>
         </div>
         <div>
-          <span class="mexa-rank-sub"><span class="circ qual"></span> Quality</span>
+          <span class="mexa-rank-sub"><span class="circ qual"></span> Quality <app-metric-help topic="quality"></app-metric-help></span>
           <p class="font-bold text-[--mexa-ink]">{{ pctText(data.oee.quality) }}</p>
         </div>
       </div>
@@ -185,11 +185,11 @@
 
       <div class="grid grid-cols-2 gap-2 text-center mt-1" *ngIf="runtimeSeries.length">
         <div>
-          <span class="mexa-rank-sub"><span class="circ run"></span> Run Time</span>
+          <span class="mexa-rank-sub"><span class="circ run"></span> Run Time <app-metric-help topic="run_time"></app-metric-help></span>
           <p class="font-bold text-[--mexa-ink]">{{ hm(data.time.run_seconds) }}</p>
         </div>
         <div>
-          <span class="mexa-rank-sub"><span class="circ idle"></span> Idle Time</span>
+          <span class="mexa-rank-sub"><span class="circ idle"></span> Idle Time <app-metric-help topic="idle_time"></app-metric-help></span>
           <p class="font-bold text-[--mexa-ink]">{{ hm(data.time.idle_seconds) }}</p>
         </div>
       </div>
@@ -253,7 +253,7 @@
           {{ change(data.energy.cost_per_part_vs_yesterday_pct) }}</span> vs yesterday
       </p>
       <p class="mexa-card-hint text-center" *ngIf="data.energy.cost_per_part === null">
-        {{ data.energy.month_kwh }} kWh this month
+        {{ qty(data.energy.month_kwh, 2) }} kWh this month
       </p>
 
       <h3 class="mexa-card-title mexa-card-title-left !mb-1">Energy Consumption Trend</h3>

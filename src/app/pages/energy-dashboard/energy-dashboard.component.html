@@ -8,10 +8,10 @@
   <h1 class="mexa-title">Energy Dashboard</h1>
   <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Last Updated: <br>{{ updatedAt }}
+  Updated {{ updatedAt }}
 </p>
 </div>
-  <div class="mexa-filters">
+  <div class="mexa-filters" appFilterPanel>
     <label class="mexa-filter-label" for="enMachine">Machine</label>
     <select id="enMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
       <option [ngValue]="null">All</option>
@@ -183,7 +183,7 @@
             <span class="mexa-key-swatch" [style.--swatch]="donutColour(i)" aria-hidden="true"></span>
             <span>
               <span class="mexa-key-label">{{ s.shift_name }}</span>
-              <span class="mexa-key-value">{{ sharePct(s.kwh, shiftTotal) }} ({{ s.kwh }} kWh)</span>
+              <span class="mexa-key-value">{{ sharePct(s.kwh, shiftTotal) }} ({{ num(s.kwh) }} kWh)</span>
             </span>
           </li>
         </ul>
@@ -230,7 +230,7 @@
           <span class="mexa-rank-name">
             <span class="mexa-rank-n">{{ i + 1 }}.</span>{{ m.machine_serial_no }}
           </span>
-          <span class="mexa-rank-value num">{{ m.kwh }} kWh</span>
+          <span class="mexa-rank-value num">{{ num(m.kwh) }} kWh</span>
         </li>
       </ol>
     </section>

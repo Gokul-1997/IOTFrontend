@@ -20,7 +20,7 @@ import { TwofaService } from '../../core/services/twofa.service';
     :host-context(.dark) .tf-state.is-off { background: #362a10; color: #f7c667; }
     .tf-icon { width: 2.5rem; height: 2.5rem; border-radius: 999px; display: grid; place-items: center; background: rgba(255,255,255,.7); flex: none; }
     :host-context(.dark) .tf-icon { background: rgba(0,0,0,.25); }
-    .tf-icon svg { width: 1.25rem; height: 1.25rem; }
+    .tf-icon .material-icons { font-size: 1.35rem; }
     .tf-state-title { margin: 0; font-weight: 700; }
     .tf-state-sub { margin: .1rem 0 0; font-size: .8rem; }
     .tf-qr { display: flex; justify-content: center; margin-bottom: 1rem; }
@@ -71,7 +71,7 @@ export class TwofaSetupComponent implements OnInit {
   }
 
   disable() {
-    if (!confirm('Are you sure you want to disable 2FA?')) return;
+    if (!confirm('Turn off two-step sign-in? Your account will then need only your password.')) return;
     this.svc.disable().subscribe({ next: () => { this.step = 'status'; this.cdr.markForCheck(); this.loadStatus(); } });
   }
 }

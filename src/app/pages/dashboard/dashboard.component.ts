@@ -8,10 +8,11 @@ import {
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { DashboardService } from './dashboard.service';
 import { SocketService } from '../../core/services/socket.service';
 import { AuthService } from '../../core/services/auth.service';
+import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import {
   Subject,
   interval,
@@ -44,7 +45,7 @@ const AUTO_PAGE_MS          = 10_000;
 @Component({
   standalone: true,
   selector: 'app-dashboard',
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink, MetricHelpComponent],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -487,8 +488,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  /** Page rotation stopped by the Pause button. */
+  autoPaused = false;
+
+  toggleAutoPage(): void {
+    this.autoPaused = !this.autoPaused;
+    this.resetAutoPageTimer();
+    this.cdr.markForCheck();
+  }
+
+  /* Someone is reading this page: keyboard focus on a card, or a metric's
+     (i) panel open. Turning the page now would pull it away from them. */
+  private get holdPage(): boolean {
+    return !!document.querySelector('.mh-panel') || !!document.activeElement?.closest('.machine-grid');
+  }
+
+  statusText(m: any): string {
+    const s = m.status === 'RUNNING' ? 'running' : m.status === 'IDLE' ? 'idle' : 'offline';
+    return m.alarm ? `${s}, alarm` : s;
+  }
+
   private startAutoPageTimer(): void {
+    if (this.autoPaused) return;
     this.autoPageTimer = setInterval(() => {
+      if (this.holdPage) return;
       this.zone.run(() => {
         this.currentPage = this.currentPage >= this.totalPages ? 1 : this.currentPage + 1;
         this.cdr.markForCheck();

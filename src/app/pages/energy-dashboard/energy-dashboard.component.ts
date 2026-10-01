@@ -11,6 +11,9 @@ import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
+import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { updatedLabel } from '../../shared/updated-label';
+import { compactQty, qty } from '../../shared/format-number';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 9 — Energy Monitoring
@@ -24,7 +27,7 @@ import { ReportDateDirective } from '../../shared/report-date.directive';
 @Component({
   selector: 'app-energy-dashboard',
   standalone: true,
-  imports: [ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [FilterPanelDirective, ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './energy-dashboard.component.html'
 })
 export class EnergyDashboardComponent implements OnInit, OnDestroy {
@@ -122,7 +125,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
     }
 
     const d = this.data = this.normalise(res.data);
-    this.updatedAt = d.updated_at ? new Date(d.updated_at).toLocaleString('en-IN', { hour12: true }) : '';
+    this.updatedAt = updatedLabel(d.updated_at);
 
     this.trendCategories = (d.trend || []).map((t: any) =>
       new Date(t.day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
@@ -197,7 +200,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
 
   /** Unknown shows as a dash, never 0 — they are different claims. */
   num(v: number | null | undefined, unit = ''): string {
-    return v === null || v === undefined ? '--' : `${v}${unit}`;
+    return v === null || v === undefined ? '--' : `${qty(v, 3)}${unit}`;
   }
 
   hours(seconds: number | null | undefined): string {
@@ -221,7 +224,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       colors: ['#b45309'],
       dataLabels: { enabled: false },
       xaxis:  { categories: this.trendCategories },
-      yaxis:  { title: { text: 'kWh' }, labels: { formatter: (v: number) => v?.toFixed(1) } },
+      yaxis:  { title: { text: 'kWh' }, labels: { formatter: compactQty } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'dark' },
       noData: { text: 'No machine is reporting an energy counter yet' }

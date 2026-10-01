@@ -9,12 +9,12 @@
   <h1 class="mexa-title">Alarm Report Dashboard</h1>
   <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Last Updated: {{ updatedAt }}
+  Updated {{ updatedAt }}
 </p>
 
  </div>
 
-  <div class="mexa-filters mb-2">
+  <div class="mexa-filters mb-2" appFilterPanel>
     <label class="mexa-filter-label" for="alMachine">Machine Name</label>
     <select id="alMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine" style="width: 5rem;">
       <option [ngValue]="null">All</option>

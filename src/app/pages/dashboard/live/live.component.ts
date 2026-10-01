@@ -22,6 +22,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { NeedleGaugeComponent, GaugeZone } from '../../../shared/needle-gauge/needle-gauge.component';
 import { ShiftTimelineComponent } from './shift-timeline.component';
+import { MetricHelpComponent } from '../../../shared/metric-help/metric-help.component';
 
 /* ─────────────────────────────────────────
    SOCKET  → machine_status, rpm, feed_rate ONLY
@@ -38,7 +39,7 @@ const POLL_MS = 30_000;
 @Component({
   standalone: true,
   selector: 'app-live',
-  imports: [NgApexchartsModule, CommonModule, RouterModule, NeedleGaugeComponent, ShiftTimelineComponent],
+  imports: [MetricHelpComponent, NgApexchartsModule, CommonModule, RouterModule, NeedleGaugeComponent, ShiftTimelineComponent],
   templateUrl: './live.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

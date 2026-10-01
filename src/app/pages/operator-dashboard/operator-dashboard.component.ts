@@ -10,6 +10,9 @@ import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
+import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { updatedLabel } from '../../shared/updated-label';
+import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 7 — Operator Performance
@@ -30,7 +33,7 @@ type Board = 'score' | 'rejection' | 'downtime' | 'oee';
 @Component({
   selector: 'app-operator-dashboard',
   standalone: true,
-  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [MetricHelpComponent, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './operator-dashboard.component.html'
 })
 export class OperatorDashboardComponent implements OnInit, OnDestroy {
@@ -174,7 +177,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
     }
     const d = this.data = this.normalise(res.data);
     this.operatorList = d.operator_list;
-    this.updatedAt = d.updated_at ? new Date(d.updated_at).toLocaleString('en-IN', { hour12: true }) : '';
+    this.updatedAt = updatedLabel(d.updated_at);
     this.cdr.markForCheck();
   }
 

@@ -1,7 +1,7 @@
 <div class="mexa-titlebar">
   <div class="flex gap-2 items-center">
-    <h1 class="mexa-title">Two-Factor Authentication</h1>
-    <p class="mexa-subtitle">( Add an extra layer of security to your account )</p>
+    <h1 class="mexa-title">Two-step sign-in</h1>
+    <p class="mexa-subtitle">( A code from your phone as well as your password, so a stolen password alone cannot open your account )</p>
   </div>
 </div>
 
@@ -11,27 +11,27 @@
     <ng-container *ngIf="status?.enabled; else notEnabled">
       <div class="tf-state is-on">
         <span class="tf-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          <span class="material-icons">check</span>
         </span>
         <div>
-          <p class="tf-state-title">2FA is on</p>
+          <p class="tf-state-title">Two-step sign-in is on</p>
           <p class="tf-state-sub">Turned on {{ status.enabled_at | date:'mediumDate' }}</p>
         </div>
       </div>
-      <button type="button" (click)="disable()" class="ui-btn ui-btn-danger-ghost tf-full">Turn off 2FA</button>
+      <button type="button" (click)="disable()" class="ui-btn ui-btn-danger-ghost tf-full">Turn off two-step sign-in</button>
     </ng-container>
     <ng-template #notEnabled>
       <div class="tf-state is-off">
         <span class="tf-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M12 5a7 7 0 110 14A7 7 0 0112 5z"/></svg>
+          <span class="material-icons">error_outline</span>
         </span>
         <div>
-          <p class="tf-state-title">2FA is off</p>
+          <p class="tf-state-title">Two-step sign-in is off</p>
           <p class="tf-state-sub">Your account is less secure without it</p>
         </div>
       </div>
       <button type="button" (click)="startSetup()" [disabled]="loading" class="ui-btn ui-btn-primary tf-full">
-        {{ loading ? 'Setting up…' : 'Turn on 2FA' }}
+        {{ loading ? 'Setting up…' : 'Turn on two-step sign-in' }}
       </button>
     </ng-template>
   </section>
@@ -60,9 +60,9 @@
   <section *ngIf="step === 'backup'" class="mexa-card">
     <div class="tf-state is-on">
       <span class="tf-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        <span class="material-icons">check</span>
       </span>
-      <div><p class="tf-state-title">2FA is on</p></div>
+      <div><p class="tf-state-title">Two-step sign-in is on</p></div>
     </div>
     <div class="ui-alert ui-alert-warn">
       <strong>Save these backup codes.</strong>

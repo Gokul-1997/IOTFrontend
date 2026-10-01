@@ -9,6 +9,8 @@ import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { ConditionGaugeComponent, ConditionZone } from './condition-gauge.component';
+import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { updatedLabel } from '../../shared/updated-label';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 2 — Maintenance Dashboard
@@ -51,7 +53,7 @@ const SIGNAL_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-maintenance-dashboard',
   standalone: true,
-  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, ConditionGaugeComponent],
+  imports: [FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, ConditionGaugeComponent],
   templateUrl: './maintenance-dashboard.component.html',
   styleUrl: './maintenance-dashboard.component.scss'
 })
@@ -207,9 +209,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     }
 
     const d = this.data = res.data;
-    this.updatedAt = d.updated_at
-      ? new Date(d.updated_at).toLocaleString('en-IN', { hour12: true })
-      : '';
+    this.updatedAt = updatedLabel(d.updated_at);
 
     /* Donuts and gauges take a flat number array; the {name,data} series
        shape renders an empty chart with no error. */

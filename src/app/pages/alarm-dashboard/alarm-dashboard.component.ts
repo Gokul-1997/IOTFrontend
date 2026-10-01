@@ -11,6 +11,8 @@ import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { ReportDateDirective } from '../../shared/report-date.directive';
+import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { updatedLabel } from '../../shared/updated-label';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 5 — Alarm Dashboard & Reports
@@ -24,7 +26,7 @@ import { ReportDateDirective } from '../../shared/report-date.directive';
 @Component({
   selector: 'app-alarm-dashboard',
   standalone: true,
-  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
+  imports: [FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
   templateUrl: './alarm-dashboard.component.html'
 })
 export class AlarmDashboardComponent implements OnInit, OnDestroy {
@@ -197,9 +199,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     }
 
     const d = this.data = this.normalise(res.data);
-    this.updatedAt = d.updated_at
-      ? new Date(d.updated_at).toLocaleString('en-IN', { hour12: true })
-      : '';
+    this.updatedAt = updatedLabel(d.updated_at);
 
     // one day selected: hour by hour, as the design's "Alarms Trend (By Hour)"
     this.trendCategories = (d.trend || []).map((t: any) => d.trend_by === 'hour'

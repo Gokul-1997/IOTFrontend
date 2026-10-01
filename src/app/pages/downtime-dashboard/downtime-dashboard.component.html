@@ -2,7 +2,7 @@
 
 <!-- <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Last Updated: {{ updatedAt }}
+  Updated {{ updatedAt }}
 </p> -->
 
 <!-- ══════════ TITLE BAR ══════════ -->
@@ -11,10 +11,10 @@
   <h1 class="mexa-title">Downtime Reason Analysis</h1>
   <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Last Updated: <br> {{ updatedAt }}
+  Updated {{ updatedAt }}
 </p>
 </div>
-  <div class="mexa-filters">
+  <div class="mexa-filters" appFilterPanel>
     <label class="mexa-filter-label" for="dtMachine">Machine Name</label>
     <select id="dtMachine" class="mexa-select max-w-24" [(ngModel)]="f.machine_id" name="machine">
       <option [ngValue]="null">All</option>
@@ -67,7 +67,7 @@
   <div class="mexa-kpis">
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Total<br>Downtime</span>
+        <span class="mexa-kpi-label">Total<br>Downtime <app-metric-help topic="declared_downtime"></app-metric-help></span>
         <span class="mexa-kpi-icon red" style="background:#dc2626" aria-hidden="true">
           <mat-icon>timer_off</mat-icon>
         </span>
@@ -78,18 +78,18 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Availability</span>
+        <span class="mexa-kpi-label">Availability <app-metric-help topic="onoff_availability"></app-metric-help></span>
         <span class="mexa-kpi-icon green" style="background:#22c55e" aria-hidden="true">
           <mat-icon>check_circle</mat-icon>
         </span>
       </div>
       <p class="mexa-kpi-value">{{ pct(data.kpis.availability_pct) }}</p>
-      <p class="mexa-kpi-sub">Run time over planned time</p>
+      <p class="mexa-kpi-sub">Run time ÷ switched-on time</p>
     </div>
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Downtime<br>Events</span>
+        <span class="mexa-kpi-label">Downtime<br>Events <app-metric-help topic="downtime_reasons"></app-metric-help></span>
         <span class="mexa-kpi-icon sky" style="background:#3b9ae1" aria-hidden="true">
           <mat-icon>report</mat-icon>
         </span>
@@ -100,7 +100,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Running<br>Time</span>
+        <span class="mexa-kpi-label">Running<br>Time <app-metric-help topic="run_time"></app-metric-help></span>
         <span class="mexa-kpi-icon purple" style="background:#2f2d8f" aria-hidden="true">
           <mat-icon>play_circle</mat-icon>
         </span>
@@ -110,7 +110,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Idle<br>Time</span>
+        <span class="mexa-kpi-label">Idle<br>Time <app-metric-help topic="idle_time"></app-metric-help></span>
         <span class="mexa-kpi-icon yellow" style="background:#b45309" aria-hidden="true">
           <mat-icon>pause_circle</mat-icon>
         </span>
@@ -121,7 +121,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Alarm<br>Time</span>
+        <span class="mexa-kpi-label">Alarm<br>Time <app-metric-help topic="alarm_time"></app-metric-help></span>
         <span class="mexa-kpi-icon blue" style="background:#9b7ec8" aria-hidden="true">
           <mat-icon>error</mat-icon>
         </span>
@@ -155,7 +155,7 @@
             <tr>
               <th scope="col">Downtime Reason</th>
               <th scope="col">Occurrences</th>
-              <th scope="col">Total DT</th>
+              <th scope="col">Total downtime</th>
               <th scope="col">Contribution</th>
             </tr>
           </thead>

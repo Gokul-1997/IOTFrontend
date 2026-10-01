@@ -16,6 +16,8 @@ import { MachineOeeReportComponent } from './machine-oee-report.component';
 import { AuthService } from '../../core/services/auth.service';
 import { UiTabsDirective } from '../../shared/ui-tabs.directive';
 import { ReportDateDirective } from '../../shared/report-date.directive';
+import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
+import { qty } from '../../shared/format-number';
 
 type Tab = ReportType | 'oee-records' | 'machine-oee';
 
@@ -31,8 +33,9 @@ interface KpiCard {
   label: string;
   value: string | number;
   unit:  string;
-  icon:  string;
+  icon:  string;   // a Material icon name
   color: string;
+  help:  string;   // the metric-help topic for its (i)
 }
 
 /* ─── ALL available columns per report type ─── */
@@ -74,7 +77,7 @@ const COL_DEFS: Record<ReportType, ColDef[]> = {
 @Component({
   standalone: true,
   selector: 'app-reports',
-  imports: [ReportDateDirective, UiTabsDirective, CommonModule, FormsModule, OeeReportsComponent, MachineOeeReportComponent],
+  imports: [MetricHelpComponent, ReportDateDirective, UiTabsDirective, CommonModule, FormsModule, OeeReportsComponent, MachineOeeReportComponent],
   templateUrl: './reports.html',
   styleUrl: './reports.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -428,16 +431,16 @@ export class Reports implements OnInit {
   /* ── KPI cards ── */
   private buildKpis(tab: ReportType, s: any): KpiCard[] {
     if (tab === 'production') return [
-      { label: 'Total Parts',  value: s.total_parts    ?? 0,   unit: 'pcs', icon: '🔩', color: 'blue'   },
-      { label: 'Run Hours',    value: s.run_hours       ?? '0', unit: 'hrs', icon: '▶️', color: 'green'  },
-      { label: 'Total Energy', value: s.total_energy    ?? '0', unit: 'kWh', icon: '⚡', color: 'yellow' },
-      { label: 'Efficiency',   value: s.efficiency_pct  ?? '0', unit: '%',   icon: '📈', color: 'purple' },
+      { label: 'Total Parts',  value: qty(s.total_parts ?? 0, 0), unit: 'pcs', icon: 'inventory_2', color: 'blue',   help: 'produced' },
+      { label: 'Run Hours',    value: s.run_hours       ?? '0', unit: 'hrs', icon: 'play_arrow',  color: 'green',  help: 'run_hours' },
+      { label: 'Total Energy', value: qty(s.total_energy ?? 0, 2), unit: 'kWh', icon: 'bolt',        color: 'yellow', help: 'energy_total' },
+      { label: 'Efficiency',   value: s.efficiency_pct  ?? '0', unit: '%',   icon: 'speed',       color: 'purple', help: 'efficiency' },
     ];
     return [
-      { label: 'Avg Availability', value: s.avg_availability ?? '0', unit: '%', icon: '🕐', color: 'blue'   },
-      { label: 'Avg Performance',  value: s.avg_performance  ?? '0', unit: '%', icon: '⚡', color: 'green'  },
-      { label: 'Avg Quality',      value: s.avg_quality      ?? '0', unit: '%', icon: '✅', color: 'yellow' },
-      { label: 'Avg OEE',          value: s.avg_oee          ?? '0', unit: '%', icon: '📊', color: 'purple' },
+      { label: 'Avg Availability', value: s.avg_availability ?? '0', unit: '%', icon: 'schedule', color: 'blue',   help: 'avg_availability' },
+      { label: 'Avg Performance',  value: s.avg_performance  ?? '0', unit: '%', icon: 'speed',    color: 'green',  help: 'avg_performance' },
+      { label: 'Avg Quality',      value: s.avg_quality      ?? '0', unit: '%', icon: 'verified', color: 'yellow', help: 'avg_quality' },
+      { label: 'Avg OEE',          value: s.avg_oee          ?? '0', unit: '%', icon: 'insights', color: 'purple', help: 'avg_oee' },
     ];
   }
 

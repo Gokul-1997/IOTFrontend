@@ -11,6 +11,9 @@ import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { ReportDateDirective } from '../../shared/report-date.directive';
+import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { updatedLabel } from '../../shared/updated-label';
+import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 6 — Downtime Reason Loss Analysis
@@ -27,7 +30,7 @@ import { ReportDateDirective } from '../../shared/report-date.directive';
 @Component({
   selector: 'app-downtime-dashboard',
   standalone: true,
-  imports: [ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
+  imports: [MetricHelpComponent, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
   templateUrl: './downtime-dashboard.component.html'
 })
 export class DowntimeDashboardComponent implements OnInit, OnDestroy {
@@ -149,9 +152,7 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
     }
 
     const d = this.data = this.normalise(res.data);
-    this.updatedAt = d.updated_at
-      ? new Date(d.updated_at).toLocaleString('en-IN', { hour12: true })
-      : '';
+    this.updatedAt = updatedLabel(d.updated_at);
 
     /* A Pareto is bars plus the cumulative line — the line is the point,
        because it is what shows how few reasons cover most of the loss. */
@@ -314,7 +315,8 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
       markers: { size: 4 },
       colors: ['#2f2d8f'],
       dataLabels: { enabled: false },
-      xaxis:  { categories: this.hourlyCategories, title: { text: 'Time (Hour)' } },
+      // 24 hour labels ran together on a 1366px screen ('00010203…'): every third hour is enough
+      xaxis:  { categories: this.hourlyCategories, tickAmount: 8, labels: { rotate: 0, hideOverlappingLabels: true }, title: { text: 'Time (Hour)' } },
       yaxis:  { title: { text: 'Hours down' }, labels: { formatter: (v: number) => v?.toFixed(1) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'dark' },
