@@ -205,7 +205,8 @@ export function niceScale(top: number): { max: number; ticks: number } {
           [action]="range === '24h' ? '' : 'Show the last 24 hours'" (act)="setRange('24h')"></app-state>
 
         <ng-container *ngIf="data.summary.samples">
-          <div role="img" [attr.aria-label]="chartLabel">
+          <!-- a group, not an image: the chart's own legend buttons and keyboard reading stay reachable -->
+          <div role="group" [attr.aria-label]="chartLabel">
             <apx-chart [series]="chart.series" [chart]="chart.chart" [colors]="chart.colors" [stroke]="chart.stroke"
               [xaxis]="chart.xaxis" [yaxis]="chart.yaxis" [annotations]="chart.annotations" [legend]="chart.legend"
               [tooltip]="chart.tooltip" [grid]="chart.grid" [dataLabels]="chart.dataLabels" [markers]="chart.markers"></apx-chart>
