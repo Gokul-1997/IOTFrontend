@@ -25,7 +25,7 @@
           <mat-icon>close</mat-icon>
         </button>
       </div>
-      <button class="btn-primary" (click)="openCreate()" *ngIf="auth.hasAction('shifts', 'create')" aria-label="Add" title="Add">
+      <button class="btn-primary" (click)="openCreate()" *ngIf="auth.hasAction('shifts', 'create')">
         <mat-icon>add</mat-icon>
         New Shift
       </button>
@@ -39,7 +39,7 @@
   <div class="table-card mat-elevation-z2 shadow-lg">
 
     <div *ngIf="loading" class="loading-overlay">
-      <mat-spinner diameter="40"></mat-spinner>
+      <mat-spinner aria-label="Loading" diameter="40"></mat-spinner>
     </div>
 
     <div class="table-wrapper">
@@ -83,9 +83,8 @@
         <ng-container matColumnDef="is_active">
           <th mat-header-cell *matHeaderCellDef>Status</th>
           <td mat-cell *matCellDef="let r">
-            <mat-slide-toggle color="primary" [checked]="r.is_active" (change)="toggle(r)"
-              [matTooltip]="r.is_active ? 'Active' : 'Inactive'">
-            </mat-slide-toggle>
+            <mat-slide-toggle [aria-label]="(r.shift_name || r.shift_code) + ' – ' + (r.is_active ? 'Active' : 'Inactive')" color="primary" [checked]="r.is_active" (change)="toggle(r)"
+              [matTooltip]="r.is_active ? 'Active' : 'Inactive'">{{ r.is_active ? 'Active' : 'Inactive' }}</mat-slide-toggle>
           </td>
         </ng-container>
 
@@ -93,10 +92,10 @@
         <ng-container matColumnDef="actions" [stickyEnd]="true">
           <th mat-header-cell *matHeaderCellDef class="col-actions">Actions</th>
           <td mat-cell *matCellDef="let r" class="col-actions">
-            <button mat-icon-button class="action-edit" (click)="openEdit(r)" matTooltip="Edit" *ngIf="auth.hasAction('shifts', 'edit')" aria-label="Edit">
+            <button mat-icon-button class="action-edit" (click)="openEdit(r)" matTooltip="Edit" *ngIf="auth.hasAction('shifts', 'edit')" [attr.aria-label]="'Edit ' + (r.shift_name || r.shift_code)">
               <mat-icon>edit</mat-icon>
             </button>
-            <button mat-icon-button class="action-delete" (click)="confirmDelete(r)" matTooltip="Delete" *ngIf="auth.hasAction('shifts', 'delete')" aria-label="Delete" title="Delete">
+            <button mat-icon-button class="action-delete" (click)="confirmDelete(r)" matTooltip="Delete" *ngIf="auth.hasAction('shifts', 'delete')" [attr.aria-label]="'Delete ' + (r.shift_name || r.shift_code)">
               <mat-icon>delete_outline</mat-icon>
             </button>
           </td>

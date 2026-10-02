@@ -64,7 +64,7 @@
         <div><dt>Plant</dt><dd>{{ profile.plant_name || '--' }}</dd></div>
         <div><dt>Last login</dt>
           <dd>
-            {{ profile.last_login_at ? (profile.last_login_at | date:'medium') : 'This is your first login' }}
+            {{ profile.last_login_at ? (profile.last_login_at | date:'d MMM y, h:mm:ss a') : 'This is your first login' }}
           </dd>
         </div>
       </dl>

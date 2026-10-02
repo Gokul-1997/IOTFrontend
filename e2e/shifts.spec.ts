@@ -68,7 +68,7 @@ test.describe('Shifts page', () => {
     await stubShifts(page);
     await page.goto('/shifts');
 
-    await page.getByRole('button', { name: 'Add' }).click();
+    await page.getByRole('button', { name: 'New Shift' }).click();
     const dialog = page.getByRole('dialog', { name: 'Create Shift' });
     await expect(dialog).toBeVisible();
     await expect(page).toHaveURL(/\/shifts$/);

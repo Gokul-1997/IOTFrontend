@@ -36,9 +36,10 @@ hover:scale-105 transition">
             </div>
             <!-- TEXT -->
             <div class="max-w-md mx-auto px-6 md:-mt-4">
-              <h1 class="text-5xl md:text-3xl font-bold mb-4">
+              <!-- slides are decoration beside the form: the page's heading is "Sign In" -->
+              <h2 class="text-5xl md:text-3xl font-bold mb-4">
                 {{slide.title}}
-              </h1>
+              </h2>
               <div class="w-12 h-1 bg-white mb-6 rounded "></div>
               <p class="text-white/80">
                 {{slide.desc}}
@@ -59,7 +60,7 @@ hover:scale-105 transition">
     <div class="w-full max-w-md">
       <!-- Logo -->
       <img src="/images/logo/STM_Mexa_logo.svg" alt="STM Mexa" class="mb-8" />
-      <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-2"> Sign In </h2>
+      <h1 class="text-2xl font-semibold text-gray-800 dark:text-white mb-2"> Sign In </h1>
       <p class="text-gray-500 dark:text-gray-400 mb-6"> Enter your email and password to sign in </p>
       <!-- FORM -->
       <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5">

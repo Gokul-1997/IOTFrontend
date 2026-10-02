@@ -12,6 +12,7 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { ReportDateDirective, reportMinDate, plantToday } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { updatedLabel } from '../../shared/updated-label';
+import { SEVERITY } from '../../shared/severity';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 3 — Preventive Maintenance Dashboard
@@ -419,12 +420,14 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
     return v ? v.charAt(0) + v.slice(1).toLowerCase() : '--';
   }
 
+  readonly SEV = SEVERITY;
+
   get severityDonut(): any {
     return this.charts.memo('severityDonut', () => {
     return {
       chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
-      labels: ['Critical', 'Non critical', 'Information'],
-      colors: ['#e03131', '#17b3a3', '#f5a623'],
+      labels: [SEVERITY.critical.label, SEVERITY.noncritical.label, SEVERITY.info.label],
+      colors: [SEVERITY.critical.color, SEVERITY.noncritical.color, SEVERITY.info.color],
       plotOptions: {
         pie: { donut: { size: '62%', labels: {
           show: true,

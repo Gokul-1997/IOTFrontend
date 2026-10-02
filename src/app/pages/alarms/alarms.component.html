@@ -1,17 +1,21 @@
 <div class="mexa-titlebar">
   <div class="flex gap-2 items-center">
     <h1 class="mexa-title">Machine Alarms</h1>
-    <p class="mexa-subtitle">( Monitor and resolve machine alarms and offline events )</p>
+    <p class="mexa-subtitle">Alarms and offline events to look into and resolve</p>
   </div>
   <span class="mexa-titlebar-spacer"></span>
   <div class="mexa-filters" appFilterPanel>
-    <label class="mexa-filter-label" for="alarm-status">Status</label>
-    <select id="alarm-status" class="mexa-select" [(ngModel)]="filter.is_resolved" (change)="filter.page=1; load()">
-      <option value="false">Active alarms</option>
-      <option value="true">Resolved</option>
-      <option value="">All</option>
-    </select>
-    <button type="button" class="mexa-submit" (click)="load()">Refresh</button>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="alarm-status">Status</label>
+      <select id="alarm-status" class="mexa-select" [(ngModel)]="filter.is_resolved" (change)="filter.page=1; load()">
+        <option value="false">Active alarms</option>
+        <option value="true">Resolved</option>
+        <option value="">All</option>
+      </select>
+    </span>
+    <button type="button" class="mexa-submit inline-flex items-center gap-1" (click)="load()">
+      <span class="material-icons text-[18px]" aria-hidden="true">refresh</span>Refresh
+    </button>
   </div>
 </div>
 
@@ -20,32 +24,42 @@
     <span class="ui-spinner" aria-hidden="true"></span> Loading alarms…
   </div>
 
-  <div *ngIf="!loading" class="mexa-tablewrap" tabindex="0" role="region" aria-label="Alarms">
+  <div *ngIf="!loading" class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Alarms">
     <table class="mexa-table">
+      <caption class="sr-only">Machine alarms, newest first</caption>
       <thead>
         <tr>
           <th scope="col">Machine</th>
-          <th scope="col">Type</th>
+          <th scope="col">Alarm</th>
           <th scope="col">Severity</th>
-          <th scope="col">Message</th>
           <th scope="col">Started</th>
           <th scope="col">Status</th>
-          <th scope="col">Action</th>
+          <th scope="col" class="actions">Action</th>
         </tr>
       </thead>
       <tbody>
         <ng-container *ngIf="alarms.length > 0; else noAlarms">
           <tr *ngFor="let alarm of alarms">
             <td class="strong">{{ alarm.machine_serial_no }}</td>
-            <td><span class="mexa-badge mexa-badge-neutral">{{ alarm.alarm_type }}</span></td>
-            <td><span class="mexa-badge" [ngClass]="severityClass(alarm.severity)">{{ alarm.severity }}</span></td>
-            <td class="alarm-msg" [title]="alarm.message || ''">{{ alarm.message || '--' }}</td>
-            <td class="num">{{ alarm.started_at | date:'short' }}</td>
-            <td>
-              <span *ngIf="alarm.is_resolved" class="mexa-badge mexa-badge-good">Resolved</span>
-              <span *ngIf="!alarm.is_resolved" class="mexa-badge mexa-badge-bad">Active</span>
+            <!-- the alarm in words; its code and type underneath when they add something -->
+            <td class="wrap">
+              <span class="block text-[var(--mexa-ink)]">{{ alarm.message || alarm.alarm_type || '--' }}</span>
+              <span *ngIf="alarm.alarm_code || (alarm.alarm_type && alarm.message && !alarm.message.startsWith(alarm.alarm_type))"
+                    class="block text-xs text-[var(--mexa-ink-3)]">
+                {{ alarm.alarm_code }}<ng-container *ngIf="alarm.alarm_type && alarm.message && !alarm.message.startsWith(alarm.alarm_type)">{{ alarm.alarm_code ? ' · ' : '' }}{{ alarm.alarm_type }}</ng-container>
+              </span>
             </td>
             <td>
+              <span class="mexa-badge" [ngClass]="SEV[sevOf(alarm.severity)].badge">
+                <span class="material-icons" aria-hidden="true">{{ SEV[sevOf(alarm.severity)].icon }}</span>{{ SEV[sevOf(alarm.severity)].label }}
+              </span>
+            </td>
+            <td class="num">{{ alarm.started_at | date:'d MMM y, h:mm:ss a' }}</td>
+            <td>
+              <span *ngIf="alarm.is_resolved" class="mexa-badge mexa-badge-good"><span class="material-icons" aria-hidden="true">check_circle</span>Resolved</span>
+              <span *ngIf="!alarm.is_resolved" class="mexa-badge mexa-badge-warn"><span class="material-icons" aria-hidden="true">notifications_active</span>Active</span>
+            </td>
+            <td class="actions">
               <!-- resolving is its own permission (page:alarms:resolve); the API refuses it otherwise -->
               <ng-container *ngIf="!alarm.is_resolved && canResolve">
                 <div *ngIf="resolvingId === alarm.id" class="ui-btn-row">
@@ -66,7 +80,7 @@
           </tr>
         </ng-container>
         <ng-template #noAlarms>
-          <tr><td colspan="7" class="mexa-empty">No alarms found</td></tr>
+          <tr><td colspan="6" class="mexa-empty">{{ filter.is_resolved === 'false' ? 'No active alarms. Every machine is clear.' : 'No alarms match this filter.' }}</td></tr>
         </ng-template>
       </tbody>
     </table>
@@ -75,8 +89,12 @@
   <div *ngIf="pagination.totalPages > 1" class="mexa-tablebar">
     <span class="mexa-drill">Page <strong>{{ filter.page }}</strong> of {{ pagination.totalPages }}</span>
     <div class="mexa-pager">
-      <button type="button" class="mexa-pagebtn" [disabled]="filter.page <= 1" (click)="filter.page = filter.page - 1; load()">‹ Previous</button>
-      <button type="button" class="mexa-pagebtn" [disabled]="filter.page >= pagination.totalPages" (click)="filter.page = filter.page + 1; load()">Next ›</button>
+      <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" [disabled]="filter.page <= 1" (click)="filter.page = filter.page - 1; load()">
+        <span class="material-icons" aria-hidden="true">chevron_left</span>Previous
+      </button>
+      <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" [disabled]="filter.page >= pagination.totalPages" (click)="filter.page = filter.page + 1; load()">
+        Next<span class="material-icons" aria-hidden="true">chevron_right</span>
+      </button>
     </div>
   </div>
 </div>

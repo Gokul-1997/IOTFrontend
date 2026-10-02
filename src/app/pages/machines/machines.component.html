@@ -31,7 +31,7 @@
         </button>
       </div>
       <!-- New Machine — only if user has create permission -->
-      <button *ngIf="auth.hasAction('machines', 'create')" class="btn-primary" (click)="openCreate()" aria-label="Add" title="Add">
+      <button *ngIf="auth.hasAction('machines', 'create')" class="btn-primary" (click)="openCreate()">
         <mat-icon>add</mat-icon>
         New Machine
       </button>
@@ -47,7 +47,7 @@
 
     <!-- Loading overlay -->
     <div *ngIf="loading" class="loading-overlay">
-      <mat-spinner diameter="40"></mat-spinner>
+      <mat-spinner aria-label="Loading" diameter="40"></mat-spinner>
     </div>
 
     <div class="table-wrapper">
@@ -173,7 +173,7 @@
               mat-icon-button
               class="copy-btn"
               (click)="copyApiKey(r.api_key)"
-              matTooltip="Copy API Key" aria-label="Copy API Key">
+              matTooltip="Copy API Key" [attr.aria-label]="'Copy the API key of ' + r.machine_serial_no">
               <mat-icon>content_copy</mat-icon>
             </button>
           </td>
@@ -183,12 +183,11 @@
         <ng-container matColumnDef="is_active" class=" thead-custm">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
           <td mat-cell *matCellDef="let r">
-            <mat-slide-toggle
+            <mat-slide-toggle [aria-label]="(r.machine_serial_no) + ' – ' + (r.is_active ? 'Active' : 'Inactive')"
               color="primary"
               [checked]="r.is_active"
               (change)="toggle(r)"
-              [matTooltip]="r.is_active ? 'Active – click to deactivate' : 'Inactive – click to activate'">
-            </mat-slide-toggle>
+              [matTooltip]="r.is_active ? 'Active – click to deactivate' : 'Inactive – click to activate'">{{ r.is_active ? 'Active' : 'Inactive' }}</mat-slide-toggle>
           </td>
         </ng-container>
 
@@ -196,10 +195,10 @@
         <ng-container matColumnDef="actions" [stickyEnd]="true">
           <th mat-header-cell *matHeaderCellDef class="col-actions thead-custm">Actions</th>
           <td mat-cell *matCellDef="let r" class="col-actions">
-            <button *ngIf="auth.hasAction('machines', 'edit')" mat-icon-button class="action-edit" (click)="openEdit(r)" matTooltip="Edit" aria-label="Edit" title="Edit">
+            <button *ngIf="auth.hasAction('machines', 'edit')" mat-icon-button class="action-edit" (click)="openEdit(r)" matTooltip="Edit" [attr.aria-label]="'Edit ' + (r.machine_serial_no)">
               <mat-icon>edit</mat-icon>
             </button>
-            <button *ngIf="auth.hasAction('machines', 'delete')" mat-icon-button class="action-delete" (click)="confirmDelete(r)" matTooltip="Delete" aria-label="Delete" title="Delete">
+            <button *ngIf="auth.hasAction('machines', 'delete')" mat-icon-button class="action-delete" (click)="confirmDelete(r)" matTooltip="Delete" [attr.aria-label]="'Delete ' + (r.machine_serial_no)">
               <mat-icon>delete_outline</mat-icon>
             </button>
           </td>

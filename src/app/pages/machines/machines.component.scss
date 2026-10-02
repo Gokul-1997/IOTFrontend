@@ -227,7 +227,7 @@
   align-items: center;
   gap: 6px;
 
-  &:hover .copy-btn {
+  &:hover .copy-btn, .copy-btn:focus-visible {
     opacity: 1;
   }
 }
@@ -243,7 +243,9 @@
 }
 
 .copy-btn {
-  opacity: 0;
+  /* always there: a control that appears only on hover cannot be found by
+     touch or by keyboard */
+  opacity: .75;
   transition: opacity 0.2s ease;
   color: #3b5bdb !important;
   font-size: 16px !important;
@@ -274,12 +276,6 @@
 
   .table-card { background: #12203a; }
 
-  .machines-table {
-    .mat-mdc-header-row { background: #0f1c33; border-bottom-color: #1e2d45; }
-    .mat-mdc-header-cell { color: #cbcbcb; }
-    .mat-mdc-row.data-row:hover { background: #1a2d48; }
-    .mat-mdc-cell { color: #cbcbcb; }
-  }
 
   .api-key-cell {
     background: #1e3a5f;

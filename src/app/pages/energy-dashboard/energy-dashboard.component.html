@@ -12,24 +12,27 @@
 </p>
 </div>
   <div class="mexa-filters" appFilterPanel>
-    <label class="mexa-filter-label" for="enMachine">Machine</label>
-    <select id="enMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
-      <option [ngValue]="null">All</option>
-      <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-    </select>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="enMachine">Machine</label>
+      <select id="enMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
+        <option [ngValue]="null">All</option>
+        <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+      </select>
+    </span>
 
     <!-- The design shows one date; energy is a counter difference, so a
          range is the only thing that can be measured. Both ends shown. -->
-    <label class="mexa-filter-label" for="enFrom">Date</label>
-    <input id="enFrom" type="date" appReportDate [rdBefore]="f.to" class="mexa-date" [(ngModel)]="f.from" name="from"
-           aria-label="From date">
-    <span class="mexa-filter-label" aria-hidden="true">–</span>
-    <input id="enTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to"
-           aria-label="To date">
-
-    <button type="submit" class="mexa-submit" [disabled]="loading">
-      {{ loading ? 'Loading…' : 'Submit' }}
-    </button>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="enFrom">Date</label>
+      <input id="enFrom" type="date" appReportDate [rdBefore]="f.to" class="mexa-date" [(ngModel)]="f.from" name="from"
+             aria-label="From date">
+      <span class="mexa-filter-label" aria-hidden="true">–</span>
+      <input id="enTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to"
+             aria-label="To date">
+      <button type="submit" class="mexa-submit" [disabled]="loading">
+        {{ loading ? 'Loading…' : 'Submit' }}
+      </button>
+    </span>
     <!-- Where the cost per kWh is set. Up here so it can be found; it used
          to sit in the machine table's toolbar at the bottom of the page. -->
     <a *ngIf="canEditSettings" routerLink="/energy-tariff" class="mexa-submit">Tariff &amp; limits</a>
@@ -119,7 +122,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Overall<br>Volts</span>
+        <span class="mexa-kpi-label">Average<br>Voltage</span>
         <span class="mexa-kpi-icon blue" style="background:#9b7ec8" aria-hidden="true"><mat-icon>electrical_services</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ num(data.kpis.avg_voltage) }}<small *ngIf="data.kpis.avg_voltage != null">V</small></p>
@@ -128,7 +131,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Overall<br>AMPs</span>
+        <span class="mexa-kpi-label">Average<br>Current</span>
         <span class="mexa-kpi-icon green" style="background:#17b3a3" aria-hidden="true"><mat-icon>power</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ num(data.kpis.avg_current) }}<small *ngIf="data.kpis.avg_current != null">A</small></p>
@@ -242,20 +245,23 @@
       <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Machine Detail</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="enSearch">Search machines</label>
-        <input id="enSearch" type="search" class="mexa-search" placeholder="Search"
-               [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
-        <span *ngIf="canExport" class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
-          <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">
-            {{ exporting === 'xlsx' ? '…' : 'Excel' }}
-          </button>
-          <button type="button" class="mexa-pagebtn" (click)="export('csv')" [disabled]="exporting">
-            {{ exporting === 'csv' ? '…' : 'CSV' }}
-          </button>
-          <button type="button" class="mexa-pagebtn" (click)="export('pdf')" [disabled]="exporting">
-            {{ exporting === 'pdf' ? '…' : 'PDF' }}
-          </button>
+        <span class="mexa-searchbox">
+          <span class="material-icons" aria-hidden="true">search</span>
+          <input id="enSearch" type="search" class="mexa-search" placeholder="Search machine"
+                 [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
         </span>
-        <button type="button" class="mexa-pagebtn" (click)="reset()">Reset</button>
+        <span *ngIf="canExport" class="ui-btn-row" role="group" aria-label="Download the filtered list">
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('xlsx')" [disabled]="exporting">
+              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'xlsx' ? 'Preparing…' : 'Excel' }}
+            </button>
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('csv')" [disabled]="exporting">
+              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
+            </button>
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('pdf')" [disabled]="exporting">
+              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
+            </button>
+        </span>
+        <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()"><span class="material-icons" aria-hidden="true">restart_alt</span>Reset filters</button>
       </span>
     </div>
 
@@ -265,12 +271,12 @@
         <thead>
           <tr>
             <th scope="col">Machine</th>
-            <th scope="col">Energy</th>
-            <th scope="col">Operating Time</th>
-            <th scope="col">Production</th>
-            <th scope="col">kWh / Part</th>
-            <th scope="col">Cost ({{ data.currency }})</th>
-            <th scope="col">Peak kW</th>
+            <th class="qty" scope="col">Energy</th>
+            <th class="qty" scope="col">Operating Time</th>
+            <th class="qty" scope="col">Production</th>
+            <th class="qty" scope="col">kWh / Part</th>
+            <th class="qty" scope="col">Cost ({{ data.currency }})</th>
+            <th class="qty" scope="col">Peak kW</th>
             <th scope="col">Status</th>
           </tr>
         </thead>
@@ -280,16 +286,16 @@
               <span class="strong">{{ m.machine_serial_no }}</span>
               <span class="mexa-rank-sub">{{ m.model }}</span>
             </td>
-            <td class="num strong">
+            <td class="num strong qty">
               {{ num(m.kwh) }}
               <!-- said in words: no counter is different from no usage -->
               <span *ngIf="m.kwh === null" class="mexa-rank-sub">not reporting</span>
             </td>
-            <td class="num whitespace-nowrap">{{ hours(m.run_seconds) }}</td>
-            <td class="num">{{ m.produced }}</td>
-            <td class="num">{{ num(m.kwh_per_part) }}</td>
-            <td class="num">{{ num(m.cost) }}</td>
-            <td class="num">{{ num(m.peak_kw) }}</td>
+            <td class="num whitespace-nowrap qty">{{ hours(m.run_seconds) }}</td>
+            <td class="num qty">{{ m.produced }}</td>
+            <td class="num qty">{{ num(m.kwh_per_part) }}</td>
+            <td class="num qty">{{ num(m.cost) }}</td>
+            <td class="num qty">{{ num(m.peak_kw) }}</td>
             <td>
               <span *ngIf="m.is_overloaded" class="mexa-badge mexa-badge-bad">Overload</span>
               <span *ngIf="!m.is_overloaded" class="mexa-rank-sub">--</span>

@@ -3,41 +3,47 @@
 
 
 <!-- ══════════ TITLE BAR ══════════ -->
-<form class="" (ngSubmit)="submit()">
-  <div class="mexa-titlebar flex justify-between">
+<form class="mexa-titlebar" (ngSubmit)="submit()">
   <h1 class="mexa-title">Operator Performance Dashboard</h1>
   <p class="mexa-updated" *ngIf="updatedAt">
-  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Updated {{ updatedAt }}
-</p>
-</div>
-  <div class="mexa-filters mb-2" appFilterPanel>
-    <label class="mexa-filter-label" for="opShift">Shift</label>
-    <select id="opShift" class="mexa-select" [(ngModel)]="f.shift_id" name="shift">
-      <option [ngValue]="null">All</option>
-      <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_name || s.name }}</option>
-    </select>
+    <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
+    Updated {{ updatedAt }}
+  </p>
+  <span class="mexa-titlebar-spacer"></span>
+  <div class="mexa-filters" appFilterPanel>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="opShift">Shift</label>
+      <select id="opShift" class="mexa-select" [(ngModel)]="f.shift_id" name="shift">
+        <option [ngValue]="null">All</option>
+        <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_name || s.name }}</option>
+      </select>
+    </span>
 
-    <label class="mexa-filter-label" for="opMachine">Machine</label>
-    <select id="opMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
-      <option [ngValue]="null">All</option>
-      <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-    </select>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="opMachine">Machine</label>
+      <select id="opMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
+        <option [ngValue]="null">All</option>
+        <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+      </select>
+    </span>
 
-    <label class="mexa-filter-label" for="opOperator">Operator</label>
-    <select id="opOperator" class="mexa-select" [(ngModel)]="f.operator_id" name="operator">
-      <option [ngValue]="null">All</option>
-      <option *ngFor="let o of operatorList" [ngValue]="o.id">{{ o.operator_name }}</option>
-    </select>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="opOperator">Operator</label>
+      <select id="opOperator" class="mexa-select" [(ngModel)]="f.operator_id" name="operator">
+        <option [ngValue]="null">All</option>
+        <option *ngFor="let o of operatorList" [ngValue]="o.id">{{ o.operator_name }}</option>
+      </select>
+    </span>
 
-    <label class="mexa-filter-label" for="opFrom">Date</label>
-    <input id="opFrom" type="date" appReportDate [rdBefore]="f.to" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
-    <span class="mexa-filter-label" aria-hidden="true">–</span>
-    <input id="opTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
-
-    <button type="submit" class="mexa-submit" [disabled]="loading">
-      {{ loading ? 'Loading…' : 'Submit' }}
-    </button>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="opFrom">Date</label>
+      <input id="opFrom" type="date" appReportDate [rdBefore]="f.to" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
+      <span class="mexa-filter-label" aria-hidden="true">–</span>
+      <input id="opTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
+      <button type="submit" class="mexa-submit" [disabled]="loading">
+        {{ loading ? 'Loading…' : 'Submit' }}
+      </button>
+    </span>
   </div>
 </form>
 
@@ -192,20 +198,23 @@
       <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Operator Performance Details</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="opSearch">Search operators</label>
-        <input id="opSearch" type="search" class="mexa-search" placeholder="Search"
-               [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
-        <span *ngIf="canExport" class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
-          <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">
-            {{ exporting === 'xlsx' ? '…' : 'Excel' }}
-          </button>
-          <button type="button" class="mexa-pagebtn" (click)="export('csv')" [disabled]="exporting">
-            {{ exporting === 'csv' ? '…' : 'CSV' }}
-          </button>
-          <button type="button" class="mexa-pagebtn" (click)="export('pdf')" [disabled]="exporting">
-            {{ exporting === 'pdf' ? '…' : 'PDF' }}
-          </button>
+        <span class="mexa-searchbox">
+          <span class="material-icons" aria-hidden="true">search</span>
+          <input id="opSearch" type="search" class="mexa-search" placeholder="Search operator or machine"
+                 [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
         </span>
-        <button type="button" class="mexa-pagebtn" (click)="reset()">Reset</button>
+        <span *ngIf="canExport" class="ui-btn-row" role="group" aria-label="Download the filtered list">
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('xlsx')" [disabled]="exporting">
+              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'xlsx' ? 'Preparing…' : 'Excel' }}
+            </button>
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('csv')" [disabled]="exporting">
+              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
+            </button>
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('pdf')" [disabled]="exporting">
+              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
+            </button>
+        </span>
+        <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()"><span class="material-icons" aria-hidden="true">restart_alt</span>Reset filters</button>
       </span>
     </div>
 
@@ -215,7 +224,7 @@
         <thead>
           <tr>
             <th scope="col">#</th>
-            <th scope="col" *ngFor="let c of columns" [attr.aria-sort]="ariaSort(c.key)">
+            <th scope="col" *ngFor="let c of columns" [class]="$any(c).cls || ''" [attr.aria-sort]="ariaSort(c.key)">
               <button type="button" class="mexa-sort" (click)="sortBy(c.key)" [attr.aria-current]="sort === c.key">
                 {{ c.label }}
                 <span class="mexa-sort-arrow" aria-hidden="true">{{ sort === c.key ? (dir === 'asc' ? '▲' : '▼') : '⇅' }}</span>
@@ -234,18 +243,18 @@
               <span *ngIf="r.shared_machines > 0" class="mexa-rank-sub">{{ r.shared_machines }} machine(s) shared</span>
             </td>
             <td>{{ r.shift_name || '--' }}</td>
-            <td>{{ r.machine_names || '--' }}</td>
-            <td class="num strong">{{ pct(r.score) }}</td>
-            <td class="num whitespace-nowrap">{{ hms(r.run_seconds) }}</td>
-            <td class="num whitespace-nowrap">{{ hms(r.downtime_seconds) }}</td>
-            <td class="num">{{ pct(r.utilization_pct) }}</td>
-            <td class="num">{{ r.produced }}</td>
-            <td class="num">{{ r.good }}</td>
-            <td class="num">{{ r.rejected }}</td>
-            <td class="num">{{ pct(r.quality_rate_pct) }}</td>
-            <td class="num">{{ r.alarm_count }}</td>
-            <td class="num">{{ pct(r.oee_pct) }}</td>
-            <td class="num">{{ pct(r.efficiency_pct) }}</td>
+            <td class="wrap">{{ r.machine_names || '--' }}</td>
+            <td class="num strong qty">{{ pct(r.score) }}</td>
+            <td class="num whitespace-nowrap qty">{{ hms(r.run_seconds) }}</td>
+            <td class="num whitespace-nowrap qty">{{ hms(r.downtime_seconds) }}</td>
+            <td class="num qty">{{ pct(r.utilization_pct) }}</td>
+            <td class="num qty">{{ r.produced }}</td>
+            <td class="num qty">{{ r.good }}</td>
+            <td class="num qty">{{ r.rejected }}</td>
+            <td class="num qty">{{ pct(r.quality_rate_pct) }}</td>
+            <td class="num qty">{{ r.alarm_count }}</td>
+            <td class="num qty">{{ pct(r.oee_pct) }}</td>
+            <td class="num qty">{{ pct(r.efficiency_pct) }}</td>
             <td><span class="mexa-badge" [ngClass]="bandClass[r.band] || 'mexa-badge-neutral'">{{ bandText[r.band] || 'Unrated' }}</span></td>
           </tr>
           <tr *ngIf="!data.operators.data.length">

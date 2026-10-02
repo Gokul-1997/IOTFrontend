@@ -54,7 +54,7 @@
           <th scope="col">Reason</th>
           <th scope="col">Category</th>
           <th scope="col">Started</th>
-          <th scope="col">Duration</th>
+          <th class="qty" scope="col">Duration</th>
           <th scope="col">Entered by</th>
         </tr>
       </thead>
@@ -64,8 +64,8 @@
             <td class="strong">{{ e.machine_serial_no }}</td>
             <td>{{ e.reason_name || '--' }}</td>
             <td><span class="mexa-badge" [ngClass]="categoryClass(e.category)">{{ e.category || '--' }}</span></td>
-            <td class="num">{{ e.started_at | date:'short' }}</td>
-            <td class="num">{{ e.duration_seconds ? ((e.duration_seconds / 60) | number:'1.0-0') + ' min' : '--' }}</td>
+            <td class="num">{{ e.started_at | date:'d MMM y, h:mm a' }}</td>
+            <td class="num qty">{{ e.duration_seconds ? ((e.duration_seconds / 60) | number:'1.0-0') + ' min' : '--' }}</td>
             <td>{{ e.entered_by_name || '--' }}</td>
           </tr>
         </ng-container>
@@ -123,8 +123,8 @@
         <tr>
           <th scope="col">Reason</th>
           <th scope="col">Category</th>
-          <th scope="col" class="num-col">Events</th>
-          <th scope="col" class="num-col">Total time</th>
+          <th scope="col" class="qty">Events</th>
+          <th scope="col" class="qty">Total time</th>
         </tr>
       </thead>
       <tbody>
@@ -132,8 +132,8 @@
           <tr *ngFor="let s of summary">
             <td class="strong">{{ s.reason_name || 'Unknown' }} ({{ s.code }})</td>
             <td><span class="mexa-badge" [ngClass]="categoryClass(s.category)">{{ s.category }}</span></td>
-            <td class="num num-col">{{ s.event_count }}</td>
-            <td class="num num-col">{{ (s.total_seconds / 3600 | number:'1.1-1') }} hrs</td>
+            <td class="num qty">{{ s.event_count }}</td>
+            <td class="num qty">{{ (s.total_seconds / 3600 | number:'1.1-1') }} hrs</td>
           </tr>
         </ng-container>
         <ng-template #noSummary>

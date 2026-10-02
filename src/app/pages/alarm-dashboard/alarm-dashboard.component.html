@@ -4,52 +4,60 @@
 
 <!-- ══════════ TITLE BAR ══════════ -->
 
-<form class="" (ngSubmit)="submit()">
-   <div class="mexa-titlebar">
+<!-- The same title bar as every dashboard: title and freshness on the left,
+     the filters in the bar on the right (folded behind one button on a phone). -->
+<form class="mexa-titlebar" (ngSubmit)="submit()">
   <h1 class="mexa-title">Alarm Report Dashboard</h1>
   <p class="mexa-updated" *ngIf="updatedAt">
-  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Updated {{ updatedAt }}
-</p>
+    <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
+    Updated {{ updatedAt }}
+  </p>
+  <span class="mexa-titlebar-spacer"></span>
 
- </div>
+  <div class="mexa-filters" appFilterPanel>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="alMachine">Machine</label>
+      <select id="alMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
+        <option [ngValue]="null">All</option>
+        <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+      </select>
+    </span>
 
-  <div class="mexa-filters mb-2" appFilterPanel>
-    <label class="mexa-filter-label" for="alMachine">Machine Name</label>
-    <select id="alMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine" style="width: 5rem;">
-      <option [ngValue]="null">All</option>
-      <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-    </select>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="alShift">Shift</label>
+      <select id="alShift" class="mexa-select" [(ngModel)]="f.shift_id" name="shift">
+        <option [ngValue]="null">All</option>
+        <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_name || s.name }}</option>
+      </select>
+    </span>
 
-    <label class="mexa-filter-label" for="alShift">Shift</label>
-    <select id="alShift" class="mexa-select" [(ngModel)]="f.shift_id" name="shift">
-      <option [ngValue]="null">All</option>
-      <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_name || s.name }}</option>
-    </select>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="alSeverity">Severity</label>
+      <select id="alSeverity" class="mexa-select" [(ngModel)]="f.severity" name="severity">
+        <option value="">All</option>
+        <option value="CRITICAL">{{ SEV.critical.label }}</option>
+        <option value="NORMAL">{{ SEV.noncritical.label }}</option>
+      </select>
+    </span>
 
-    <label class="mexa-filter-label" for="alSeverity">Severity</label>
-    <select id="alSeverity" class="mexa-select" [(ngModel)]="f.severity" name="severity">
-      <option value="">All</option>
-      <option value="CRITICAL">Critical</option>
-      <option value="NORMAL">Normal</option>
-    </select>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="alType">Alarm type</label>
+      <select id="alType" class="mexa-select sm:max-w-[12rem]" [(ngModel)]="f.alarm_type" name="alarmType">
+        <option value="">All</option>
+        <option *ngFor="let t of data?.facets?.types || []" [value]="t">{{ t }}</option>
+      </select>
+    </span>
 
-    <label class="mexa-filter-label" for="alType">Alarm Type</label>
-    <select id="alType" class="mexa-select sm:max-w-[12rem]" [(ngModel)]="f.alarm_type" name="alarmType" style="width: 5rem;">
-      <option value="">All</option>
-      <option *ngFor="let t of data?.facets?.types || []" [value]="t">{{ t }}</option>
-    </select>
-
-    <label class="mexa-filter-label" for="alFrom">Date</label>
-    <input id="alFrom" type="date" appReportDate [rdBefore]="f.to" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
-    <span class="mexa-filter-label" aria-hidden="true">–</span>
-    <input id="alTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
-
-    <button type="submit" class="mexa-submit" [disabled]="loading">
-      {{ loading ? 'Loading…' : 'Submit' }}
-    </button>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="alFrom">Date</label>
+      <input id="alFrom" type="date" appReportDate [rdBefore]="f.to" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
+      <span class="mexa-filter-label" aria-hidden="true">–</span>
+      <input id="alTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
+      <button type="submit" class="mexa-submit" [disabled]="loading">
+        {{ loading ? 'Loading…' : 'Submit' }}
+      </button>
+    </span>
   </div>
-  
 </form>
 
 
@@ -96,8 +104,8 @@
             [attr.aria-pressed]="drillKind === 'critical'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Critical Alarms</span>
-        <span class="mexa-kpi-icon red" style="background:#dc2626" aria-hidden="true">
-          <mat-icon>error</mat-icon>
+        <span class="mexa-kpi-icon red" [style.background]="SEV.critical.color" aria-hidden="true">
+          <mat-icon>{{ SEV.critical.icon }}</mat-icon>
         </span>
       </span>
       <span class="mexa-kpi-value">{{ data.kpis.critical }}</span>
@@ -108,9 +116,9 @@
     <button type="button" class="mexa-kpi" (click)="drill('normal')" aria-controls="alDetails"
             [attr.aria-pressed]="drillKind === 'normal'">
       <span class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Normal Alarms</span>
-        <span class="mexa-kpi-icon sky" style="background:#17b3a3" aria-hidden="true">
-          <mat-icon>notifications_none</mat-icon>
+        <span class="mexa-kpi-label">Non-critical Alarms</span>
+        <span class="mexa-kpi-icon" [style.background]="SEV.noncritical.color" aria-hidden="true">
+          <mat-icon>{{ SEV.noncritical.icon }}</mat-icon>
         </span>
       </span>
       <span class="mexa-kpi-value">{{ data.kpis.normal }}</span>
@@ -197,17 +205,17 @@
           [tooltip]="severityDonut.tooltip" [noData]="severityDonut.noData"></apx-chart>
         <ul class="mexa-keylist">
           <li>
-            <span class="mexa-key-swatch" style="--swatch:#e03131" aria-hidden="true"></span>
+            <span class="mexa-key-swatch" [style.--swatch]="SEV.critical.color" aria-hidden="true"></span>
             <span>
-              <span class="mexa-key-label">Critical</span>
+              <span class="mexa-key-label">{{ SEV.critical.label }}</span>
               <span class="mexa-key-value">{{ data.by_severity.critical }}
                 ({{ sharePct(data.by_severity.critical, data.kpis.total) }})</span>
             </span>
           </li>
           <li>
-            <span class="mexa-key-swatch" style="--swatch:#17b3a3" aria-hidden="true"></span>
+            <span class="mexa-key-swatch" [style.--swatch]="SEV.noncritical.color" aria-hidden="true"></span>
             <span>
-              <span class="mexa-key-label">Normal</span>
+              <span class="mexa-key-label">{{ SEV.noncritical.label }}</span>
               <span class="mexa-key-value">{{ data.by_severity.normal }}
                 ({{ sharePct(data.by_severity.normal, data.kpis.total) }})</span>
             </span>
@@ -235,36 +243,41 @@
       <h2 id="alDetailsTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left" style="margin:0">Alarms Details</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="alSearch">Search alarms</label>
-        <input id="alSearch" type="search" class="mexa-search" placeholder="Search"
-               [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
-        <span *ngIf="canExport" class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
-          <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">
-            {{ exporting === 'xlsx' ? '…' : 'Excel' }}
+        <span class="mexa-searchbox">
+          <mat-icon aria-hidden="true">search</mat-icon>
+          <input id="alSearch" type="search" class="mexa-search" placeholder="Search machine, code or name"
+                 [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
+        </span>
+        <span *ngIf="canExport" class="ui-btn-row" role="group" aria-label="Download the filtered list">
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('xlsx')" [disabled]="exporting">
+            <mat-icon aria-hidden="true">download</mat-icon>{{ exporting === 'xlsx' ? 'Preparing…' : 'Excel' }}
           </button>
-          <button type="button" class="mexa-pagebtn" (click)="export('csv')" [disabled]="exporting">
-            {{ exporting === 'csv' ? '…' : 'CSV' }}
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('csv')" [disabled]="exporting">
+            <mat-icon aria-hidden="true">download</mat-icon>{{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
           </button>
-          <button type="button" class="mexa-pagebtn" (click)="export('pdf')" [disabled]="exporting">
-            {{ exporting === 'pdf' ? '…' : 'PDF' }}
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('pdf')" [disabled]="exporting">
+            <mat-icon aria-hidden="true">download</mat-icon>{{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
           </button>
         </span>
-        <button type="button" class="mexa-pagebtn" (click)="reset()">Reset</button>
+        <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()">
+          <mat-icon aria-hidden="true">restart_alt</mat-icon>Reset filters
+        </button>
       </span>
     </div>
 
     <!-- what a KPI card narrowed the table to, and the way back -->
     <p *ngIf="drillKind" class="mexa-drill" role="status">
       <span>Showing <strong>{{ drillLabels[drillKind] }}</strong> · {{ data.alarms.total }} {{ data.alarms.total === 1 ? 'alarm' : 'alarms' }}</span>
-      <button type="button" class="mexa-pagebtn" (click)="drill('all')">Show all</button>
+      <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="drill('all')">Show all</button>
     </p>
 
-    <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
+    <div class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Alarms — scroll to see every row and column">
       <table class="mexa-table">
         <caption class="sr-only">Alarms matching the current filters, newest first</caption>
         <thead>
           <tr>
             <th scope="col">#</th>
-            <th scope="col" *ngFor="let c of columns" [attr.aria-sort]="ariaSort(c.key)">
+            <th scope="col" *ngFor="let c of columns" [class]="c.cls || ''" [attr.aria-sort]="ariaSort(c.key)">
               <button type="button" class="mexa-sort" (click)="sortBy(c.key)" [attr.aria-current]="sort === c.key">
                 {{ c.label }}
                 <span class="mexa-sort-arrow" aria-hidden="true">{{ sort === c.key ? (dir === 'asc' ? '▲' : '▼') : '⇅' }}</span>
@@ -278,23 +291,21 @@
             <td class="strong">{{ a.machine_serial_no }}</td>
             <td>{{ a.shift_name || '--' }}</td>
             <td class="num">{{ a.alarm_code }}</td>
-            <td>{{ a.alarm_type || '--' }}</td>
+            <td class="wrap">{{ a.alarm_type || '--' }}</td>
             <td>
-              <!-- Colour reinforces the word; it is never the only cue. -->
-              <span class="mexa-badge" [class.mexa-badge-bad]="isCritical(a.severity)"
-                    [class.mexa-badge-warn]="!isCritical(a.severity)">
-                {{ isCritical(a.severity) ? 'Critical' : 'Normal' }}
+              <!-- a word and an icon; the colour only reinforces them -->
+              <span class="mexa-badge" [ngClass]="SEV[sevOf(a.severity)].badge">
+                <mat-icon aria-hidden="true">{{ SEV[sevOf(a.severity)].icon }}</mat-icon>{{ SEV[sevOf(a.severity)].label }}
               </span>
             </td>
             <td>
-              <span class="mexa-badge" [class.mexa-badge-warn]="a.is_open"
-                    [class.mexa-badge-info]="!a.is_open">
-                {{ a.is_open ? 'Open' : 'Closed' }}
+              <span class="mexa-badge" [ngClass]="a.is_open ? STATE.open.badge : STATE.closed.badge">
+                <mat-icon aria-hidden="true">{{ a.is_open ? STATE.open.icon : STATE.closed.icon }}</mat-icon>{{ a.is_open ? STATE.open.label : STATE.closed.label }}
               </span>
             </td>
-            <td class="num">{{ hms(a.duration_seconds) }}</td>
-            <td class="num whitespace-nowrap">{{ a.started_at | date:'dd-MMM-yyyy HH:mm:ss' }}</td>
-            <td class="num whitespace-nowrap">{{ a.ended_at ? (a.ended_at | date:'dd-MMM-yyyy HH:mm:ss') : '-' }}</td>
+            <td class="qty">{{ hms(a.duration_seconds) }}</td>
+            <td class="num whitespace-nowrap">{{ a.started_at | date:'d MMM y, h:mm:ss a' }}</td>
+            <td class="num whitespace-nowrap">{{ a.ended_at ? (a.ended_at | date:'d MMM y, h:mm:ss a') : '-' }}</td>
           </tr>
           <tr *ngIf="!data.alarms.data.length">
             <td colspan="10" class="mexa-empty">No alarms match these filters.</td>

@@ -23,7 +23,7 @@
         </button>
       </div>
       <!-- Add Plant -->
-      <button class="btn-primary" (click)="openCreate()" *ngIf="auth.hasAction('plants', 'create')" aria-label="Add" title="Add">
+      <button class="btn-primary" (click)="openCreate()" *ngIf="auth.hasAction('plants', 'create')">
         <mat-icon>add</mat-icon>
         New Plant
       </button>
@@ -35,7 +35,7 @@
 
     <!-- Loading overlay -->
     <div *ngIf="loading" class="loading-overlay">
-      <mat-spinner diameter="40"></mat-spinner>
+      <mat-spinner aria-label="Loading" diameter="40"></mat-spinner>
     </div>
 
     <div class="table-wrapper">
@@ -69,9 +69,8 @@
         <ng-container matColumnDef="is_active">
           <th mat-header-cell *matHeaderCellDef class="thead-custm">Status</th>
           <td mat-cell *matCellDef="let r">
-            <mat-slide-toggle color="primary" [checked]="r.is_active" (change)="toggle(r)"
-              [matTooltip]="r.is_active ? 'Active – click to deactivate' : 'Inactive – click to activate'">
-            </mat-slide-toggle>
+            <mat-slide-toggle [aria-label]="(r.plant_name) + ' – ' + (r.is_active ? 'Active' : 'Inactive')" color="primary" [checked]="r.is_active" (change)="toggle(r)"
+              [matTooltip]="r.is_active ? 'Active – click to deactivate' : 'Inactive – click to activate'">{{ r.is_active ? 'Active' : 'Inactive' }}</mat-slide-toggle>
           </td>
         </ng-container>
 
@@ -79,7 +78,7 @@
         <ng-container matColumnDef="actions" [stickyEnd]="true">
           <th mat-header-cell *matHeaderCellDef class="col-actions thead-custm">Actions</th>
           <td mat-cell *matCellDef="let r" class="col-actions">
-            <button mat-icon-button class="action-edit" (click)="openEdit(r)" matTooltip="Edit" *ngIf="auth.hasAction('plants', 'edit')" aria-label="Edit">
+            <button mat-icon-button class="action-edit" (click)="openEdit(r)" matTooltip="Edit" *ngIf="auth.hasAction('plants', 'edit')" [attr.aria-label]="'Edit ' + (r.plant_name)">
               <mat-icon>edit</mat-icon>
             </button>
           </td>

@@ -1,42 +1,48 @@
 <!-- Maintenance Report — the exportable ticket record, MEXA design. -->
 
-<p class="mexa-updated mb-2" *ngIf="updatedAt">
-  <mat-icon class="!w-4 !h-4 !text-sm" aria-hidden="true">refresh</mat-icon>
-  Updated {{ updatedAt }}
-</p>
-
 <!-- ══════════ TITLE BAR ══════════ -->
 <form class="mexa-titlebar" (ngSubmit)="submit()">
   <h1 class="mexa-title">Maintenance Report</h1>
+  <p class="mexa-updated" *ngIf="updatedAt">
+    <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
+    Updated {{ updatedAt }}
+  </p>
   <span class="mexa-titlebar-spacer"></span>
 
   <div class="mexa-filters" appFilterPanel>
-    <label class="mexa-filter-label" for="mrMachine">Machine</label>
-    <select id="mrMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
-      <option [ngValue]="null">All</option>
-      <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-    </select>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="mrMachine">Machine</label>
+      <select id="mrMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
+        <option [ngValue]="null">All</option>
+        <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+      </select>
+    </span>
 
-    <label class="mexa-filter-label" for="mrType">Type</label>
-    <select id="mrType" class="mexa-select" [(ngModel)]="f.issue_type" name="issue_type">
-      <option value="">All</option>
-      <option *ngFor="let t of ISSUES" [value]="t">{{ words(t) }}</option>
-    </select>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="mrType">Type</label>
+      <select id="mrType" class="mexa-select" [(ngModel)]="f.issue_type" name="issue_type">
+        <option value="">All</option>
+        <option *ngFor="let t of ISSUES" [value]="t">{{ words(t) }}</option>
+      </select>
+    </span>
 
-    <label class="mexa-filter-label" for="mrStatus">Status</label>
-    <select id="mrStatus" class="mexa-select" [(ngModel)]="f.status" name="status">
-      <option value="">All</option>
-      <option *ngFor="let s of STATUSES" [value]="s">{{ words(s) }}</option>
-    </select>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="mrStatus">Status</label>
+      <select id="mrStatus" class="mexa-select" [(ngModel)]="f.status" name="status">
+        <option value="">All</option>
+        <option *ngFor="let s of STATUSES" [value]="s">{{ words(s) }}</option>
+      </select>
+    </span>
 
-    <label class="mexa-filter-label" for="mrFrom">Date</label>
-    <input id="mrFrom" type="date" appReportDate [rdBefore]="f.to" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
-    <span class="mexa-filter-label" aria-hidden="true">–</span>
-    <input id="mrTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
-
-    <button type="submit" class="mexa-submit" [disabled]="loading">
-      {{ loading ? 'Loading…' : 'Submit' }}
-    </button>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="mrFrom">Date</label>
+      <input id="mrFrom" type="date" appReportDate [rdBefore]="f.to" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
+      <span class="mexa-filter-label" aria-hidden="true">–</span>
+      <input id="mrTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
+      <button type="submit" class="mexa-submit" [disabled]="loading">
+        {{ loading ? 'Loading…' : 'Submit' }}
+      </button>
+    </span>
   </div>
 </form>
 
@@ -167,19 +173,19 @@
         <thead>
           <tr>
             <th scope="col">Machine</th>
-            <th scope="col">Tickets</th>
-            <th scope="col">Breakdowns</th>
-            <th scope="col">Downtime</th>
-            <th scope="col">MTTR</th>
+            <th class="qty" scope="col">Tickets</th>
+            <th class="qty" scope="col">Breakdowns</th>
+            <th class="qty" scope="col">Downtime</th>
+            <th class="qty" scope="col">MTTR</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let r of data.by_machine">
             <td class="strong">{{ r.machine_serial_no }}</td>
-            <td class="num">{{ r.tickets }}</td>
-            <td class="num">{{ r.breakdowns }}</td>
-            <td class="num whitespace-nowrap">{{ minutes(r.downtime_minutes) }}</td>
-            <td class="num whitespace-nowrap">{{ hours(r.mttr_hours) }}</td>
+            <td class="num qty">{{ r.tickets }}</td>
+            <td class="num qty">{{ r.breakdowns }}</td>
+            <td class="num whitespace-nowrap qty">{{ minutes(r.downtime_minutes) }}</td>
+            <td class="num whitespace-nowrap qty">{{ hours(r.mttr_hours) }}</td>
           </tr>
           <tr *ngIf="!data.by_machine.length">
             <td colspan="5" class="mexa-empty">No machine has a ticket in this period.</td>
@@ -195,20 +201,23 @@
       <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Maintenance Tickets</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="mrSearch">Search tickets</label>
-        <input id="mrSearch" type="search" class="mexa-search" placeholder="Search"
-               [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
-        <span *ngIf="canExport" class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
-          <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">
-            {{ exporting === 'xlsx' ? '…' : 'Excel' }}
-          </button>
-          <button type="button" class="mexa-pagebtn" (click)="export('csv')" [disabled]="exporting">
-            {{ exporting === 'csv' ? '…' : 'CSV' }}
-          </button>
-          <button type="button" class="mexa-pagebtn" (click)="export('pdf')" [disabled]="exporting">
-            {{ exporting === 'pdf' ? '…' : 'PDF' }}
-          </button>
+        <span class="mexa-searchbox">
+          <span class="material-icons" aria-hidden="true">search</span>
+          <input id="mrSearch" type="search" class="mexa-search" placeholder="Search ticket, machine or title"
+                 [(ngModel)]="f.search" name="search" (ngModelChange)="onSearchInput()">
         </span>
-        <button type="button" class="mexa-pagebtn" (click)="reset()">Reset</button>
+        <span *ngIf="canExport" class="ui-btn-row" role="group" aria-label="Download the filtered list">
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('xlsx')" [disabled]="exporting">
+              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'xlsx' ? 'Preparing…' : 'Excel' }}
+            </button>
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('csv')" [disabled]="exporting">
+              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
+            </button>
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('pdf')" [disabled]="exporting">
+              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
+            </button>
+        </span>
+        <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()"><span class="material-icons" aria-hidden="true">restart_alt</span>Reset filters</button>
       </span>
     </div>
 
@@ -223,8 +232,8 @@
             <th scope="col">Type</th>
             <th scope="col">Priority</th>
             <th scope="col">Raised</th>
-            <th scope="col">Repair</th>
-            <th scope="col">Downtime</th>
+            <th class="qty" scope="col">Repair</th>
+            <th class="qty" scope="col">Downtime</th>
             <th scope="col">Assigned To</th>
             <th scope="col">Status</th>
           </tr>
@@ -233,17 +242,17 @@
           <tr *ngFor="let r of data.tickets.data; let i = index">
             <td class="num">{{ (data.tickets.page - 1) * limit + i + 1 }}</td>
             <td class="strong">{{ r.machine_serial_no }}</td>
-            <td>{{ r.title }}</td>
+            <td class="wrap">{{ r.title }}</td>
             <td>{{ words(r.issue_type) }}</td>
             <td>
               <span class="mexa-badge" [ngClass]="priorityBadge(r.priority)">{{ words(r.priority) }}</span>
             </td>
-            <td class="whitespace-nowrap">{{ r.created_at | date:'dd MMM, HH:mm' }}</td>
+            <td class="whitespace-nowrap">{{ r.created_at | date:'d MMM, h:mm a' }}</td>
             <!-- an unresolved ticket has no repair time yet: a dash, not zero -->
-            <td class="num whitespace-nowrap">{{ hours(r.repair_hours) }}</td>
+            <td class="num whitespace-nowrap qty">{{ hours(r.repair_hours) }}</td>
             <!-- read as hours and minutes, as everywhere else on the page;
                  a ticket with nothing entered is a dash, not 0m -->
-            <td class="num whitespace-nowrap">
+            <td class="num whitespace-nowrap qty">
               {{ r.downtime_minutes === null || r.downtime_minutes === undefined ? '--' : minutes(r.downtime_minutes) }}
             </td>
             <td>{{ r.assigned_to_name || 'Unassigned' }}</td>

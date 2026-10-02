@@ -332,19 +332,7 @@
         {{ activeTab === 'production' ? 'Production Report' : activeTab === 'oee-hourly' ? 'OEE Hourly Report' : 'Shift OEE Report' }}
         <span class="ml-2 text-sm font-normal text-gray-400">({{ rows.length }} records)</span>
       </p>
-      <div class="flex items-center gap-2 text-sm text-gray-400">
-        <span>Show</span>
-        <select [(ngModel)]="pageSize" (ngModelChange)="page = 1"
-          class="border border-gray-200 dark:border-gray-600 rounded px-2 py-1 text-sm
-                 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200" aria-label="Page size" >
-          <option [value]="10">10</option>
-          <option [value]="15">15</option>
-          <option [value]="25">25</option>
-          <option [value]="50">50</option>
-          <option [value]="100">100</option>
-        </select>
-        <span>per page</span>
-      </div>
+
     </div>
 
     <!-- No columns selected warning -->
@@ -354,54 +342,36 @@
     </div>
 
     <!-- Loading -->
-    <div *ngIf="loading" class="p-10 flex flex-col items-center gap-3">
-      <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      <p class="text-sm text-gray-400">Loading report data…</p>
-    </div>
+    <app-state *ngIf="loading" kind="loading" title="Loading the report…"></app-state>
 
     <!-- Empty state -->
-    <div *ngIf="!loading && rows.length === 0 && !rangeTooLong"
-      class="p-12 flex flex-col items-center gap-2 text-gray-400">
-      <svg class="w-12 h-12 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
-      </svg>
-      <p class="text-sm font-medium">No data found</p>
-      <p class="text-xs">Adjust your filters or date range and try again.</p>
-    </div>
+    <app-state *ngIf="!loading && rows.length === 0 && !rangeTooLong" kind="empty" icon="summarize"
+      title="No records for these filters"
+      text="Nothing was recorded for this date range, machine, operator or shift. Choose other filters and press Apply."></app-state>
 
     <!-- Data table -->
-    <div *ngIf="!loading && rows.length > 0 && selectedCount > 0" class="overflow-x-auto" tabindex="0" role="region" aria-label="Report table — scroll sideways to see every column">
-      <table class="w-full text-sm mexa-table">
+    <div *ngIf="!loading && rows.length > 0 && selectedCount > 0" class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Report table — scroll to see every row and column">
+      <table class="mexa-table">
         <thead>
-          <tr class="">
-            <th class="">#</th>
-            <th
-              *ngFor="let col of activeColumns"
-              (click)="sort(col.key)"
-              [class]="'px-3 py-2.5 text-base font-semibold  dark:text-gray-400
-                        cursor-pointer select-none whitespace-nowrap
-                        hover:text-gray-700 dark:hover:text-gray-200 transition-colors '
-                       + (col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left')">
-              {{ col.label }}
-              <span *ngIf="sortCol === col.key" class="ml-1">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
-              <span *ngIf="sortCol !== col.key" class="ml-1 opacity-20">⇅</span>
+          <tr>
+            <th scope="col" class="col-index">#</th>
+            <!-- a quantity column lines up on the right; the header is the sort button -->
+            <th scope="col" *ngFor="let col of activeColumns" [class.qty]="col.align && col.align !== 'left'"
+                [attr.aria-sort]="sortCol === col.key ? (sortDir === 'asc' ? 'ascending' : 'descending') : null">
+              <button type="button" class="mexa-sort" (click)="sort(col.key)" [attr.aria-current]="sortCol === col.key">
+                {{ col.label }}
+                <span class="mexa-sort-arrow" aria-hidden="true">{{ sortCol === col.key ? (sortDir === 'asc' ? '▲' : '▼') : '⇅' }}</span>
+              </button>
             </th>
           </tr>
         </thead>
         <tbody>
-          <tr
-            *ngFor="let row of pagedRows; let i = index"
-            [class]="i % 2 === 0
-              ? 'border-t border-gray-100 dark:border-gray-700 hover:bg-blue-50/40 dark:hover:bg-gray-700/40 transition-colors'
-              : 'border-t border-gray-100 dark:border-gray-700 bg-gray-50/40 dark:bg-gray-700/20 hover:bg-blue-50/40 transition-colors'">
+          <tr *ngFor="let row of pagedRows; let i = index">
 
-            <td class="px-3 py-2.5 text-xs text-gray-400">{{ (page - 1) * pageSize + i + 1 }}</td>
+            <td class="col-index num muted">{{ (page - 1) * pageSize + i + 1 }}</td>
 
-            <td
-              *ngFor="let col of activeColumns"
-              [class]="'px-3 py-2.5 text-gray-700 dark:text-gray-200 '
-                       + (col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left')">
+            <td *ngFor="let col of activeColumns" [class.qty]="col.align && col.align !== 'left'"
+                [class.muted]="row[col.key] === null || row[col.key] === undefined">
 
               <ng-container *ngIf="isOeeCol(col.key); else plain">
                 <span [class]="oeeColor(+row[col.key])">{{ row[col.key] ?? '--' }}%</span>
@@ -414,30 +384,10 @@
       </table>
     </div>
 
-    <!-- Pagination -->
-    <div *ngIf="!loading && totalPages > 1"
-      class="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-gray-700">
-      <p class="text-xs text-gray-400">
-        Showing {{ (page - 1) * pageSize + 1 }}–{{ minOf(page * pageSize, rows.length) }} of {{ rows.length }}
-      </p>
-      <div class="flex items-center gap-1">
-        <button type="button" [disabled]="page === 1" (click)="page = page - 1" aria-label="Previous page"
-          class="min-w-8 min-h-8 px-2 py-1 rounded text-xs border border-gray-200 dark:border-gray-600
-                 disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">‹</button>
-        <ng-container *ngFor="let n of pageNumbers">
-          <span *ngIf="n === -1" class="px-1 text-gray-400 text-xs">…</span>
-          <button type="button" *ngIf="n !== -1" (click)="page = n" [attr.aria-label]="'Page ' + n" [attr.aria-current]="n === page ? 'page' : null"
-            [class]="n === page
-              ? 'min-w-8 min-h-8 px-2.5 py-1 rounded text-xs font-semibold bg-blue-600 text-white'
-              : 'min-w-8 min-h-8 px-2.5 py-1 rounded text-xs border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300'">
-            {{ n }}
-          </button>
-        </ng-container>
-        <button type="button" [disabled]="page === totalPages" (click)="page = page + 1" aria-label="Next page"
-          class="min-w-8 min-h-8 px-2 py-1 rounded text-xs border border-gray-200 dark:border-gray-600
-                 disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">›</button>
-      </div>
-    </div>
+    <!-- Pagination: the same footer as every table -->
+    <app-mexa-pager *ngIf="!loading && rows.length > 0" [page]="page" [totalPages]="totalPages" [total]="rows.length"
+      [shown]="pagedRows.length" [limit]="pageSize" [sizes]="[10, 15, 25, 50, 100]"
+      (pageChange)="page = $event" (limitChange)="pageSize = $event; page = 1"></app-mexa-pager>
 
   </div><!-- /table card -->
   </div>

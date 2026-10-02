@@ -13,24 +13,27 @@
 </div>
 
   <div class="mexa-filters" appFilterPanel>
-    <label class="mexa-filter-label" for="pvMachine">Machine</label>
-    <select id="pvMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine">
-      <option [ngValue]="null">All</option>
-      <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-    </select>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="pvMachine">Machine</label>
+      <select id="pvMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine">
+        <option [ngValue]="null">All</option>
+        <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+      </select>
+    </span>
 
-    <label class="mexa-filter-label" for="pvFrom">Date</label>
-    <input id="pvFrom" type="date" appReportDate [rdBefore]="toDate" class="mexa-date" [(ngModel)]="fromDate" name="from"
-           aria-label="From date"
-           [attr.aria-invalid]="rangeError ? true : null" aria-describedby="pvRangeError">
-    <span class="mexa-filter-label" aria-hidden="true">–</span>
-    <input id="pvTo" type="date" appReportDate [rdAfter]="fromDate" class="mexa-date" [(ngModel)]="toDate" name="to"
-           aria-label="To date"
-           [attr.aria-invalid]="rangeError ? true : null" aria-describedby="pvRangeError">
-
-    <button type="submit" class="mexa-submit" [disabled]="loading">
-      {{ loading ? 'Loading…' : 'Submit' }}
-    </button>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="pvFrom">Date</label>
+      <input id="pvFrom" type="date" appReportDate [rdBefore]="toDate" class="mexa-date" [(ngModel)]="fromDate" name="from"
+             aria-label="From date"
+             [attr.aria-invalid]="rangeError ? true : null" aria-describedby="pvRangeError">
+      <span class="mexa-filter-label" aria-hidden="true">–</span>
+      <input id="pvTo" type="date" appReportDate [rdAfter]="fromDate" class="mexa-date" [(ngModel)]="toDate" name="to"
+             aria-label="To date"
+             [attr.aria-invalid]="rangeError ? true : null" aria-describedby="pvRangeError">
+      <button type="submit" class="mexa-submit" [disabled]="loading">
+        {{ loading ? 'Loading…' : 'Submit' }}
+      </button>
+    </span>
   </div>
 </form>
 
@@ -143,23 +146,23 @@
           [tooltip]="severityDonut.tooltip" [noData]="severityDonut.noData"></apx-chart>
         <ul class="mexa-keylist">
           <li>
-            <span class="mexa-key-swatch" style="--swatch:#e03131" aria-hidden="true"></span>
+            <span class="mexa-key-swatch" [style.--swatch]="SEV.critical.color" aria-hidden="true"></span>
             <span>
-              <span class="mexa-key-label">Critical</span>
+              <span class="mexa-key-label">{{ SEV.critical.label }}</span>
               <span class="mexa-key-value">{{ data.alarm_severity.critical }}</span>
             </span>
           </li>
           <li>
-            <span class="mexa-key-swatch" style="--swatch:#17b3a3" aria-hidden="true"></span>
+            <span class="mexa-key-swatch" [style.--swatch]="SEV.noncritical.color" aria-hidden="true"></span>
             <span>
-              <span class="mexa-key-label">Non critical</span>
+              <span class="mexa-key-label">{{ SEV.noncritical.label }}</span>
               <span class="mexa-key-value">{{ data.alarm_severity.non_critical }}</span>
             </span>
           </li>
           <li>
-            <span class="mexa-key-swatch" style="--swatch:#f5a623" aria-hidden="true"></span>
+            <span class="mexa-key-swatch" [style.--swatch]="SEV.info.color" aria-hidden="true"></span>
             <span>
-              <span class="mexa-key-label">Information</span>
+              <span class="mexa-key-label">{{ SEV.info.label }}</span>
               <span class="mexa-key-value">{{ data.alarm_severity.information }}</span>
             </span>
           </li>
@@ -195,13 +198,16 @@
       <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Preventive maintenance tickets (raised by alarms)</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="pvSearch">Search tickets</label>
-        <input id="pvSearch" type="search" class="mexa-search" placeholder="Search"
-               [(ngModel)]="search" name="search" (ngModelChange)="onSearchInput()">
-        <button type="button" class="mexa-pagebtn" (click)="showRules = !showRules"
+        <span class="mexa-searchbox">
+          <span class="material-icons" aria-hidden="true">search</span>
+          <input id="pvSearch" type="search" class="mexa-search" placeholder="Search ticket, machine or alarm"
+                 [(ngModel)]="search" name="search" (ngModelChange)="onSearchInput()">
+        </span>
+        <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="showRules = !showRules"
                 [attr.aria-expanded]="showRules">
-          {{ showRules ? 'Hide alarm rules' : 'Alarm rules' }}
+          <span class="material-icons" aria-hidden="true">rule</span>{{ showRules ? 'Hide alarm rules' : 'Alarm rules' }}
         </button>
-        <button type="button" class="mexa-pagebtn" (click)="reset()">Reset</button>
+        <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()"><span class="material-icons" aria-hidden="true">restart_alt</span>Reset filters</button>
       </span>
     </div>
 
@@ -218,7 +224,7 @@
             <th scope="col">Triggered On</th>
             <th scope="col">Due Date</th>
             <th scope="col">Status</th>
-            <th scope="col">Age</th>
+            <th class="qty" scope="col">Age</th>
           </tr>
         </thead>
         <tbody>
@@ -226,21 +232,21 @@
             <td class="num">{{ (data.tickets.page - 1) * limit + i + 1 }}</td>
             <td class="num strong">{{ t.ticket_id }}</td>
             <td>{{ t.machine_serial_no }}</td>
-            <td>
+            <td class="wrap">
               {{ t.alarm_name }}
               <span *ngIf="t.threshold_count" class="mexa-rank-sub">
                 after {{ t.threshold_count }} occurrences
               </span>
             </td>
             <td><span class="mexa-badge" [ngClass]="priorityBadge(t.priority)">{{ t.priority | titlecase }}</span></td>
-            <td class="num whitespace-nowrap">{{ t.created_at | date:'dd-MMM-yy HH:mm' }}</td>
+            <td class="num whitespace-nowrap">{{ t.created_at | date:'d MMM y, h:mm a' }}</td>
             <td class="num whitespace-nowrap">
-              {{ t.due_date ? (t.due_date | date:'dd-MMM-yy HH:mm') : '--' }}
+              {{ t.due_date ? (t.due_date | date:'d MMM y, h:mm a') : '--' }}
               <!-- overdue is a fact about the row, so it is said on the row -->
               <span *ngIf="t.is_overdue" class="mexa-rank-sub" style="color:var(--mexa-bad)">overdue</span>
             </td>
             <td><span class="mexa-badge" [ngClass]="statusBadge(t.status)">{{ statusWord(t.status) }}</span></td>
-            <td class="num">{{ age(t.age_hours) }}</td>
+            <td class="num qty">{{ age(t.age_hours) }}</td>
           </tr>
           <tr *ngIf="!data.tickets.data.length">
             <td colspan="9" class="mexa-empty">No tickets match these filters.</td>
@@ -303,11 +309,11 @@
           <tr>
             <th scope="col">Scope</th>
             <th scope="col">Alarm Type</th>
-            <th scope="col">Occurrences</th>
-            <th scope="col">Window</th>
-            <th scope="col">Due In</th>
+            <th class="qty" scope="col">Occurrences</th>
+            <th class="qty" scope="col">Window</th>
+            <th class="qty" scope="col">Due In</th>
             <th scope="col">Priority</th>
-            <th scope="col">Tickets Raised</th>
+            <th class="qty" scope="col">Tickets Raised</th>
             <th scope="col">Active</th>
           </tr>
         </thead>
@@ -315,11 +321,11 @@
           <tr *ngFor="let r of thresholds">
             <td class="strong">{{ r.machine_serial_no || r.scope_machine || 'All machines' }}</td>
             <td>{{ r.alarm_type || 'Any' }}</td>
-            <td class="num">{{ r.threshold_count }}</td>
-            <td class="num">{{ r.window_hours }}h</td>
-            <td class="num">{{ r.due_hours }}h</td>
+            <td class="num qty">{{ r.threshold_count }}</td>
+            <td class="num qty">{{ r.window_hours }}h</td>
+            <td class="num qty">{{ r.due_hours }}h</td>
             <td><span class="mexa-badge" [ngClass]="priorityBadge(r.priority)">{{ r.priority | titlecase }}</span></td>
-            <td class="num">{{ r.tickets_created ?? 0 }}</td>
+            <td class="num qty">{{ r.tickets_created ?? 0 }}</td>
             <td>
               <span class="mexa-badge" [class.mexa-badge-good]="r.is_active"
                     [class.mexa-badge-neutral]="!r.is_active">

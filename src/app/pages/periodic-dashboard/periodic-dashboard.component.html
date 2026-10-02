@@ -15,11 +15,13 @@
 </p>
 </div>
   <div class="mexa-filters" appFilterPanel>
-    <label class="mexa-filter-label" for="peMachine">Machine</label>
-    <select id="peMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine">
-      <option [ngValue]="null">All</option>
-      <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-    </select>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="peMachine">Machine</label>
+      <select id="peMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine">
+        <option [ngValue]="null">All</option>
+        <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+      </select>
+    </span>
 
     <button type="submit" class="mexa-submit" [disabled]="loading">
       {{ loading ? 'Loading…' : 'Submit' }}
@@ -225,7 +227,7 @@
                 <span class="mexa-rank-sub">{{ frequencyLabel(u.frequency) }}</span>
               </td>
               <td class="num whitespace-nowrap">
-                {{ u.due_date | date:'dd-MMM-yyyy' }}
+                {{ u.due_date | date:'d MMM y' }}
                 <span class="mexa-rank-sub" [style.color]="u.is_overdue ? 'var(--mexa-bad)' : null">
                   {{ dueLabel(u.due_date, u.is_overdue) }}
                 </span>
@@ -255,9 +257,9 @@
             <tr>
               <th scope="col">#</th>
               <th scope="col">Maintenance Type</th>
-              <th scope="col">Open</th>
-              <th scope="col">Completed</th>
-              <th scope="col">Overdue</th>
+              <th class="qty" scope="col">Open</th>
+              <th class="qty" scope="col">Completed</th>
+              <th class="qty" scope="col">Overdue</th>
               <th scope="col">Next Due</th>
             </tr>
           </thead>
@@ -265,11 +267,11 @@
             <tr *ngFor="let f of data.by_frequency; let i = index">
               <td class="num">{{ i + 1 }}</td>
               <td class="strong">{{ frequencyLabel(f.frequency) }}</td>
-              <td class="num">{{ f.open }}</td>
-              <td class="num">{{ f.completed }}</td>
-              <td class="num" [style.color]="f.overdue ? 'var(--mexa-bad)' : null">{{ f.overdue }}</td>
+              <td class="num qty">{{ f.open }}</td>
+              <td class="num qty">{{ f.completed }}</td>
+              <td class="num qty" [style.color]="f.overdue ? 'var(--mexa-bad)' : null">{{ f.overdue }}</td>
               <td class="num whitespace-nowrap">
-                {{ f.next_due_at ? (f.next_due_at | date:'dd-MMM-yyyy') : '--' }}
+                {{ f.next_due_at ? (f.next_due_at | date:'d MMM y') : '--' }}
               </td>
             </tr>
             <tr *ngIf="!data.by_frequency.length">
@@ -293,31 +295,34 @@
           <option *ngFor="let s of STATUSES" [value]="s">{{ statusWord(s) }}</option>
         </select>
         <label class="sr-only" for="peSearch">Search tickets</label>
-        <input id="peSearch" type="search" class="mexa-search" placeholder="Search"
-               [(ngModel)]="search" name="search" (ngModelChange)="onSearchInput()">
-        <span *ngIf="canExport" class="inline-flex items-center gap-1" role="group" aria-label="Export the filtered list">
-          <button type="button" class="mexa-pagebtn" (click)="export('xlsx')" [disabled]="exporting">
-            {{ exporting === 'xlsx' ? '…' : 'Excel' }}
-          </button>
-          <button type="button" class="mexa-pagebtn" (click)="export('csv')" [disabled]="exporting">
-            {{ exporting === 'csv' ? '…' : 'CSV' }}
-          </button>
-          <button type="button" class="mexa-pagebtn" (click)="export('pdf')" [disabled]="exporting">
-            {{ exporting === 'pdf' ? '…' : 'PDF' }}
-          </button>
+        <span class="mexa-searchbox">
+          <span class="material-icons" aria-hidden="true">search</span>
+          <input id="peSearch" type="search" class="mexa-search" placeholder="Search ticket, machine or title"
+                 [(ngModel)]="search" name="search" (ngModelChange)="onSearchInput()">
         </span>
-        <button type="button" class="mexa-pagebtn" (click)="runEngine()" [disabled]="running">
-          {{ running ? 'Generating…' : 'Generate due tickets' }}
+        <span *ngIf="canExport" class="ui-btn-row" role="group" aria-label="Download the filtered list">
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('xlsx')" [disabled]="exporting">
+              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'xlsx' ? 'Preparing…' : 'Excel' }}
+            </button>
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('csv')" [disabled]="exporting">
+              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
+            </button>
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('pdf')" [disabled]="exporting">
+              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
+            </button>
+        </span>
+        <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="runEngine()" [disabled]="running">
+          <span class="material-icons" aria-hidden="true">playlist_add_check</span>{{ running ? 'Generating…' : 'Generate due tickets' }}
         </button>
-        <button type="button" class="mexa-pagebtn" (click)="reset()">Reset</button>
+        <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()"><span class="material-icons" aria-hidden="true">restart_alt</span>Reset filters</button>
       </span>
     </div>
 
     <!-- the filter is stated, because the table below is a subset -->
     <p *ngIf="dueFilter" class="mexa-note">
       Showing only tickets that are <strong>{{ dueFilter === 'overdue' ? 'overdue' : 'due today' }}</strong>.
-      <button type="button" class="mexa-pagebtn" (click)="focusDue(dueFilter === 'overdue' ? 'overdue' : 'today')">
-        Clear
+      <button type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="focusDue(dueFilter === 'overdue' ? 'overdue' : 'today')">
+        Show all tickets
       </button>
     </p>
 
@@ -348,12 +353,12 @@
             <td><span class="mexa-badge" [ngClass]="priorityBadge(t.priority)">{{ t.priority | titlecase }}</span></td>
             <td>{{ frequencyLabel(t.frequency) }}</td>
             <td class="num whitespace-nowrap">
-              {{ t.due_date | date:'dd-MMM-yy' }}
+              {{ t.due_date | date:'d MMM y' }}
               <span *ngIf="t.is_overdue" class="mexa-rank-sub" style="color:var(--mexa-bad)">overdue</span>
             </td>
             <td><span class="mexa-badge" [ngClass]="statusBadge(t.status)">{{ statusWord(t.status) }}</span></td>
             <td class="num whitespace-nowrap">
-              {{ t.completed_at ? (t.completed_at | date:'dd-MMM-yy HH:mm') : '-' }}
+              {{ t.completed_at ? (t.completed_at | date:'d MMM y, h:mm a') : '-' }}
             </td>
           </tr>
           <tr *ngIf="!data.tickets.data.length">
@@ -437,7 +442,7 @@
             <td>{{ s.title }}</td>
             <td>{{ frequencyLabel(s.frequency) }}</td>
             <td class="num whitespace-nowrap">
-              {{ s.next_due_at ? (s.next_due_at | date:'dd-MMM-yyyy') : '--' }}
+              {{ s.next_due_at ? (s.next_due_at | date:'d MMM y') : '--' }}
             </td>
             <td class="num">{{ s.grace_days }}d</td>
             <td>{{ s.assigned_to_name || 'Unassigned' }}</td>

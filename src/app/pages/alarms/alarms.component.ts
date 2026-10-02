@@ -6,6 +6,7 @@ import { TicketService } from '../../core/services/ticket.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { SEVERITY, severityOf } from '../../shared/severity';
 
 @Component({
   selector: 'app-alarms',
@@ -13,7 +14,6 @@ import { FilterPanelDirective } from '../../shared/filter-panel.directive';
   imports: [FilterPanelDirective, CommonModule, FormsModule],
   templateUrl: './alarms.component.html',
   styles: [`
-    .alarm-msg { max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .alarm-note { width: 11rem; min-height: 1.875rem; padding: .25rem .55rem; font-size: .8rem; }
   `]
 })
@@ -120,6 +120,10 @@ export class AlarmsComponent implements OnInit {
 
   /* The machines send CRITICAL and NORMAL; INFORMATION and the older
      LOW/MEDIUM/HIGH wording are kept so no severity shows up unstyled. */
+  /* severity in words, icon and colour (shared/severity.ts) */
+  readonly SEV = SEVERITY;
+  readonly sevOf = severityOf;
+
   severityClass(severity: string) {
     const map: any = {
       CRITICAL: 'mexa-badge-bad', HIGH: 'mexa-badge-bad',

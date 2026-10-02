@@ -13,6 +13,7 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { updatedLabel } from '../../shared/updated-label';
+import { ALARM_STATE, SEVERITY, severityOf } from '../../shared/severity';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 5 — Alarm Dashboard & Reports
@@ -45,11 +46,11 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
 
   /** Table columns, in the design's order; `key` is what the server sorts by. */
   readonly columns = [
-    { key: 'machine_serial_no', label: 'Machine Name' }, { key: 'shift_name', label: 'Shift' },
+    { key: 'machine_serial_no', label: 'Machine' }, { key: 'shift_name', label: 'Shift' },
     { key: 'alarm_code', label: 'Alarm Code' }, { key: 'message', label: 'Alarm Name' },
     { key: 'severity', label: 'Severity' }, { key: 'status', label: 'Status' },
-    { key: 'duration_seconds', label: 'Duration (HH:MM:SS)' }, { key: 'started_at', label: 'Generated Time' },
-    { key: 'ended_at', label: 'Closed Time' }
+    { key: 'duration_seconds', label: 'Duration (h:m:s)', cls: 'qty' }, { key: 'started_at', label: 'Started' },
+    { key: 'ended_at', label: 'Closed' }
   ];
 
   /* ── KPI card drill-down ──
@@ -62,7 +63,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
 
   readonly drillLabels: Record<string, string> = {
     critical: 'critical alarms only',
-    normal:   'normal alarms only',
+    normal:   'non-critical alarms only',
     open:     'open alarms only — not yet closed',
     longest:  'every alarm, longest first'
   };
@@ -206,8 +207,8 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
       ? `${String(t.hour).padStart(2, '0')}:00`
       : new Date(t.day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
     this.trendSeries = [
-      { name: 'Critical', data: (d.trend || []).map((t: any) => t.critical) },
-      { name: 'Normal',   data: (d.trend || []).map((t: any) => t.total - t.critical) }
+      { name: SEVERITY.critical.label, data: (d.trend || []).map((t: any) => t.critical) },
+      { name: SEVERITY.noncritical.label, data: (d.trend || []).map((t: any) => t.total - t.critical) }
     ];
 
     this.machineCategories = (d.by_machine || []).map((m: any) => m.machine_serial_no);
@@ -310,6 +311,11 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
   }
 
+  /* severity and open/closed: a word, an icon and a colour (shared/severity.ts) */
+  readonly SEV = SEVERITY;
+  readonly STATE = ALARM_STATE;
+  readonly sevOf = severityOf;
+
   isCritical(severity: string): boolean {
     return String(severity || '').toUpperCase() === 'CRITICAL';
   }
@@ -345,9 +351,10 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
       plotOptions: {},
       stroke: { width: 3, curve: 'smooth' },
       markers: { size: 4 },
-      colors: ['#e03131', '#f59f00'],
+      colors: [SEVERITY.critical.color, SEVERITY.noncritical.color],
       dataLabels: { enabled: false },
-      legend: { position: 'top', horizontalAlign: 'right', show:false },
+      // two lines in two colours: the key says which is which
+      legend: { show: true, position: 'top', horizontalAlign: 'right', fontSize: '12px', markers: { size: 5 } },
       xaxis:  { categories: this.trendCategories },
       yaxis:  { title: { text: 'No. of Alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
@@ -396,8 +403,8 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     return this.charts.memo('severityDonut', () => {
     return {
       chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
-      labels: ['Critical', 'Normal'],
-      colors: ['#e03131', '#17b3a3'],
+      labels: [SEVERITY.critical.label, SEVERITY.noncritical.label],
+      colors: [SEVERITY.critical.color, SEVERITY.noncritical.color],
       plotOptions: { pie: { donut: { size: '62%' } } },
       dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%` },
       legend: { show: false },

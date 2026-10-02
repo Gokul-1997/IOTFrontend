@@ -479,7 +479,7 @@ test('Alarm Report: a card click narrows the table to that card', async ({ authe
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/alarm-report');
 
-  const critical = page.locator('button.mexa-kpi').filter({ hasText: 'Critical' });
+  const critical = page.locator('button.mexa-kpi').filter({ hasText: /^\s*Critical Alarms/ });
   await expect(critical).toHaveAttribute('aria-pressed', 'false');
   await critical.click();
   await expect(critical).toHaveAttribute('aria-pressed', 'true');

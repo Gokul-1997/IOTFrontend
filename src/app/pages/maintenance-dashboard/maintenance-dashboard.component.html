@@ -37,27 +37,32 @@
   <span class="mexa-titlebar-spacer"></span> -->
 
   <div class="mexa-filters" appFilterPanel>
-    <label class="mexa-filter-label" for="mtShift">Shift</label>
-    <select id="mtShift" class="mexa-select" [(ngModel)]="selectedShift" name="shift">
-      <option [ngValue]="null">All</option>
-      <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_name || s.name }}</option>
-    </select>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="mtShift">Shift</label>
+      <select id="mtShift" class="mexa-select" [(ngModel)]="selectedShift" name="shift">
+        <option [ngValue]="null">All</option>
+        <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_name || s.name }}</option>
+      </select>
+    </span>
 
-    <label class="mexa-filter-label" for="mtMachine">Machine</label>
-    <select id="mtMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine"
-            aria-describedby="mtMachineHint">
-      <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-    </select>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="mtMachine">Machine</label>
+      <select id="mtMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine"
+              aria-describedby="mtMachineHint">
+        <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+      </select>
+    </span>
     <span id="mtMachineHint" class="sr-only">
       This dashboard reports one machine's condition at a time.
     </span>
 
-    <label class="mexa-filter-label" for="mtDate">Date</label>
-    <input id="mtDate" type="date" appReportDate class="mexa-date" [(ngModel)]="selectedDate" name="date">
-
-    <button type="submit" class="mexa-submit" [disabled]="loading">
-      {{ loading ? 'Loading…' : 'Submit' }}
-    </button>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="mtDate">Date</label>
+      <input id="mtDate" type="date" appReportDate class="mexa-date" [(ngModel)]="selectedDate" name="date">
+      <button type="submit" class="mexa-submit" [disabled]="loading">
+        {{ loading ? 'Loading…' : 'Submit' }}
+      </button>
+    </span>
   </div>
 </form>
 
@@ -253,9 +258,9 @@
           [plotOptions]="alarmDonut.plotOptions" [legend]="alarmDonut.legend"
           [tooltip]="alarmDonut.tooltip" [noData]="alarmDonut.noData"></apx-chart>
         <ul class="mt-alarmlist">
-          <li><span class="mt-dot" style="background:#e03131" aria-hidden="true"></span><span>Critical Alarms</span><strong>{{ alarmShare(data.alarms.critical) }}</strong></li>
-          <li><span class="mt-dot" style="background:#22c55e" aria-hidden="true"></span><span>Non Critical Alarms</span><strong>{{ alarmShare(data.alarms.non_critical) }}</strong></li>
-          <li><span class="mt-dot" style="background:#f5a623" aria-hidden="true"></span><span>Info</span><strong>{{ alarmShare(data.alarms.information) }}</strong></li>
+          <li><span class="mt-dot" [style.background]="SEV.critical.color" aria-hidden="true"></span><span>Critical alarms</span><strong>{{ alarmShare(data.alarms.critical) }}</strong></li>
+          <li><span class="mt-dot" [style.background]="SEV.noncritical.color" aria-hidden="true"></span><span>Non-critical alarms</span><strong>{{ alarmShare(data.alarms.non_critical) }}</strong></li>
+          <li><span class="mt-dot" [style.background]="SEV.info.color" aria-hidden="true"></span><span>Information</span><strong>{{ alarmShare(data.alarms.information) }}</strong></li>
         </ul>
       </ng-container>
       <ng-template #noAlarms><p class="mexa-empty">No alarms in this window.</p></ng-template>

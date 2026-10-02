@@ -14,7 +14,7 @@
   <strong>Upcoming in the next 7 days</strong>
   <ul>
     <li *ngFor="let u of upcoming" class="mexa-badge mexa-badge-warn">
-      {{ u.machine_serial_no }} &mdash; {{ u.title }} ({{ u.scheduled_at | date:'shortDate' }})
+      {{ u.machine_serial_no }} &mdash; {{ u.title }} ({{ u.scheduled_at | date:'d MMM y' }})
     </li>
   </ul>
 </div>
@@ -136,12 +136,12 @@
           <ng-container *ngIf="tickets.length > 0; else noTickets">
             <tr *ngFor="let t of tickets" class="is-clickable" (click)="openTicket(t)">
               <td class="strong">{{ t.machine_serial_no }}</td>
-              <td><button type="button" class="row-link" (click)="$event.stopPropagation(); openTicket(t)">{{ t.title }}</button></td>
+              <td class="wrap"><button type="button" class="row-link" (click)="$event.stopPropagation(); openTicket(t)">{{ t.title }}</button></td>
               <td>{{ t.issue_type }}</td>
               <td><span class="mexa-badge" [ngClass]="priorityClass(t.priority)">{{ t.priority }}</span></td>
               <td>{{ t.assigned_to_name || '--' }}</td>
               <td><span class="mexa-badge" [ngClass]="ticketStatusClass(t.status)">{{ t.status }}</span></td>
-              <td class="num">{{ t.created_at | date:'short' }}</td>
+              <td class="num">{{ t.created_at | date:'d MMM y, h:mm a' }}</td>
             </tr>
           </ng-container>
           <ng-template #noTickets>
@@ -160,7 +160,7 @@
       <div class="ui-dialog-header">
         <div>
           <h2 id="ticketTitle" class="ui-dialog-title">{{ selectedTicket.title }}</h2>
-          <p class="ui-dialog-subtitle">{{ selectedTicket.machine_serial_no }} &middot; {{ selectedTicket.created_at | date:'short' }}</p>
+          <p class="ui-dialog-subtitle">{{ selectedTicket.machine_serial_no }} &middot; {{ selectedTicket.created_at | date:'d MMM y, h:mm a' }}</p>
         </div>
         <button type="button" class="ui-close" (click)="closeTicketDetail()" aria-label="Close ticket details">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5" aria-hidden="true">
@@ -212,7 +212,7 @@
           <div class="mt-history">
             <div *ngFor="let h of selectedTicket.history">
               <strong>{{ h.from_status || 'Created' }} &rarr; {{ h.to_status }}</strong>
-              <span class="muted"> &middot; {{ h.created_at | date:'short' }}</span>
+              <span class="muted"> &middot; {{ h.created_at | date:'d MMM y, h:mm a' }}</span>
               <span *ngIf="h.changed_by_name" class="muted"> &middot; {{ h.changed_by_name }}</span>
               <div *ngIf="h.note" class="muted">{{ h.note }}</div>
             </div>
@@ -280,19 +280,19 @@
             <th scope="col">Scheduled</th>
             <th scope="col">Assigned to</th>
             <th scope="col">Status</th>
-            <th scope="col">Action</th>
+            <th class="actions" scope="col">Action</th>
           </tr>
         </thead>
         <tbody>
           <ng-container *ngIf="schedules.length > 0; else noSchedules">
             <tr *ngFor="let s of schedules">
               <td class="strong">{{ s.machine_serial_no }}</td>
-              <td>{{ s.title }}</td>
+              <td class="wrap">{{ s.title }}</td>
               <td>{{ s.maintenance_type }}</td>
-              <td class="num">{{ s.scheduled_at | date:'short' }}</td>
+              <td class="num">{{ s.scheduled_at | date:'d MMM y, h:mm a' }}</td>
               <td>{{ s.assigned_to || '--' }}</td>
               <td><span class="mexa-badge" [ngClass]="statusClass(s.status)">{{ s.status }}</span></td>
-              <td><button type="button" (click)="deleteSchedule(s.id)" class="ui-btn ui-btn-danger-ghost ui-btn-xs">Remove</button></td>
+              <td class="actions"><button type="button" (click)="deleteSchedule(s.id)" class="ui-btn ui-btn-danger-ghost ui-btn-xs">Remove</button></td>
             </tr>
           </ng-container>
           <ng-template #noSchedules>
@@ -366,9 +366,9 @@
           <ng-container *ngIf="logs.length > 0; else noLogs">
             <tr *ngFor="let l of logs">
               <td class="strong">{{ l.machine_serial_no }}</td>
-              <td>{{ l.title }}</td>
+              <td class="wrap">{{ l.title }}</td>
               <td>{{ l.maintenance_type }}</td>
-              <td class="num">{{ l.started_at | date:'short' }}</td>
+              <td class="num">{{ l.started_at | date:'d MMM y, h:mm a' }}</td>
               <td>{{ l.technician_name || '--' }}</td>
               <td><span class="mexa-badge" [ngClass]="statusClass(l.status)">{{ l.status }}</span></td>
             </tr>
@@ -389,18 +389,18 @@
       <thead>
         <tr>
           <th scope="col">Machine</th>
-          <th scope="col" class="num-col">Total events</th>
-          <th scope="col" class="num-col">Avg repair time</th>
-          <th scope="col" class="num-col">Total downtime</th>
+          <th scope="col" class="qty">Total events</th>
+          <th scope="col" class="qty">Avg repair time</th>
+          <th scope="col" class="qty">Total downtime</th>
         </tr>
       </thead>
       <tbody>
         <ng-container *ngIf="mttr.length > 0; else noMttr">
           <tr *ngFor="let m of mttr">
             <td class="strong">{{ m.machine_serial_no }}</td>
-            <td class="num num-col">{{ m.total_events }}</td>
-            <td class="num num-col">{{ m.avg_repair_minutes | number:'1.1-1' }} min</td>
-            <td class="num num-col">{{ (m.total_downtime_minutes / 60 | number:'1.1-1') }} hrs</td>
+            <td class="num qty">{{ m.total_events }}</td>
+            <td class="num qty">{{ m.avg_repair_minutes | number:'1.1-1' }} min</td>
+            <td class="num qty">{{ (m.total_downtime_minutes / 60 | number:'1.1-1') }} hrs</td>
           </tr>
         </ng-container>
         <ng-template #noMttr>

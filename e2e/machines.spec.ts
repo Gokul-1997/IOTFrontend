@@ -51,7 +51,7 @@ test.describe('Machines page', () => {
     await stubMachines(page);
     await page.goto('/machines');
 
-    await page.getByRole('button', { name: 'Add' }).click();
+    await page.getByRole('button', { name: 'New Machine' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page).toHaveURL(/\/machines$/);
   });

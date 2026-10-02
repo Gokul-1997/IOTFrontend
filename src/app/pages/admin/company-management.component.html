@@ -45,15 +45,15 @@
       <table class="mexa-table">
         <thead>
           <tr>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Company</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Plan</th>
-            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Limits</th>
-            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
+            <th scope="col">Company</th>
+            <th scope="col">Plan</th>
+            <th scope="col" class="center">Limits</th>
+            <th scope="col" class="center">Status</th>
+            <th scope="col" class="center">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let c of companies" class="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
+          <tr *ngFor="let c of companies">
             <td class="px-4 py-3">
               <div>
                 <span class="font-semibold text-gray-800 dark:text-white">{{ c.company_name }}</span>
@@ -141,34 +141,34 @@
     </div>
     <div class="ui-dialog-body space-y-4">
       <div>
-        <label class="ui-label">Company Code *</label>
-        <input [(ngModel)]="form.company_code" type="text" [disabled]="isEditing"
+        <label class="ui-label" for="cm-company-code">Company Code *</label>
+        <input id="cm-company-code" required aria-required="true" [(ngModel)]="form.company_code" type="text" [disabled]="isEditing"
           class="ui-input"
           placeholder="e.g., ACME">
       </div>
       <div>
-        <label class="ui-label">Company Name *</label>
-        <input [(ngModel)]="form.company_name" type="text"
+        <label class="ui-label" for="cm-company-name">Company Name *</label>
+        <input id="cm-company-name" required aria-required="true" [(ngModel)]="form.company_name" type="text"
           class="ui-input"
           placeholder="e.g., Acme Manufacturing Ltd.">
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="ui-label">Email</label>
-          <input [(ngModel)]="form.contact_email" type="email"
+          <label class="ui-label" for="cm-email">Email</label>
+          <input id="cm-email" [(ngModel)]="form.contact_email" type="email"
             class="ui-input"
             placeholder="admin&#64;acme.com">
         </div>
         <div>
-          <label class="ui-label">Phone</label>
-          <input [(ngModel)]="form.contact_phone" type="text"
+          <label class="ui-label" for="cm-phone">Phone</label>
+          <input id="cm-phone" [(ngModel)]="form.contact_phone" type="text"
             class="ui-input"
             placeholder="+91-XXXX">
         </div>
       </div>
       <div>
-        <label class="ui-label">Address</label>
-        <textarea [(ngModel)]="form.address" rows="2"
+        <label class="ui-label" for="cm-address">Address</label>
+        <textarea id="cm-address" [(ngModel)]="form.address" rows="2"
           class="ui-input"
           placeholder="City, State"></textarea>
       </div>
@@ -184,14 +184,14 @@
         <p class="text-xs text-gray-400 mb-3">This user will manage users & roles for this company. Password will be auto-generated and sent via email.</p>
         <div class="space-y-3">
           <div>
-            <label class="ui-label">Admin Username *</label>
-            <input [(ngModel)]="form.admin_username" type="text"
+            <label class="ui-label" for="cm-admin-username">Admin Username *</label>
+            <input id="cm-admin-username" required aria-required="true" [(ngModel)]="form.admin_username" type="text"
               class="ui-input"
               placeholder="e.g., acme_admin">
           </div>
           <div>
-            <label class="ui-label">Admin Email *</label>
-            <input [(ngModel)]="form.admin_email" type="email"
+            <label class="ui-label" for="cm-admin-email">Admin Email *</label>
+            <input id="cm-admin-email" required aria-required="true" [(ngModel)]="form.admin_email" type="email"
               class="ui-input"
               placeholder="admin@company.com">
           </div>
@@ -552,29 +552,30 @@
         <p class="font-medium">No plants yet</p>
         <p class="text-sm mt-1">Click <strong>+ Add Plant</strong> to create the first plant.</p>
       </div>
-      <table *ngIf="!plantsLoading && plants.length > 0" class="w-full border-collapse text-sm">
+      <div *ngIf="!plantsLoading && plants.length > 0" class="mexa-tablewrap" tabindex="0" role="region" aria-label="Plants">
+      <table class="mexa-table">
         <thead>
-          <tr class="border-b border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            <th class="pb-2 text-left">#</th>
-            <th class="pb-2 text-left">Code</th>
-            <th class="pb-2 text-left">Name</th>
-            <th class="pb-2 text-left">Location</th>
-            <th class="pb-2 text-center">Status</th>
-            <th class="pb-2 text-center">Actions</th>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Code</th>
+            <th scope="col">Name</th>
+            <th scope="col">Location</th>
+            <th scope="col" class="center">Status</th>
+            <th scope="col" class="center">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let p of plants; let i = index" class="hover:bg-gray-50 dark:hover:bg-gray-750">
-            <td class="py-2.5 pr-3 text-gray-400">{{ i + 1 }}</td>
-            <td class="py-2.5 pr-3 font-mono font-semibold text-teal-700 dark:text-teal-400">{{ p.plant_code }}</td>
-            <td class="py-2.5 pr-3 font-medium text-gray-800 dark:text-white">{{ p.plant_name }}</td>
-            <td class="py-2.5 pr-3 text-gray-500">{{ p.location || '—' }}</td>
-            <td class="py-2.5 text-center">
+          <tr *ngFor="let p of plants; let i = index">
+            <td class="num muted">{{ i + 1 }}</td>
+            <td class="num strong">{{ p.plant_code }}</td>
+            <td class="strong">{{ p.plant_name }}</td>
+            <td [class.muted]="!p.location">{{ p.location || '—' }}</td>
+            <td class="center">
               <span class="mexa-badge" [ngClass]="p.is_active ? 'mexa-badge-good' : 'mexa-badge-bad'">
                 {{ p.is_active ? 'Active' : 'Inactive' }}
               </span>
             </td>
-            <td class="py-2.5 text-center">
+            <td class="center">
               <div class="flex items-center justify-center gap-2">
                 <button (click)="openPlantEdit(p)"
                   class="ui-btn ui-btn-ghost ui-btn-xs">Edit</button>
@@ -587,6 +588,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <!-- Footer -->
@@ -633,7 +635,7 @@
             <p class="text-sm text-red-700 dark:text-red-300">
               <strong>No active plan.</strong>
               <span *ngIf="usage.expires_at">
-                The {{ usage.plan_name }} plan expired on {{ usage.expires_at | date:'dd MMM yyyy' }}.
+                The {{ usage.plan_name }} plan expired on {{ usage.expires_at | date:'d MMM y' }}.
               </span>
               This company cannot create users, plants or machines until a plan is assigned.
             </p>
@@ -672,35 +674,35 @@
         </div>
 
         <div *ngIf="!historyLoading && history.length > 0" class="mexa-tablewrap">
-          <table class="w-full border-collapse text-sm">
+          <table class="mexa-table">
             <thead>
               <tr>
-                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">When</th>
-                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Change</th>
-                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Limits</th>
-                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">By</th>
+                <th scope="col">When</th>
+                <th scope="col">Change</th>
+                <th scope="col">Limits</th>
+                <th scope="col">By</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let h of history">
-                <td class="px-3 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">
-                  {{ h.changed_at | date:'dd MMM yyyy HH:mm' }}
+                <td class="num">
+                  {{ h.changed_at | date:'d MMM y, h:mm a' }}
                 </td>
-                <td class="px-3 py-2">
+                <td class="wrap">
                   <span *ngIf="h.previous_plan_name" class="text-gray-400">{{ h.previous_plan_name }} → </span>
                   <strong class="text-gray-800 dark:text-white">{{ h.plan_name || '—' }}</strong>
                   <p *ngIf="h.note" class="text-xs text-gray-500 mt-0.5">{{ h.note }}</p>
                   <p *ngIf="h.expires_at" class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
-                    Expires {{ h.expires_at | date:'dd MMM yyyy' }}
+                    Expires {{ h.expires_at | date:'d MMM y' }}
                   </p>
                 </td>
-                <td class="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">
+                <td>
                   <!-- blank means the plan's own ceiling was used, not zero -->
                   <div>Users: {{ h.max_users === null ? 'plan default' : h.max_users }}</div>
                   <div>Plants: {{ h.max_plants === null ? 'plan default' : h.max_plants }}</div>
                   <div>Machines: {{ h.max_machines === null ? 'plan default' : h.max_machines }}</div>
                 </td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-300">{{ h.changed_by_name || '—' }}</td>
+                <td>{{ h.changed_by_name || '—' }}</td>
               </tr>
             </tbody>
           </table>

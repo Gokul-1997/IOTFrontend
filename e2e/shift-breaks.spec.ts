@@ -98,7 +98,7 @@ test('a new shift is told to add breaks after it is created', async ({ authedPag
   await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
   await page.route('**/api/**', (r: any) => r.fulfill(ok({ status: 'success', data: [] })));
   await page.goto('/shifts');
-  await page.getByRole('button', { name: 'Add' }).click();
+  await page.getByRole('button', { name: 'New Shift' }).click();
   await expect(page.getByRole('dialog', { name: 'Create Shift' })
     .getByText('Create the shift first, then open it again to add its break times.')).toBeVisible();
 });

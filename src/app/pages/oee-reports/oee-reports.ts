@@ -168,6 +168,12 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
     this.loadReports();
   }
 
+  /** For the column header: which way the table is sorted, if by this column. */
+  ariaSort(column: string): 'ascending' | 'descending' | null {
+    if (this.sortBy !== column) return null;
+    return this.sortOrder === 'ASC' ? 'ascending' : 'descending';
+  }
+
   getSortIcon(column: string): string {
     if (this.sortBy !== column) return '⇅';
     return this.sortOrder === 'ASC' ? '↑' : '↓';

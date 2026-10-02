@@ -68,18 +68,18 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
     { key: 'operator_code',      label: 'ID' },
     { key: 'operator_name',      label: 'Name' },
     { key: 'shift_name',         label: 'Shift' },
-    { key: 'machine_names',      label: 'Machine Name' },
-    { key: 'score',              label: 'Performance' },
-    { key: 'run_seconds',        label: 'Run Time' },
-    { key: 'downtime_seconds',   label: 'Down Time' },
-    { key: 'utilization_pct',    label: 'Utilization (%)' },
-    { key: 'produced',           label: 'Prod Qty' },
-    { key: 'good',               label: 'Good Qty' },
-    { key: 'rejected',           label: 'Rej Qty' },
-    { key: 'quality_rate_pct',   label: 'Qly Rate' },
-    { key: 'alarm_count',        label: 'Alarms' },
-    { key: 'oee_pct',            label: 'OEE (%)' },
-    { key: 'efficiency_pct',     label: 'Efficiency' }
+    { key: 'machine_names',      label: 'Machines', cls: 'wrap' },
+    { key: 'score',              label: 'Performance', cls: 'qty' },
+    { key: 'run_seconds',        label: 'Run time', cls: 'qty' },
+    { key: 'downtime_seconds',   label: 'Downtime', cls: 'qty' },
+    { key: 'utilization_pct',    label: 'Utilization (%)', cls: 'qty' },
+    { key: 'produced',           label: 'Produced', cls: 'qty' },
+    { key: 'good',               label: 'Good', cls: 'qty' },
+    { key: 'rejected',           label: 'Rejected', cls: 'qty' },
+    { key: 'quality_rate_pct',   label: 'Quality (%)', cls: 'qty' },
+    { key: 'alarm_count',        label: 'Alarms', cls: 'qty' },
+    { key: 'oee_pct',            label: 'OEE (%)', cls: 'qty' },
+    { key: 'efficiency_pct',     label: 'Efficiency', cls: 'qty' }
   ];
 
   constructor(

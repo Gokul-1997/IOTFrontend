@@ -333,7 +333,7 @@
 
     <!-- CHART — controlled by widget:hourly-chart -->
     <div *ngIf="auth.hasWidget('quality', 'hourly-chart')" class="bg-common">
-      <p class="font-medium mb-2">Overall Performance Hour Wise</p>
+      <h2 class="mexa-card-title mexa-card-title-left mb-2">OEE hour by hour</h2>
 
       <app-state *ngIf="loadState === 'error'" kind="error" title="Could not load the quality figures"
         text="Check the connection, then try again." action="Try again" (act)="loadDashboard()"></app-state>

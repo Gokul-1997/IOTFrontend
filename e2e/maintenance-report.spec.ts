@@ -112,12 +112,12 @@ test('an open ticket shows a dash for repair time, never a zero', async ({ page 
 test('export is its own grant — view alone hides the buttons', async ({ page }) => {
   await open(page, ['page:maintenance-report:view']);
   await expect(page.getByRole('heading', { name: 'Maintenance Report' })).toBeVisible();
-  await expect(page.getByRole('group', { name: 'Export the filtered list' })).toHaveCount(0);
+  await expect(page.getByRole('group', { name: 'Download the filtered list' })).toHaveCount(0);
 });
 
 test('with the export grant, all three formats are offered', async ({ page }) => {
   await open(page);
-  const group = page.getByRole('group', { name: 'Export the filtered list' });
+  const group = page.getByRole('group', { name: 'Download the filtered list' });
   await expect(group.getByRole('button', { name: 'Excel' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'CSV' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'PDF' })).toBeVisible();

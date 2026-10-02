@@ -17,6 +17,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { UiTabsDirective } from '../../shared/ui-tabs.directive';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
+import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { StateComponent } from '../../shared/state/state.component';
 import { qty } from '../../shared/format-number';
 
 type Tab = ReportType | 'oee-records' | 'machine-oee';
@@ -77,7 +79,7 @@ const COL_DEFS: Record<ReportType, ColDef[]> = {
 @Component({
   standalone: true,
   selector: 'app-reports',
-  imports: [MetricHelpComponent, ReportDateDirective, UiTabsDirective, CommonModule, FormsModule, OeeReportsComponent, MachineOeeReportComponent],
+  imports: [MexaPagerComponent, StateComponent, MetricHelpComponent, ReportDateDirective, UiTabsDirective, CommonModule, FormsModule, OeeReportsComponent, MachineOeeReportComponent],
   templateUrl: './reports.html',
   styleUrl: './reports.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

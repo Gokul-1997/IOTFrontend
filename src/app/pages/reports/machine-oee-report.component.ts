@@ -46,7 +46,7 @@ import { ReportDateDirective } from '../../shared/report-date.directive';
       <thead>
         <tr>
           <th scope="col">#</th>
-          <th scope="col" *ngFor="let c of columns" [attr.aria-sort]="aria(c.key)">
+          <th scope="col" *ngFor="let c of columns" [class]="$any(c).cls || ''" [attr.aria-sort]="aria(c.key)">
             <button type="button" class="mexa-sort" (click)="sortBy(c.key)" [attr.aria-current]="sort === c.key">
               {{ c.label }}
               <span class="mexa-sort-arrow" aria-hidden="true">{{ sort === c.key ? (dir === 'asc' ? '▲' : '▼') : '⇅' }}</span>
@@ -60,16 +60,16 @@ import { ReportDateDirective } from '../../shared/report-date.directive';
           <td class="num">{{ (page - 1) * limit + i + 1 }}</td>
           <td class="strong">{{ m.machine_serial_no }}</td>
           <td><span class="mexa-badge" [ngClass]="statusClass(m.status)">{{ m.status | titlecase }}</span></td>
-          <td class="num">{{ pct(m.availability_pct) }}</td>
-          <td class="num">{{ pct(m.performance_pct) }}</td>
-          <td class="num">{{ pct(m.quality_pct) }}</td>
-          <td class="num strong">{{ pct(m.oee_pct) }}</td>
-          <td class="num">{{ m.produced }}</td>
-          <td class="num">{{ m.good }}</td>
-          <td class="num">{{ m.rejected }}</td>
-          <td class="num">{{ m.rework }}</td>
-          <td class="num">{{ pct(m.rejection_rate_pct) }}</td>
-          <td class="num whitespace-nowrap">{{ hms(m.idle_seconds) }}</td>
+          <td class="num qty">{{ pct(m.availability_pct) }}</td>
+          <td class="num qty">{{ pct(m.performance_pct) }}</td>
+          <td class="num qty">{{ pct(m.quality_pct) }}</td>
+          <td class="num strong qty">{{ pct(m.oee_pct) }}</td>
+          <td class="num qty">{{ m.produced }}</td>
+          <td class="num qty">{{ m.good }}</td>
+          <td class="num qty">{{ m.rejected }}</td>
+          <td class="num qty">{{ m.rework }}</td>
+          <td class="num qty">{{ pct(m.rejection_rate_pct) }}</td>
+          <td class="num whitespace-nowrap qty">{{ hms(m.idle_seconds) }}</td>
         </tr>
         <tr *ngIf="!loading && !pageRows.length">
           <td [attr.colspan]="columns.length + 1" class="mexa-empty">No machines match these filters.</td>
@@ -96,11 +96,11 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
 
   readonly columns = [
     { key: 'machine_serial_no', label: 'Machine' }, { key: 'status', label: 'Status' },
-    { key: 'availability_pct', label: 'Availability (%)' }, { key: 'performance_pct', label: 'Performance (%)' },
-    { key: 'quality_pct', label: 'Quality (%)' }, { key: 'oee_pct', label: 'OEE' },
-    { key: 'produced', label: 'Actuals' }, { key: 'good', label: 'Good' },
-    { key: 'rejected', label: 'Rejections' }, { key: 'rework', label: 'Rework' },
-    { key: 'rejection_rate_pct', label: 'Rej (%)' }, { key: 'idle_seconds', label: 'Downtime' }
+    { key: 'availability_pct', label: 'Availability (%)', cls: 'qty' }, { key: 'performance_pct', label: 'Performance (%)', cls: 'qty' },
+    { key: 'quality_pct', label: 'Quality (%)', cls: 'qty' }, { key: 'oee_pct', label: 'OEE (%)', cls: 'qty' },
+    { key: 'produced', label: 'Produced', cls: 'qty' }, { key: 'good', label: 'Good', cls: 'qty' },
+    { key: 'rejected', label: 'Rejected', cls: 'qty' }, { key: 'rework', label: 'Rework', cls: 'qty' },
+    { key: 'rejection_rate_pct', label: 'Rejected (%)', cls: 'qty' }, { key: 'idle_seconds', label: 'Downtime', cls: 'qty' }
   ];
 
   private destroy$ = new Subject<void>();

@@ -140,8 +140,10 @@ export class JobListComponent implements OnInit {
 
   fmt(dt: string | null): string {
     if (!dt) return '--';
-    const d   = new Date(dt);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const d = new Date(dt);
+    if (Number.isNaN(d.getTime())) return '--';
+    // "1 Oct 2026, 4:25 PM", as every table in the app writes a time
+    return `${d.getDate()} ${d.toLocaleString('en-US', { month: 'short' })} ${d.getFullYear()}, `
+         + d.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   }
 }

@@ -4,10 +4,10 @@
 .badge-time {
   background: #e8f4fd;
   color: #1864ab;   /* 4.5 → 5.3 on its tint */
-  font-family: monospace;
+  font-variant-numeric: tabular-nums;
   border-radius: 20px;
   padding: 2px 10px;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 600;
   display: inline-block;
 }

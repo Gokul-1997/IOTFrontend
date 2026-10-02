@@ -12,6 +12,7 @@ import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { compactQty, qty } from '../../shared/format-number';
+import { SEVERITY } from '../../shared/severity';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 1 — Factory Overall Dashboard
@@ -381,12 +382,14 @@ export class FactoryComponent implements OnInit, OnDestroy {
   });
   }
 
+  readonly SEV = SEVERITY;
+
   get alarmDonut(): any {
     return this.charts.memo('alarmDonut', () => {
     return {
       chart: { type: 'donut', height: 180, fontFamily: 'inherit' },
-      labels: ['Critical', 'Non critical', 'Information'],
-      colors: ['#f43f5e', '#22c55e', '#f5a623'],
+      labels: [SEVERITY.critical.label, SEVERITY.noncritical.label, SEVERITY.info.label],
+      colors: [SEVERITY.critical.color, SEVERITY.noncritical.color, SEVERITY.info.color],
       dataLabels: { enabled: true, formatter: (_v: number, o: any) => o.w.config.series[o.seriesIndex] },
       plotOptions: {
         pie: { donut: { size: '62%', labels: {

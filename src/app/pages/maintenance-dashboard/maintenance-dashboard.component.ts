@@ -11,6 +11,7 @@ import { ReportDateDirective } from '../../shared/report-date.directive';
 import { ConditionGaugeComponent, ConditionZone } from './condition-gauge.component';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { updatedLabel } from '../../shared/updated-label';
+import { SEVERITY } from '../../shared/severity';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 2 — Maintenance Dashboard
@@ -364,12 +365,14 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     return s ? s.charAt(0) + s.slice(1).toLowerCase() : '--';
   }
 
+  readonly SEV = SEVERITY;
+
   get alarmDonut(): any {
     return this.charts.memo('alarmDonut', () => {
     return {
       chart: { type: 'donut', height: 180, fontFamily: 'inherit' },
-      labels: ['Critical', 'Non critical', 'Information'],
-      colors: ['#e03131', '#22c55e', '#f5a623'],
+      labels: [SEVERITY.critical.label, SEVERITY.noncritical.label, SEVERITY.info.label],
+      colors: [SEVERITY.critical.color, SEVERITY.noncritical.color, SEVERITY.info.color],
       plotOptions: {
         pie: { donut: { size: '64%', labels: {
           show: true,

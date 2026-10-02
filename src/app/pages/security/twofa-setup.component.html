@@ -15,7 +15,7 @@
         </span>
         <div>
           <p class="tf-state-title">Two-step sign-in is on</p>
-          <p class="tf-state-sub">Turned on {{ status.enabled_at | date:'mediumDate' }}</p>
+          <p class="tf-state-sub">Turned on {{ status.enabled_at | date:'d MMM y' }}</p>
         </div>
       </div>
       <button type="button" (click)="disable()" class="ui-btn ui-btn-danger-ghost tf-full">Turn off two-step sign-in</button>

@@ -38,7 +38,7 @@ test.describe('Reports → OEE Records', () => {
     await expect(page).toHaveURL(/\/reports\?tab=oee-records$/);
 
     // the machine filter's <option> also says VMC-1-F; look in the results
-    const rows = page.locator('table.data-table tbody');
+    const rows = page.locator('table.mexa-table tbody');
     await expect(rows.getByText('VMC-1-F').first()).toBeVisible({ timeout: 10_000 });
     await expect(rows.getByText('74.10').first()).toBeVisible();
     await expect(rows.getByText('100.00').first()).toBeVisible();
@@ -58,8 +58,8 @@ test.describe('Reports → OEE Records', () => {
     await page.goto('/reports?tab=oee-records');
     // Scope to the results table: the machine name also appears in the
     // filter dropdown, so a page-wide check would match that instead.
-    await expect(page.locator('table.data-table tbody').getByText('VMC-1-F')).toHaveCount(0);
-    await expect(page.getByText(/No records found/i)).toBeVisible();
+    await expect(page.locator('table.mexa-table tbody').getByText('VMC-1-F')).toHaveCount(0);
+    await expect(page.getByText(/No OEE records for these filters/i)).toBeVisible();
   });
 });
 

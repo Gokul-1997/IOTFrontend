@@ -75,7 +75,7 @@
 
     <!-- live progress -->
     <div *ngIf="activeProgress.length" class="bg-white rounded-xl shadow-sm border p-4 mb-4">
-      <h3 class="text-sm font-semibold text-gray-700 mb-3">Transferring</h3>
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-white mb-3">Transferring</h3>
       <div *ngFor="let p of activeProgress" class="mb-3 last:mb-0">
         <div class="flex justify-between text-xs text-gray-600 mb-1">
           <span>
@@ -95,62 +95,65 @@
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
 
       <!-- ── LOCAL LIBRARY ── -->
-      <div class="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col">
-        <div class="px-4 py-3 border-b bg-gray-50">
+      <div class="bg-white dark:bg-[var(--mexa-card)] dark:border-[var(--mexa-rule)] rounded-xl shadow-sm border overflow-hidden flex flex-col">
+        <div class="px-4 py-3 border-b bg-gray-50 dark:bg-[var(--mexa-row-alt)] dark:border-[var(--mexa-rule)]">
           <div class="flex items-center justify-between mb-2">
-            <h3 class="font-semibold text-gray-700 text-sm">Server Library</h3>
+            <h3 class="font-semibold text-gray-700 dark:text-white text-sm">Server Library</h3>
             <span class="text-xs text-gray-400">{{ total }} program{{ total === 1 ? '' : 's' }}</span>
           </div>
           <div class="flex gap-2">
-            <input [(ngModel)]="search" (keyup.enter)="page = 1; load()" placeholder="Search programs…"
-              class="border rounded-lg px-3 py-1.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Search" />
-            <button (click)="page = 1; load()"
-              class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">Search</button>
+            <span class="mexa-searchbox flex-1">
+              <span class="material-icons" aria-hidden="true">search</span>
+              <input [(ngModel)]="search" (keyup.enter)="page = 1; load()" placeholder="Search programs by name"
+                class="mexa-search w-full" aria-label="Search programs" />
+            </span>
+            <button type="button" (click)="page = 1; load()" class="ui-btn ui-btn-ghost ui-btn-sm">Search</button>
           </div>
         </div>
 
-        <div class="flex-1 overflow-auto" style="max-height:420px">
-          <table class="w-full text-sm">
-            <thead class="bg-white border-b sticky top-0">
+        <div class="mexa-tablewrap flex-1" style="max-height:420px" tabindex="0" role="region" aria-label="Programs in the server library">
+          <table class="mexa-table is-compact">
+            <thead>
               <tr>
-                <th class="px-3 py-2 w-8">
+                <th scope="col" class="center w-12">
                   <label class="ux-check" title="Select all programs">
                     <input type="checkbox" [checked]="allSelected" (change)="toggleAll()"
                            class="rounded border-gray-300" aria-label="Select all programs" />
                   </label>
                 </th>
-                <th class="px-3 py-2 text-left font-semibold text-gray-600">Program</th>
-                <th class="px-3 py-2 text-left font-semibold text-gray-600">Size</th>
-                <th class="px-3 py-2 text-left font-semibold text-gray-600">Date</th>
-                <th class="px-3 py-2 text-left font-semibold text-gray-600">Actions</th>
+                <th scope="col">Program</th>
+                <th scope="col" class="qty">Size</th>
+                <th scope="col">Uploaded</th>
+                <th scope="col" class="actions">Actions</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-50">
-              <tr *ngFor="let p of programs" class="hover:bg-gray-50 transition-colors"
-                  [class.bg-blue-50]="isSelected(p.id)">
-                <td class="px-3 py-2">
+            <tbody>
+              <tr *ngFor="let p of programs" [class.is-selected]="isSelected(p.id)" [attr.aria-selected]="isSelected(p.id)">
+                <td class="center">
                   <label class="ux-check">
                     <input type="checkbox" [checked]="isSelected(p.id)" (change)="toggleProgram(p.id)"
                            class="rounded border-gray-300" [attr.aria-label]="'Select ' + p.name" />
                   </label>
                 </td>
-                <td class="px-3 py-2">
-                  <div class="font-medium text-gray-800">{{ p.name }}</div>
-                  <div class="text-xs text-gray-400">{{ p.file_name }}</div>
+                <td class="wrap">
+                  <span class="block strong">{{ p.name }}</span>
+                  <span class="sub">{{ p.file_name }}</span>
                 </td>
-                <td class="px-3 py-2 text-gray-500">{{ fileSize(p.file_size) }}</td>
-                <td class="px-3 py-2 text-gray-500 text-xs">{{ p.created_at | date:'dd MMM HH:mm' }}</td>
-                <td class="px-3 py-2">
-                  <div class="flex gap-1.5">
-                    <button (click)="download(p)"
-                      class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs hover:bg-gray-200">Save</button>
-                    <button *ngIf="canDelete" (click)="deleteProgram(p)"
-                      class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">Delete</button>
-                  </div>
+                <td class="qty">{{ fileSize(p.file_size) }}</td>
+                <td class="num">{{ p.created_at | date:'d MMM y, h:mm a' }}</td>
+                <td class="actions">
+                  <span class="ui-btn-row">
+                    <button type="button" (click)="download(p)" class="ui-btn ui-btn-ghost ui-btn-xs" [attr.aria-label]="'Download ' + p.name">
+                      <span class="material-icons" aria-hidden="true">download</span>Download
+                    </button>
+                    <button type="button" *ngIf="canDelete" (click)="deleteProgram(p)" class="ui-btn ui-btn-danger-ghost ui-btn-xs" [attr.aria-label]="'Delete ' + p.name">
+                      <span class="material-icons" aria-hidden="true">delete_outline</span>Delete
+                    </button>
+                  </span>
                 </td>
               </tr>
               <tr *ngIf="!loading && programs.length === 0">
-                <td colspan="5" class="px-4 py-10 text-center text-gray-400">
+                <td colspan="5" class="mexa-empty">
                   No programs yet.<span *ngIf="canUpload"> Use "Upload Program" to add a G-code file.</span>
                 </td>
               </tr>
@@ -158,7 +161,7 @@
           </table>
         </div>
 
-        <div class="px-4 py-3 border-t bg-gray-50 flex items-center justify-between">
+        <div class="px-4 py-3 border-t bg-gray-50 dark:bg-[var(--mexa-row-alt)] dark:border-[var(--mexa-rule)] flex items-center justify-between">
           <span class="text-xs text-gray-500">{{ selectedCount }} selected</span>
           <!-- said, rather than a button that answers "Permission denied" -->
           <span *ngIf="!canTransfer" class="text-xs text-gray-500">Sending to a machine is not part of your role.</span>
@@ -171,27 +174,30 @@
       </div>
 
       <!-- ── CONTROLLER ── -->
-      <div class="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col">
-        <div class="px-4 py-3 border-b bg-gray-50">
+      <div class="bg-white dark:bg-[var(--mexa-card)] dark:border-[var(--mexa-rule)] rounded-xl shadow-sm border overflow-hidden flex flex-col">
+        <div class="px-4 py-3 border-b bg-gray-50 dark:bg-[var(--mexa-row-alt)] dark:border-[var(--mexa-rule)]">
           <div class="flex items-center justify-between mb-2">
-            <h3 class="font-semibold text-gray-700 text-sm">
+            <h3 class="font-semibold text-gray-700 dark:text-white text-sm">
               On Controller
               <span *ngIf="selectedMachine" class="text-gray-400 font-normal">· {{ selectedMachine.machine_serial_no }}</span>
             </h3>
-            <button *ngIf="selectedMachineId" (click)="loadMachineFiles()"
-              class="text-xs text-blue-600 hover:underline">Refresh</button>
+            <button type="button" *ngIf="selectedMachineId" (click)="loadMachineFiles()" class="ui-btn ui-btn-ghost ui-btn-xs">
+              <span class="material-icons" aria-hidden="true">refresh</span>Refresh
+            </button>
           </div>
           <div class="flex gap-2">
-            <input [(ngModel)]="machineSearch" (keyup.enter)="loadMachineFiles()"
-              [disabled]="!selectedMachineId" placeholder="Search files on machine…"
-              class="border rounded-lg px-3 py-1.5 text-sm flex-1 disabled:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Machine search" />
-            <button (click)="loadMachineFiles()" [disabled]="!selectedMachineId"
-              class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 disabled:opacity-40">Search</button>
+            <span class="mexa-searchbox flex-1">
+              <span class="material-icons" aria-hidden="true">search</span>
+              <input [(ngModel)]="machineSearch" (keyup.enter)="loadMachineFiles()"
+                [disabled]="!selectedMachineId" placeholder="Search files on the machine"
+                class="mexa-search w-full" aria-label="Search files on the machine" />
+            </span>
+            <button type="button" (click)="loadMachineFiles()" [disabled]="!selectedMachineId" class="ui-btn ui-btn-ghost ui-btn-sm">Search</button>
           </div>
         </div>
 
-        <div class="flex-1 overflow-auto" style="max-height:420px">
-          <div *ngIf="!selectedMachineId" class="px-4 py-16 text-center text-gray-400 text-sm">
+        <div class="mexa-tablewrap flex-1" style="max-height:420px" tabindex="0" role="region" aria-label="Programs on the machine's controller">
+          <div *ngIf="!selectedMachineId" class="mexa-empty">
             Select a machine to browse the programs stored on its controller.
           </div>
 
@@ -199,31 +205,31 @@
             <div class="w-7 h-7 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
           </div>
 
-          <table *ngIf="selectedMachineId && !loadingFiles" class="w-full text-sm">
-            <thead class="bg-white border-b sticky top-0">
+          <table *ngIf="selectedMachineId && !loadingFiles" class="mexa-table is-compact">
+            <thead>
               <tr>
-                <th class="px-3 py-2 text-left font-semibold text-gray-600">File</th>
-                <th class="px-3 py-2 text-left font-semibold text-gray-600">Size</th>
-                <th class="px-3 py-2 text-left font-semibold text-gray-600">Modified</th>
-                <th class="px-3 py-2 text-left font-semibold text-gray-600">Actions</th>
+                <th scope="col">File</th>
+                <th scope="col" class="qty">Size</th>
+                <th scope="col">Modified</th>
+                <th scope="col" class="actions">Actions</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-50">
-              <tr *ngFor="let f of machineFiles" class="hover:bg-gray-50 transition-colors">
-                <td class="px-3 py-2 font-medium text-gray-800">{{ f.name }}</td>
-                <td class="px-3 py-2 text-gray-500">{{ fileSize(f.size) }}</td>
-                <td class="px-3 py-2 text-gray-500 text-xs">
-                  {{ f.modified_at ? (f.modified_at | date:'dd MMM HH:mm') : '--' }}
+            <tbody>
+              <tr *ngFor="let f of machineFiles">
+                <td class="strong">{{ f.name }}</td>
+                <td class="qty">{{ fileSize(f.size) }}</td>
+                <td class="num" [class.muted]="!f.modified_at">
+                  {{ f.modified_at ? (f.modified_at | date:'d MMM y, h:mm a') : '--' }}
                 </td>
-                <td class="px-3 py-2">
-                  <button *ngIf="canFetch" (click)="fetchFile(f)" [disabled]="fetchingFile === f.name"
-                    class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 disabled:opacity-40">
-                    {{ fetchingFile === f.name ? 'Getting…' : '← Get' }}
+                <td class="actions">
+                  <button type="button" *ngIf="canFetch" (click)="fetchFile(f)" [disabled]="fetchingFile === f.name"
+                    class="ui-btn ui-btn-ghost ui-btn-xs" [attr.aria-label]="'Copy ' + f.name + ' into the server library'">
+                    <span class="material-icons" aria-hidden="true">file_download</span>{{ fetchingFile === f.name ? 'Getting…' : 'Get' }}
                   </button>
                 </td>
               </tr>
               <tr *ngIf="machineFiles.length === 0">
-                <td colspan="4" class="px-4 py-16 text-center text-gray-400">
+                <td colspan="4" class="mexa-empty">
                   No program files found on this controller.
                 </td>
               </tr>
@@ -231,7 +237,7 @@
           </table>
         </div>
 
-        <div *ngIf="canFetch" class="px-4 py-3 border-t bg-gray-50">
+        <div *ngIf="canFetch" class="px-4 py-3 border-t bg-gray-50 dark:bg-[var(--mexa-row-alt)] dark:border-[var(--mexa-rule)]">
           <span class="text-xs text-gray-500">
             "Get" copies the program from the controller into the server library.
           </span>
@@ -240,12 +246,14 @@
     </div>
 
     <!-- pagination for the library -->
-    <div *ngIf="totalPages > 1" class="flex justify-end mt-4 gap-2">
-      <button [disabled]="page <= 1" (click)="changePage(-1)"
-        class="px-3 py-1 border rounded text-sm disabled:opacity-40 hover:bg-gray-50">Previous</button>
-      <span class="px-3 py-1 text-sm text-gray-600">{{ page }} / {{ totalPages }}</span>
-      <button [disabled]="page >= totalPages" (click)="changePage(1)"
-        class="px-3 py-1 border rounded text-sm disabled:opacity-40 hover:bg-gray-50">Next</button>
+    <div *ngIf="totalPages > 1" class="mexa-pager justify-end mt-4">
+      <button type="button" [disabled]="page <= 1" (click)="changePage(-1)" class="ui-btn ui-btn-ghost ui-btn-sm">
+        <span class="material-icons" aria-hidden="true">chevron_left</span>Previous
+      </button>
+      <span>Page {{ page }} of {{ totalPages }}</span>
+      <button type="button" [disabled]="page >= totalPages" (click)="changePage(1)" class="ui-btn ui-btn-ghost ui-btn-sm">
+        Next<span class="material-icons" aria-hidden="true">chevron_right</span>
+      </button>
     </div>
   </div>
 
@@ -257,80 +265,77 @@
       <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
     </div>
 
-    <div *ngIf="!loading" class="overflow-hidden">
-    <table class="w-full text-sm">
-      <thead class="bg-gray-50 border-b">
+    <div *ngIf="!loading" class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Transfer history">
+    <table class="mexa-table">
+      <caption class="sr-only">Program transfers, newest first</caption>
+      <thead>
         <tr>
-          <th class="px-4 py-3 text-left font-semibold text-gray-600">Program</th>
-          <th class="px-4 py-3 text-left font-semibold text-gray-600">Direction</th>
-          <th class="px-4 py-3 text-left font-semibold text-gray-600">Machine</th>
-          <th class="px-4 py-3 text-left font-semibold text-gray-600">Size</th>
-          <th class="px-4 py-3 text-left font-semibold text-gray-600">Status</th>
-          <th class="px-4 py-3 text-left font-semibold text-gray-600">Error</th>
-          <th class="px-4 py-3 text-left font-semibold text-gray-600">By</th>
-          <th class="px-4 py-3 text-left font-semibold text-gray-600">Authorised by</th>
-          <th class="px-4 py-3 text-left font-semibold text-gray-600">Replaced program</th>
-          <th class="px-4 py-3 text-left font-semibold text-gray-600">Time</th>
+          <th scope="col">Program</th>
+          <th scope="col">Direction</th>
+          <th scope="col">Machine</th>
+          <th scope="col" class="qty">Size</th>
+          <th scope="col">Status</th>
+          <th scope="col">Error</th>
+          <th scope="col">By</th>
+          <th scope="col">Authorised by</th>
+          <th scope="col">Replaced program</th>
+          <th scope="col">Time</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-50">
+      <tbody>
         <ng-container *ngIf="transfers.length > 0; else noTransfers">
-          <tr *ngFor="let t of transfers" class="hover:bg-gray-50 transition-colors">
-            <td class="px-4 py-3">
-              <div class="font-medium text-gray-800">{{ t.program_name }}</div>
-              <div class="text-xs text-gray-400">{{ t.file_name }}</div>
+          <tr *ngFor="let t of transfers">
+            <td>
+              <span class="block strong">{{ t.program_name }}</span>
+              <span class="sub">{{ t.file_name }}</span>
             </td>
-            <td class="px-4 py-3">
-              <span class="px-2 py-1 rounded-md text-xs font-medium"
-                [class]="t.direction === 'DOWNLOAD' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'">
-                {{ t.direction === 'DOWNLOAD' ? 'From machine' : 'To machine' }}
+            <td>
+              <span class="mexa-badge" [ngClass]="t.direction === 'DOWNLOAD' ? 'mexa-badge-info' : 'mexa-badge-violet'">
+                <span class="material-icons" aria-hidden="true">{{ t.direction === 'DOWNLOAD' ? 'south_west' : 'north_east' }}</span>{{ t.direction === 'DOWNLOAD' ? 'From machine' : 'To machine' }}
               </span>
             </td>
-            <td class="px-4 py-3 text-gray-600">{{ t.machine_serial }}</td>
-            <td class="px-4 py-3 text-gray-500">{{ fileSize(t.file_size) }}</td>
-            <td class="px-4 py-3">
-              <span class="px-2 py-1 rounded-md text-xs font-medium"
-                [class]="t.status === 'SUCCESS' ? 'bg-green-100 text-green-700'
-                       : t.status === 'FAILED'  ? 'bg-red-100 text-red-700'
-                       : 'bg-yellow-100 text-yellow-700'">
-                {{ t.status }}
+            <td class="strong">{{ t.machine_serial }}</td>
+            <td class="qty">{{ fileSize(t.file_size) }}</td>
+            <td>
+              <span class="mexa-badge" [ngClass]="t.status === 'SUCCESS' ? 'mexa-badge-good' : t.status === 'FAILED' ? 'mexa-badge-bad' : 'mexa-badge-warn'">
+                <span class="material-icons" aria-hidden="true">{{ t.status === 'SUCCESS' ? 'check_circle' : t.status === 'FAILED' ? 'error_outline' : 'schedule' }}</span>{{ t.status === 'SUCCESS' ? 'Sent' : t.status === 'FAILED' ? 'Failed' : (t.status | titlecase) }}
               </span>
             </td>
-            <td class="px-4 py-3 text-red-600 text-xs max-w-xs truncate">{{ t.error_message || '--' }}</td>
-            <td class="px-4 py-3 text-gray-500">{{ t.transferred_by_name || '--' }}</td>
-            <td class="px-4 py-3 text-gray-500">
+            <td class="wrap" [class.muted]="!t.error_message">{{ t.error_message || '--' }}</td>
+            <td [class.muted]="!t.transferred_by_name">{{ t.transferred_by_name || '--' }}</td>
+            <td>
               <!-- Downloads are not gated, and rows written before the
                    supervisor gate shipped have nobody recorded. -->
               <span *ngIf="t.authorized_by_name">{{ t.authorized_by_name }}</span>
-              <span *ngIf="!t.authorized_by_name" class="text-gray-300">--</span>
+              <span *ngIf="!t.authorized_by_name" class="is-missing">--</span>
             </td>
-            <td class="px-4 py-3 text-xs">
+            <td>
               <!-- The audit answer to "what was on the machine before this?".
                    A dash means nothing was replaced, not that a backup was
                    skipped — a transfer that could not back up never ran. -->
-              <span *ngIf="t.backup_program_name" class="text-gray-600"
-                    [title]="t.backup_program_name">
-                <span class="inline-block px-2 py-0.5 rounded-md bg-slate-100 text-slate-700
-                             dark:bg-slate-700 dark:text-slate-200">saved</span>
+              <span *ngIf="t.backup_program_name" class="mexa-badge mexa-badge-neutral" [title]="t.backup_program_name">
+                <span class="material-icons" aria-hidden="true">inventory_2</span>Saved
               </span>
-              <span *ngIf="!t.backup_program_name" class="text-gray-300">--</span>
+              <span *ngIf="!t.backup_program_name" class="is-missing">--</span>
             </td>
-            <td class="px-4 py-3 text-gray-500">{{ t.started_at | date:'short' }}</td>
+            <td class="num">{{ t.started_at | date:'d MMM y, h:mm a' }}</td>
           </tr>
         </ng-container>
         <ng-template #noTransfers>
-          <tr><td colspan="10" class="px-4 py-12 text-center text-gray-400">No transfers yet</td></tr>
+          <tr><td colspan="10" class="mexa-empty">No transfers yet. Programs sent to or fetched from a machine are listed here.</td></tr>
         </ng-template>
       </tbody>
     </table>
   </div>
 
-      <div *ngIf="!loading && totalPages > 1" class="flex justify-end mt-4 gap-2">
-        <button [disabled]="page <= 1" (click)="changePage(-1)"
-          class="px-3 py-1 border rounded text-sm disabled:opacity-40 hover:bg-gray-50">Previous</button>
-        <span class="px-3 py-1 text-sm text-gray-600">{{ page }} / {{ totalPages }}</span>
-        <button [disabled]="page >= totalPages" (click)="changePage(1)"
-          class="px-3 py-1 border rounded text-sm disabled:opacity-40 hover:bg-gray-50">Next</button>
+      <div *ngIf="!loading && totalPages > 1" class="mexa-pager justify-end mt-4">
+        <button type="button" [disabled]="page <= 1" (click)="changePage(-1)" class="ui-btn ui-btn-ghost ui-btn-sm">
+          <span class="material-icons" aria-hidden="true">chevron_left</span>Previous
+        </button>
+        <span>Page {{ page }} of {{ totalPages }}</span>
+        <button type="button" [disabled]="page >= totalPages" (click)="changePage(1)" class="ui-btn ui-btn-ghost ui-btn-sm">
+          Next<span class="material-icons" aria-hidden="true">chevron_right</span>
+        </button>
       </div>
   </div>
 

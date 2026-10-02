@@ -17,24 +17,29 @@
   
 
   <div class="mexa-filters" appFilterPanel>
-    <label class="mexa-filter-label" for="fShift">Shift</label>
-    <select id="fShift" class="mexa-select" [(ngModel)]="selectedShift" name="shift">
-      <option [ngValue]="null">All</option>
-      <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_name || s.name }}</option>
-    </select>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="fShift">Shift</label>
+      <select id="fShift" class="mexa-select" [(ngModel)]="selectedShift" name="shift">
+        <option [ngValue]="null">All</option>
+        <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_name || s.name }}</option>
+      </select>
+    </span>
 
-    <label class="mexa-filter-label" for="fMachine">Machine</label>
-    <select id="fMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine">
-      <option [ngValue]="null">All</option>
-      <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-    </select>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="fMachine">Machine</label>
+      <select id="fMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine">
+        <option [ngValue]="null">All</option>
+        <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+      </select>
+    </span>
 
-    <label class="mexa-filter-label" for="fDate">Date</label>
-    <input id="fDate" type="date" appReportDate class="mexa-date" [(ngModel)]="selectedDate" name="date">
-
-    <button type="submit" class="mexa-submit" [disabled]="loading">
-      {{ loading ? 'Loading…' : 'Submit' }}
-    </button>
+    <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="fDate">Date</label>
+      <input id="fDate" type="date" appReportDate class="mexa-date" [(ngModel)]="selectedDate" name="date">
+      <button type="submit" class="mexa-submit" [disabled]="loading">
+        {{ loading ? 'Loading…' : 'Submit' }}
+      </button>
+    </span>
   </div>
 </form>
 
@@ -307,21 +312,21 @@
         <ul class="mexa-rank mt-2 p-2" *ngIf="data.alarms.total > 0">
         <li>
           <span class="mexa-rank-name">
-            <span class="mexa-legend-dot inline-block" style="background:#f43f5e"></span>
-            Critical Alarms
+            <span class="mexa-legend-dot inline-block" [style.background]="SEV.critical.color" aria-hidden="true"></span>
+            Critical alarms
           </span>
           <span class="mexa-rank-value">{{ data.alarms.critical }}</span>
         </li>
         <li>
           <span class="mexa-rank-name">
-            <span class="mexa-legend-dot inline-block" style="background:#22c55e"></span>
-            Non Critical Alarms
+            <span class="mexa-legend-dot inline-block" [style.background]="SEV.noncritical.color" aria-hidden="true"></span>
+            Non-critical alarms
           </span>
           <span class="mexa-rank-value">{{ data.alarms.non_critical }}</span>
         </li>
         <li>
           <span class="mexa-rank-name">
-            <span class="mexa-legend-dot inline-block" style="background:#f5a623"></span>
+            <span class="mexa-legend-dot inline-block" [style.background]="SEV.info.color" aria-hidden="true"></span>
             Information
           </span>
           <span class="mexa-rank-value">{{ data.alarms.information }}</span>

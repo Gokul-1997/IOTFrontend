@@ -47,8 +47,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let user of users; let i = index"
-              class="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
+          <tr *ngFor="let user of users; let i = index">
             <td class="px-4 py-3 text-sm text-gray-400">{{ i + 1 }}</td>
             <td class="px-4 py-3">
               <div class="flex items-center gap-3">
@@ -132,20 +131,20 @@
     <div class="ui-dialog-body space-y-4">
 
       <div>
-        <label class="ui-label">Username<span class="ui-req" aria-hidden="true">*</span></label>
-        <input [(ngModel)]="createForm.username" type="text"
+        <label class="ui-label" for="um-username">Username<span class="ui-req" aria-hidden="true">*</span></label>
+        <input id="um-username" required aria-required="true" [(ngModel)]="createForm.username" type="text"
           class="ui-input"
           placeholder="e.g., john_doe">
       </div>
       <div>
-        <label class="ui-label">Email<span class="ui-req" aria-hidden="true">*</span></label>
-        <input [(ngModel)]="createForm.email" type="email"
+        <label class="ui-label" for="um-email">Email<span class="ui-req" aria-hidden="true">*</span></label>
+        <input id="um-email" required aria-required="true" [(ngModel)]="createForm.email" type="email"
           class="ui-input"
           placeholder="user@company.com">
       </div>
       <div>
-        <label class="ui-label">Password<span class="ui-req" aria-hidden="true">*</span></label>
-        <input [(ngModel)]="createForm.password" type="password"
+        <label class="ui-label" for="um-password">Password<span class="ui-req" aria-hidden="true">*</span></label>
+        <input id="um-password" required aria-required="true" [(ngModel)]="createForm.password" type="password"
           class="ui-input"
           placeholder="Minimum 8 characters">
       </div>
@@ -226,20 +225,20 @@
       </div>
 
       <div>
-        <label class="ui-label">Username</label>
-        <input [(ngModel)]="editForm.username" type="text"
+        <label class="ui-label" for="um-edit-username">Username</label>
+        <input id="um-edit-username" [(ngModel)]="editForm.username" type="text"
           class="ui-input">
       </div>
       <div>
-        <label class="ui-label">Email</label>
-        <input [(ngModel)]="editForm.email" type="email"
+        <label class="ui-label" for="um-edit-email">Email</label>
+        <input id="um-edit-email" [(ngModel)]="editForm.email" type="email"
           class="ui-input">
       </div>
       <div>
-        <label class="ui-label">
+        <label class="ui-label" for="um-new-password-leave-blank">
           New Password <span class="text-gray-400 font-normal">(leave blank to keep current)</span>
         </label>
-        <input [(ngModel)]="editForm.password" type="password"
+        <input id="um-new-password-leave-blank" [(ngModel)]="editForm.password" type="password"
           class="ui-input"
           placeholder="••••••••">
       </div>
