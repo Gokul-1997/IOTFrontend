@@ -1,0 +1,383 @@
+/* ═══════════════════════════════════════════════════════════════
+   SYSTEM LAYER — loaded last (the final line of styles.scss), so it
+   settles what the older stylesheets left different from page to page.
+
+     1. Font    one family, Ubuntu (the STM MEXA face), served with the app
+     2. Type    one scale: page titles, card titles, labels, controls,
+                buttons, tables
+     3. Tables  one design for .mexa-table and every Angular Material table
+
+   Why (measured 2026-10-02 on all 36 pages): Machines, Shifts, Operators,
+   Lines, Plants, Components and Jobs rendered in Roboto — Angular
+   Material's theme font — while every other page was Ubuntu. Page titles
+   came in three sizes (19.2, 20 and 22.4px) and two weights; table headers
+   in weight 500 on some pages and 900 on others; cell padding was 3px on
+   the dashboards and 10px on the master pages.
+
+   Alignment, weight and wrapping defaults are wrapped in :where() so a
+   template's own text-center / font-semibold / whitespace-nowrap still wins.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. Font ─────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/fonts/ubuntu-300-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/fonts/ubuntu-300-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/ubuntu-400-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/ubuntu-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/ubuntu-500-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/ubuntu-500-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/ubuntu-700-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/ubuntu-700-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --font-ui: 'Ubuntu', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* ── 2. Type scale ── */
+  --fs-title: 1.25rem;        /* 20px  page title, in the title bar */
+  --fs-card-title: .9375rem;  /* 15px  card and section titles */
+  --fs-body: .875rem;         /* 14px  text, inputs, selects, buttons */
+  --fs-label: .8125rem;       /* 13px  form labels, small buttons */
+  --fs-small: .75rem;         /* 12px  hints and captions */
+  --fs-th: .78rem;            /* table header */
+  --fs-td: .84rem;            /* table cell */
+
+  /* ── 3. Tables ── */
+  --tbl-head-bg: #3f3785;     /* the indigo header the dashboards already use */
+  --tbl-head-ink: #ffffff;
+  --tbl-row: var(--mexa-card, #fff);
+  --tbl-row-alt: var(--mexa-row-alt, #f5f4fc);
+  --tbl-row-hover: #eceefb;
+  --tbl-row-selected: #e0e4fb;
+  --tbl-rule: var(--mexa-rule, #e3e6ef);
+  --tbl-pad-x: .75rem;
+  --tbl-pad-y: .55rem;
+}
+:root[data-theme="dark"], .dark {
+  --tbl-row-hover: #232846;
+  --tbl-row-selected: #2b3160;
+}
+
+html, body { font-family: var(--font-ui); }
+/* Material components take the theme's font (styles.scss: typography Ubuntu),
+   form controls inherit it (Tailwind preflight), and charts get it from
+   window.Apex in main.ts. Codes that must line up character by character
+   (an API key, a two-step sign-in secret) keep a monospace face. */
+
+/* ── 2. Type ─────────────────────────────────────────────────── */
+
+/* Page title: one size and weight whichever title bar a page uses */
+.mexa-titlebar .mexa-title,
+.mexa-titlebar h1,
+.bg-top-bar h1,
+.page-title h1 {
+  font-size: var(--fs-title);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -.01em;
+}
+.mexa-subtitle,
+.page-title .subtitle { font-size: var(--fs-body); font-weight: 400; }
+
+/* Card and section titles */
+.mexa-card-title { font-size: var(--fs-card-title); font-weight: 700; line-height: 1.35; letter-spacing: 0; }
+.ui-dialog-title { font-size: 1.125rem; font-weight: 700; }
+
+/* Labels */
+.mexa-filter-label { font-size: var(--fs-body); font-weight: 600; }
+.ui-label, .label_custom { font-size: var(--fs-label); font-weight: 600; }
+
+/* Inputs and selects: the same text size everywhere; a chosen value in a
+   title-bar select reads as a value, not a heading */
+.mexa-select, .mexa-date, .filter-select, .filter-date, .ui-input, .mexa-search,
+.search-box .search-input { font-size: var(--fs-body); }
+.mexa-select, .mexa-date { font-weight: 500; }
+
+/* Buttons */
+.ui-btn, .btn-primary, .btn-apply, .btn-clear, .btn-secondary, .btn-cancel, .btn-danger, .mexa-submit {
+  font-family: inherit; font-size: var(--fs-body); font-weight: 600; letter-spacing: 0;
+}
+.ui-btn-sm, .ui-btn-xs, .mexa-pagebtn { font-size: var(--fs-label); font-weight: 600; }
+
+/* ── 3. Tables ───────────────────────────────────────────────── */
+
+/* The scroll box. Wide tables scroll sideways inside it, never the page;
+   app.ts marks which edges have more to see (data-scroll-x) and the far
+   edge fades, so a cut-off column reads as "scroll", not as missing. */
+.mexa-tablewrap, .table-wrapper {
+  overflow: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 10px;
+}
+:is(.mexa-tablewrap, .table-wrapper)[data-scroll-x="right"] {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+}
+:is(.mexa-tablewrap, .table-wrapper)[data-scroll-x="left"] {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 32px), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - 32px), transparent);
+}
+:is(.mexa-tablewrap, .table-wrapper)[data-scroll-x="both"] {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+}
+/* Long lists: the box scrolls and the header stays in view */
+.mexa-tablewrap.is-scroll, .table-wrapper.is-scroll { max-height: min(70vh, 42rem); }
+
+.mexa-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 40rem;
+  font-size: var(--fs-td);
+}
+
+/* Header */
+.mexa-table thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--tbl-head-bg);
+  color: var(--tbl-head-ink);
+  font-size: var(--fs-th);
+  line-height: 1.3;
+  padding: .65rem var(--tbl-pad-x);
+  vertical-align: middle;
+  border-bottom: 0;
+}
+:where(.mexa-table thead th) { font-weight: 600; text-align: left; white-space: nowrap; }
+.mexa-table thead tr:first-child th:first-child { border-top-left-radius: 10px; }
+.mexa-table thead tr:first-child th:last-child  { border-top-right-radius: 10px; }
+.mexa-table thead th .mexa-sort { color: inherit; font-weight: inherit; font-size: inherit; min-height: 24px; }
+.mexa-table thead th .mexa-sort-arrow { color: rgba(255, 255, 255, .7); }
+.mexa-table thead th .mexa-sort[aria-current="true"] .mexa-sort-arrow { color: #fff; }
+
+/* Rows */
+.mexa-table tbody tr { background: var(--tbl-row); transition: background-color .12s; }
+.mexa-table tbody tr:nth-child(even) { background: var(--tbl-row-alt); }
+.mexa-table tbody tr:hover { background: var(--tbl-row-hover); }
+.mexa-table tbody tr.is-selected,
+.mexa-table tbody tr[aria-selected="true"] { background: var(--tbl-row-selected); box-shadow: inset 3px 0 0 #2b3990; }
+.mexa-table tbody td {
+  padding: var(--tbl-pad-y) var(--tbl-pad-x);
+  line-height: 1.45;
+  border-bottom: 1px solid var(--tbl-rule);
+  vertical-align: middle;
+  overflow-wrap: break-word;
+}
+:where(.mexa-table tbody td) { font-size: var(--fs-td); color: var(--mexa-ink-2); white-space: nowrap; }
+/* A long-text column (alarm names, messages, notes) wraps inside a sensible
+   width instead of making every row two lines tall or the table endless. */
+.mexa-table td.wrap, .mat-mdc-table .mat-mdc-cell.wrap { white-space: normal; min-width: 12rem; max-width: 26rem; }
+.mexa-table tbody tr:last-child td { border-bottom: 0; }
+.mexa-table .strong { color: var(--mexa-ink); font-weight: 600; }
+
+/* Column kinds: a measured quantity lines up on the right, digits in
+   columns; a label column can be pinned while the rest scrolls. */
+.mexa-table .num { font-variant-numeric: tabular-nums; }
+.mexa-table :is(th, td).qty { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mexa-table :is(th, td).center { text-align: center; }
+.mexa-table :is(th, td).actions { text-align: right; white-space: nowrap; width: 1%; }
+.mexa-table td.muted, .mexa-table .is-missing { color: var(--mexa-ink-3); }
+.mexa-table td .clip {
+  display: block; max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mexa-table :is(th, td).sticky-col { position: sticky; left: 0; z-index: 1; background: inherit; }
+.mexa-table thead th.sticky-col { z-index: 3; background: var(--tbl-head-bg); }
+.mexa-table tbody td.sticky-col { box-shadow: 1px 0 0 var(--tbl-rule); }
+
+/* Empty, loading and error rows */
+.mexa-table td.mexa-empty {
+  padding: 2.25rem 1rem; text-align: center; white-space: normal;
+  color: var(--mexa-ink-3); font-size: var(--fs-body);
+}
+.mexa-table tbody tr:has(> td.mexa-empty):hover { background: var(--tbl-row); }
+
+/* Badges inside tables keep one size */
+.mexa-table .mexa-badge { font-size: var(--fs-small); font-weight: 600; line-height: 1.5; }
+
+/* Angular Material tables (Machines, Shifts, Operators, Lines, Plants,
+   Components, Jobs): the same look, set through Material's own tokens. */
+.mat-mdc-table {
+  --mat-table-background-color: transparent;
+  --mat-table-header-container-height: 44px;
+  --mat-table-header-headline-color: var(--tbl-head-ink);
+  --mat-table-header-headline-font: var(--font-ui);
+  --mat-table-header-headline-size: var(--fs-th);
+  --mat-table-header-headline-weight: 600;
+  --mat-table-header-headline-tracking: 0;
+  --mat-table-row-item-container-height: 48px;
+  --mat-table-row-item-label-text-color: var(--mexa-ink-2);
+  --mat-table-row-item-label-text-font: var(--font-ui);
+  --mat-table-row-item-label-text-size: var(--fs-td);
+  --mat-table-row-item-label-text-tracking: 0;
+  --mat-table-row-item-outline-color: var(--tbl-rule);
+  --mat-sort-arrow-color: #fff;
+  width: 100%;
+}
+.mat-mdc-table .mat-mdc-header-row { background: var(--tbl-head-bg); }
+.mat-mdc-table .mat-mdc-header-cell {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--tbl-head-bg);
+  color: var(--tbl-head-ink);
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 0 var(--tbl-pad-x);
+  border-bottom: 0;
+}
+:where(.mat-mdc-table .mat-mdc-header-cell) { white-space: nowrap; }
+.mat-mdc-table .mat-mdc-header-cell .mat-sort-header-content { font-weight: 600; }
+.mat-mdc-table .mat-mdc-header-row .mat-mdc-header-cell:first-child { border-top-left-radius: 10px; }
+.mat-mdc-table .mat-mdc-header-row .mat-mdc-header-cell:last-child  { border-top-right-radius: 10px; }
+.mat-mdc-table .mat-mdc-row { background: var(--tbl-row); transition: background-color .12s; }
+.mat-mdc-table .mat-mdc-row:nth-child(even) { background: var(--tbl-row-alt); }
+.mat-mdc-table .mat-mdc-row:hover { background: var(--tbl-row-hover); }
+.mat-mdc-table .mat-mdc-cell { padding: var(--tbl-pad-y) var(--tbl-pad-x); }
+:where(.mat-mdc-table .mat-mdc-cell) { white-space: nowrap; }
+.mat-mdc-table .mat-mdc-row:last-child .mat-mdc-cell { border-bottom: 0; }
+.mat-mdc-table .col-index { color: var(--mexa-ink-3); width: 48px; text-align: center; }
+
+.mat-mdc-paginator {
+  --mat-paginator-container-background-color: transparent;
+  --mat-paginator-container-text-color: var(--mexa-ink-2);
+  --mat-paginator-container-text-font: var(--font-ui);
+  --mat-paginator-container-text-size: var(--fs-label);
+  --mat-paginator-enabled-icon-color: var(--mexa-ink-2);
+  --mat-paginator-disabled-icon-color: var(--mexa-ink-3);
+}
+
+/* ── Shared controls ─────────────────────────────────────────── */
+
+/* Icons inside buttons and badges, sized to the words beside them */
+.ui-btn :is(mat-icon, .material-icons) { width: 18px; height: 18px; font-size: 18px; flex: none; }
+:is(.ui-btn-sm, .ui-btn-xs) :is(mat-icon, .material-icons) { width: 16px; height: 16px; font-size: 16px; }
+.mexa-badge { display: inline-flex; align-items: center; gap: .25rem; }
+.mexa-badge :is(mat-icon, .material-icons) { width: 14px; height: 14px; font-size: 14px; flex: none; }
+
+/* A search field with its magnifier, above a table */
+.mexa-searchbox { position: relative; display: inline-flex; align-items: center; }
+.mexa-searchbox > :is(mat-icon, .material-icons) {
+  position: absolute; left: .6rem; width: 18px; height: 18px; font-size: 18px;
+  color: var(--mexa-ink-3); pointer-events: none;
+}
+.mexa-searchbox > .mexa-search { padding-left: 2.1rem; min-height: 36px; }
+
+/* ── Notes on the field ──────────────────────────────────────
+   One look per kind, each with its icon, so a note reads as what it is:
+   information (blue), a warning to act on (amber), a failure (red). The
+   salmon "note" looked like an error for what are plain explanations. */
+.mexa-note {
+  position: relative;
+  padding: .55rem .85rem .55rem 2.4rem;
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  border-radius: 10px;
+  border-left-width: 5px;
+}
+.mexa-note::before {
+  content: 'info';
+  position: absolute; left: .75rem; top: .55rem;
+  font-family: 'Material Icons'; font-size: 18px; line-height: 1.2; font-feature-settings: 'liga';
+  color: #2563eb;
+}
+.mexa-note-note { border-left-color: #2563eb; background: #e8f0fe; color: #1e3a6e; }
+.mexa-note-warn { border-left-color: #d97706; background: #fff4dc; color: #4a3200; }
+.mexa-note-warn::before { content: 'warning_amber'; color: #b45309; }
+.mexa-note-bad  { border-left-color: #dc2626; background: #fdecec; color: #5c1414; }
+.mexa-note-bad::before  { content: 'error_outline'; color: #dc2626; }
+.mexa-note :is(a, button) { color: inherit; text-decoration: underline; font-weight: 600; }
+.dark .mexa-note-note { background: #14243d; color: #c9dcfb; }
+.dark .mexa-note-warn { background: #362a10; color: #f6dfa8; }
+.dark .mexa-note-bad  { background: #3a1620; color: #f8c4cb; }
+.dark .mexa-note::before { color: #8fb8f5; }
+.dark .mexa-note-warn::before { color: #f7c667; }
+.dark .mexa-note-bad::before { color: #f59aa6; }
+
+/* A table inside a narrow panel (half a page, a dialog) may be narrower
+   than the usual 40rem before it scrolls */
+.mexa-table.is-compact { min-width: 0; }
+/* The second line of a cell: a file name under a program, a model under a machine */
+.mexa-table .sub { display: block; font-size: var(--fs-small); color: var(--mexa-ink-3); white-space: normal; }
+
+/* Red words inside a warning note: a darker red holds 4.5:1 on the amber */
+html:not(.dark) .mexa-note :is([class~="text-red-500"], [class~="text-red-600"]) { color: #b42318; }
+
+/* A title-bar filter toggle on a narrow phone shrinks with its row instead
+   of pushing past the edge (Charts at 360px ran 10px over) */
+.toolbar-right, .mf-collapsible { min-width: 0; max-width: 100%; }
+.mf-toggle { max-width: 100%; }
+
+/* The Material paginator sits in the white table card everywhere */
+.table-card .mat-mdc-paginator { background: var(--mexa-card); }
+
+/* Dark theme, for the parts the shared table and notes now share: second
+   lines and codes in table rows, and red words inside a warning note */
+html.dark .mexa-note :is([class~="text-red-500"], [class~="text-red-600"]) { color: #f8a4ae; }
+.dark .mat-mdc-table :is(.sub-text, .mexa-rank-sub) { color: var(--mexa-ink-3); }
+.dark .mat-mdc-table .serial-no { color: #a5b4fc; }
+
+/* A column pinned to the edge (Actions) covers what scrolls under it: it
+   takes its row's background instead of being see-through, and a shade
+   marks the edge. */
+.mat-mdc-table .mat-mdc-table-sticky { background: inherit; }
+.mat-mdc-table .mat-mdc-header-cell.mat-mdc-table-sticky { background: var(--tbl-head-bg); }
+.mat-mdc-table .mat-mdc-table-sticky-border-elem-right { box-shadow: -6px 0 8px -6px rgba(18, 14, 64, .25); }
+/* A status switch shows its state in words beside it */
+.mat-mdc-table .mat-mdc-slide-toggle .mdc-label { font-size: var(--fs-label); color: var(--mexa-ink-2); padding-left: .4rem; }
+/* Row actions stay on one line: a row is as tall as its text, not its buttons */
+.mexa-table td.actions :is(.ui-btn-row, .flex) { flex-wrap: nowrap; }

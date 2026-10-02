@@ -1,6 +1,5 @@
 /*
- * The app's menu: one list for the header (desktop bar and phone menu) and
- * the breadcrumb above each page, so the two can never disagree.
+ * The app's menu: one list for the header's desktop bar and phone menu.
  *
  * Grouped deliberately. This was a flat list of fourteen top-level items,
  * which no longer fitted the header: seven of them — Settings and Admin
@@ -72,43 +71,10 @@ export const NAV_MENUS: NavItem[] = [
   { label: 'Admin', path: '/admin/users', icon: 'admin_panel_settings', adminOnly: true }
 ];
 
-export interface Crumb { label: string; path?: string; }
-
-/** Pages reached from the account menu or from inside another page. */
-const OTHER_PAGES: { prefix: string; trail: Crumb[] }[] = [
-  { prefix: '/dashboard/live/', trail: [{ label: 'Dashboards' }, { label: 'Live Dashboard', path: '/dashboard' }, { label: 'Machine' }] },
-  { prefix: '/admin/users',     trail: [{ label: 'Admin' }, { label: 'Users' }] },
-  { prefix: '/admin/roles',     trail: [{ label: 'Admin' }, { label: 'Roles & Permissions' }] },
-  { prefix: '/admin/companies', trail: [{ label: 'Admin' }, { label: 'Companies' }] },
-  { prefix: '/admin/plans',     trail: [{ label: 'Admin' }, { label: 'Plans' }] },
-  { prefix: '/assignments/operator-shift', trail: [{ label: 'Master' }, { label: 'Operator → Shift' }] },
-  { prefix: '/assignments',     trail: [{ label: 'Master' }, { label: 'Operator → Machine' }] },
-  { prefix: '/machine-shifts',  trail: [{ label: 'Master' }, { label: 'Machine → Shifts' }] },
-  { prefix: '/plants',          trail: [{ label: 'Master' }, { label: 'Plants' }] },
-  { prefix: '/profile',         trail: [{ label: 'My account' }, { label: 'Profile' }] },
-  { prefix: '/settings',        trail: [{ label: 'My account' }, { label: 'Settings' }] },
-  { prefix: '/notifications',   trail: [{ label: 'My account' }, { label: 'Notifications' }] },
-  { prefix: '/security/2fa',    trail: [{ label: 'My account' }, { label: 'Two-step sign-in' }] }
-];
-
 /** Does `url` show the page at `path`? Whole path segments only:
  *  "/maintenance" must not match "/maintenance-dashboard". */
 export function pathMatches(url: string, path: string | undefined): boolean {
   if (!path) return false;
   const clean = url.split(/[?#]/)[0];
   return clean === path || clean.startsWith(path + '/');
-}
-
-/** Where a URL sits in the menu — [Dashboards, Factory Overall] — or [] for
- *  a top-level page (Alarms, Downtime), which needs no trail. Menu groups
- *  are not pages, so they are plain text; the last crumb is the page. */
-export function trailFor(url: string): Crumb[] {
-  const clean = url.split(/[?#]/)[0];
-  const other = OTHER_PAGES.find(o => clean.startsWith(o.prefix));
-  if (other) return other.trail;
-  for (const g of NAV_MENUS) {
-    const child = g.children?.find(c => pathMatches(clean, c.path));
-    if (child) return [{ label: g.label }, { label: child.label }];
-  }
-  return [];
 }

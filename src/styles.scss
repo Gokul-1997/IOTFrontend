@@ -3,6 +3,7 @@
 // components according to the Material 3 design spec.
 // Learn more about theming and how to use it for your application's
 // custom components at https://material.angular.dev/guide/theming
+@use 'sass:meta';
 @use '@angular/material' as mat;
 // Shared dialog, form and tab system. Loaded here because @use must come
 // before any other rule — which also puts it ahead of @tailwind utilities,
@@ -14,12 +15,12 @@
 // every Phase 2 dashboard shares.
 @use './styles/mexa';
 @use './styles/responsive';
-// Shared UX layer: header, phone menu, breadcrumb, filters on phones,
+// Shared UX layer: header, phone menu, filters on phones,
 // touch targets, focus, dialogs and empty/error states.
 @use './styles/ux';
-// Ubuntu is the STM MEXA face (the design PDF uses it throughout). Libre
-// Franklin, Questrial and Nunito Sans were loaded here too and used nowhere.
-@import url('https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap');
+// Ubuntu is the STM MEXA face (the design PDF uses it throughout). It is
+// served with the app (public/fonts, declared in styles/system.scss), not
+// from Google, so a plant PC with no internet shows the same type.
 
 
 html {
@@ -27,7 +28,8 @@ html {
   @include mat.theme((color: (primary: mat.$azure-palette,
         tertiary: mat.$blue-palette,
       ),
-      typography: Roboto,
+      // Material components in the app's one font, not Roboto
+      typography: (plain-family: Ubuntu, brand-family: Ubuntu),
       density: 0,
     ));
 }
@@ -538,9 +540,6 @@ h4 {
 .mat-mdc-form-field-infix{
   padding: 3px 0!important;
 }
-.mat-mdc-header-cell{
-  z-index: 10!important;
-}
 
 .page-title {
   display: flex;
@@ -593,42 +592,7 @@ $radius: 10px;
 }
 
 
-.machines-table {
-  width: 100%;
-}
-  // Header — keep z-index low so the nav dropdown is never cut through
-  .mat-mdc-header-row {
-    background: #DBE0FF;
-    border-bottom: 2px solid #DBE0FF;
-    z-index: 1 !important;
-  }
-
-  .mat-mdc-header-cell {
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #182052;
-    white-space: nowrap;
-    padding: 0 10px;
-  }
-
-  // Rows
-  .mat-mdc-row.data-row {
-    transition: background 0.15s;
-
-    &:hover {
-      background: #f1f3ff;
-    }
-  }
-
-  .mat-mdc-cell {
-    font-size: 0.8rem;
-    color: #343a40;
-    padding: 0px 10px;
-    white-space: nowrap;
-    border-color: #e5e7eb!important;
-  }
+/* Table look (header, rows, cells, paginator): styles/system.scss */
 
 
 // ── COLUMN SPECIFICS ───────────────────────────────────────────────────────
@@ -656,41 +620,8 @@ $radius: 10px;
   color: #ced4da;
 }
 
-.mat-mdc-table tr:nth-child(odd) {                                                                
-    background: #ffffff!important;
-}
-
-.mat-mdc-table tr:nth-child(even) {                                     
-  background-color: #f1f3ff!important; /* white */
-}
-.mat-row {
-  min-height: 48px!important;
-}
-.mat-mdc-table tr {
-    height: 40px!important;
-}
 .mdc-form-field .mdc-switch{
       width:45px!important;
-}
-.mdc-data-table__cell, .mdc-data-table__header-cell {
-    padding: 0 5px!important;
-}
-
-/* Highlight sorted column header */
-::ng-deep .mat-sort-header-sorted {
-  background-color: #eef2ff; /* light blue */
-  color: #1d4ed8;
-  font-weight: 600;
-}
-
-/* Highlight entire column cells */
-::ng-deep td.mat-column-yourColumnName {
-  background-color: #f8fafc;
-}
-
-/* Optional: header cell */
-::ng-deep th.mat-column-yourColumnName {
-  background-color: #e0e7ff;
 }
 .modal-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -734,22 +665,9 @@ $radius: 10px;
     background: #363636!important;
 }
 
-.dark .mat-mdc-table tr:nth-child(odd),
-.dark .mat-mdc-paginator,
 .dark .mat-mdc-select {
     background: #111 !important;
     color: #acaeb1!important;;
-}
-.dark .mat-mdc-table tr:nth-child(even) {
-    background-color: #1e1e1e !important;
-}
-.dark .mat-mdc-cell {
-    border-color: #262626 !important;
-}
-.dark .machines-table .mat-mdc-header-row, 
-.dark .machines-table .mat-mdc-header-row
-{
-    border-bottom-color: #1e1e1e!important;
 }
 
 .filter-select {
@@ -836,12 +754,6 @@ $radius: 10px;
   @apply bg-[#111] hover:bg-[#222] text-white font-semibold py-2 px-4 border border-[#3e3e3e] rounded-xl shadow
 }
 
-.dark .mat-mdc-header-row {
-    border-bottom: 2px solid #222!important;
-}
-.dark .mat-mdc-header-cell {
-    color: #cbcbcb;
-}
 
 
 .btn-primary {
@@ -881,11 +793,6 @@ $radius: 10px;
 }
 .data-table .col-index{
   text-align: center!important;
-}
-.thead-custm .mat-sort-header-content,
-.mat-mdc-header-cell{
-  font-weight: 900!important;
-  font-size: 13px;
 }
 
 /* An alarm: red stripe and a red ring that pulses outward. The whole card
@@ -1005,29 +912,6 @@ input[type="date"]::after {
 html.dark {
   --chart-track: #000;
   --chart-fill: #60a5fa;
-}
- .machines-table {
-    .mat-mdc-header-row { background: #0f1c33; }
-    .mat-mdc-header-cell { color: #282828; }
-    .mat-mdc-row.data-row:hover { background: #1a2d48; }
-    .mat-mdc-cell { color: #282828; }
-  }
-  .dark .machines-table {
-    .mat-mdc-header-cell { color: #cbcbcb; }
-    .mat-mdc-cell { color: #cbcbcb; }
-  }
-  .ent-table {
-    .mat-mdc-header-row { background: #0f1c33; }
-    .mat-mdc-header-cell { color: #282828; }
-    .mat-mdc-row.data-row:hover { background: #1a2d48; }
-    .mat-mdc-cell { color: #282828; }
-  }
-  .dark .ent-table {
-    .mat-mdc-header-cell { color: #cbcbcb; }
-    .mat-mdc-cell { color: #cbcbcb; }
-  }
-  .dark .mat-mdc-cell {
-    color: #cbcbcb;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1173,13 +1057,6 @@ html.dark {
 //   &:hover { background: #2f4ac4; box-shadow: 0 4px 12px rgba(59,91,219,0.35); }
 // }
 
-.ent-table {
-  width: 100%;
-  .mat-mdc-header-row { background: #f8f9fa; border-bottom: 2px solid #e9ecef; z-index: 1 !important; }
-  .mat-mdc-header-cell { font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;  white-space: nowrap; padding: 0 14px; }
-  .mat-mdc-row.data-row { transition: background 0.15s; &:hover { background: #f1f3ff; } }
-  .mat-mdc-cell { font-size: 0.82rem; padding: 10px 14px; white-space: nowrap; }
-}
 
 .col-index  { width: 48px; text-align: center; font-size: 0.8rem !important; }
 .col-actions { width: 100px; text-align: right; }
@@ -1304,3 +1181,6 @@ html.dark [class~="bg-blue-600"][class~="text-white"] { color: #fff; }
   .blink { animation: none !important; }
 }
 
+/* The system layer — one font, one type scale, one table design — is
+   loaded last so it settles what the rules above left different. */
+@include meta.load-css('styles/system');

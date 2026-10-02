@@ -28,7 +28,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   isAdmin = false;
   isSntSuper = false;
 
-  /** The menu, shared with the breadcrumb (layout/nav-menu.ts). */
+  /** The menu (layout/nav-menu.ts). */
   allMenus: NavItem[] = NAV_MENUS.map(m => ({ ...m, children: m.children?.map(c => ({ ...c })) }));
 
   menus: NavItem[] = [];

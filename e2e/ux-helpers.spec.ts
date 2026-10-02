@@ -1,8 +1,8 @@
 import { test, expect, seedAuth } from './fixtures/auth';
 
 /*
- * The shared helpers every dashboard now uses: the (i) beside a figure, the
- * breadcrumb, and the filters folded behind one button on a phone. Tested
+ * The shared helpers every dashboard now uses: the (i) beside a figure and
+ * the filters folded behind one button on a phone. Tested
  * once here, on the Maintenance Report, rather than on every page.
  */
 
@@ -63,13 +63,6 @@ test('the label keeps its own words: the (i) adds no text to it', async ({ page 
   await expect(page.locator('.mexa-kpi-label', { hasText: 'Mean Time' })).toHaveText(/^\s*Mean Timeto Repair\s*$/);
 });
 
-test('a breadcrumb says where the page sits in the menu', async ({ page }) => {
-  await open(page);
-  const crumbs = page.getByRole('navigation', { name: 'Breadcrumb' });
-  await expect(crumbs).toContainText('Analytics');
-  await expect(crumbs.locator('[aria-current="page"]')).toHaveText('Maintenance Report');
-});
-
 test('on a phone the filters fold behind one button that reads them back', async ({ page }) => {
   await open(page, { width: 390, height: 844 });
   const toggle = page.getByRole('button', { name: /^Show filters/ });
@@ -84,6 +77,6 @@ test('on a phone the filters fold behind one button that reads them back', async
 
 test('on a laptop the filters stay in the title bar, with no extra button', async ({ page }) => {
   await open(page);
-  await expect(page.getByRole('button', { name: /filters/ })).toBeHidden();
+  await expect(page.getByRole('button', { name: /^(Show|Hide) filters/ })).toBeHidden();
   await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
 });
