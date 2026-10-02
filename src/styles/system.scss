@@ -351,6 +351,8 @@ html, body { font-family: var(--font-ui); }
 /* A table inside a narrow panel (half a page, a dialog) may be narrower
    than the usual 40rem before it scrolls */
 .mexa-table.is-compact { min-width: 0; }
+/* …and its long-text column gives way first, so the row's buttons stay in view */
+.mexa-table.is-compact td.wrap { min-width: 8rem; }
 /* The second line of a cell: a file name under a program, a model under a machine */
 .mexa-table .sub { display: block; font-size: var(--fs-small); color: var(--mexa-ink-3); white-space: normal; }
 

@@ -140,7 +140,7 @@
                   <span class="sub">{{ p.file_name }}</span>
                 </td>
                 <td class="qty">{{ fileSize(p.file_size) }}</td>
-                <td class="num">{{ p.created_at | date:'d MMM y, h:mm a' }}</td>
+                <td class="num">{{ p.created_at | date:'d MMM y' }}<span class="sub">{{ p.created_at | date:'h:mm a' }}</span></td>
                 <td class="actions">
                   <span class="ui-btn-row">
                     <button type="button" (click)="download(p)" class="ui-btn ui-btn-ghost ui-btn-xs" [attr.aria-label]="'Download ' + p.name">
@@ -219,7 +219,8 @@
                 <td class="strong">{{ f.name }}</td>
                 <td class="qty">{{ fileSize(f.size) }}</td>
                 <td class="num" [class.muted]="!f.modified_at">
-                  {{ f.modified_at ? (f.modified_at | date:'d MMM y, h:mm a') : '--' }}
+                  <ng-container *ngIf="f.modified_at; else noTime">{{ f.modified_at | date:'d MMM y' }}<span class="sub">{{ f.modified_at | date:'h:mm a' }}</span></ng-container>
+                  <ng-template #noTime>--</ng-template>
                 </td>
                 <td class="actions">
                   <button type="button" *ngIf="canFetch" (click)="fetchFile(f)" [disabled]="fetchingFile === f.name"
