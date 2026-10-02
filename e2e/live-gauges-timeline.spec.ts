@@ -1,13 +1,13 @@
 import { test, expect, seedAuth } from './fixtures/auth';
 
 /*
- * The machine page's dials and its shift timeline.
+ * The machine page's spindle and feed panel, and its shift timeline.
  *
- * Spindle load runs 0–150%: the load meter passes 100% on an overload (226%
- * was recorded), which the old 0–100% dial clamped away. The feed dial shows
- * the actual feed in mm/min — no controller sends the override %; the old
- * "Feed Override" dial divided mm/min by a guessed 45,000, so a cutting feed
- * of 96 mm/min read 0%.
+ * The panel replaced two needle dials. It must say what each reading is
+ * now, in its unit, when it was taken (and when it is too old to be "now"),
+ * how load compares with the 80 % / 100 % bands and speed with the rated
+ * top speed — and say plainly that no controller sends a programmed feed
+ * or override %.
  */
 
 const ok = (body: any) => ({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
@@ -18,6 +18,26 @@ function detail(live: any) {
     machine: { id: 25, machine_serial_no: 'HMC - 7 - F' }, operator: {}, job: {}, oee: {}, shift: { shift_code: 'S1' },
     quality: {}, power: {}, production: { run_time: '01:00:00', idle_time: '02:00:00' },
     live: { machine_status: 'RUNNING', mode: 'MEM', spindle_load: 0, feed_rate: 0, parts_count: 0, alarm: false, active_alarms: [], ...live }
+  } };
+}
+
+/** The spindle readings API: latest reading plus a trend; `range` echoes the request. */
+function spindle(range: string, over: any = {}) {
+  const to = Date.now(), from = to - 3600e3;
+  return { status: 'success', data: {
+    machine: { id: 25, serial: 'HMC - 7 - F', rated_rpm: 10000 },
+    range: { key: range, from, to, bucket_seconds: 60 },
+    thresholds: { load_high: 80, load_overload: 100 },
+    latest: { at: to - 5000, load: 35, rpm: 2500, feed: 1500, status: 'RUNNING', stale: false },
+    points: [
+      { t: Math.floor((to - 120e3) / 60e3) * 60e3, load_avg: 30, load_max: 60, rpm_avg: 2400, rpm_max: 2600, feed_avg: 1200, feed_max: 1500, samples: 12 },
+      { t: Math.floor((to - 60e3) / 60e3) * 60e3, load_avg: 40, load_max: 182, rpm_avg: 2500, rpm_max: 4800, feed_avg: 1300, feed_max: 30000, samples: 12 }
+    ],
+    summary: { samples: 24, turning: 20, first_at: to - 120e3, last_at: to - 5000,
+      load: { min: 2, avg: 35, max: 182, high_pct: 10, overload_pct: 5 },
+      rpm: { min: 800, avg: 2450, max: 4800, max_of_rated_pct: 48 },
+      feed: { min: 50, avg: 1250, max: 30000, feeding: 18 } },
+    ...over
   } };
 }
 
@@ -36,50 +56,89 @@ const timeline = (over: any = {}) => ({ status: 'success', data: {
   ...over
 } });
 
-async function open(page: any, live: any, tl: any = timeline()) {
-  // the dials are live-page widgets; a company admin holds them
+async function open(page: any, live: any, tl: any = timeline(), sp: (range: string) => any = r => spindle(r), ranges: string[] = []) {
+  // the spindle and feed widgets belong to the live page; a company admin holds them
   await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
   await page.route('**/api/**', (r: any) => r.fulfill(ok({ status: 'success', data: [] })));
   await page.route('**/api/dashboard/live/25', (r: any) => r.fulfill(ok(detail(live))));
   await page.route('**/api/dashboard/live/25/timeline', (r: any) => r.fulfill(ok(tl)));
+  await page.route('**/api/dashboard/live/25/spindle*', (r: any) => {
+    const range = new URL(r.request().url()).searchParams.get('range') || '1h';
+    ranges.push(range);
+    const body = sp(range);
+    return body === 'fail' ? r.fulfill({ status: 500, contentType: 'application/json', body: '{}' }) : r.fulfill(ok(body));
+  });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/dashboard/live/25');
   await expect(page.getByRole('heading', { name: 'HMC - 7 - F' })).toBeVisible();
 }
 
-const dial = (page: any, name: RegExp) => page.getByRole('img', { name });
+const card = (page: any, name: string) => page.getByRole('article', { name: new RegExp(name) });
 
-test.describe('dials', () => {
-  test('spindle load reads Normal, High and Overload by its zones', async ({ authedPage: page }) => {
-    await open(page, { spindle_load: 35 });
-    await expect(dial(page, /^Spindle load 35 percent, Normal$/)).toBeVisible();
-    await expect(dial(page, /Spindle load/).locator('text.value')).toHaveText('35%');
+test.describe('spindle and feed', () => {
+  test('spindle load says its value, unit and band in words', async ({ authedPage: page }) => {
+    await open(page, {});
+    const load = card(page, 'Spindle load');
+    await expect(load.locator('.sp-value')).toContainText('35%');
+    await expect(load).toContainText('Normal');
+    await expect(load).toContainText('As of');
   });
 
-  test('an overload past the scale pins the needle but prints the real value', async ({ authedPage: page }) => {
-    await open(page, { spindle_load: 226 });
-    const g = dial(page, /Spindle load/);
-    await expect(g).toHaveAccessibleName('Spindle load 226 percent, Overload');
-    await expect(g.locator('text.value')).toHaveText('226%');
-    await expect(page.getByText('Overload', { exact: true })).toBeVisible();
-    // pinned at the end of the scale: rotated a full +90°
-    await expect(g.locator('g.needle-turn')).toHaveAttribute('style', /rotate\(90deg\)/);
+  test('an overload is named, not only coloured', async ({ authedPage: page }) => {
+    await open(page, {}, timeline(), r => spindle(r, { latest: { at: Date.now() - 5000, load: 226, rpm: 2500, feed: 1500, status: 'RUNNING', stale: false } }));
+    const load = card(page, 'Spindle load');
+    await expect(load.locator('.sp-value')).toContainText('226%');
+    await expect(load).toContainText('Overload');
+  });
+
+  test('speed is compared with the rated top speed', async ({ authedPage: page }) => {
+    await open(page, {});
+    const speed = card(page, 'Spindle speed');
+    await expect(speed.locator('.sp-value')).toContainText('2,500rpm');
+    await expect(speed).toContainText('25 % of the rated 10,000 rpm.');
   });
 
   test('feed is the actual feed in mm/min, with the reason there is no override', async ({ authedPage: page }) => {
-    await open(page, { feed_rate: 1500 });
-    await expect(page.getByRole('heading', { name: 'Feed Rate' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Feed Override' })).toHaveCount(0);
-    await expect(dial(page, /Feed rate/).locator('text.value')).toHaveText('1,500 mm/min');
-    await expect(page.getByText('Feed override % is not reported by the controller')).toBeVisible();
-    // 1,500 of 6,000 is a quarter of the arc: -90° + 45°
-    await expect(dial(page, /Feed rate/).locator('g.needle-turn')).toHaveAttribute('style', /rotate\(-45deg\)/);
+    await open(page, {});
+    const feed = card(page, 'Feed rate');
+    await expect(feed.locator('.sp-value')).toContainText('1,500mm/min');
+    await expect(feed).toContainText('does not send the programmed feed or the feed override %');
   });
 
-  test('a rapid move past the scale says so', async ({ authedPage: page }) => {
-    await open(page, { feed_rate: 36000 });
-    await expect(page.getByText('Above the 6,000 mm/min scale')).toBeVisible();
-    await expect(dial(page, /Feed rate/).locator('text.value')).toHaveText('36,000 mm/min');
+  test('a reading too old to be "now" is shown as missing, with when it was taken', async ({ authedPage: page }) => {
+    await open(page, {}, timeline(), r => spindle(r, { latest: { at: Date.now() - 3600e3, load: 35, rpm: 2500, feed: 1500, status: 'IDLE', stale: true } }));
+    const load = card(page, 'Spindle load');
+    await expect(load.locator('.sp-value')).toHaveText(/--/);
+    await expect(load).toContainText('No reading since');
+  });
+
+  test('the range and the metric change the chart and the figures under it', async ({ authedPage: page }) => {
+    const ranges: string[] = [];
+    await open(page, {}, timeline(), r => spindle(r), ranges);
+    await expect(page.locator('.sp-stats')).toContainText('182');
+    await page.getByRole('group', { name: 'Time range' }).getByRole('button', { name: '24 hours' }).click();
+    await expect.poll(() => ranges.includes('24h')).toBe(true);
+    await expect(page.getByRole('group', { name: 'Time range' }).getByRole('button', { name: '24 hours' })).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('group', { name: 'Show on the chart' }).getByRole('button', { name: 'Spindle speed' }).click();
+    await expect(page.locator('.sp-stats')).toContainText('4,800');
+    await expect(page.locator('.sp-stats')).toContainText('48');
+  });
+
+  test('a range with no readings says so and offers a longer one', async ({ authedPage: page }) => {
+    const ranges: string[] = [];
+    await open(page, {}, timeline(), r => r === '24h' ? spindle(r) : spindle(r, { points: [], summary: { samples: 0, turning: 0, first_at: null, last_at: null,
+      load: { min: null, avg: null, max: null, high_pct: null, overload_pct: null }, rpm: { min: null, avg: null, max: null, max_of_rated_pct: null },
+      feed: { min: null, avg: null, max: null, feeding: 0 } } }), ranges);
+    await expect(page.getByText('No readings from this machine in the last hour')).toBeVisible();
+    await page.getByRole('button', { name: 'Show the last 24 hours' }).click();
+    await expect.poll(() => ranges.includes('24h')).toBe(true);
+    await expect(page.locator('.sp-stats')).toContainText('182');
+  });
+
+  test('a failed load says what to do, and the current values still show', async ({ authedPage: page }) => {
+    await open(page, {}, timeline(), () => 'fail');
+    await expect(page.getByText('Could not load the spindle readings')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
   });
 });
 

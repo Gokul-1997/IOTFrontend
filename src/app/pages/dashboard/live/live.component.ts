@@ -20,7 +20,7 @@ import {
   takeUntil
 } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { NeedleGaugeComponent, GaugeZone } from '../../../shared/needle-gauge/needle-gauge.component';
+import { SpindlePanelComponent } from './spindle-panel.component';
 import { ShiftTimelineComponent } from './shift-timeline.component';
 import { MetricHelpComponent } from '../../../shared/metric-help/metric-help.component';
 
@@ -39,7 +39,7 @@ const POLL_MS = 30_000;
 @Component({
   standalone: true,
   selector: 'app-live',
-  imports: [MetricHelpComponent, NgApexchartsModule, CommonModule, RouterModule, NeedleGaugeComponent, ShiftTimelineComponent],
+  imports: [MetricHelpComponent, NgApexchartsModule, CommonModule, RouterModule, SpindlePanelComponent, ShiftTimelineComponent],
   templateUrl: './live.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -84,6 +84,8 @@ export class LiveComponent implements OnInit, OnDestroy {
   private get socketLive(): boolean { return Date.now() - this.lastSocketMs < 60_000; }
   liveSpindleLoad  = 0;
   liveFeed         = 0;
+  /** When the live feed last brought load and feed (ms; 0 = not yet) — the spindle panel's "as of". */
+  liveAt           = 0;
   livePartCount    = 0;
 
 
@@ -101,8 +103,6 @@ export class LiveComponent implements OnInit, OnDestroy {
   /* ── Chart configs ── */
   utilChart:    any;
   oeeChart:     any;
-  spindleChart: any;
-  feedChart:    any;
   timePieChart: any;
 
   constructor(
@@ -294,11 +294,13 @@ export class LiveComponent implements OnInit, OnDestroy {
       /* ── Spindle load, % of rated — past 100 is an overload ── */
       if (data.spindle_load !== undefined) {
         this.liveSpindleLoad = Number(data.spindle_load);
+        this.liveAt = Date.now();
       }
 
       /* ── Feed rate, mm/min ── */
       if (data.feed_rate !== undefined) {
         this.liveFeed   = Number(data.feed_rate);
+        this.liveAt = Date.now();
       }
 
       /* ── Energy → update total_kwh in real-time ── */
@@ -316,32 +318,6 @@ export class LiveComponent implements OnInit, OnDestroy {
 
       // console.log('[SOCKET] cdr.markForCheck() called — UI should update');
     });
-  }
-
-  /* ════════════════════════════════════════
-     GAUGES (app-needle-gauge)
-     Spindle load on 0–150%: the load meter passes 100% on an overload
-     (226% has been recorded), and the old 0–100% dial clamped it away.
-     Feed is the actual feed in mm/min — no controller sends the override
-     %. 0–6,000 holds almost all cutting (90% of samples are under 2,500);
-     rapids run far past it, and the needle pins while the number stays true.
-  ════════════════════════════════════════ */
-  readonly SPINDLE_ZONES: GaugeZone[] = [
-    { from: 80,  to: 100, color: '#f5a623' },   // high
-    { from: 100, to: 150, color: '#e03131' }    // overload
-  ];
-  readonly FEED_SCALE = 6000;
-
-  readonly pctTick   = (v: number) => `${v}%`;
-  readonly kTick     = (v: number) => (v === 0 ? '0' : `${v / 1000}k`);
-  readonly spindleText = (v: number | null) => (v === null ? '--' : `${Math.round(v)}%`);
-  readonly feedText    = (v: number | null) => (v === null ? '--' : `${Math.round(v).toLocaleString('en-IN')} mm/min`);
-
-  get spindleState(): { word: string; cls: string } {
-    const v = this.liveSpindleLoad;
-    if (v > 100) return { word: 'Overload', cls: 'text-red-700 dark:text-red-400' };
-    if (v >= 80) return { word: 'High', cls: 'text-amber-700 dark:text-amber-400' };
-    return { word: 'Normal', cls: 'text-green-700 dark:text-green-400' };
   }
 
   /* ════════════════════════════════════════

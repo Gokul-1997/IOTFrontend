@@ -13,7 +13,8 @@ describe('metricHelp', () => {
     'downtime_reasons', 'declared_downtime', 'onoff_availability', 'unaccounted', 'alarm_time', 'mttr',
     'target', 'accepted', 'rejected', 'rework', 'utilization', 'running_share', 'production_vs_target',
     'machine_status', 'run_hours', 'energy_total', 'efficiency',
-    'avg_oee', 'avg_availability', 'avg_performance', 'avg_quality'
+    'avg_oee', 'avg_availability', 'avg_performance', 'avg_quality',
+    'spindle_load', 'spindle_speed', 'feed_rate'
   ];
 
   it('has words for every topic the screens use', () => {

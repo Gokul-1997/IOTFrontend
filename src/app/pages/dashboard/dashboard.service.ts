@@ -25,4 +25,9 @@ export class DashboardService {
     return this.http.get(`${this.api}/live/${machineId}/timeline`);
   }
 
+  /** Spindle load, speed and feed: the latest reading and a trend over the range. */
+  getMachineSpindle(machineId: number, range: string): Observable<any> {
+    return this.http.get(`${this.api}/live/${machineId}/spindle`, { params: { range } });
+  }
+
 }

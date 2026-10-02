@@ -32,7 +32,7 @@
     <!-- Center: shift / date / time -->
     <!-- each item stays on one line; on a phone the date and clock wrap as whole items -->
     <div class="rounded-md flex flex-wrap gap-y-1 whitespace-nowrap px-1 md:px-4 py-1 items-center">
-      <!-- {{ shift?.shift_code || '--' }} | {{ currentDate | date:'dd MMM yyyy' }} | {{ currentDate | date:'h:mm:ss a' }} -->
+      <!-- {{ shift?.shift_code || '--' }} | {{ currentDate | date:'d MMM y' }} | {{ currentDate | date:'h:mm:ss a' }} -->
     
     <div class="flex  border_status pr-2">
         <div class="text-sm font-medium ml-1"> {{ shift?.shift_code || '--' }}</div>
@@ -311,8 +311,8 @@
   <!-- SHIFT TIMELINE — running / idle / alarm / off across the shift, breaks marked -->
   <app-shift-timeline [machineId]="machineId"></app-shift-timeline>
 
-  <!-- BOTTOM GRID — OEE + Speedometers -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 chart_med">
+  <!-- BOTTOM GRID — OEE, and spindle and feed -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-2 chart_med items-start">
 
     <!-- ══════════════ OEE ══════════════ -->
     <div class="mexa-lift rounded-xl  p-2 flex flex-col items-center  ">
@@ -369,38 +369,14 @@
     </div>
 
 
-    <!-- ══════════════ SPINDLE LOAD ══════════════
-         0–150%: the load meter passes 100% on an overload (226% was
-         recorded), which the old 0–100% dial could not show. -->
-    <div *ngIf="auth.hasWidget('dashboard:live', 'spindle-speed-chart')" class="mexa-lift rounded-xl p-2 flex flex-col items-center ">
-      <h3 class="text-base font-semibold">Spindle Load</h3>
-      <app-needle-gauge class="max-w-[300px] -mt-2"
-        [value]="liveSpindleLoad" [min]="0" [max]="150" [majorStep]="25" [minorPerMajor]="5"
-        [zones]="SPINDLE_ZONES" [tickLabel]="pctTick" [valueText]="spindleText"
-        [ariaLabel]="'Spindle load ' + (liveSpindleLoad | number:'1.0-0') + ' percent, ' + spindleState.word"></app-needle-gauge>
-      <div class="flex items-center gap-2 -mt-2">
-        <p class="text-sm font-bold " [ngClass]="spindleState.cls">{{ spindleState.word }}</p>
-      <p class="text-xs text-gray-600 dark:text-gray-400">| Amber above 80% · red past 100% (overload)</p>
-    </div>
-    </div>
-
-    <!-- ══════════════ FEED RATE ══════════════
-         The controllers send the actual feed (mm/min), not the override %:
-         the old "Feed Override" dial divided mm/min by a guessed 45,000, so a
-         cutting feed of 96 mm/min read 0%. -->
-    <div *ngIf="auth.hasWidget('dashboard:live', 'feed-override-chart')" class="mexa-lift rounded-xl p-2 flex flex-col items-center ">
-      <h3 class="text-base font-semibold">Feed Rate</h3>
-      <app-needle-gauge class="max-w-[300px] -mt-2"
-        [value]="liveFeed" [min]="0" [max]="FEED_SCALE" [majorStep]="1000" [minorPerMajor]="4"
-        fill="#3b82f6" [tickLabel]="kTick" [valueText]="feedText"
-        [ariaLabel]="'Feed rate ' + (liveFeed | number:'1.0-0') + ' millimetres per minute'"></app-needle-gauge>
-      <div class="flex items-center gap-2 -mt-2">
-        <p class="text-sm font-bold text-gray-700 dark:text-gray-300">
-        {{ liveFeed > FEED_SCALE ? 'Above the ' + (FEED_SCALE | number) + ' mm/min scale' : 'Actual feed' }}
-      </p>
-      <p class="text-xs text-gray-600 dark:text-gray-400">| Feed override % is not reported by the controller</p>
-   </div>
-    </div>
+    <!-- ══════════════ SPINDLE AND FEED ══════════════
+         Current load, speed and feed with their units and when they were
+         read, and how they moved over a chosen range (spindle-panel). -->
+    <app-spindle-panel *ngIf="auth.hasWidget('dashboard:live', 'spindle-speed-chart') || auth.hasWidget('dashboard:live', 'feed-override-chart')"
+      class="lg:col-span-2" [machineId]="machineId"
+      [liveLoad]="liveSpindleLoad" [liveFeed]="liveFeed" [liveAt]="liveAt"
+      [showLoad]="auth.hasWidget('dashboard:live', 'spindle-speed-chart')"
+      [showFeed]="auth.hasWidget('dashboard:live', 'feed-override-chart')"></app-spindle-panel>
 
   </div>
 

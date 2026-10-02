@@ -250,6 +250,29 @@ export function metricHelp(topic: string, basis: HelpBasis = 'period'): MetricHe
         why: `Good for comparing periods and machines. The OEE Dashboard works ${name} out from the total times and parts instead, so its figure can differ a little. What ${name} measures: ${base.what}`
       };
     }
+    case 'spindle_load':
+      return {
+        title: 'Spindle load',
+        what: 'How hard the spindle motor is working, as a share of the load it is rated for. The controller measures it.',
+        formula: ['Up to 80 % is normal', '80–100 % is high', 'Over 100 % is an overload the motor can carry only for a short time'],
+        example: '42 % means the motor is giving 42 % of its rated load. 118 % is an overload.',
+        why: 'Long stretches above 80 % wear the spindle and the tools faster. Frequent overloads point to heavy cuts or blunt tools.'
+      };
+    case 'spindle_speed':
+      return {
+        title: 'Spindle speed',
+        what: 'How fast the spindle turns, in revolutions per minute (rpm), as the controller reports it. It is compared with the machine\'s rated top speed from the machine register.',
+        formula: ['Share of rated speed = Spindle speed ÷ Rated speed'],
+        example: '2,500 rpm on a machine rated for 10,000 rpm is 25 % of its rated speed.',
+        why: 'Speeds close to the rated top speed for long periods add wear. A speed of 0 means the spindle is stopped.'
+      };
+    case 'feed_rate':
+      return {
+        title: 'Feed rate',
+        what: 'How fast the machine\'s axes move, in millimetres per minute (mm/min), as the controller reports it. It includes rapid moves between cuts, so the highest figure is usually a rapid move.',
+        example: 'A cut at 1,200 mm/min moves the tool 1.2 metres in a minute.',
+        why: 'The controller does not send the programmed feed or the feed override %, so the screen cannot say whether the operator slowed the feed down.'
+      };
     default:
       return { title: topic, what: '' };
   }
