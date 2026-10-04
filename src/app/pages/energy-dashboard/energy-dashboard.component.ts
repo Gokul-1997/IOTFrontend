@@ -14,6 +14,7 @@ import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { compactQty, qty } from '../../shared/format-number';
+import { MeterPanelComponent } from '../../shared/meter-panel/meter-panel.component';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 9 — Energy Monitoring
@@ -27,7 +28,7 @@ import { compactQty, qty } from '../../shared/format-number';
 @Component({
   selector: 'app-energy-dashboard',
   standalone: true,
-  imports: [FilterPanelDirective, ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [FilterPanelDirective, ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MeterPanelComponent],
   templateUrl: './energy-dashboard.component.html'
 })
 export class EnergyDashboardComponent implements OnInit, OnDestroy {

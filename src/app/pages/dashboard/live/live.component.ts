@@ -21,6 +21,7 @@ import {
 } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { SpindlePanelComponent } from './spindle-panel.component';
+import { MeterPanelComponent } from '../../../shared/meter-panel/meter-panel.component';
 import { ShiftTimelineComponent } from './shift-timeline.component';
 import { MetricHelpComponent } from '../../../shared/metric-help/metric-help.component';
 
@@ -39,7 +40,7 @@ const POLL_MS = 30_000;
 @Component({
   standalone: true,
   selector: 'app-live',
-  imports: [MetricHelpComponent, NgApexchartsModule, CommonModule, RouterModule, SpindlePanelComponent, ShiftTimelineComponent],
+  imports: [MetricHelpComponent, NgApexchartsModule, CommonModule, RouterModule, SpindlePanelComponent, ShiftTimelineComponent, MeterPanelComponent],
   templateUrl: './live.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
