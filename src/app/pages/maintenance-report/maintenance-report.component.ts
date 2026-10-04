@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { MaintenanceReportService } from './maintenance-report.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -11,6 +11,7 @@ import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 
@@ -27,7 +28,7 @@ import { MetricHelpComponent } from '../../shared/metric-help/metric-help.compon
 @Component({
   selector: 'app-maintenance-report',
   standalone: true,
-  imports: [MetricHelpComponent, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './maintenance-report.component.html'
 })
 export class MaintenanceReportComponent implements OnInit, OnDestroy {
@@ -54,6 +55,8 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy {
   typeSeries: number[] = [];    typeLabels: string[] = [];
 
   private destroy$ = new Subject<void>();
+  /** The request on its way; a newer filter choice replaces it, so an older answer can never land last. */
+  private loadSub?: Subscription;
   private search$ = new RxSubject<string>();
 
   constructor(
@@ -105,7 +108,8 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy {
     this.errorMsg = '';
     this.cdr.markForCheck();
 
-    this.svc.getReport({ ...this.f, page: this.page, limit: this.limit })
+    this.loadSub?.unsubscribe();
+    this.loadSub = this.svc.getReport({ ...this.f, page: this.page, limit: this.limit })
       .pipe(takeUntil(this.destroy$), catchError(err => {
         this.errorMsg = err?.error?.message || 'Unable to load the maintenance report.';
         return of(null);

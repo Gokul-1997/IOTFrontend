@@ -3,12 +3,12 @@
 
 
 <!-- ══════════ TITLE BAR ══════════ -->
-<form class="mexa-titlebar" (ngSubmit)="submit()">
+<form class="mexa-titlebar" (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
   <div class="flex gap-2">
   <h1 class="mexa-title">Preventive Maintenance Dashboard</h1>
-  <p class="mexa-updated" *ngIf="updatedAt">
-  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Updated {{ updatedAt }}
+  <p class="mexa-updated" *ngIf="updatedAt || loading">
+  <mat-icon class="!w-4 !h-4 !text-base" [class.mexa-spin]="loading" aria-hidden="true">refresh</mat-icon>
+  {{ loading ? 'Updating…' : 'Updated ' + updatedAt }}
 </p>
 </div>
 
@@ -30,9 +30,6 @@
       <input id="pvTo" type="date" appReportDate [rdAfter]="fromDate" class="mexa-date" [(ngModel)]="toDate" name="to"
              aria-label="To date"
              [attr.aria-invalid]="rangeError ? true : null" aria-describedby="pvRangeError">
-      <button type="submit" class="mexa-submit" [disabled]="loading">
-        {{ loading ? 'Loading…' : 'Submit' }}
-      </button>
     </span>
   </div>
 </form>

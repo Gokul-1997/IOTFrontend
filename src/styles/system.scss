@@ -383,3 +383,10 @@ html.dark .mexa-note :is([class~="text-red-500"], [class~="text-red-600"]) { col
 .mat-mdc-table .mat-mdc-slide-toggle .mdc-label { font-size: var(--fs-label); color: var(--mexa-ink-2); padding-left: .4rem; }
 /* Row actions stay on one line: a row is as tall as its text, not its buttons */
 .mexa-table td.actions :is(.ui-btn-row, .flex) { flex-wrap: nowrap; }
+
+/* Dashboard filters apply themselves (appAutoApply): while they do, the
+   title bar's "Updated …" reads "Updating…" and its icon turns — unless the
+   viewer has asked for less motion. */
+@keyframes mexa-spin { to { transform: rotate(360deg); } }
+.mexa-spin { animation: mexa-spin 1s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .mexa-spin { animation: none; } }

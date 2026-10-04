@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, takeUntil, catchError, of } from 'rxjs';
+import { Subject, takeUntil, catchError, of, Subscription } from 'rxjs';
 import { OeeDashboardService } from './oee-dashboard.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 
@@ -38,7 +39,7 @@ interface Loss { key: 'a' | 'p' | 'q'; name: string; label: string; note: string
 @Component({
   selector: 'app-oee-dashboard',
   standalone: true,
-  imports: [MetricHelpComponent, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './oee-dashboard.component.html'
 })
 export class OeeDashboardComponent implements OnInit, OnDestroy {
@@ -70,6 +71,8 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   loss: { oee: number; items: Loss[]; biggest: Loss } | null = null;
 
   private destroy$ = new Subject<void>();
+  /** The request on its way; a newer filter choice replaces it, so an older answer can never land last. */
+  private loadSub?: Subscription;
 
   constructor(
     private svc: OeeDashboardService,
@@ -111,7 +114,8 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
     this.errorMsg = '';
     this.cdr.markForCheck();
 
-    this.svc.getOee({ ...this.f, page: this.page, limit: this.limit })
+    this.loadSub?.unsubscribe();
+    this.loadSub = this.svc.getOee({ ...this.f, page: this.page, limit: this.limit })
       .pipe(takeUntil(this.destroy$), catchError(err => {
         this.errorMsg = err?.error?.message || 'Unable to load OEE data.';
         return of(null);

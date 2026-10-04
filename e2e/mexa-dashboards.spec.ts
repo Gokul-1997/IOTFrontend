@@ -517,21 +517,24 @@ test('Preventive: a From–To range, checked before it is sent', async ({ authed
   const span = (Date.parse(first.searchParams.get('to')!) - Date.parse(first.searchParams.get('from')!)) / 86_400_000;
   expect(span).toBe(6);
 
-  /* The two ends cannot cross: a To typed before the From is pulled up to
-     it (the three-month window, ReportDateDirective), so an inverted range
-     is never sent. Dates relative to today, so the test does not age out. */
+  /* Each change applies itself once the date has settled. The two ends
+     cannot cross: a To typed before the From is pulled up to it (the
+     three-month window, ReportDateDirective), so an inverted range is never
+     sent. Dates relative to today, so the test does not age out. */
   const day = (back: number) => new Date(Date.now() + 330 * 60000 - back * 86_400_000).toISOString().slice(0, 10);
-  const before = seen.length;
   await page.getByLabel('From date').fill(day(3));
+  await expect.poll(() => seen.at(-1)).toContain(`from=${day(3)}`);
   await page.getByLabel('To date').fill(day(20));
   await page.getByLabel('To date').blur();
   await expect(page.getByLabel('To date')).toHaveValue(day(3));
-  expect(seen.length).toBe(before);
+  await expect.poll(() => seen.at(-1)).toContain(`to=${day(3)}`);
+  const inverted = (u: string) => { const q = new URL(u).searchParams; return q.get('from')! > q.get('to')!; };
+  expect(seen.some(inverted)).toBe(false);
 
   await page.getByLabel('From date').fill(day(23));
   await page.getByLabel('To date').fill(day(0));
-  await page.getByRole('button', { name: 'Submit' }).click();
   await expect.poll(() => seen.at(-1)).toContain(`from=${day(23)}`);
   expect(seen.at(-1)).toContain(`to=${day(0)}`);
+  expect(seen.some(inverted)).toBe(false);
   await expect(page.locator('#pvRangeError')).toHaveCount(0);
 });

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { OperatorDashboardService } from './operator-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -11,6 +11,7 @@ import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 
@@ -33,7 +34,7 @@ type Board = 'score' | 'rejection' | 'downtime' | 'oee';
 @Component({
   selector: 'app-operator-dashboard',
   standalone: true,
-  imports: [MetricHelpComponent, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './operator-dashboard.component.html'
 })
 export class OperatorDashboardComponent implements OnInit, OnDestroy {
@@ -61,6 +62,8 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
   which: Record<Board, Which> = { score: 'top', rejection: 'top', downtime: 'top', oee: 'top' };
 
   private destroy$ = new Subject<void>();
+  /** The request on its way; a newer filter choice replaces it, so an older answer can never land last. */
+  private loadSub?: Subscription;
   private search$ = new RxSubject<string>();
 
   /** The table's columns, in the mock's order. `key` is what the server sorts by. */
@@ -159,7 +162,8 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
     this.errorMsg = '';
     this.cdr.markForCheck();
 
-    this.svc.getOperators({ ...this.f, sort: this.sort, dir: this.dir, page: this.page, limit: this.limit })
+    this.loadSub?.unsubscribe();
+    this.loadSub = this.svc.getOperators({ ...this.f, sort: this.sort, dir: this.dir, page: this.page, limit: this.limit })
       .pipe(takeUntil(this.destroy$), catchError(err => {
         this.errorMsg = err?.error?.message || 'Unable to load operator performance.';
         return of(null);

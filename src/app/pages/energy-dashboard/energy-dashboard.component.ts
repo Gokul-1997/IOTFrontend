@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { EnergyDashboardService } from './energy-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -12,6 +12,7 @@ import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { compactQty, qty } from '../../shared/format-number';
 import { MeterPanelComponent } from '../../shared/meter-panel/meter-panel.component';
@@ -28,7 +29,7 @@ import { MeterPanelComponent } from '../../shared/meter-panel/meter-panel.compon
 @Component({
   selector: 'app-energy-dashboard',
   standalone: true,
-  imports: [FilterPanelDirective, ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MeterPanelComponent],
+  imports: [AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MeterPanelComponent],
   templateUrl: './energy-dashboard.component.html'
 })
 export class EnergyDashboardComponent implements OnInit, OnDestroy {
@@ -58,6 +59,8 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   monthCategories: string[] = [];
 
   private destroy$ = new Subject<void>();
+  /** The request on its way; a newer filter choice replaces it, so an older answer can never land last. */
+  private loadSub?: Subscription;
   private search$ = new RxSubject<string>();
 
   constructor(
@@ -108,7 +111,8 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
     this.errorMsg = '';
     this.cdr.markForCheck();
 
-    this.svc.getEnergy({ ...this.f, page: this.page, limit: this.limit })
+    this.loadSub?.unsubscribe();
+    this.loadSub = this.svc.getEnergy({ ...this.f, page: this.page, limit: this.limit })
       .pipe(takeUntil(this.destroy$), catchError(err => {
         this.errorMsg = err?.error?.message || 'Unable to load energy data.';
         return of(null);

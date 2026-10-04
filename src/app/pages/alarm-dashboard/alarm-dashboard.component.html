@@ -6,11 +6,11 @@
 
 <!-- The same title bar as every dashboard: title and freshness on the left,
      the filters in the bar on the right (folded behind one button on a phone). -->
-<form class="mexa-titlebar" (ngSubmit)="submit()">
+<form class="mexa-titlebar" (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
   <h1 class="mexa-title">Alarm Report Dashboard</h1>
-  <p class="mexa-updated" *ngIf="updatedAt">
-    <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-    Updated {{ updatedAt }}
+  <p class="mexa-updated" *ngIf="updatedAt || loading">
+    <mat-icon class="!w-4 !h-4 !text-base" [class.mexa-spin]="loading" aria-hidden="true">refresh</mat-icon>
+    {{ loading ? 'Updating…' : 'Updated ' + updatedAt }}
   </p>
   <span class="mexa-titlebar-spacer"></span>
 
@@ -53,9 +53,6 @@
       <input id="alFrom" type="date" appReportDate [rdBefore]="f.to" class="mexa-date" [(ngModel)]="f.from" name="from" aria-label="From date">
       <span class="mexa-filter-label" aria-hidden="true">–</span>
       <input id="alTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
-      <button type="submit" class="mexa-submit" [disabled]="loading">
-        {{ loading ? 'Loading…' : 'Submit' }}
-      </button>
     </span>
   </div>
 </form>

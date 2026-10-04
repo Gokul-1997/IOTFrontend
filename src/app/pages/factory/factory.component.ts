@@ -9,6 +9,7 @@ import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { compactQty, qty } from '../../shared/format-number';
@@ -28,7 +29,7 @@ const POLL_MS = 60_000;
 @Component({
   selector: 'app-factory',
   standalone: true,
-  imports: [MetricHelpComponent, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './factory.component.html'
 })
 export class FactoryComponent implements OnInit, OnDestroy {
@@ -65,6 +66,8 @@ export class FactoryComponent implements OnInit, OnDestroy {
   alarmSeries:      number[] = [];
 
   private destroy$ = new Subject<void>();
+  /** A filter change: fetch now, and start the minute's polling again from here. */
+  private refresh$ = new Subject<void>();
 
   constructor(
     private svc: FactoryService,
@@ -80,10 +83,14 @@ export class FactoryComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       });
 
-    /* poll so a wall-mounted board stays live without a reload */
-    interval(POLL_MS)
+    /* Poll so a wall-mounted board stays live without a reload. A filter
+       change fetches at once and restarts the clock; a request still on its
+       way is dropped for the newer one (switchMap), so a slow answer for the
+       old filters can never land on top of the new. */
+    this.refresh$
       .pipe(
-        startWith(0),
+        startWith(undefined),
+        switchMap(() => interval(POLL_MS).pipe(startWith(0))),
         switchMap(() => this.fetch$()),
         takeUntil(this.destroy$)
       )
@@ -95,9 +102,9 @@ export class FactoryComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  /** Submit re-runs the query immediately with the current filters. */
+  /** The filters changed (they apply themselves): fetch now with them. */
   submit(): void {
-    this.fetch$().pipe(takeUntil(this.destroy$)).subscribe(res => this.apply(res));
+    this.refresh$.next();
   }
 
   private fetch$() {

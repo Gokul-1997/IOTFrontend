@@ -68,15 +68,17 @@ test('on a phone the filters fold behind one button that reads them back', async
   const toggle = page.getByRole('button', { name: /^Show filters/ });
   await expect(toggle).toBeVisible();
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.getByRole('button', { name: 'Submit' })).toBeHidden();
+  await expect(page.getByLabel('From date')).toBeHidden();
 
   await toggle.click();
   await expect(page.getByRole('button', { name: /^Hide filters/ })).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
+  await expect(page.getByLabel('From date')).toBeVisible();
 });
 
 test('on a laptop the filters stay in the title bar, with no extra button', async ({ page }) => {
   await open(page);
   await expect(page.getByRole('button', { name: /^(Show|Hide) filters/ })).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
+  await expect(page.getByLabel('From date')).toBeVisible();
+  // the filters apply themselves: no Submit to find
+  await expect(page.getByRole('button', { name: 'Submit' })).toHaveCount(0);
 });

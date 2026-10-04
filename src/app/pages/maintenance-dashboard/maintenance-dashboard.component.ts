@@ -10,6 +10,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { ConditionGaugeComponent, ConditionZone } from './condition-gauge.component';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { SEVERITY } from '../../shared/severity';
 
@@ -54,7 +55,7 @@ const SIGNAL_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-maintenance-dashboard',
   standalone: true,
-  imports: [FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, ConditionGaugeComponent],
+  imports: [AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, ConditionGaugeComponent],
   templateUrl: './maintenance-dashboard.component.html',
   styleUrl: './maintenance-dashboard.component.scss'
 })
@@ -111,6 +112,8 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   fansReported = false;
 
   private destroy$ = new Subject<void>();
+  /** A filter change: fetch now, and start the minute's polling again from here. */
+  private refresh$ = new Subject<void>();
 
   constructor(
     private svc: MaintenanceDashboardService,
@@ -162,8 +165,15 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   private startPolling(): void {
     if (this.polling) return;
     this.polling = true;
-    interval(POLL_MS)
-      .pipe(startWith(0), switchMap(() => this.fetch$()), takeUntil(this.destroy$))
+    /* A filter change fetches at once and restarts the clock; a request
+       still on its way is dropped for the newer one (switchMap). */
+    this.refresh$
+      .pipe(
+        startWith(undefined),
+        switchMap(() => interval(POLL_MS).pipe(startWith(0))),
+        switchMap(() => this.fetch$()),
+        takeUntil(this.destroy$)
+      )
       .subscribe(res => this.apply(res));
   }
 
@@ -172,8 +182,11 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  /** The filters changed (they apply themselves): fetch now with them.
+   *  Before the first machine is chosen there is nothing to refresh yet;
+   *  polling starts with whatever the filters say by then. */
   submit(): void {
-    this.fetch$().pipe(takeUntil(this.destroy$)).subscribe(res => this.apply(res));
+    this.refresh$.next();
   }
 
   reset(): void {

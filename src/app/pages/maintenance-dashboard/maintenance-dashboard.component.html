@@ -9,12 +9,12 @@
 
 
 <!-- ══════════ TITLE BAR ══════════ -->
-<form class="mexa-titlebar" (ngSubmit)="submit()">
+<form class="mexa-titlebar" (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
   <div class="flex gap-2">
   <h1 class="mexa-title">Maintenance Dashboard</h1>
-<p class="mexa-updated" *ngIf="updatedAt">
-  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Updated {{ updatedAt }}
+<p class="mexa-updated" *ngIf="updatedAt || loading">
+  <mat-icon class="!w-4 !h-4 !text-base" [class.mexa-spin]="loading" aria-hidden="true">refresh</mat-icon>
+  {{ loading ? 'Updating…' : 'Updated ' + updatedAt }}
 </p>
 </div>
   <!-- One machine, named. The fleet counts that used to sit here belong on
@@ -59,9 +59,6 @@
     <span class="mexa-filter-set">
       <label class="mexa-filter-label" for="mtDate">Date</label>
       <input id="mtDate" type="date" appReportDate class="mexa-date" [(ngModel)]="selectedDate" name="date">
-      <button type="submit" class="mexa-submit" [disabled]="loading">
-        {{ loading ? 'Loading…' : 'Submit' }}
-      </button>
     </span>
   </div>
 </form>

@@ -3,12 +3,12 @@
 
 
 <!-- ══════════ TITLE BAR ══════════ -->
-<form class="mexa-titlebar" (ngSubmit)="submit()">
+<form class="mexa-titlebar" (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
   <div class="flex gap-2">
   <h1 class="mexa-title">Energy Dashboard</h1>
-  <p class="mexa-updated" *ngIf="updatedAt">
-  <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
-  Updated {{ updatedAt }}
+  <p class="mexa-updated" *ngIf="updatedAt || loading">
+  <mat-icon class="!w-4 !h-4 !text-base" [class.mexa-spin]="loading" aria-hidden="true">refresh</mat-icon>
+  {{ loading ? 'Updating…' : 'Updated ' + updatedAt }}
 </p>
 </div>
   <div class="mexa-filters" appFilterPanel>
@@ -29,9 +29,6 @@
       <span class="mexa-filter-label" aria-hidden="true">–</span>
       <input id="enTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to"
              aria-label="To date">
-      <button type="submit" class="mexa-submit" [disabled]="loading">
-        {{ loading ? 'Loading…' : 'Submit' }}
-      </button>
     </span>
     <!-- Where the cost per kWh is set. Up here so it can be found; it used
          to sit in the machine table's toolbar at the bottom of the page. -->
