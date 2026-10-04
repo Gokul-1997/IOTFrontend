@@ -126,7 +126,8 @@
         <span class="mexa-kpi-icon blue" style="background:#9b7ec8" aria-hidden="true"><mat-icon>electrical_services</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ num(data.kpis.avg_voltage) }}<small *ngIf="data.kpis.avg_voltage != null">V</small></p>
-      <p class="mexa-kpi-sub">{{ data.kpis.avg_voltage == null ? 'Not reported by the devices' : 'Average over the period' }}</p>
+      <!-- the meters' line-to-line figure (~415 V), not phase-to-neutral (~240 V) -->
+      <p class="mexa-kpi-sub">{{ data.kpis.avg_voltage == null ? 'Not reported by the devices' : 'Phase to phase, average over the period' }}</p>
     </div>
 
     <div class="mexa-kpi">
@@ -135,7 +136,7 @@
         <span class="mexa-kpi-icon green" style="background:#17b3a3" aria-hidden="true"><mat-icon>power</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ num(data.kpis.avg_current) }}<small *ngIf="data.kpis.avg_current != null">A</small></p>
-      <p class="mexa-kpi-sub">{{ data.kpis.avg_current == null ? 'Not reported by the devices' : 'Average over the period' }}</p>
+      <p class="mexa-kpi-sub">{{ data.kpis.avg_current == null ? 'Not reported by the devices' : 'Per phase, average over the period' }}</p>
     </div>
 
     <div class="mexa-kpi">
