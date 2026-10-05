@@ -1,533 +1,454 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ProgramService } from '../../core/services/program.service';
-import { MachinesService } from '../machines/machines.service';
+import {
+  ProgramService, PtMachine, PtFile, PtJob, PtControllerFile, PtKind, PtStatus
+} from '../../core/services/program.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SocketService } from '../../core/services/socket.service';
 import { UiTabsDirective } from '../../shared/ui-tabs.directive';
 import { MatIconModule } from '@angular/material/icon';
 
+const POLL_MS = 10_000;
+
+/**
+ * Program Transfer, through each machine's own device.
+ *
+ * The server keeps the programs (the ProgramTransfer folder, one folder per
+ * machine IP) and hands out jobs; the device at the machine collects them,
+ * writes to or reads from the controller, and reports back. So "send" here
+ * queues a job and the status follows it: Waiting for the device → Taken by
+ * the device → Done / Failed. The device also reports what is on the
+ * controller, which is the "On the machine" list.
+ */
 @Component({
   selector: 'app-programs',
   standalone: true,
   imports: [CommonModule, FormsModule, UiTabsDirective, MatIconModule],
-  templateUrl: './programs.component.html'
+  templateUrl: './programs.component.html',
+  styleUrl: './programs.component.scss'
 })
 export class ProgramsComponent implements OnInit, OnDestroy {
   tab: 'programs' | 'history' = 'programs';
 
-  programs: any[] = [];
-  transfers: any[] = [];
-  machines: any[] = [];
-  total = 0;
-  transfersTotal = 0;
-  loading = false;
-  page = 1;
-  limit = 10;
-  search = '';
-
-  /* ── controller side ── */
+  machines: PtMachine[] = [];
   selectedMachineId: number | null = null;
-  machineFiles: any[] = [];
-  machineSearch = '';
+
+  /* ── the machine's folder ── */
+  files: PtFile[] = [];
+  filesTotal = 0;
+  filesPage = 1;
+  readonly filesLimit = 25;
+  kind: '' | PtKind = '';
+  search = '';
   loadingFiles = false;
-  /** null = not checked yet */
-  machineOnline: boolean | null = null;
-  checkingStatus = false;
-  fetchingFile: string | null = null;
+  selectedFileIds = new Set<number>();
 
-  /* ── selection (server side) ── */
-  selectedProgramIds = new Set<number>();
+  /* ── the controller, as the device reported it ── */
+  controllerFiles: PtControllerFile[] = [];
+  controllerReportedAt: string | null = null;
+  controllerSearch = '';
+  loadingController = false;
 
-  /* ── upload form ── */
+  /* ── jobs ── */
+  openJobs: PtJob[] = [];
+  history: PtJob[] = [];
+  historyTotal = 0;
+  historyPage = 1;
+  readonly historyLimit = 20;
+  loadingHistory = false;
+  busy = false;
+
+  /* ── upload dialog ── */
   showUpload = false;
   uploadFile: File | null = null;
   uploadName = '';
-  uploadDescription = '';
+  uploadNote = '';
+  uploadSend = true;
+  uploadMachineId: number | null = null;
   uploading = false;
 
-  /* ── transfer ── */
-  transferring = false;
-  /** transfer_id → { file_name, percent, direction } */
-  progress = new Map<number, any>();
-  /** set when the controller already holds one of the files */
-  /* `unverified` distinguishes "the controller told us this file is there"
-     from "the controller cannot answer either probe". Both need the same
-     confirmation, but claiming a file exists when we could not check is a
-     lie the operator would rightly stop trusting. */
-  overwritePrompt: {
-    programIds: number[]; machineIds: number[]; names: string[]; unverified: boolean;
+  /** a send the machine refused because the program is already there */
+  overwritePrompt: { names: string[]; retry: (overwrite: boolean) => void } | null = null;
+
+  /* ── device token dialog ── */
+  deviceDialog: {
+    machine: PtMachine;
+    label: string;
+    token: string | null;
+    confirmReplace: boolean;
+    confirmRevoke: boolean;
+    working: boolean;
+    copied: boolean;
   } | null = null;
 
-  /* ── supervisor authorisation ──
-     Sending to a controller needs a one-time code from the supervisor
-     assigned to that machine. The modal has two phases: pick a supervisor
-     (only when the machine has more than one), then enter their code. */
-  authPrompt: {
-    machineId: number;
-    machineSerial: string;
-    choices: any[] | null;
-    authorizationId: number | null;
-    supervisorName: string;
-    sentTo: string;
-    expiresAt: string;
-    code: string;
-    busy: boolean;
-    error: string;
-  } | null = null;
-
-  /** Held only between a verified code and the end of that send — including
-   *  the overwrite retry, which re-posts the batch and would otherwise ask
-   *  the supervisor to type the code a second time. Cleared once the
-   *  transfer finishes, so a later send needs fresh authorisation. */
-  private activeAuth: { authorization_id: number; code: string; machineId: number } | null = null;
-
-  private statusTimer: any = null;
+  private timer: any = null;
+  now = Date.now();
 
   constructor(
-    private programService: ProgramService,
-    private machinesService: MachinesService,
+    private programs: ProgramService,
     private toast: ToastService,
     private socket: SocketService,
     private cdr: ChangeDetectorRef,
     private auth: AuthService
   ) {}
 
-  /* Each action shows only when the role holds it and the company was
-     granted it — what the API checks. Before, every button showed to
-     everyone who could open the page, and pressing one the role lacked (a
-     SETTER sending to a machine, say) answered "Permission denied". */
+  /* Each action shows only when the role holds it — what the API checks. */
   get canUpload():   boolean { return this.auth.hasAction('programs', 'upload'); }
   get canTransfer(): boolean { return this.auth.hasAction('programs', 'transfer'); }
   get canFetch():    boolean { return this.auth.hasAction('programs', 'fetch'); }
   get canDelete():   boolean { return this.auth.hasAction('programs', 'delete'); }
+  /** a device token is a machine credential, like its MQTT key */
+  get canManageDevice(): boolean { return this.auth.hasAction('machines', 'edit'); }
 
-  /**
-   * The app runs zoneless (Angular 21, no zone.js), so an HTTP response or a
-   * socket event updating a field schedules nothing on its own — the view
-   * only refreshed when the user happened to click something else. That left
-   * the machine dropdown and the program list rendering empty on load.
-   * Every async callback here has to say it changed something.
-   */
+  /** The app is zoneless: every async callback says it changed something. */
   private touch() { this.cdr.markForCheck(); }
 
   ngOnInit() {
-    this.load();
-    this.machinesService.getMachines({ page: 1, limit: 1000 }).subscribe({
-      next: res => { this.machines = (res.data || []).filter((m: any) => m.is_active); this.touch(); }
-    });
-
-    this.socket.onTransferProgress(p => {
-      this.progress.set(p.transfer_id, p);
+    this.loadMachines(true);
+    this.socket.onProgramJob(() => this.refreshAfterJob());
+    // device online/offline and job states move on their own: keep up
+    this.timer = setInterval(() => {
+      if (document.hidden) return;
+      this.now = Date.now();
+      this.loadMachines(false);
+      if (this.selectedMachineId) this.loadOpenJobs();
       this.touch();
-      // drop the bar shortly after it completes so the list settles
-      if (p.percent === 100) {
-        setTimeout(() => { this.progress.delete(p.transfer_id); this.touch(); }, 1500);
-      }
-    });
+    }, POLL_MS);
   }
 
   ngOnDestroy() {
-    this.socket.offTransferProgress();
-    if (this.statusTimer) clearInterval(this.statusTimer);
+    this.socket.offProgramJob();
+    if (this.timer) clearInterval(this.timer);
   }
 
-  /* ─────────────── server-side library ─────────────── */
+  /* ─────────────── machines ─────────────── */
 
-  load() {
-    this.loading = true;
-    this.programService.getPrograms({ page: this.page, limit: this.limit, search: this.search }).subscribe({
-      next: res => { this.programs = res.data || []; this.total = res.total || 0; this.loading = false; this.touch(); },
-      error: () => { this.loading = false; this.touch(); }
+  get selectedMachine(): PtMachine | null {
+    return this.machines.find(m => m.id === this.selectedMachineId) || null;
+  }
+
+  loadMachines(first: boolean) {
+    this.programs.getMachines().subscribe({
+      next: res => {
+        this.machines = res.data || [];
+        if (first && !this.selectedMachineId && this.machines.length) {
+          this.selectedMachineId = this.machines[0].id;
+          this.onMachineChange();
+        }
+        this.touch();
+      },
+      error: err => { if (first) this.toast.error(err.error?.message || 'Could not load the machines'); this.touch(); }
     });
   }
-
-  loadTransfers() {
-    this.loading = true;
-    this.programService.getTransfers({ page: this.page, limit: this.limit }).subscribe({
-      next: res => { this.transfers = res.data || []; this.transfersTotal = res.total || 0; this.loading = false; this.touch(); },
-      error: () => { this.loading = false; this.touch(); }
-    });
-  }
-
-  switchTab(tab: 'programs' | 'history') {
-    this.tab = tab;
-    this.page = 1;
-    tab === 'programs' ? this.load() : this.loadTransfers();
-  }
-
-  /* ─────────────── selection ─────────────── */
-
-  toggleProgram(id: number) {
-    this.selectedProgramIds.has(id)
-      ? this.selectedProgramIds.delete(id)
-      : this.selectedProgramIds.add(id);
-  }
-
-  isSelected(id: number) { return this.selectedProgramIds.has(id); }
-
-  get allSelected(): boolean {
-    return this.programs.length > 0 && this.programs.every(p => this.selectedProgramIds.has(p.id));
-  }
-
-  toggleAll() {
-    if (this.allSelected) this.programs.forEach(p => this.selectedProgramIds.delete(p.id));
-    else this.programs.forEach(p => this.selectedProgramIds.add(p.id));
-  }
-
-  get selectedCount() { return this.selectedProgramIds.size; }
-
-  /* ─────────────── controller side ─────────────── */
 
   onMachineChange() {
-    this.machineFiles = [];
-    this.machineOnline = null;
-    if (this.statusTimer) { clearInterval(this.statusTimer); this.statusTimer = null; }
-    if (!this.selectedMachineId) return;
-
-    this.checkStatus();
-    this.loadMachineFiles();
-    // keep the connection indicator honest while the page is open
-    this.statusTimer = setInterval(() => this.checkStatus(), 30_000);
+    this.selectedFileIds.clear();
+    this.filesPage = 1;
+    this.controllerFiles = [];
+    this.controllerReportedAt = null;
+    this.loadFiles();
+    this.loadController();
+    this.loadOpenJobs();
+    if (this.tab === 'history') this.loadHistory();
   }
 
-  checkStatus() {
-    if (!this.selectedMachineId) return;
-    this.checkingStatus = true;
-    this.programService.getMachineStatus(this.selectedMachineId).subscribe({
-      next: res => { this.machineOnline = !!res.data?.online; this.checkingStatus = false; this.touch(); },
-      error: () => { this.machineOnline = false; this.checkingStatus = false; this.touch(); }
-    });
+  /** "online", "offline" or "none" — a device that called in the last minute is online. */
+  deviceState(m: PtMachine | null): 'online' | 'offline' | 'none' {
+    if (!m || !m.device_id) return 'none';
+    return m.online ? 'online' : 'offline';
   }
 
-  loadMachineFiles() {
-    if (!this.selectedMachineId) return;
+  ago(iso: string | null): string {
+    if (!iso) return 'never';
+    const s = Math.max(0, Math.round((this.now - new Date(iso).getTime()) / 1000));
+    if (s < 60) return `${s}s ago`;
+    if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+    if (s < 86400) return `${Math.floor(s / 3600)} h ago`;
+    return `${Math.floor(s / 86400)} d ago`;
+  }
+
+  /* ─────────────── the folder ─────────────── */
+
+  loadFiles() {
+    if (!this.selectedMachineId) { this.files = []; this.filesTotal = 0; return; }
     this.loadingFiles = true;
-    this.programService.getMachineFiles(this.selectedMachineId, this.machineSearch).subscribe({
-      next: res => { this.machineFiles = res.data || []; this.loadingFiles = false; this.touch(); },
-      error: err => {
-        this.machineFiles = [];
-        this.loadingFiles = false;
-        this.touch();
-        this.toast.error(err.error?.message || 'Could not read files from the controller');
-      }
+    this.programs.getFiles({
+      machine_id: this.selectedMachineId, kind: this.kind, search: this.search.trim(),
+      page: this.filesPage, limit: this.filesLimit
+    }).subscribe({
+      next: res => { this.files = res.data || []; this.filesTotal = res.total || 0; this.loadingFiles = false; this.touch(); },
+      error: err => { this.loadingFiles = false; this.toast.error(err.error?.message || 'Could not load the programs'); this.touch(); }
     });
   }
 
-  /** Pull a file off the controller into the server library. */
-  fetchFile(f: any) {
-    if (!this.selectedMachineId) return;
-    this.fetchingFile = f.name;
-    this.programService.fetchFromMachine(this.selectedMachineId, f.name).subscribe({
-      next: () => {
-        this.fetchingFile = null;
-        this.toast.success(`"${f.name}" retrieved from machine`);
-        this.load();
-      },
-      error: err => {
-        this.fetchingFile = null;
-        this.touch();
-        this.toast.error(err.error?.message || 'Download from machine failed');
-      }
-    });
+  setKind(k: '' | PtKind) { this.kind = k; this.filesPage = 1; this.selectedFileIds.clear(); this.loadFiles(); }
+
+  get filesPages(): number { return Math.max(1, Math.ceil(this.filesTotal / this.filesLimit)); }
+  changeFilesPage(step: number) { this.filesPage = Math.min(this.filesPages, Math.max(1, this.filesPage + step)); this.loadFiles(); }
+
+  isSelected(id: number) { return this.selectedFileIds.has(id); }
+  toggleFile(id: number) { this.selectedFileIds.has(id) ? this.selectedFileIds.delete(id) : this.selectedFileIds.add(id); }
+  get allSelected() { return this.files.length > 0 && this.files.every(f => this.selectedFileIds.has(f.id)); }
+  toggleAll() {
+    if (this.allSelected) this.files.forEach(f => this.selectedFileIds.delete(f.id));
+    else this.files.forEach(f => this.selectedFileIds.add(f.id));
+  }
+  get selectedCount() { return this.selectedFileIds.size; }
+
+  kindLabel(k: PtKind) { return k === 'NEW' ? 'Uploaded' : k === 'BACKUP' ? 'Backup' : 'From machine'; }
+  kindBadge(k: PtKind) { return k === 'NEW' ? 'mexa-badge-violet' : k === 'BACKUP' ? 'mexa-badge-neutral' : 'mexa-badge-info'; }
+  kindIcon(k: PtKind) { return k === 'NEW' ? 'upload_file' : k === 'BACKUP' ? 'inventory_2' : 'south_west'; }
+
+  fileSize(bytes: number | null | undefined): string {
+    if (bytes == null) return '--';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   }
 
-  /* ─────────────── transfers ─────────────── */
-
-  /** Send every selected program to the selected machine. */
-  sendSelected(overwrite = false) {
-    if (!this.selectedMachineId) { this.toast.error('Select a machine first'); return; }
-    if (this.selectedCount === 0) { this.toast.error('Select at least one program'); return; }
-
-    const programIds = Array.from(this.selectedProgramIds);
-    const machineIds = [this.selectedMachineId];
-
-    // Nothing reaches the controller until the machine's supervisor has
-    // signed this send off.
-    if (!this.activeAuth || this.activeAuth.machineId !== this.selectedMachineId) {
-      this.openAuthPrompt();
-      return;
-    }
-    const auth = { authorization_id: this.activeAuth.authorization_id, code: this.activeAuth.code };
-
-    this.transferring = true;
-    this.programService.transferBatch(programIds, machineIds, overwrite, auth).subscribe({
-      next: res => {
-        this.transferring = false;
-        this.overwritePrompt = null;
-        this.touch();
-
-        const results = res.data?.results || [];
-
-        // A rejected code comes back per row, not as an HTTP error, because
-        // the batch reports every combination individually.
-        const denied = results.filter((r: any) => r.status === 'APPROVAL_REQUIRED');
-        if (denied.length) {
-          this.activeAuth = null;
-          if (this.authPrompt) {
-            this.authPrompt.busy = false;
-            this.authPrompt.code = '';
-            this.authPrompt.error = denied[0].message || 'That code was not accepted.';
-            this.touch();
-          } else {
-            this.toast.error(denied[0].message || 'Supervisor authorisation required');
-          }
-          return;
-        }
-
-        const unassigned = results.filter((r: any) => r.status === 'NO_SUPERVISOR');
-        if (unassigned.length) {
-          this.closeAuthPrompt();
-          this.toast.error(unassigned[0].message || 'No supervisor is assigned to this machine');
-          return;
-        }
-
-        // The old program could not be read back, so nothing was sent. Say
-        // that plainly — the machine is untouched, and an operator who
-        // thinks a half-transfer happened will go and check the panel.
-        const backupFailed = results.filter((r: any) => r.status === 'BACKUP_FAILED');
-        if (backupFailed.length) {
-          this.closeAuthPrompt();
-          this.toast.error(backupFailed[0].message ||
-            'The program on the machine could not be backed up, so nothing was sent.');
-          return;
-        }
-
-        // The machine is mid-transfer for someone else. Retrying is the fix,
-        // so say that rather than reporting a failure the operator would
-        // reasonably read as a broken machine.
-        const busy = results.filter((r: any) => r.status === 'BUSY');
-        if (busy.length) {
-          this.closeAuthPrompt();
-          this.toast.error(busy[0].message || 'That machine is busy with another transfer');
-          return;
-        }
-
-        // Missing IP or a program directory that is not on the controller —
-        // an admin fixes this in the machine form; retrying never will.
-        const misconfigured = results.filter((r: any) => r.status === 'NOT_CONFIGURED');
-        if (misconfigured.length) {
-          this.closeAuthPrompt();
-          this.toast.error(misconfigured[0].message || 'This machine’s FTP details are incomplete');
-          return;
-        }
-
-        const existing = results.filter((r: any) => r.status === 'EXISTS');
-        if (existing.length) {
-          // ask once, then resend the whole batch with overwrite — the same
-          // authorisation carries over, so no second code is needed
-          this.authPrompt = null;
-          this.overwritePrompt = {
-            programIds, machineIds,
-            names: existing.map((r: any) => r.program_name),
-            unverified: existing.every((r: any) => r.code === 'EXISTENCE_UNKNOWN')
-          };
-          return;
-        }
-
-        this.closeAuthPrompt();
-        this.activeAuth = null;
-
-        if (res.data?.failed) {
-          this.toast.error(`${res.data.failed} of ${res.data.total} transfers failed`);
-        } else {
-          // Naming the backup in the success message is what makes the
-          // guarantee real to the operator — otherwise it is a promise in a
-          // dialog they have already dismissed.
-          const backups = results.filter((r: any) => r.backup).length;
-          this.toast.success(
-            backups
-              ? `Transfer complete. ${backups === 1 ? 'The program it replaced was' : backups + ' replaced programs were'} saved under Backups.`
-              : (res.message || 'Transfer complete')
-          );
-        }
-
-        this.selectedProgramIds.clear();
-        this.loadMachineFiles();
-      },
-      error: err => {
-        this.transferring = false;
-        this.activeAuth = null;
-        this.closeAuthPrompt();
-        this.touch();
-        this.toast.error(err.error?.message || 'Transfer failed');
-      }
-    });
-  }
-
-  confirmOverwrite() {
-    if (!this.overwritePrompt) return;
-    this.sendSelected(true);
-  }
-
-  cancelOverwrite() {
-    this.overwritePrompt = null;
-    // The supervisor authorised a send that is no longer happening.
-    this.activeAuth = null;
-  }
-
-  /* ─────────────── supervisor authorisation ─────────────── */
-
-  /** Open the modal and ask the backend to send a code. */
-  openAuthPrompt() {
-    if (!this.selectedMachineId) return;
-    this.authPrompt = {
-      machineId: this.selectedMachineId,
-      machineSerial: this.selectedMachine?.machine_serial_no || 'this machine',
-      choices: null,
-      authorizationId: null,
-      supervisorName: '',
-      sentTo: '',
-      expiresAt: '',
-      code: '',
-      busy: true,
-      error: ''
-    };
-    this.requestCode();
-  }
-
-  /** Ask for a code, optionally naming which supervisor should receive it. */
-  requestCode(supervisorId?: number) {
-    if (!this.authPrompt) return;
-    const prompt = this.authPrompt;
-    prompt.busy = true;
-    prompt.error = '';
-
-    this.programService
-      .requestAuthorization(prompt.machineId, Array.from(this.selectedProgramIds), supervisorId)
-      .subscribe({
-        next: res => {
-          const d = res.data || {};
-          prompt.busy = false;
-          prompt.choices = null;
-          prompt.authorizationId = d.authorization_id;
-          prompt.supervisorName = d.supervisor?.username || '';
-          prompt.sentTo = d.supervisor?.sent_to || '';
-          prompt.expiresAt = d.expires_at;
-          prompt.code = '';
-          this.touch();
-        },
-        error: err => {
-          const code = err.error?.code;
-          prompt.busy = false;
-
-          // Several supervisors cover this machine — ask which one is here.
-          if (code === 'SUPERVISOR_REQUIRED') {
-            prompt.choices = err.error?.supervisors || [];
-            this.touch();
-            return;
-          }
-
-          // Nobody can authorise this machine: an administrator has to fix
-          // that, so close the modal rather than leaving a dead-end open.
-          this.closeAuthPrompt();
-          this.touch();
-          this.toast.error(err.error?.message || 'Could not request an authorisation code');
-        }
-      });
-  }
-
-  /** Supervisor has entered their code — run the transfer with it. */
-  confirmAuthorization() {
-    const prompt = this.authPrompt;
-    if (!prompt || !prompt.authorizationId) return;
-    const code = (prompt.code || '').trim();
-    if (!code) { prompt.error = 'Enter the code sent to the supervisor.'; return; }
-
-    this.activeAuth = {
-      authorization_id: prompt.authorizationId,
-      code,
-      machineId: prompt.machineId
-    };
-    prompt.busy = true;
-    prompt.error = '';
-    this.sendSelected(false);
-  }
-
-  closeAuthPrompt() { this.authPrompt = null; }
-
-  cancelAuthorization() {
-    this.closeAuthPrompt();
-    this.activeAuth = null;
-  }
-
-  /* ─────────────── misc ─────────────── */
-
-  onFileSelected(event: any) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    this.uploadFile = file;
-    if (!this.uploadName) this.uploadName = file.name;
-  }
-
-  upload() {
-    if (!this.uploadFile) { this.toast.error('Please choose a program file'); return; }
-    this.uploading = true;
-    this.programService.upload(this.uploadFile, this.uploadName, this.uploadDescription).subscribe({
-      next: () => {
-        this.uploading = false;
-        this.showUpload = false;
-        this.touch();
-        this.uploadFile = null;
-        this.uploadName = '';
-        this.uploadDescription = '';
-        this.toast.success('Program uploaded');
-        this.load();
-      },
-      error: err => {
-        this.uploading = false;
-        this.touch();
-        this.toast.error(err.error?.message || 'Upload failed');
-      }
-    });
-  }
-
-  deleteProgram(p: any) {
-    if (!confirm(`Delete program "${p.name}"?`)) return;
-    this.programService.delete(p.id).subscribe({
-      next: () => { this.toast.success('Program deleted'); this.selectedProgramIds.delete(p.id); this.load(); },
-      error: err => { this.touch(); this.toast.error(err.error?.message || 'Delete failed'); }
-    });
-  }
-
-  download(p: any) {
-    this.programService.download(p.id).subscribe({
+  download(f: PtFile) {
+    this.programs.download(f.id).subscribe({
       next: blob => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = p.file_name;
+        a.download = f.stored_name;
         a.click();
         URL.revokeObjectURL(url);
       },
-      error: () => this.toast.error('Download failed')
+      error: () => { this.toast.error('Download failed — the file may have been removed from the folder'); this.touch(); }
     });
   }
 
-  fileSize(bytes: number): string {
-    if (bytes == null) return '--';
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  deleteFile(f: PtFile) {
+    if (!confirm(`Delete ${f.stored_name} from the ProgramTransfer folder?`)) return;
+    this.programs.delete(f.id).subscribe({
+      next: () => { this.toast.success('Program deleted'); this.selectedFileIds.delete(f.id); this.loadFiles(); },
+      error: err => { this.toast.error(err.error?.message || 'Delete failed'); this.touch(); }
+    });
   }
 
-  get activeProgress(): any[] {
-    return Array.from(this.progress.values());
+  /* ─────────────── sending and fetching ─────────────── */
+
+  sendSelected(overwrite = false) {
+    const machine = this.selectedMachine;
+    if (!machine || !this.selectedCount) return;
+    const ids = [...this.selectedFileIds];
+    this.busy = true;
+    this.programs.send(ids, [machine.id], overwrite).subscribe({
+      next: res => {
+        this.busy = false;
+        this.overwritePrompt = null;
+        this.selectedFileIds.clear();
+        const n = res.data.jobs.length;
+        this.toast.success(`${n} program${n === 1 ? '' : 's'} queued for ${machine.machine_serial_no}`);
+        this.loadOpenJobs();
+        this.touch();
+      },
+      error: err => {
+        this.busy = false;
+        if (err.status === 409 && err.error?.code === 'FILE_EXISTS') {
+          this.overwritePrompt = { names: err.error.names || [], retry: o => this.sendSelected(o) };
+        } else {
+          this.overwritePrompt = null;
+          this.toast.error(err.error?.message || 'Could not queue the programs');
+        }
+        this.touch();
+      }
+    });
   }
 
-  get selectedMachine(): any {
-    return this.machines.find(m => m.id === this.selectedMachineId) || null;
+  get filteredController(): PtControllerFile[] {
+    const q = this.controllerSearch.trim().toLowerCase();
+    return q ? this.controllerFiles.filter(f => f.name.toLowerCase().includes(q)) : this.controllerFiles;
   }
 
-  get totalPages(): number {
-    const t = this.tab === 'programs' ? this.total : this.transfersTotal;
-    return Math.max(1, Math.ceil(t / this.limit));
+  loadController() {
+    const id = this.selectedMachineId;
+    if (!id) return;
+    this.loadingController = true;
+    this.programs.getControllerFiles(id).subscribe({
+      next: res => {
+        if (id !== this.selectedMachineId) return;
+        this.controllerFiles = res.data.files || [];
+        this.controllerReportedAt = res.data.reported_at;
+        this.loadingController = false;
+        this.touch();
+      },
+      error: () => { this.loadingController = false; this.touch(); }
+    });
   }
 
-  changePage(delta: number) {
-    this.page += delta;
-    this.tab === 'programs' ? this.load() : this.loadTransfers();
+  /** a fetch already asked for and not finished */
+  fetchWaiting(name: string): boolean {
+    return this.openJobs.some(j => j.action === 'FETCH' && j.program_name.toLowerCase() === name.toLowerCase());
+  }
+
+  fetchFile(f: PtControllerFile) {
+    const machine = this.selectedMachine;
+    if (!machine) return;
+    this.programs.fetch(machine.id, [f.name]).subscribe({
+      next: () => { this.toast.success(`Asked ${machine.machine_serial_no} for ${f.name}`); this.loadOpenJobs(); this.touch(); },
+      error: err => { this.toast.error(err.error?.message || 'Could not ask the machine'); this.touch(); }
+    });
+  }
+
+  /* ─────────────── jobs ─────────────── */
+
+  loadOpenJobs() {
+    const id = this.selectedMachineId;
+    if (!id) { this.openJobs = []; return; }
+    this.programs.getJobs({ machine_id: id, status: 'open', limit: 50 }).subscribe({
+      next: res => { if (id === this.selectedMachineId) { this.openJobs = res.data || []; this.touch(); } },
+      error: () => {}
+    });
+  }
+
+  /** a job moved: what it touched may have changed too */
+  private refreshAfterJob() {
+    this.loadOpenJobs();
+    this.loadFiles();
+    this.loadController();
+    this.loadMachines(false);
+    if (this.tab === 'history') this.loadHistory();
+  }
+
+  cancelJob(j: PtJob) {
+    this.programs.cancelJob(j.id).subscribe({
+      next: () => { this.toast.success('Cancelled'); this.loadOpenJobs(); this.touch(); },
+      error: err => { this.toast.error(err.error?.message || 'Could not cancel'); this.loadOpenJobs(); this.touch(); }
+    });
+  }
+
+  statusLabel(j: PtJob): string {
+    const s: Record<PtStatus, string> = {
+      QUEUED: 'Waiting for the device', DELIVERED: 'Taken by the device', DONE: 'Done',
+      FAILED: 'Failed', CANCELLED: 'Cancelled'
+    };
+    return s[j.status];
+  }
+  statusBadge(s: PtStatus) {
+    return s === 'DONE' ? 'mexa-badge-good' : s === 'FAILED' ? 'mexa-badge-bad' : s === 'CANCELLED' ? 'mexa-badge-neutral' : 'mexa-badge-warn';
+  }
+  statusIcon(s: PtStatus) {
+    return s === 'DONE' ? 'check_circle' : s === 'FAILED' ? 'error_outline' : s === 'CANCELLED' ? 'block' : s === 'DELIVERED' ? 'sync' : 'schedule';
+  }
+
+  switchTab(t: 'programs' | 'history') {
+    this.tab = t;
+    if (t === 'history') { this.historyPage = 1; this.loadHistory(); }
+  }
+
+  loadHistory() {
+    this.loadingHistory = true;
+    this.programs.getJobs({ machine_id: this.selectedMachineId, page: this.historyPage, limit: this.historyLimit }).subscribe({
+      next: res => { this.history = res.data || []; this.historyTotal = res.total || 0; this.loadingHistory = false; this.touch(); },
+      error: err => { this.loadingHistory = false; this.toast.error(err.error?.message || 'Could not load the history'); this.touch(); }
+    });
+  }
+  get historyPages(): number { return Math.max(1, Math.ceil(this.historyTotal / this.historyLimit)); }
+  changeHistoryPage(step: number) { this.historyPage = Math.min(this.historyPages, Math.max(1, this.historyPage + step)); this.loadHistory(); }
+
+  /* ─────────────── upload ─────────────── */
+
+  openUpload() {
+    this.uploadFile = null;
+    this.uploadName = '';
+    this.uploadNote = '';
+    this.uploadSend = this.canTransfer;
+    this.uploadMachineId = this.selectedMachineId;
+    this.showUpload = true;
+  }
+
+  onFileSelected(e: Event) {
+    const input = e.target as HTMLInputElement;
+    this.uploadFile = input.files?.[0] || null;
+    if (this.uploadFile && !this.uploadName) this.uploadName = this.uploadFile.name;
+  }
+
+  get uploadMachine(): PtMachine | null {
+    return this.machines.find(m => m.id === this.uploadMachineId) || null;
+  }
+
+  upload(overwrite = false) {
+    if (!this.uploadFile || !this.uploadMachineId) return;
+    const machine = this.uploadMachine;
+    this.uploading = true;
+    this.programs.upload({
+      file: this.uploadFile, machineId: this.uploadMachineId, programName: this.uploadName.trim(),
+      note: this.uploadNote.trim(), send: this.uploadSend && this.canTransfer, overwrite
+    }).subscribe({
+      next: res => {
+        this.uploading = false;
+        this.showUpload = false;
+        this.overwritePrompt = null;
+        this.toast.success(res.data.job
+          ? `Uploaded and queued for ${machine?.machine_serial_no}`
+          : `Uploaded to ${machine?.machine_serial_no}'s folder`);
+        if (this.uploadMachineId !== this.selectedMachineId) { this.selectedMachineId = this.uploadMachineId; this.onMachineChange(); }
+        else { this.loadFiles(); this.loadOpenJobs(); }
+        this.touch();
+      },
+      error: err => {
+        this.uploading = false;
+        if (err.status === 409 && err.error?.code === 'FILE_EXISTS') {
+          this.overwritePrompt = { names: err.error.names || [], retry: o => this.upload(o) };
+        } else {
+          this.toast.error(err.error?.message || 'Upload failed');
+        }
+        this.touch();
+      }
+    });
+  }
+
+  cancelOverwrite() { this.overwritePrompt = null; }
+  confirmOverwrite() { this.overwritePrompt?.retry(true); }
+
+  /* ─────────────── the machine's device ─────────────── */
+
+  openDevice() {
+    const m = this.selectedMachine;
+    if (!m) return;
+    this.deviceDialog = { machine: m, label: m.device_label || '', token: null, confirmReplace: false, confirmRevoke: false, working: false, copied: false };
+  }
+
+  closeDevice() { this.deviceDialog = null; this.loadMachines(false); }
+
+  createToken() {
+    const d = this.deviceDialog;
+    if (!d) return;
+    if (d.machine.device_id && !d.confirmReplace) { d.confirmReplace = true; return; }
+    d.working = true;
+    this.programs.createDeviceToken(d.machine.id, d.label.trim() || undefined).subscribe({
+      next: res => { d.working = false; d.confirmReplace = false; d.token = res.data.token; this.loadMachines(false); this.touch(); },
+      error: err => { d.working = false; this.toast.error(err.error?.message || 'Could not create the token'); this.touch(); }
+    });
+  }
+
+  revokeToken() {
+    const d = this.deviceDialog;
+    if (!d) return;
+    if (!d.confirmRevoke) { d.confirmRevoke = true; return; }
+    d.working = true;
+    this.programs.revokeDeviceToken(d.machine.id).subscribe({
+      next: () => { this.toast.success(`${d.machine.machine_serial_no}'s device token revoked`); this.closeDevice(); this.touch(); },
+      error: err => { d.working = false; this.toast.error(err.error?.message || 'Could not revoke the token'); this.touch(); }
+    });
+  }
+
+  /** what goes into the device's config file */
+  deviceConfig(token: string): string {
+    return `MEXA_URL=${this.programs.serverUrl}\nMEXA_DEVICE_TOKEN=${token}`;
+  }
+
+  copyConfig() {
+    const d = this.deviceDialog;
+    if (!d?.token) return;
+    navigator.clipboard?.writeText(this.deviceConfig(d.token)).then(
+      () => { d.copied = true; this.touch(); },
+      () => this.toast.error('Copy did not work — select the text and copy it')
+    );
   }
 }

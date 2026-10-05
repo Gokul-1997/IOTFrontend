@@ -20,7 +20,6 @@ import {
 
 import { MachinesService } from './machines.service';
 import { ToastService } from '../../core/services/toast.service';
-import { ProgramService } from '../../core/services/program.service';
 
 @Component({
   standalone: true,
@@ -36,13 +35,9 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
   @Output() close = new EventEmitter<void>();
 
   uploading = false;
-  testingConnection = false;
   previewUrl: string | null = null;
   lines: any[] = [];
   form!: FormGroup;
-
-  /** Result of the last FTP test, shown inline beside the button. */
-  connectionResult: { ok: boolean; message: string } | null = null;
 
   /** Rendered as one row so the five axes read as a single group. */
   readonly axes = [
@@ -57,7 +52,6 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
     private fb: FormBuilder,
     private service: MachinesService,
     private toast: ToastService,
-    private programService: ProgramService,
     private cdr: ChangeDetectorRef,
     private host: ElementRef<HTMLElement>
   ) {}
@@ -81,11 +75,8 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       atc_tool_capacity: [''],
       line_id: [null, Validators.required],
       is_active: [true],
-      ip_address: [''],
-      ftp_port: [21],
-      ftp_user: [''],
-      ftp_pass: [''],
-      ftp_dir: ['']
+      // the shop-LAN address; Program Transfer keeps this machine's files in a folder named after it
+      ip_address: ['', Validators.pattern(/^\s*(\d{1,3}(\.\d{1,3}){3}|[0-9a-fA-F:]{2,39})\s*$/)]
     });
     this.loadLines();
   }
@@ -195,44 +186,6 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
   }
 
   ////////////////////////////////////////////
-  // TEST FTP CONNECTION
-  ////////////////////////////////////////////
-
-  testConnection() {
-    const v = this.form.value;
-    if (!v.ip_address) {
-      this.toast.error('Enter the machine IP address first');
-      return;
-    }
-
-    this.testingConnection = true;
-    this.connectionResult = null;
-    this.programService.testConnection({
-      machine_id: this.data?.id,
-      ip_address: v.ip_address,
-      ftp_port: v.ftp_port,
-      ftp_user: v.ftp_user,
-      ftp_pass: v.ftp_pass   // blank = use saved password (write-only)
-    }).subscribe({
-      next: () => {
-        this.testingConnection = false;
-        // Kept on screen rather than only toasted — a toast is gone before
-        // you can compare it against the IP you just typed.
-        this.connectionResult = { ok: true, message: 'Controller reachable' };
-        this.cdr.detectChanges();
-      },
-      error: err => {
-        this.testingConnection = false;
-        this.connectionResult = {
-          ok: false,
-          message: err.error?.message || 'Could not reach the controller'
-        };
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  ////////////////////////////////////////////
   // SAVE (PRODUCTION SAFE)
   ////////////////////////////////////////////
 
@@ -245,7 +198,7 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       // Move focus to the first problem rather than leaving the user to hunt
       // for red borders in a form four sections long.
       const firstInvalid = Object.keys(this.form.controls).find(k => this.form.get(k)?.invalid);
-      const map: Record<string, string> = { line_id: '#mfLine', machine_serial_no: '#mfSerial' };
+      const map: Record<string, string> = { line_id: '#mfLine', machine_serial_no: '#mfSerial', ip_address: '#mfIp' };
       const el = firstInvalid && map[firstInvalid]
         ? this.host.nativeElement.querySelector<HTMLElement>(map[firstInvalid])
         : null;
@@ -260,12 +213,6 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       const changed: any = {};
 
       Object.keys(this.form.controls).forEach(key => {
-        // ftp_pass is write-only: the API never returns it, so an empty
-        // field means "unchanged", not "clear the password"
-        if (key === 'ftp_pass') {
-          if (this.form.get(key)?.value) changed[key] = this.form.get(key)?.value;
-          return;
-        }
         if (this.form.get(key)?.value !== this.data[key]) {
           changed[key] = this.form.get(key)?.value;
         }
@@ -296,8 +243,6 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
     if (!this.data) return false;
 
     return Object.keys(this.form.controls)
-      .every(key => key === 'ftp_pass'
-        ? !this.form.get(key)?.value   // blank password = unchanged
-        : this.form.get(key)?.value === this.data[key]);
+      .every(key => this.form.get(key)?.value === this.data[key]);
   }
 }

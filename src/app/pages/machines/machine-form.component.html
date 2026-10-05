@@ -199,61 +199,25 @@
           </div>
         </section>
 
-        <!-- ══ 4. Network / DNC ══ -->
+        <!-- ══ 4. Network ══ -->
         <section class="ui-section" aria-labelledby="mfSecNet">
-          <h3 id="mfSecNet" class="ui-section-title">Network &amp; program transfer (DNC)</h3>
+          <h3 id="mfSecNet" class="ui-section-title">Network</h3>
           <p class="ui-section-hint">
-            The controller’s built-in FTP server. Needed only if you transfer G-code to this machine.
+            The machine’s address on the shop LAN. Program Transfer keeps this machine’s programs in a server folder named after it.
           </p>
 
           <div class="grid grid-cols-2 lg:grid-cols-6 gap-4 mt-4">
             <div class="col-span-2">
               <label class="ui-label" for="mfIp">IP address</label>
               <input id="mfIp" class="ui-input" formControlName="ip_address"
-                     placeholder="192.168.1.101" inputmode="decimal" autocomplete="off" />
+                     placeholder="192.168.1.101" inputmode="decimal" autocomplete="off"
+                     [class.is-invalid]="form.get('ip_address')?.invalid && form.get('ip_address')?.touched"
+                     [attr.aria-invalid]="form.get('ip_address')?.invalid && form.get('ip_address')?.touched"
+                     aria-describedby="mfIpErr" />
+              <p *ngIf="form.get('ip_address')?.invalid && form.get('ip_address')?.touched" id="mfIpErr" class="ui-error" role="alert">
+                Enter an IP address such as 192.168.1.101.
+              </p>
             </div>
-
-            <div>
-              <label class="ui-label" for="mfPort">Port</label>
-              <input id="mfPort" class="ui-input" type="number" inputmode="numeric" min="1" max="65535"
-                     formControlName="ftp_port" placeholder="21" />
-            </div>
-
-            <div>
-              <label class="ui-label" for="mfFtpUser">FTP user</label>
-              <input id="mfFtpUser" class="ui-input" formControlName="ftp_user"
-                     placeholder="cnc" autocomplete="off" />
-            </div>
-
-            <div>
-              <label class="ui-label" for="mfFtpPass">FTP password</label>
-              <input id="mfFtpPass" class="ui-input" type="password" formControlName="ftp_pass"
-                     autocomplete="new-password"
-                     [placeholder]="data ? '••••••••' : 'Password'"
-                     [attr.aria-describedby]="data ? 'mfPassHint' : null" />
-              <p *ngIf="data" id="mfPassHint" class="ui-hint">Leave blank to keep the saved one.</p>
-            </div>
-
-            <div>
-              <label class="ui-label" for="mfFtpDir">Folder</label>
-              <input id="mfFtpDir" class="ui-input" formControlName="ftp_dir"
-                     placeholder="/PROGRAM" autocomplete="off" />
-            </div>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-3 mt-4">
-            <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm"
-                    (click)="testConnection()" [disabled]="testingConnection">
-              {{ testingConnection ? 'Testing…' : 'Test connection' }}
-            </button>
-
-            <!-- Result stays on screen; a toast disappears before you can act on it. -->
-            <span *ngIf="connectionResult" class="ui-pill"
-                  [class.ui-pill-ok]="connectionResult.ok" [class.ui-pill-fail]="!connectionResult.ok"
-                  role="status">
-              <span class="ui-dot" aria-hidden="true"></span>
-              {{ connectionResult.message }}
-            </span>
           </div>
         </section>
 

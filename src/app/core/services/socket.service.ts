@@ -168,26 +168,27 @@ export class SocketService {
 
   }
 
-  /* ================= PROGRAM TRANSFER PROGRESS ================= */
+  /* ================= PROGRAM TRANSFER JOBS ================= */
 
-  /** Byte-level progress for transfers this user started. The server emits
-   *  into a per-user room, so no filtering is needed here. */
-  onTransferProgress(callback: (data: any) => void): void {
+  /** A Program Transfer job this user asked for changed: queued, taken by
+   *  the machine's device, done or failed. The server emits into a
+   *  per-user room, so no filtering is needed here. */
+  onProgramJob(callback: (job: any) => void): void {
 
     if (!this.socket) return;
 
-    this.socket.off('programTransferProgress');
+    this.socket.off('programJob');
 
-    this.socket.on('programTransferProgress', (data) => {
+    this.socket.on('programJob', (job) => {
       // deliberately not gated on `paused` — that pauses dashboard polling,
-      // but a transfer the user just started must keep reporting.
-      this.zone.run(() => callback(data));
+      // but a job the user just started must keep reporting.
+      this.zone.run(() => callback(job));
     });
   }
 
-  offTransferProgress(): void {
+  offProgramJob(): void {
     if (!this.socket) return;
-    this.socket.off('programTransferProgress');
+    this.socket.off('programJob');
   }
 
   /* ================= PAUSE / RESUME ================= */

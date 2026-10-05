@@ -5,7 +5,6 @@ import { Router, RouterModule } from '@angular/router';
 import { AdminService } from './admin.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
-import { MachinesService } from '../machines/machines.service';
 import { AdminTabsComponent } from './admin-tabs.component';
 
 @Component({
@@ -18,8 +17,6 @@ import { AdminTabsComponent } from './admin-tabs.component';
 export class UserManagementComponent implements OnInit {
   users: any[] = [];
   roles: any[] = [];
-  /** Every machine in the company — the pool a user can be made supervisor of. */
-  machines: any[] = [];
   loading = false;
   showCreateModal = false;
   showEditModal = false;
@@ -29,8 +26,7 @@ export class UserManagementComponent implements OnInit {
     username: '',
     email: '',
     password: '',
-    role_ids: [] as number[],
-    supervised_machine_ids: [] as number[]
+    role_ids: [] as number[]
   };
 
   editForm = {
@@ -38,8 +34,7 @@ export class UserManagementComponent implements OnInit {
     email: '',
     password: '',
     is_active: true,
-    role_ids: [] as number[],
-    supervised_machine_ids: [] as number[]
+    role_ids: [] as number[]
   };
 
   constructor(
@@ -47,27 +42,15 @@ export class UserManagementComponent implements OnInit {
     private toastService: ToastService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    public auth: AuthService,
-    private machinesService: MachinesService
+    public auth: AuthService
   ) {}
 
   ngOnInit() {
     this.loadUsers();
     /* S&T only edits each company's admin — name, email, password, active —
-       so it needs neither the company's roles nor its machines. */
+       so it does not need the company's roles. */
     if (this.auth.isSntSuper()) return;
     this.loadRoles();
-    this.loadMachines();
-  }
-
-  loadMachines() {
-    this.machinesService.getAllForDropdown().subscribe({
-      next: (res: any) => {
-        this.machines = res?.data || [];
-        this.cdr.detectChanges();
-      },
-      error: () => { /* the supervisor picker just stays empty */ }
-    });
   }
 
   loadUsers() {
@@ -108,7 +91,7 @@ export class UserManagementComponent implements OnInit {
   openCreateModal() {
     this.createForm = {
       username: '', email: '', password: '',
-      role_ids: [], supervised_machine_ids: []
+      role_ids: []
     };
     this.showCreateModal = true;
     this.cdr.detectChanges();
@@ -130,33 +113,6 @@ export class UserManagementComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  /* ── supervised machines ──
-     Which machines this user may authorise program transfers to. A setter
-     or supervisor typically covers a handful out of the whole shop. */
-
-  isMachineSelectedForCreate(machineId: number): boolean {
-    return this.createForm.supervised_machine_ids.includes(machineId);
-  }
-
-  toggleMachineForCreate(machineId: number) {
-    const ids = this.createForm.supervised_machine_ids;
-    const idx = ids.indexOf(machineId);
-    this.createForm.supervised_machine_ids = idx === -1 ? [...ids, machineId] : ids.filter(id => id !== machineId);
-    this.cdr.detectChanges();
-  }
-
-  isMachineSelectedForEdit(machineId: number): boolean {
-    return this.editForm.supervised_machine_ids.includes(machineId);
-  }
-
-  toggleMachineForEdit(machineId: number) {
-    const ids = this.editForm.supervised_machine_ids;
-    const idx = ids.indexOf(machineId);
-    this.editForm.supervised_machine_ids = idx === -1 ? [...ids, machineId] : ids.filter(id => id !== machineId);
-    this.cdr.detectChanges();
-  }
-
-
   /* ── role selection ──────────────────────────────────────────
      One role per user, chosen from a dropdown. role_ids stays an array
      because that is what the API takes; the UI just never puts more than
@@ -173,35 +129,14 @@ export class UserManagementComponent implements OnInit {
   setRole(kind: 'Create' | 'Edit', roleId: number | null) {
     const form = this.formFor(kind);
     form.role_ids = roleId == null ? [] : [roleId];
-
-    // Dropping to a role that cannot reach a controller should not leave a
-    // machine assignment behind that nothing in the UI shows any more.
-    if (!this.roleNeedsMachines(kind)) form.supervised_machine_ids = [];
     this.cdr.detectChanges();
-  }
-
-  /**
-   * Whether the chosen role can send programs to a machine.
-   *
-   * Read from the role's own permissions rather than a name like
-   * "SUPERVISOR": companies create their own roles, so a name match would
-   * miss a role called "Setter" or "Line Lead". getRoles() already returns
-   * each role with its permission list, so no extra request is needed.
-   */
-  roleNeedsMachines(kind: 'Create' | 'Edit'): boolean {
-    const role = this.roles.find(r => r.id === this.selectedRoleId(kind));
-    const keys: string[] = (role?.permissions || []).map((p: any) => p.permission_key);
-    return keys.includes('page:programs:transfer');
   }
 
   /** One line under the dropdown saying what the choice actually means. */
   roleSummary(kind: 'Create' | 'Edit'): string {
     const role = this.roles.find(r => r.id === this.selectedRoleId(kind));
     if (!role) return 'Pick the role that matches what this person does.';
-    if (this.roleNeedsMachines(kind)) {
-      return `${role.role_name} can send programs to a machine, so choose which machines below.`;
-    }
-    return `${role.role_name} cannot send programs to a machine, so no machine assignment is needed.`;
+    return role.description || `${role.role_name} opens the pages set for it under Roles.`;
   }
 
   createUser() {
@@ -244,25 +179,10 @@ export class UserManagementComponent implements OnInit {
       email: user.email,
       password: '',
       is_active: user.is_active,
-      role_ids: user.roles?.map((r: any) => r.id) || [],
-      supervised_machine_ids: []
+      role_ids: user.roles?.map((r: any) => r.id) || []
     };
     this.showEditModal = true;
     this.cdr.detectChanges();
-
-    // S&T edits no machines, so it has nothing to fetch
-    if (this.auth.isSntSuper()) return;
-
-    // The list endpoint doesn't carry supervised machines, so tick the
-    // boxes once the detail arrives rather than holding the modal shut.
-    this.adminService.getUserById(user.id).subscribe({
-      next: (res: any) => {
-        const detail = res?.data || res;
-        this.editForm.supervised_machine_ids = detail?.supervised_machine_ids || [];
-        this.cdr.detectChanges();
-      },
-      error: () => { /* leave the boxes unticked; saving still works */ }
-    });
   }
 
   closeEditModal() {
@@ -290,11 +210,6 @@ export class UserManagementComponent implements OnInit {
       email: this.editForm.email,
       is_active: this.editForm.is_active
     };
-    /* S&T changes an admin's own details only — never the company, and no
-       machines: the API refuses anything else from S&T. */
-    if (!this.auth.isSntSuper()) {
-      updateData.supervised_machine_ids = this.editForm.supervised_machine_ids;
-    }
     if (this.editForm.password.trim()) {
       updateData.password = this.editForm.password;
     }

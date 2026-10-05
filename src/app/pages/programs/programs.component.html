@@ -1,7 +1,4 @@
 <div class="page-wrapper">
-  <!-- Header bar, matching Machines/Components/Jobs. The heading used to be
-       dark grey text straight on the page gradient, which never cleared
-       4.5:1 anywhere on that background. -->
   <div class="bg-top-bar">
     <div class="toolbar-left">
       <div class="page-title">
@@ -9,229 +6,246 @@
         <div>
           <h1>Program Transfer</h1>
         </div>
-        <span class="subtitle">G-code between the server library and CNC controllers (DNC)</span>
+        <span class="subtitle">G-code to and from the machines, through each machine's device</span>
       </div>
     </div>
     <div class="toolbar-right">
-      <button *ngIf="tab === 'programs' && canUpload" class="btn-primary" (click)="showUpload = true">
+      <button *ngIf="tab === 'programs' && canUpload" class="btn-primary" (click)="openUpload()" [disabled]="!machines.length">
         <mat-icon>upload_file</mat-icon>
         Upload Program
       </button>
     </div>
   </div>
 
-  <!-- Tabs — same folder-tab pattern as Reports, so the selected view and
-       the sheet it belongs to read as one surface. -->
   <div class="ui-tabs ui-tabs-center" role="tablist" uiTabs aria-label="Program view">
     <button type="button" role="tab" class="ui-tab" id="tab-programs"
-            [class.is-active]="tab === 'programs'"
-            [attr.aria-selected]="tab === 'programs'"
-            aria-controls="panel-programs"
-            [attr.tabindex]="tab === 'programs' ? 0 : -1"
+            [class.is-active]="tab === 'programs'" [attr.aria-selected]="tab === 'programs'"
+            aria-controls="panel-programs" [attr.tabindex]="tab === 'programs' ? 0 : -1"
             (click)="switchTab('programs')">
       <span class="ui-tab-icon material-icons" aria-hidden="true">folder</span>Programs
-      <span class="ui-tab-count">{{ total }}</span>
+      <span class="ui-tab-count">{{ filesTotal }}</span>
     </button>
     <button type="button" role="tab" class="ui-tab" id="tab-history"
-            [class.is-active]="tab === 'history'"
-            [attr.aria-selected]="tab === 'history'"
-            aria-controls="panel-history"
-            [attr.tabindex]="tab === 'history' ? 0 : -1"
+            [class.is-active]="tab === 'history'" [attr.aria-selected]="tab === 'history'"
+            aria-controls="panel-history" [attr.tabindex]="tab === 'history' ? 0 : -1"
             (click)="switchTab('history')">
       <span class="ui-tab-icon material-icons" aria-hidden="true">history</span>Transfer History
-      <span class="ui-tab-count">{{ transfersTotal }}</span>
     </button>
   </div>
 
-  <!-- ══════════ TRANSFER WORKSPACE ══════════ -->
-  <div class="ui-tabpanel" role="tabpanel" id="panel-programs" aria-labelledby="tab-programs"
-       *ngIf="tab === 'programs'">
-
-    <!-- machine selector + live connection status -->
-    <div class="bg-white rounded-xl shadow-sm border p-4 mb-4 flex flex-wrap items-end gap-4">
-      <div>
-        <label class="block text-xs font-medium text-gray-500 mb-1">CNC Machine</label>
-        <select [(ngModel)]="selectedMachineId" (ngModelChange)="onMachineChange()"
-          class="border rounded-lg px-3 py-2 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="CNC Machine" >
-          <option [ngValue]="null">-- Select machine --</option>
-          <option *ngFor="let m of machines" [ngValue]="m.id">
-            {{ m.machine_serial_no }} {{ m.ip_address ? '— ' + m.ip_address : '— no IP set' }}
-          </option>
-        </select>
-      </div>
-
-      <div *ngIf="selectedMachineId" class="flex items-center gap-2 pb-2">
-        <span class="w-2.5 h-2.5 rounded-full"
-              [class]="machineOnline === null ? 'bg-gray-300'
-                     : machineOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'"></span>
-        <span class="text-sm"
-              [class]="machineOnline === null ? 'text-gray-400'
-                     : machineOnline ? 'text-green-700' : 'text-red-700'">
-          {{ checkingStatus ? 'Checking…' : machineOnline === null ? 'Unknown' : machineOnline ? 'Controller online' : 'Controller offline' }}
-        </span>
-        <button (click)="checkStatus()" class="text-xs text-blue-600 hover:underline ml-1">recheck</button>
-      </div>
+  <!-- the machine, its folder and its device: shared by both tabs -->
+  <div class="bg-white dark:bg-[var(--mexa-card)] dark:border-[var(--mexa-rule)] rounded-xl shadow-sm border p-4 mb-4 flex flex-wrap items-end gap-x-6 gap-y-3">
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1" for="ptMachine">CNC Machine</label>
+      <select id="ptMachine" [(ngModel)]="selectedMachineId" (ngModelChange)="onMachineChange()"
+              class="ui-input w-72">
+        <option *ngIf="!machines.length" [ngValue]="null">No machines</option>
+        <option *ngFor="let m of machines" [ngValue]="m.id">
+          {{ m.machine_serial_no }} {{ m.ip_address ? '— ' + m.ip_address : '— no IP set' }}
+        </option>
+      </select>
     </div>
 
-    <!-- live progress -->
-    <div *ngIf="activeProgress.length" class="bg-white rounded-xl shadow-sm border p-4 mb-4">
-      <h3 class="text-sm font-semibold text-gray-700 dark:text-white mb-3">Transferring</h3>
-      <div *ngFor="let p of activeProgress" class="mb-3 last:mb-0">
-        <div class="flex justify-between text-xs text-gray-600 mb-1">
-          <span>
-            <span class="font-medium text-gray-800">{{ p.file_name }}</span>
-            <span class="ml-2 text-gray-400">{{ p.direction === 'DOWNLOAD' ? 'from machine' : 'to machine' }}</span>
+    <div *ngIf="selectedMachine as m" class="pb-1 min-w-0">
+      <span class="block text-xs font-medium text-gray-500 mb-1">Device</span>
+      <span class="pt-device" [attr.data-state]="deviceState(m)" role="status">
+        <span class="pt-dot" aria-hidden="true"></span>
+        <ng-container [ngSwitch]="deviceState(m)">
+          <span *ngSwitchCase="'online'">Online · checked in {{ ago(m.last_seen_at) }}</span>
+          <span *ngSwitchCase="'offline'">Offline · last seen {{ ago(m.last_seen_at) }}</span>
+          <span *ngSwitchDefault>No device linked</span>
+        </ng-container>
+        <span *ngIf="m.agent_version" class="text-gray-400"> · v{{ m.agent_version }}</span>
+      </span>
+    </div>
+
+    <div *ngIf="selectedMachine as m" class="pb-1 min-w-0">
+      <span class="block text-xs font-medium text-gray-500 mb-1">Server folder</span>
+      <code class="pt-folder" [title]="'ProgramTransfer/' + m.folder">ProgramTransfer/{{ m.folder }}</code>
+    </div>
+
+    <button *ngIf="selectedMachine && canManageDevice" type="button" class="ui-btn ui-btn-ghost ui-btn-sm ml-auto" (click)="openDevice()">
+      <span class="material-icons" aria-hidden="true">key</span>{{ selectedMachine.device_id ? 'Device token' : 'Link a device' }}
+    </button>
+  </div>
+
+  <!-- ══════════ PROGRAMS ══════════ -->
+  <div class="ui-tabpanel" role="tabpanel" id="panel-programs" aria-labelledby="tab-programs" *ngIf="tab === 'programs'">
+
+    <!-- what the device has still to do -->
+    <div *ngIf="openJobs.length" class="bg-white dark:bg-[var(--mexa-card)] dark:border-[var(--mexa-rule)] rounded-xl shadow-sm border p-4 mb-4" aria-live="polite">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-white mb-2">In progress</h3>
+      <ul class="pt-jobs">
+        <li *ngFor="let j of openJobs">
+          <span class="material-icons pt-dir" aria-hidden="true">{{ j.action === 'SEND' ? 'north_east' : 'south_west' }}</span>
+          <span class="strong">{{ j.program_name }}</span>
+          <span class="text-gray-500">{{ j.action === 'SEND' ? 'to' : 'from' }} {{ j.machine_serial }}</span>
+          <span class="mexa-badge" [ngClass]="statusBadge(j.status)">
+            <span class="material-icons" aria-hidden="true">{{ statusIcon(j.status) }}</span>{{ statusLabel(j) }}
           </span>
-          <span>{{ p.percent != null ? p.percent + '%' : fileSize(p.bytes) }}</span>
-        </div>
-        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div class="h-full bg-blue-600 rounded-full transition-all duration-200"
-               [style.width.%]="p.percent != null ? p.percent : 100"></div>
-        </div>
-      </div>
+          <span class="text-xs text-gray-400">{{ j.requested_by_name }} · {{ ago(j.requested_at) }}</span>
+          <button *ngIf="j.status === 'QUEUED' && (j.action === 'SEND' ? canTransfer : canFetch)" type="button"
+                  class="ui-btn ui-btn-ghost ui-btn-xs ml-auto" (click)="cancelJob(j)" [attr.aria-label]="'Cancel ' + j.program_name">
+            Cancel
+          </button>
+        </li>
+      </ul>
+      <p *ngIf="deviceState(selectedMachine) !== 'online'" class="ui-alert ui-alert-warn mt-3 mb-0">
+        The device at {{ selectedMachine?.machine_serial_no }} is not online. These wait until it checks in; after 24 hours they fail.
+      </p>
     </div>
 
-    <!-- two panes -->
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
 
-      <!-- ── LOCAL LIBRARY ── -->
+      <!-- ── the ProgramTransfer folder ── -->
       <div class="bg-white dark:bg-[var(--mexa-card)] dark:border-[var(--mexa-rule)] rounded-xl shadow-sm border overflow-hidden flex flex-col">
         <div class="px-4 py-3 border-b bg-gray-50 dark:bg-[var(--mexa-row-alt)] dark:border-[var(--mexa-rule)]">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-semibold text-gray-700 dark:text-white text-sm">Server Library</h3>
-            <span class="text-xs text-gray-400">{{ total }} program{{ total === 1 ? '' : 's' }}</span>
+          <div class="flex items-center justify-between mb-2 gap-2">
+            <h3 class="font-semibold text-gray-700 dark:text-white text-sm">On the server</h3>
+            <span class="text-xs text-gray-400">{{ filesTotal }} file{{ filesTotal === 1 ? '' : 's' }}</span>
+          </div>
+          <div class="pt-kinds mb-2" role="group" aria-label="Show">
+            <button type="button" class="pt-kind" [attr.aria-pressed]="kind === ''" (click)="setKind('')">All</button>
+            <button type="button" class="pt-kind" [attr.aria-pressed]="kind === 'NEW'" (click)="setKind('NEW')">Uploaded</button>
+            <button type="button" class="pt-kind" [attr.aria-pressed]="kind === 'BACKUP'" (click)="setKind('BACKUP')">Backups</button>
+            <button type="button" class="pt-kind" [attr.aria-pressed]="kind === 'FETCHED'" (click)="setKind('FETCHED')">From machine</button>
           </div>
           <div class="flex gap-2">
             <span class="mexa-searchbox flex-1">
               <span class="material-icons" aria-hidden="true">search</span>
-              <input [(ngModel)]="search" (keyup.enter)="page = 1; load()" placeholder="Search programs by name"
-                class="mexa-search w-full" aria-label="Search programs" />
+              <input [(ngModel)]="search" (keyup.enter)="filesPage = 1; loadFiles()" placeholder="Search programs by name"
+                     class="mexa-search w-full" aria-label="Search programs on the server" />
             </span>
-            <button type="button" (click)="page = 1; load()" class="ui-btn ui-btn-ghost ui-btn-sm">Search</button>
+            <button type="button" (click)="filesPage = 1; loadFiles()" class="ui-btn ui-btn-ghost ui-btn-sm">Search</button>
           </div>
         </div>
 
-        <div class="mexa-tablewrap flex-1" style="max-height:420px" tabindex="0" role="region" aria-label="Programs in the server library">
+        <div class="mexa-tablewrap flex-1" style="max-height:440px" tabindex="0" role="region" aria-label="Programs in this machine's server folder">
           <table class="mexa-table is-compact">
             <thead>
               <tr>
-                <th scope="col" class="center w-12">
-                  <label class="ux-check" title="Select all programs">
-                    <input type="checkbox" [checked]="allSelected" (change)="toggleAll()"
-                           class="rounded border-gray-300" aria-label="Select all programs" />
+                <th *ngIf="canTransfer" scope="col" class="center w-12">
+                  <label class="ux-check" title="Select all">
+                    <input type="checkbox" [checked]="allSelected" (change)="toggleAll()" aria-label="Select all programs" />
                   </label>
                 </th>
                 <th scope="col">Program</th>
                 <th scope="col" class="qty">Size</th>
-                <th scope="col">Uploaded</th>
+                <th scope="col">Saved</th>
                 <th scope="col" class="actions">Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let p of programs" [class.is-selected]="isSelected(p.id)" [attr.aria-selected]="isSelected(p.id)">
-                <td class="center">
+              <tr *ngFor="let f of files" [class.is-selected]="isSelected(f.id)" [attr.aria-selected]="isSelected(f.id)">
+                <td *ngIf="canTransfer" class="center">
                   <label class="ux-check">
-                    <input type="checkbox" [checked]="isSelected(p.id)" (change)="toggleProgram(p.id)"
-                           class="rounded border-gray-300" [attr.aria-label]="'Select ' + p.name" />
+                    <input type="checkbox" [checked]="isSelected(f.id)" (change)="toggleFile(f.id)" [attr.aria-label]="'Select ' + f.stored_name" />
                   </label>
                 </td>
                 <td class="wrap">
-                  <span class="block strong">{{ p.name }}</span>
-                  <span class="sub">{{ p.file_name }}</span>
+                  <span class="pt-name">
+                    <span class="strong">{{ f.program_name }}</span>
+                    <span class="mexa-badge" [ngClass]="kindBadge(f.kind)">
+                      <span class="material-icons" aria-hidden="true">{{ kindIcon(f.kind) }}</span>{{ kindLabel(f.kind) }}
+                    </span>
+                  </span>
+                  <span class="sub" [title]="f.note || ''">{{ f.stored_name }}</span>
+                  <span *ngIf="f.note" class="sub">{{ f.note }}</span>
                 </td>
-                <td class="qty">{{ fileSize(p.file_size) }}</td>
-                <td class="num">{{ p.created_at | date:'d MMM y' }}<span class="sub">{{ p.created_at | date:'h:mm a' }}</span></td>
+                <td class="qty">{{ fileSize(f.size_bytes) }}</td>
+                <td class="num">{{ f.created_at | date:'d MMM y' }}<span class="sub">{{ f.created_at | date:'h:mm a' }}{{ f.uploaded_by_name ? ' · ' + f.uploaded_by_name : '' }}</span></td>
                 <td class="actions">
                   <span class="ui-btn-row">
-                    <button type="button" (click)="download(p)" class="ui-btn ui-btn-ghost ui-btn-xs" [attr.aria-label]="'Download ' + p.name">
+                    <button type="button" (click)="download(f)" class="ui-btn ui-btn-ghost ui-btn-xs" [attr.aria-label]="'Download ' + f.stored_name">
                       <span class="material-icons" aria-hidden="true">download</span>Download
                     </button>
-                    <button type="button" *ngIf="canDelete" (click)="deleteProgram(p)" class="ui-btn ui-btn-danger-ghost ui-btn-xs" [attr.aria-label]="'Delete ' + p.name">
+                    <button type="button" *ngIf="canDelete" (click)="deleteFile(f)" class="ui-btn ui-btn-danger-ghost ui-btn-xs" [attr.aria-label]="'Delete ' + f.stored_name">
                       <span class="material-icons" aria-hidden="true">delete_outline</span>Delete
                     </button>
                   </span>
                 </td>
               </tr>
-              <tr *ngIf="!loading && programs.length === 0">
-                <td colspan="5" class="mexa-empty">
-                  No programs yet.<span *ngIf="canUpload"> Use "Upload Program" to add a G-code file.</span>
+              <tr *ngIf="!loadingFiles && files.length === 0">
+                <td [attr.colspan]="canTransfer ? 5 : 4" class="mexa-empty">
+                  No programs in this folder yet.<span *ngIf="canUpload"> Use "Upload Program" to add one.</span>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <div class="px-4 py-3 border-t bg-gray-50 dark:bg-[var(--mexa-row-alt)] dark:border-[var(--mexa-rule)] flex items-center justify-between">
-          <span class="text-xs text-gray-500">{{ selectedCount }} selected</span>
-          <!-- said, rather than a button that answers "Permission denied" -->
+        <div class="px-4 py-3 border-t bg-gray-50 dark:bg-[var(--mexa-row-alt)] dark:border-[var(--mexa-rule)] flex flex-wrap items-center gap-3 justify-between">
+          <span *ngIf="canTransfer" class="text-xs text-gray-500">{{ selectedCount }} selected</span>
+          <span *ngIf="filesPages > 1" class="mexa-pager">
+            <button type="button" [disabled]="filesPage <= 1" (click)="changeFilesPage(-1)" class="ui-btn ui-btn-ghost ui-btn-xs" aria-label="Previous page">
+              <span class="material-icons" aria-hidden="true">chevron_left</span>
+            </button>
+            <span class="text-xs">{{ filesPage }} / {{ filesPages }}</span>
+            <button type="button" [disabled]="filesPage >= filesPages" (click)="changeFilesPage(1)" class="ui-btn ui-btn-ghost ui-btn-xs" aria-label="Next page">
+              <span class="material-icons" aria-hidden="true">chevron_right</span>
+            </button>
+          </span>
           <span *ngIf="!canTransfer" class="text-xs text-gray-500">Sending to a machine is not part of your role.</span>
-          <button *ngIf="canTransfer" (click)="sendSelected()"
-            [disabled]="transferring || selectedCount === 0 || !selectedMachineId"
-            class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-40">
-            {{ transferring ? 'Sending…' : 'Send to Machine →' }}
+          <button *ngIf="canTransfer" type="button" (click)="sendSelected()" [disabled]="busy || selectedCount === 0 || !selectedMachineId"
+                  class="ui-btn ui-btn-primary ui-btn-sm">
+            <span *ngIf="busy" class="ui-spinner" aria-hidden="true"></span>
+            {{ busy ? 'Queuing…' : 'Send to ' + (selectedMachine?.machine_serial_no || 'machine') }}
+            <span class="material-icons" aria-hidden="true">arrow_forward</span>
           </button>
         </div>
       </div>
 
-      <!-- ── CONTROLLER ── -->
+      <!-- ── on the controller, as the device reported ── -->
       <div class="bg-white dark:bg-[var(--mexa-card)] dark:border-[var(--mexa-rule)] rounded-xl shadow-sm border overflow-hidden flex flex-col">
         <div class="px-4 py-3 border-b bg-gray-50 dark:bg-[var(--mexa-row-alt)] dark:border-[var(--mexa-rule)]">
-          <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center justify-between mb-2 gap-2">
             <h3 class="font-semibold text-gray-700 dark:text-white text-sm">
-              On Controller
+              On the machine
               <span *ngIf="selectedMachine" class="text-gray-400 font-normal">· {{ selectedMachine.machine_serial_no }}</span>
             </h3>
-            <button type="button" *ngIf="selectedMachineId" (click)="loadMachineFiles()" class="ui-btn ui-btn-ghost ui-btn-xs">
-              <span class="material-icons" aria-hidden="true">refresh</span>Refresh
-            </button>
-          </div>
-          <div class="flex gap-2">
-            <span class="mexa-searchbox flex-1">
-              <span class="material-icons" aria-hidden="true">search</span>
-              <input [(ngModel)]="machineSearch" (keyup.enter)="loadMachineFiles()"
-                [disabled]="!selectedMachineId" placeholder="Search files on the machine"
-                class="mexa-search w-full" aria-label="Search files on the machine" />
+            <span class="text-xs text-gray-400">
+              {{ controllerReportedAt ? 'Reported by the device ' + ago(controllerReportedAt) : 'Not reported yet' }}
             </span>
-            <button type="button" (click)="loadMachineFiles()" [disabled]="!selectedMachineId" class="ui-btn ui-btn-ghost ui-btn-sm">Search</button>
           </div>
+          <span class="mexa-searchbox w-full">
+            <span class="material-icons" aria-hidden="true">search</span>
+            <input [(ngModel)]="controllerSearch" [disabled]="!controllerFiles.length" placeholder="Search programs on the machine"
+                   class="mexa-search w-full" aria-label="Search programs on the machine" />
+          </span>
         </div>
 
-        <div class="mexa-tablewrap flex-1" style="max-height:420px" tabindex="0" role="region" aria-label="Programs on the machine's controller">
-          <div *ngIf="!selectedMachineId" class="mexa-empty">
-            Select a machine to browse the programs stored on its controller.
+        <div class="mexa-tablewrap flex-1" style="max-height:440px" tabindex="0" role="region" aria-label="Programs on the machine's controller">
+          <div *ngIf="deviceState(selectedMachine) === 'none'" class="mexa-empty">
+            This machine has no device linked yet, so nothing can be sent to it or read from it.
+            <span *ngIf="canManageDevice"> Use "Link a device" above.</span>
           </div>
-
-          <div *ngIf="selectedMachineId && loadingFiles" class="flex items-center justify-center py-16">
-            <div class="w-7 h-7 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-
-          <table *ngIf="selectedMachineId && !loadingFiles" class="mexa-table is-compact">
+          <table *ngIf="deviceState(selectedMachine) !== 'none'" class="mexa-table is-compact">
             <thead>
               <tr>
-                <th scope="col">File</th>
+                <th scope="col">Program</th>
                 <th scope="col" class="qty">Size</th>
                 <th scope="col">Modified</th>
-                <th scope="col" class="actions">Actions</th>
+                <th *ngIf="canFetch" scope="col" class="actions">Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let f of machineFiles">
-                <td class="strong">{{ f.name }}</td>
+              <tr *ngFor="let f of filteredController">
+                <td class="wrap"><span class="block strong">{{ f.name }}</span><span *ngIf="f.comment" class="sub">{{ f.comment }}</span></td>
                 <td class="qty">{{ fileSize(f.size) }}</td>
-                <td class="num" [class.muted]="!f.modified_at">
-                  <ng-container *ngIf="f.modified_at; else noTime">{{ f.modified_at | date:'d MMM y' }}<span class="sub">{{ f.modified_at | date:'h:mm a' }}</span></ng-container>
+                <td class="num" [class.muted]="!f.modified">
+                  <ng-container *ngIf="f.modified; else noTime">{{ f.modified | date:'d MMM y' }}<span class="sub">{{ f.modified | date:'h:mm a' }}</span></ng-container>
                   <ng-template #noTime>--</ng-template>
                 </td>
-                <td class="actions">
-                  <button type="button" *ngIf="canFetch" (click)="fetchFile(f)" [disabled]="fetchingFile === f.name"
-                    class="ui-btn ui-btn-ghost ui-btn-xs" [attr.aria-label]="'Copy ' + f.name + ' into the server library'">
-                    <span class="material-icons" aria-hidden="true">file_download</span>{{ fetchingFile === f.name ? 'Getting…' : 'Get' }}
+                <td *ngIf="canFetch" class="actions">
+                  <button type="button" (click)="fetchFile(f)" [disabled]="fetchWaiting(f.name)"
+                          class="ui-btn ui-btn-ghost ui-btn-xs" [attr.aria-label]="'Copy ' + f.name + ' to the server folder'">
+                    <span class="material-icons" aria-hidden="true">file_download</span>{{ fetchWaiting(f.name) ? 'Asked…' : 'Get' }}
                   </button>
                 </td>
               </tr>
-              <tr *ngIf="machineFiles.length === 0">
-                <td colspan="4" class="mexa-empty">
-                  No program files found on this controller.
+              <tr *ngIf="!loadingController && filteredController.length === 0">
+                <td [attr.colspan]="canFetch ? 4 : 3" class="mexa-empty">
+                  {{ controllerReportedAt ? 'No programs match.' : 'The device has not reported what is on the controller yet — it does every few minutes.' }}
                 </td>
               </tr>
             </tbody>
@@ -239,115 +253,84 @@
         </div>
 
         <div *ngIf="canFetch" class="px-4 py-3 border-t bg-gray-50 dark:bg-[var(--mexa-row-alt)] dark:border-[var(--mexa-rule)]">
-          <span class="text-xs text-gray-500">
-            "Get" copies the program from the controller into the server library.
-          </span>
+          <span class="text-xs text-gray-500">"Get" asks the device to copy the program into this machine's server folder.</span>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- pagination for the library -->
-    <div *ngIf="totalPages > 1" class="mexa-pager justify-end mt-4">
-      <button type="button" [disabled]="page <= 1" (click)="changePage(-1)" class="ui-btn ui-btn-ghost ui-btn-sm">
+  <!-- ══════════ HISTORY ══════════ -->
+  <div class="ui-tabpanel" role="tabpanel" id="panel-history" aria-labelledby="tab-history" *ngIf="tab === 'history'">
+    <div *ngIf="loadingHistory && !history.length" class="flex items-center justify-center py-12">
+      <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" role="status" aria-label="Loading"></div>
+    </div>
+
+    <div *ngIf="!loadingHistory || history.length" class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Transfer history">
+      <table class="mexa-table">
+        <caption class="sr-only">Program transfers for {{ selectedMachine?.machine_serial_no }}, newest first</caption>
+        <thead>
+          <tr>
+            <th scope="col">Program</th>
+            <th scope="col">Direction</th>
+            <th scope="col">Machine</th>
+            <th scope="col">Status</th>
+            <th scope="col" class="wrap">Message</th>
+            <th scope="col">Replaced program</th>
+            <th scope="col">By</th>
+            <th scope="col">Asked</th>
+            <th scope="col">Finished</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let j of history">
+            <td><span class="block strong">{{ j.program_name }}</span><span class="sub">{{ j.file_name || '' }}</span></td>
+            <td>
+              <span class="mexa-badge" [ngClass]="j.action === 'FETCH' ? 'mexa-badge-info' : 'mexa-badge-violet'">
+                <span class="material-icons" aria-hidden="true">{{ j.action === 'FETCH' ? 'south_west' : 'north_east' }}</span>{{ j.action === 'FETCH' ? 'From machine' : 'To machine' }}
+              </span>
+            </td>
+            <td class="strong">{{ j.machine_serial }}</td>
+            <td>
+              <span class="mexa-badge" [ngClass]="statusBadge(j.status)">
+                <span class="material-icons" aria-hidden="true">{{ statusIcon(j.status) }}</span>{{ statusLabel(j) }}
+              </span>
+            </td>
+            <td class="wrap" [class.muted]="!j.message">{{ j.message || '--' }}</td>
+            <td>
+              <span *ngIf="j.backup_name" class="mexa-badge mexa-badge-neutral" [title]="j.backup_name">
+                <span class="material-icons" aria-hidden="true">inventory_2</span>Kept
+              </span>
+              <span *ngIf="!j.backup_name" class="is-missing">--</span>
+            </td>
+            <td [class.muted]="!j.requested_by_name">{{ j.requested_by_name || '--' }}</td>
+            <td class="num">{{ j.requested_at | date:'d MMM y, h:mm a' }}</td>
+            <td class="num" [class.muted]="!j.finished_at">{{ j.finished_at ? (j.finished_at | date:'d MMM y, h:mm a') : '--' }}</td>
+          </tr>
+          <tr *ngIf="!loadingHistory && history.length === 0">
+            <td colspan="9" class="mexa-empty">No transfers for this machine yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="historyPages > 1" class="mexa-pager justify-end mt-4">
+      <button type="button" [disabled]="historyPage <= 1" (click)="changeHistoryPage(-1)" class="ui-btn ui-btn-ghost ui-btn-sm">
         <span class="material-icons" aria-hidden="true">chevron_left</span>Previous
       </button>
-      <span>Page {{ page }} of {{ totalPages }}</span>
-      <button type="button" [disabled]="page >= totalPages" (click)="changePage(1)" class="ui-btn ui-btn-ghost ui-btn-sm">
+      <span>Page {{ historyPage }} of {{ historyPages }}</span>
+      <button type="button" [disabled]="historyPage >= historyPages" (click)="changeHistoryPage(1)" class="ui-btn ui-btn-ghost ui-btn-sm">
         Next<span class="material-icons" aria-hidden="true">chevron_right</span>
       </button>
     </div>
   </div>
 
-  <!-- ══════════ HISTORY ══════════ -->
-  <div class="ui-tabpanel" role="tabpanel" id="panel-history" aria-labelledby="tab-history"
-       *ngIf="tab === 'history'">
-
-    <div *ngIf="loading" class="flex items-center justify-center py-12">
-      <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-    </div>
-
-    <div *ngIf="!loading" class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Transfer history">
-    <table class="mexa-table">
-      <caption class="sr-only">Program transfers, newest first</caption>
-      <thead>
-        <tr>
-          <th scope="col">Program</th>
-          <th scope="col">Direction</th>
-          <th scope="col">Machine</th>
-          <th scope="col" class="qty">Size</th>
-          <th scope="col">Status</th>
-          <th scope="col">Error</th>
-          <th scope="col">By</th>
-          <th scope="col">Authorised by</th>
-          <th scope="col">Replaced program</th>
-          <th scope="col">Time</th>
-        </tr>
-      </thead>
-      <tbody>
-        <ng-container *ngIf="transfers.length > 0; else noTransfers">
-          <tr *ngFor="let t of transfers">
-            <td>
-              <span class="block strong">{{ t.program_name }}</span>
-              <span class="sub">{{ t.file_name }}</span>
-            </td>
-            <td>
-              <span class="mexa-badge" [ngClass]="t.direction === 'DOWNLOAD' ? 'mexa-badge-info' : 'mexa-badge-violet'">
-                <span class="material-icons" aria-hidden="true">{{ t.direction === 'DOWNLOAD' ? 'south_west' : 'north_east' }}</span>{{ t.direction === 'DOWNLOAD' ? 'From machine' : 'To machine' }}
-              </span>
-            </td>
-            <td class="strong">{{ t.machine_serial }}</td>
-            <td class="qty">{{ fileSize(t.file_size) }}</td>
-            <td>
-              <span class="mexa-badge" [ngClass]="t.status === 'SUCCESS' ? 'mexa-badge-good' : t.status === 'FAILED' ? 'mexa-badge-bad' : 'mexa-badge-warn'">
-                <span class="material-icons" aria-hidden="true">{{ t.status === 'SUCCESS' ? 'check_circle' : t.status === 'FAILED' ? 'error_outline' : 'schedule' }}</span>{{ t.status === 'SUCCESS' ? 'Sent' : t.status === 'FAILED' ? 'Failed' : (t.status | titlecase) }}
-              </span>
-            </td>
-            <td class="wrap" [class.muted]="!t.error_message">{{ t.error_message || '--' }}</td>
-            <td [class.muted]="!t.transferred_by_name">{{ t.transferred_by_name || '--' }}</td>
-            <td>
-              <!-- Downloads are not gated, and rows written before the
-                   supervisor gate shipped have nobody recorded. -->
-              <span *ngIf="t.authorized_by_name">{{ t.authorized_by_name }}</span>
-              <span *ngIf="!t.authorized_by_name" class="is-missing">--</span>
-            </td>
-            <td>
-              <!-- The audit answer to "what was on the machine before this?".
-                   A dash means nothing was replaced, not that a backup was
-                   skipped — a transfer that could not back up never ran. -->
-              <span *ngIf="t.backup_program_name" class="mexa-badge mexa-badge-neutral" [title]="t.backup_program_name">
-                <span class="material-icons" aria-hidden="true">inventory_2</span>Saved
-              </span>
-              <span *ngIf="!t.backup_program_name" class="is-missing">--</span>
-            </td>
-            <td class="num">{{ t.started_at | date:'d MMM y, h:mm a' }}</td>
-          </tr>
-        </ng-container>
-        <ng-template #noTransfers>
-          <tr><td colspan="10" class="mexa-empty">No transfers yet. Programs sent to or fetched from a machine are listed here.</td></tr>
-        </ng-template>
-      </tbody>
-    </table>
-  </div>
-
-      <div *ngIf="!loading && totalPages > 1" class="mexa-pager justify-end mt-4">
-        <button type="button" [disabled]="page <= 1" (click)="changePage(-1)" class="ui-btn ui-btn-ghost ui-btn-sm">
-          <span class="material-icons" aria-hidden="true">chevron_left</span>Previous
-        </button>
-        <span>Page {{ page }} of {{ totalPages }}</span>
-        <button type="button" [disabled]="page >= totalPages" (click)="changePage(1)" class="ui-btn ui-btn-ghost ui-btn-sm">
-          Next<span class="material-icons" aria-hidden="true">chevron_right</span>
-        </button>
-      </div>
-  </div>
-
-  <!-- ══════════ UPLOAD MODAL ══════════ -->
+  <!-- ══════════ UPLOAD ══════════ -->
   <div *ngIf="showUpload" class="ui-overlay">
     <div class="ui-dialog ui-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
-
       <div class="ui-dialog-header">
         <div>
           <h2 id="uploadTitle" class="ui-dialog-title">Upload Program</h2>
-          <p class="ui-dialog-subtitle">Add a G-code file to the server library.</p>
+          <p class="ui-dialog-subtitle">Into the machine's folder on the server.</p>
         </div>
         <button type="button" class="ui-close" (click)="showUpload = false" aria-label="Close without uploading">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5" aria-hidden="true">
@@ -358,110 +341,92 @@
 
       <div class="ui-dialog-body">
         <div class="ui-field">
-          <label class="ui-label" for="upFile">
-            G-code file<span class="ui-req" aria-hidden="true">*</span>
-          </label>
+          <label class="ui-label" for="upMachine">Machine<span class="ui-req" aria-hidden="true">*</span></label>
+          <select id="upMachine" class="ui-input" [(ngModel)]="uploadMachineId">
+            <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}{{ m.ip_address ? ' — ' + m.ip_address : '' }}</option>
+          </select>
+        </div>
+
+        <div class="ui-field">
+          <label class="ui-label" for="upFile">G-code file<span class="ui-req" aria-hidden="true">*</span></label>
           <input id="upFile" type="file" class="ui-input"
-                 accept=".nc,.prg,.cnc,.txt,.tap,.eia,.min,.gcode"
+                 accept=".nc,.prg,.cnc,.txt,.tap,.eia,.min,.gcode,.ptp,.mpf,.spf"
                  (change)="onFileSelected($event)" aria-describedby="upFileHint" />
-          <p id="upFileHint" class="ui-hint">.nc .prg .cnc .txt .tap .eia .min .gcode — up to 10 MB</p>
+          <p id="upFileHint" class="ui-hint">.nc .prg .cnc .txt .tap .eia .min .gcode .ptp .mpf .spf, or no extension — text files up to 20 MB</p>
         </div>
 
         <div class="ui-field">
-          <label class="ui-label" for="upName">Program name</label>
-          <input id="upName" class="ui-input" [(ngModel)]="uploadName"
-                 placeholder="e.g. O1234 — Flange Roughing" autocomplete="off" />
+          <label class="ui-label" for="upName">Name on the machine</label>
+          <input id="upName" class="ui-input" [(ngModel)]="uploadName" placeholder="e.g. O1234.nc" autocomplete="off" aria-describedby="upNameHint" />
+          <p id="upNameHint" class="ui-hint">What the device saves it as on the controller.</p>
         </div>
 
         <div class="ui-field">
-          <label class="ui-label" for="upDesc">Description</label>
-          <textarea id="upDesc" class="ui-input" rows="2" [(ngModel)]="uploadDescription"
-                    placeholder="Operation, revision, anything worth knowing later"></textarea>
+          <label class="ui-label" for="upNote">Note</label>
+          <input id="upNote" class="ui-input" [(ngModel)]="uploadNote" maxlength="255" placeholder="Revision, operation — anything worth knowing later" autocomplete="off" />
         </div>
+
+        <label *ngIf="canTransfer" class="ui-toggle">
+          <input type="checkbox" [(ngModel)]="uploadSend" />
+          <span>
+            <span class="ui-toggle-label">Send it to {{ uploadMachine?.machine_serial_no || 'the machine' }} now</span>
+            <span class="ui-toggle-hint">Its device collects it the next time it checks in</span>
+          </span>
+        </label>
       </div>
 
       <div class="ui-dialog-footer">
-        <button type="button" class="ui-btn ui-btn-ghost" (click)="showUpload = false" [disabled]="uploading">
-          Cancel
-        </button>
-        <button type="button" class="ui-btn ui-btn-primary" (click)="upload()" [disabled]="uploading || !uploadFile">
+        <button type="button" class="ui-btn ui-btn-ghost" (click)="showUpload = false" [disabled]="uploading">Cancel</button>
+        <button type="button" class="ui-btn ui-btn-primary" (click)="upload()" [disabled]="uploading || !uploadFile || !uploadMachineId">
           <span *ngIf="uploading" class="ui-spinner" aria-hidden="true"></span>
-          {{ uploading ? 'Uploading…' : 'Upload' }}
+          {{ uploading ? 'Uploading…' : (uploadSend && canTransfer ? 'Upload & Send' : 'Upload') }}
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════ OVERWRITE CONFIRMATION ══════════ -->
+  <!-- ══════════ ALREADY ON THE MACHINE ══════════ -->
   <div *ngIf="overwritePrompt" class="ui-overlay">
     <div class="ui-dialog ui-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="overwriteTitle">
-
       <div class="ui-dialog-header">
         <div>
-          <h2 id="overwriteTitle" class="ui-dialog-title">
-            {{ overwritePrompt.unverified ? 'Cannot check the controller' : 'File already on the controller' }}
-          </h2>
-          <p class="ui-dialog-subtitle">
-            <ng-container *ngIf="!overwritePrompt.unverified">
-              Already present on {{ selectedMachine?.machine_serial_no }}.
-            </ng-container>
-            <ng-container *ngIf="overwritePrompt.unverified">
-              {{ selectedMachine?.machine_serial_no }} cannot report which files it holds.
-            </ng-container>
-          </p>
+          <h2 id="overwriteTitle" class="ui-dialog-title">Already on the machine</h2>
+          <p class="ui-dialog-subtitle">The device last reported these on the controller.</p>
         </div>
-        <button type="button" class="ui-close" (click)="cancelOverwrite()" aria-label="Cancel the transfer">
+        <button type="button" class="ui-close" (click)="cancelOverwrite()" aria-label="Cancel">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
-
       <div class="ui-dialog-body">
         <ul class="text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#3e3e3e] rounded-lg px-4 py-3 mb-3 max-h-40 overflow-auto">
           <li *ngFor="let n of overwritePrompt.names" class="py-0.5">{{ n }}</li>
         </ul>
-        <!-- The reassuring half first: nothing is lost. Then the part that
-             still needs a human decision. -->
         <p class="ui-alert ui-alert-info">
-          The program currently on {{ selectedMachine?.machine_serial_no }} will be read back and saved
-          before the new one is sent. You can find it under <strong>Backups</strong> and send it again if
-          you need to. If the backup cannot be read, nothing is sent.
+          Before writing the new program, the device saves the one on the machine as a <strong>Backup</strong> in
+          this machine's server folder. If it cannot save the backup, nothing is overwritten.
         </p>
-        <p class="ui-alert ui-alert-warn" *ngIf="!overwritePrompt.unverified">
-          Make sure the operator is not currently running it.
-        </p>
-        <p class="ui-alert ui-alert-warn" *ngIf="overwritePrompt.unverified">
-          This controller does not support checking whether a file is already there, so we cannot tell you
-          if sending will replace one. Continue only if you know the operator is not running these programs.
-        </p>
+        <p class="ui-alert ui-alert-warn">Make sure the operator is not running it.</p>
       </div>
-
       <div class="ui-dialog-footer">
-        <button type="button" class="ui-btn ui-btn-ghost" (click)="cancelOverwrite()" [disabled]="transferring">
-          Cancel
-        </button>
-        <button type="button" class="ui-btn ui-btn-danger" (click)="confirmOverwrite()" [disabled]="transferring">
-          <span *ngIf="transferring" class="ui-spinner" aria-hidden="true"></span>
-          {{ transferring ? 'Overwriting…' : 'Overwrite' }}
+        <button type="button" class="ui-btn ui-btn-ghost" (click)="cancelOverwrite()" [disabled]="busy || uploading">Cancel</button>
+        <button type="button" class="ui-btn ui-btn-danger" (click)="confirmOverwrite()" [disabled]="busy || uploading">
+          <span *ngIf="busy || uploading" class="ui-spinner" aria-hidden="true"></span>Overwrite
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════ SUPERVISOR AUTHORISATION ══════════ -->
-  <div *ngIf="authPrompt" class="ui-overlay">
-    <div class="ui-dialog ui-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="authTitle">
-
+  <!-- ══════════ THE MACHINE'S DEVICE ══════════ -->
+  <div *ngIf="deviceDialog as d" class="ui-overlay">
+    <div class="ui-dialog ui-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="deviceTitle">
       <div class="ui-dialog-header">
         <div>
-          <h2 id="authTitle" class="ui-dialog-title">Supervisor Authorisation</h2>
-          <p class="ui-dialog-subtitle">
-            Sending {{ selectedCount }} program{{ selectedCount === 1 ? '' : 's' }} to
-            {{ authPrompt.machineSerial }}.
-          </p>
+          <h2 id="deviceTitle" class="ui-dialog-title">Device at {{ d.machine.machine_serial_no }}</h2>
+          <p class="ui-dialog-subtitle">The token the machine's device uses to reach Program Transfer.</p>
         </div>
-        <button type="button" class="ui-close" (click)="cancelAuthorization()" aria-label="Cancel the transfer">
+        <button type="button" class="ui-close" (click)="closeDevice()" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
           </svg>
@@ -469,66 +434,55 @@
       </div>
 
       <div class="ui-dialog-body">
+        <!-- the token, once -->
+        <ng-container *ngIf="d.token; else noToken">
+          <p class="ui-alert ui-alert-warn">
+            Copy this now — it is shown only once and cannot be read again. Put it in the device's configuration file,
+            readable by its administrator only.
+          </p>
+          <pre class="pt-config" tabindex="0" aria-label="Device configuration">{{ deviceConfig(d.token) }}</pre>
+          <button type="button" class="ui-btn ui-btn-primary ui-btn-sm mt-2" (click)="copyConfig()">
+            <span class="material-icons" aria-hidden="true">{{ d.copied ? 'check' : 'content_copy' }}</span>{{ d.copied ? 'Copied' : 'Copy' }}
+          </button>
+          <p class="ui-hint">The device then checks in within seconds, and this page shows it Online.</p>
+        </ng-container>
 
-        <!-- phase 0: waiting on the server -->
-        <p *ngIf="authPrompt.busy && !authPrompt.authorizationId" class="ui-hint text-center py-6">
-          Sending code to the supervisor…
-        </p>
+        <ng-template #noToken>
+          <dl *ngIf="d.machine.device_id" class="pt-facts">
+            <dt>Token</dt><dd><code>{{ d.machine.token_prefix }}…</code></dd>
+            <dt>Label</dt><dd>{{ d.machine.device_label || '--' }}</dd>
+            <dt>Created</dt><dd>{{ d.machine.device_created_at | date:'d MMM y, h:mm a' }}</dd>
+            <dt>Last seen</dt><dd>{{ ago(d.machine.last_seen_at) }}{{ d.machine.last_seen_ip ? ' from ' + d.machine.last_seen_ip : '' }}</dd>
+            <dt>Agent</dt><dd>{{ d.machine.agent_version || '--' }}</dd>
+          </dl>
+          <p *ngIf="!d.machine.device_id" class="ui-hint !mt-0">No device is linked to this machine yet.</p>
 
-        <!-- phase 1: more than one supervisor covers this machine -->
-        <div *ngIf="authPrompt.choices && !authPrompt.busy">
-          <label class="ui-label">Which supervisor is authorising this transfer?</label>
-          <div class="grid gap-2 max-h-48 overflow-auto">
-            <button *ngFor="let s of authPrompt.choices" type="button"
-                    class="ui-toggle text-left" (click)="requestCode(s.id)">
-              <span><span class="ui-toggle-label">{{ s.username }}</span></span>
-            </button>
+          <div *ngIf="!d.machine.device_id || d.confirmReplace" class="ui-field">
+            <label class="ui-label" for="devLabel">Label for the {{ d.machine.device_id ? 'new ' : '' }}token</label>
+            <input id="devLabel" class="ui-input" [(ngModel)]="d.label" maxlength="100" placeholder="e.g. Raspberry Pi at VMC-1" autocomplete="off" />
           </div>
-        </div>
 
-        <!-- phase 2: enter the code -->
-        <div *ngIf="authPrompt.authorizationId">
-          <p class="ui-hint !mt-0 mb-3">
-            A one-time code was sent to
-            <span class="font-medium">{{ authPrompt.supervisorName }}</span>&nbsp;({{ authPrompt.sentTo }}).
+          <p *ngIf="d.confirmReplace" class="ui-alert ui-alert-warn" role="alert">
+            The current token stops working at once. The device is offline until it has the new one.
           </p>
-
-          <label class="ui-label" for="authCode">Authorisation code</label>
-          <input id="authCode" class="ui-input text-lg tracking-[0.4em] text-center"
-                 [(ngModel)]="authPrompt.code" inputmode="numeric" autocomplete="one-time-code"
-                 maxlength="6" placeholder="000000" [disabled]="authPrompt.busy"
-                 (keyup.enter)="confirmAuthorization()"
-                 [class.is-invalid]="!!authPrompt.error"
-                 [attr.aria-invalid]="!!authPrompt.error"
-                 [attr.aria-describedby]="authPrompt.error ? 'authCodeErr' : 'authCodeHint'" />
-
-          <p *ngIf="authPrompt.error" id="authCodeErr" class="ui-error" role="alert">
-            {{ authPrompt.error }}
+          <p *ngIf="d.confirmRevoke" class="ui-alert ui-alert-warn" role="alert">
+            The device stops working at once, and nothing can be sent to or read from {{ d.machine.machine_serial_no }} until a new token is set up.
           </p>
-
-          <p id="authCodeHint" class="ui-hint">
-            Expires in 10 minutes and works only for this machine.
-            <button type="button" (click)="requestCode()" [disabled]="authPrompt.busy"
-                    class="text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50">
-              Resend code
-            </button>
-          </p>
-
-          <p class="ui-alert ui-alert-warn mt-4">
-            Confirm the machine is safe before authorising. A wrong program can crash the spindle.
-          </p>
-        </div>
+        </ng-template>
       </div>
 
       <div class="ui-dialog-footer">
-        <button type="button" class="ui-btn ui-btn-ghost" (click)="cancelAuthorization()" [disabled]="transferring">
-          Cancel
-        </button>
-        <button *ngIf="authPrompt.authorizationId" type="button" class="ui-btn ui-btn-danger"
-                (click)="confirmAuthorization()" [disabled]="authPrompt.busy || !authPrompt.code">
-          <span *ngIf="authPrompt.busy" class="ui-spinner" aria-hidden="true"></span>
-          {{ authPrompt.busy ? 'Authorising…' : 'Authorise & Send' }}
-        </button>
+        <ng-container *ngIf="!d.token">
+          <button *ngIf="d.machine.device_id" type="button" class="ui-btn ui-btn-danger-ghost mr-auto" (click)="revokeToken()" [disabled]="d.working">
+            {{ d.confirmRevoke ? 'Yes, revoke' : 'Revoke' }}
+          </button>
+          <button type="button" class="ui-btn ui-btn-ghost" (click)="closeDevice()" [disabled]="d.working">Close</button>
+          <button type="button" class="ui-btn ui-btn-primary" (click)="createToken()" [disabled]="d.working">
+            <span *ngIf="d.working" class="ui-spinner" aria-hidden="true"></span>
+            {{ d.machine.device_id ? (d.confirmReplace ? 'Yes, replace it' : 'New token') : 'Create token' }}
+          </button>
+        </ng-container>
+        <button *ngIf="d.token" type="button" class="ui-btn ui-btn-primary" (click)="closeDevice()">Done</button>
       </div>
     </div>
   </div>
