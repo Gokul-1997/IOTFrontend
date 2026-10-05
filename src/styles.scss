@@ -596,6 +596,9 @@ $radius: 10px;
 
 
 // ── COLUMN SPECIFICS ───────────────────────────────────────────────────────
+.mat-mdc-header-row .col-index {
+  color: #adb5bd !important;
+}
 .col-index {
   width: 40px;
   text-align: center;

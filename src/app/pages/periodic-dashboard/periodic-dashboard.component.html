@@ -298,13 +298,13 @@
         </span>
         <span *ngIf="canExport" class="ui-btn-row" role="group" aria-label="Download the filtered list">
           <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('xlsx')" [disabled]="exporting">
-              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'xlsx' ? 'Preparing…' : 'Excel' }}
+              <img src="/images/icons/FileXls.svg" alt="Excel" class="w-5 h-5" /> {{ exporting === 'xlsx' ? 'Preparing…' : 'Excel' }}
             </button>
           <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('csv')" [disabled]="exporting">
-              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
+              <img src="/images/icons/FileCsv.svg" alt="CSV" class="w-5 h-5" /> {{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
             </button>
           <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('pdf')" [disabled]="exporting">
-              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
+              <img src="/images/icons/FilePdf.svg" alt="PDF" class="w-5 h-5" /> {{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
             </button>
         </span>
         <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="runEngine()" [disabled]="running">

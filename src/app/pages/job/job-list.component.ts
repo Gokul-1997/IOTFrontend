@@ -72,11 +72,18 @@ export class JobListComponent implements OnInit {
     this.loadHistory();
   }
 
+profileTab: 'account' | 'password' | 'security' = 'account';
+
+setProfileTab(tab: 'account' | 'password' | 'security'): void {
+  this.profileTab = tab;
+}
+
   /** Switch which list is on screen. */
   setTab(tab: 'active' | 'history') {
     this.tab = tab;
     this.cdr.markForCheck();
   }
+  
 
   /*
    * The app runs zoneless (Angular 21, no zone.js), so assigning .data inside

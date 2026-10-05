@@ -99,15 +99,15 @@
   --fs-td: .84rem;            /* table cell */
 
   /* ── 3. Tables ── */
-  --tbl-head-bg: #3f3785;     /* the indigo header the dashboards already use */
+  --tbl-head-bg: #1C3D6F;     /* the indigo header the dashboards already use */
   --tbl-head-ink: #ffffff;
   --tbl-row: var(--mexa-card, #fff);
   --tbl-row-alt: var(--mexa-row-alt, #f5f4fc);
   --tbl-row-hover: #eceefb;
   --tbl-row-selected: #e0e4fb;
   --tbl-rule: var(--mexa-rule, #e3e6ef);
-  --tbl-pad-x: .75rem;
-  --tbl-pad-y: .55rem;
+  --tbl-pad-x: .5rem;
+  --tbl-pad-y: .25rem;
 }
 :root[data-theme="dark"], .dark {
   --tbl-row-hover: #232846;
@@ -153,7 +153,7 @@ html, body { font-family: var(--font-ui); }
 .ui-btn, .btn-primary, .btn-apply, .btn-clear, .btn-secondary, .btn-cancel, .btn-danger, .mexa-submit {
   font-family: inherit; font-size: var(--fs-body); font-weight: 600; letter-spacing: 0;
 }
-.ui-btn-sm, .ui-btn-xs, .mexa-pagebtn { font-size: var(--fs-label); font-weight: 600; }
+.ui-btn-sm, .ui-btn-xs, .mexa-pagebtn { font-size: var(--fs-label); font-weight: 500; }
 
 /* ── 3. Tables ───────────────────────────────────────────────── */
 
@@ -390,3 +390,32 @@ html.dark .mexa-note :is([class~="text-red-500"], [class~="text-red-600"]) { col
 @keyframes mexa-spin { to { transform: rotate(360deg); } }
 .mexa-spin { animation: mexa-spin 1s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .mexa-spin { animation: none; } }
+
+/* Sticky table header */
+.mat-mdc-table-sticky {
+  z-index: 10 !important;
+}
+
+/* Navigation/dropdown */
+.nav-dropdown-wrapper {
+  position: relative;
+  z-index: 1000;
+}
+
+.nav-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 99999 !important;
+
+  min-width: 15rem;
+  padding: 0.35rem;
+  display: grid;
+  gap: 2px;
+
+  background: #fff;
+  border-radius: 12px;
+  box-shadow:
+    0 16px 40px rgba(18, 14, 64, 0.2),
+    0 0 0 1px rgba(18, 14, 64, 0.06);
+}

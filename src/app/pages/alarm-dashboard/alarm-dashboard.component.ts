@@ -390,7 +390,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   get shiftDonut(): any {
     return this.charts.memo('shiftDonut', () => {
     return {
-      chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
+      chart: { type: 'donut', height: 180, fontFamily: 'inherit' },
       labels: (this.data?.by_shift || []).map((s: any) => s.shift_name),
       colors: this.palette,
       plotOptions: { pie: { donut: { size: '62%' } } },
@@ -406,7 +406,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   get severityDonut(): any {
     return this.charts.memo('severityDonut', () => {
     return {
-      chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
+      chart: { type: 'donut', height: 180, fontFamily: 'inherit' },
       labels: [SEVERITY.critical.label, SEVERITY.noncritical.label],
       colors: [SEVERITY.critical.color, SEVERITY.noncritical.color],
       plotOptions: { pie: { donut: { size: '62%' } } },

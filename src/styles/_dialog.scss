@@ -394,7 +394,7 @@ select.ui-input {
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  padding: 0.15rem 1.125rem;
+  padding: .5rem 1.125rem;
   font-size: 0.875rem;
   font-weight: 600;
   border-radius: 9px;
@@ -407,8 +407,9 @@ select.ui-input {
 .ui-btn:focus-visible { outline: 2px solid #2b3990; outline-offset: 2px; }
 .ui-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
-.ui-btn-primary { color: #fff; background: #2b3990; }
-.ui-btn-primary:hover:not(:disabled) { background: #223070; }
+.ui-btn-primary { color: #fff; background: #1C3D6F; }
+
+.ui-btn-primary:hover:not(:disabled) { background: #1C3D6F; }
 
 .ui-btn-danger { color: #fff; background: #dc2626; }
 .ui-btn-danger:hover:not(:disabled) { background: #b91c1c; }

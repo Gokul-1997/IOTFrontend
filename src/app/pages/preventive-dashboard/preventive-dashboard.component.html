@@ -135,7 +135,7 @@
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Alarms by Severity</h2>
-      <div class="mexa-donutrow mt-6" *ngIf="severityTotal > 0; else noSeverity">
+      <div class="flex mt-6 gap-3" *ngIf="severityTotal > 0; else noSeverity">
         <apx-chart
           [series]="severitySeries" [chart]="severityDonut.chart" [labels]="severityDonut.labels"
           [colors]="severityDonut.colors" [dataLabels]="severityDonut.dataLabels"
@@ -191,7 +191,7 @@
 
   <!-- ══════════ PM TICKETS ══════════ -->
   <section class="mexa-card">
-    <div class="mexa-tablebar">
+    <div class="mexa-tablebar mb-3">
       <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Preventive maintenance tickets (raised by alarms)</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="pvSearch">Search tickets</label>

@@ -31,7 +31,7 @@
   }
   .menu-default{
     height: 100%;
-    zoom: 1.2;
+    // zoom: 1.1;
   }
   .bg-top-bar, .mexa-titlebar{
     zoom: 1.2;
@@ -87,6 +87,21 @@
   }
   .mt-machine-img{
     height: 150px;
+  }
+  .mexa-card{
+    zoom: 1.2;
+  }
+  .ui-tabs, .rep-step, .ui-tabpanel, .mat-mdc-table, .bg-common, .bg-common, .mexa-kpi, .mexa-note{
+    zoom: 1.2;
+  }
+  // .mat-mdc-header-row{
+  //   zoom: 1.2;
+  // }
+  // .mexa-kpi {
+  //   padding: 1rem 1rem;
+  // }
+  .mexa-card .mat-mdc-table{
+    zoom:normal;
   }
 }
 

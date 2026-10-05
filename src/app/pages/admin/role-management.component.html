@@ -91,17 +91,20 @@
                 <button *ngIf="!role.is_system"
                   (click)="openPagesModal(role)"
                   class="ui-btn ui-btn-ghost ui-btn-xs">
+                  <span class="material-icons" aria-hidden="true">edit</span>
                    Edit Permissions
                 </button>
                 <button *ngIf="canCopy(role)"
                   (click)="openCopyModal(role)"
                   title="Make a new role from this one"
                   class="ui-btn ui-btn-ghost ui-btn-xs">
+                  <span class="material-icons" aria-hidden="true">file_copy</span>
                   Copy
                 </button>
                 <button *ngIf="!role.is_system"
                   (click)="deleteRole(role)"
                   class="ui-btn ui-btn-danger-ghost ui-btn-xs">
+                  <span class="material-icons" aria-hidden="true">delete</span>
                   Delete
                 </button>
                 <span *ngIf="isCompanyAdminRole(role)" class="text-xs text-gray-400">Set by Manage Access</span>

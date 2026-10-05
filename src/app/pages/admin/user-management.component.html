@@ -94,15 +94,18 @@
               <div class="flex items-center justify-center gap-2">
                 <button (click)="openEditModal(user)"
                   class="ui-btn ui-btn-ghost ui-btn-xs">
+                  <span class="ui-tab-icon material-icons" aria-hidden="true">edit</span>
                   Edit
                 </button>
                 <button (click)="toggleUserActive(user)" class="ui-btn ui-btn-ghost ui-btn-xs">
+                  <span class="ui-tab-icon material-icons" aria-hidden="true">visibilityoff</span>
                   {{ user.is_active ? 'Disable' : 'Enable' }}
                 </button>
                 <!-- A company's admin goes only with the company: S&T can't add
                      another, so deleting this one would leave nobody to run it -->
                 <button *ngIf="!auth.isSntSuper()" (click)="deleteUser(user)"
                   class="ui-btn ui-btn-danger-ghost ui-btn-xs">
+                  <span class="ui-tab-icon material-icons" aria-hidden="true">delete</span>
                   Delete
                 </button>
               </div>

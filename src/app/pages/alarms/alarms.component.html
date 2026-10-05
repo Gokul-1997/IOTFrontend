@@ -64,14 +64,23 @@
               <ng-container *ngIf="!alarm.is_resolved && canResolve">
                 <div *ngIf="resolvingId === alarm.id" class="ui-btn-row">
                   <input [(ngModel)]="resolveNote" placeholder="Resolution note" class="ui-input alarm-note" aria-label="Resolution note" />
-                  <button type="button" (click)="resolve(alarm.id)" class="ui-btn ui-btn-primary ui-btn-xs">Save</button>
-                  <button type="button" (click)="resolvingId=null" class="ui-btn ui-btn-ghost ui-btn-xs">Cancel</button>
+                  <button type="button" (click)="resolve(alarm.id)" class="ui-btn ui-btn-primary ui-btn-xs">
+                    <span class="material-icons" aria-hidden="true">save</span>
+                    Save</button>
+                  <button type="button" (click)="resolvingId=null" class="ui-btn ui-btn-ghost ui-btn-xs">
+                    <span class="material-icons" aria-hidden="true">close</span>
+                    Cancel</button>
                 </div>
                 <div *ngIf="resolvingId !== alarm.id" class="ui-btn-row">
-                  <button type="button" (click)="resolvingId=alarm.id" class="ui-btn ui-btn-primary ui-btn-xs">Resolve</button>
-                  <span *ngIf="ticketedAlarmIds.has(alarm.id)" class="mexa-badge mexa-badge-neutral">Ticket created</span>
+                  <button type="button" (click)="resolvingId=alarm.id" class="ui-btn ui-btn-primary ui-btn-xs">
+                    <span class="material-icons" aria-hidden="true">mark_chat_read</span>
+                    Resolve</button>
+                  <span *ngIf="ticketedAlarmIds.has(alarm.id)" class="mexa-badge mexa-badge-neutral">
+                    <span class="material-icons" aria-hidden="true">description</span>
+                    Ticket created</span>
                   <button type="button" *ngIf="!ticketedAlarmIds.has(alarm.id)" (click)="createTicketFromAlarm(alarm)" [disabled]="creatingTicketId === alarm.id"
                     class="ui-btn ui-btn-ghost ui-btn-xs">
+                    <span class="material-icons" aria-hidden="true">description</span>
                     {{ creatingTicketId === alarm.id ? 'Creating…' : 'Create ticket' }}
                   </button>
                 </div>

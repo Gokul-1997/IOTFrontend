@@ -40,6 +40,7 @@ import { AuthService } from '../../core/services/auth.service';
      routerLinkActive="is-active"
      #users="routerLinkActive"
      [attr.aria-current]="users.isActive ? 'page' : null">
+     <span class="ui-tab-icon material-icons" aria-hidden="true">groups</span>
     {{ auth.isSntSuper() ? 'Company Admins' : 'Users' }}
   </a>
 
@@ -49,6 +50,7 @@ import { AuthService } from '../../core/services/auth.service';
      routerLinkActive="is-active"
      #roles="routerLinkActive"
      [attr.aria-current]="roles.isActive ? 'page' : null">
+     <span class="ui-tab-icon material-icons" aria-hidden="true">settings</span>
     Roles &amp; Permissions
   </a>
 

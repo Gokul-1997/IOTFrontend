@@ -295,11 +295,11 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
           { name: 'P', data: col('efficiency_pct') },
           { name: 'Q', data: col('quality_rate_pct') }
         ],
-        chart: { type: 'bar', height: 220, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
+        chart: { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
         plotOptions: { bar: { borderRadius: 2, columnWidth: '62%' } },
         colors: ['#2f2d8f', '#4a76c8', '#9b7ec8'],
         dataLabels: { enabled: false },
-        legend: { position: 'bottom', markers: { shape: 'circle' } },
+        legend: { position: 'top', markers: { shape: 'circle' } },
         xaxis: { categories: rows.map((r: any) => r.operator_name), 
           labels: { rotate: -30, trim: true } },
         yaxis: { min: 0, max: 100, tickAmount: 5, labels: { formatter: (v: number) => `${Math.round(v)}%` } },

@@ -6,15 +6,15 @@
 
 <!-- The same title bar as every dashboard: title and freshness on the left,
      the filters in the bar on the right (folded behind one button on a phone). -->
-<form class="mexa-titlebar" (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
+<form class="mexa-titlebar justify-between" (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
   <h1 class="mexa-title">Alarm Report Dashboard</h1>
   <p class="mexa-updated" *ngIf="updatedAt || loading">
     <mat-icon class="!w-4 !h-4 !text-base" [class.mexa-spin]="loading" aria-hidden="true">refresh</mat-icon>
     {{ loading ? 'Updating…' : 'Updated ' + updatedAt }}
   </p>
-  <span class="mexa-titlebar-spacer"></span>
-
-  <div class="mexa-filters" appFilterPanel>
+ 
+</form>
+<div class="mexa-filters pb-4 pt-1" appFilterPanel>
     <span class="mexa-filter-set">
       <label class="mexa-filter-label" for="alMachine">Machine</label>
       <select id="alMachine" class="mexa-select" [(ngModel)]="f.machine_id" name="machine">
@@ -55,8 +55,6 @@
       <input id="alTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
     </span>
   </div>
-</form>
-
 
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
@@ -171,7 +169,7 @@
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Alarms by Shift</h2>
-      <div class="mexa-donutrow" *ngIf="shiftDonutSeries.length; else noShift">
+      <div class="flex gap-3" *ngIf="shiftDonutSeries.length; else noShift">
         <apx-chart
           [series]="shiftDonutSeries" [chart]="shiftDonut.chart" [labels]="shiftDonut.labels"
           [colors]="shiftDonut.colors" [dataLabels]="shiftDonut.dataLabels"
@@ -194,7 +192,7 @@
       <!-- The mock calls this "Alarm Type Distribution" but plots severity;
            named for what it actually shows. -->
       <h2 class="mexa-card-title">Alarm Severity Distribution</h2>
-      <div class="mexa-donutrow" *ngIf="data.kpis.total; else noSeverity">
+      <div class="flex gap-3" *ngIf="data.kpis.total; else noSeverity">
         <apx-chart
           [series]="severitySeries" [chart]="severityDonut.chart" [labels]="severityDonut.labels"
           [colors]="severityDonut.colors" [dataLabels]="severityDonut.dataLabels"

@@ -429,7 +429,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   get severityDonut(): any {
     return this.charts.memo('severityDonut', () => {
     return {
-      chart: { type: 'donut', height: 240, fontFamily: 'inherit' },
+      chart: { type: 'donut', height: 180, fontFamily: 'inherit' },
       labels: [SEVERITY.critical.label, SEVERITY.noncritical.label, SEVERITY.info.label],
       colors: [SEVERITY.critical.color, SEVERITY.noncritical.color, SEVERITY.info.color],
       plotOptions: {
@@ -451,7 +451,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   get reasonChart(): any {
     return this.charts.memo('reasonChart', () => {
     return {
-      chart: { type: 'bar', height: 200, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart: { type: 'bar', height: 230, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '80%', distributed: true } },
       colors: this.palette,
       dataLabels: { enabled: true, offsetY: 7, style: { fontSize: '.72rem', fontWeight: 700, colors: ['#fff'] } },

@@ -9,8 +9,9 @@
     <mat-icon class="!w-4 !h-4 !text-base" [class.mexa-spin]="loading" aria-hidden="true">refresh</mat-icon>
     {{ loading ? 'Updating…' : 'Updated ' + updatedAt }}
   </p>
-  <span class="mexa-titlebar-spacer"></span>
-  <div class="mexa-filters" appFilterPanel>
+  
+</form>
+<div class="mexa-filters mb-3" appFilterPanel>
     <span class="mexa-filter-set">
       <label class="mexa-filter-label" for="opShift">Shift</label>
       <select id="opShift" class="mexa-select" [(ngModel)]="f.shift_id" name="shift">
@@ -42,8 +43,6 @@
       <input id="opTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
     </span>
   </div>
-</form>
-
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
 <ng-container *ngIf="loading && !data">

@@ -24,7 +24,7 @@ import { ToastService } from '../../core/services/toast.service';
   <form class="mexa-titlebar" (ngSubmit)="save()">
     <h1 class="mexa-title">Tariff &amp; Limits</h1>
     <span class="mexa-titlebar-spacer"></span>
-    <a routerLink="/energy-dashboard" class="mexa-submit">Energy Dashboard</a>
+    <a routerLink="/energy-dashboard" class="mexa-submit flex items-center gap-2">Go to Energy Dashboard <span class="ui-tab-icon material-icons" aria-hidden="true">east</span></a>
   </form>
 
   <section class="mexa-card p-4" aria-labelledby="tfFormTitle">
@@ -57,7 +57,9 @@ import { ToastService } from '../../core/services/toast.service';
                [attr.aria-invalid]="overloadError ? true : null" aria-describedby="tfError">
       </div>
       <div class="flex gap-2">
-        <button type="submit" class="ui-btn ui-btn-primary" [disabled]="saving">{{ saving ? 'Saving…' : 'Save' }}</button>
+        <button type="submit" class="ui-btn ui-btn-primary" [disabled]="saving">
+        <span class="ui-tab-icon material-icons" aria-hidden="true">save</span>
+        {{ saving ? 'Saving…' : 'Save' }}</button>
         <button *ngIf="editing" type="button" class="ui-btn ui-btn-ghost" (click)="reset()">Cancel</button>
       </div>
     </form>

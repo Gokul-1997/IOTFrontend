@@ -61,7 +61,7 @@
     MQTT payload. Operating time and production below are measured and are unaffected.
   </p>
 
-  <p *ngIf="!noEnergyData && !data.coverage.tariff_configured" class="mexa-note">
+  <p *ngIf="!noEnergyData && !data.coverage.tariff_configured" class="mexa-note mexa-note-warn">
     <strong>No tariff configured.</strong>
     Energy is shown in kWh until a cost per unit is set.
     <ng-container *ngIf="canEditSettings">
@@ -164,7 +164,7 @@
   <app-meter-panel mode="energy"></app-meter-panel>
 
   <!-- ══════════ ROW 2 — trend + distribution ══════════ -->
-  <div class="mexa-grid lg:grid-cols-3">
+  <div class="mexa-grid lg:grid-cols-3 mt-4">
 
     <section class="mexa-card lg:col-span-2">
       <h2 class="mexa-card-title mexa-card-title-left">Energy Consumption Over Time (kWh)</h2>
@@ -245,7 +245,7 @@
 
   <!-- ══════════ MACHINE DETAIL ══════════ -->
   <section class="mexa-card">
-    <div class="mexa-tablebar">
+    <div class="mexa-tablebar mb-2">
       <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Machine Detail</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="enSearch">Search machines</label>
@@ -256,13 +256,13 @@
         </span>
         <span *ngIf="canExport" class="ui-btn-row" role="group" aria-label="Download the filtered list">
           <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('xlsx')" [disabled]="exporting">
-              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'xlsx' ? 'Preparing…' : 'Excel' }}
+              <img src="/images/icons/FileXls.svg" alt="Excel" class="w-5 h-5">{{ exporting === 'xlsx' ? 'Preparing…' : 'Excel' }}
             </button>
           <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('csv')" [disabled]="exporting">
-              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
+              <img src="/images/icons/FileCsv.svg" alt="Csv" class="w-5 h-5">{{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
             </button>
           <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('pdf')" [disabled]="exporting">
-              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
+              <img src="/images/icons/FilePdf.svg" alt="PDF" class="w-5 h-5">{{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
             </button>
         </span>
         <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()"><span class="material-icons" aria-hidden="true">restart_alt</span>Reset filters</button>

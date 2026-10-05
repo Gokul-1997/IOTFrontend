@@ -269,7 +269,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   get shiftDonut(): any {
     return this.charts.memo('shiftDonut', () => {
     return {
-      chart: { type: 'donut', height: 260, fontFamily: 'inherit' },
+      chart: { type: 'donut', height: 200, fontFamily: 'inherit' },
       labels: (this.data?.by_shift || []).map((s: any) => s.shift_name),
       colors: this.palette,
       plotOptions: {

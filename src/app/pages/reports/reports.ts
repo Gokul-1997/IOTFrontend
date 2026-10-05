@@ -123,11 +123,11 @@ export class Reports implements OnInit {
      role that may open it: the production reports need Reports, the OEE ones
      need OEE Reports (and the machine summary the OEE Dashboard's data too). */
   private readonly allTabs: { id: Tab; label: string; icon: string; allowed: () => boolean }[] = [
-    { id: 'production',  label: 'Production',  icon: '⚙️', allowed: () => this.auth.hasPermission('page:reports') },
-    { id: 'oee-hourly',  label: 'OEE Hourly',  icon: '📊', allowed: () => this.auth.hasPermission('page:reports') },
-    { id: 'shift-oee',   label: 'Shift OEE',   icon: '🔄', allowed: () => this.auth.hasPermission('page:reports') },
-    { id: 'oee-records', label: 'OEE Records', icon: '📋', allowed: () => this.auth.hasPermission('page:oee-reports') },
-    { id: 'machine-oee', label: 'Machine OEE', icon: '🏭',
+    { id: 'production',  label: 'Production',  icon: 'settings', allowed: () => this.auth.hasPermission('page:reports') },
+    { id: 'oee-hourly',  label: 'OEE Hourly',  icon: 'bar_chart', allowed: () => this.auth.hasPermission('page:reports') },
+    { id: 'shift-oee',   label: 'Shift OEE',   icon: 'loop', allowed: () => this.auth.hasPermission('page:reports') },
+    { id: 'oee-records', label: 'OEE Records', icon: 'note', allowed: () => this.auth.hasPermission('page:oee-reports') },
+    { id: 'machine-oee', label: 'Machine OEE', icon: 'precision_manufacturing',
       allowed: () => this.auth.hasPermission('page:oee-reports') && this.auth.hasPermission('page:analytics-oee') },
   ];
   tabs: { id: Tab; label: string; icon: string }[] = [];

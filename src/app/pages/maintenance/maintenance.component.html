@@ -31,6 +31,7 @@
           [attr.aria-selected]="activeTab === 'tickets'"
           [attr.tabindex]="activeTab === 'tickets' ? 0 : -1"
           (click)="setTab('tickets')">
+          <span class="ui-tab-icon material-icons" aria-hidden="true">confirmation_number</span>
     Tickets
   </button>
 
@@ -41,6 +42,7 @@
           [attr.aria-selected]="activeTab === 'schedules'"
           [attr.tabindex]="activeTab === 'schedules' ? 0 : -1"
           (click)="setTab('schedules')">
+          <span class="ui-tab-icon material-icons" aria-hidden="true">access_time_filled';</span>
     Schedules
   </button>
 
@@ -51,6 +53,7 @@
           [attr.aria-selected]="activeTab === 'logs'"
           [attr.tabindex]="activeTab === 'logs' ? 0 : -1"
           (click)="setTab('logs')">
+          <span class="ui-tab-icon material-icons" aria-hidden="true">description</span>
     Logs
   </button>
 
@@ -61,13 +64,14 @@
           [attr.aria-selected]="activeTab === 'mttr'"
           [attr.tabindex]="activeTab === 'mttr' ? 0 : -1"
           (click)="setTab('mttr')">
+          <span class="ui-tab-icon material-icons" aria-hidden="true">bar_chart</span>
     MTTR analysis
   </button>
 
 </div>
 
 <!-- Tickets -->
-<div *ngIf="activeTab === 'tickets'" role="tabpanel" class="ui-tabpanel">
+<div *ngIf="activeTab === 'tickets'" role="tabpanel" class="">
   <div *ngIf="showTicketForm" class="mexa-card mt-form p-4">
     <h2 class="mexa-card-title mexa-card-title-left">Create maintenance ticket</h2>
     <div class="mt-grid">

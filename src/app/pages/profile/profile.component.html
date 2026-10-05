@@ -17,6 +17,7 @@
     [class.is-active]="activeTab === 'account'"
     [attr.aria-selected]="activeTab === 'account'"
     (click)="activeTab = 'account'">
+    <span class="ui-tab-icon material-icons" aria-hidden="true">description</span>
     Account Details
   </button>
 
@@ -27,6 +28,7 @@
     [class.is-active]="activeTab === 'password'"
     [attr.aria-selected]="activeTab === 'password'"
     (click)="activeTab = 'password'">
+    <span class="ui-tab-icon material-icons" aria-hidden="true">pattern</span>
     Change Password
   </button>
 
@@ -37,6 +39,7 @@
     [class.is-active]="activeTab === 'security'"
     [attr.aria-selected]="activeTab === 'security'"
     (click)="activeTab = 'security'">
+    <span class="ui-tab-icon material-icons" aria-hidden="true">lock</span>
     Security
   </button>
 
