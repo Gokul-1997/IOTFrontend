@@ -72,15 +72,26 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   /** a send the machine refused because the program is already there */
   overwritePrompt: { names: string[]; retry: (overwrite: boolean) => void } | null = null;
 
+  /* ── the machine's program path (where its device saves programs) ── */
+  editingPath = false;
+  pathDraft = '';
+  savingPath = false;
+  pathError = '';
+
   /* ── device token dialog ── */
   deviceDialog: {
     machine: PtMachine;
     label: string;
+    path: string;
     token: string | null;
     confirmReplace: boolean;
     confirmRevoke: boolean;
     working: boolean;
     copied: boolean;
+    showHelp: boolean;
+    sampleTab: 'curl' | 'python';
+    sampleCopied: boolean;
+    error: string;
   } | null = null;
 
   private timer: any = null;
@@ -152,6 +163,36 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     this.loadController();
     this.loadOpenJobs();
     if (this.tab === 'history') this.loadHistory();
+  }
+
+  /** every machine must say where its device saves programs before anything moves */
+  get hasPath(): boolean { return !!this.selectedMachine?.program_path; }
+
+  startPathEdit() {
+    this.pathDraft = this.selectedMachine?.program_path || '';
+    this.pathError = '';
+    this.editingPath = true;
+  }
+
+  cancelPathEdit() { this.editingPath = false; this.pathError = ''; }
+
+  savePath() {
+    const m = this.selectedMachine;
+    const path = this.pathDraft.trim();
+    if (!m) return;
+    if (!path) { this.pathError = 'Enter the folder on the machine, e.g. //CNC_MEM/USER/PATH1/'; return; }
+    this.savingPath = true;
+    this.programs.setProgramPath(m.id, path).subscribe({
+      next: () => {
+        this.savingPath = false;
+        this.editingPath = false;
+        m.program_path = path;
+        this.toast.success(`Program path set for ${m.machine_serial_no}`);
+        this.loadMachines(false);
+        this.touch();
+      },
+      error: err => { this.savingPath = false; this.pathError = err.error?.message || 'Could not save the path'; this.touch(); }
+    });
   }
 
   /** "online", "offline" or "none" — a device that called in the last minute is online. */
@@ -235,6 +276,7 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   sendSelected(overwrite = false) {
     const machine = this.selectedMachine;
     if (!machine || !this.selectedCount) return;
+    if (!machine.program_path) { this.toast.error(`Set the program path for ${machine.machine_serial_no} first`); return; }
     const ids = [...this.selectedFileIds];
     this.busy = true;
     this.programs.send(ids, [machine.id], overwrite).subscribe({
@@ -357,7 +399,7 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     this.uploadFile = null;
     this.uploadName = '';
     this.uploadNote = '';
-    this.uploadSend = this.canTransfer;
+    this.uploadSend = this.canTransfer && this.hasPath;
     this.uploadMachineId = this.selectedMachineId;
     this.showUpload = true;
   }
@@ -372,13 +414,21 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     return this.machines.find(m => m.id === this.uploadMachineId) || null;
   }
 
+  /** where the device will save it, for the upload dialog */
+  get uploadTarget(): string | null {
+    const path = this.uploadMachine?.program_path;
+    const name = (this.uploadName || this.uploadFile?.name || '').trim();
+    if (!path || !name) return null;
+    return /[\\/]$/.test(path) ? path + name : path + (path.includes('\\') && !path.includes('/') ? '\\' : '/') + name;
+  }
+
   upload(overwrite = false) {
     if (!this.uploadFile || !this.uploadMachineId) return;
     const machine = this.uploadMachine;
     this.uploading = true;
     this.programs.upload({
       file: this.uploadFile, machineId: this.uploadMachineId, programName: this.uploadName.trim(),
-      note: this.uploadNote.trim(), send: this.uploadSend && this.canTransfer, overwrite
+      note: this.uploadNote.trim(), send: this.uploadSend && this.canTransfer && !!this.uploadMachine?.program_path, overwrite
     }).subscribe({
       next: res => {
         this.uploading = false;
@@ -411,7 +461,11 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   openDevice() {
     const m = this.selectedMachine;
     if (!m) return;
-    this.deviceDialog = { machine: m, label: m.device_label || '', token: null, confirmReplace: false, confirmRevoke: false, working: false, copied: false };
+    this.deviceDialog = {
+      machine: m, label: m.device_label || '', path: m.program_path || '', token: null,
+      confirmReplace: false, confirmRevoke: false, working: false, copied: false,
+      showHelp: false, sampleTab: 'python', sampleCopied: false, error: ''
+    };
   }
 
   closeDevice() { this.deviceDialog = null; this.loadMachines(false); }
@@ -420,11 +474,26 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     const d = this.deviceDialog;
     if (!d) return;
     if (d.machine.device_id && !d.confirmReplace) { d.confirmReplace = true; return; }
+    const path = d.path.trim();
+    if (!d.machine.program_path && !path) { d.error = 'Set the program path first — where the device saves programs on this machine.'; return; }
+    d.error = '';
     d.working = true;
-    this.programs.createDeviceToken(d.machine.id, d.label.trim() || undefined).subscribe({
-      next: res => { d.working = false; d.confirmReplace = false; d.token = res.data.token; this.loadMachines(false); this.touch(); },
-      error: err => { d.working = false; this.toast.error(err.error?.message || 'Could not create the token'); this.touch(); }
+    const issue = () => this.programs.createDeviceToken(d.machine.id, d.label.trim() || undefined).subscribe({
+      next: res => {
+        d.working = false; d.confirmReplace = false; d.token = res.data.token; d.showHelp = true;
+        this.loadMachines(false); this.touch();
+      },
+      error: err => { d.working = false; d.error = err.error?.message || 'Could not create the token'; this.touch(); }
     });
+    // a machine without a path gets it first, in the same step
+    if (!d.machine.program_path) {
+      this.programs.setProgramPath(d.machine.id, path).subscribe({
+        next: () => { d.machine.program_path = path; issue(); },
+        error: err => { d.working = false; d.error = err.error?.message || 'Could not save the path'; this.touch(); }
+      });
+    } else {
+      issue();
+    }
   }
 
   revokeToken() {
@@ -441,6 +510,94 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   /** what goes into the device's config file */
   deviceConfig(token: string): string {
     return `MEXA_URL=${this.programs.serverUrl}\nMEXA_DEVICE_TOKEN=${token}`;
+  }
+
+  /** Every call the device makes, filled in with this machine's values (the token only right after it is made). */
+  sample(kind: 'curl' | 'python'): string {
+    const d = this.deviceDialog;
+    const token = d?.token || 'mxd_PASTE-THE-TOKEN';
+    const path = d?.machine.program_path || d?.path.trim() || '//CNC_MEM/USER/PATH1/';
+    const api = `${this.programs.serverUrl}/api/device/v1`;
+    if (kind === 'curl') {
+      return [
+        `URL=${api}`,
+        `AUTH="Authorization: Bearer ${token}"`,
+        ``,
+        `# 1. Check the token - the answer has this machine's program path (${path})`,
+        `curl -s -H "$AUTH" $URL/ping`,
+        ``,
+        `# 2. Ask for work every 15 s. HTTP 204 = nothing to do`,
+        `curl -s -H "$AUTH" $URL/jobs/next`,
+        ``,
+        `# 3. NEW PROGRAM (action SEND, job 11): download it, check its sha256,`,
+        `#    then save it on the machine at target_file (${path}O1234.nc)`,
+        `curl -s -H "$AUTH" -o O1234.nc $URL/jobs/11/file`,
+        ``,
+        `# 4. BACKUP: before overwriting, upload what is in ${path} now`,
+        `curl -s -H "$AUTH" -F type=BACKUP -F job_id=11 -F program_name=O1234.nc -F file=@O1234-on-machine.nc $URL/files`,
+        ``,
+        `# 5. Say how it went`,
+        `curl -s -H "$AUTH" -H "Content-Type: application/json" -d '{"status":"DONE"}' $URL/jobs/11/result`,
+        ``,
+        `# 6. UPLOAD a program a user asked for (action FETCH, job 12) - read it from ${path}`,
+        `curl -s -H "$AUTH" -F type=FETCHED -F job_id=12 -F file=@O2001.nc $URL/files`,
+        ``,
+        `# 7. What is in ${path} (every few minutes)`,
+        `curl -s -X PUT -H "$AUTH" -H "Content-Type: application/json" -d '{"files":[{"name":"O1234.nc","size":2048}]}' $URL/controller-files`
+      ].join('\n');
+    }
+    return [
+      `import hashlib, json, time, urllib.request, uuid`,
+      ``,
+      `API = "${api}"`,
+      `TOKEN = "${token}"`,
+      ``,
+      `def call(method, url, body=None, ctype=None):`,
+      `    h = {"Authorization": "Bearer " + TOKEN}`,
+      `    if ctype: h["Content-Type"] = ctype`,
+      `    with urllib.request.urlopen(urllib.request.Request(API + url, body, h, method=method), timeout=120) as r:`,
+      `        return r.status, r.read()`,
+      ``,
+      `def result(job, status, message=None):                 # 5. say how it went`,
+      `    call("POST", "/jobs/%d/result" % job["id"], json.dumps({"status": status, "message": message}).encode(), "application/json")`,
+      ``,
+      `def upload(data, tag, name, job_id):                    # 4. BACKUP / 6. FETCHED: machine -> server`,
+      `    b = uuid.uuid4().hex`,
+      `    f = {"type": tag, "program_name": name, "job_id": str(job_id), "sha256": hashlib.sha256(data).hexdigest()}`,
+      `    body = b"".join(('--%s\\r\\nContent-Disposition: form-data; name="%s"\\r\\n\\r\\n%s\\r\\n' % (b, k, v)).encode() for k, v in f.items())`,
+      `    body += ('--%s\\r\\nContent-Disposition: form-data; name="file"; filename="%s"\\r\\n\\r\\n' % (b, name)).encode() + data + ("\\r\\n--%s--\\r\\n" % b).encode()`,
+      `    call("POST", "/files", body, "multipart/form-data; boundary=" + b)`,
+      ``,
+      `info = json.loads(call("GET", "/ping")[1])               # 1. check the token`,
+      `print(info["machine"]["serial"], info["machine"]["program_path"])   # ${path}`,
+      ``,
+      `while True:`,
+      `    status, body = call("GET", "/jobs/next")             # 2. anything to do?`,
+      `    if status == 204:`,
+      `        time.sleep(info["poll_seconds"]); continue`,
+      `    job = json.loads(body)["job"]`,
+      `    path, name = job["program_path"], job["program_name"]`,
+      `    if job["action"] == "SEND":                          # 3. NEW PROGRAM for the machine`,
+      `        data = call("GET", "/jobs/%d/file" % job["id"])[1]`,
+      `        old = read_from_machine(path, name)              # your FOCAS / FTP code`,
+      `        if old is not None:`,
+      `            upload(old, "BACKUP", name, job["id"])       # 4. BACKUP first`,
+      `        save_on_machine(path, name, data)                # your FOCAS / FTP code`,
+      `        result(job, "DONE")`,
+      `    else:                                                # 6. FETCH: a user asked for it`,
+      `        data = read_from_machine(path, name)`,
+      `        if data is None: result(job, "FAILED", name + " is not on the machine.")`,
+      `        else: upload(data, "FETCHED", name, job["id"])   # finishes the job`
+    ].join('\n');
+  }
+
+  copySample() {
+    const d = this.deviceDialog;
+    if (!d) return;
+    navigator.clipboard?.writeText(this.sample(d.sampleTab)).then(
+      () => { d.sampleCopied = true; this.touch(); setTimeout(() => { d.sampleCopied = false; this.touch(); }, 2000); },
+      () => this.toast.error('Copy did not work — select the text and copy it')
+    );
   }
 
   copyConfig() {

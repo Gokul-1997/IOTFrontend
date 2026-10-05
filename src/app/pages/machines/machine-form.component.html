@@ -203,7 +203,7 @@
         <section class="ui-section" aria-labelledby="mfSecNet">
           <h3 id="mfSecNet" class="ui-section-title">Network</h3>
           <p class="ui-section-hint">
-            The machine’s address on the shop LAN. Program Transfer keeps this machine’s programs in a server folder named after it.
+            The machine’s address on the shop LAN, and where its programs live for Program Transfer.
           </p>
 
           <div class="grid grid-cols-2 lg:grid-cols-6 gap-4 mt-4">
@@ -216,6 +216,21 @@
                      aria-describedby="mfIpErr" />
               <p *ngIf="form.get('ip_address')?.invalid && form.get('ip_address')?.touched" id="mfIpErr" class="ui-error" role="alert">
                 Enter an IP address such as 192.168.1.101.
+              </p>
+            </div>
+
+            <div class="col-span-2 lg:col-span-4">
+              <label class="ui-label" for="mfPath">Program path on the machine</label>
+              <input id="mfPath" class="ui-input" formControlName="program_path" maxlength="255"
+                     placeholder="//CNC_MEM/USER/PATH1/" autocomplete="off"
+                     [class.is-invalid]="form.get('program_path')?.invalid && form.get('program_path')?.touched"
+                     [attr.aria-invalid]="form.get('program_path')?.invalid && form.get('program_path')?.touched"
+                     [attr.aria-describedby]="form.get('program_path')?.invalid && form.get('program_path')?.touched ? 'mfPathErr' : 'mfPathHint'" />
+              <p *ngIf="!(form.get('program_path')?.invalid && form.get('program_path')?.touched)" id="mfPathHint" class="ui-hint">
+                Where this machine’s device saves programs sent from Program Transfer, and reads them for backups. Needed before any transfer.
+              </p>
+              <p *ngIf="form.get('program_path')?.invalid && form.get('program_path')?.touched" id="mfPathErr" class="ui-error" role="alert">
+                Use letters, digits, spaces and _ - . : / \ only, up to 255 characters.
               </p>
             </div>
           </div>

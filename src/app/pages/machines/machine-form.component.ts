@@ -76,7 +76,9 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       line_id: [null, Validators.required],
       is_active: [true],
       // the shop-LAN address; Program Transfer keeps this machine's files in a folder named after it
-      ip_address: ['', Validators.pattern(/^\s*(\d{1,3}(\.\d{1,3}){3}|[0-9a-fA-F:]{2,39})\s*$/)]
+      ip_address: ['', Validators.pattern(/^\s*(\d{1,3}(\.\d{1,3}){3}|[0-9a-fA-F:]{2,39})\s*$/)],
+      // Program Transfer: the folder on the machine where its device saves programs
+      program_path: ['', [Validators.maxLength(255), Validators.pattern(/^[A-Za-z0-9 _\-.:/\\]*$/)]]
     });
     this.loadLines();
   }
@@ -198,7 +200,7 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       // Move focus to the first problem rather than leaving the user to hunt
       // for red borders in a form four sections long.
       const firstInvalid = Object.keys(this.form.controls).find(k => this.form.get(k)?.invalid);
-      const map: Record<string, string> = { line_id: '#mfLine', machine_serial_no: '#mfSerial', ip_address: '#mfIp' };
+      const map: Record<string, string> = { line_id: '#mfLine', machine_serial_no: '#mfSerial', ip_address: '#mfIp', program_path: '#mfPath' };
       const el = firstInvalid && map[firstInvalid]
         ? this.host.nativeElement.querySelector<HTMLElement>(map[firstInvalid])
         : null;

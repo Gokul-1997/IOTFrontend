@@ -7,6 +7,8 @@ export interface PtMachine {
   id: number;
   machine_serial_no: string;
   ip_address: string | null;
+  /** where the machine's device saves programs on the machine, e.g. //CNC_MEM/USER/PATH1/ */
+  program_path: string | null;
   folder: string;
   device_id: number | null;
   token_prefix: string | null;
@@ -46,6 +48,9 @@ export interface PtJob {
   machine_serial: string;
   action: 'SEND' | 'FETCH';
   program_name: string;
+  /** the machine's program path when the job was made, and the program's full name there */
+  program_path: string | null;
+  target_file: string | null;
   overwrite: boolean;
   status: PtStatus;
   message: string | null;
@@ -133,6 +138,11 @@ export class ProgramService {
 
   cancelJob(id: number) {
     return this.http.post<{ data: PtJob }>(`${this.api}/jobs/${id}/cancel`, {});
+  }
+
+  /** Where the machine's device saves programs on the machine (machine.update). */
+  setProgramPath(machineId: number, programPath: string) {
+    return this.http.put<any>(`${environment.apiUrl}/machines/${machineId}`, { program_path: programPath });
   }
 
   /** A new token for the machine's device; the old one stops working. Shown once. */

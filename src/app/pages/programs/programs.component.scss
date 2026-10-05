@@ -43,3 +43,16 @@
 .pt-facts dd { margin: 0; color: var(--mexa-ink); overflow-wrap: anywhere; }
 
 .pt-name { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+
+/* the program path: where on the machine its device saves programs */
+.pt-path { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.pt-pathinput { width: 16rem; max-width: 100%; padding-top: .35rem; padding-bottom: .35rem; }
+.pt-nopath { font-size: .85rem; font-weight: 700; color: #b42318; }
+:host-context(.dark) .pt-nopath { color: #ffa9b4; }
+.pt-target { font-size: .75rem; color: var(--mexa-ink-3); overflow-wrap: anywhere; }
+
+.pt-help { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--mexa-rule); }
+.pt-help-title { margin: 0 0 .5rem; font-size: .95rem; font-weight: 700; color: var(--mexa-ink); }
+.pt-help code { font-size: .78rem; }
+.pt-sample-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-top: 1rem; }
+.pt-sample { max-height: 22rem; overflow: auto; margin-top: .5rem; }

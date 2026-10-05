@@ -59,9 +59,27 @@
       </span>
     </div>
 
+    <!-- where on the machine its device saves programs: every machine must have one -->
     <div *ngIf="selectedMachine as m" class="pb-1 min-w-0">
-      <span class="block text-xs font-medium text-gray-500 mb-1">Server folder</span>
-      <code class="pt-folder" [title]="'ProgramTransfer/' + m.folder">ProgramTransfer/{{ m.folder }}</code>
+      <span class="block text-xs font-medium text-gray-500 mb-1" id="ptPathLabel">Program path on the machine</span>
+      <span *ngIf="!editingPath" class="pt-path">
+        <code *ngIf="m.program_path" class="pt-folder" [title]="m.program_path">{{ m.program_path }}</code>
+        <span *ngIf="!m.program_path" class="pt-nopath">Not set</span>
+        <button *ngIf="canManageDevice" type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="startPathEdit()"
+                [attr.aria-label]="(m.program_path ? 'Change' : 'Set') + ' the program path for ' + m.machine_serial_no">
+          <span class="material-icons" aria-hidden="true">edit</span>{{ m.program_path ? 'Change' : 'Set' }}
+        </button>
+      </span>
+      <form *ngIf="editingPath" class="pt-path" (ngSubmit)="savePath()">
+        <input class="ui-input pt-pathinput" [(ngModel)]="pathDraft" name="programPath" maxlength="255" autocomplete="off"
+               placeholder="//CNC_MEM/USER/PATH1/" aria-labelledby="ptPathLabel"
+               [attr.aria-invalid]="!!pathError" [attr.aria-describedby]="pathError ? 'ptPathErr' : null" />
+        <button type="submit" class="ui-btn ui-btn-primary ui-btn-xs" [disabled]="savingPath">
+          <span *ngIf="savingPath" class="ui-spinner" aria-hidden="true"></span>Save
+        </button>
+        <button type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="cancelPathEdit()" [disabled]="savingPath">Cancel</button>
+      </form>
+      <p *ngIf="editingPath && pathError" id="ptPathErr" class="ui-error" role="alert">{{ pathError }}</p>
     </div>
 
     <button *ngIf="selectedMachine && canManageDevice" type="button" class="ui-btn ui-btn-ghost ui-btn-sm ml-auto" (click)="openDevice()">
@@ -72,6 +90,11 @@
   <!-- ══════════ PROGRAMS ══════════ -->
   <div class="ui-tabpanel" role="tabpanel" id="panel-programs" aria-labelledby="tab-programs" *ngIf="tab === 'programs'">
 
+    <p *ngIf="selectedMachine && !hasPath" class="ui-alert ui-alert-warn" role="status">
+      <strong>{{ selectedMachine.machine_serial_no }} has no program path yet</strong> — the folder on the machine where its device
+      saves programs. Nothing can be sent to it or read from it until it is set{{ canManageDevice ? ' (Set, above).' : '; ask an admin to set it.' }}
+    </p>
+
     <!-- what the device has still to do -->
     <div *ngIf="openJobs.length" class="bg-white dark:bg-[var(--mexa-card)] dark:border-[var(--mexa-rule)] rounded-xl shadow-sm border p-4 mb-4" aria-live="polite">
       <h3 class="text-sm font-semibold text-gray-700 dark:text-white mb-2">In progress</h3>
@@ -80,6 +103,7 @@
           <span class="material-icons pt-dir" aria-hidden="true">{{ j.action === 'SEND' ? 'north_east' : 'south_west' }}</span>
           <span class="strong">{{ j.program_name }}</span>
           <span class="text-gray-500">{{ j.action === 'SEND' ? 'to' : 'from' }} {{ j.machine_serial }}</span>
+          <code *ngIf="j.target_file" class="pt-target" [title]="j.target_file">{{ j.target_file }}</code>
           <span class="mexa-badge" [ngClass]="statusBadge(j.status)">
             <span class="material-icons" aria-hidden="true">{{ statusIcon(j.status) }}</span>{{ statusLabel(j) }}
           </span>
@@ -186,7 +210,7 @@
             </button>
           </span>
           <span *ngIf="!canTransfer" class="text-xs text-gray-500">Sending to a machine is not part of your role.</span>
-          <button *ngIf="canTransfer" type="button" (click)="sendSelected()" [disabled]="busy || selectedCount === 0 || !selectedMachineId"
+          <button *ngIf="canTransfer" type="button" (click)="sendSelected()" [disabled]="busy || selectedCount === 0 || !selectedMachineId || !hasPath"
                   class="ui-btn ui-btn-primary ui-btn-sm">
             <span *ngIf="busy" class="ui-spinner" aria-hidden="true"></span>
             {{ busy ? 'Queuing…' : 'Send to ' + (selectedMachine?.machine_serial_no || 'machine') }}
@@ -237,7 +261,7 @@
                   <ng-template #noTime>--</ng-template>
                 </td>
                 <td *ngIf="canFetch" class="actions">
-                  <button type="button" (click)="fetchFile(f)" [disabled]="fetchWaiting(f.name)"
+                  <button type="button" (click)="fetchFile(f)" [disabled]="fetchWaiting(f.name) || !hasPath"
                           class="ui-btn ui-btn-ghost ui-btn-xs" [attr.aria-label]="'Copy ' + f.name + ' to the server folder'">
                     <span class="material-icons" aria-hidden="true">file_download</span>{{ fetchWaiting(f.name) ? 'Asked…' : 'Get' }}
                   </button>
@@ -283,7 +307,11 @@
         </thead>
         <tbody>
           <tr *ngFor="let j of history">
-            <td><span class="block strong">{{ j.program_name }}</span><span class="sub">{{ j.file_name || '' }}</span></td>
+            <td>
+              <span class="block strong">{{ j.program_name }}</span>
+              <span *ngIf="j.target_file" class="sub">{{ j.action === 'SEND' ? 'Saved at ' : 'Read from ' }}{{ j.target_file }}</span>
+              <span *ngIf="j.file_name" class="sub">{{ j.file_name }}</span>
+            </td>
             <td>
               <span class="mexa-badge" [ngClass]="j.action === 'FETCH' ? 'mexa-badge-info' : 'mexa-badge-violet'">
                 <span class="material-icons" aria-hidden="true">{{ j.action === 'FETCH' ? 'south_west' : 'north_east' }}</span>{{ j.action === 'FETCH' ? 'From machine' : 'To machine' }}
@@ -366,11 +394,16 @@
           <input id="upNote" class="ui-input" [(ngModel)]="uploadNote" maxlength="255" placeholder="Revision, operation — anything worth knowing later" autocomplete="off" />
         </div>
 
-        <label *ngIf="canTransfer" class="ui-toggle">
-          <input type="checkbox" [(ngModel)]="uploadSend" />
+        <label *ngIf="canTransfer" class="ui-toggle" [class.opacity-60]="!uploadMachine?.program_path">
+          <input type="checkbox" [(ngModel)]="uploadSend" [disabled]="!uploadMachine?.program_path" />
           <span>
             <span class="ui-toggle-label">Send it to {{ uploadMachine?.machine_serial_no || 'the machine' }} now</span>
-            <span class="ui-toggle-hint">Its device collects it the next time it checks in</span>
+            <span class="ui-toggle-hint" *ngIf="uploadMachine?.program_path">
+              Its device saves it at <code>{{ uploadTarget || uploadMachine?.program_path }}</code> the next time it checks in
+            </span>
+            <span class="ui-toggle-hint" *ngIf="!uploadMachine?.program_path">
+              Set this machine's program path first; until then the program only goes into its server folder
+            </span>
           </span>
         </label>
       </div>
@@ -379,7 +412,7 @@
         <button type="button" class="ui-btn ui-btn-ghost" (click)="showUpload = false" [disabled]="uploading">Cancel</button>
         <button type="button" class="ui-btn ui-btn-primary" (click)="upload()" [disabled]="uploading || !uploadFile || !uploadMachineId">
           <span *ngIf="uploading" class="ui-spinner" aria-hidden="true"></span>
-          {{ uploading ? 'Uploading…' : (uploadSend && canTransfer ? 'Upload & Send' : 'Upload') }}
+          {{ uploading ? 'Uploading…' : (uploadSend && canTransfer && uploadMachine?.program_path ? 'Upload & Send' : 'Upload') }}
         </button>
       </div>
     </div>
@@ -420,7 +453,7 @@
 
   <!-- ══════════ THE MACHINE'S DEVICE ══════════ -->
   <div *ngIf="deviceDialog as d" class="ui-overlay">
-    <div class="ui-dialog ui-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="deviceTitle">
+    <div class="ui-dialog" [class.ui-dialog-sm]="!d.showHelp" [class.ui-dialog-xl]="d.showHelp" role="dialog" aria-modal="true" aria-labelledby="deviceTitle">
       <div class="ui-dialog-header">
         <div>
           <h2 id="deviceTitle" class="ui-dialog-title">Device at {{ d.machine.machine_serial_no }}</h2>
@@ -444,11 +477,12 @@
           <button type="button" class="ui-btn ui-btn-primary ui-btn-sm mt-2" (click)="copyConfig()">
             <span class="material-icons" aria-hidden="true">{{ d.copied ? 'check' : 'content_copy' }}</span>{{ d.copied ? 'Copied' : 'Copy' }}
           </button>
-          <p class="ui-hint">The device then checks in within seconds, and this page shows it Online.</p>
+          <p class="ui-hint">The device then checks in within seconds, and this page shows it Online. The samples below already hold this token.</p>
         </ng-container>
 
         <ng-template #noToken>
           <dl *ngIf="d.machine.device_id" class="pt-facts">
+            <dt>Program path</dt><dd><code>{{ d.machine.program_path }}</code></dd>
             <dt>Token</dt><dd><code>{{ d.machine.token_prefix }}…</code></dd>
             <dt>Label</dt><dd>{{ d.machine.device_label || '--' }}</dd>
             <dt>Created</dt><dd>{{ d.machine.device_created_at | date:'d MMM y, h:mm a' }}</dd>
@@ -456,6 +490,14 @@
             <dt>Agent</dt><dd>{{ d.machine.agent_version || '--' }}</dd>
           </dl>
           <p *ngIf="!d.machine.device_id" class="ui-hint !mt-0">No device is linked to this machine yet.</p>
+
+          <!-- the device saves and reads programs here: it comes first -->
+          <div *ngIf="!d.machine.program_path" class="ui-field">
+            <label class="ui-label" for="devPath">Program path on the machine<span class="ui-req" aria-hidden="true">*</span></label>
+            <input id="devPath" class="ui-input" [(ngModel)]="d.path" maxlength="255" placeholder="//CNC_MEM/USER/PATH1/"
+                   autocomplete="off" aria-describedby="devPathHint" />
+            <p id="devPathHint" class="ui-hint">Where the device saves the programs sent to this machine, and reads them for backups.</p>
+          </div>
 
           <div *ngIf="!d.machine.device_id || d.confirmReplace" class="ui-field">
             <label class="ui-label" for="devLabel">Label for the {{ d.machine.device_id ? 'new ' : '' }}token</label>
@@ -468,7 +510,48 @@
           <p *ngIf="d.confirmRevoke" class="ui-alert ui-alert-warn" role="alert">
             The device stops working at once, and nothing can be sent to or read from {{ d.machine.machine_serial_no }} until a new token is set up.
           </p>
+          <p *ngIf="d.error" class="ui-error" role="alert">{{ d.error }}</p>
         </ng-template>
+
+        <button *ngIf="!d.token" type="button" class="ui-btn ui-btn-ghost ui-btn-sm mt-3" (click)="d.showHelp = !d.showHelp"
+                [attr.aria-expanded]="d.showHelp" aria-controls="devHelp">
+          <span class="material-icons" aria-hidden="true">{{ d.showHelp ? 'expand_less' : 'code' }}</span>How the device uses the token
+        </button>
+
+        <!-- how the device uses it: which call does what, then samples to copy -->
+        <section *ngIf="d.showHelp" id="devHelp" class="pt-help" aria-labelledby="devHelpTitle">
+          <h3 id="devHelpTitle" class="pt-help-title" [class.sr-only]="!d.token">How the device uses the token</h3>
+          <div class="mexa-tablewrap">
+            <table class="mexa-table is-compact">
+              <caption class="sr-only">Which device API does what</caption>
+              <thead><tr><th scope="col">What</th><th scope="col">Call</th></tr></thead>
+              <tbody>
+                <tr><td>Check the token, get the program path</td><td><code>GET /ping</code></td></tr>
+                <tr><td>Anything to do? (every 15 s)</td><td><code>GET /jobs/next</code> — 204 means nothing</td></tr>
+                <tr><td><strong>New program</strong> for the machine (job <code>SEND</code>)</td><td><code>GET /jobs/&#123;id&#125;/file</code>, then save it at the job's <code>target_file</code></td></tr>
+                <tr><td><strong>Backup</strong> of what is on the machine</td><td><code>POST /files</code> with <code>type=BACKUP</code> (and the job id before an overwrite)</td></tr>
+                <tr><td><strong>Upload</strong> a program a user asked for (job <code>FETCH</code>)</td><td><code>POST /files</code> with <code>type=FETCHED</code> and the job id</td></tr>
+                <tr><td>Done or failed</td><td><code>POST /jobs/&#123;id&#125;/result</code></td></tr>
+                <tr><td>What is in the program path</td><td><code>PUT /controller-files</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pt-sample-head">
+            <div class="pt-kinds" role="group" aria-label="Sample">
+              <button type="button" class="pt-kind" [attr.aria-pressed]="d.sampleTab === 'python'" (click)="d.sampleTab = 'python'">Python</button>
+              <button type="button" class="pt-kind" [attr.aria-pressed]="d.sampleTab === 'curl'" (click)="d.sampleTab = 'curl'">curl</button>
+            </div>
+            <button type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="copySample()">
+              <span class="material-icons" aria-hidden="true">{{ d.sampleCopied ? 'check' : 'content_copy' }}</span>{{ d.sampleCopied ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+          <pre class="pt-config pt-sample" tabindex="0" [attr.aria-label]="(d.sampleTab === 'python' ? 'Python' : 'curl') + ' sample'">{{ sample(d.sampleTab) }}</pre>
+          <p class="ui-hint">
+            <code>read_from_machine</code> and <code>save_on_machine</code> are your FOCAS / FTP code. The full device program,
+            with retries and restart handling, is <code>tools/program-agent/program_agent.py</code> in the backend.
+          </p>
+        </section>
       </div>
 
       <div class="ui-dialog-footer">
@@ -477,7 +560,7 @@
             {{ d.confirmRevoke ? 'Yes, revoke' : 'Revoke' }}
           </button>
           <button type="button" class="ui-btn ui-btn-ghost" (click)="closeDevice()" [disabled]="d.working">Close</button>
-          <button type="button" class="ui-btn ui-btn-primary" (click)="createToken()" [disabled]="d.working">
+          <button type="button" class="ui-btn ui-btn-primary" (click)="createToken()" [disabled]="d.working || (!d.machine.program_path && !d.path.trim())">
             <span *ngIf="d.working" class="ui-spinner" aria-hidden="true"></span>
             {{ d.machine.device_id ? (d.confirmReplace ? 'Yes, replace it' : 'New token') : 'Create token' }}
           </button>
