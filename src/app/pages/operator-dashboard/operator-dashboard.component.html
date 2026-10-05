@@ -11,7 +11,8 @@
   </p>
   
 </form>
-<div class="mexa-filters mb-3" appFilterPanel>
+<!-- the filters sit under the title bar, in their own form, so a change still loads at once (appAutoApply) -->
+<form class="mexa-filters mb-3" appFilterPanel (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
     <span class="mexa-filter-set">
       <label class="mexa-filter-label" for="opShift">Shift</label>
       <select id="opShift" class="mexa-select" [(ngModel)]="f.shift_id" name="shift">
@@ -42,7 +43,7 @@
       <span class="mexa-filter-label" aria-hidden="true">–</span>
       <input id="opTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
     </span>
-  </div>
+  </form>
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
 <ng-container *ngIf="loading && !data">

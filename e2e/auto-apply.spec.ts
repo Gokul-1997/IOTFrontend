@@ -42,21 +42,23 @@ for (const s of screens) {
     await page.goto(s.path);
 
     const bar = page.locator('form.mexa-titlebar');
+    // the filters are in the title bar, or in their own form just under it (Alarm Report, Operator Performance)
+    const filters = page.locator('form.mexa-titlebar, form.mexa-filters');
     await expect(bar.getByRole('heading', { name: s.title })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Submit' })).toHaveCount(0);
     await expect.poll(() => seen.length).toBeGreaterThan(0);
 
     // a dropdown choice asks for the data with it
     const [label, option, param] = s.select;
-    await expect(bar.getByLabel(label, { exact: true }).locator('option', { hasText: option })).toHaveCount(1);
+    await expect(filters.getByLabel(label, { exact: true }).locator('option', { hasText: option })).toHaveCount(1);
     const before = seen.length;
-    await bar.getByLabel(label, { exact: true }).selectOption({ label: option });
+    await filters.getByLabel(label, { exact: true }).selectOption({ label: option });
     await expect.poll(() => seen.slice(before).some(u => u.includes(param))).toBe(true);
 
     // so does a date
     if (s.date) {
       const at = seen.length;
-      await bar.getByLabel(s.date, { exact: true }).fill(day(2));
+      await filters.getByLabel(s.date, { exact: true }).fill(day(2));
       await expect.poll(() => seen.slice(at).some(u => u.includes(day(2)))).toBe(true);
       // with the dropdown choice still in it
       expect(seen.at(-1)).toContain(param);
