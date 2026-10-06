@@ -249,7 +249,7 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy {
       xaxis:  { categories: this.trendCategories, title: { text: 'Day' } },
       yaxis:  { title: { text: 'Tickets' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark' },
+      tooltip:{ theme: 'light' },
       noData: { text: 'No tickets in this period' }
     }));
   }
@@ -263,7 +263,7 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy {
       xaxis:  { categories: this.downtimeCategories, title: { text: 'Hours stopped' } },
       yaxis:  { labels: { style: { fontSize: '12px' } } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark', y: { formatter: (v: number) => `${v} h` } },
+      tooltip:{ theme: 'light', y: { formatter: (v: number) => `${v} h` } },
       noData: { text: 'No downtime recorded' }
     }));
   }
@@ -289,7 +289,7 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy {
         formatter: (_v: number, o: any) => String(o.w.config.series[o.seriesIndex])
       },
       legend: { position: 'bottom' },
-      tooltip:{ theme: 'dark', y: { formatter: (v: number) => `${v} ticket${v === 1 ? '' : 's'}` } },
+      tooltip:{ theme: 'light', y: { formatter: (v: number) => `${v} ticket${v === 1 ? '' : 's'}` } },
       noData: { text: 'No tickets in this period' }
     }));
   }

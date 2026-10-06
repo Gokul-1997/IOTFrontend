@@ -234,17 +234,26 @@
           </span>
           <div class="mexa-apq">
             <div class="mexa-apq-row mexa-factor-a"><span>Availability</span><span class="num">{{ pct(m.availability_pct) }}</span>
-              <span class="mexa-apq-bar" aria-hidden="true"><i [style.--v.%]="m.availability_pct || 0"></i></span></div>
+              <!-- <span class="mexa-apq-bar" aria-hidden="true"><i [style.--v.%]="m.availability_pct || 0"></i></span> -->
+            </div>
             <div class="mexa-apq-row mexa-factor-p"><span>Performance</span><span class="num">{{ pct(m.performance_pct) }}</span>
-              <span class="mexa-apq-bar" aria-hidden="true"><i [style.--v.%]="m.performance_pct || 0"></i></span></div>
+              <!-- <span class="mexa-apq-bar" aria-hidden="true"><i [style.--v.%]="m.performance_pct || 0"></i></span> -->
+            </div>
             <div class="mexa-apq-row mexa-factor-q"><span>Quality</span><span class="num">{{ pct(m.quality_pct) }}</span>
-              <span class="mexa-apq-bar" aria-hidden="true"><i [style.--v.%]="m.quality_pct || 0"></i></span></div>
+              <!-- <span class="mexa-apq-bar" aria-hidden="true"><i [style.--v.%]="m.quality_pct || 0"></i></span> -->
+            </div>
           </div>
         </div>
         <div class="mexa-oeecard-foot">
+          <div class="flex gap-3">
+          <div class="notification-icon icon-notify_system">
+  <span class="material-icons" aria-hidden="true">
+    dark_mode
+  </span>
+</div>    <div class="flex flex-col">
           <span>{{ gradeWord(grade(m)) }}</span>
           <small>{{ m.produced | number }} pcs<ng-container *ngIf="m.idle_cost != null"> · <span [title]="costHint">{{ rupees(m.idle_cost) }} idle</span></ng-container></small>
-        </div>
+        </div></div></div>
       </article>
       <p *ngIf="!pageCards.length" class="mexa-empty">
         {{ data.machines.data.length ? 'No machine has a computable OEE yet — it needs a cycle time on its current job.' : 'No machines match these filters.' }}

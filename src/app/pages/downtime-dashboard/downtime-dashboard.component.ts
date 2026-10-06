@@ -321,7 +321,7 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
           labels: { formatter: (v: number) => v?.toFixed(0) } }
       ],
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark', shared: true, intersect: false },
+      tooltip:{ theme: 'light', shared: true, intersect: false },
       noData: { text: 'No downtime reasons recorded for this period' }
     };
   });
@@ -340,7 +340,7 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
       xaxis:  { categories: this.hourlyCategories, tickAmount: 8, labels: { rotate: 0, hideOverlappingLabels: true }, title: { text: 'Time (Hour)' } },
       yaxis:  { title: { text: 'Hours down' }, labels: { formatter: (v: number) => v?.toFixed(1) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark' },
+      tooltip:{ theme: 'light' },
       noData: { text: 'No downtime recorded for this period' }
     };
   });

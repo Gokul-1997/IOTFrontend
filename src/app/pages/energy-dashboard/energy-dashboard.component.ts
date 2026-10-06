@@ -250,7 +250,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       xaxis:  { categories: this.trendCategories },
       yaxis:  { title: { text: 'kWh' }, labels: { formatter: compactQty } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark' },
+      tooltip:{ theme: 'light' },
       noData: { text: 'No machine is sending energy readings yet' }
     };
   }, this.charts.sig('trendCats') + this.charts.sig('trendSeries'));
@@ -279,7 +279,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       legend: { show: false },
       xaxis:  { categories: this.machineCategories, title: { text: 'kWh' } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark' },
+      tooltip:{ theme: 'light' },
       noData: { text: 'No machine is sending energy readings yet' }
     };
   }, this.charts.sig('machineCats') + this.charts.sig('machineSeries'));
@@ -370,7 +370,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       yaxis: { title: { text: this.data?.rate_per_kwh != null ? `Cost (${this.data?.currency || 'INR'})` : 'kWh' },
                labels: { formatter: compactQty } },
       grid:  { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip: { theme: 'dark', y: { formatter: (v: number) => this.data?.rate_per_kwh != null ? this.money(v) : `${qty(v, 1)} kWh` } },
+      tooltip: { theme: 'light', y: { formatter: (v: number) => this.data?.rate_per_kwh != null ? this.money(v) : `${qty(v, 1)} kWh` } },
       noData: { text: 'Nothing recorded for this period' }
     };
   }, `${this.costBy}|${this.data?.rate_per_kwh}|${this.charts.sig('monthCats')}|${this.charts.sig('monthSeries')}`);

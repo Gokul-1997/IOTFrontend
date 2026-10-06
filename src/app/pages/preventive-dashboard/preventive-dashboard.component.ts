@@ -362,7 +362,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
       xaxis:  { categories: this.trendCategories },
       yaxis:  { title: { text: 'Critical alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark' }
+      tooltip:{ theme: 'light' }
     };
   });
   }
@@ -382,7 +382,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
       xaxis:  { categories: this.machineCategories },
       yaxis:  { title: { text: 'No. of Alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark' },
+      tooltip:{ theme: 'light' },
       noData: { text: 'No critical alarms in this period' }
     };
   });

@@ -254,7 +254,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
       xaxis:  { categories: this.shiftCategories },
       yaxis:  { title: { text: 'Qty' } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark' }
+      tooltip:{ theme: 'light' }
     };
   });
   }
@@ -272,7 +272,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
       yaxis:  { min: 0, title: { text: 'Units' } },
       legend: { position: 'bottom' },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark', shared: true, intersect: false }
+      tooltip:{ theme: 'light', shared: true, intersect: false }
     };
   });
   }

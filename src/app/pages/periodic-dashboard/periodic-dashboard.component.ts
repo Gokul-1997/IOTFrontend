@@ -470,7 +470,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
                 labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       // a week with nothing due is a gap in the line, not a zero
-      tooltip:{ theme: 'dark' },
+      tooltip:{ theme: 'light' },
       noData: { text: 'No completed cycles yet' }
     };
   });
