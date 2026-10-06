@@ -29,12 +29,17 @@ export class SocketService {
 
     if (!this.socket) {
 
+      /* Keep trying, backing off to every 30 s. It gave up after 5 attempts
+         (about 10 s), so a server restart or deploy longer than that left a
+         shop-floor screen on the 30-second poll until someone reloaded it. */
       this.socket = io(environment.socketUrl, {
         transports: ['websocket'],
         autoConnect: false,
         reconnection: true,
-        reconnectionAttempts: 5,
+        reconnectionAttempts: Infinity,
         reconnectionDelay: 2000,
+        reconnectionDelayMax: 30000,
+        randomizationFactor: 0.5,
         auth: {
           token: localStorage.getItem('token')
         }
