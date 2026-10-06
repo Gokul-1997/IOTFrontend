@@ -75,13 +75,13 @@ export const routes: Routes = [
       { path: 'alarms', canActivate: [permissionGuard('page:alarms')], loadComponent: () => import('./pages/alarms/alarms.component').then(m => m.AlarmsComponent) },
       { path: 'downtime', canActivate: [permissionGuard('page:downtime')], loadComponent: () => import('./pages/downtime/downtime.component').then(m => m.DowntimeComponent) },
       { path: 'maintenance', canActivate: [permissionGuard('page:maintenance')], loadComponent: () => import('./pages/maintenance/maintenance.component').then(m => m.MaintenanceComponent) },
-      { path: 'security/2fa', loadComponent: () => import('./pages/security/twofa-setup.component').then(m => m.TwofaSetupComponent) },
 
       /* Every authenticated user reaches these — no permission key, because
          "view my own profile" and "change my own theme" are not a page a
          role can be denied. */
       { path: 'profile',       loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent) },
-      { path: 'settings',      canActivate: [companyUserGuard], loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
+      // everyone: light or dark lives here; S&T sees only that (no company, no notifications)
+      { path: 'settings',      loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
       { path: 'notifications', canActivate: [companyUserGuard], loadComponent: () => import('./pages/notifications/notifications.component').then(m => m.NotificationsComponent) },
 
       // ADMIN ROUTES (SNT_SUPER / COMPANY_ADMIN / ADMIN)

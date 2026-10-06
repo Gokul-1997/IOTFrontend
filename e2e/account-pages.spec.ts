@@ -85,7 +85,7 @@ test('the notification bell\'s "View all" link now lands on a real page', async 
   await expect(page.getByText('CNC-01 in alarm')).toBeVisible();
 });
 
-test('dark mode survives a reload', async ({ authedPage: page }) => {
+test('dark mode, switched in Settings, survives a reload and applies on other pages', async ({ authedPage: page }) => {
   await mockCommon(page);
   await page.setViewportSize({ width: 1400, height: 1000 });
   await page.goto('/factory');
@@ -94,17 +94,18 @@ test('dark mode survives a reload', async ({ authedPage: page }) => {
   // Force a known starting state — headless Chromium's own colour-scheme
   // preference is not this test's concern, only whether a choice persists.
   await page.evaluate(() => localStorage.setItem('theme', 'light'));
-  await page.reload();
-  await expect(page.locator('.mexa-kpi').first()).toBeVisible();
-
+  await page.goto('/settings');
   const html = page.locator('html');
   await expect(html).not.toHaveClass(/dark/);
 
-  await page.getByRole('button', { name: /switch to dark theme/i }).click();
+  // the switch lives in Settings only since 6 Oct 2026 — the header has no theme button
+  await page.getByRole('switch', { name: 'Dark mode' }).click();
   await expect(html).toHaveClass(/dark/);
 
+  await page.goto('/factory');
+  await expect(page.locator('.mexa-kpi').first()).toBeVisible();
+  await expect(html).toHaveClass(/dark/);
   await page.reload();
-  // before ThemeService, this assertion would fail — isDark reset to false
   await expect(page.locator('.mexa-kpi').first()).toBeVisible();
   await expect(html).toHaveClass(/dark/);
 });

@@ -38,7 +38,7 @@ export class ProfileComponent implements OnInit {
   loading = true;
   errorMsg = '';
   profile: any = null;
-  activeTab: 'account' | 'password' | 'security' = 'account';
+  activeTab: 'account' | 'password' = 'account';
   /* ── edit profile ── */
   editing = false;
   form = { email: '', mobile: '' };

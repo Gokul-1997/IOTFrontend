@@ -29,20 +29,25 @@ test.describe('the app\'s home address opens each role\'s own first page', () =>
   }
 });
 
-test('S&T has no Settings, Notifications or bell — and the URLs send it home', async ({ page }) => {
+/* S&T is sent no notifications. Since the header lost its light/dark button
+   (6 Oct 2026) S&T opens Settings for that switch alone. */
+test('S&T has no Notifications or bell — that URL sends it home — and Settings is light/dark only', async ({ page }) => {
   await seedAuth(page, { roles: ['SNT_SUPER'], is_snt_super: true, company_id: null, user_type: 'SNT_SUPER', username: 'superadmin' });
   await mockAll(page);
   await page.goto('/admin/companies');
   await page.getByRole('button', { name: /superadmin/ }).click();
   await expect(page.getByRole('link', { name: 'My Profile' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Settings' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Notifications' })).toHaveCount(0);
   await expect(page.locator('app-notification-bell')).toHaveCount(0);
 
-  for (const path of ['/settings', '/notifications']) {
-    await page.goto(path);
-    await expect(page).toHaveURL(/\/admin\/companies$/);
-  }
+  await page.goto('/notifications');
+  await expect(page).toHaveURL(/\/admin\/companies$/);
+
+  await page.goto('/settings');
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page.getByRole('switch', { name: 'Dark mode' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Notification types' })).toHaveCount(0);
 });
 
 test('Settings no longer offers an email digest', async ({ page }) => {
@@ -71,10 +76,10 @@ test('Settings lists every notification for a company admin', async ({ page }) =
   await expect(rows).toHaveText(['Alarms', 'Maintenance', 'Tickets', 'Program transfer', 'System']);
 });
 
-/* The header's Master menu is configuration only; 2FA is about the person
-   and sits in the account menu, where every role finds it. Before, a
-   2FA entry with no permission put a "Settings" menu in every role's bar. */
-test('a role with no master data has no Master menu, and finds 2FA in the account menu', async ({ page }) => {
+/* The header's Master menu is configuration only; Settings is about the
+   person and sits in the account menu, where every role finds it.
+   Two-step sign-in was removed on 6 Oct 2026. */
+test('a role with no master data has no Master menu, and finds Settings in the account menu', async ({ page }) => {
   await seedAuth(page, { roles: ['QUALITY'], username: 'quality', permissions: ['page:quality:view', 'page:analytics-oee:view'], company_permissions: company });
   await mockAll(page);
   await page.setViewportSize({ width: 1500, height: 900 });
@@ -82,7 +87,8 @@ test('a role with no master data has no Master menu, and finds 2FA in the accoun
   await expect(page.getByRole('button', { name: 'Master' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Settings', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: /Account menu/ }).click();
-  await expect(page.getByRole('link', { name: 'Security (2-step sign-in)' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /2-step|two-step/i })).toHaveCount(0);
 });
 
 /* Reports is one page: each role sees the tabs it holds, and opens on the

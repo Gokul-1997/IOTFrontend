@@ -2,7 +2,7 @@
   <div class="flex justify-between w-full">
     <div class="flex gap-2 items-center">
     <h1 class="mexa-title">Settings</h1>
-    <p class="mexa-subtitle">( Appearance and notifications )</p>
+    <p class="mexa-subtitle">( {{ subtitle }} )</p>
     </div>
     <div>
       <span *ngIf="saving" class="mexa-setting-hint">Saving…</span>
@@ -11,7 +11,8 @@
   </div>
 </div>
 
-<div class="set-grid w-1/2 mx-auto">
+<!-- full width on a phone (it was half a phone's width), capped on a desktop -->
+<div class="set-grid w-full max-w-3xl mx-auto">
   <!-- Appearance -->
   <!-- <section class="mexa-card">
     <h2 class="mexa-card-title mexa-card-title-left">Appearance</h2>
@@ -33,6 +34,8 @@
     </div>
     <!-- <p class="mexa-card-hint set-hint">Choose which notifications reach you.</p> -->
 
+    <!-- notification choices: a company's people only (S&T is sent none) -->
+    <ng-container *ngIf="!isSntSuper">
     <div *ngIf="loading" class="mexa-empty" aria-busy="true" role="status">
       <span class="ui-spinner" aria-hidden="true"></span> Loading preferences…
     </div>
@@ -53,6 +56,7 @@
     </div>
 
     <p *ngIf="saveErr" class="ui-error" role="alert">{{ saveErr }}</p>
+    </ng-container>
     <div class="mexa-setting">
       <div>
         <p class="mexa-setting-label" id="set-dark">Dark mode</p>
@@ -61,5 +65,26 @@
       <button type="button" role="switch" class="mexa-switch" aria-labelledby="set-dark"
         [attr.aria-checked]="theme.isDark()" (click)="theme.toggle()"></button>
     </div>
+  </section>
+
+  <!-- A company admin's Users and Roles, moved here from the header bar -->
+  <section *ngIf="companyAdmin" class="mexa-card" aria-labelledby="set-admin">
+    <h2 id="set-admin" class="mexa-card-title mexa-card-title-left">Administration</h2>
+    <a routerLink="/admin/users" class="mexa-setting set-link">
+      <span class="material-icons set-link-icon" aria-hidden="true">groups</span>
+      <span class="set-text">
+        <span class="mexa-setting-label block">Users</span>
+        <span class="mexa-setting-hint block">The people in your company and the role each one has</span>
+      </span>
+      <span class="material-icons set-chevron" aria-hidden="true">chevron_right</span>
+    </a>
+    <a routerLink="/admin/roles" class="mexa-setting set-link">
+      <span class="material-icons set-link-icon" aria-hidden="true">admin_panel_settings</span>
+      <span class="set-text">
+        <span class="mexa-setting-label block">Roles &amp; Permissions</span>
+        <span class="mexa-setting-hint block">What each role can see and do</span>
+      </span>
+      <span class="material-icons set-chevron" aria-hidden="true">chevron_right</span>
+    </a>
   </section>
 </div>

@@ -118,7 +118,7 @@ html, body { font-family: var(--font-ui); }
 /* Material components take the theme's font (styles.scss: typography Ubuntu),
    form controls inherit it (Tailwind preflight), and charts get it from
    window.Apex in main.ts. Codes that must line up character by character
-   (an API key, a two-step sign-in secret) keep a monospace face. */
+   (an API key, a device token) keep a monospace face. */
 
 /* ── 2. Type ─────────────────────────────────────────────────── */
 
