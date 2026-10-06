@@ -24,6 +24,7 @@
   display: inline-flex; align-items: center; gap: .4rem; flex: none;
   padding: .3rem .8rem; border-radius: 10px; font-size: .82rem; font-weight: 600; color: #fff;
   background: #64748b;
+  transition: background-color .3s ease;   /* Running → Alarm → Offline changes colour, not with a jump */
 }
 .mt-state.is-running   { background: #15803d; }
 .mt-state.is-idle      { background: #b45309; }
@@ -44,7 +45,7 @@
 .mt-gauges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .25rem; margin-bottom: .25rem; }
 .mt-gauge { text-align: center; min-width: 0; }
 .mt-gauge-label { margin: 0 0 -12px 0; font-size: .8rem; font-weight: 600; color: var(--mexa-ink); line-height: 1.2; min-height: 1.95em; }
-.mt-word { margin: .1rem 0 0; font-size: .78rem; font-weight: 700; }
+.mt-word { margin: .1rem 0 0; font-size: .78rem; font-weight: 700; transition: color .3s ease; }
 .mt-center { text-align: center; }
 
 /* ── fans and batteries ── */
@@ -54,7 +55,19 @@
 .mt-fans.is-one-row { align-content: center; }
 .mt-fan { text-align: center; padding: .15rem .35rem; min-width: 0; }
 .mt-fan:not(:nth-child(3n + 1)) { border-left: 1px solid var(--mexa-rule); }
-.mt-fan-icon { width: 1.9rem; height: 1.9rem; color: var(--mexa-ink); display: block; margin: 0 auto .25rem; }
+.mt-fan-icon { width: 1.9rem; height: 1.9rem; color: var(--mexa-ink); display: block; margin: 0 auto .25rem;
+                transition: color .3s ease; }
+.mt-fan.is-still .mt-fan-icon { color: var(--mexa-ink-3); }
+.mt-fan.is-fault .mt-fan-icon { color: #e03131; }
+
+/* A turning fan, and only a turning one. The whole <svg> turns — one
+   transform the browser runs off the main thread, no repaint per frame —
+   at a steady pace that says "running", not its rpm. Paused while the cards
+   are off-screen or the tab is hidden (appPauseOffscreen), still for anyone
+   who asked for less motion. */
+@keyframes mt-fan-spin { to { transform: rotate(360deg); } }
+.mt-fan-icon.is-spinning { animation: mt-fan-spin 1.2s linear infinite; }
+.is-paused .mt-fan-icon.is-spinning { animation-play-state: paused; }
 .mt-fan-name { margin: 0; font-size: .8rem; font-weight: 700; color: var(--mexa-ink); }
 .mt-fan-place { margin: .1rem 0 0; font-size: .7rem; color: var(--mexa-ink-2); line-height: 1.25; }
 .mt-fan-reading { margin: .1rem 0 0; font-size: .75rem; font-weight: 600; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
@@ -64,6 +77,14 @@
 .mt-tile-value { display: flex; align-items: center; justify-content: center; gap: .3rem; margin: .35rem 0 0;
                  font-size: 1.05rem; font-weight: 800; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
 .mt-battery { width: .8rem; height: 1.35rem; color: var(--mexa-ink); flex: none; }
+/* filled to its band (full / half / low / empty when not reported); a change of band slides */
+.mt-battery-fill { transform-box: fill-box; transform-origin: 50% 100%;
+                   transition: transform .4s cubic-bezier(.2, .8, .25, 1), fill .3s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mt-fan-icon.is-spinning { animation: none; }
+  .mt-state, .mt-word, .mt-fan-icon, .mt-battery-fill { transition: none; }
+}
 
 /* ── bottom row ── */
 .mt-current { font-size: .82rem; color: var(--mexa-ink-2); white-space: nowrap; }

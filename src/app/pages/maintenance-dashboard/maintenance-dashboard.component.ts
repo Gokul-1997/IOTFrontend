@@ -13,6 +13,7 @@ import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { SEVERITY } from '../../shared/severity';
+import { PauseOffscreenDirective } from '../../shared/pause-offscreen.directive';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 2 — Maintenance Dashboard
@@ -31,8 +32,15 @@ import { SEVERITY } from '../../shared/severity';
 
 const POLL_MS = 60_000;
 
-/** A fan tile: one the controller reports, or one of the design's positions. */
-interface FanTile { name: string; place: string; reading: string; status: string; }
+/** A fan tile: one the controller reports, or one of the design's positions.
+ *  `running` — the controller says it is turning; only then does its icon turn. */
+interface FanTile { name: string; place: string; reading: string; status: string; running: boolean; }
+
+/** A battery tile: its reading, its band, and how full its icon is drawn (0–1). */
+interface BatteryTile { value: string; word: string; level: number; }
+
+/** How full a battery icon is drawn, by band: the word under it says the same. */
+const BATTERY_LEVEL: Record<string, number> = { Healthy: 1, Stable: 0.55, Critical: 0.22 };
 
 /* The six fan positions the design shows, as a FANUC cabinet has them. */
 const DESIGN_FANS = [
@@ -58,7 +66,7 @@ const SIGNAL_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-maintenance-dashboard',
   standalone: true,
-  imports: [AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, ConditionGaugeComponent],
+  imports: [AutoApplyDirective, FilterPanelDirective, ReportDateDirective, PauseOffscreenDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, ConditionGaugeComponent],
   templateUrl: './maintenance-dashboard.component.html',
   styleUrl: './maintenance-dashboard.component.scss'
 })
@@ -112,11 +120,14 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
      positions the design names, each marked "Not reported". */
   fanTiles: FanTile[] = [];
   fansReported = false;
+  /** Any reported fan turning: the "CNC Fans" tile's icon turns too. */
+  fansRunning = false;
   /** Columns in the fan card: three, or fewer when fewer fans report, so two fans fill the card. */
   fanCols = 3;
-  /* The APC battery tile: volts when the controller sends them, else the
-     battery flag it keeps per axis. */
-  apcBattery: { value: string; word: string } = { value: '--', word: '' };
+  /* The battery tiles: volts when the controller sends them, else (APC) the
+     battery flag it keeps per axis; `level` is how full the icon is drawn. */
+  apcBattery: BatteryTile = { value: '--', word: '', level: 0 };
+  cncBattery: BatteryTile = { value: '--', word: '', level: 0 };
 
   private destroy$ = new Subject<void>();
   /** A filter change: fetch now, and start the minute's polling again from here. */
@@ -275,9 +286,11 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     this.fansReported = reported.length > 0;
     this.fanTiles = this.fansReported
       ? reported.slice(0, 6)
-      : DESIGN_FANS.map(f => ({ ...f, reading: '', status: 'Not reported' }));
+      : DESIGN_FANS.map(f => ({ ...f, reading: '', status: 'Not reported', running: false }));
     this.fanCols = Math.min(3, this.fanTiles.length);
+    this.fansRunning = this.fanTiles.some(f => f.running);
     this.apcBattery = this.batteryTile(this.focusRow?.apc_battery_voltage, this.focusRow?.apc_battery_status);
+    this.cncBattery = this.batteryTile(this.focusRow?.cnc_battery_voltage, null);
 
     /* Cycle time: run time per part in each hour. Hours with no part are
        left as gaps. Long-cycle machines (an HMC part can take an hour) read
@@ -450,16 +463,28 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   private fanTile(key: string, v: any): FanTile | null {
     const name = this.fanName(key);
     if (v === null || v === undefined || v === '') return null;
-    if (typeof v !== 'object') return { name, place: '', reading: '', status: this.fanWord(String(v)) };
+    if (typeof v !== 'object') {
+      // an older controller's word or number: "OK", 1, or a speed
+      const status = this.fanWord(String(v));
+      return { name, place: '', reading: '', status, running: status === 'Healthy' || (typeof v === 'number' && v > 1) };
+    }
     if (Array.isArray(v)) return null;
 
-    const rpm = typeof v.rpm === 'number' && Number.isFinite(v.rpm)
-      ? `${Math.round(v.rpm).toLocaleString('en-IN')} rpm` : '';
+    const hasRpm = typeof v.rpm === 'number' && Number.isFinite(v.rpm);
+    const rpm = hasRpm ? `${Math.round(v.rpm).toLocaleString('en-IN')} rpm` : '';
     const reading = (state: string) => [state, rpm].filter(Boolean).join(' · ');
-    if (v.fault === true) return { name, place: '', reading: reading('Fault'), status: 'Critical' };
-    if (v.on === false)   return { name, place: '', reading: reading('Off'), status: 'Stable' };
-    if (v.on === true || v.fault === false || rpm) return { name, place: '', reading: rpm || 'Running', status: 'Healthy' };
+    // turning: not faulted, not off, and a speed above 0 (or "on" when no speed is sent)
+    const running = v.fault !== true && v.on !== false && (hasRpm ? v.rpm > 0 : v.on === true);
+    if (v.fault === true) return { name, place: '', reading: reading('Fault'), status: 'Critical', running };
+    if (v.on === false)   return { name, place: '', reading: reading('Off'), status: 'Stable', running };
+    if (v.on === true || v.fault === false || rpm) return { name, place: '', reading: rpm || 'Running', status: 'Healthy', running };
     return null;
+  }
+
+  /** Fan tiles keep their element from one refresh to the next, so a turning
+   *  icon carries on turning instead of snapping back every minute. */
+  fanKey(_: number, f: FanTile): string {
+    return `${f.name}|${f.place}`;
   }
 
   /** "CNC_FAN1" → "CNC Fan 1", "radiator_fan2" → "Radiator Fan 2", the way the design names fans. */
@@ -474,20 +499,21 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
    * them; otherwise the battery flag per axis — true is a battery alarm on
    * that axis (`battery: {"X": false, ...}` from the collector).
    */
-  private batteryTile(volts: any, flags: any): { value: string; word: string } {
+  private batteryTile(volts: any, flags: any): BatteryTile {
     const axes = flags && typeof flags === 'object' && !Array.isArray(flags)
       ? Object.entries(flags).filter(([, low]) => typeof low === 'boolean') as [string, boolean][]
       : [];
     const low = axes.filter(([, isLow]) => isLow).map(([axis]) => axis);
     const flagWord = axes.length ? (low.length ? 'Critical' : 'Healthy') : '';
+    const tile = (value: string, word: string): BatteryTile => ({ value, word, level: BATTERY_LEVEL[word] ?? 0 });
 
     if (volts !== null && volts !== undefined && Number.isFinite(Number(volts))) {
       const voltWord = this.bandLow(volts, this.BATTERY_BANDS);
       const rank = (w: string) => ['', 'Healthy', 'Stable', 'Critical'].indexOf(w);
-      return { value: `${Number(volts).toFixed(2)} v`, word: rank(flagWord) > rank(voltWord) ? flagWord : voltWord };
+      return tile(`${Number(volts).toFixed(2)} v`, rank(flagWord) > rank(voltWord) ? flagWord : voltWord);
     }
-    if (!axes.length) return { value: '--', word: '' };
-    return { value: low.length ? `${low.join(', ')} low` : `${axes.map(([axis]) => axis).join(' ')} OK`, word: flagWord };
+    if (!axes.length) return tile('--', '');
+    return tile(low.length ? `${low.join(', ')} low` : `${axes.map(([axis]) => axis).join(' ')} OK`, flagWord);
   }
 
   /** A controller's fan value in the design's words. */

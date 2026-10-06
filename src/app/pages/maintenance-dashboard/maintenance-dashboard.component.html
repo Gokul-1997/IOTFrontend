@@ -157,12 +157,17 @@
       <ng-template #noServoTemp><p class="mexa-empty">Servo temperature not reported.</p></ng-template>
     </section>
 
-    <!-- fans and batteries -->
-    <div class="mt-cooling">
+    <!-- fans and batteries. A fan's icon turns only while the controller says
+         it is turning and the machine is reporting live; the battery icons
+         fill to their band. Motion pauses off-screen and in a hidden tab
+         (appPauseOffscreen) and stays still for reduced-motion users. -->
+    @let live = rowStatus(r) !== 'OFFLINE';
+    <div class="mt-cooling" appPauseOffscreen>
       <section class="mexa-card mt-fans" aria-label="Cooling fans"
                [class.is-one-row]="fanTiles.length <= fanCols" [style.--mt-fan-cols]="fanCols">
-        <div class="mt-fan" *ngFor="let f of fanTiles">
-          <svg class="mt-fan-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <div class="mt-fan" *ngFor="let f of fanTiles; trackBy: fanKey"
+             [class.is-still]="!f.running" [class.is-fault]="f.status === 'Critical'">
+          <svg class="mt-fan-icon" [class.is-spinning]="live && f.running" viewBox="0 0 24 24" aria-hidden="true">
             <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
               <path d="M12 12c0-4 1.2-7 3.6-7 2.4 0 3 3.2.6 5.2-1.3 1.1-2.8 1.5-4.2 1.8Z"/>
               <path d="M12 12c3.5 2 5.4 4.5 4.2 6.6-1.2 2.1-4.3 1-4.9-2-.4-1.7 0-3.2.7-4.6Z"/>
@@ -179,7 +184,7 @@
 
       <div class="mt-tiles">
         <section class="mexa-card mt-tile" aria-label="CNC fans">
-          <svg class="mt-fan-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <svg class="mt-fan-icon" [class.is-spinning]="live && fansRunning" viewBox="0 0 24 24" aria-hidden="true">
             <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
               <path d="M12 12c0-4 1.2-7 3.6-7 2.4 0 3 3.2.6 5.2-1.3 1.1-2.8 1.5-4.2 1.8Z"/>
               <path d="M12 12c3.5 2 5.4 4.5 4.2 6.6-1.2 2.1-4.3 1-4.9-2-.4-1.7 0-3.2.7-4.6Z"/>
@@ -193,15 +198,15 @@
         <section class="mexa-card mt-tile" aria-label="CNC battery">
           <p class="mt-tile-name">CNC battery</p>
           <p class="mt-tile-value">
-            <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><path d="M4.5 10h5M4.5 13.5h5M4.5 17h5" stroke="currentColor" stroke-width="1.6"/></svg>
-            <span>{{ r.cnc_battery_voltage != null ? (r.cnc_battery_voltage | number:'1.2-2') + ' v' : '--' }}</span>
+            <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><rect class="mt-battery-fill" x="3.6" y="5.6" width="6.8" height="14.8" rx=".8" [style.fill]="bandColour(cncBattery.word)" [style.transform]="'scaleY(' + cncBattery.level + ')'"/></svg>
+            <span>{{ cncBattery.value }}</span>
           </p>
-          <p class="mt-word" [ngClass]="bandText(bandLow(r.cnc_battery_voltage, BATTERY_BANDS))">{{ bandLow(r.cnc_battery_voltage, BATTERY_BANDS) || 'Not reported' }}</p>
+          <p class="mt-word" [ngClass]="bandText(cncBattery.word)">{{ cncBattery.word || 'Not reported' }}</p>
         </section>
         <section class="mexa-card mt-tile" aria-label="APC battery">
           <p class="mt-tile-name">APC battery</p>
           <p class="mt-tile-value">
-            <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><path d="M4.5 10h5M4.5 13.5h5M4.5 17h5" stroke="currentColor" stroke-width="1.6"/></svg>
+            <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><rect class="mt-battery-fill" x="3.6" y="5.6" width="6.8" height="14.8" rx=".8" [style.fill]="bandColour(apcBattery.word)" [style.transform]="'scaleY(' + apcBattery.level + ')'"/></svg>
             <span>{{ apcBattery.value }}</span>
           </p>
           <p class="mt-word" [ngClass]="bandText(apcBattery.word)">{{ apcBattery.word || 'Not reported' }}</p>
