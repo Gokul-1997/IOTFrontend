@@ -49,12 +49,15 @@
 
 /* ── fans and batteries ── */
 .mt-cooling { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
-.mt-fans { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem 0; }
+.mt-fans { flex: 1; display: grid; grid-template-columns: repeat(var(--mt-fan-cols, 3), minmax(0, 1fr)); gap: .6rem 0; }
+/* one row of fans (a controller with two) sits in the middle of the card, not along its top */
+.mt-fans.is-one-row { align-content: center; }
 .mt-fan { text-align: center; padding: .15rem .35rem; min-width: 0; }
 .mt-fan:not(:nth-child(3n + 1)) { border-left: 1px solid var(--mexa-rule); }
 .mt-fan-icon { width: 1.9rem; height: 1.9rem; color: var(--mexa-ink); display: block; margin: 0 auto .25rem; }
 .mt-fan-name { margin: 0; font-size: .8rem; font-weight: 700; color: var(--mexa-ink); }
 .mt-fan-place { margin: .1rem 0 0; font-size: .7rem; color: var(--mexa-ink-2); line-height: 1.25; }
+.mt-fan-reading { margin: .1rem 0 0; font-size: .75rem; font-weight: 600; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
 .mt-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; }
 .mt-tile { text-align: center; padding: .7rem .4rem !important; }
 .mt-tile-name { margin: 0; font-size: .8rem; font-weight: 600; color: var(--mexa-ink); }

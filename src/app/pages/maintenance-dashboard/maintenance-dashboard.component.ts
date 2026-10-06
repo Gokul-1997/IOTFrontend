@@ -31,6 +31,9 @@ import { SEVERITY } from '../../shared/severity';
 
 const POLL_MS = 60_000;
 
+/** A fan tile: one the controller reports, or one of the design's positions. */
+interface FanTile { name: string; place: string; reading: string; status: string; }
+
 /* The six fan positions the design shows, as a FANUC cabinet has them. */
 const DESIGN_FANS = [
   { name: 'Internal Fan 1', place: 'Power Supply · Spindle Motor' },
@@ -47,7 +50,7 @@ const SIGNAL_LABELS: Record<string, string> = {
   servo_temperature:     'Servo motor temperature',
   spindle_temperature:   'Spindle motor temperature',
   encoder_temperature:   'Encoder temperature',
-  battery_status:        'CNC / APC battery voltage',
+  battery_status:        'CNC / APC battery',
   insulation_resistance: 'Insulation resistance',
   fan_amplifier_status:  'Cooling fan & amplifier status'
 };
@@ -91,7 +94,6 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   servoTempSeries: any[] = [];
   servoTempMissing = '';
   hasEncoderTemp   = false;
-  fanList: { name: string; value: string }[] = [];
   conditionCategories: string[] = [];
   /* One row per axis. The three per-axis readings were three separate
      charts of three numbers each; as rows they compare across the axis,
@@ -108,8 +110,13 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
 
   /* Fan tiles: the controller's own list when it sends one, else the six
      positions the design names, each marked "Not reported". */
-  fanTiles: { name: string; place: string; status: string }[] = [];
+  fanTiles: FanTile[] = [];
   fansReported = false;
+  /** Columns in the fan card: three, or fewer when fewer fans report, so two fans fill the card. */
+  fanCols = 3;
+  /* The APC battery tile: volts when the controller sends them, else the
+     battery flag it keeps per axis. */
+  apcBattery: { value: string; word: string } = { value: '--', word: '' };
 
   private destroy$ = new Subject<void>();
   /** A filter change: fetch now, and start the minute's polling again from here. */
@@ -262,13 +269,15 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     }));
 
     const fans = this.focusRow?.fan_status;
-    this.fanList = fans && typeof fans === 'object' && !Array.isArray(fans)
-      ? Object.entries(fans).map(([k, v]) => ({ name: k.replace(/_/g, ' '), value: String(v) }))
+    const reported = fans && typeof fans === 'object' && !Array.isArray(fans)
+      ? Object.entries(fans).map(([k, v]) => this.fanTile(k, v)).filter((f): f is FanTile => f !== null)
       : [];
-    this.fansReported = this.fanList.length > 0;
+    this.fansReported = reported.length > 0;
     this.fanTiles = this.fansReported
-      ? this.fanList.slice(0, 6).map(f => ({ name: f.name, place: '', status: this.fanWord(f.value) }))
-      : DESIGN_FANS.map(f => ({ ...f, status: 'Not reported' }));
+      ? reported.slice(0, 6)
+      : DESIGN_FANS.map(f => ({ ...f, reading: '', status: 'Not reported' }));
+    this.fanCols = Math.min(3, this.fanTiles.length);
+    this.apcBattery = this.batteryTile(this.focusRow?.apc_battery_voltage, this.focusRow?.apc_battery_status);
 
     /* Cycle time: run time per part in each hour. Hours with no part are
        left as gaps. Long-cycle machines (an HMC part can take an hour) read
@@ -432,12 +441,61 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     return n < b.critical ? 'Critical' : n < b.stable ? 'Stable' : 'Healthy';
   }
 
+  /**
+   * One reported fan as its tile says it. The collector stores a fan as
+   * {on, fault, rpm} (cnc_fans) — a fault is Critical, a fan that is off but
+   * not faulted is Stable — or, from older controllers, a bare number or
+   * word, read as before.
+   */
+  private fanTile(key: string, v: any): FanTile | null {
+    const name = this.fanName(key);
+    if (v === null || v === undefined || v === '') return null;
+    if (typeof v !== 'object') return { name, place: '', reading: '', status: this.fanWord(String(v)) };
+    if (Array.isArray(v)) return null;
+
+    const rpm = typeof v.rpm === 'number' && Number.isFinite(v.rpm)
+      ? `${Math.round(v.rpm).toLocaleString('en-IN')} rpm` : '';
+    const reading = (state: string) => [state, rpm].filter(Boolean).join(' · ');
+    if (v.fault === true) return { name, place: '', reading: reading('Fault'), status: 'Critical' };
+    if (v.on === false)   return { name, place: '', reading: reading('Off'), status: 'Stable' };
+    if (v.on === true || v.fault === false || rpm) return { name, place: '', reading: rpm || 'Running', status: 'Healthy' };
+    return null;
+  }
+
+  /** "CNC_FAN1" → "CNC Fan 1", "radiator_fan2" → "Radiator Fan 2", the way the design names fans. */
+  private fanName(key: string): string {
+    return String(key).replace(/[_-]+/g, ' ').replace(/([a-z])(\d)/gi, '$1 $2').trim().split(/\s+/)
+      .map(w => /^fan$/i.test(w) ? 'Fan' : w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
+
+  /**
+   * The APC battery tile. Volts, banded as before, when the controller sends
+   * them; otherwise the battery flag per axis — true is a battery alarm on
+   * that axis (`battery: {"X": false, ...}` from the collector).
+   */
+  private batteryTile(volts: any, flags: any): { value: string; word: string } {
+    const axes = flags && typeof flags === 'object' && !Array.isArray(flags)
+      ? Object.entries(flags).filter(([, low]) => typeof low === 'boolean') as [string, boolean][]
+      : [];
+    const low = axes.filter(([, isLow]) => isLow).map(([axis]) => axis);
+    const flagWord = axes.length ? (low.length ? 'Critical' : 'Healthy') : '';
+
+    if (volts !== null && volts !== undefined && Number.isFinite(Number(volts))) {
+      const voltWord = this.bandLow(volts, this.BATTERY_BANDS);
+      const rank = (w: string) => ['', 'Healthy', 'Stable', 'Critical'].indexOf(w);
+      return { value: `${Number(volts).toFixed(2)} v`, word: rank(flagWord) > rank(voltWord) ? flagWord : voltWord };
+    }
+    if (!axes.length) return { value: '--', word: '' };
+    return { value: low.length ? `${low.join(', ')} low` : `${axes.map(([axis]) => axis).join(' ')} OK`, word: flagWord };
+  }
+
   /** A controller's fan value in the design's words. */
   private fanWord(v: string): string {
     const s = String(v).toLowerCase();
     if (['ok', 'true', 'normal', 'healthy', '1', 'on'].includes(s)) return 'Healthy';
     if (['warn', 'warning', 'stable', 'low'].includes(s)) return 'Stable';
-    if (['alarm', 'fail', 'failed', 'false', 'critical', 'error', 'stop', '0', 'off'].includes(s)) return 'Critical';
+    if (['ng', 'alarm', 'fail', 'failed', 'false', 'critical', 'error', 'stop', '0', 'off'].includes(s)) return 'Critical';
     return v;
   }
 

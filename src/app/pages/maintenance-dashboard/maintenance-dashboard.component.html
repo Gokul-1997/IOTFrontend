@@ -159,7 +159,8 @@
 
     <!-- fans and batteries -->
     <div class="mt-cooling">
-      <section class="mexa-card mt-fans" aria-label="Cooling fans">
+      <section class="mexa-card mt-fans" aria-label="Cooling fans"
+               [class.is-one-row]="fanTiles.length <= fanCols" [style.--mt-fan-cols]="fanCols">
         <div class="mt-fan" *ngFor="let f of fanTiles">
           <svg class="mt-fan-icon" viewBox="0 0 24 24" aria-hidden="true">
             <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
@@ -171,6 +172,7 @@
           </svg>
           <p class="mt-fan-name">{{ f.name }}</p>
           <p class="mt-fan-place" *ngIf="f.place">{{ f.place }}</p>
+          <p class="mt-fan-reading" *ngIf="f.reading">{{ f.reading }}</p>
           <p class="mt-word" [ngClass]="bandText(f.status)">{{ f.status }}</p>
         </div>
       </section>
@@ -200,9 +202,9 @@
           <p class="mt-tile-name">APC battery</p>
           <p class="mt-tile-value">
             <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><path d="M4.5 10h5M4.5 13.5h5M4.5 17h5" stroke="currentColor" stroke-width="1.6"/></svg>
-            <span>{{ r.apc_battery_voltage != null ? (r.apc_battery_voltage | number:'1.2-2') + ' v' : '--' }}</span>
+            <span>{{ apcBattery.value }}</span>
           </p>
-          <p class="mt-word" [ngClass]="bandText(bandLow(r.apc_battery_voltage, BATTERY_BANDS))">{{ bandLow(r.apc_battery_voltage, BATTERY_BANDS) || 'Not reported' }}</p>
+          <p class="mt-word" [ngClass]="bandText(apcBattery.word)">{{ apcBattery.word || 'Not reported' }}</p>
         </section>
       </div>
     </div>
