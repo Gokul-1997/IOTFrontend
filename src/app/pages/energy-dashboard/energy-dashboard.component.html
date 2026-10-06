@@ -32,7 +32,7 @@
     </span>
     <!-- Where the cost per kWh is set. Up here so it can be found; it used
          to sit in the machine table's toolbar at the bottom of the page. -->
-    <a *ngIf="canEditSettings" routerLink="/energy-tariff" class="mexa-submit">Tariff &amp; limits</a>
+    <a *ngIf="canEditSettings" routerLink="/energy-tariff" class="mexa-submit">Tariff &amp; rates</a>
   </div>
 </form>
 
@@ -70,7 +70,7 @@
     </ng-container>
     <!-- said plainly, rather than pointing at a button this person can't see -->
     <ng-container *ngIf="!canEditSettings">
-      Your company admin sets it under <strong>Master → Energy Tariff</strong>.
+      Your company admin sets it under <strong>Master → Tariff &amp; Rates</strong>.
     </ng-container>
   </p>
 

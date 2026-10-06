@@ -120,7 +120,7 @@ test('Quality: a view-only role sees no edit icons; a role with Edit does', asyn
   await expect(page.locator('.absolute.bottom-2.right-2')).toHaveCount(0);
 });
 
-/* Tariff & Limits is its own page under Master, opened by the Energy
+/* Tariff & Rates is its own page under Master, opened by the Energy
    "Tariff Settings" grant — the same one the API checks before saving. */
 test('Energy: whoever can set the tariff finds it in the top bar and under Master', async ({ page }) => {
   await seedAuth(page, { roles: ['COMPANY_ADMIN'], company_permissions: company });
@@ -128,12 +128,12 @@ test('Energy: whoever can set the tariff finds it in the top bar and under Maste
   await page.setViewportSize({ width: 1500, height: 900 });
   await page.goto('/energy-dashboard');
   await expect(page.getByRole('heading', { name: 'Energy Dashboard' })).toBeVisible();
-  await expect(page.locator('form.mexa-titlebar').getByRole('link', { name: 'Tariff & limits' })).toHaveAttribute('href', '/energy-tariff');
+  await expect(page.locator('form.mexa-titlebar').getByRole('link', { name: 'Tariff & rates' })).toHaveAttribute('href', '/energy-tariff');
 
   await page.getByRole('button', { name: 'Master' }).click();
-  await page.locator('.nav-dropdown').getByRole('link', { name: 'Energy Tariff' }).click();
+  await page.locator('.nav-dropdown').getByRole('link', { name: 'Tariff & Rates' }).click();
   await expect(page).toHaveURL(/\/energy-tariff$/);
-  await expect(page.getByRole('heading', { name: 'Tariff & Limits' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tariff & Rates' })).toBeVisible();
   await expect(page.getByLabel('Cost per kWh')).toBeVisible();
 });
 
@@ -154,7 +154,7 @@ test('Energy: a view-only role gets no tariff link, and the tariff page refuses 
   await mockAll(page);
   await page.goto('/energy-dashboard');
   await expect(page.getByRole('heading', { name: 'Energy Dashboard' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Tariff & limits' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Tariff & rates' })).toHaveCount(0);
   await page.goto('/energy-tariff');
   await expect(page).toHaveURL(/\/no-access$/);
 });

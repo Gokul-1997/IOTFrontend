@@ -116,3 +116,56 @@ test('Machines: the hour rate is set on the machine, and an unchanged rate is no
   await expect.poll(() => put).not.toBeNull();
   expect(put).toEqual({ hour_rate: 750 });
 });
+
+test('Tariff & Rates: one page for the EB tariff and every machine\'s hour rate', async ({ page }) => {
+  await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
+  const puts: Record<string, any> = {};
+  await mock(page, {
+    '**/api/dashboard/energy/settings*': ok([]),
+    '**/api/machines?*': { status: 'success', total: 3, data: [
+      { id: 35, machine_serial_no: 'VMC - 10 - M', model: 'VL100G', hour_rate: null, is_active: true },
+      { id: 19, machine_serial_no: 'VMC - 2 - F', model: 'VL1000', hour_rate: '380.00', is_active: true },
+      { id: 25, machine_serial_no: 'HMC - 7 - F', model: 'HM400', hour_rate: null, is_active: true } ] }
+  });
+  await page.route(/\/api\/machines\/\d+$/, (r: any) => {
+    puts[r.request().url().split('/').pop()!] = JSON.parse(r.request().postData() || '{}');
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'success', data: {} }) });
+  });
+  await page.setViewportSize({ width: 1500, height: 1000 });
+  await page.goto('/energy-tariff');
+  await expect(page.getByRole('heading', { name: 'Tariff & Rates' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /electricity tariff — ₹ per unit/ })).toBeVisible();
+
+  const table = page.getByRole('region', { name: 'Machine hour rates' });
+  // in the order the plant counts them, VMC - 2 before VMC - 10
+  await expect(table.locator('tbody th')).toHaveText(['HMC - 7 - F', 'VMC - 2 - F', 'VMC - 10 - M']);
+  await expect(page.getByLabel('Hour rate of VMC - 2 - F, rupees per hour')).toHaveValue('380');
+
+  const save = page.getByRole('button', { name: 'Save hour rates' });
+  await expect(save).toBeDisabled();
+  await page.getByLabel('Hour rate of HMC - 7 - F, rupees per hour').fill('1000');
+  await page.getByLabel('Hour rate of VMC - 10 - M, rupees per hour').fill('380');
+  await expect(page.getByText('2 changed, not saved yet')).toBeVisible();
+  await save.click();
+  await expect.poll(() => Object.keys(puts).sort()).toEqual(['25', '35']);
+  expect(puts['25']).toEqual({ hour_rate: 1000 });
+  expect(puts['35']).toEqual({ hour_rate: 380 });
+  await expect(save).toBeDisabled();
+});
+
+test('Tariff & Rates: a rate out of range is refused before anything is sent', async ({ page }) => {
+  await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
+  let sent = 0;
+  await mock(page, {
+    '**/api/dashboard/energy/settings*': ok([]),
+    '**/api/machines?*': { status: 'success', total: 1, data: [
+      { id: 25, machine_serial_no: 'HMC - 7 - F', model: 'HM400', hour_rate: null, is_active: true } ] }
+  });
+  await page.route(/\/api\/machines\/\d+$/, (r: any) => { sent++; return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }); });
+  await page.setViewportSize({ width: 1500, height: 1000 });
+  await page.goto('/energy-tariff');
+  await page.getByLabel('Hour rate of HMC - 7 - F, rupees per hour').fill('-5');
+  await page.getByRole('button', { name: 'Save hour rates' }).click();
+  await expect(page.getByRole('alert')).toHaveText('An hour rate must be from 0 to 10,00,000 rupees.');
+  expect(sent).toBe(0);
+});

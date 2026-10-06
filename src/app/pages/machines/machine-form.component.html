@@ -215,7 +215,7 @@
                        [attr.aria-describedby]="form.get('hour_rate')?.invalid && form.get('hour_rate')?.touched ? 'mfRateErr' : 'mfRateHint'" />
                 <span class="ui-unit" aria-hidden="true">₹/hour</span>
               </div>
-              <p *ngIf="!(form.get('hour_rate')?.invalid && form.get('hour_rate')?.touched)" id="mfRateHint" class="ui-hint">Leave blank if not known.</p>
+              <p *ngIf="!(form.get('hour_rate')?.invalid && form.get('hour_rate')?.touched)" id="mfRateHint" class="ui-hint">Leave blank if not known. Every machine's rate can be set at once on Master → Tariff &amp; Rates.</p>
               <p *ngIf="form.get('hour_rate')?.invalid && form.get('hour_rate')?.touched" id="mfRateErr" class="ui-error" role="alert">
                 Enter rupees per hour, from 0 to 10,00,000.
               </p>
