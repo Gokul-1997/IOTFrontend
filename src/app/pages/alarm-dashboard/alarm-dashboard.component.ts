@@ -362,7 +362,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
       xaxis:  { categories: this.trendCategories },
       yaxis:  { title: { text: 'No. of Alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark' },
+      tooltip:{ theme: 'light' },
       noData: { text: 'No alarms in this period' }
     };
   });
@@ -371,7 +371,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   get machineChart(): any {
     return this.charts.memo('machineChart', () => {
     return {
-      chart:  { type: 'bar', height:180, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'bar', height:220, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
       colors: this.palette,
       dataLabels: { enabled: false },
@@ -381,7 +381,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
       yaxis:  { title: { text: 'No. of Alarms' }, 
       labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark' },
+      tooltip:{ theme: 'light' },
       noData: { text: 'No alarms in this period' }
     };
   });

@@ -247,7 +247,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
   get shiftChart(): any {
     return this.charts.memo('shiftChart', () => {
     return {
-      chart:  { type: 'bar', height: 150, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 6, columnWidth: '45%' } },
       dataLabels: { enabled: true },
       colors: ['#2B3990'],
@@ -281,16 +281,20 @@ export class FactoryComponent implements OnInit, OnDestroy {
   get energyChart(): any {
     return this.charts.memo('energyChart', () => {
     return {
-      chart:  { height: 170, type: 'line', toolbar: { show: false }, fontFamily: 'inherit', sparkline: { enabled: false } },
+      chart:  { height: 230, 
+      type: 'line', 
+      toolbar: { show: false }, 
+      fontFamily: 'inherit', 
+      sparkline: { enabled: false } },
       stroke: { width: 2, curve: 'straight' },
       colors: ['#9b7ec8'],
       markers: { size: 4 },
       dataLabels: { enabled: false },
       // a small chart: every fourth hour, level, instead of 24 slanted labels on top of each other
-      xaxis:  { categories: this.trendCategories, tickAmount: 6, title: { text: 'Hour' }, labels: { rotate: 0, hideOverlappingLabels: true } },
+      xaxis:  { categories: this.trendCategories, tickAmount: 6, title: { text: 'Hour', offsetY: -30 }, labels: { rotate: -60, rotateAlways: true, hideOverlappingLabels: true } },
       yaxis:  { min: 0, title: { text: 'Units' }, labels: { formatter: compactQty } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark', y: { formatter: (v: number) => `${qty(v, 2)} kWh` } }
+      tooltip:{ theme: 'light', y: { formatter: (v: number) => `${qty(v, 2)} kWh` } }
     };
   });
   }
@@ -345,11 +349,11 @@ export class FactoryComponent implements OnInit, OnDestroy {
   get oeeRadial(): any {
     return this.charts.memo('oeeRadial', () => {
     return {
-      chart: { type: 'radialBar', height: 220, fontFamily: 'inherit' },
+      chart: { type: 'radialBar', height: 280, fontFamily: 'inherit' },
       plotOptions: {
         radialBar: {
           startAngle: -168, endAngle: 168,
-          hollow: { size: '42%' },
+          hollow: { size: '50%' },
           track: { background: '#eceaf5', strokeWidth: '100%' },
           dataLabels: {
             name: { fontSize: '1.1rem', offsetY: -6, color: '#1f2430' },
@@ -368,7 +372,17 @@ export class FactoryComponent implements OnInit, OnDestroy {
       labels: ['Availability', 'Performance', 'Quality'],
       stroke: { lineCap: 'round' },
       legend: { show: false },
-      noData: { text: 'No OEE recorded for this period' }
+      noData: { text: 'No OEE recorded for this period' },
+      responsive: [
+        {
+          breakpoint: 1600,
+          options: {
+            chart: {
+              height: 360
+            }
+          }
+        }
+      ]
     };
   });
   }
@@ -376,7 +390,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
   get runtimeDonut(): any {
     return this.charts.memo('runtimeDonut', () => {
     return {
-      chart: { type: 'donut', height: 200, fontFamily: 'inherit' },
+      chart: { type: 'donut', height: 280, fontFamily: 'inherit' },
       labels: ['Run Time', 'Idle Time'],
       colors: ['#22c55e', '#f5a623'],
       dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%`,

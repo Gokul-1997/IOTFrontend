@@ -59,13 +59,13 @@
 
       <!-- view mode -->
       <dl *ngIf="!editing" class="prof-dl">
-        <div><dt>Username</dt><dd>{{ profile.username }}</dd></div>
-        <div><dt>Role</dt><dd>{{ roleLabel(profile.user_type) }}</dd></div>
-        <div><dt>Email</dt><dd>{{ profile.email || '--' }}</dd></div>
-        <div><dt>Mobile</dt><dd>{{ profile.mobile || '--' }}</dd></div>
-        <div><dt>Company</dt><dd>{{ profile.company_name || '--' }}</dd></div>
-        <div><dt>Plant</dt><dd>{{ profile.plant_name || '--' }}</dd></div>
-        <div><dt>Last login</dt>
+        <div class="txt-card"><dt>Username</dt><dd>{{ profile.username }}</dd></div>
+        <div class="txt-card"><dt>Role</dt><dd>{{ roleLabel(profile.user_type) }}</dd></div>
+        <div class="txt-card"><dt>Email</dt><dd>{{ profile.email || '--' }}</dd></div>
+        <div class="txt-card"><dt>Mobile</dt><dd>{{ profile.mobile || '--' }}</dd></div>
+        <div class="txt-card"><dt>Company</dt><dd>{{ profile.company_name || '--' }}</dd></div>
+        <div class="txt-card"><dt>Plant</dt><dd>{{ profile.plant_name || '--' }}</dd></div>
+        <div class="txt-card"><dt>Last login</dt>
           <dd>
             {{ profile.last_login_at ? (profile.last_login_at | date:'d MMM y, h:mm:ss a') : 'This is your first login' }}
           </dd>

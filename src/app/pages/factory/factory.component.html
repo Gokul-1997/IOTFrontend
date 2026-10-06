@@ -150,27 +150,36 @@
   <div class="mexa-grid xl:grid-cols-4 lg:grid-cols-2">
 
     <section class="mexa-card">
+      <div class="flex flex-col justify-center">
       <h2 class="mexa-card-title">Overall OEE</h2>
-      <div class="-mt-4">
+      
+      <div class="">
       <apx-chart *ngIf="oeeRadialSeries.length"
         [series]="oeeRadialSeries" [chart]="oeeRadial.chart" [plotOptions]="oeeRadial.plotOptions"
         [colors]="oeeRadial.colors" [labels]="oeeRadial.labels" [stroke]="oeeRadial.stroke"
         [legend]="oeeRadial.legend" [noData]="oeeRadial.noData"></apx-chart>
         </div>
 
-      <div class="grid grid-cols-3 gap-2 text-center mt-2">
+      <div class="grid grid-cols-3 gap-2 text-center mt-3">
         <div>
-          <span class="mexa-rank-sub"><span class="circ avail"></span> Availability <app-metric-help topic="availability"></app-metric-help></span>
+          <span class="mexa-rank-sub"><span class="circ avail"></span> Availability 
+          <!-- <app-metric-help topic="availability"></app-metric-help> -->
+        </span>
           <p class="font-bold text-[--mexa-ink]">{{ pctText(data.oee.availability) }}</p>
         </div>
         <div>
-          <span class="mexa-rank-sub"><span class="circ perf"></span> Performance <app-metric-help topic="performance"></app-metric-help></span>
+          <span class="mexa-rank-sub"><span class="circ perf"></span> Performance 
+          <!-- <app-metric-help topic="performance"></app-metric-help> -->
+        </span>
           <p class="font-bold text-[--mexa-ink]">{{ pctText(data.oee.performance) }}</p>
         </div>
         <div>
-          <span class="mexa-rank-sub"><span class="circ qual"></span> Quality <app-metric-help topic="quality"></app-metric-help></span>
+          <span class="mexa-rank-sub"><span class="circ qual"></span> Quality 
+          <!-- <app-metric-help topic="quality"></app-metric-help> -->
+        </span>
           <p class="font-bold text-[--mexa-ink]">{{ pctText(data.oee.quality) }}</p>
         </div>
+      </div>
       </div>
     </section>
 
@@ -187,11 +196,15 @@
 
       <div class="grid grid-cols-2 gap-2 text-center mt-1" *ngIf="runtimeSeries.length">
         <div>
-          <span class="mexa-rank-sub"><span class="circ run"></span> Run Time <app-metric-help topic="run_time"></app-metric-help></span>
+          <span class="mexa-rank-sub"><span class="circ run"></span> Run Time 
+          <!-- <app-metric-help topic="run_time"></app-metric-help> -->
+        </span>
           <p class="font-bold text-[--mexa-ink]">{{ hm(data.time.run_seconds) }}</p>
         </div>
         <div>
-          <span class="mexa-rank-sub"><span class="circ idle"></span> Idle Time <app-metric-help topic="idle_time"></app-metric-help></span>
+          <span class="mexa-rank-sub"><span class="circ idle"></span> Idle Time 
+          <!-- <app-metric-help topic="idle_time"></app-metric-help> -->
+        </span>
           <p class="font-bold text-[--mexa-ink]">{{ hm(data.time.idle_seconds) }}</p>
         </div>
       </div>
@@ -231,14 +244,14 @@
       <h2 class="mexa-card-title">Energy Cost Analysis</h2>
 
       <div class="grid grid-cols-2 gap-2 mb-3">
-        <div class="rounded-xl p-3 text-white" style="background:#3b63b0">
+        <div class="rounded-xl p-2 text-white" style="background:#3b63b0">
           <span class="block text-xs">Today's Cost</span>
           <p class="text-base font-bold">{{ money(data.energy.cost_day) }}</p>
           <span *ngIf="data.energy.day_vs_yesterday_pct !== null" class="block text-xs">
-            {{ change(data.energy.day_vs_yesterday_pct) }} vs Yesterday
+            {{ change(data.energy.day_vs_yesterday_pct) }} vs Yest
           </span>
         </div>
-        <div class="rounded-xl p-3 text-white" style="background:#6b7280">
+        <div class="rounded-xl p-2 text-white" style="background:#6b7280">
           <span class="block text-xs">Monthly Cost</span>
           <p class="text-base font-bold">{{ money(data.energy.cost_month) }}</p>
           <span *ngIf="data.energy.month_vs_last_pct !== null" class="block text-xs">
@@ -259,11 +272,13 @@
       </p>
 
       <h3 class="mexa-card-title mexa-card-title-left !mb-1">Energy Consumption Trend</h3>
+      <div style="height: 200px; overflow: hidden;">
       <apx-chart *ngIf="energySeries.length"
         [series]="energySeries" [chart]="energyChart.chart" [stroke]="energyChart.stroke"
         [colors]="energyChart.colors" [markers]="energyChart.markers" [dataLabels]="energyChart.dataLabels"
         [xaxis]="energyChart.xaxis" [yaxis]="energyChart.yaxis" [grid]="energyChart.grid"
         [tooltip]="energyChart.tooltip"></apx-chart>
+        </div>
       <p *ngIf="!energySeries.length" class="mexa-card-hint text-center !mt-2">
         No machine is reporting an energy reading yet.
       </p>

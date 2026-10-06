@@ -44,6 +44,38 @@ export class SettingsComponent implements OnInit {
     { key: 'notify_system',            label: 'System',            hint: 'Account and platform announcements' }
   ];
 
+  isDarkMode = false;
+
+toggleDarkMode(): void {
+  this.isDarkMode = !this.isDarkMode;
+
+  if (this.isDarkMode) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+}
+  getNotificationIcon(key: string): string {
+  switch (key) {
+    case 'notify_alarm':
+      return 'notifications_active';
+
+    case 'notify_maintenance':
+      return 'build';
+
+    case 'notify_ticket':
+      return 'confirmation_number';
+
+    case 'notify_program_transfer':
+      return 'swap_horiz';
+
+    case 'notify_system':
+      return 'settings';
+
+    default:
+      return 'notifications';
+  }
+}
   /* Only the notifications this person's role can receive. Every role saw
      all five — HR could switch Program transfer alerts on and off although
      nothing ever sent one to HR. The API sends alarms only to the same roles. */

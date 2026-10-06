@@ -42,21 +42,43 @@
     </div>
 
     <div *ngIf="!loading && !errorMsg" role="group" aria-label="Notification types">
-      <div *ngFor="let row of visibleRows" class="mexa-setting">
-        <div class="set-text">
-          <p class="mexa-setting-label">{{ row.label }}</p>
-          <p class="mexa-setting-hint">{{ row.hint }}</p>
-        </div>
-        <button type="button" role="switch" class="mexa-switch" [attr.aria-checked]="!!prefs[row.key]"
-          [attr.aria-label]="row.label" (click)="toggle(row.key)"></button>
-      </div>
+  <div *ngFor="let row of visibleRows" class="mexa-setting">
+    <div class="flex gap-2">
+    <div class="notification-icon" [ngClass]="'icon-' + row.key">
+      <span class="material-icons" aria-hidden="true">
+        {{ getNotificationIcon(row.key) }}
+      </span>
     </div>
+
+    <div class="set-text">
+      <p class="mexa-setting-label">{{ row.label }}</p>
+      <p class="mexa-setting-hint">{{ row.hint }}</p>
+    </div>
+</div>
+    <button
+      type="button"
+      role="switch"
+      class="mexa-switch"
+      [attr.aria-checked]="!!prefs[row.key]"
+      [attr.aria-label]="row.label"
+      (click)="toggle(row.key)">
+    </button>
+
+  </div>
+</div>
 
     <p *ngIf="saveErr" class="ui-error" role="alert">{{ saveErr }}</p>
     <div class="mexa-setting">
+      <div class="flex gap-2">
+      <div class="notification-icon icon-theme_change" (click)="toggleDarkMode()" >
+        <span class="material-icons" aria-hidden="true">
+          {{ isDarkMode ? 'dark_mode' : 'light_mode' }}
+        </span>
+      </div>
       <div>
         <p class="mexa-setting-label" id="set-dark">Dark mode</p>
         <p class="mexa-setting-hint">Applies everywhere and is remembered next time you sign in.</p>
+      </div>
       </div>
       <button type="button" role="switch" class="mexa-switch" aria-labelledby="set-dark"
         [attr.aria-checked]="theme.isDark()" (click)="theme.toggle()"></button>

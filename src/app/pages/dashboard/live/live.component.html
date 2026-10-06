@@ -83,96 +83,167 @@
   <div class="grid grid-cols-1 xl:grid-cols-12 gap-2">
 
     <!-- MACHINE CARD -->
-    <div class="xl:col-span-6 mexa-lift rounded-xl border-big p-2 flex flex-col md:flex-row gap-6 "
+    <div
+  class="xl:col-span-6 mexa-lift rounded-xl border-big p-2 flex flex-col md:flex-row gap-4"
+  [ngClass]="{
+    'green-full': liveStatus === 'RUNNING',
+    'yellow-full': liveStatus === 'IDLE',
+    'gray-full': liveStatus === 'OFFLINE',
+    'alarm-blink': liveAlarm
+  }"
+>
+
+  <!-- Status -->
+  <span
+    class="text-white inline-block text-sm font-semibold px-3 py-1 rounded-full mt-1 blink absolute z-10"
     [ngClass]="{
-        'green-full':  liveStatus === 'RUNNING',
-        'yellow-full': liveStatus === 'IDLE',
-        'gray-full':   liveStatus === 'OFFLINE',
-        'alarm-blink': liveAlarm
-      }">
-    
-<!-- <span class="blink">This text blinks! :) </span> -->
-<span class="text-white inline-block text-sm font-semibold px-3 py-1 rounded-full mt-1 blink absolute"
-              [ngClass]="{
-                'green':  liveStatus === 'RUNNING',
-                'yellow': liveStatus === 'IDLE',
-                'gray': liveStatus === 'OFFLINE'
-              }">{{ liveStatus }}</span>
-      <div class="w-full md:w-1/2">
-        <img [src]="machine?.image || '/images/product/machine_login_02.png'"
-             [alt]="'Machine ' + (machine?.machine_serial_no || '')"
-             class="rounded-lg w-full object-contain machine_img_det">
+      'green': liveStatus === 'RUNNING',
+      'yellow': liveStatus === 'IDLE',
+      'gray': liveStatus === 'OFFLINE'
+    }"
+  >
+    {{ liveStatus }}
+  </span>
+
+  <!-- Machine Image -->
+  <div class="w-full md:w-auto md:flex-[0_1_45%] min-w-0 flex items-center justify-center">
+    <img
+      [src]="machine?.image || '/images/product/machine_login_02.png'"
+      [alt]="'Machine ' + (machine?.machine_serial_no || '')"
+      class="rounded-lg w-full object-contain machine_img_det"
+    >
+  </div>
+
+  <!-- Details -->
+  <div
+    class="w-full md:flex-1 min-w-0 bg-blue-50 dark:bg-black rounded-xl p-2 operator_det"
+  >
+
+    <!-- Operator -->
+    <div class="text-sm mb-1">
+      <div class="flex gap-2">
+        <div
+          class="bg-white dark:bg-[#111111] rounded-lg p-2 flex flex-1 min-w-0 justify-between items-center"
+        >
+
+          <div class="min-w-0">
+            <p class="text-sm text-gray-500 dark:text-[#939393]">
+              Operator
+            </p>
+
+            <p class="font-bold truncate">
+              {{ operator?.operator_name || '--' }}
+            </p>
+
+            <div class="flex">
+              <span>ID:</span>
+              <p class="font-bold ml-1 truncate">
+                {{ operator?.employee_id || '--' }}
+              </p>
+            </div>
+          </div>
+
+          <img
+            src="/images/user/owner.png"
+            alt=""
+            class="h-12 w-12 rounded-full shrink-0"
+          >
+        </div>
       </div>
+    </div>
 
-      <div class="w-full md:w-1/2 bg-blue-50 dark:bg-black rounded-xl p-2 operator_det">
+    <!-- Part / Component -->
+    <div class="text-sm mb-1">
+      <div class="flex gap-2">
 
-        <!-- Operator -->
-        <div class="space-y-1 text-sm mb-1">
-          
-          <div class="flex gap-2 ">
-            <div class="bg-white dark:bg-[#111111]  rounded-lg p-2 flex flex-1 justify-between items-center">
-              
-              <div>
-              <p class="text-sm text-gray-500 dark:text-[#939393]">Operator</p>
-              <p class="font-bold">{{ operator?.operator_name || '--' }}</p>
-              <div class="flex">
-                ID: <p class="font-bold">&nbsp;{{ operator?.employee_id || '--' }}</p>
-              </div>
-              </div>
-              <img src="/images/user/owner.png" alt="" class="h-12 w-12 rounded-full">
-            </div>
-            <!-- <div class="bg-white dark:bg-[#111111]  rounded-lg p-3 flex flex-col flex-1">
-              <p class="text-sm text-gray-500 dark:text-[#939393]">Employee Id</p>
-              <p class="font-bold">{{ operator?.employee_id || '--' }}</p>
-            </div> -->
-          </div>
+        <div class="bg-white dark:bg-[#111111] rounded-lg p-2 flex flex-1 min-w-0 flex-col">
+          <span class="text-gray-700 dark:text-[#939393]">
+            Part
+          </span>
+
+          <span
+            class="font-bold break-words"
+            [title]="job?.part_name || '--'"
+          >
+            {{ job?.part_name || '--' }}
+          </span>
         </div>
 
-        <!-- Part / Comp. Id / Optn. No -->
-        <div class="space-y-1 text-sm mb-1">
-          <div class=" flex gap-2">
-            <div class="bg-white dark:bg-[#111111]  rounded-lg p-2 flex flex-col flex-1">
-            <span class="text-gray-700 dark:text-[#939393] mr-2">Part</span>
-            <span class="font-bold">{{ job?.part_name || '--' }}</span>
-            </div>
-            <div class="bg-white dark:bg-[#111111]  rounded-lg p-2 flex flex-col flex-1"><span class="text-gray-700 dark:text-[#939393] mr-2">Component Id</span>
-            <span class="font-bold">{{ job?.component_id || '--' }}</span>
-          </div>
-            <!-- <div class=""><span class="text-gray-500 mr-2">Operation No</span>
-            <span class="font-medium">{{ job?.operation_no || '--' }}</span>
-          </div> -->
-          <!-- <div class=""><span class="text-gray-500 mr-2">Status</span>
-            <span class="text-white inline-block text-xs font-semibold px-3 py-1 rounded-full mt-1 "
-              [ngClass]="{
-                'green':  liveStatus === 'RUNNING',
-                'yellow': liveStatus === 'IDLE',
-                'gray': liveStatus === 'OFFLINE'
-              }">{{ liveStatus }}</span>
-          </div> -->
-          </div>
-        </div>
+        <div class="bg-white dark:bg-[#111111] rounded-lg p-2 flex flex-1 min-w-0 flex-col">
+          <span class="text-gray-700 dark:text-[#939393]">
+            Component ID
+          </span>
 
-        
-
-        <!-- Mode + Setup Time -->
-        <div class="flex items-center justify-between text-sm">
-          <div class="flex items-center gap-2">
-            <span class="text-gray-700 dark:text-[#939393]">Mode</span>
-            <span class="text-xs font-bold px-2 py-0.5 rounded-full"
-              [ngClass]="{
-                'bg-green-100 text-green-700': liveMode === 'AUTO',
-                'bg-yellow-100 text-yellow-700': liveMode === 'MANUAL',
-                'bg-gray-100 text-gray-500': !liveMode
-              }">{{ liveMode || '--' }}</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <span class="text-gray-700 dark:text-[#939393]">Setup</span>
-            <span class="font-semibold">{{ setupTime }}</span>
-          </div>
+          <span
+            class="font-bold break-words"
+            [title]="job?.component_id || '--'"
+          >
+            {{ job?.component_id || '--' }}
+          </span>
         </div>
 
       </div>
     </div>
+
+    <!-- Plan / Actual -->
+    <div class="text-sm mb-1">
+      <div class="flex gap-2">
+
+        <div class="bg-white dark:bg-[#111111] rounded-lg p-2 flex flex-1 min-w-0 flex-col">
+          <span class="text-gray-700 dark:text-[#939393]">
+            Plan
+          </span>
+          <span class="font-bold">
+            {{ job?.target_qty || 0 }}
+          </span>
+        </div>
+
+        <div class="bg-white dark:bg-[#111111] rounded-lg p-2 flex flex-1 min-w-0 flex-col">
+          <span class="text-gray-700 dark:text-[#939393]">
+            Actual
+          </span>
+          <span class="font-bold">
+            {{ livePartCount || 0 }}
+          </span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Mode + Setup -->
+    <div class="flex items-center justify-between gap-3 text-sm mt-2">
+
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="text-gray-700 dark:text-[#939393] shrink-0">
+          Mode
+        </span>
+
+        <span
+          class="text-xs font-bold px-2 py-0.5 rounded-full shrink-0"
+          [ngClass]="{
+            'bg-green-100 text-green-700': liveMode === 'AUTO',
+            'bg-yellow-100 text-yellow-700': liveMode === 'MANUAL',
+            'bg-gray-100 text-gray-500': !liveMode
+          }"
+        >
+          {{ liveMode || '--' }}
+        </span>
+      </div>
+
+      <div class="flex items-center gap-1 shrink-0">
+        <span class="text-gray-700 dark:text-[#939393]">
+          Setup
+        </span>
+
+        <span class="font-semibold">
+          {{ setupTime }}
+        </span>
+      </div>
+
+    </div>
+
+  </div>
+</div>
 
 
     <!-- TIME INFO -->
@@ -195,87 +266,19 @@
           <span class="w-2 h-full rounded-md bg-green-500 flex-shrink-0"></span>
           <div>
             <p class="text-sm text-gray-700 dark:text-[#939393]">Running Time <app-metric-help topic="run_time" basis="shift"></app-metric-help></p>
-            <p class="font-semibold text-lg leading-tight">{{ formatDuration(runTime) }}</p>
+            <p class="font-semibold text-md leading-tight">{{ formatDuration(runTime) }}</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
           <span class="w-2 h-full rounded-md yellow flex-shrink-0"></span>
           <div>
             <p class="text-sm text-gray-700 dark:text-[#939393]">Idle Time <app-metric-help topic="idle_time" basis="shift"></app-metric-help></p>
-            <p class="font-semibold text-lg leading-tight">{{ formatDuration(idleTime) }}</p>
+            <p class="font-semibold text-md leading-tight">{{ formatDuration(idleTime) }}</p>
           </div>
         </div>
       </div>
       </div>
  
-      
-
-    </div>
-    <!-- Plan / Actual -->
-        <div class="space-y-1 text-sm mb-1 mt-2 rounded-xl shadow-md bg-gray-50 border">
-          <div class=" flex gap-2">
-          <div class="dark:bg-[#111111]  rounded-lg p-2 flex flex-1">
-
-              <p class="text-gray-700 dark:text-[#939393] text-sm">Plan :</p>
-              <p class="font-bold">&nbsp; {{ job?.target_qty || 0 }}</p>
-
-          </div>
-          <div class="dark:bg-[#111111]  rounded-lg p-2 flex flex-1">
-
-              <p class="text-gray-700 dark:text-[#939393] text-sm">Actual :</p>
-              <p class="font-bold">&nbsp; {{ livePartCount || 0 }}</p>
-
-          </div>
-          </div>
-        </div>
-    </div>
-    <!-- MACHINE STATUS / UTILIZATION -->
-    <div class="xl:col-span-3 mexa-lift rounded-xl  p-2  machine_status">
-
-      <h3 class="text-base font-semibold text-center mb-2">Machine Status</h3>
-
-      <!-- Accepted / Rejected + Radial chart -->
-      <div class="flex items-center justify-between gap-2 -mt-6">
-
-        <!-- Left: quality metrics -->
-        <div class="flex flex-col gap-1 -mr-5 ml-5 mt-4">
-
-          <div class="flex items-center gap-3">
-            <span class="flex items-center justify-center w-7 h-7 rounded-full bg-green-500 flex-shrink-0 text-white"><span class="material-icons text-[20px]" aria-hidden="true">check</span></span>
-            <div>
-              <p class="text-sm text-gray-700 dark:text-[#939393] leading-none">Accepted <app-metric-help topic="accepted" basis="shift"></app-metric-help></p>
-              <p class="text-lg font-bold text-gray-900 dark:text-white leading-tight">{{ quality?.accepted || 0 }}</p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <span class="flex items-center justify-center w-7 h-7 rounded-full bg-red-500 flex-shrink-0 text-white"><span class="material-icons text-[20px]" aria-hidden="true">block</span></span>
-            <div>
-              <p class="text-sm text-gray-700 dark:text-[#939393] leading-none">Rejected <app-metric-help topic="rejected" basis="shift"></app-metric-help></p>
-              <p class="text-lg font-bold text-gray-900 dark:text-white leading-tight">{{ quality?.rejected || 0 }}</p>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Right: utilization radial chart -->
-        <div class="overflow-hidden w-1/2 relative">
-          <!-- level with the chart's own "Utilization" label, not beside the card title -->
-          <app-metric-help topic="utilization" basis="shift" class="absolute right-0 top-1/2 -translate-y-1/2 z-[1]"></app-metric-help>
-          <div class="chart-align-center">
-          <apx-chart
-            [series]="utilSeries"
-            [chart]="utilChart.chart"
-            [plotOptions]="utilChart.plotOptions"
-            [colors]="utilChart.colors"
-            [fill]="utilChart.fill"
-            [labels]="['Utilization']">
-          </apx-chart>
-          </div>
-        </div>
-
-      </div>
-
       <!-- Power Consumption -->
       <div *ngIf="auth.hasWidget('dashboard:live', 'power-consume')" class="border-t pt-1 dark:border-gray-700">
         <p class="flex items-center gap-2 text-sm font-semibold mb-2 justify-center">
@@ -305,18 +308,14 @@
       </div>
 
     </div>
-  </div>
-
-
-  <!-- SHIFT TIMELINE — running / idle / alarm / off across the shift, breaks marked -->
-  <app-shift-timeline [machineId]="machineId"></app-shift-timeline>
-
-  <!-- BOTTOM GRID — OEE, and spindle and feed -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-2 chart_med items-start">
-
-    <!-- ══════════════ OEE ══════════════ -->
-    <div class="mexa-lift rounded-xl  p-2 flex flex-col items-center  ">
-      <h3 class="text-base font-semibold text-center mb-2">OEE <app-metric-help topic="oee" basis="shift"></app-metric-help></h3>
+    
+        
+    </div>
+    <!-- MACHINE STATUS / UTILIZATION -->
+    <div class="xl:col-span-3 mexa-lift rounded-xl  p-2  machine_status">
+      <!-- ══════════════ OEE ══════════════ -->
+    <div class="rounded-xl flex flex-col items-center  ">
+      <!-- <h3 class="text-base font-semibold text-center -mb-2">OEE <app-metric-help topic="oee" basis="shift"></app-metric-help></h3> -->
 
       <div class="flex items-center justify-center w-full overflow-hidden">
 
@@ -331,42 +330,103 @@
             [dataLabels]="oeeChart.dataLabels"
             [labels]="oeeChart.labels">
           </apx-chart>
-          <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-24"
+          <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-16"
                style="padding-bottom:30px">
             <span class="text-2xl font-bold" style="color:#3B4CCA">
               {{ oee?.oee || 0 }}%
             </span>
-            <span class="text-xs text-gray-400 -mt-1">OEE</span>
+            <span class="text-base text-gray-800 -mt-1 font-bold">OEE</span>
           </div>
         </div>
 
         <!-- A / P / Q legend -->
-        <div class="flex flex-col gap-4 pl-1 mr-6">
+        <div class="flex flex-col gap-2 pl-1 mr-6">
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:#22c55e"></span>
             <div>
               <p class="text-sm text-gray-700 dark:text-[#939393] leading-none">Availability <app-metric-help topic="availability" basis="shift"></app-metric-help></p>
-              <p class="font-bold text-xl leading-tight">{{ oee?.availability || 0 }}%</p>
+              <p class="font-bold text-base leading-tight">{{ oee?.availability || 0 }}%</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:#60a5fa"></span>
             <div>
               <p class="text-sm text-gray-700 dark:text-[#939393] leading-none">Performance <app-metric-help topic="performance" basis="shift"></app-metric-help></p>
-              <p class="font-bold text-xl leading-tight">{{ oee?.performance || 0 }}%</p>
+              <p class="font-bold text-base leading-tight">{{ oee?.performance || 0 }}%</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:#a855f7"></span>
             <div>
               <p class="text-sm text-gray-700 dark:text-[#939393] leading-none">Quality <app-metric-help topic="quality" basis="shift"></app-metric-help></p>
-              <p class="font-bold text-xl leading-tight">{{ oee?.quality || 0 }}%</p>
+              <p class="font-bold text-base leading-tight">{{ oee?.quality || 0 }}%</p>
             </div>
           </div>
         </div>
 
       </div>
     </div>
+
+      
+
+      <!-- Accepted / Rejected + Radial chart -->
+      <div class="flex items-center justify-between gap-2 -mt-6">
+
+        <!-- Left: quality metrics -->
+        <div class="flex gap-1 -mr-5 ml-5 mt-4">
+          <div class="">
+          <h3 class="text-base font-semibold mb-2">Machine Status</h3>
+          <div class="flex">
+          <div class="flex items-center gap-3">
+            <span class="flex items-center justify-center w-7 h-7 rounded-full bg-green-500 flex-shrink-0 text-white"><span class="material-icons text-[20px]" aria-hidden="true">check</span></span>
+            <div>
+              <p class="text-sm text-gray-700 dark:text-[#939393] leading-none flex">Accepted <app-metric-help topic="accepted" basis="shift"></app-metric-help></p>
+              <p class="text-lg font-bold text-gray-900 dark:text-white leading-tight">{{ quality?.accepted || 0 }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span class="flex items-center justify-center w-7 h-7 rounded-full bg-red-500 flex-shrink-0 text-white"><span class="material-icons text-[20px]" aria-hidden="true">block</span></span>
+            <div>
+              <p class="text-sm text-gray-700 dark:text-[#939393] leading-none flex">Rejected <app-metric-help topic="rejected" basis="shift"></app-metric-help></p>
+              <p class="text-lg font-bold text-gray-900 dark:text-white leading-tight">{{ quality?.rejected || 0 }}</p>
+            </div>
+          </div>
+          </div>
+          </div>
+        </div>
+
+        <!-- Right: utilization radial chart -->
+        <div class="overflow-hidden w-1/2 relative">
+          <!-- level with the chart's own "Utilization" label, not beside the card title -->
+          <app-metric-help topic="utilization" basis="shift" class="absolute right-0 top-1/2 -translate-y-1/2 z-[1]"></app-metric-help>
+          <div class="chart-align-center">
+          <apx-chart
+            [series]="utilSeries"
+            [chart]="utilChart.chart"
+            [plotOptions]="utilChart.plotOptions"
+            [colors]="utilChart.colors"
+            [fill]="utilChart.fill"
+            [labels]="['Utilization']">
+          </apx-chart>
+          </div>
+        </div>
+
+      </div>
+
+      
+
+    </div>
+  </div>
+
+
+  <!-- SHIFT TIMELINE — running / idle / alarm / off across the shift, breaks marked -->
+  <app-shift-timeline [machineId]="machineId"></app-shift-timeline>
+
+  <!-- BOTTOM GRID — OEE, and spindle and feed -->
+  <div class="grid grid-cols-1 gap-4 mt-2 chart_med items-start">
+
+    
 
 
     <!-- ══════════════ SPINDLE AND FEED ══════════════

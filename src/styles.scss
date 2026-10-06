@@ -447,7 +447,7 @@ h4 {
    as heavy and made every offline machine a grey slab. */
 .border-big {
   border: 0 !important;
-  border: 6px solid var(--card-status, #94a3b8) !important;
+  border: 10px solid var(--card-status, #94a3b8) !important;
   background-color: var(--mexa-card) !important;
   border-radius: 18px !important;
   box-shadow: var(--mexa-card-shadow) !important;
@@ -803,7 +803,7 @@ $radius: 10px;
    unreadable exactly when someone needs to read them. */
 .alarm-blink {
   --card-status: #e03131;
-  border-top-color: #e03131 !important;
+  border-color: #e03131 !important;
   box-shadow: 0 0 0 2px #e03131, var(--mexa-card-shadow) !important;
   animation: alarmPulse 1.4s ease-out infinite;
 }
@@ -827,9 +827,8 @@ $radius: 10px;
 
 }
 .alarm-blink .menu-default {
-  background-color: transparent;
-  border: 1px solid #f37171;
-
+  background-color: #ffe5e5;
+  // border: 1px solid #f37171;
 }
 .apexcharts-tooltip-series-group, .apexcharts-tooltip-title {
     color: #000!important;
@@ -1187,3 +1186,86 @@ html.dark [class~="bg-blue-600"][class~="text-white"] { color: #fff; }
 /* The system layer — one font, one type scale, one table design — is
    loaded last so it settles what the rules above left different. */
 @include meta.load-css('styles/system');
+.bar-cht{
+  background-color: rgb(245, 245, 255); height: 260px; overflow: hidden; border-radius: 15px;
+}
+.mexa-card-cht {
+    padding-bottom: 0rem!important;
+}
+.notification-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .material-icons {
+    font-size: 21px;
+  }
+}
+
+/* Alarms */
+.icon-notify_alarm {
+  background: #fff0f1;
+
+  .material-icons {
+    color: #fb3748;
+  }
+}
+
+/* Maintenance */
+.icon-notify_maintenance {
+  background: #fff7df;
+
+  .material-icons {
+    color: #d99a00;
+  }
+}
+
+/* Tickets */
+.icon-notify_ticket {
+  background: #edf4ff;
+
+  .material-icons {
+    color: #4f7fd9;
+  }
+}
+
+/* Program transfer */
+.icon-notify_program_transfer {
+  background: #ecfaf7;
+
+  .material-icons {
+    color: #00a88a;
+  }
+}
+
+/* System */
+.icon-notify_system {
+  background: #f1f3f5;
+
+  .material-icons {
+    color: #68727d;
+  }
+}
+
+.icon-theme_change {
+  background: #f1f3f5;
+
+  .material-icons {
+    color: #7b98b8;
+  }
+}
+
+.txt-card {
+  background: var(--mexa-card);
+  border: 0;
+  border-radius: 18px;
+  padding: .8rem;
+  /* On the STM field the card is lifted by a soft shadow, as in the design */
+  box-shadow: var(--mexa-card-shadow);
+  min-width: 0;
+}

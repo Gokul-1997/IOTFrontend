@@ -279,7 +279,7 @@ a.nav-btn { text-decoration: none; }
 
 /* Live Dashboard: a machine in alarm says so in words, not only by its red pulse */
 .dash-alarm-badge {
-  display: flex; align-items: center; gap: .25rem; width: max-content; margin: .2rem auto 0;
+  display: flex; align-items: center; gap: .25rem; width: max-content; 
   padding: .1rem .55rem; border-radius: 999px; background: #b42318; color: #fff;
   font-size: .75rem; font-weight: 700; letter-spacing: .02em; line-height: 1.4;
 }

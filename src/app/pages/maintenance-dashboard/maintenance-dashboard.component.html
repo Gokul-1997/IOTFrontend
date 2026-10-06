@@ -150,18 +150,20 @@
           <p class="mt-word" [ngClass]="bandText(bandLow(r.spindle_insulation_res, IR_BANDS))">{{ bandLow(r.spindle_insulation_res, IR_BANDS) || 'Not reported' }}</p>
         </div>
       </div>
+      <div class="bar-cht">
       <ng-container *ngIf="anyReading([r.encoder_temp_x, r.encoder_temp_y, r.encoder_temp_z]); else noEnc">
         <apx-chart class="mt-bars" *ngIf="axisBars('enc', [r.encoder_temp_x, r.encoder_temp_y, r.encoder_temp_z], ['Encoder Temp X', 'Encoder Temp Y', 'Encoder Temp Z'], '°C') as b"
           [series]="b.series" [chart]="b.chart" [plotOptions]="b.plotOptions" [colors]="b.colors"
           [dataLabels]="b.dataLabels" [legend]="b.legend" [xaxis]="b.xaxis" [yaxis]="b.yaxis"
           [grid]="b.grid" [tooltip]="b.tooltip"></apx-chart>
       </ng-container>
+      </div>
       <ng-template #noEnc><p class="mexa-empty">Encoder temperature not reported.</p></ng-template>
     </section>
 
     <!-- servo: load per axis, then motor temperature per axis -->
     <section class="mexa-card" aria-labelledby="mtServo">
-      <h2 id="mtServo" class="mexa-card-title mb-5">Servo Details</h2>
+      <h2 id="mtServo" class="mexa-card-title mb-7">Servo Details</h2>
       <div class="mt-gauges">
         <div class="mt-gauge" *ngFor="let a of ['x','y','z']" [class.is-new-alert]="freshAlerts.has('servo_load_' + a)">
           <p class="mt-gauge-label">Servo Load {{ a.toUpperCase() }}</p>
@@ -170,6 +172,7 @@
           <p class="mt-word" [ngClass]="bandText(band(r['servo_load_' + a], LOAD_BANDS))">{{ band(r['servo_load_' + a], LOAD_BANDS) || 'Not reported' }}</p>
         </div>
       </div>
+      <div class="bar-cht">
       <ng-container *ngIf="anyReading([r.servo_temp_x, r.servo_temp_y, r.servo_temp_z]); else noServoTemp">
         <apx-chart class="mt-bars" *ngIf="axisBars('servoT', [r.servo_temp_x, r.servo_temp_y, r.servo_temp_z], ['Servo Temp X', 'Servo Temp Y', 'Servo Temp Z'], '°C') as b"
           [series]="b.series" [chart]="b.chart" [plotOptions]="b.plotOptions" [colors]="b.colors"
@@ -177,6 +180,7 @@
           [grid]="b.grid" [tooltip]="b.tooltip"></apx-chart>
         <p *ngIf="servoTempMissing" class="mexa-card-hint mt-center">{{ servoTempMissing }} not reporting a temperature.</p>
       </ng-container>
+      </div>
       <ng-template #noServoTemp><p class="mexa-empty">Servo temperature not reported.</p></ng-template>
     </section>
 
@@ -243,20 +247,22 @@
   <!-- ══════════ ROW 2 — cycle time · condition trend · alarm summary ══════════ -->
   <div class="mt-row2">
 
-    <section class="mexa-card mt-cycle" aria-labelledby="mtCycle">
+    <section class="mexa-card mt-cycle mexa-card-cht" aria-labelledby="mtCycle">
       <div class="mexa-card-head">
         <h2 id="mtCycle" class="mexa-card-title mexa-card-title-left">Cycle Time ({{ cycleUnit }})</h2>
         <span class="mt-current">Current Cycle Time: <strong>{{ currentCycle != null ? currentCycle + ' ' + cycleUnit : '--' }}</strong></span>
       </div>
+      <div style="height: 260px;">
       <apx-chart *ngIf="cycleSeries.length; else noCycle"
         [series]="cycleSeries" [chart]="cycleChart.chart" [stroke]="cycleChart.stroke" [markers]="cycleChart.markers"
         [colors]="cycleChart.colors" [dataLabels]="cycleChart.dataLabels" [legend]="cycleChart.legend"
         [xaxis]="cycleChart.xaxis" [yaxis]="cycleChart.yaxis" [grid]="cycleChart.grid"
         [tooltip]="cycleChart.tooltip" [noData]="cycleChart.noData"></apx-chart>
+       </div>
       <ng-template #noCycle><p class="mexa-empty">No parts made in this window, so no cycle time yet.</p></ng-template>
     </section>
 
-    <section class="mexa-card mt-trend" aria-labelledby="mtTrend">
+    <section class="mexa-card mt-trend mexa-card-cht" aria-labelledby="mtTrend">
       <h2 id="mtTrend" class="mexa-card-title mexa-card-title-left">{{ trendTitle }}</h2>
       <!-- <p *ngIf="!trendIsIr && data.unavailable?.includes('insulation_resistance')" class="mexa-card-hint mt-hint">
         Insulation resistance is not reported by this controller; servo temperature is shown instead.
@@ -276,7 +282,7 @@
       <p *ngIf="!trendIsIr && !tempTrendSeries.length" class="mexa-empty">No temperature reported for this machine in this window.</p>
     </section>
 
-    <section class="mexa-card mt-alarms" aria-labelledby="mtAlarms">
+    <section class="mexa-card mt-alarms mexa-card-cht" aria-labelledby="mtAlarms">
       <h2 id="mtAlarms" class="mexa-card-title mexa-card-title-left">Alarm Summary</h2>
       <ng-container *ngIf="data.alarms.total; else noAlarms">
         <apx-chart

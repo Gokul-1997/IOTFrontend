@@ -262,7 +262,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
       const max = fixedMax ?? (top > 0 ? Math.ceil(top * 1.3) : 10);
       return {
         series: [{ name: axisTitle, data: values }],
-        chart: { type: 'bar', height: 260, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
+        chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
         plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '62%', distributed: true,
                               dataLabels: { position: 'top' } } },
         colors: this.palette,

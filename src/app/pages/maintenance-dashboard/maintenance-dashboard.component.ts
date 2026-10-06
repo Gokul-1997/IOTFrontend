@@ -654,17 +654,30 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
 
   get cycleChart(): any {
     return this.charts.memo('cycleChart', () => ({
-      chart: { type: 'line', height: 250, toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false }, animations: { enabled: false } },
+      chart: { type: 'line', height: 270, toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false }, animations: { enabled: false } },
       stroke: { width: 3, curve: 'smooth' },
       markers: { size: 4, strokeWidth: 2, colors: ['#fff'], strokeColors: '#2f2d8f' },
       colors: ['#2f2d8f'],
       dataLabels: { enabled: false },
       legend: { show: true, position: 'bottom' },
-      xaxis: { categories: this.cycleCategories, title: { text: 'Hour' }, labels: { rotate: -45, hideOverlappingLabels: true } },
+      xaxis: { categories: this.cycleCategories, 
+      title: { text: 'Hour', offsetY: -15}, labels: { rotate: -45, hideOverlappingLabels: true } },
       yaxis: { min: 0, title: { text: this.cycleUnit }, labels: { formatter: (v: number) => v == null ? '' : String(Math.round(v)) } },
       grid: { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip: { theme: 'dark', y: { formatter: (v: number | null) => v == null ? 'no part this hour' : `${v} ${this.cycleUnit.toLowerCase()}` } },
-      noData: { text: 'No parts made in this window' }
+      tooltip: { theme: 'light', y: { formatter: (v: number | null) => v == null ? 'no part this hour' : `${v} ${this.cycleUnit.toLowerCase()}` } },
+      noData: { text: 'No parts made in this window' },
+//       responsive: [
+//   {
+//     breakpoint: 1200,
+//     options: {
+//       chart: {
+//         height: 600
+//       },
+//       title: { text: 'test',offsetY: -5}
+//     }
+
+//   }
+// ]
     }), this.charts.sig('cycleSeries') + JSON.stringify([this.cycleCategories, this.cycleUnit]));
   }
 
@@ -696,7 +709,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
 
   private barOptions(labels: string[], unit: string): any {
     return {
-      chart: { type: 'bar', height: 190, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
+      chart: { type: 'bar', height: 245, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
       plotOptions: { bar: { columnWidth: '55%', borderRadius: 4, distributed: true, dataLabels: { position: 'top' } } },
       colors: ['#2f2d8f', '#4a76c8', '#9b7ec8'],
       dataLabels: { enabled: true, offsetY: -18, formatter: (v: number | null) => v == null ? '--' : Number(v).toFixed(0),
@@ -707,7 +720,17 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
                labels: { rotate: 0, hideOverlappingLabels: false, trim: false } },
       yaxis: { min: 0, max: (m: number) => Math.max(50, Math.ceil((m || 0) / 10) * 10 + 10), title: { text: unit === '°C' ? 'Celsius' : unit } },
       grid: { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip: { theme: 'dark', y: { formatter: (v: number | null) => v == null ? 'not reported' : `${v} ${unit}` } }
+      tooltip: { theme: 'light', y: { formatter: (v: number | null) => v == null ? 'not reported' : `${v} ${unit}` } },
+      responsive: [
+          {
+            breakpoint: 1600,
+            options: {
+              chart: {
+                height: 190
+              }
+            }
+          }
+        ]
     };
   }
 
@@ -735,7 +758,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       xaxis: { categories: this.conditionCategories, title: { text: 'Hour' } },
       yaxis: { title: { text: unit === '°C' ? 'Celsius' : unit }, labels: { formatter: (v: number) => v == null ? '' : v.toFixed(0) } },
       grid: { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip: { theme: 'dark', y: { formatter: (v: number | null) => v == null ? 'no reading' : `${v} ${unit}` } },
+      tooltip: { theme: 'light', y: { formatter: (v: number | null) => v == null ? 'no reading' : `${v} ${unit}` } },
       noData: { text: 'No reading in this window' }
     };
   }

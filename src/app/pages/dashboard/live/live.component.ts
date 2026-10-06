@@ -391,7 +391,7 @@ export class LiveComponent implements OnInit, OnDestroy {
 
     /* ── Utilization ── */
     this.utilChart = {
-      chart: { type: 'radialBar', height: 120},
+      chart: { type: 'radialBar', height: 140},
       plotOptions: {
         radialBar: {
           startAngle: -135,
@@ -409,7 +409,7 @@ export class LiveComponent implements OnInit, OnDestroy {
             value: {
               show: true,
               offsetY: -15,
-              fontSize: '24px',
+              fontSize: '16px',
               fontWeight: '700',
               color: '#3B4CCA',
               fontFamily: 'inherit',
@@ -430,7 +430,7 @@ export class LiveComponent implements OnInit, OnDestroy {
 
     /* ── OEE — dashed-segment radialBar ── */
     this.oeeChart = {
-      chart: { type: 'radialBar', height: 250, sparkline: { enabled: true } },
+      chart: { type: 'radialBar', height: 220, sparkline: { enabled: true } },
       labels: ['OEE'],
       plotOptions: {
         radialBar: {

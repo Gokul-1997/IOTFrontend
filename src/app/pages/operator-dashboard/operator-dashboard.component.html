@@ -134,12 +134,14 @@
         <h2 id="opScoreTitle" class="mexa-card-title mexa-card-title-left">Operator Score</h2>
         <ng-container *ngTemplateOutlet="seg; context: { board: 'score', label: 'Operator Score' }"></ng-container>
       </div>
-      <p class="mexa-card-hint">Average of utilisation, efficiency and quality rate</p>
+      <!-- <p class="mexa-card-hint">Average of utilisation, efficiency and quality rate</p> -->
+       <div style="height: 270px;">
       <apx-chart *ngIf="rows('score').length"
         [series]="scoreChart.series" [chart]="scoreChart.chart" [plotOptions]="scoreChart.plotOptions"
         [colors]="scoreChart.colors" [dataLabels]="scoreChart.dataLabels" [legend]="scoreChart.legend"
         [xaxis]="scoreChart.xaxis" [yaxis]="scoreChart.yaxis" [grid]="scoreChart.grid"
         [tooltip]="scoreChart.tooltip" [noData]="scoreChart.noData"></apx-chart>
+        </div>
       <p *ngIf="!rows('score').length" class="mexa-empty">No operator has a score for this period.</p>
     </section>
 
@@ -148,12 +150,14 @@
         <h2 id="opRejTitle" class="mexa-card-title mexa-card-title-left">Rejection Rate</h2>
         <ng-container *ngTemplateOutlet="seg; context: { board: 'rejection', label: 'Rejection Rate' }"></ng-container>
       </div>
-      <p class="mexa-card-hint">Rejected and reworked parts, as a share of output</p>
+      <!-- <p class="mexa-card-hint">Rejected and reworked parts, as a share of output</p> -->
+       <div style="height: 270px;">
       <apx-chart *ngIf="rows('rejection').length"
         [series]="rejectionChart.series" [chart]="rejectionChart.chart" [plotOptions]="rejectionChart.plotOptions"
         [colors]="rejectionChart.colors" [dataLabels]="rejectionChart.dataLabels" [legend]="rejectionChart.legend"
         [xaxis]="rejectionChart.xaxis" [yaxis]="rejectionChart.yaxis" [grid]="rejectionChart.grid"
         [tooltip]="rejectionChart.tooltip" [noData]="rejectionChart.noData"></apx-chart>
+        </div>
       <!-- <p *ngIf="noRejects" class="mexa-card-hint !mt-1">No rejects or rework were entered for this period.</p> -->
       <p *ngIf="!rows('rejection').length" class="mexa-empty">Nothing produced, so there is no rejection rate.</p>
     </section>
@@ -163,12 +167,14 @@
         <h2 id="opDownTitle" class="mexa-card-title mexa-card-title-left">Downtime Contribution</h2>
         <ng-container *ngTemplateOutlet="seg; context: { board: 'downtime', label: 'Downtime Contribution' }"></ng-container>
       </div>
-      <p class="mexa-card-hint">Time the machines were on but not cutting</p>
+      <!-- <p class="mexa-card-hint">Time the machines were on but not cutting</p> -->
+       <div style="height: 270px;">
       <apx-chart *ngIf="rows('downtime').length"
         [series]="downtimeChart.series" [chart]="downtimeChart.chart" [plotOptions]="downtimeChart.plotOptions"
         [colors]="downtimeChart.colors" [dataLabels]="downtimeChart.dataLabels" [legend]="downtimeChart.legend"
         [xaxis]="downtimeChart.xaxis" [yaxis]="downtimeChart.yaxis" [grid]="downtimeChart.grid"
         [tooltip]="downtimeChart.tooltip" [noData]="downtimeChart.noData"></apx-chart>
+        </div>
       <p *ngIf="!rows('downtime').length" class="mexa-empty">No machine time was reported for these operators.</p>
     </section>
 
@@ -177,7 +183,7 @@
         <h2 id="opOeeTitle" class="mexa-card-title mexa-card-title-left">OEE <app-metric-help topic="oee"></app-metric-help></h2>
         <ng-container *ngTemplateOutlet="seg; context: { board: 'oee', label: 'OEE' }"></ng-container>
       </div>
-      <p class="mexa-card-hint">Availability, Performance and Quality, ranked by OEE</p>
+      <!-- <p class="mexa-card-hint">Availability, Performance and Quality, ranked by OEE</p> -->
       <apx-chart *ngIf="rows('oee').length"
         [series]="oeeChart.series" [chart]="oeeChart.chart" [plotOptions]="oeeChart.plotOptions"
         [colors]="oeeChart.colors" [dataLabels]="oeeChart.dataLabels" [legend]="oeeChart.legend"
