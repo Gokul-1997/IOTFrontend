@@ -7,6 +7,8 @@ import { Subject, takeUntil, catchError, of, Subscription } from 'rxjs';
 import { OeeDashboardService } from './oee-dashboard.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { ChartMemo } from '../../shared/chart-memo';
+import { lostCostLine, LOST_COST_HINT } from '../../shared/lost-cost';
+import { qty } from '../../shared/format-number';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
@@ -238,6 +240,14 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   /* ── view helpers ── */
 
   /** Unknown shows as a dash, never 0% — they are different claims. */
+  /* Idle time in rupees, at each machine's hour rate (Master → Machines). */
+  readonly costHint = LOST_COST_HINT;
+  get idleCostLine(): string {
+    const k = this.data?.kpis;
+    return k ? lostCostLine(k.idle_cost, k.machines_priced, k.machines_total) : '';
+  }
+  rupees(v: number | null | undefined): string { return '₹' + qty(v, 0); }
+
   pct(v: number | null | undefined): string {
     return v === null || v === undefined ? '--' : `${v}%`;
   }

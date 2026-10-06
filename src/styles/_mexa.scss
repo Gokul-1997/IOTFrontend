@@ -339,6 +339,8 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   font-size: .78rem;
   color: var(--mexa-ink-3);
 }
+/* lost time in rupees, under an idle or alarm time (lost-cost.ts) */
+.mexa-kpi-cost { color: var(--mexa-ink-2); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* A KPI card that opens the records behind its number. A real <button>, so
    it is reachable by keyboard and announced as pressable; the "View" cue is

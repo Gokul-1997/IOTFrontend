@@ -119,6 +119,7 @@
       </div>
       <p class="mexa-kpi-value">{{ hours(data.kpis.idle_seconds) }}</p>
       <p class="mexa-kpi-sub">{{ hours(data.kpis.unaccounted_seconds) }} unaccounted</p>
+      <p class="mexa-kpi-sub mexa-kpi-cost" *ngIf="idleCostLine" [title]="costHint">{{ idleCostLine }}</p>
     </div>
 
     <div class="mexa-kpi">
@@ -129,6 +130,7 @@
         </span>
       </div>
       <p class="mexa-kpi-value">{{ hours(data.kpis.alarm_seconds) }}</p>
+      <p class="mexa-kpi-sub mexa-kpi-cost" *ngIf="alarmCostLine" [title]="costHint">{{ alarmCostLine }}</p>
     </div>
   </div>
 

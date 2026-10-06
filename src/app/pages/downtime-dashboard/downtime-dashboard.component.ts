@@ -15,6 +15,7 @@ import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
+import { lostCostLine, LOST_COST_HINT } from '../../shared/lost-cost';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 6 — Downtime Reason Loss Analysis
@@ -241,6 +242,18 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
   }
 
   /* ── view helpers ── */
+
+  /* Idle and alarm time in rupees, at each machine's hour rate. Shown side by
+     side, never added: a machine in alarm is usually idle too. */
+  readonly costHint = LOST_COST_HINT;
+  get idleCostLine(): string {
+    const k = this.data?.kpis;
+    return k ? lostCostLine(k.idle_cost, k.cost_machines?.priced, k.cost_machines?.of) : '';
+  }
+  get alarmCostLine(): string {
+    const k = this.data?.kpis;
+    return k ? lostCostLine(k.alarm_cost, k.cost_machines?.priced, k.cost_machines?.of) : '';
+  }
 
   /** True when telemetry exists but nobody has entered a single reason —
    *  a setup gap, not an empty filter result. */

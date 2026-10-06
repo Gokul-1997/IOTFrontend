@@ -157,6 +157,7 @@
            minutes: "1594:14:50" across a fleet-week could not be read. -->
       <p class="mexa-kpi-value" [title]="hms(data.kpis.idle_seconds) + ' (HH:MM:SS)'">{{ longHours(data.kpis.idle_seconds) }}</p>
       <p class="mexa-kpi-sub">Machines on, not running</p>
+      <p class="mexa-kpi-sub mexa-kpi-cost" *ngIf="idleCostLine" [title]="costHint">{{ idleCostLine }}</p>
     </div>
   </div>
 
@@ -244,7 +245,7 @@
         </div>
         <div class="mexa-oeecard-foot">
           <span>{{ gradeWord(grade(m)) }}</span>
-          <small>{{ m.produced | number }} pcs</small>
+          <small>{{ m.produced | number }} pcs<ng-container *ngIf="m.idle_cost != null"> · <span [title]="costHint">{{ rupees(m.idle_cost) }} idle</span></ng-container></small>
         </div>
       </article>
       <p *ngIf="!pageCards.length" class="mexa-empty">
