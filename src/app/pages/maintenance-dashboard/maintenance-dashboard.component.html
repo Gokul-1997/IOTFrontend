@@ -73,22 +73,45 @@
   </div>
 </ng-container>
 
+<p class="sr-only" role="status" aria-live="polite">{{ alertNote }}</p>
+
 <ng-container *ngIf="data">
 <ng-container *ngIf="focusRow as r">
 
   <!-- ══════════ ROW 1 — machine · spindle · servo · fans & batteries (the design's top row) ══════════ -->
   <div class="mt-row1">
 
-    <!-- the machine: photo, state, and the job on it -->
-    <section class="mexa-card mt-machine" aria-labelledby="mtName">
+    <!-- the machine: photo, state, what needs attention, and the job on it -->
+    @let live = rowStatus(r) !== 'OFFLINE';
+    <section class="mexa-card mt-machine" aria-labelledby="mtName" appPauseOffscreen>
       <div class="mt-machine-head">
         <h2 id="mtName" class="mt-machine-name">{{ r.machine_serial_no }}</h2>
-        <span class="mt-state" [ngClass]="'is-' + rowStatus(r).toLowerCase()">
+        <span class="mt-state" [ngClass]="'is-' + rowStatus(r).toLowerCase()" [class.is-new-alert]="freshAlerts.has('machine')">
           <span class="mt-state-dot" aria-hidden="true"></span>{{ stateWord(rowStatus(r)) }}
         </span>
       </div>
+      <!-- the one line that says whether anything on this machine needs a look -->
+      <p class="mt-attention" *ngIf="attention.length || live"
+         [class.is-critical]="attention[0]?.band === 'Critical'" [class.is-stable]="attention[0]?.band === 'Stable'"
+         [attr.title]="attention.length ? attentionText : null">
+        <svg class="mt-attention-icon" viewBox="0 0 20 20" aria-hidden="true">
+          @if (attention.length) {
+            <path d="M10 2.5 18.5 17h-17L10 2.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+            <path d="M10 8v4M10 14.4v.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          } @else {
+            <circle cx="10" cy="10" r="7.6" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <path d="m6.6 10.2 2.3 2.3 4.6-4.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          }
+        </svg>
+        @if (attention.length) {
+          <span class="mt-attention-text"><strong>{{ attention[0].label }}{{ attention[0].value ? ' ' + attention[0].value : '' }}</strong>{{ attentionTail }}</span>
+          <span class="sr-only">Needs attention: {{ attentionText }}</span>
+        } @else {
+          <span class="mt-attention-text">All reported readings normal</span>
+        }
+      </p>
       <img class="mt-machine-img" [src]="r.image_url || '/images/product/machine_login_02.png'"
-           [alt]="'Photo of ' + r.machine_serial_no" loading="lazy" />
+           [alt]="'Photo of ' + r.machine_serial_no" />
       <p class="mt-lastseen" *ngIf="rowStatus(r) === 'OFFLINE'">
         {{ r.received_at ? 'Last reading ' + (r.received_at | date:'d MMM, h:mm a') : 'No reading in this window' }}
       </p>
@@ -108,19 +131,19 @@
         Spindle RPM : {{ r.spindle_speed != null ? (r.spindle_speed | number:'1.0-0') : '--' }}
       </h2>
       <div class="mt-gauges">
-        <div class="mt-gauge">
+        <div class="mt-gauge" [class.is-new-alert]="freshAlerts.has('spindle_load')">
           <p class="mt-gauge-label">Spindle Load</p>
           <app-condition-gauge [value]="r.spindle_load" [max]="150" [zones]="LOAD_ZONES" unit="%"
             [ariaLabel]="'Spindle load ' + reading(r.spindle_load, '%', 0)"></app-condition-gauge>
           <p class="mt-word" [ngClass]="bandText(band(r.spindle_load, LOAD_BANDS))">{{ band(r.spindle_load, LOAD_BANDS) || 'Not reported' }}</p>
         </div>
-        <div class="mt-gauge">
+        <div class="mt-gauge" [class.is-new-alert]="freshAlerts.has('spindle_temp')">
           <p class="mt-gauge-label">Spindle Temp</p>
           <app-condition-gauge [value]="r.spindle_motor_temp" [max]="120" [zones]="TEMP_ZONES" unit="°C"
             [ariaLabel]="'Spindle temperature ' + reading(r.spindle_motor_temp, '°C', 0)"></app-condition-gauge>
           <p class="mt-word" [ngClass]="bandText(band(r.spindle_motor_temp, TEMP_BANDS))">{{ band(r.spindle_motor_temp, TEMP_BANDS) || 'Not reported' }}</p>
         </div>
-        <div class="mt-gauge">
+        <div class="mt-gauge" [class.is-new-alert]="freshAlerts.has('spindle_ir')">
           <p class="mt-gauge-label">Spindle IR</p>
           <app-condition-gauge [value]="r.spindle_insulation_res" [max]="200" [zones]="IR_ZONES" unit=" MΩ"
             [ariaLabel]="'Spindle insulation resistance ' + reading(r.spindle_insulation_res, 'megohm', 0)"></app-condition-gauge>
@@ -128,7 +151,7 @@
         </div>
       </div>
       <ng-container *ngIf="anyReading([r.encoder_temp_x, r.encoder_temp_y, r.encoder_temp_z]); else noEnc">
-        <apx-chart *ngIf="axisBars('enc', [r.encoder_temp_x, r.encoder_temp_y, r.encoder_temp_z], ['Encoder Temp X', 'Encoder Temp Y', 'Encoder Temp Z'], '°C') as b"
+        <apx-chart class="mt-bars" *ngIf="axisBars('enc', [r.encoder_temp_x, r.encoder_temp_y, r.encoder_temp_z], ['Encoder Temp X', 'Encoder Temp Y', 'Encoder Temp Z'], '°C') as b"
           [series]="b.series" [chart]="b.chart" [plotOptions]="b.plotOptions" [colors]="b.colors"
           [dataLabels]="b.dataLabels" [legend]="b.legend" [xaxis]="b.xaxis" [yaxis]="b.yaxis"
           [grid]="b.grid" [tooltip]="b.tooltip"></apx-chart>
@@ -140,7 +163,7 @@
     <section class="mexa-card" aria-labelledby="mtServo">
       <h2 id="mtServo" class="mexa-card-title mb-5">Servo Details</h2>
       <div class="mt-gauges">
-        <div class="mt-gauge" *ngFor="let a of ['x','y','z']">
+        <div class="mt-gauge" *ngFor="let a of ['x','y','z']" [class.is-new-alert]="freshAlerts.has('servo_load_' + a)">
           <p class="mt-gauge-label">Servo Load {{ a.toUpperCase() }}</p>
           <app-condition-gauge [value]="r['servo_load_' + a]" [max]="150" [zones]="LOAD_ZONES" unit="%"
             [ariaLabel]="'Servo load ' + a.toUpperCase() + ' ' + reading(r['servo_load_' + a], '%', 0)"></app-condition-gauge>
@@ -148,7 +171,7 @@
         </div>
       </div>
       <ng-container *ngIf="anyReading([r.servo_temp_x, r.servo_temp_y, r.servo_temp_z]); else noServoTemp">
-        <apx-chart *ngIf="axisBars('servoT', [r.servo_temp_x, r.servo_temp_y, r.servo_temp_z], ['Servo Temp X', 'Servo Temp Y', 'Servo Temp Z'], '°C') as b"
+        <apx-chart class="mt-bars" *ngIf="axisBars('servoT', [r.servo_temp_x, r.servo_temp_y, r.servo_temp_z], ['Servo Temp X', 'Servo Temp Y', 'Servo Temp Z'], '°C') as b"
           [series]="b.series" [chart]="b.chart" [plotOptions]="b.plotOptions" [colors]="b.colors"
           [dataLabels]="b.dataLabels" [legend]="b.legend" [xaxis]="b.xaxis" [yaxis]="b.yaxis"
           [grid]="b.grid" [tooltip]="b.tooltip"></apx-chart>
@@ -161,13 +184,14 @@
          it is turning and the machine is reporting live; the battery icons
          fill to their band. Motion pauses off-screen and in a hidden tab
          (appPauseOffscreen) and stays still for reduced-motion users. -->
-    @let live = rowStatus(r) !== 'OFFLINE';
     <div class="mt-cooling" appPauseOffscreen>
       <section class="mexa-card mt-fans" aria-label="Cooling fans"
                [class.is-one-row]="fanTiles.length <= fanCols" [style.--mt-fan-cols]="fanCols">
         <div class="mt-fan" *ngFor="let f of fanTiles; trackBy: fanKey"
-             [class.is-still]="!f.running" [class.is-fault]="f.status === 'Critical'">
-          <svg class="mt-fan-icon" [class.is-spinning]="live && f.running" viewBox="0 0 24 24" aria-hidden="true">
+             [class.is-still]="!f.running" [class.is-fault]="f.status === 'Critical'"
+             [class.is-new-alert]="freshAlerts.has('fan:' + f.name)">
+          <span class="mt-fan-hub">
+          <svg class="mt-fan-icon" [class.is-spinning]="live && f.running" [style.--mt-spin]="f.spin" viewBox="0 0 24 24" aria-hidden="true">
             <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
               <path d="M12 12c0-4 1.2-7 3.6-7 2.4 0 3 3.2.6 5.2-1.3 1.1-2.8 1.5-4.2 1.8Z"/>
               <path d="M12 12c3.5 2 5.4 4.5 4.2 6.6-1.2 2.1-4.3 1-4.9-2-.4-1.7 0-3.2.7-4.6Z"/>
@@ -175,6 +199,7 @@
               <circle cx="12" cy="12" r="1.4"/>
             </g>
           </svg>
+          </span>
           <p class="mt-fan-name">{{ f.name }}</p>
           <p class="mt-fan-place" *ngIf="f.place">{{ f.place }}</p>
           <p class="mt-fan-reading" *ngIf="f.reading">{{ f.reading }}</p>
@@ -195,7 +220,7 @@
           <p class="mt-tile-name">CNC Fans</p>
           <p class="mt-word" [ngClass]="bandText(fansOverall)">{{ fansOverall }}</p>
         </section>
-        <section class="mexa-card mt-tile" aria-label="CNC battery">
+        <section class="mexa-card mt-tile" aria-label="CNC battery" [class.is-new-alert]="freshAlerts.has('battery:cnc')">
           <p class="mt-tile-name">CNC battery</p>
           <p class="mt-tile-value">
             <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><rect class="mt-battery-fill" x="3.6" y="5.6" width="6.8" height="14.8" rx=".8" [style.fill]="bandColour(cncBattery.word)" [style.transform]="'scaleY(' + cncBattery.level + ')'"/></svg>
@@ -203,7 +228,7 @@
           </p>
           <p class="mt-word" [ngClass]="bandText(cncBattery.word)">{{ cncBattery.word || 'Not reported' }}</p>
         </section>
-        <section class="mexa-card mt-tile" aria-label="APC battery">
+        <section class="mexa-card mt-tile" aria-label="APC battery" [class.is-new-alert]="freshAlerts.has('battery:apc')">
           <p class="mt-tile-name">APC battery</p>
           <p class="mt-tile-value">
             <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><rect class="mt-battery-fill" x="3.6" y="5.6" width="6.8" height="14.8" rx=".8" [style.fill]="bandColour(apcBattery.word)" [style.transform]="'scaleY(' + apcBattery.level + ')'"/></svg>
@@ -218,7 +243,7 @@
   <!-- ══════════ ROW 2 — cycle time · condition trend · alarm summary ══════════ -->
   <div class="mt-row2">
 
-    <section class="mexa-card" aria-labelledby="mtCycle">
+    <section class="mexa-card mt-cycle" aria-labelledby="mtCycle">
       <div class="mexa-card-head">
         <h2 id="mtCycle" class="mexa-card-title mexa-card-title-left">Cycle Time ({{ cycleUnit }})</h2>
         <span class="mt-current">Current Cycle Time: <strong>{{ currentCycle != null ? currentCycle + ' ' + cycleUnit : '--' }}</strong></span>
@@ -231,10 +256,8 @@
       <ng-template #noCycle><p class="mexa-empty">No parts made in this window, so no cycle time yet.</p></ng-template>
     </section>
 
-    <section class="mexa-card" aria-labelledby="mtTrend">
-      <h2 id="mtTrend" class="mexa-card-title mexa-card-title-left">
-        {{ trendIsIr ? 'Servo Motor Insulation Resistance Trend' : 'Servo Motor Temperature Trend' }}
-      </h2>
+    <section class="mexa-card mt-trend" aria-labelledby="mtTrend">
+      <h2 id="mtTrend" class="mexa-card-title mexa-card-title-left">{{ trendTitle }}</h2>
       <!-- <p *ngIf="!trendIsIr && data.unavailable?.includes('insulation_resistance')" class="mexa-card-hint mt-hint">
         Insulation resistance is not reported by this controller; servo temperature is shown instead.
       </p> -->
@@ -253,7 +276,7 @@
       <p *ngIf="!trendIsIr && !tempTrendSeries.length" class="mexa-empty">No temperature reported for this machine in this window.</p>
     </section>
 
-    <section class="mexa-card" aria-labelledby="mtAlarms">
+    <section class="mexa-card mt-alarms" aria-labelledby="mtAlarms">
       <h2 id="mtAlarms" class="mexa-card-title mexa-card-title-left">Alarm Summary</h2>
       <ng-container *ngIf="data.alarms.total; else noAlarms">
         <apx-chart

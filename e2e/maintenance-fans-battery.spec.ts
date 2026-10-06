@@ -72,7 +72,7 @@ test('each fan shows its speed and state; the battery its axes', async ({ authed
   await expect(page.locator('body')).not.toContainText('object Object');
 
   await expect(tile(page, 'CNC fans').locator('.mt-word')).toHaveText('Healthy');
-  await expect(tile(page, 'APC battery')).toContainText('X Y Z OK');
+  await expect(tile(page, 'APC battery').locator('.mt-tile-value')).toHaveText('X Y Z');
   await expect(tile(page, 'APC battery').locator('.mt-word')).toHaveText('Healthy');
   // the collector sends no voltage, and the CNC battery is not one of the flags
   await expect(tile(page, 'CNC battery').locator('.mt-word')).toHaveText('Not reported');
@@ -264,6 +264,31 @@ test('a refresh keeps each fan\'s element, so a turning icon never snaps back', 
   await expect.poll(() => served).toBeGreaterThan(before);
   await expect(tile(page, 'Cooling fans').locator('.mt-fan')).toHaveCount(2);
   expect(await icon.evaluate((e: any) => e.__sameElement === true)).toBe(true);
+});
+
+test('a slower fan turns visibly slower; a healthy one\'s rpm wobble does not change its pace', async ({ authedPage: page }) => {
+  await mockApi(page, row({ fan_status: {
+    CNC_FAN1: { on: true, fault: false, rpm: 10206 },
+    CNC_FAN2: { on: true, fault: false, rpm: 9950 },
+    CNC_FAN3: { on: true, fault: false, rpm: 5000 }
+  } }));
+  await page.setViewportSize({ width: 1500, height: 1100 });
+  await page.goto('/maintenance-dashboard');
+  const icons = tile(page, 'Cooling fans').locator('.mt-fan-icon');
+  await expect(icons).toHaveCount(3);
+  const pace = (i: number) => icons.nth(i).evaluate((e: Element) => getComputedStyle(e).animationDuration);
+  expect(await pace(0)).toBe('1.2s');
+  expect(await pace(1)).toBe('1.2s');
+  expect(await pace(2)).toBe('2.4s');
+});
+
+test('battery axes read in the machine\'s order, not the database\'s', async ({ authedPage: page }) => {
+  // JSONB hands a 4-axis machine's flags back as B, X, Y, Z
+  await mockApi(page, row({ apc_battery_status: { B: false, X: false, Y: false, Z: false } }));
+  await page.setViewportSize({ width: 1500, height: 1100 });
+  await page.goto('/maintenance-dashboard');
+  await expect(tile(page, 'APC battery').locator('.mt-tile-value')).toHaveText('X Y Z B');
+  await expect(tile(page, 'APC battery').locator('.mt-word')).toHaveText('Healthy');
 });
 
 test('nothing reported: the design\'s six fan positions, each "Not reported"', async ({ authedPage: page }) => {

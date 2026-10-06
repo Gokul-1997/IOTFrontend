@@ -27,7 +27,7 @@ export interface ConditionZone { to: number; color: string; }
     .hub { fill: var(--mexa-ink, #1f2430); }
     .value { fill: var(--mexa-ink, #1f2430); font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
     .value.none { fill: var(--mexa-ink-3, #5d6679); }
-    .needle-turn { transform-box: view-box; transition: transform .6s cubic-bezier(.2, .8, .25, 1); }
+    .needle-turn { transform-box: view-box; transition: transform .4s cubic-bezier(.2, .8, .25, 1); }
     @media (prefers-reduced-motion: reduce) { .needle-turn { transition: none; } }
     :host-context(.dark) .off { stroke: #2a2f3b; }
   `],

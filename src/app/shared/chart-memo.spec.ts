@@ -64,6 +64,40 @@ describe('ChartMemo', () => {
     expect(m.memo('trend', () => ({ n: 4 }))).toEqual({ n: 4 });
   });
 
+  it('with deps, a bump alone keeps the reference: nothing it is built from changed', () => {
+    const m = new ChartMemo();
+    let built = 0;
+    const build = () => ({ n: ++built });
+    const first = m.memo('bars', build, '[39,42,38]');
+    m.bump();
+    expect(m.memo('bars', build, '[39,42,38]')).toBe(first);
+    expect(built).toBe(1);
+  });
+
+  it('with deps, a change in them rebuilds even within a generation', () => {
+    const m = new ChartMemo();
+    const first = m.memo('bars', () => ({ v: 39 }), '[39]');
+    const next = m.memo('bars', () => ({ v: 40 }), '[40]');
+    expect(next).not.toBe(first);
+    expect(next).toEqual({ v: 40 });
+  });
+
+  it('keep() hands back the old reference while the data is the same, and the new one once not', () => {
+    const m = new ChartMemo();
+    const first = m.keep('cycle', [{ name: 'Cycle Time', data: [24, 26.3] }]);
+    expect(m.keep('cycle', [{ name: 'Cycle Time', data: [24, 26.3] }])).toBe(first);
+    const changed = [{ name: 'Cycle Time', data: [24, 26.4] }];
+    expect(m.keep('cycle', changed)).toBe(changed);
+    expect(m.sig('cycle')).toBe(JSON.stringify(changed));
+  });
+
+  it('keep() compares with the data as it was handed out, not as the chart library left it', () => {
+    const m = new ChartMemo();
+    const first: any[] = m.keep('trend', [{ name: 'Servo X', data: [30, 31] }]);
+    first[0].type = 'line';               // what ApexCharts does to the series it is given
+    expect(m.keep('trend', [{ name: 'Servo X', data: [30, 31] }])).toBe(first);
+  });
+
   it('caches a falsy build result rather than rebuilding it every pass', () => {
     const m = new ChartMemo();
     let built = 0;
