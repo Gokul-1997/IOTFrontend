@@ -59,10 +59,10 @@
 
   <!-- Telemetry shows idle time but nobody entered a reason: a setup gap,
        not an empty filter result, and worth saying in words. -->
+  <!-- the gap, its size, and where to close it -->
   <p *ngIf="hasNoReasons" class="mexa-note mexa-note-warn">
-    <strong>No downtime reasons have been entered.</strong>
-    The machines reported {{ hours(data.kpis.idle_seconds) }} of idle time in this period, but no
-    operator recorded why. The Pareto below stays empty until reasons are entered.
+    <strong>No downtime reasons entered</strong> — {{ hours(data.kpis.idle_seconds) }} idle with no reason recorded.
+    <a *ngIf="canRecordReasons" routerLink="/downtime" class="mexa-kpi-link">Record reasons</a>
   </p>
 
   <!-- ══════════ KPI TILES ══════════ -->

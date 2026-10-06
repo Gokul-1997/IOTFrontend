@@ -1,8 +1,9 @@
 import { test, expect, seedAuth } from './fixtures/auth';
 
 /*
- * The energy meter panel: every value a machine's 3-phase meter sends, on
- * the Energy screen (any machine with a meter) and on the machine page.
+ * The energy meter panel: every value a machine's 3-phase meter sends, at
+ * the foot of the Energy screen, for the machines that have one. (The
+ * machine page showed it too until 6 Oct 2026.)
  *
  * Built from VMC - 1 - F's PowerData of 3 Oct 2026 — negative kW and power
  * factor, more Export than Import — so the panel must show the readings as
@@ -126,49 +127,61 @@ test.describe('energy meter — Energy screen', () => {
     await expect(panel(page).locator('.mp-totals').last()).toContainText('Energy used0.03kWh');
   });
 
-  test('no machine has a meter yet: said plainly', async ({ authedPage: page }) => {
-    await openEnergy(page, u => meter(u.searchParams.get('range') || '24h', { meters: [], machine: null, latest: null, points: [], summary: { readings: 0 } }));
-    await expect(panel(page)).toContainText('No machine has an energy meter yet');
+  /* Minimum on screen: a company with no meter gets no card saying so.
+     (That it is then asked once, not every 30 s, is in the unit spec.) */
+  test('no machine has a meter: no card at all', async ({ authedPage: page }) => {
+    const asked: string[] = [];
+    await openEnergy(page, u => meter(u.searchParams.get('range') || '24h',
+      { meters: [], machine: null, latest: null, points: [], summary: { readings: 0 } }), asked);
+    await expect(page.getByRole('heading', { name: 'Energy Dashboard' })).toBeVisible();
+    await expect.poll(() => asked.length).toBe(1);
+    await page.waitForTimeout(300);
+    await expect(panel(page)).toHaveCount(0);
+    await expect(page.getByText('No machine has an energy meter yet')).toHaveCount(0);
   });
 
-  test('a failed load says what to do, and Try again asks again', async ({ authedPage: page }) => {
+  test('a failed refresh says what to do, and Try again asks again', async ({ authedPage: page }) => {
     const asked: string[] = [];
-    let fail = true;
+    let fail = false;
     await openEnergy(page, u => (fail ? 'fail' : meter(u.searchParams.get('range') || '24h')), asked);
+    await expect(card(page, 'Voltage')).toContainText('416.7V');
+    fail = true;
+    await panel(page).getByRole('group', { name: 'Time range' }).getByRole('button', { name: '7 days' }).click();
     await expect(panel(page)).toContainText('Could not load the energy meter');
     fail = false;
     await panel(page).getByRole('button', { name: 'Try again' }).click();
     await expect(card(page, 'Voltage')).toContainText('416.7V');
   });
-});
 
-test.describe('energy meter — machine page', () => {
-  async function openMachine(page: any, body: any) {
-    await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
-    await page.route('**/api/**', (r: any) => r.fulfill(ok({ status: 'success', data: [] })));
-    await page.route('**/api/dashboard/live/15', (r: any) => r.fulfill(ok({ status: 'success', data: {
-      machine: { id: 15, machine_serial_no: 'VMC - 1 - F' }, operator: {}, job: {}, oee: {}, shift: { shift_code: 'S1' },
-      quality: {}, power: {}, production: { run_time: '00:00:00', idle_time: '00:00:00' },
-      live: { machine_status: 'IDLE', mode: 'EDIT', spindle_load: 0, feed_rate: 0, parts_count: 76, alarm: false, active_alarms: [] }
-    } })));
-    // the page's other panels answer as failed, which they show in their own words
-    await page.route('**/api/dashboard/live/15/timeline', (r: any) => r.fulfill({ status: 500, contentType: 'application/json', body: '{}' }));
-    await page.route('**/api/dashboard/live/15/spindle*', (r: any) => r.fulfill({ status: 500, contentType: 'application/json', body: '{}' }));
-    await page.route('**/api/dashboard/live/15/meter*', (r: any) => r.fulfill(ok(body)));
-    await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.goto('/dashboard/live/15');
-    await expect(page.getByRole('heading', { name: 'VMC - 1 - F' })).toBeVisible();
-  }
-
-  test('a machine with a meter shows it, without a machine picker', async ({ authedPage: page }) => {
-    await openMachine(page, meter('24h'));
+  test('one meter is named, not offered as a choice of one', async ({ authedPage: page }) => {
+    await openEnergy(page, u => meter(u.searchParams.get('range') || '24h',
+      { meters: [{ id: 15, serial: 'VMC - 1 - F', last_read_at: Date.now() }] }));
     await expect(card(page, 'Voltage')).toContainText('416.7V');
     await expect(panel(page).getByLabel('Machine')).toHaveCount(0);
+    await expect(panel(page).locator('.mp-machine')).toHaveText('VMC - 1 - F');
   });
+});
 
-  test('a machine without a meter shows nothing at all', async ({ authedPage: page }) => {
-    await openMachine(page, meter('24h', { meters: [], latest: null, points: [], summary: { readings: 0 }, checks: { ct_reversed: false } }));
-    await page.waitForTimeout(500);
-    await expect(panel(page)).toHaveCount(0);
-  });
+/* The machine page is the machine: status, production, spindle. The meter's
+   phases and totals live on the Energy screen only (6 Oct 2026). */
+test('the machine page has no energy meter, and does not ask for one', async ({ authedPage: page }) => {
+  const meterCalls: string[] = [];
+  await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
+  await page.route('**/api/**', (r: any) => r.fulfill(ok({ status: 'success', data: [] })));
+  await page.route('**/api/dashboard/live/15', (r: any) => r.fulfill(ok({ status: 'success', data: {
+    machine: { id: 15, machine_serial_no: 'VMC - 1 - F' }, operator: {}, job: {}, oee: {}, shift: { shift_code: 'S1' },
+    quality: {}, power: {}, production: { run_time: '00:00:00', idle_time: '00:00:00' },
+    live: { machine_status: 'IDLE', mode: 'EDIT', spindle_load: 0, feed_rate: 0, parts_count: 76, alarm: false, active_alarms: [] }
+  } })));
+  // the page's other panels answer as failed, which they show in their own words
+  await page.route('**/api/dashboard/live/15/timeline', (r: any) => r.fulfill({ status: 500, contentType: 'application/json', body: '{}' }));
+  await page.route('**/api/dashboard/live/15/spindle*', (r: any) => r.fulfill({ status: 500, contentType: 'application/json', body: '{}' }));
+  page.on('request', (r: any) => { if (r.url().includes('/meter')) meterCalls.push(r.url()); });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/dashboard/live/15');
+  await expect(page.getByRole('heading', { name: 'VMC - 1 - F' })).toBeVisible();
+  await page.waitForTimeout(800);
+  await expect(page.locator('app-meter-panel')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Energy meter' })).toHaveCount(0);
+  expect(meterCalls).toEqual([]);
 });

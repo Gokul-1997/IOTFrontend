@@ -16,6 +16,7 @@ import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { compactQty, qty } from '../../shared/format-number';
 import { MeterPanelComponent } from '../../shared/meter-panel/meter-panel.component';
+import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 9 — Energy Monitoring
@@ -24,17 +25,22 @@ import { MeterPanelComponent } from '../../shared/meter-panel/meter-panel.compon
    a difference between readings, never a sum of them. No machine sends
    that counter yet, so this screen reports "not reporting" rather than
    zeros that would read as a remarkably efficient factory.
+
+   Kept to what can be read at a glance (6 Oct 2026): a value and at most
+   one short line per tile, the definitions behind each (i). A chart is
+   drawn again only when its own figures change, and Day / Week / Month
+   regroup what is already loaded — no request.
 ───────────────────────────────────────────────────────────── */
 
 @Component({
   selector: 'app-energy-dashboard',
   standalone: true,
-  imports: [AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MeterPanelComponent],
+  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MeterPanelComponent],
   templateUrl: './energy-dashboard.component.html'
 })
 export class EnergyDashboardComponent implements OnInit, OnDestroy {
 
-  /** Chart options keep the same reference until apply() bumps this. */
+  /** Chart options keep their reference until their own figures change (deps). */
   private charts = new ChartMemo();
 
   machines: any[] = [];
@@ -121,7 +127,6 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   }
 
   private apply(res: any): void {
-    this.charts.bump();
     this.loading = false;
     if (!res || res.status !== 'success' || !res.data) {
       if (!this.errorMsg) this.errorMsg = 'No energy data available.';
@@ -132,20 +137,22 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
     const d = this.data = this.normalise(res.data);
     this.updatedAt = updatedLabel(d.updated_at);
 
-    this.trendCategories = (d.trend || []).map((t: any) =>
-      new Date(t.day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
-    this.trendSeries = [{ name: 'kWh', data: (d.trend || []).map((t: any) => t.kwh) }];
+    /* keep(): the same arrays as last time when the figures are the same, so
+       paging or searching the machine table redraws no chart. */
+    this.trendCategories = this.charts.keep('trendCats', (d.trend || []).map((t: any) =>
+      new Date(t.day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })));
+    this.trendSeries = this.charts.keep('trendSeries', [{ name: 'kWh', data: (d.trend || []).map((t: any) => t.kwh) }]);
 
-    /* Only machines that actually report a counter go on the chart —
-       plotting a non-reporting machine as a zero bar would read as a
-       machine using no electricity. */
-    const reporting = (d.machines?.data || []).filter((m: any) => m.kwh !== null);
-    this.machineCategories = reporting.map((m: any) => m.machine_serial_no);
-    this.machineSeries = [{ name: 'kWh', data: reporting.map((m: any) => m.kwh) }];
+    /* The five machines that used the most, over every machine — not the
+       table's page. Only machines that report a counter are in it: a zero
+       bar would read as a machine using no electricity. */
+    const top = d.top_consumers || [];
+    this.machineCategories = this.charts.keep('machineCats', top.map((m: any) => m.machine_serial_no));
+    this.machineSeries = this.charts.keep('machineSeries', top.length ? [{ name: 'kWh', data: top.map((m: any) => m.kwh) }] : []);
 
     /* A donut needs a flat array of numbers, not a {name,data} series —
        passing the series shape renders an empty chart with no error. */
-    this.shiftDonutSeries = (d.by_shift || []).map((s: any) => Number(s.kwh) || 0);
+    this.shiftDonutSeries = this.charts.keep('shiftSeries', (d.by_shift || []).map((s: any) => Number(s.kwh) || 0));
     this.shiftTotal = this.shiftDonutSeries.reduce((a, b) => a + b, 0);
 
     this.buildCostTrend();
@@ -208,6 +215,18 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
     return v === null || v === undefined ? '--' : `${qty(v, 3)}${unit}`;
   }
 
+  /** "₹8,926" — rupees as the plant reads them; another currency by its code. */
+  money(v: number | null | undefined, digits = 0): string {
+    if (v === null || v === undefined) return '--';
+    const cur = this.data?.currency || 'INR';
+    return `${cur === 'INR' ? '₹' : cur + ' '}${qty(v, digits)}`;
+  }
+
+  /** An overload is only judged against a limit; 0 alerts with none set is no all-clear. */
+  get overloadLimitSet(): boolean {
+    return (this.data?.machines?.data || []).some((m: any) => m.overload_kw != null);
+  }
+
   hours(seconds: number | null | undefined): string {
     const n = Number(seconds) || 0;
     const h = Math.floor(n / 3600);
@@ -232,9 +251,9 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       yaxis:  { title: { text: 'kWh' }, labels: { formatter: compactQty } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'dark' },
-      noData: { text: 'No machine is reporting an energy counter yet' }
+      noData: { text: 'No machine is sending energy readings yet' }
     };
-  });
+  }, this.charts.sig('trendCats') + this.charts.sig('trendSeries'));
   }
 
   /** The MEXA palette, in the order the design cycles it. */
@@ -261,9 +280,9 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       xaxis:  { categories: this.machineCategories, title: { text: 'kWh' } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'dark' },
-      noData: { text: 'No machine is reporting an energy counter yet' }
+      noData: { text: 'No machine is sending energy readings yet' }
     };
-  });
+  }, this.charts.sig('machineCats') + this.charts.sig('machineSeries'));
   }
 
   get shiftDonut(): any {
@@ -285,16 +304,20 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       tooltip: { y: { formatter: (v: number) => `${v} kWh` } },
       noData: { text: 'Nothing recorded by shift' }
     };
-  });
+  }, JSON.stringify(this.data?.by_shift ?? []));
   }
 
   /** Energy Cost Trend grouping: the design's Day | Week | Month. */
   costBy: 'day' | 'week' | 'month' = 'day';
+  readonly costPeriods = [
+    { key: 'day', label: 'Day' }, { key: 'week', label: 'Week' }, { key: 'month', label: 'Month' }
+  ] as const;
 
-  setCostBy(p: string): void {
-    this.costBy = p as any;
+  /** Regroups the figures already loaded: no request, and no other chart is redrawn. */
+  setCostBy(p: 'day' | 'week' | 'month'): void {
+    if (p === this.costBy) return;
+    this.costBy = p;
     this.buildCostTrend();
-    this.charts.bump();
     this.cdr.markForCheck();
   }
 
@@ -324,8 +347,9 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
         rows = [...weeks.entries()].map(([label, kwh]) => ({ label: `Wk ${label}`, kwh }));
       }
     }
-    this.monthCategories = rows.map(r => r.label);
-    this.monthSeries = rows.length ? [{ name: rate != null ? 'Cost' : 'kWh', data: rows.map(r => price(r.kwh)) }] : [];
+    this.monthCategories = this.charts.keep('monthCats', rows.map(r => r.label));
+    this.monthSeries = this.charts.keep('monthSeries',
+      rows.length ? [{ name: rate != null ? 'Cost' : 'kWh', data: rows.map(r => price(r.kwh)) }] : []);
   }
 
   /** "↑ 12.5%" / "↓ 3.4%". */
@@ -343,11 +367,12 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
       dataLabels: { enabled: false },
       legend: { show: false },
       xaxis: { categories: this.monthCategories },
-      yaxis: { title: { text: this.data?.rate_per_kwh != null ? `Cost (${this.data?.currency || 'INR'})` : 'kWh' } },
+      yaxis: { title: { text: this.data?.rate_per_kwh != null ? `Cost (${this.data?.currency || 'INR'})` : 'kWh' },
+               labels: { formatter: compactQty } },
       grid:  { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip: { theme: 'dark' },
-      noData: { text: 'Nothing recorded by month' }
+      tooltip: { theme: 'dark', y: { formatter: (v: number) => this.data?.rate_per_kwh != null ? this.money(v) : `${qty(v, 1)} kWh` } },
+      noData: { text: 'Nothing recorded for this period' }
     };
-  });
+  }, `${this.costBy}|${this.data?.rate_per_kwh}|${this.charts.sig('monthCats')}|${this.charts.sig('monthSeries')}`);
   }
 }

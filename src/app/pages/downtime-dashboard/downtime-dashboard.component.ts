@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { DowntimeDashboardService } from './downtime-dashboard.service';
@@ -32,7 +33,7 @@ import { lostCostLine, LOST_COST_HINT } from '../../shared/lost-cost';
 @Component({
   selector: 'app-downtime-dashboard',
   standalone: true,
-  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
+  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, RouterModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
   templateUrl: './downtime-dashboard.component.html'
 })
 export class DowntimeDashboardComponent implements OnInit, OnDestroy {
@@ -254,6 +255,9 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy {
     const k = this.data?.kpis;
     return k ? lostCostLine(k.alarm_cost, k.cost_machines?.priced, k.cost_machines?.of) : '';
   }
+
+  /** The Downtime page, where a stop's reason is entered — for whoever may open it. */
+  get canRecordReasons(): boolean { return this.auth.hasPermission('page:downtime'); }
 
   /** True when telemetry exists but nobody has entered a single reason —
    *  a setup gap, not an empty filter result. */

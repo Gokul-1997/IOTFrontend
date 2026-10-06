@@ -2,7 +2,7 @@ import { qty } from './format-number';
 
 /**
  * Lost time in rupees, for a KPI's line: what idle or alarm time cost at each
- * machine's hour rate (set on the machine, Master → Machines). When not every
+ * machine's hour rate (Master → Tariff & Rates). When not every
  * machine has a rate it says how many the figure covers; when none has, it
  * says so — never "₹0", which would claim the lost time cost nothing.
  */
@@ -15,4 +15,4 @@ export function lostCostLine(cost: number | null | undefined,
 }
 
 /** Where the rupee figures come from, for a tooltip. */
-export const LOST_COST_HINT = 'Hours lost × each machine’s hour rate, set on the machine in Master → Machines';
+export const LOST_COST_HINT = 'Hours lost × each machine’s hour rate, set on Master → Tariff & Rates';

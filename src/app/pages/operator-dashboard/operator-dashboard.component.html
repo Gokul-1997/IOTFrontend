@@ -48,9 +48,7 @@
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
 <ng-container *ngIf="loading && !data">
   <app-skeleton kind="kpis" [count]="5" label="Loading dashboard"></app-skeleton>
-  <div class="mexa-grid lg:grid-cols-2 xl:grid-cols-4">
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
+  <div class="mexa-grid lg:grid-cols-2">
     <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
     <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
   </div>
@@ -58,17 +56,12 @@
 
 <ng-container *ngIf="data">
 
-  <!-- The attribution caveat is shown, not buried: a machine with two
-       assigned operators appears in both of their rows. -->
-  <p *ngIf="data.attribution.shared_machines > 0" class="mexa-note mexa-note-note">
-    {{ data.attribution.note }}
-  </p>
-
+  <!-- One line: the problem and its count. Why, and what to do, are behind
+       the (i). (The shared-machine caveat moved to the table's (i), and is
+       on each row it applies to.) -->
   <p *ngIf="oeeGap > 0" class="mexa-note mexa-note-warn">
-    <strong>OEE needs a cycle time.</strong>
-    {{ oeeGap }} of {{ data.oee_coverage.machines }} running machines have no current job with a cycle time,
-    so operators who hold only those machines show OEE and efficiency as <code>--</code>.
-    Set the job on the machine to include them.
+    <strong>{{ oeeGap }} of {{ data.oee_coverage.machines }} running machines {{ oeeGap === 1 ? 'has' : 'have' }} no cycle time</strong> — no OEE for their operators.
+    <app-metric-help topic="performance"></app-metric-help>
   </p>
 
   <!-- ══════════ KPI TILES ══════════ -->
@@ -119,57 +112,44 @@
     </div>
   </div>
 
-  <!-- ══════════ TOP 5 / BOTTOM 5 CARDS ══════════ -->
+  <!-- ══════════ RANKINGS ══════════
+       Operator Score, Rejection Rate and Downtime Contribution are one card
+       with a tab each (6 Oct 2026); OEE keeps its own. Every tab and every
+       Top 5 / Bottom 5 is already in the page's one answer: switching asks
+       the server for nothing and draws only the chart on show. -->
   <ng-template #seg let-board="board" let-label="label">
     <span class="mexa-seg" role="group" [attr.aria-label]="label + ': show'">
       <button type="button" [attr.aria-pressed]="isShowing(board, 'top')" (click)="show(board, 'top')">Top 5</button>
-      <button type="button" [attr.aria-pressed]="isShowing(board, 'bottom')" (click)="show(board, 'bottom')">Botm 5</button>
+      <button type="button" [attr.aria-pressed]="isShowing(board, 'bottom')" (click)="show(board, 'bottom')">Bottom 5</button>
     </span>
   </ng-template>
 
-  <div class="mexa-grid lg:grid-cols-2 xl:grid-cols-4">
+  <div class="mexa-grid lg:grid-cols-2">
 
-    <section class="mexa-card" aria-labelledby="opScoreTitle">
-      <div class="mexa-card-head">
-        <h2 id="opScoreTitle" class="mexa-card-title mexa-card-title-left">Operator Score</h2>
-        <ng-container *ngTemplateOutlet="seg; context: { board: 'score', label: 'Operator Score' }"></ng-container>
+    <section class="mexa-card" aria-label="Operator ranking">
+      <div class="mexa-card-head mexa-card-head-wrap">
+        <span class="mexa-card-head-start">
+          <span class="mexa-cardtabs" role="tablist" uiTabs aria-label="Rank operators by">
+            <button *ngFor="let t of tabs" type="button" role="tab" class="mexa-cardtab" [id]="'opTab-' + t.key"
+                    aria-controls="opRankPanel" [attr.aria-label]="t.label" [attr.aria-selected]="tab === t.key"
+                    [attr.tabindex]="tab === t.key ? 0 : -1" (click)="setTab(t.key)"><span
+                    class="mexa-cardtab-long">{{ t.label }}</span><span class="mexa-cardtab-short">{{ t.short }}</span></button>
+          </span>
+          <app-metric-help [topic]="tabInfo.topic"></app-metric-help>
+        </span>
+        <ng-container *ngTemplateOutlet="seg; context: { board: tab, label: tabInfo.label }"></ng-container>
       </div>
-      <p class="mexa-card-hint">Average of utilisation, efficiency and quality rate</p>
-      <apx-chart *ngIf="rows('score').length"
-        [series]="scoreChart.series" [chart]="scoreChart.chart" [plotOptions]="scoreChart.plotOptions"
-        [colors]="scoreChart.colors" [dataLabels]="scoreChart.dataLabels" [legend]="scoreChart.legend"
-        [xaxis]="scoreChart.xaxis" [yaxis]="scoreChart.yaxis" [grid]="scoreChart.grid"
-        [tooltip]="scoreChart.tooltip" [noData]="scoreChart.noData"></apx-chart>
-      <p *ngIf="!rows('score').length" class="mexa-empty">No operator has a score for this period.</p>
-    </section>
-
-    <section class="mexa-card" aria-labelledby="opRejTitle">
-      <div class="mexa-card-head">
-        <h2 id="opRejTitle" class="mexa-card-title mexa-card-title-left">Rejection Rate</h2>
-        <ng-container *ngTemplateOutlet="seg; context: { board: 'rejection', label: 'Rejection Rate' }"></ng-container>
+      <div id="opRankPanel" role="tabpanel" [attr.aria-labelledby]="'opTab-' + tab">
+        <!-- made afresh for each tab and half, so the new bars ease in -->
+        <div *ngFor="let k of [tab + which[tab]]" class="mexa-swap">
+          <apx-chart *ngIf="rows(tab).length"
+            [series]="boardChart.series" [chart]="boardChart.chart" [plotOptions]="boardChart.plotOptions"
+            [colors]="boardChart.colors" [dataLabels]="boardChart.dataLabels" [legend]="boardChart.legend"
+            [xaxis]="boardChart.xaxis" [yaxis]="boardChart.yaxis" [grid]="boardChart.grid"
+            [tooltip]="boardChart.tooltip" [noData]="boardChart.noData"></apx-chart>
+          <p *ngIf="!rows(tab).length" class="mexa-empty">{{ tabInfo.empty }}</p>
+        </div>
       </div>
-      <p class="mexa-card-hint">Rejected and reworked parts, as a share of output</p>
-      <apx-chart *ngIf="rows('rejection').length"
-        [series]="rejectionChart.series" [chart]="rejectionChart.chart" [plotOptions]="rejectionChart.plotOptions"
-        [colors]="rejectionChart.colors" [dataLabels]="rejectionChart.dataLabels" [legend]="rejectionChart.legend"
-        [xaxis]="rejectionChart.xaxis" [yaxis]="rejectionChart.yaxis" [grid]="rejectionChart.grid"
-        [tooltip]="rejectionChart.tooltip" [noData]="rejectionChart.noData"></apx-chart>
-      <!-- <p *ngIf="noRejects" class="mexa-card-hint !mt-1">No rejects or rework were entered for this period.</p> -->
-      <p *ngIf="!rows('rejection').length" class="mexa-empty">Nothing produced, so there is no rejection rate.</p>
-    </section>
-
-    <section class="mexa-card" aria-labelledby="opDownTitle">
-      <div class="mexa-card-head">
-        <h2 id="opDownTitle" class="mexa-card-title mexa-card-title-left">Downtime Contribution</h2>
-        <ng-container *ngTemplateOutlet="seg; context: { board: 'downtime', label: 'Downtime Contribution' }"></ng-container>
-      </div>
-      <p class="mexa-card-hint">Time the machines were on but not cutting</p>
-      <apx-chart *ngIf="rows('downtime').length"
-        [series]="downtimeChart.series" [chart]="downtimeChart.chart" [plotOptions]="downtimeChart.plotOptions"
-        [colors]="downtimeChart.colors" [dataLabels]="downtimeChart.dataLabels" [legend]="downtimeChart.legend"
-        [xaxis]="downtimeChart.xaxis" [yaxis]="downtimeChart.yaxis" [grid]="downtimeChart.grid"
-        [tooltip]="downtimeChart.tooltip" [noData]="downtimeChart.noData"></apx-chart>
-      <p *ngIf="!rows('downtime').length" class="mexa-empty">No machine time was reported for these operators.</p>
     </section>
 
     <section class="mexa-card" aria-labelledby="opOeeTitle">
@@ -177,22 +157,23 @@
         <h2 id="opOeeTitle" class="mexa-card-title mexa-card-title-left">OEE <app-metric-help topic="oee"></app-metric-help></h2>
         <ng-container *ngTemplateOutlet="seg; context: { board: 'oee', label: 'OEE' }"></ng-container>
       </div>
-      <p class="mexa-card-hint">Availability, Performance and Quality, ranked by OEE</p>
-      <apx-chart *ngIf="rows('oee').length"
-        [series]="oeeChart.series" [chart]="oeeChart.chart" [plotOptions]="oeeChart.plotOptions"
-        [colors]="oeeChart.colors" [dataLabels]="oeeChart.dataLabels" [legend]="oeeChart.legend"
-        [xaxis]="oeeChart.xaxis" [yaxis]="oeeChart.yaxis" [grid]="oeeChart.grid"
-        [tooltip]="oeeChart.tooltip" [noData]="oeeChart.noData"></apx-chart>
-      <p *ngIf="!rows('oee').length" class="mexa-empty">
-        No operator's machines have a cycle time, so OEE cannot be worked out.
-      </p>
+      <div *ngFor="let k of [which.oee]" class="mexa-swap">
+        <apx-chart *ngIf="rows('oee').length"
+          [series]="oeeChart.series" [chart]="oeeChart.chart" [plotOptions]="oeeChart.plotOptions"
+          [colors]="oeeChart.colors" [dataLabels]="oeeChart.dataLabels" [legend]="oeeChart.legend"
+          [xaxis]="oeeChart.xaxis" [yaxis]="oeeChart.yaxis" [grid]="oeeChart.grid"
+          [tooltip]="oeeChart.tooltip" [noData]="oeeChart.noData"></apx-chart>
+        <p *ngIf="!rows('oee').length" class="mexa-empty">
+          No operator's machines have a cycle time, so OEE cannot be worked out.
+        </p>
+      </div>
     </section>
   </div>
 
   <!-- ══════════ OPERATOR DETAIL ══════════ -->
   <section class="mexa-card">
     <div class="mexa-tablebar">
-      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Operator Performance Details</h2>
+      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Operator Performance Details <app-metric-help topic="operator_rows"></app-metric-help></h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="opSearch">Search operators</label>
         <span class="mexa-searchbox">

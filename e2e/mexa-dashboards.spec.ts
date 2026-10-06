@@ -207,6 +207,17 @@ const operator = ok({
           quality_rate_pct: 97.6, utilization_pct: 87.1, oee_pct: 85.6 },
   attribution: { operators: 100, shared_machines: 10, note: 'Machines with more than one assigned operator appear in each of their rows.' },
   bands: { excellent: 20, good: 60, average: 15, needs_help: 5, unrated: 0 },
+  leaders: (() => {
+    const p = (name: string, value: number, oee = 80) =>
+      ({ operator_name: name, value, availability_pct: 92, efficiency_pct: 87, quality_rate_pct: 96, oee_pct: oee });
+    return {
+      score: { top: [p('Kumar', 91), p('Ramesh', 84), p('Suresh', 77), p('Niraj', 66), p('Arun', 52)],
+               bottom: [p('Vijay', 31), p('Arun', 52), p('Niraj', 66), p('Suresh', 77), p('Ramesh', 84)] },
+      rejection: { top: [p('Vijay', 12.5), p('Niraj', 6.1), p('Arun', 4.4)], bottom: [p('Kumar', 0.4)] },
+      downtime: { top: [p('Suresh', 22800), p('Arun', 15300)], bottom: [p('Kumar', 1800)] },
+      oee: { top: [p('Kumar', 85, 85), p('Ramesh', 78, 78), p('Suresh', 62, 62)], bottom: [p('Vijay', 22, 22)] }
+    };
+  })(),
   by_production: [],
   top_performers: [],
   operators: {

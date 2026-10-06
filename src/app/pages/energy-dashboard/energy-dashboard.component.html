@@ -54,31 +54,17 @@
 <ng-container *ngIf="data">
 
   <!-- Said plainly rather than shown as zeros, which would read as a
-       remarkably efficient factory. -->
+       remarkably efficient factory. Where the figure comes from is behind the (i). -->
   <p *ngIf="noEnergyData" class="mexa-note mexa-note-warn">
-    <strong>No machine is reporting an energy counter yet.</strong>
-    Energy figures appear as soon as the devices include the <code>energy</code> field in their
-    MQTT payload. Operating time and production below are measured and are unaffected.
-  </p>
-
-  <p *ngIf="!noEnergyData && !data.coverage.tariff_configured" class="mexa-note mexa-note-warn">
-    <strong>No tariff configured.</strong>
-    Energy is shown in kWh until a cost per unit is set.
-    <ng-container *ngIf="canEditSettings">
-      <a routerLink="/energy-tariff" class="underline font-semibold">Set the tariff</a>
-      to see cost.
-    </ng-container>
-    <!-- said plainly, rather than pointing at a button this person can't see -->
-    <ng-container *ngIf="!canEditSettings">
-      Your company admin sets it under <strong>Master → Tariff &amp; Rates</strong>.
-    </ng-container>
+    <strong>No machine is sending energy readings yet.</strong>
+    <app-metric-help topic="energy_consumed"></app-metric-help>
   </p>
 
   <!-- ══════════ KPI TILES ══════════ -->
   <div class="mexa-kpis">
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Total Energy<br>Consumed</span>
+        <span class="mexa-kpi-label">Total Energy<br>Consumed <app-metric-help topic="energy_consumed"></app-metric-help></span>
         <span class="mexa-kpi-icon navy" style="background:#2f2d8f" aria-hidden="true">
           <mat-icon>battery_charging_full</mat-icon>
         </span>
@@ -86,59 +72,65 @@
       <p class="mexa-kpi-value">
         {{ num(data.kpis.total_kwh) }}<small *ngIf="data.kpis.total_kwh !== null">kWh</small>
       </p>
-      <p class="mexa-kpi-sub">
-        <ng-container *ngIf="data.kpis.kwh_vs_yesterday_pct !== null && data.kpis.kwh_vs_yesterday_pct !== undefined; else cov">
-          <span [class.text-red-600]="data.kpis.kwh_vs_yesterday_pct > 0" [class.text-emerald-600]="data.kpis.kwh_vs_yesterday_pct < 0">
-            {{ change(data.kpis.kwh_vs_yesterday_pct) }}</span> vs Yesterday
-        </ng-container>
-        <ng-template #cov>{{ data.coverage.reporting }} of {{ data.coverage.machines }} machines reporting</ng-template>
+      <!-- more energy than the day before is the bad direction, so it is red -->
+      <p class="mexa-kpi-sub" *ngIf="data.kpis.kwh_vs_yesterday_pct != null">
+        <span class="mexa-delta" [class.mexa-delta-bad]="data.kpis.kwh_vs_yesterday_pct > 0"
+              [class.mexa-delta-good]="data.kpis.kwh_vs_yesterday_pct < 0">{{ change(data.kpis.kwh_vs_yesterday_pct) }}</span> vs Yesterday
+      </p>
+      <!-- only when some machines send no counter: the total leaves them out -->
+      <p class="mexa-kpi-sub" *ngIf="!noEnergyData && data.coverage.reporting < data.coverage.machines">
+        {{ data.coverage.reporting }} of {{ data.coverage.machines }} machines reporting
       </p>
     </div>
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Total Energy<br>Cost</span>
+        <span class="mexa-kpi-label">Total Energy<br>Cost <app-metric-help topic="energy_cost"></app-metric-help></span>
         <span class="mexa-kpi-icon blue" style="background:#4a76c8" aria-hidden="true">
           <mat-icon>account_balance_wallet</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ num(data.kpis.total_cost) }}</p>
-      <p class="mexa-kpi-sub">{{ data.currency }}</p>
+      <p class="mexa-kpi-value">{{ money(data.kpis.total_cost) }}</p>
+      <p class="mexa-kpi-sub" *ngIf="data.rate_per_kwh != null">{{ money(data.rate_per_kwh, 2) }} per kWh</p>
+      <!-- no tariff: said on the tile it empties, with the way to set one -->
+      <p class="mexa-kpi-sub" *ngIf="data.rate_per_kwh == null && !data.coverage.tariff_configured">
+        No tariff set<ng-container *ngIf="canEditSettings"> · <a routerLink="/energy-tariff" class="mexa-kpi-link">Set tariff</a></ng-container>
+      </p>
     </div>
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Energy<br>per Part</span>
+        <span class="mexa-kpi-label">Energy<br>per Part <app-metric-help topic="energy_per_part"></app-metric-help></span>
         <span class="mexa-kpi-icon purple" style="background:#9b7ec8" aria-hidden="true">
           <mat-icon>bolt</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ num(data.kpis.kwh_per_part) }}</p>
-      <p class="mexa-kpi-sub">kWh · {{ data.kpis.total_produced }} parts</p>
+      <p class="mexa-kpi-value">{{ num(data.kpis.kwh_per_part) }}<small *ngIf="data.kpis.kwh_per_part != null">kWh</small></p>
+      <p class="mexa-kpi-sub">{{ data.kpis.total_produced | number }} parts</p>
     </div>
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Average<br>Voltage</span>
+        <span class="mexa-kpi-label">Average<br>Voltage <app-metric-help topic="avg_voltage"></app-metric-help></span>
         <span class="mexa-kpi-icon blue" style="background:#9b7ec8" aria-hidden="true"><mat-icon>electrical_services</mat-icon></span>
       </div>
-      <p class="mexa-kpi-value">{{ num(data.kpis.avg_voltage) }}<small *ngIf="data.kpis.avg_voltage != null">V</small></p>
       <!-- the meters' line-to-line figure (~415 V), not phase-to-neutral (~240 V) -->
-      <p class="mexa-kpi-sub">{{ data.kpis.avg_voltage == null ? 'Not reported by the devices' : 'Phase to phase, average over the period' }}</p>
+      <p class="mexa-kpi-value">{{ num(data.kpis.avg_voltage) }}<small *ngIf="data.kpis.avg_voltage != null">V</small></p>
+      <p class="mexa-kpi-sub" *ngIf="data.kpis.avg_voltage == null">Not reported</p>
     </div>
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Average<br>Current</span>
+        <span class="mexa-kpi-label">Average<br>Current <app-metric-help topic="avg_current"></app-metric-help></span>
         <span class="mexa-kpi-icon green" style="background:#17b3a3" aria-hidden="true"><mat-icon>power</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ num(data.kpis.avg_current) }}<small *ngIf="data.kpis.avg_current != null">A</small></p>
-      <p class="mexa-kpi-sub">{{ data.kpis.avg_current == null ? 'Not reported by the devices' : 'Per phase, average over the period' }}</p>
+      <p class="mexa-kpi-sub" *ngIf="data.kpis.avg_current == null">Not reported</p>
     </div>
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Overload<br>Alerts</span>
+        <span class="mexa-kpi-label">Overload<br>Alerts <app-metric-help topic="overload"></app-metric-help></span>
         <span class="mexa-kpi-icon grey" [style.background]="data.kpis.overload_alerts > 0 ? '#dc2626' : '#6b7280'"
               aria-hidden="true">
           <mat-icon>warning</mat-icon>
@@ -146,25 +138,20 @@
       </div>
       <!-- the machine furthest over its limit, as the design names it -->
       <ng-container *ngIf="data.kpis.overload_top as o; else noOverload">
-        <p class="mexa-kpi-value" style="color:#c32b3f">{{ o.machine_serial_no }}</p>
-        <p class="mexa-kpi-sub">Power exceeded <strong class="text-red-600">{{ o.exceeded_kw }} kW</strong>
-          <span *ngIf="data.kpis.overload_alerts > 1"> · {{ data.kpis.overload_alerts }} machines</span></p>
+        <p class="mexa-kpi-value mexa-kpi-alert">{{ o.machine_serial_no }}</p>
+        <p class="mexa-kpi-sub"><strong class="text-red-600">+{{ o.exceeded_kw }} kW</strong> over the limit<span
+          *ngIf="data.kpis.overload_alerts > 1"> · {{ data.kpis.overload_alerts }} machines</span></p>
       </ng-container>
       <ng-template #noOverload>
         <p class="mexa-kpi-value">0</p>
-        <p class="mexa-kpi-sub">Peak above the configured limit</p>
+        <!-- 0 with no limit set is not a clean bill of health -->
+        <p class="mexa-kpi-sub" *ngIf="!overloadLimitSet">No limit set</p>
       </ng-template>
     </div>
   </div>
 
-  <!-- ══════════ ENERGY METER — every value the meter sends ══════════
-       Phases, power factor, frequency and the meter's import/export totals,
-       now and over a range of its own, for the machine chosen in the
-       panel — only machines with a meter are offered (meter-panel). -->
-  <app-meter-panel mode="energy"></app-meter-panel>
-
   <!-- ══════════ ROW 2 — trend + distribution ══════════ -->
-  <div class="mexa-grid lg:grid-cols-3 mt-4">
+  <div class="mexa-grid lg:grid-cols-3">
 
     <section class="mexa-card lg:col-span-2">
       <h2 class="mexa-card-title mexa-card-title-left">Energy Consumption Over Time (kWh)</h2>
@@ -199,47 +186,42 @@
     </section>
   </div>
 
-  <!-- ══════════ ROW 3 — by machine, by month, top consumers ══════════ -->
-  <div class="mexa-grid lg:grid-cols-3">
+  <!-- ══════════ ROW 3 — the biggest users, and what energy cost ══════════
+       The "Highest Consumers" list that repeated the bar chart is gone
+       (6 Oct 2026); the chart is those five machines. -->
+  <div class="mexa-grid lg:grid-cols-2">
 
-    <section class="mexa-card">
-      <h2 class="mexa-card-title mexa-card-title-left">High Energy Consumption by Machine (kWh)</h2>
+    <section class="mexa-card" aria-labelledby="enMachTitle">
+      <h2 id="enMachTitle" class="mexa-card-title mexa-card-title-left">High Energy Consumption by Machine (kWh)</h2>
       <apx-chart *ngIf="machineSeries.length"
         [series]="machineSeries" [chart]="machineChart.chart" [plotOptions]="machineChart.plotOptions"
         [colors]="machineChart.colors" [dataLabels]="machineChart.dataLabels"
         [xaxis]="machineChart.xaxis" [grid]="machineChart.grid" [legend]="machineChart.legend"
         [tooltip]="machineChart.tooltip" [noData]="machineChart.noData"></apx-chart>
-      <p *ngIf="!machineSeries.length" class="mexa-empty">No machine is reporting a counter yet.</p>
+      <p *ngIf="!machineSeries.length" class="mexa-empty">No machine is sending energy readings yet.</p>
     </section>
 
-    <section class="mexa-card">
+    <!-- Day / Week / Month regroup the figures already on the page: no request -->
+    <section class="mexa-card" aria-labelledby="enCostTitle">
       <div class="mexa-card-head">
-        <h2 class="mexa-card-title mexa-card-title-left">Energy Cost Trend</h2>
-        <span class="mexa-seg" role="group" aria-label="Energy Cost Trend: group by">
-          <button type="button" *ngFor="let p of ['day','week','month']" [attr.aria-pressed]="costBy === p"
-                  (click)="setCostBy(p)">{{ p === 'day' ? 'Day' : p === 'week' ? 'Week' : 'Month' }}</button>
+        <h2 id="enCostTitle" class="mexa-card-title mexa-card-title-left">
+          {{ data.rate_per_kwh != null ? 'Energy Cost Trend' : 'Energy Trend (kWh)' }}
+          <app-metric-help topic="energy_cost_trend"></app-metric-help>
+        </h2>
+        <span class="mexa-seg" role="group" aria-label="Energy trend: group by">
+          <button type="button" *ngFor="let p of costPeriods" [attr.aria-pressed]="costBy === p.key"
+                  (click)="setCostBy(p.key)">{{ p.label }}</button>
         </span>
       </div>
-      <apx-chart *ngIf="monthSeries.length"
-        [series]="monthSeries" [chart]="monthChart.chart" [plotOptions]="monthChart.plotOptions"
-        [colors]="monthChart.colors" [dataLabels]="monthChart.dataLabels"
-        [xaxis]="monthChart.xaxis" [grid]="monthChart.grid" [legend]="monthChart.legend"
-        [tooltip]="monthChart.tooltip" [noData]="monthChart.noData"></apx-chart>
+      <!-- re-made on each grouping, so the new bars ease in and say they changed -->
+      <div *ngFor="let k of [costBy]" class="mexa-swap">
+        <apx-chart *ngIf="monthSeries.length"
+          [series]="monthSeries" [chart]="monthChart.chart" [plotOptions]="monthChart.plotOptions"
+          [colors]="monthChart.colors" [dataLabels]="monthChart.dataLabels"
+          [xaxis]="monthChart.xaxis" [yaxis]="monthChart.yaxis" [grid]="monthChart.grid" [legend]="monthChart.legend"
+          [tooltip]="monthChart.tooltip" [noData]="monthChart.noData"></apx-chart>
+      </div>
       <p *ngIf="!monthSeries.length" class="mexa-empty">Nothing recorded for this period.</p>
-      <p *ngIf="monthSeries.length && !data.rate_per_kwh" class="mexa-card-hint text-center !mt-0">In kWh — no tariff is set, so there is no cost.</p>
-    </section>
-
-    <section class="mexa-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Highest Consumers</h2>
-      <p *ngIf="!data.top_consumers.length" class="mexa-empty">Nothing recorded.</p>
-      <ol class="mexa-rank">
-        <li *ngFor="let m of data.top_consumers; let i = index">
-          <span class="mexa-rank-name">
-            <span class="mexa-rank-n">{{ i + 1 }}.</span>{{ m.machine_serial_no }}
-          </span>
-          <span class="mexa-rank-value num">{{ num(m.kwh) }} kWh</span>
-        </li>
-      </ol>
     </section>
   </div>
 
@@ -325,5 +307,10 @@
       </span>
     </div>
   </section>
+
+  <!-- ══════════ ENERGY METER ══════════
+       Every value a 3-phase meter sends, for the machines that have one;
+       nothing at all, and no polling, for a company without (meter-panel). -->
+  <app-meter-panel class="mt-4"></app-meter-panel>
 </ng-container>
 

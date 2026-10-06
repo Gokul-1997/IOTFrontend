@@ -16,9 +16,4 @@ export class MeterService {
     if (machineId) params['machine_id'] = String(machineId);
     return this.http.get<any>(`${this.api}/energy/meter`, { params });
   }
-
-  /** Machine page: that machine's meter. */
-  forMachine(machineId: number, range: string): Observable<any> {
-    return this.http.get<any>(`${this.api}/live/${machineId}/meter`, { params: { range } });
-  }
 }

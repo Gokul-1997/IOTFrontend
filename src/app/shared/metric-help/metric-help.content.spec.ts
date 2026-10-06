@@ -14,7 +14,9 @@ describe('metricHelp', () => {
     'target', 'accepted', 'rejected', 'rework', 'utilization', 'running_share', 'production_vs_target',
     'machine_status', 'run_hours', 'energy_total', 'efficiency',
     'avg_oee', 'avg_availability', 'avg_performance', 'avg_quality',
-    'spindle_load', 'spindle_speed', 'feed_rate'
+    'spindle_load', 'spindle_speed', 'feed_rate',
+    'energy_consumed', 'energy_cost', 'energy_per_part', 'avg_voltage', 'avg_current', 'overload', 'energy_cost_trend',
+    'oee_loss', 'oee_trend', 'operator_score', 'rejection_rate', 'downtime_contribution', 'operator_rows'
   ];
 
   it('has words for every topic the screens use', () => {
