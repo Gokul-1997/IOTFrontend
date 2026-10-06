@@ -13,7 +13,14 @@
 .mt-row1, .mt-row2 { display: grid; gap: 1rem; margin-bottom: 1rem; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
 @media (min-width: 768px)  { .mt-row1 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1280px) { .mt-row1 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-@media (min-width: 1024px) { .mt-row2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, .9fr); } }
+/* between tablet and wide desktop three charts were too narrow ("Cycle Time
+   (Min)" wrapped into its own headline): cycle time and alarms side by side,
+   the trend across both under them */
+@media (min-width: 768px) and (max-width: 1279px) {
+  .mt-row2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mt-row2 > .mt-trend { grid-column: 1 / -1; order: 1; }
+}
+@media (min-width: 1280px) { .mt-row2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, .9fr); } }
 .mt-row1 > .mexa-card, .mt-row2 > .mexa-card { display: flex; flex-direction: column; min-width: 0; }
 
 /* ── machine card ── */
@@ -29,8 +36,33 @@
 .mt-state.is-running   { background: #15803d; }
 .mt-state.is-idle      { background: #b45309; }
 .mt-state.is-breakdown { background: #c32b3f; }
-.mt-state-dot { width: .55rem; height: .55rem; border-radius: 999px; background: #fff; }
-.mt-machine-img { display: block; width: 100%; object-fit: contain; margin: .6rem 0 .2rem; }
+.mt-state-dot { position: relative; width: .55rem; height: .55rem; border-radius: 999px; background: #fff; }
+/* a live, running machine's dot breathes — a ring that grows and fades, so it
+   runs off the main thread; an offline machine's dot is hollow */
+.mt-state.is-running .mt-state-dot::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; background: #fff;
+  animation: mt-live 2s ease-out infinite;
+}
+@keyframes mt-live { from { transform: scale(1); opacity: .6; } to { transform: scale(2.6); opacity: 0; } }
+.is-paused .mt-state.is-running .mt-state-dot::after { animation-play-state: paused; }
+.mt-state.is-offline .mt-state-dot { background: transparent; box-shadow: inset 0 0 0 2px #fff; }
+/* a tablet's half-width card made the photo 350px tall and pushed the facts away */
+.mt-machine-img { display: block; width: 100%; max-height: 12.5rem; object-fit: contain; margin: .6rem 0 .2rem; }
+
+/* the one line under the name: what needs a look, worst first — or that nothing does */
+.mt-attention {
+  --att-ink: #065f46; --att-bg: rgba(34, 197, 94, .11);
+  display: flex; align-items: center; gap: .45rem; margin: .6rem 0 0; padding: .4rem .65rem;
+  border-radius: 10px; font-size: .8rem; line-height: 1.3; color: var(--att-ink); background: var(--att-bg);
+  transition: background-color .3s ease, color .3s ease;
+}
+.mt-attention.is-stable   { --att-ink: #92400e; --att-bg: rgba(245, 166, 35, .15); }
+.mt-attention.is-critical { --att-ink: #991b1b; --att-bg: rgba(224, 49, 49, .12); }
+:host-context(.dark) .mt-attention             { --att-ink: #6ee7b7; --att-bg: rgba(34, 197, 94, .12); }
+:host-context(.dark) .mt-attention.is-stable   { --att-ink: #fcd34d; --att-bg: rgba(245, 166, 35, .14); }
+:host-context(.dark) .mt-attention.is-critical { --att-ink: #fca5a5; --att-bg: rgba(224, 49, 49, .16); }
+.mt-attention-icon { width: 1.05rem; height: 1.05rem; flex: none; }
+.mt-attention-text { min-width: 0; overflow-wrap: anywhere; }
 .mt-lastseen { margin: 0 0 .3rem; text-align: center; font-size: .75rem; color: var(--mexa-ink-3); }
 .mt-facts { display: grid; grid-template-columns: 1fr 1fr; gap: .2rem; margin: .5rem 0 0; }
 .mt-facts dt { font-size: .78rem; color: var(--mexa-ink-2); }
@@ -46,6 +78,12 @@
 .mt-gauge { text-align: center; min-width: 0; }
 .mt-gauge-label { margin: 0 0 -12px 0; font-size: .8rem; font-weight: 600; color: var(--mexa-ink); line-height: 1.2; min-height: 1.95em; }
 .mt-word { margin: .1rem 0 0; font-size: .78rem; font-weight: 700; transition: color .3s ease; }
+
+/* A reading that has just got worse (since the last refresh of this machine)
+   dims and returns three times, gently — then stays still in its colour. No
+   continuous blinking: a critical reading is already red. */
+@keyframes mt-alert { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+.is-new-alert .mt-word, .mt-state.is-new-alert { animation: mt-alert 1.2s ease-in-out 3; }
 .mt-center { text-align: center; }
 
 /* ── fans and batteries ── */
@@ -59,6 +97,19 @@
                 transition: color .3s ease; }
 .mt-fan.is-still .mt-fan-icon { color: var(--mexa-ink-3); }
 .mt-fan.is-fault .mt-fan-icon { color: #e03131; }
+/* each fan sits on a disc tinted by its state: turning, still, or faulted */
+.mt-fan-hub {
+  display: grid; place-items: center; width: 2.75rem; height: 2.75rem; margin: 0 auto .35rem;
+  border-radius: 999px; background: rgba(34, 197, 94, .13); transition: background-color .3s ease;
+}
+.mt-fan.is-still .mt-fan-hub { background: rgba(148, 163, 184, .16); }
+.mt-fan.is-fault .mt-fan-hub { background: rgba(224, 49, 49, .13); }
+.mt-fan-hub .mt-fan-icon { width: 1.65rem; height: 1.65rem; margin: 0; }
+/* two or three fans get the card's room: a bigger disc, the speed as the figure */
+.mt-fans.is-one-row .mt-fan-hub { width: 3.75rem; height: 3.75rem; margin-bottom: .55rem; }
+.mt-fans.is-one-row .mt-fan-hub .mt-fan-icon { width: 2.2rem; height: 2.2rem; }
+.mt-fans.is-one-row .mt-fan-name { font-size: .85rem; }
+.mt-fans.is-one-row .mt-fan-reading { font-size: 1.2rem; margin-top: .15rem; }
 
 /* A turning fan, and only a turning one. The whole <svg> turns — one
    transform the browser runs off the main thread, no repaint per frame —
@@ -66,11 +117,11 @@
    are off-screen or the tab is hidden (appPauseOffscreen), still for anyone
    who asked for less motion. */
 @keyframes mt-fan-spin { to { transform: rotate(360deg); } }
-.mt-fan-icon.is-spinning { animation: mt-fan-spin 1.2s linear infinite; }
+.mt-fan-icon.is-spinning { animation: mt-fan-spin var(--mt-spin, 1.2s) linear infinite; }
 .is-paused .mt-fan-icon.is-spinning { animation-play-state: paused; }
 .mt-fan-name { margin: 0; font-size: .8rem; font-weight: 700; color: var(--mexa-ink); }
 .mt-fan-place { margin: .1rem 0 0; font-size: .7rem; color: var(--mexa-ink-2); line-height: 1.25; }
-.mt-fan-reading { margin: .1rem 0 0; font-size: .75rem; font-weight: 600; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
+.mt-fan-reading { margin: .1rem 0 0; font-size: .88rem; font-weight: 800; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
 .mt-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; }
 .mt-tile { text-align: center; padding: .7rem .4rem !important; }
 .mt-tile-name { margin: 0; font-size: .8rem; font-weight: 600; color: var(--mexa-ink); }
@@ -81,9 +132,14 @@
 .mt-battery-fill { transform-box: fill-box; transform-origin: 50% 100%;
                    transition: transform .4s cubic-bezier(.2, .8, .25, 1), fill .3s ease; }
 
+/* the readings above the bars sit on the card, so they take its ink — in
+   either theme, and at once when the theme is switched */
+:host ::ng-deep .mt-bars .apexcharts-datalabel { fill: var(--mexa-ink); }
+
 @media (prefers-reduced-motion: reduce) {
-  .mt-fan-icon.is-spinning { animation: none; }
-  .mt-state, .mt-word, .mt-fan-icon, .mt-battery-fill { transition: none; }
+  .mt-fan-icon.is-spinning, .mt-state.is-running .mt-state-dot::after,
+  .is-new-alert .mt-word, .mt-state.is-new-alert { animation: none; }
+  .mt-state, .mt-word, .mt-fan-icon, .mt-fan-hub, .mt-attention, .mt-battery-fill { transition: none; }
 }
 
 /* ── bottom row ── */

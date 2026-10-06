@@ -33,8 +33,21 @@ import { PauseOffscreenDirective } from '../../shared/pause-offscreen.directive'
 const POLL_MS = 60_000;
 
 /** A fan tile: one the controller reports, or one of the design's positions.
- *  `running` — the controller says it is turning; only then does its icon turn. */
-interface FanTile { name: string; place: string; reading: string; status: string; running: boolean; }
+ *  `running` — the controller says it is turning; only then does its icon turn,
+ *  `spin` long a turn takes: a slower fan turns visibly slower. */
+interface FanTile { name: string; place: string; reading: string; status: string; running: boolean; spin: string; }
+
+type Band = 'Healthy' | 'Stable' | 'Critical' | '';
+
+/** A reading with a band: what the attention line lists and new alerts are found in. */
+interface Watched { key: string; label: string; value: string; band: Band; }
+
+const BAND_RANK: Record<string, number> = { '': 0, Healthy: 1, Stable: 2, Critical: 3 };
+
+/* Axes in the order a machine names them, then anything else alphabetically:
+   a 4-axis machine's battery flags come back from JSONB as B, X, Y, Z. */
+const AXIS_ORDER = ['X', 'Y', 'Z', 'A', 'B', 'C', 'U', 'V', 'W'];
+const axisRank = (a: string) => { const i = AXIS_ORDER.indexOf(a); return i < 0 ? AXIS_ORDER.length : i; };
 
 /** A battery tile: its reading, its band, and how full its icon is drawn (0–1). */
 interface BatteryTile { value: string; word: string; level: number; }
@@ -128,6 +141,15 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
      battery flag it keeps per axis; `level` is how full the icon is drawn. */
   apcBattery: BatteryTile = { value: '--', word: '', level: 0 };
   cncBattery: BatteryTile = { value: '--', word: '', level: 0 };
+
+  /* What needs attention on this machine now, worst first — the line under its
+     name — and which readings have just got worse since the last refresh,
+     which pulse briefly and are told to a screen reader once. */
+  attention: Watched[] = [];
+  freshAlerts = new Set<string>();
+  alertNote = '';
+  private lastBands = new Map<string, Band>();
+  private lastMachine: number | null = null;
 
   private destroy$ = new Subject<void>();
   /** A filter change: fetch now, and start the minute's polling again from here. */
@@ -245,11 +267,11 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
 
     /* Donuts and gauges take a flat number array; the {name,data} series
        shape renders an empty chart with no error. */
-    this.alarmSeries = [
+    this.alarmSeries = this.charts.keep('alarmSeries', [
       Number(d.alarms.critical) || 0,
       Number(d.alarms.non_critical) || 0,
       Number(d.alarms.information) || 0
-    ];
+    ]);
 
     const axes = (prefix: string) => ['x', 'y', 'z'].map(a => ({
       axis: a.toUpperCase(),
@@ -286,11 +308,12 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     this.fansReported = reported.length > 0;
     this.fanTiles = this.fansReported
       ? reported.slice(0, 6)
-      : DESIGN_FANS.map(f => ({ ...f, reading: '', status: 'Not reported', running: false }));
+      : DESIGN_FANS.map(f => ({ ...f, reading: '', status: 'Not reported', running: false, spin: '1.2s' }));
     this.fanCols = Math.min(3, this.fanTiles.length);
     this.fansRunning = this.fanTiles.some(f => f.running);
     this.apcBattery = this.batteryTile(this.focusRow?.apc_battery_voltage, this.focusRow?.apc_battery_status);
     this.cncBattery = this.batteryTile(this.focusRow?.cnc_battery_voltage, null);
+    this.noteAlerts(this.focusRow);
 
     /* Cycle time: run time per part in each hour. Hours with no part are
        left as gaps. Long-cycle machines (an HMC part can take an hour) read
@@ -302,9 +325,9 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     const k = this.cycleUnit === 'Min' ? 60 : 1;
     // only hours that finished a part: a gap per idle hour broke the line into dots
     this.cycleCategories = withParts.map(c => this.clockLabel(c.hour_start));
-    this.cycleSeries = withParts.length
+    this.cycleSeries = this.charts.keep('cycleSeries', withParts.length
       ? [{ name: 'Cycle Time', data: withParts.map(c => Math.round((Number(c.cycle_seconds) / k) * 10) / 10) }]
-      : [];
+      : []);
     const last = withParts[withParts.length - 1];
     this.currentCycle = last ? Math.round((Number(last.cycle_seconds) / k) * 10) / 10 : null;
 
@@ -316,14 +339,14 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     const lines = (defs: [string, string][]) => defs
       .filter(([, key]) => ct.some((t: any) => t[key] != null))
       .map(([name, key]) => ({ name, data: ct.map((t: any) => t[key] ?? null) }));
-    this.tempTrendSeries = lines([
+    this.tempTrendSeries = this.charts.keep('tempTrendSeries', lines([
       ['Servo X', 'servo_temp_x'], ['Servo Y', 'servo_temp_y'],
       ['Servo Z', 'servo_temp_z'], ['Spindle', 'spindle_motor_temp']
-    ]);
-    this.irTrendSeries = lines([
+    ]));
+    this.irTrendSeries = this.charts.keep('irTrendSeries', lines([
       ['IR X', 'servo_insulation_res_x'], ['IR Y', 'servo_insulation_res_y'],
       ['IR Z', 'servo_insulation_res_z']
-    ]);
+    ]));
 
     this.cdr.markForCheck();
   }
@@ -403,9 +426,11 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   readonly SEV = SEVERITY;
 
   get alarmDonut(): any {
+    // one slice needs no label on the ring: the centre already says the total
+    const slices = this.alarmSeries.filter(n => n > 0).length;
     return this.charts.memo('alarmDonut', () => {
     return {
-      chart: { type: 'donut', height: 180, fontFamily: 'inherit' },
+      chart: { type: 'donut', height: 180, fontFamily: 'inherit', animations: { enabled: false } },
       labels: [SEVERITY.critical.label, SEVERITY.noncritical.label, SEVERITY.info.label],
       colors: [SEVERITY.critical.color, SEVERITY.noncritical.color, SEVERITY.info.color],
       plotOptions: {
@@ -415,13 +440,13 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
                    formatter: () => String(this.data?.alarms?.total ?? 0) }
         } } }
       },
-      dataLabels: { enabled: true, formatter: (_v: number, o: any) => String(o.w.config.series[o.seriesIndex]) },
+      dataLabels: { enabled: slices > 1, formatter: (_v: number, o: any) => String(o.w.config.series[o.seriesIndex]) },
       // the key list beside the donut already names every class
       legend: { show: false },
       tooltip: { y: { formatter: (v: number) => `${v} alarms` } },
       noData: { text: 'No alarms in this window' }
     };
-  });
+  }, this.charts.sig('alarmSeries'));
   }
 
   /* ── gauges and bands, as the design draws them ──
@@ -466,7 +491,8 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     if (typeof v !== 'object') {
       // an older controller's word or number: "OK", 1, or a speed
       const status = this.fanWord(String(v));
-      return { name, place: '', reading: '', status, running: status === 'Healthy' || (typeof v === 'number' && v > 1) };
+      return { name, place: '', reading: '', status, running: status === 'Healthy' || (typeof v === 'number' && v > 1),
+               spin: this.spinFor(typeof v === 'number' && v > 1 ? v : null) };
     }
     if (Array.isArray(v)) return null;
 
@@ -475,10 +501,83 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     const reading = (state: string) => [state, rpm].filter(Boolean).join(' · ');
     // turning: not faulted, not off, and a speed above 0 (or "on" when no speed is sent)
     const running = v.fault !== true && v.on !== false && (hasRpm ? v.rpm > 0 : v.on === true);
-    if (v.fault === true) return { name, place: '', reading: reading('Fault'), status: 'Critical', running };
-    if (v.on === false)   return { name, place: '', reading: reading('Off'), status: 'Stable', running };
-    if (v.on === true || v.fault === false || rpm) return { name, place: '', reading: rpm || 'Running', status: 'Healthy', running };
+    const spin = this.spinFor(hasRpm ? v.rpm : null);
+    if (v.fault === true) return { name, place: '', reading: reading('Fault'), status: 'Critical', running, spin };
+    if (v.on === false)   return { name, place: '', reading: reading('Off'), status: 'Stable', running, spin };
+    if (v.on === true || v.fault === false || rpm) return { name, place: '', reading: rpm || 'Running', status: 'Healthy', running, spin };
     return null;
+  }
+
+  /**
+   * How long one turn of the icon takes: 1.2 s at 10,000 rpm, a little slower
+   * for a slower fan (2.4 s at most). In 0.2 s steps, so the minute-by-minute
+   * wobble of a healthy fan's rpm never restarts the turn.
+   */
+  private spinFor(rpm: number | null): string {
+    if (!rpm || rpm <= 0) return '1.2s';
+    const seconds = Math.min(2.4, Math.max(0.8, 12000 / rpm));
+    return `${(Math.round(seconds * 5) / 5).toFixed(1)}s`;
+  }
+
+  /**
+   * The readings this machine is watched on, in the words its card uses, and
+   * from them: the attention line (worst first), and the readings that got
+   * worse since the last refresh of the same machine — those pulse a few
+   * times and are announced once. A first look, or another machine, has no
+   * "since", so nothing pulses then.
+   */
+  private noteAlerts(r: any): void {
+    const watched: Watched[] = [];
+    if (r) {
+      const add = (key: string, label: string, v: any, unit: string, band: Band) =>
+        watched.push({ key, label, band, value: v === null || v === undefined ? '' : `${Math.round(Number(v))}${unit}` });
+      if (this.rowStatus(r) === 'BREAKDOWN') watched.push({ key: 'machine', label: 'Machine in alarm', value: '', band: 'Critical' });
+      add('spindle_load', 'Spindle load', r.spindle_load, '%', this.band(r.spindle_load, this.LOAD_BANDS));
+      add('spindle_temp', 'Spindle temp', r.spindle_motor_temp, ' °C', this.band(r.spindle_motor_temp, this.TEMP_BANDS));
+      add('spindle_ir', 'Spindle IR', r.spindle_insulation_res, ' MΩ', this.bandLow(r.spindle_insulation_res, this.IR_BANDS));
+      for (const a of ['x', 'y', 'z']) {
+        const A = a.toUpperCase();
+        add(`servo_load_${a}`, `Servo load ${A}`, r[`servo_load_${a}`], '%', this.band(r[`servo_load_${a}`], this.LOAD_BANDS));
+        add(`servo_temp_${a}`, `Servo temp ${A}`, r[`servo_temp_${a}`], ' °C', this.band(r[`servo_temp_${a}`], this.TEMP_BANDS));
+        add(`encoder_temp_${a}`, `Encoder temp ${A}`, r[`encoder_temp_${a}`], ' °C', this.band(r[`encoder_temp_${a}`], this.TEMP_BANDS));
+      }
+      if (this.fansReported) {
+        for (const f of this.fanTiles) {
+          if (f.status in BAND_RANK) watched.push({ key: `fan:${f.name}`, label: f.name, value: f.reading, band: f.status as Band });
+        }
+      }
+      watched.push({ key: 'battery:cnc', label: 'CNC battery', value: this.cncBattery.value, band: this.cncBattery.word as Band });
+      watched.push({ key: 'battery:apc', label: 'APC battery', value: this.apcBattery.value, band: this.apcBattery.word as Band });
+    }
+
+    this.attention = watched
+      .filter(w => BAND_RANK[w.band] >= BAND_RANK['Stable'])
+      .sort((a, b) => BAND_RANK[b.band] - BAND_RANK[a.band]);
+
+    const sameMachine = !!r && r.machine_id === this.lastMachine;
+    const fresh = sameMachine
+      ? this.attention.filter(w => BAND_RANK[w.band] > BAND_RANK[this.lastBands.get(w.key) ?? ''])
+      : [];
+    this.freshAlerts = new Set(fresh.map(w => w.key));
+    this.alertNote = fresh.length
+      ? 'Now ' + fresh.map(w => `${w.band.toLowerCase()}: ${w.label}${w.value ? ' ' + w.value : ''}`).join('; ')
+      : '';
+    this.lastBands = new Map(watched.map(w => [w.key, w.band]));
+    this.lastMachine = r?.machine_id ?? null;
+  }
+
+  /** After the worst reading's name: its band (unless the name says it) and how many more. */
+  get attentionTail(): string {
+    const [first] = this.attention;
+    if (!first) return '';
+    const band = first.key === 'machine' ? '' : ` · ${first.band}`;
+    const more = this.attention.length > 1 ? ` · +${this.attention.length - 1} more` : '';
+    return band + more;
+  }
+
+  /** The attention line's full list, for its tooltip and for a screen reader. */
+  get attentionText(): string {
+    return this.attention.map(w => `${w.label}${w.value ? ' ' + w.value : ''} (${w.band.toLowerCase()})`).join(', ');
   }
 
   /** Fan tiles keep their element from one refresh to the next, so a turning
@@ -501,7 +600,8 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
    */
   private batteryTile(volts: any, flags: any): BatteryTile {
     const axes = flags && typeof flags === 'object' && !Array.isArray(flags)
-      ? Object.entries(flags).filter(([, low]) => typeof low === 'boolean') as [string, boolean][]
+      ? (Object.entries(flags).filter(([, low]) => typeof low === 'boolean') as [string, boolean][])
+          .sort(([a], [b]) => axisRank(a) - axisRank(b) || a.localeCompare(b))
       : [];
     const low = axes.filter(([, isLow]) => isLow).map(([axis]) => axis);
     const flagWord = axes.length ? (low.length ? 'Critical' : 'Healthy') : '';
@@ -513,7 +613,8 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       return tile(`${Number(volts).toFixed(2)} v`, rank(flagWord) > rank(voltWord) ? flagWord : voltWord);
     }
     if (!axes.length) return tile('--', '');
-    return tile(low.length ? `${low.join(', ')} low` : `${axes.map(([axis]) => axis).join(' ')} OK`, flagWord);
+    // all fine: the axes it covers ("X Y Z B", with "Healthy" under it); else which are low
+    return tile(low.length ? `${low.join(', ')} low` : axes.map(([axis]) => axis).join(' '), flagWord);
   }
 
   /** A controller's fan value in the design's words. */
@@ -553,7 +654,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
 
   get cycleChart(): any {
     return this.charts.memo('cycleChart', () => ({
-      chart: { type: 'line', height: 250, toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false } },
+      chart: { type: 'line', height: 250, toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false }, animations: { enabled: false } },
       stroke: { width: 3, curve: 'smooth' },
       markers: { size: 4, strokeWidth: 2, colors: ['#fff'], strokeColors: '#2f2d8f' },
       colors: ['#2f2d8f'],
@@ -564,7 +665,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       grid: { borderColor: 'rgba(148,163,184,.25)' },
       tooltip: { theme: 'dark', y: { formatter: (v: number | null) => v == null ? 'no part this hour' : `${v} ${this.cycleUnit.toLowerCase()}` } },
       noData: { text: 'No parts made in this window' }
-    }));
+    }), this.charts.sig('cycleSeries') + JSON.stringify([this.cycleCategories, this.cycleUnit]));
   }
 
   /** The design's middle chart: insulation resistance when a controller
@@ -588,8 +689,13 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
 
   /** X / Y / Z as three bars, one colour per axis as in the design. */
   axisBars(key: string, values: (number | null)[], labels: string[], unit: string): any {
-    return this.charts.memo(`bars:${key}`, () => ({
-      series: [{ name: unit, data: values }],
+    // kept until the readings or labels change (see ChartMemo.memo on why not updateSeries)
+    return this.charts.memo(`bars:${key}`, () => ({ ...this.barOptions(labels, unit), series: [{ name: unit, data: values }] }),
+                            JSON.stringify([values, labels, unit]));
+  }
+
+  private barOptions(labels: string[], unit: string): any {
+    return {
       chart: { type: 'bar', height: 190, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
       plotOptions: { bar: { columnWidth: '55%', borderRadius: 4, distributed: true, dataLabels: { position: 'top' } } },
       colors: ['#2f2d8f', '#4a76c8', '#9b7ec8'],
@@ -602,7 +708,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       yaxis: { min: 0, max: (m: number) => Math.max(50, Math.ceil((m || 0) / 10) * 10 + 10), title: { text: unit === '°C' ? 'Celsius' : unit } },
       grid: { borderColor: 'rgba(148,163,184,.25)' },
       tooltip: { theme: 'dark', y: { formatter: (v: number | null) => v == null ? 'not reported' : `${v} ${unit}` } }
-    }));
+    };
   }
 
   /** Whether any of these readings was sent. */
@@ -620,14 +726,14 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
 
   private trendOptions(unit: string, colors: string[]): any {
     return {
-      chart: { type: 'line', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart: { type: 'line', height: 260, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
       stroke: { width: 3, curve: 'smooth' },
       markers: { size: 3 },
       colors,
       dataLabels: { enabled: false },
       legend: { position: 'bottom' },
       xaxis: { categories: this.conditionCategories, title: { text: 'Hour' } },
-      yaxis: { title: { text: unit }, labels: { formatter: (v: number) => v == null ? '' : v.toFixed(0) } },
+      yaxis: { title: { text: unit === '°C' ? 'Celsius' : unit }, labels: { formatter: (v: number) => v == null ? '' : v.toFixed(0) } },
       grid: { borderColor: 'rgba(148,163,184,.25)' },
       tooltip: { theme: 'dark', y: { formatter: (v: number | null) => v == null ? 'no reading' : `${v} ${unit}` } },
       noData: { text: 'No reading in this window' }
@@ -635,10 +741,24 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   }
 
   get tempTrendChart(): any {
-    return this.charts.memo('tempTrendChart', () => { return this.trendOptions('°C', ['#2f2d8f', '#4a76c8', '#9b7ec8', '#e8618c']); });
+    return this.charts.memo('tempTrendChart', () => this.trendOptions('°C', this.trendColours(this.tempTrendSeries)),
+                            this.charts.sig('tempTrendSeries') + JSON.stringify(this.conditionCategories));
   }
   get irTrendChart(): any   {
-    return this.charts.memo('irTrendChart', () => { return this.trendOptions('Resistance', ['#4a76c8', '#2f2d8f', '#9b7ec8']); });
+    return this.charts.memo('irTrendChart', () => this.trendOptions('Resistance', ['#4a76c8', '#2f2d8f', '#9b7ec8']),
+                            this.charts.sig('irTrendSeries') + JSON.stringify(this.conditionCategories));
+  }
+
+  /** One colour per line, kept with its line when a line has nothing to draw. */
+  private trendColours(lines: { name: string }[]): string[] {
+    const colour: Record<string, string> = { 'Servo X': '#2f2d8f', 'Servo Y': '#4a76c8', 'Servo Z': '#9b7ec8', 'Spindle': '#e8618c' };
+    return lines.map(l => colour[l.name] ?? '#64748b');
+  }
+
+  /** The middle chart's name says what it draws: the spindle's line too, when it has one. */
+  get trendTitle(): string {
+    if (this.trendIsIr) return 'Servo Motor Insulation Resistance Trend';
+    return this.tempTrendSeries.some(l => l.name === 'Spindle') ? 'Servo & Spindle Temperature Trend' : 'Servo Motor Temperature Trend';
   }
 
   /** Signals the API says it cannot supply, in readable form. */
