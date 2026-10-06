@@ -1,7 +1,7 @@
 <div class="mexa-titlebar">
   <div class="flex gap-2 items-center">
     <h1 class="mexa-title">My Profile</h1>
-    <p class="mexa-subtitle">( Your account details and security )</p>
+    <p class="mexa-subtitle">( Your account details and password )</p>
   </div>
 </div>
 
@@ -30,17 +30,6 @@
     (click)="activeTab = 'password'">
     <span class="ui-tab-icon material-icons" aria-hidden="true">pattern</span>
     Change Password
-  </button>
-
-  <button
-    type="button"
-    role="tab"
-    class="ui-tab"
-    [class.is-active]="activeTab === 'security'"
-    [attr.aria-selected]="activeTab === 'security'"
-    (click)="activeTab = 'security'">
-    <span class="ui-tab-icon material-icons" aria-hidden="true">lock</span>
-    Security
   </button>
 
 </div>
@@ -144,20 +133,6 @@
   </section>
 
 
-  <!-- Security -->
-  <section
-    *ngIf="activeTab === 'security'"
-    class="mexa-card prof-card w-1/2 mx-auto">
-<!-- ══════════ SECURITY ══════════ -->
-    <section class="prof-card text-center p-8">
-      <h2 class="mexa-card-title mexa-card-title-left"></h2>
-      <p class="mexa-card-hint prof-hint">Add an extra layer of security to your account.</p>
-      <a routerLink="/security/2fa" class="ui-btn ui-btn-primary">
-        Manage two-step sign-in
-      </a>
-    </section>
-
-  </section>
 
 </div>
 

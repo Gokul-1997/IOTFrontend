@@ -76,3 +76,6 @@
 @media (prefers-reduced-motion: reduce) {
   .mf-image { transition: none; }
 }
+
+/* "₹/hour" is wider than "rpm": keep the figure clear of it */
+.mf-unit-wide .ui-input { padding-right: 4.5rem; }

@@ -231,6 +231,102 @@ export function metricHelp(topic: string, basis: HelpBasis = 'period'): MetricHe
         example: 'Three hours at 4.2, 3.9 and 4.5 kWh: 12.6 kWh.',
         why: 'Compare it with parts made to see the energy each part costs. It stays at 0 when the machines send no energy readings.'
       };
+    case 'energy_consumed':
+      return {
+        title: 'Energy consumed',
+        what: 'Electricity the machines used in the period, in kilowatt-hours (kWh), from each machine\'s own energy counter.',
+        formula: ['Energy used = last counter reading − first, day by day, added up'],
+        example: 'A counter at 1,200.0 kWh in the morning and 1,262.5 kWh at night: 62.5 kWh used that day.',
+        why: 'A machine whose device sends no energy counter shows "not reporting", never 0 — it is left out of the total, not counted as using nothing.'
+      };
+    case 'energy_cost':
+      return {
+        title: 'Total energy cost',
+        what: 'What the energy used in the period cost, at the tariff set on Master → Tariff & Rates (₹ per unit, kWh).',
+        formula: ['Energy cost = kWh used × ₹ per kWh'],
+        example: '1,248.6 kWh at ₹10.95 per kWh: ₹13,672.',
+        why: 'A machine with a rate of its own is priced at that rate; every other machine at the company default. With no tariff set, cost shows "--".'
+      };
+    case 'energy_per_part':
+      return {
+        title: 'Energy per part',
+        what: 'How much energy each part took, on average, over the period.',
+        formula: ['Energy per part = kWh used ÷ parts made'],
+        example: '1,248.6 kWh for 12,560 parts: 0.099 kWh per part.',
+        why: 'Lower is better. A rise means the machines used more energy for the same output — idle running, heavier cuts or a fault.'
+      };
+    case 'avg_voltage':
+      return {
+        title: 'Average voltage',
+        what: 'The supply voltage sent with the machines\' readings, between phases (line to line), averaged over the period.',
+        example: 'About 415 V is normal for a 3-phase supply; phase to neutral it would read about 240 V.',
+        why: 'A supply well above or below 415 V strains motors and drives. Shows "--" when no machine sends a voltage.'
+      };
+    case 'avg_current':
+      return {
+        title: 'Average current',
+        what: 'The current sent with the machines\' readings, per phase, averaged over the period.',
+        why: 'A machine drawing much more current than usual for the same work can point to a mechanical or electrical problem. Shows "--" when no machine sends a current.'
+      };
+    case 'overload':
+      return {
+        title: 'Overload alerts',
+        what: 'Machines whose power went above their overload limit (kW) in the period. The tile names the one furthest over.',
+        formula: ['Overload = peak kW above the limit set on Master → Tariff & Rates'],
+        example: 'A limit of 12 kW and a peak of 15.2 kW: 3.2 kW over.',
+        why: 'Repeated overloads strain the motor and the supply. No limit set means no alert.'
+      };
+    case 'energy_cost_trend':
+      return {
+        title: 'Energy cost trend',
+        what: 'Energy used each day, week or month, priced at the company tariff. With no tariff set, the bars show kWh instead.',
+        formula: ['Cost of a bar = kWh in it × ₹ per kWh'],
+        why: 'Weeks are the days of each week added together; switching Day, Week or Month does not reload the page.'
+      };
+    case 'oee_loss':
+      return {
+        title: 'Where OEE is lost',
+        what: 'Every planned hour, split into good output (OEE) and the three ways time is lost.',
+        formula: ['Availability loss: planned, but not running — idle, or off and sending no data',
+                  'Performance loss: running slower than the ideal cycle time',
+                  'Quality loss: parts rejected or reworked'],
+        example: 'Availability 89 %, Performance 88 %, Quality 96 %: 11 pts lost to availability, 10.7 to performance, 3.1 to quality, 75.2 % good output.',
+        why: 'The four parts add up to 100 % of planned time. The biggest loss is where to look first.'
+      };
+    case 'oee_trend':
+      return {
+        title: 'OEE trend',
+        what: 'OEE for each day against the target line, with Availability, Performance and Quality behind it.',
+        why: 'Click a name in the key to hide or show its line. A drop in OEE follows the factor that dropped with it.'
+      };
+    case 'operator_score':
+      return {
+        title: 'Operator score',
+        what: 'One score per operator: the average of their machines\' utilisation, efficiency and quality rate.',
+        formula: ['Score = (Utilisation + Efficiency + Quality rate) ÷ 3'],
+        example: 'Utilisation 80 %, efficiency 75 %, quality 97 %: (80 + 75 + 97) ÷ 3 = 84 %.',
+        why: 'A rate that was not measured is left out and the other two are averaged. Top 5 shows the highest scores, Bottom 5 the lowest.'
+      };
+    case 'rejection_rate':
+      return {
+        title: 'Rejection rate',
+        what: 'The share of an operator\'s output that was rejected or reworked.',
+        formula: ['Rejection rate = (Rejected + Rework) ÷ Parts made'],
+        example: '10 rejected and 2 reworked out of 420 parts: 2.9 %.',
+        why: 'Lower is better, so Top 5 shows the highest rates: the operators to help first.'
+      };
+    case 'downtime_contribution':
+      return {
+        title: 'Downtime contribution',
+        what: 'How long each operator\'s machines were switched on but not cutting.',
+        why: 'Measured from the machines, not typed in, so it counts every stop whether or not a reason was entered. Top 5 shows the longest.'
+      };
+    case 'operator_rows':
+      return {
+        title: 'Operator rows',
+        what: 'One row per operator, with the machines assigned to them in the period.',
+        why: 'A machine with more than one assigned operator appears in each of their rows, so the rows can add up to more than the factory total.'
+      };
     case 'efficiency':
       return {
         title: 'Efficiency',

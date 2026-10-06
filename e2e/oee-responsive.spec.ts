@@ -199,10 +199,13 @@ test('where OEE is lost adds up to 100 and names the biggest loss', async ({ aut
   await expect(rows.nth(2)).toContainText('10.0 pts');   // 0.5 × 0.2
   await expect(rows.nth(3)).toContainText('4.0 pts');    // 0.5 × 0.8 × 0.1
   // the two hour figures on the page, reconciled
-  await expect(rows.nth(1)).toContainText('100 h 0 m (60 h 0 m idle, 40 h 0 m off or not reporting)');
+  await expect(rows.nth(1)).toContainText('100 h 0 m not running (60 h 0 m idle, 40 h 0 m off)');
+  await expect(rows.nth(2)).toContainText('20% slower than the cycle time');
+  await expect(rows.nth(3)).toContainText('40 parts rejected');
   await expect(rows.nth(1)).toHaveClass(/is-biggest/);
+  // the problem, and where to act on it
   await expect(panel.locator('.mexa-loss-verdict')).toContainText('Biggest loss: Availability');
-  await expect(panel.locator('.mexa-loss-verdict')).toContainText('not running for 50% of their planned time');
+  await expect(panel.locator('.mexa-loss-verdict').getByRole('link', { name: 'See downtime reasons' })).toHaveAttribute('href', '/downtime-analysis');
 });
 
 test('the loss panel says what it needs when OEE cannot be computed', async ({ authedPage: page }) => {

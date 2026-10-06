@@ -62,12 +62,12 @@ export const NAV_MENUS: NavItem[] = [
       { label: 'Lines', path: '/lines', icon: 'linear_scale', permission: 'page:lines' },
       { label: 'Shifts', path: '/shifts', icon: 'schedule', permission: 'page:shifts' },
       { label: 'Operators', path: '/operators', icon: 'badge', permission: 'page:operators' },
-      // Tariff & limits, moved off the Energy Dashboard into its own page
-      { label: 'Energy Tariff', path: '/energy-tariff', icon: 'payments', permission: 'page:analytics-energy:settings' }
-      /* 2FA Security moved to the account menu: it is about the person, and
-         with no permission it made this menu appear for every role. */
+      // every rate in one place: the electricity tariff and each machine's hour rate
+      { label: 'Tariff & Rates', path: '/energy-tariff', icon: 'payments', permission: 'page:analytics-energy:settings' }
     ]
   },
+  /* S&T's whole menu (it opens on Companies). A company admin reaches Users
+     and Roles from Settings since 6 Oct 2026, not from the bar. */
   { label: 'Admin', path: '/admin/users', icon: 'admin_panel_settings', adminOnly: true }
 ];
 

@@ -199,7 +199,31 @@
           </div>
         </section>
 
-        <!-- ══ 4. Network ══ -->
+        <!-- ══ 4. Cost ══ -->
+        <section class="ui-section" aria-labelledby="mfSecCost">
+          <h3 id="mfSecCost" class="ui-section-title">Cost</h3>
+          <p class="ui-section-hint">What an hour of this machine costs. The Downtime and OEE screens price its idle and alarm time with it.</p>
+
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+            <div>
+              <label class="ui-label" for="mfRate">Hour rate</label>
+              <div class="ui-unit-wrap mf-unit-wide">
+                <input id="mfRate" class="ui-input" type="number" inputmode="decimal" min="0" max="1000000" step="0.01"
+                       formControlName="hour_rate" placeholder="e.g. 500" autocomplete="off"
+                       [class.is-invalid]="form.get('hour_rate')?.invalid && form.get('hour_rate')?.touched"
+                       [attr.aria-invalid]="form.get('hour_rate')?.invalid && form.get('hour_rate')?.touched"
+                       [attr.aria-describedby]="form.get('hour_rate')?.invalid && form.get('hour_rate')?.touched ? 'mfRateErr' : 'mfRateHint'" />
+                <span class="ui-unit" aria-hidden="true">₹/hour</span>
+              </div>
+              <p *ngIf="!(form.get('hour_rate')?.invalid && form.get('hour_rate')?.touched)" id="mfRateHint" class="ui-hint">Leave blank if not known. Every machine's rate can be set at once on Master → Tariff &amp; Rates.</p>
+              <p *ngIf="form.get('hour_rate')?.invalid && form.get('hour_rate')?.touched" id="mfRateErr" class="ui-error" role="alert">
+                Enter rupees per hour, from 0 to 10,00,000.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ 5. Network ══ -->
         <section class="ui-section" aria-labelledby="mfSecNet">
           <h3 id="mfSecNet" class="ui-section-title">Network</h3>
           <p class="ui-section-hint">

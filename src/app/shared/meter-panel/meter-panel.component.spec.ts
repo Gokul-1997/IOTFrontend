@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { fmt, fmtAuto, hzBand, imbalancePct, MeterLimits, niceBounds, pfBand, voltageBand } from './meter-panel.component';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { of, throwError } from 'rxjs';
+import { fmt, fmtAuto, hzBand, imbalancePct, MeterLimits, MeterPanelComponent, niceBounds, pfBand, voltageBand } from './meter-panel.component';
 
 const limits: MeterLimits = {
   v_ll_nominal: 415, v_tolerance_pct: 10, pf_good: 0.95, pf_low: 0.9,
@@ -50,5 +51,64 @@ describe('meter panel helpers', () => {
     expect(b.min).toBe(0);
     expect(b.max).toBeGreaterThanOrEqual(0.0167);
     expect(b.ticks).toBeLessThanOrEqual(6);
+  });
+});
+
+/* The panel asks the server every 30 s only while that is worth it: a meter
+   on show, in a tab someone can see. A company with no meter is asked once. */
+describe('meter panel polling', () => {
+  let calls: number;
+  let answer: () => any;
+  let panel: MeterPanelComponent;
+  const withMeter = { status: 'success', data: { meters: [{ id: 15, serial: 'VMC - 1 - F' }], machine: { id: 15, serial: 'VMC - 1 - F' } } };
+  const noMeter = { status: 'success', data: { meters: [], machine: null } };
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    calls = 0;
+    const api: any = { forEnergy: () => { calls++; return answer(); } };
+    panel = new MeterPanelComponent(api, { markForCheck() {} } as any);
+  });
+  afterEach(() => {
+    panel.ngOnDestroy();
+    vi.useRealTimers();
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+  });
+
+  it('a company with no meter is asked once, and shown nothing', () => {
+    answer = () => of(noMeter);
+    panel.ngOnInit();
+    vi.advanceTimersByTime(5 * 60_000);
+    expect(calls).toBe(1);
+    expect(panel.visible).toBe(false);
+  });
+
+  it('a meter on show is asked again every 30 s', () => {
+    answer = () => of(withMeter);
+    panel.ngOnInit();
+    expect(panel.visible).toBe(true);
+    vi.advanceTimersByTime(90_000);
+    expect(calls).toBe(4);
+  });
+
+  it('not while the browser tab is in the background', () => {
+    answer = () => of(withMeter);
+    panel.ngOnInit();
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+    vi.advanceTimersByTime(90_000);
+    expect(calls).toBe(1);
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+    vi.advanceTimersByTime(30_000);
+    expect(calls).toBe(2);
+  });
+
+  it('a first answer that failed is tried again: it is not yet known there is no meter', () => {
+    answer = () => throwError(() => new Error('offline'));
+    panel.ngOnInit();
+    expect(panel.visible).toBe(false);
+    answer = () => of(withMeter);
+    vi.advanceTimersByTime(30_000);
+    expect(calls).toBe(2);
+    expect(panel.visible).toBe(true);
   });
 });

@@ -55,10 +55,11 @@
 <ng-container *ngIf="data">
 
   <!-- OEE needs a cycle time per machine; without one, performance cannot
-       be computed at all. Said plainly rather than shown as a low score. -->
-  <p *ngIf="data.coverage.oee_computable < data.coverage.machines" class="mexa-note mexa-note-warn">
-    <strong>{{ data.coverage.oee_computable }} of {{ data.coverage.machines }} machines have a computable OEE.</strong>
-    {{ data.coverage.note }}
+       be computed at all. Said plainly rather than shown as a low score —
+       in one line, with why and what to do behind the (i). -->
+  <p *ngIf="noCycleTime > 0" class="mexa-note mexa-note-warn">
+    <strong>{{ noCycleTime }} of {{ data.coverage.machines }} machines {{ noCycleTime === 1 ? 'has' : 'have' }} no cycle time</strong> — no OEE for {{ noCycleTime === 1 ? 'it' : 'them' }}.
+    <app-metric-help topic="performance"></app-metric-help>
   </p>
 
   <!-- ══════════ KPI TILES ══════════
@@ -98,10 +99,9 @@
       </div>
       <p class="mexa-kpi-value">{{ pct(data.kpis.availability_pct) }}</p>
       <div class="mexa-kpi-track mexa-factor-a" aria-hidden="true" [style.--v.%]="data.kpis.availability_pct || 0"><i></i></div>
-      <p class="mexa-kpi-sub" *ngIf="data.kpis.vs_yesterday?.availability != null; else aSub">
+      <p class="mexa-kpi-sub" *ngIf="data.kpis.vs_yesterday?.availability != null">
         <span class="mexa-delta" [class.mexa-delta-up]="data.kpis.vs_yesterday.availability >= 0" [class.mexa-delta-down]="data.kpis.vs_yesterday.availability < 0">{{ change(data.kpis.vs_yesterday.availability) }}</span> vs Yesterday
       </p>
-      <ng-template #aSub><p class="mexa-kpi-sub">Run time over planned time</p></ng-template>
     </div>
 
     <div class="mexa-kpi">
@@ -113,10 +113,9 @@
       </div>
       <p class="mexa-kpi-value">{{ pct(data.kpis.performance_pct) }}</p>
       <div class="mexa-kpi-track mexa-factor-p" aria-hidden="true" [style.--v.%]="data.kpis.performance_pct || 0"><i></i></div>
-      <p class="mexa-kpi-sub" *ngIf="data.kpis.vs_yesterday?.performance != null; else pSub">
+      <p class="mexa-kpi-sub" *ngIf="data.kpis.vs_yesterday?.performance != null">
         <span class="mexa-delta" [class.mexa-delta-up]="data.kpis.vs_yesterday.performance >= 0" [class.mexa-delta-down]="data.kpis.vs_yesterday.performance < 0">{{ change(data.kpis.vs_yesterday.performance) }}</span> vs Yesterday
       </p>
-      <ng-template #pSub><p class="mexa-kpi-sub">{{ data.coverage.with_cycle_time }} machines have a cycle time</p></ng-template>
     </div>
 
     <div class="mexa-kpi">
@@ -128,10 +127,9 @@
       </div>
       <p class="mexa-kpi-value">{{ pct(data.kpis.quality_pct) }}</p>
       <div class="mexa-kpi-track mexa-factor-q" aria-hidden="true" [style.--v.%]="data.kpis.quality_pct || 0"><i></i></div>
-      <p class="mexa-kpi-sub" *ngIf="data.kpis.vs_yesterday?.quality != null; else qSub">
+      <p class="mexa-kpi-sub" *ngIf="data.kpis.vs_yesterday?.quality != null">
         <span class="mexa-delta" [class.mexa-delta-up]="data.kpis.vs_yesterday.quality >= 0" [class.mexa-delta-down]="data.kpis.vs_yesterday.quality < 0">{{ change(data.kpis.vs_yesterday.quality) }}</span> vs Yesterday
       </p>
-      <ng-template #qSub><p class="mexa-kpi-sub">{{ data.kpis.rejected | number }} rejected</p></ng-template>
     </div>
 
     <div class="mexa-kpi">
@@ -156,15 +154,14 @@
            reasons are rarely entered, so the event total read 0. Hours and
            minutes: "1594:14:50" across a fleet-week could not be read. -->
       <p class="mexa-kpi-value" [title]="hms(data.kpis.idle_seconds) + ' (HH:MM:SS)'">{{ longHours(data.kpis.idle_seconds) }}</p>
-      <p class="mexa-kpi-sub">Machines on, not running</p>
+      <p class="mexa-kpi-sub mexa-kpi-cost" *ngIf="idleCostLine" [title]="costHint">{{ idleCostLine }}</p>
     </div>
   </div>
 
   <!-- ══════════ WHERE OEE IS LOST · TREND ══════════ -->
   <div class="mexa-grid lg:grid-cols-5">
     <section class="mexa-card lg:col-span-2" aria-labelledby="oeLossTitle">
-      <h2 id="oeLossTitle" class="mexa-card-title mexa-card-title-left">Where OEE is lost</h2>
-      <p class="mexa-card-hint">Every planned hour, split into good output and the three OEE losses.</p>
+      <h2 id="oeLossTitle" class="mexa-card-title mexa-card-title-left">Where OEE is lost <app-metric-help topic="oee_loss"></app-metric-help></h2>
 
       <ng-container *ngIf="loss; else noLoss">
         <!-- the list below carries the same figures as text -->
@@ -175,17 +172,19 @@
         <ul class="mexa-losslist">
           <li class="mexa-factor-oee">
             <i aria-hidden="true"></i>
-            <span>Good output (OEE)<small>Parts made right, at full speed, in planned time</small></span>
+            <span>Good output (OEE)</span>
             <strong>{{ loss.oee | number:'1.1-1' }}%</strong>
           </li>
           <li *ngFor="let i of loss.items" [ngClass]="'mexa-factor-' + i.key" [class.is-biggest]="i === loss.biggest && i.pts > 0">
             <i aria-hidden="true"></i>
-            <span>{{ i.label }}<small>{{ i.note }}</small></span>
+            <span>{{ i.label }}<small *ngIf="i.note">{{ i.note }}</small></span>
             <strong>{{ i.pts | number:'1.1-1' }} pts</strong>
           </li>
         </ul>
+        <!-- the problem, and where to act on it -->
         <p class="mexa-loss-verdict" *ngIf="loss.biggest.pts > 0">
-          Biggest loss: <strong>{{ loss.biggest.name }}</strong> — {{ loss.biggest.verdict }}
+          Biggest loss: <strong>{{ loss.biggest.name }}</strong>
+          <ng-container *ngIf="lossAction(loss.biggest) as a"> · <a [routerLink]="a.path" class="mexa-kpi-link">{{ a.text }}</a></ng-container>
         </p>
       </ng-container>
       <ng-template #noLoss>
@@ -194,8 +193,7 @@
     </section>
 
     <section class="mexa-card lg:col-span-3" aria-labelledby="oeTrendTitle">
-      <h2 id="oeTrendTitle" class="mexa-card-title mexa-card-title-left">OEE Trend</h2>
-      <p class="mexa-card-hint">OEE each day against the {{ data.thresholds.good }}% target, with the three factors behind it. Click a name in the key to hide or show its line.</p>
+      <h2 id="oeTrendTitle" class="mexa-card-title mexa-card-title-left">OEE Trend <app-metric-help topic="oee_trend"></app-metric-help></h2>
       <apx-chart *ngIf="trendSeries.length"
         [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke" [markers]="trendChart.markers"
         [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels" [legend]="trendChart.legend"
@@ -219,7 +217,8 @@
       </span>
     </div>
 
-    <div class="mexa-oeecards">
+    <!-- made afresh for each view and page, so the new tiles ease in -->
+    <div class="mexa-oeecards mexa-swap" *ngFor="let v of [machineView + cardPage]">
       <article *ngFor="let m of pageCards" class="mexa-oeecard mexa-oeecard-tint" [ngClass]="gradeTile(grade(m))"
                [attr.aria-label]="m.machine_serial_no + ', OEE ' + pct(m.oee_pct) + ', ' + gradeWord(grade(m))">
         <div class="mexa-oeecard-head">
@@ -244,7 +243,7 @@
         </div>
         <div class="mexa-oeecard-foot">
           <span>{{ gradeWord(grade(m)) }}</span>
-          <small>{{ m.produced | number }} pcs</small>
+          <small>{{ m.produced | number }} pcs<ng-container *ngIf="m.idle_cost != null"> · <span [title]="costHint">{{ rupees(m.idle_cost) }} idle</span></ng-container></small>
         </div>
       </article>
       <p *ngIf="!pageCards.length" class="mexa-empty">

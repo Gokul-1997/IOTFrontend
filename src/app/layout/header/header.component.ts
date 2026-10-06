@@ -4,7 +4,6 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { Subscription, filter } from 'rxjs';
 import { NAV_MENUS, NavItem, pathMatches } from '../nav-menu';
 import { AuthService } from '../../core/services/auth.service';
-import { ThemeService } from '../../core/services/theme.service';
 import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 
 @Component({
@@ -25,7 +24,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
   companyName = '';
   planName = '';
 
-  isAdmin = false;
   isSntSuper = false;
 
   /** The menu (layout/nav-menu.ts). */
@@ -42,7 +40,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private auth: AuthService,
-    public  theme: ThemeService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -66,7 +63,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.userName    = user.username || user.company_name || 'Admin';
     this.userEmail   = user.email || '';
     this.isSntSuper  = this.auth.isSntSuper();
-    this.isAdmin     = this.auth.isAdmin();
     this.userRole    = user.user_type === 'snt_super' ? 'S&T Super Admin'
                      : user.roles?.includes('COMPANY_ADMIN') ? 'Company Admin'
                      : user.roles?.[0] || 'User';
@@ -109,7 +105,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
     this.menus = this.allMenus
       .map(menu => {
-        if (menu.adminOnly) return this.isAdmin ? menu : null;
+        /* A company admin's Users and Roles are in Settings, not the bar
+           (6 Oct 2026). S&T keeps Admin in the bar — it is all S&T has. */
+        if (menu.adminOnly) return null;
 
         if (menu.children) {
           const filteredChildren = menu.children.filter((child: NavItem) =>
@@ -157,13 +155,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
      Dashboard and the Maintenance Report as well. */
   isActive(path: string | undefined) { return pathMatches(this.router.url, path); }
   isChildActive(children: NavItem[] | undefined) { return !!children?.some(c => pathMatches(this.router.url, c.path)); }
-
-  /* State and persistence now live in ThemeService — before this, isDark
-     was a plain component field, always initialised to false, with nothing
-     reading or writing localStorage. It survived route changes (the header
-     sits outside <router-outlet>) but not a reload or a new tab: dark mode
-     never actually stuck. */
-  toggleTheme() { this.theme.toggle(); }
 
   isMobileMenuOpen = false;
   toggleMobileMenu() { this.isMobileMenuOpen = !this.isMobileMenuOpen; this.touch(); }

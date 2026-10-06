@@ -14,6 +14,7 @@ import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
+import { UiTabsDirective } from '../../shared/ui-tabs.directive';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 7 — Operator Performance
@@ -24,22 +25,28 @@ import { MetricHelpComponent } from '../../shared/metric-help/metric-help.compon
    this operator is responsible for", and the screen says so rather
    than implying a person personally made every part.
 
-   The four chart cards each switch between Top 5 and Bottom 5, ranked by
-   the server over every operator — not over the page the table shows.
+   Each ranking switches between Top 5 and Bottom 5, ranked by the server
+   over every operator — not over the page the table shows. Operator Score,
+   Rejection Rate and Downtime Contribution share one card, a tab each
+   (6 Oct 2026); OEE keeps its own. All of it arrives in the one answer the
+   page loads, so a tab or Top 5 / Bottom 5 asks the server for nothing and
+   redraws only the chart it changes.
 ───────────────────────────────────────────────────────────── */
 
 type Which = 'top' | 'bottom';
 type Board = 'score' | 'rejection' | 'downtime' | 'oee';
+/** The tabs of the merged card. */
+type Tab = Exclude<Board, 'oee'>;
 
 @Component({
   selector: 'app-operator-dashboard',
   standalone: true,
-  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [MetricHelpComponent, UiTabsDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './operator-dashboard.component.html'
 })
 export class OperatorDashboardComponent implements OnInit, OnDestroy {
 
-  /** Chart options keep the same reference until apply() bumps this. */
+  /** Chart options keep their reference until their own figures change (deps). */
   private charts = new ChartMemo();
 
   machines: any[] = [];
@@ -58,8 +65,21 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
   updatedAt = '';
   exporting = '';
 
-  /** Which half each card shows. */
+  /** Which half each ranking shows. */
   which: Record<Board, Which> = { score: 'top', rejection: 'top', downtime: 'top', oee: 'top' };
+
+  /** The merged card's tabs, and the one on show. `short` is what a phone
+   *  shows; the tab is always named in full. */
+  readonly tabs: { key: Tab; label: string; short: string; topic: string; empty: string }[] = [
+    { key: 'score', label: 'Operator Score', short: 'Score', topic: 'operator_score',
+      empty: 'No operator has a score for this period.' },
+    { key: 'rejection', label: 'Rejection Rate', short: 'Rejection', topic: 'rejection_rate',
+      empty: 'Nothing produced, so there is no rejection rate.' },
+    { key: 'downtime', label: 'Downtime Contribution', short: 'Downtime', topic: 'downtime_contribution',
+      empty: 'No machine time was reported for these operators.' }
+  ];
+  tab: Tab = 'score';
+  get tabInfo() { return this.tabs.find(t => t.key === this.tab)!; }
 
   private destroy$ = new Subject<void>();
   /** The request on its way; a newer filter choice replaces it, so an older answer can never land last. */
@@ -150,10 +170,17 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
 
   isShowing(board: string, which: Which): boolean { return this.which[board as Board] === which; }
 
+  /** Top 5 / Bottom 5: the rows are already here — no request, and only this chart is redrawn. */
   show(board: Board, which: Which): void {
     if (this.which[board] === which) return;
     this.which = { ...this.which, [board]: which };
-    this.charts.bump();
+    this.cdr.markForCheck();
+  }
+
+  /** A tab of the merged card: the same, for the measure it ranks by. */
+  setTab(tab: Tab): void {
+    if (this.tab === tab) return;
+    this.tab = tab;
     this.cdr.markForCheck();
   }
 
@@ -172,7 +199,6 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
   }
 
   private apply(res: any): void {
-    this.charts.bump();
     this.loading = false;
     if (!res || res.status !== 'success' || !res.data) {
       if (!this.errorMsg) this.errorMsg = 'No operator performance data available.';
@@ -235,13 +261,6 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
     return this.data?.leaders?.[board]?.[this.which[board]] ?? [];
   }
 
-  /** Every operator on the rejection card is at 0% — say so rather than draw five empty bars. */
-  get noRejects(): boolean {
-    const r = this.data?.leaders?.rejection;
-    const all = [...(r?.top ?? []), ...(r?.bottom ?? [])];
-    return all.length > 0 && all.every((x: any) => !x.value);
-  }
-
   /** OEE needs a cycle time on the machine's current job; say how many running machines lack one. */
   get oeeGap(): number {
     const c = this.data?.oee_coverage;
@@ -252,48 +271,65 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
 
   private readonly palette = ['#2f2d8f', '#4a76c8', '#9b7ec8', '#17b3a3', '#6b7280'];
 
-  private hbar(key: string, board: Board, axisTitle: string, fmt: (v: number) => string, fixedMax?: number): any {
-    return this.charts.memo(key, () => {
+  /** What a ranking's chart is drawn from: rebuilt — and the chart redrawn — only when this changes. */
+  private drawn(board: Board): string {
+    return `${board}|${this.which[board]}|${this.ink}|${JSON.stringify(this.rows(board))}`;
+  }
+
+  /* One horizontal bar per operator. A fresh options object whenever the
+     tab, the half or the figures change, so each chart is drawn new rather
+     than patched (ApexCharts leaks a tooltip on every series patch). */
+  private hbar(board: Tab): any {
+    return this.charts.memo('board', () => {
       const rows = this.rows(board);
+      const pct = (v: number) => `${this.fix(v)}%`;
+      const fmt = board === 'downtime' ? (v: number) => this.dur(v * 3600) : pct;
+      const axisTitle = board === 'score' ? 'Score (%)' : board === 'rejection' ? 'Rejection rate (%)' : 'Downtime (h)';
       /* Room past the longest bar for its label, and a scale that is never
-         0–1 with repeated ticks when every value is 0 (no rejects entered). */
+         0–1 with repeated ticks when every value is 0 (no rejects entered).
+         A multiple of 5, so the five ticks are whole numbers (0, 4, 8 … 20,
+         not 0, 3, 7 … 17). A score runs to 100 %: the axis goes on to 120
+         for the labels only. */
       const values = rows.map((r: any) => board === 'downtime' ? r.value / 3600 : r.value);
       const top = Math.max(0, ...values);
-      const max = fixedMax ?? (top > 0 ? Math.ceil(top * 1.3) : 10);
+      const max = board === 'score' ? 120 : (top > 0 ? Math.ceil((top * 1.3) / 5) * 5 : 10);
       return {
         series: [{ name: axisTitle, data: values }],
         chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
         plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '62%', distributed: true,
                               dataLabels: { position: 'top' } } },
         colors: this.palette,
-        dataLabels: { enabled: true, offsetX: 34, formatter: (v: number) => fmt(v),
+        dataLabels: { enabled: true, offsetX: board === 'downtime' ? 40 : 34, formatter: (v: number) => fmt(v),
                       style: { fontSize: '.72rem', fontWeight: 700, colors: [this.ink] } },
         legend: { show: false },
         xaxis: { categories: rows.map((r: any) => r.operator_name), title: { text: axisTitle },
-                 min: 0, max, tickAmount: 5,
-                 labels: { formatter: (v: any) => board === 'downtime' ? `${Math.round(Number(v))}h` : `${Math.round(Number(v))}` } },
-        yaxis: { labels: { maxWidth: 110 }, title: { text: 'Operator name' } },
+                 min: 0, max, tickAmount: board === 'score' ? 6 : 5,
+                 labels: { formatter: (v: any) => {
+                   const n = Math.round(Number(v));
+                   if (board === 'score' && n > 100) return '';
+                   return board === 'downtime' ? `${n}h` : `${n}`;
+                 } } },
+        yaxis: { labels: { maxWidth: 120 } },
         grid: { borderColor: 'rgba(148,163,184,.25)', padding: { right: 12 } },
         tooltip: { theme: 'light', y: { formatter: (v: number) => fmt(v) } },
         noData: { text: 'Nothing measured for this period' }
       };
-    });
+    }, this.drawn(board));
   }
 
-  get scoreChart(): any     { return this.hbar('score', 'score', 'Score', v => `${this.fix(v)}%`, 120); }
-  get rejectionChart(): any { return this.hbar('rejection', 'rejection', 'Score', v => `${this.fix(v)}%`); }
-  get downtimeChart(): any  { return this.hbar('downtime', 'downtime', 'Time', v => this.hms(v * 3600)); }
+  /** The chart of the tab on show — the only one of the three that exists. */
+  get boardChart(): any { return this.hbar(this.tab); }
 
-  /** A, P and Q for each operator on the OEE card, as the mock draws them. */
+  /** Availability, Performance and Quality for each operator, ranked by OEE. */
   get oeeChart(): any {
     return this.charts.memo('oee', () => {
       const rows = this.rows('oee');
       const col = (f: string) => rows.map((r: any) => r[f] ?? null);
       return {
         series: [
-          { name: 'A', data: col('availability_pct') },
-          { name: 'P', data: col('efficiency_pct') },
-          { name: 'Q', data: col('quality_rate_pct') }
+          { name: 'Availability', data: col('availability_pct') },
+          { name: 'Performance', data: col('efficiency_pct') },
+          { name: 'Quality', data: col('quality_rate_pct') }
         ],
         chart: { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
         plotOptions: { bar: { borderRadius: 2, columnWidth: '62%' } },
@@ -315,7 +351,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
         },
         noData: { text: 'Nothing measured for this period' }
       };
-    });
+    }, this.drawn('oee'));
   }
 
   /* ── view helpers ── */
@@ -326,6 +362,13 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
   }
 
   private fix(v: number): string { return Number.isInteger(v) ? String(v) : Number(v).toFixed(1); }
+
+  /** "6 h 20 m" — a duration read at a glance, on the chart's bars. */
+  private dur(seconds: number): string {
+    const n = Math.max(0, Math.round(Number(seconds) || 0));
+    const h = Math.floor(n / 3600), m = Math.floor((n % 3600) / 60);
+    return h ? `${h} h ${m} m` : `${m} m`;
+  }
 
   /** Durations as the mock writes them: hh:mm:ss, hours running past 24. */
   hms(seconds: number | null | undefined): string {

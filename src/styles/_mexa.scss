@@ -339,6 +339,8 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   font-size: .78rem;
   color: var(--mexa-ink-3);
 }
+/* lost time in rupees, under an idle or alarm time (lost-cost.ts) */
+.mexa-kpi-cost { color: var(--mexa-ink-2); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* A KPI card that opens the records behind its number. A real <button>, so
    it is reachable by keyboard and announced as pressable; the "View" cue is
@@ -387,6 +389,20 @@ button.mexa-kpi[aria-pressed="true"] {
 .mexa-delta { font-weight: 700; }
 .mexa-delta-up   { color: var(--mexa-good); }
 .mexa-delta-down { color: var(--mexa-bad); }
+/* For a figure where up is the bad direction (energy used): the colour
+   follows the meaning, the arrow follows the number. */
+.mexa-delta-good { color: var(--mexa-good); }
+.mexa-delta-bad  { color: var(--mexa-bad); }
+
+/* A tile's value that is itself the alarm (the machine most overloaded). */
+.mexa-kpi-alert { color: #c32b3f; }
+.dark .mexa-kpi-alert, :root[data-theme="dark"] .mexa-kpi-alert { color: #ff8a9a; }
+
+/* The way to fix what a tile's line reports ("No tariff set · Set tariff"). */
+.mexa-kpi-link { color: var(--mexa-submit); font-weight: 650; text-decoration: underline; text-underline-offset: 2px; }
+.mexa-kpi-link:hover { text-decoration-thickness: 2px; }
+.mexa-kpi-link:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 2px; border-radius: 3px; }
+.dark .mexa-kpi-link, :root[data-theme="dark"] .mexa-kpi-link { color: #b9b6ff; }
 
 /* ── Card ─────────────────────────────────────────────────── */
 
@@ -440,6 +456,9 @@ button.mexa-kpi[aria-pressed="true"] {
   margin-bottom: .6rem;
 }
 .mexa-card-head .mexa-card-title { margin: 0; }
+/* A head with tabs: the switch drops under them when the card is narrow. */
+.mexa-card-head-wrap { flex-wrap: wrap; row-gap: .35rem; }
+.mexa-card-head-start { display: inline-flex; align-items: center; gap: .15rem; min-width: 0; max-width: 100%; }
 
 /* Two-way switch drawn as one pill: "Top 5 | Botm 5". The pressed half is
    the one showing. */
@@ -455,6 +474,49 @@ button.mexa-kpi[aria-pressed="true"] {
 .mexa-seg button[aria-pressed="true"] { background: var(--mexa-card); color: var(--mexa-submit); box-shadow: 0 1px 2px rgba(17,20,45,.08); }
 .dark .mexa-seg button[aria-pressed="true"] { color: #b9b6ff; }
 .mexa-seg button:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 1px; }
+.mexa-seg button { transition: background .2s ease, color .2s ease, box-shadow .2s ease; }
+
+/* Tabs inside a card: which measure the card shows (Operator Score |
+   Rejection Rate | Downtime Contribution). Underlined, so they read as the
+   card's title and never as a second Top 5 / Bottom 5 switch; the bar
+   under the chosen one slides in to say what changed. */
+.mexa-cardtabs {
+  display: flex; align-items: flex-end; gap: .15rem; min-width: 0;
+  overflow-x: auto; scrollbar-width: none; margin: -.2rem 0 0 -.35rem;
+}
+.mexa-cardtabs::-webkit-scrollbar { display: none; }
+.mexa-cardtab {
+  position: relative; flex: none; padding: .4rem .55rem .55rem; border: 0; border-radius: 8px 8px 0 0;
+  background: none; font: inherit; font-size: .9rem; font-weight: 650; letter-spacing: .01em;
+  color: var(--mexa-ink-3); white-space: nowrap; cursor: pointer;
+  transition: color .2s ease, background .2s ease;
+}
+.mexa-cardtab::after {
+  content: ''; position: absolute; left: .55rem; right: .55rem; bottom: 0; height: 3px; border-radius: 3px;
+  background: var(--mexa-submit); transform: scaleX(0); transition: transform .25s ease;
+}
+.mexa-cardtab:hover { color: var(--mexa-ink); background: var(--mexa-row-alt); }
+.mexa-cardtab[aria-selected="true"] { color: var(--mexa-ink); }
+.mexa-cardtab[aria-selected="true"]::after { transform: scaleX(1); }
+.mexa-cardtab:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: -2px; }
+.dark .mexa-cardtab::after, :root[data-theme="dark"] .mexa-cardtab::after { background: #b9b6ff; }
+@media (pointer: coarse) { .mexa-cardtab { min-height: 44px; } }
+/* A phone shows the short name ("Score"); the tab is still named in full. */
+.mexa-cardtab-short { display: none; }
+@media (max-width: 480px) {
+  .mexa-cardtab-long { display: none; }
+  .mexa-cardtab-short { display: inline; }
+}
+
+/* Content that a switch replaced eases in, so the eye sees it changed.
+   Opacity and a 4px rise only: no layout work, nothing while it rests. */
+.mexa-swap { animation: mexa-swap-in .22s ease-out both; }
+@keyframes mexa-swap-in { from { opacity: 0; transform: translateY(4px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .mexa-seg button, .mexa-cardtab, .mexa-cardtab::after { transition: none; }
+  .mexa-swap { animation: none; }
+}
 
 /* ── Table ────────────────────────────────────────────────── */
 

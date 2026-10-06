@@ -1,16 +1,14 @@
-import {
-  ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { BehaviorSubject, Subscription, catchError, interval, map, of, startWith, switchMap } from 'rxjs';
+import { BehaviorSubject, Subscription, catchError, filter, interval, map, of, startWith, switchMap } from 'rxjs';
 import { MeterService } from './meter.service';
 import { StateComponent } from '../state/state.component';
 
 /*
- * Everything a machine's energy meter reports, on the Energy screen (any
- * machine that has a meter) and on the machine page (that machine).
+ * Everything a machine's energy meter reports, at the foot of the Energy
+ * screen, for any machine that has a meter.
  *
  *   - now: power (kW, kVA, kVAr), voltage (phase to phase and to neutral,
  *     each phase), current (each phase), power factor and frequency — each
@@ -25,8 +23,10 @@ import { StateComponent } from '../state/state.component';
  * current transformers face the wrong way (negative kW, more Export than
  * Import), the panel says so in words instead of hiding the sign.
  *
- * On the machine page the panel stays out of the way for a machine with no
- * meter; on the Energy screen it says that no machine has one yet.
+ * A company with no meter sees nothing at all, and is asked once rather than
+ * every 30 s. While a meter is on show it refreshes every 30 s, and not while
+ * the browser tab is in the background. (The machine page showed it too until
+ * 6 Oct 2026.)
  */
 
 type RangeKey = '1h' | '4h' | '12h' | '24h' | '7d';
@@ -139,6 +139,7 @@ let uidSeq = 0;
     .mp-titlewrap { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; min-width: 0; }
     .mp-title { margin: 0; font-size: var(--fs-card-title, .9375rem); font-weight: 700; color: var(--mexa-ink); }
     .mp-select { max-width: 14rem; }
+    .mp-machine { font-size: var(--fs-label, .8125rem); font-weight: 600; color: var(--mexa-ink-2); }
     .mp-at { display: inline-flex; align-items: center; gap: .25rem; font-size: var(--fs-small, .75rem); color: var(--mexa-ink-3); }
     .mp-at.is-stale { color: #b45309; font-weight: 600; }
     :host-context(.dark) .mp-at.is-stale { color: #f7c667; }
@@ -177,12 +178,13 @@ let uidSeq = 0;
         <div class="mp-titlewrap">
           <h2 class="mp-title" [id]="ids.title">Energy meter</h2>
           <!-- only machines that have sent meter readings are offered -->
-          <ng-container *ngIf="mode === 'energy' && meters.length">
+          <ng-container *ngIf="meters.length > 1; else oneMeter">
             <label class="sr-only" [for]="ids.machine">Machine</label>
             <select class="mexa-select mp-select" [id]="ids.machine" [ngModel]="data?.machine?.id" (ngModelChange)="setMachine($event)">
               <option *ngFor="let m of meters" [ngValue]="m.id">{{ m.serial }}</option>
             </select>
           </ng-container>
+          <ng-template #oneMeter><span class="mp-machine">{{ data?.machine?.serial }}</span></ng-template>
           <span class="mp-at" *ngIf="data?.machine" [class.is-stale]="!latest || latest.stale" aria-live="polite">
             <span class="material-icons" aria-hidden="true">{{ !latest || latest.stale ? 'history' : 'schedule' }}</span>{{ asOf }}
           </span>
@@ -192,12 +194,8 @@ let uidSeq = 0;
         </div>
       </div>
 
-      <app-state *ngIf="state === 'loading' && !data" kind="loading" title="Loading the energy meter…"></app-state>
       <app-state *ngIf="state === 'error'" kind="error" title="Could not load the energy meter"
         text="Check the connection, then try again." action="Try again" (act)="reload()"></app-state>
-      <app-state *ngIf="state !== 'error' && data && !data.machine" kind="empty" icon="electric_meter"
-        title="No machine has an energy meter yet"
-        text="When a machine's collector sends its meter readings, every phase, power factor, frequency and the meter's import and export totals appear here."></app-state>
 
       <ng-container *ngIf="state !== 'error' && data?.machine">
         <p *ngIf="data.checks?.ct_reversed" class="mexa-note mexa-note-warn">
@@ -333,11 +331,7 @@ let uidSeq = 0;
     </section>
   `
 })
-export class MeterPanelComponent implements OnInit, OnChanges, OnDestroy {
-  /** 'energy': the Energy screen, with a choice of machines. 'machine': one machine's page. */
-  @Input() mode: 'energy' | 'machine' = 'energy';
-  /** The machine to show; on the Energy screen, null shows the first machine with a meter. */
-  @Input() machineId: number | null = null;
+export class MeterPanelComponent implements OnInit, OnDestroy {
 
   readonly ranges = RANGES;
   readonly metrics = METRICS;
@@ -359,18 +353,13 @@ export class MeterPanelComponent implements OnInit, OnChanges, OnDestroy {
   constructor(private api: MeterService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    this.selected = this.machineId;
-    this.query$.next({ id: this.selected, range: this.range });
     // a new machine or range loads at once; the same one refreshes every 30 s
+    // while it is worth asking (see worthPolling)
     this.sub = this.query$.pipe(
-      switchMap(q => interval(POLL_MS).pipe(startWith(0), map(() => q))),
-      switchMap(q => {
-        if (this.mode === 'machine' && !q.id) return of({ ok: false, data: null });
-        const call = this.mode === 'machine' ? this.api.forMachine(q.id!, q.range) : this.api.forEnergy(q.id, q.range);
-        return call.pipe(
-          map((res: any) => ({ ok: res?.status === 'success', data: res?.data })),
-          catchError(() => of({ ok: false, data: null })));
-      }))
+      switchMap(q => interval(POLL_MS).pipe(startWith(0), filter((_, i) => i === 0 || this.worthPolling), map(() => q))),
+      switchMap(q => this.api.forEnergy(q.id, q.range).pipe(
+        map((res: any) => ({ ok: res?.status === 'success', data: res?.data })),
+        catchError(() => of({ ok: false, data: null })))))
       .subscribe(({ ok, data }) => {
         if (ok && data) { this.data = data; this.state = 'ready'; }
         else this.state = 'error';
@@ -379,20 +368,15 @@ export class MeterPanelComponent implements OnInit, OnChanges, OnDestroy {
       });
   }
 
-  ngOnChanges(ch: SimpleChanges): void {
-    if (ch['machineId'] && !ch['machineId'].firstChange) {
-      this.selected = this.machineId;
-      this.state = 'loading';
-      this.query$.next({ id: this.selected, range: this.range });
-    }
-  }
-
   ngOnDestroy(): void { this.sub?.unsubscribe(); }
 
-  /** On the machine page, nothing at all for a machine without a meter. */
-  get visible(): boolean {
-    if (this.mode === 'energy') return true;
-    return !!this.data && (!!this.data.latest || !!this.data.summary?.readings);
+  /** Shown once a machine with a meter is known: a company with none sees nothing. */
+  get visible(): boolean { return !!this.data?.machine; }
+
+  /** Not every 30 s for a company with no meter, nor for a tab in the background.
+   *  A first load that failed is tried again: it is not yet known there is none. */
+  private get worthPolling(): boolean {
+    return !document.hidden && (this.data === null || !!this.data?.machine);
   }
 
   get meters(): any[] { return this.data?.meters ?? []; }

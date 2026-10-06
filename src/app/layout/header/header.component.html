@@ -47,13 +47,6 @@
     <!-- RIGHT -->
     <div class="flex items-center gap-1 shrink-0">
 
-      <!-- <button (click)="toggleTheme()" type="button" class="hdr-icon-btn is-brand"
-              [attr.aria-pressed]="theme.isDark()"
-              [attr.aria-label]="theme.isDark() ? 'Switch to light theme' : 'Switch to dark theme'"
-              [title]="theme.isDark() ? 'Light theme' : 'Dark theme'">
-        <span class="material-icons" aria-hidden="true">{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</span>
-      </button> -->
-
       <!-- S&T belongs to no company and is sent no notifications -->
       <app-notification-bell *ngIf="!isSntSuper"></app-notification-bell>
 
@@ -82,15 +75,13 @@
           <a routerLink="/profile" (click)="closeUserMenu()" class="acct-item">
             <span class="material-icons" aria-hidden="true">person_outline</span> My Profile
           </a>
-          <!-- Settings holds notification choices; S&T gets no notifications -->
-          <a *ngIf="!isSntSuper" routerLink="/settings" (click)="closeUserMenu()" class="acct-item">
+          <!-- Settings: light or dark for everyone, notifications for a company's
+               people, and a company admin's Users and Roles -->
+          <a routerLink="/settings" (click)="closeUserMenu()" class="acct-item">
             <span class="material-icons" aria-hidden="true">settings</span> Settings
           </a>
           <a *ngIf="!isSntSuper" routerLink="/notifications" (click)="closeUserMenu()" class="acct-item">
             <span class="material-icons" aria-hidden="true">notifications_none</span> Notifications
-          </a>
-          <a routerLink="/security/2fa" (click)="closeUserMenu()" class="acct-item">
-            <span class="material-icons" aria-hidden="true">lock_outline</span> Security (2-step sign-in)
           </a>
           <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
           <button type="button" (click)="logout()" class="acct-item is-danger">
@@ -136,14 +127,11 @@
       <a routerLink="/profile" (click)="toggleMobileMenu()" class="mm-item">
         <span class="material-icons" aria-hidden="true">person_outline</span><span class="mm-label">My Profile</span>
       </a>
-      <a *ngIf="!isSntSuper" routerLink="/settings" (click)="toggleMobileMenu()" class="mm-item">
+      <a routerLink="/settings" (click)="toggleMobileMenu()" class="mm-item">
         <span class="material-icons" aria-hidden="true">settings</span><span class="mm-label">Settings</span>
       </a>
       <a *ngIf="!isSntSuper" routerLink="/notifications" (click)="toggleMobileMenu()" class="mm-item">
         <span class="material-icons" aria-hidden="true">notifications_none</span><span class="mm-label">Notifications</span>
-      </a>
-      <a routerLink="/security/2fa" (click)="toggleMobileMenu()" class="mm-item">
-        <span class="material-icons" aria-hidden="true">lock_outline</span><span class="mm-label">Security (2-step sign-in)</span>
       </a>
       <button type="button" (click)="logout()" class="mm-item is-danger">
         <span class="material-icons" aria-hidden="true">logout</span><span class="mm-label">Sign Out</span>

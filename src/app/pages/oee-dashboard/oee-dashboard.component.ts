@@ -2,11 +2,15 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, effect } from '@angula
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subscription } from 'rxjs';
 import { OeeDashboardService } from './oee-dashboard.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
+import { lostCostLine, LOST_COST_HINT } from '../../shared/lost-cost';
+import { qty } from '../../shared/format-number';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
@@ -31,15 +35,26 @@ import { MetricHelpComponent } from '../../shared/metric-help/metric-help.compon
    trend; then every machine as a tile. Two charts that repeated the
    tiles (Machines by OEE, and A/P/Q by machine) are gone — the tiles
    carry the same figures, ranked, with Top 5 / Bottom 5 views.
+
+   Kept to what can be read at a glance (6 Oct 2026): a figure and its
+   change, the definitions behind each (i), the biggest loss named with a
+   link to where it can be looked into. All / Top 5 / Bottom 5 and the tile
+   pages work on the machines already loaded — no request.
 ───────────────────────────────────────────────────────────── */
 
-/** One OEE loss, in percentage points of planned time. */
-interface Loss { key: 'a' | 'p' | 'q'; name: string; label: string; note: string; verdict: string; pts: number; }
+/** One OEE loss, in percentage points of planned time; `note` is its figure, or empty. */
+interface Loss { key: 'a' | 'p' | 'q'; name: string; label: string; note: string; pts: number; }
+
+/** Where a loss can be looked into, and the page grant it needs. */
+const LOSS_ACTIONS: Partial<Record<Loss['key'], { text: string; path: string; permission: string }>> = {
+  a: { text: 'See downtime reasons', path: '/downtime-analysis', permission: 'page:analytics-downtime' },
+  q: { text: 'See rejections', path: '/quality', permission: 'page:quality' }
+};
 
 @Component({
   selector: 'app-oee-dashboard',
   standalone: true,
-  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, RouterModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './oee-dashboard.component.html'
 })
 export class OeeDashboardComponent implements OnInit, OnDestroy {
@@ -77,6 +92,7 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   constructor(
     private svc: OeeDashboardService,
     private theme: ThemeService,
+    private auth: AuthService,
     private cdr: ChangeDetectorRef
   ) {
     /* The trend's OEE line is navy, which disappears on the dark ground;
@@ -172,19 +188,18 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
     const notRunning = Math.max(0, (Number(k.planned_seconds) || 0) - (Number(k.run_seconds) || 0));
     const idle = Math.min(notRunning, Number(k.idle_seconds) || 0);
     const off = notRunning - idle;
-    const split = off >= 3600 ? ` (${this.longHours(idle)} idle, ${this.longHours(off)} off or not reporting)` : '';
+    const split = off >= 3600 ? ` (${this.longHours(idle)} idle, ${this.longHours(off)} off)` : '';
+    const slower = Math.round((1 - p) * 100);
+    const rejected = Number(k.rejected) || 0;
     const items: Loss[] = [
       { key: 'a', name: 'Availability', label: 'Availability loss',
-        note: notRunning ? `Planned but not running: ${this.longHours(notRunning)}${split}` : 'Planned but not running',
-        verdict: `the machines were not running for ${Math.round((1 - a) * 100)}% of their planned time.`,
+        note: notRunning ? `${this.longHours(notRunning)} not running${split}` : '',
         pts: (1 - a) * 100 },
       { key: 'p', name: 'Performance', label: 'Performance loss',
-        note: 'Running slower than the ideal cycle time',
-        verdict: `while running, the machines made ${Math.round((1 - p) * 100)}% fewer parts than their cycle times allow.`,
+        note: slower > 0 ? `${slower}% slower than the cycle time` : '',
         pts: a * (1 - p) * 100 },
       { key: 'q', name: 'Quality', label: 'Quality loss',
-        note: `${(Number(k.rejected) || 0).toLocaleString('en-IN')} parts rejected`,
-        verdict: `${Math.round((1 - q) * 100)}% of the parts made were rejected.`,
+        note: rejected > 0 ? `${rejected.toLocaleString('en-IN')} parts rejected` : '',
         pts: a * p * (1 - q) * 100 }
     ];
     const biggest = items.reduce((m, i) => (i.pts > m.pts ? i : m));
@@ -206,6 +221,18 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
       trend:           d?.trend           ?? [],
       machines: { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d?.machines ?? {}) }
     };
+  }
+
+  /** Where the biggest loss can be looked into — only for someone who can open that page. */
+  lossAction(l: Loss): { text: string; path: string } | null {
+    const a = LOSS_ACTIONS[l.key];
+    return a && this.auth.hasPermission(a.permission) ? a : null;
+  }
+
+  /** Machines with no cycle time on their job: they can have no Performance, so no OEE. */
+  get noCycleTime(): number {
+    const c = this.data?.coverage;
+    return c ? Math.max(0, c.machines - c.with_cycle_time) : 0;
   }
 
   /* ── machine tiles ──
@@ -238,6 +265,14 @@ export class OeeDashboardComponent implements OnInit, OnDestroy {
   /* ── view helpers ── */
 
   /** Unknown shows as a dash, never 0% — they are different claims. */
+  /* Idle time in rupees, at each machine's hour rate (Master → Tariff & Rates). */
+  readonly costHint = LOST_COST_HINT;
+  get idleCostLine(): string {
+    const k = this.data?.kpis;
+    return k ? lostCostLine(k.idle_cost, k.machines_priced, k.machines_total) : '';
+  }
+  rupees(v: number | null | undefined): string { return '₹' + qty(v, 0); }
+
   pct(v: number | null | undefined): string {
     return v === null || v === undefined ? '--' : `${v}%`;
   }
