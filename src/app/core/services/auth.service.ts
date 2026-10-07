@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Subject, tap } from 'rxjs';
+import { Observable, Subject, finalize, shareReplay, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { jwtDecode } from 'jwt-decode';
 import { Router } from '@angular/router';
@@ -10,36 +10,83 @@ export class AuthService {
 
   private api = environment.apiUrl + '/auth';
   private refreshTimer: any;
+  private generation = 0;
+  private refreshInFlight: Observable<any> | null = null;
+  private refreshGeneration = -1;
+  get sessionVersion(): number { return this.generation; }
+
+  assertSession(version: number): void {
+    if (version !== this.generation) throw Object.assign(new Error('Session changed'), { code: 'SESSION_CHANGED' });
+  }
 
   /** Fires when a refresh brings a different set of grants than the browser
    *  held — so the header can rebuild its menu instead of showing a page the
    *  company no longer has until the next reload. */
   readonly grantsChanged$ = new Subject<void>();
 
-  constructor(private http: HttpClient, private router: Router) {}
+  /** Fires on every sign-in and sign-out, so what belongs to one session is
+   *  dropped before the next: the live-data socket (it stays in the company
+   *  room it was opened for) and the unread count. Without it, whoever signed
+   *  in next in the same tab — another company's user included — kept the
+   *  previous person's socket and its machine updates. */
+  readonly sessionChanged$ = new Subject<'signed-in' | 'signed-out'>();
+
+  /** Whose session this tab is showing; see the storage listener below. */
+  private shownUserId: number | null = this.getUser()?.id ?? null;
+
+  constructor(private http: HttpClient, private router: Router) {
+    /* Every tab shares localStorage. When another tab signs out, or signs in
+       as someone else, this tab's pages, socket and data belong to the
+       previous person: start this tab over rather than mix the two. A token
+       refresh or a grants update (same person) changes nothing here. */
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', e => {
+        if (e.key !== 'user' && e.key !== null) return;     // null: localStorage.clear()
+        const now = this.getUser()?.id ?? null;
+        if (now !== this.shownUserId) this.startOver();
+      });
+    }
+  }
+
+  /** Reload the tab: the one way to be sure nothing of the previous session's
+   *  pages, sockets or requests survives. A method so tests can watch it. */
+  startOver(): void { location.reload(); }
 
   private setSession(res: any): void {
+    this.generation++;
     localStorage.setItem('token', res.accessToken);
     localStorage.setItem('refreshToken', res.refreshToken);
     localStorage.setItem('user', JSON.stringify(res.user));
+    this.shownUserId = res.user?.id ?? null;
     this.scheduleRefresh(res.accessToken);
+    this.sessionChanged$.next('signed-in');
   }
 
   login(data: any) {
+    const version = ++this.generation;
     return this.http.post<any>(`${this.api}/login`, data).pipe(
-      tap(res => this.setSession(res))
+      tap(res => { this.assertSession(version); this.setSession(res); })
     );
   }
 
   refreshToken() {
+    const version = this.generation;
+    if (this.refreshInFlight && this.refreshGeneration === version) return this.refreshInFlight;
     const refreshToken = localStorage.getItem('refreshToken');
-    return this.http.post<any>(`${this.api}/refresh`, { refreshToken }).pipe(
+    const pending = this.http.post<any>(`${this.api}/refresh`, { refreshToken }).pipe(
       tap(res => {
+        this.assertSession(version);
+        if (refreshToken !== localStorage.getItem('refreshToken')) throw Object.assign(new Error('Session changed'), { code: 'SESSION_CHANGED' });
         localStorage.setItem('token', res.accessToken);
         this.mergeGrants(res);
         this.scheduleRefresh(res.accessToken);
-      })
+      }),
+      finalize(() => { if (this.refreshInFlight === pending) this.refreshInFlight = null; }),
+      shareReplay({ bufferSize: 1, refCount: true })
     );
+    this.refreshGeneration = version;
+    this.refreshInFlight = pending;
+    return pending;
   }
 
   /**
@@ -81,12 +128,16 @@ export class AuthService {
   /** `reason`, when given, is shown on the sign-in page — so someone signed
    *  out by the server (their company was turned off) is told why. */
   logout(reason?: string): void {
+    this.generation++;
+    this.refreshInFlight = null;
     clearTimeout(this.refreshTimer);
     const refreshToken = localStorage.getItem('refreshToken');
     if (refreshToken) {
       this.http.post(`${this.api}/logout`, { refreshToken }).subscribe({ error: () => {} });
     }
     localStorage.clear();
+    this.shownUserId = null;
+    this.sessionChanged$.next('signed-out');
     if (reason) {
       try { sessionStorage.setItem('signedOutReason', reason); } catch { /* shown only if storage works */ }
     }
@@ -108,7 +159,10 @@ export class AuthService {
       const decoded: any = jwtDecode(token);
       const refreshTime = decoded.exp * 1000 - Date.now() - 60_000;
       if (refreshTime <= 0) return;
-      this.refreshTimer = setTimeout(() => this.refreshToken().subscribe(), refreshTime);
+      const version = this.generation;
+      this.refreshTimer = setTimeout(() => this.refreshToken().subscribe({ error: err => {
+        if (version === this.generation && (err?.status === 401 || err?.status === 403)) this.logout();
+      } }), refreshTime);
     } catch { this.logout(); }
   }
 

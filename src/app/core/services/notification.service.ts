@@ -1,20 +1,26 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, interval } from 'rxjs';
-import { switchMap, startWith } from 'rxjs/operators';
+import { BehaviorSubject, EMPTY, merge, timer } from 'rxjs';
+import { catchError, filter, switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
   private api = environment.apiUrl + '/notifications';
   unreadCount$ = new BehaviorSubject<number>(0);
 
-  constructor(private http: HttpClient) {
-    // Poll unread count every 30 seconds
-    interval(30000).pipe(startWith(0), switchMap(() => this.http.get<any>(`${this.api}/unread-count`))).subscribe({
-      next: res => this.unreadCount$.next(res.count || 0),
-      error: () => {}
-    });
+  constructor(private http: HttpClient, auth: AuthService) {
+    /* The unread count, every 30 s and at once on signing in. A failed
+       request used to end the poll for good (the error reached subscribe),
+       so one network blip froze the badge until a reload; it now skips that
+       tick. Nothing is asked while signed out, and a new session starts at 0
+       rather than showing the previous person's count. */
+    auth.sessionChanged$.subscribe(() => this.unreadCount$.next(0));
+    merge(timer(0, 30000), auth.sessionChanged$.pipe(filter(e => e === 'signed-in'))).pipe(
+      filter(() => auth.isLoggedIn()),
+      switchMap(() => this.http.get<any>(`${this.api}/unread-count`).pipe(catchError(() => EMPTY)))
+    ).subscribe(res => this.unreadCount$.next(res?.count || 0));
   }
 
   getNotifications(params: any = {}) {

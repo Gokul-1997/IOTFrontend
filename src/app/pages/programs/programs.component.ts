@@ -118,7 +118,7 @@ export class ProgramsComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loadMachines(true);
-    this.socket.onProgramJob(() => this.refreshAfterJob());
+    this.unsubscribeJobs = this.socket.onProgramJob(() => this.refreshAfterJob());
     // device online/offline and job states move on their own: keep up
     this.timer = setInterval(() => {
       if (document.hidden) return;
@@ -129,8 +129,10 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     }, POLL_MS);
   }
 
+  private unsubscribeJobs?: () => void;
+
   ngOnDestroy() {
-    this.socket.offProgramJob();
+    this.unsubscribeJobs?.();
     if (this.timer) clearInterval(this.timer);
   }
 

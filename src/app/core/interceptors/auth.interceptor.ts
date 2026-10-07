@@ -1,86 +1,40 @@
-import {
-  HttpRequest,
-  HttpHandlerFn,
-  HttpEvent,
-  HttpErrorResponse,
-  HttpInterceptorFn
-} from '@angular/common/http';
+import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Observable, throwError, BehaviorSubject } from 'rxjs';
-import { catchError, filter, take, switchMap, tap } from 'rxjs/operators';
+import { catchError, switchMap, tap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
-
-let isRefreshing = false;
-const refreshTokenSubject = new BehaviorSubject<string | null>(null);
+import { environment } from '../../../environments/environment';
 
 export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
-
-  const authService = inject(AuthService);
-
-  // Skip auth endpoints — no token needed
-  if (req.url.includes('/auth/refresh') || req.url.includes('/auth/login') || req.url.includes('/auth/forgot-password') || req.url.includes('/auth/reset-password')) {
+  const auth = inject(AuthService);
+  // Credentials belong only to our API. AuthService guards login/refresh results.
+  if (!req.url.startsWith(environment.apiUrl + '/') || /\/auth\/(refresh|login|logout|forgot-password|reset-password)(?:[?\/]|$)/.test(req.url)) {
     return next(req);
   }
-
+  const version = auth.sessionVersion;
   const token = localStorage.getItem('token');
-
-  if (token) {
-    req = req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-  }
+  if (token) req = req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
+  const current = () => auth.assertSession(version);
 
   return next(req).pipe(
-    catchError((error: HttpErrorResponse) => {
-
-      if (error.status !== 401) {
-        return throwError(() => error);
-      }
-
-      if (!isRefreshing) {
-        isRefreshing = true;
-        refreshTokenSubject.next(null);
-
-        return authService.refreshToken().pipe(
-          switchMap((res: any) => {
-            isRefreshing = false;
-
-            const newToken = res.accessToken;
-            refreshTokenSubject.next(newToken);
-
-            return next(
-              req.clone({
-                setHeaders: {
-                  Authorization: `Bearer ${newToken}`
-                }
-              })
-            );
-          }),
-          catchError((refreshErr) => {
-            isRefreshing = false;
-            refreshTokenSubject.next(null); // unblock any queued requests so they can fail
-            // S&T turned the company off: say so on the sign-in page
-            const companyOff = refreshErr?.error?.code === 'COMPANY_DISABLED';
-            authService.logout(companyOff ? refreshErr.error.message : undefined);
-            return throwError(() => refreshErr);
-          })
-        );
-      }
-
-      return refreshTokenSubject.pipe(
-        filter(token => token != null),
-        take(1),
-        switchMap(token =>
-          next(
-            req.clone({
-              setHeaders: {
-                Authorization: `Bearer ${token}`
-              }
-            })
-          )
-        )
+    tap(current),
+    catchError(error => {
+      current();
+      if (error.status !== 401) return throwError(() => error);
+      // The service shares this request with sockets, timers and other 401s.
+      // Every waiter receives the failure too; none can hang waiting for a token.
+      return auth.refreshToken().pipe(
+        switchMap(res => {
+          current();
+          return next(req.clone({ setHeaders: { Authorization: `Bearer ${res.accessToken}` } })).pipe(tap(current));
+        }),
+        catchError(refreshError => {
+          current();
+          if (refreshError.status === 401 || refreshError.status === 403) {
+            const disabled = refreshError.error?.code === 'COMPANY_DISABLED';
+            auth.logout(disabled ? refreshError.error.message : undefined);
+          }
+          return throwError(() => refreshError);
+        })
       );
     })
   );

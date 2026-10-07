@@ -1,3 +1,4 @@
+import { visibleRefresh } from '../../shared/visible-refresh';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -87,13 +88,8 @@ export class FactoryComponent implements OnInit, OnDestroy {
        change fetches at once and restarts the clock; a request still on its
        way is dropped for the newer one (switchMap), so a slow answer for the
        old filters can never land on top of the new. */
-    this.refresh$
-      .pipe(
-        startWith(undefined),
-        switchMap(() => interval(POLL_MS).pipe(startWith(0))),
-        switchMap(() => this.fetch$()),
-        takeUntil(this.destroy$)
-      )
+    visibleRefresh(() => this.fetch$(), POLL_MS, this.refresh$)
+      .pipe(takeUntil(this.destroy$))
       .subscribe(res => this.apply(res));
   }
 

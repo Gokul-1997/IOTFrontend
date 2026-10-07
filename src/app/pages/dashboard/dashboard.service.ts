@@ -10,9 +10,9 @@ export class DashboardService {
 
   constructor(private http: HttpClient) {}
 
-  getLive(page: number = 1, perPage: number = 8): Observable<any> {
+  getLive(page: number = 1, perPage: number = 8, status: string = 'all'): Observable<any> {
     return this.http.get<any>(
-      `${this.api}?page=${page}&per_page=${perPage}`
+      this.api, { params: { paged: '1', page, per_page: perPage, status } }
     );
   }
 

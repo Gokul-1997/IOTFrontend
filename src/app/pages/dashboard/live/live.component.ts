@@ -20,6 +20,7 @@ import {
   takeUntil
 } from 'rxjs';
 import { CommonModule } from '@angular/common';
+import { visibleRefresh } from '../../../shared/visible-refresh';
 import { SpindlePanelComponent } from './spindle-panel.component';
 import { ShiftTimelineComponent } from './shift-timeline.component';
 import { MetricHelpComponent } from '../../../shared/metric-help/metric-help.component';
@@ -117,6 +118,9 @@ export class LiveComponent implements OnInit, OnDestroy {
   /* ════════════════════════════════════════
      INIT
   ════════════════════════════════════════ */
+  private unsubscribeLive?: () => void;
+  refreshError = '';
+
   async ngOnInit(): Promise<void> {
 
     const id      = this.route.snapshot.paramMap.get('id');
@@ -141,21 +145,20 @@ export class LiveComponent implements OnInit, OnDestroy {
     // console.log(`[SOCKET] listening for machine_id: ${this.machineId}`);
 
     /* ── 30s API poll ── */
-    interval(POLL_MS)
-      .pipe(
-        startWith(0),
-        switchMap(() => this.dashboardService.getMachineDetail(this.machineId)),
-        takeUntil(this.destroy$)
-      )
-      .subscribe((res: any) => this.applyApiData(res));
+    visibleRefresh(() => this.dashboardService.getMachineDetail(this.machineId), POLL_MS, this.socketService.connected$,
+      () => { this.refreshError = 'Connection interrupted. Retrying automatically.'; this.cdr.markForCheck(); })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((res: any) => { this.refreshError = ''; this.applyApiData(res); });
 
     /* ── Socket → status + rpm + feed ONLY ── */
-    this.socketService.onMachineUpdate((data: any) => {
+    this.socketService.setMachineScope('detail', [this.machineId]);
+    this.unsubscribeLive = this.socketService.onMachineUpdate((data: any) => {
       this.handleSocket(data);
     });
 
     /* ── Live clock (IST) ── */
     const tick = () => {
+      if (document.hidden) return;
       const now = new Date();
       this.currentTime = now.toLocaleTimeString('en-IN', {
         hour: '2-digit', minute: '2-digit', second: '2-digit',
@@ -174,7 +177,8 @@ export class LiveComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    this.socketService.offMachineUpdate();
+    this.unsubscribeLive?.();
+    this.socketService.clearMachineScope('detail');
     clearInterval(this.clockInterval);
   }
 

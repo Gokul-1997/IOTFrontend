@@ -1,3 +1,4 @@
+<p *ngIf="refreshError" role="status" class="p-3 text-sm">{{ refreshError }}</p>
 <div class="page-wrapper">
 
   <!-- TOP BAR -->
@@ -23,7 +24,7 @@
           (click)="setFilter('all')"
           class="flex border_status pr-2 items-center transition rounded-md px-2 py-0"
           [ngClass]="statusFilter === 'all' ? 'bg-blue-700 ring-2 ring-white ' : 'bg-blue-700 hover:bg-blue-800'">
-          Total : <span class="font-medium ml-1">{{ machines.length }}</span>
+          Total : <span class="font-medium ml-1">{{ pagination ? summary.total : machines.length }}</span>
         </button>
         <div class="flex gap-2">
           <!-- Running filter button -->

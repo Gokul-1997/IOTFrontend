@@ -13,8 +13,10 @@ import { DashboardService } from './dashboard.service';
 import { SocketService } from '../../core/services/socket.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
+import { visibleRefresh } from '../../shared/visible-refresh';
 import {
   Subject,
+  merge,
   interval,
   switchMap,
   startWith,
@@ -67,11 +69,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   /* ── private ── */
   private destroy$         = new Subject<void>();
+  private refresh$         = new Subject<void>();
+  private unsubscribeLive?: () => void;
+  private frame: number | null = null;
+  pagination: { total: number; total_pages: number } | null = null;
+  refreshError = '';
   private clockInterval:   any;
   private autoPageTimer:   any;
   private staleCheckTimer: any;
   private machineMap       = new Map<number, any>();
-  private updateQueue:     any[]  = [];
+  private updateQueue = new Map<number, any>();
   private updateScheduled         = false;
   // machine_id → wall-clock ms when machine first sent data after being OFFLINE
   private pendingOnlineMs  = new Map<number, number>();
@@ -83,7 +90,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.socketService.pauseUpdates();
     } else {
       this.socketService.resumeUpdates();
-      this.fetchMetrics(); // immediate re-fetch on tab restore
+      // visibleRefresh reconciles immediately on tab restore.
     }
   };
 
@@ -119,16 +126,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
        startWith(0) → fires instantly on init
        switchMap    → cancels stale request
     ──────────────────────────────────────── */
-    interval(POLL_MS)
-      .pipe(
-        startWith(0),
-        switchMap(() => this.service.getLive()),
-        takeUntil(this.destroy$)
-      )
+    visibleRefresh(() => this.service.getLive(this.currentPage, this.pageSize, this.statusFilter), POLL_MS, merge(this.refresh$, this.socketService.connected$),
+      () => { this.refreshError = 'Connection interrupted. Showing the last data received; retrying automatically.'; this.cdr.markForCheck(); })
+      .pipe(takeUntil(this.destroy$))
       .subscribe((res: any) => this.applyApiResponse(res));
 
     /* ── Socket → status + alarm ONLY ─── */
-    this.socketService.onMachineUpdate((data: any) => {
+    this.unsubscribeLive = this.socketService.onMachineUpdate((data: any) => {
       this.handleSocketUpdate(data);
     });
 
@@ -136,6 +140,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     /* ── Live clock (IST) ── */
     const tick = () => {
+      if (document.hidden) return;
       const now = new Date();
       this.currentTime = now.toLocaleTimeString('en-IN', {
         hour: '2-digit', minute: '2-digit', second: '2-digit',
@@ -159,6 +164,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
        OFFLINE when received_at is older than STALE_THRESHOLD_SEC.
     ──────────────────────────────────────────────────────── */
     this.staleCheckTimer = setInterval(() => {
+      if (document.hidden) return;
       this.zone.run(() => this.checkStaleStatus());
     }, 3_000);
   }
@@ -172,7 +178,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ════════════════════════════════════════ */
   private applyApiResponse(res: any): void {
 
+    this.refreshError = '';
+    this.pagination = res.pagination || null;
+    if (this.pagination && this.currentPage > this.pagination.total_pages) {
+      this.currentPage = this.pagination.total_pages;
+      this.fetchMetrics();
+      return;
+    }
+
     const incoming: any[] = res.machines || [];
+    this.socketService.setMachineScope('fleet', incoming.map(m => m.machine_id));
     this.shift = res.shift || this.shift;
 
     // Seed the staleness clock (see patchMetrics for the full explanation)
@@ -185,7 +200,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // detected without this).
     const nowSec = Math.floor(Date.now() / 1000);
     const seedFreshness = (m: any) => {
-      if (m.status !== 'OFFLINE') m.received_at = nowSec;
+      if (m.status !== 'OFFLINE') m.received_at = Number(m.received_at) || nowSec;
     };
 
     /* First load — set everything directly */
@@ -216,6 +231,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Remove machines that no longer exist
     const freshIds = new Set(incoming.map((m: any) => m.machine_id));
     this.machines  = this.machines.filter(m => freshIds.has(m.machine_id));
+    this.machineMap = new Map(this.machines.map(m => [m.machine_id, m]));
+    for (const map of [this.lastSocketMs, this.pendingOnlineMs]) {
+      for (const id of map.keys()) if (!freshIds.has(id)) map.delete(id);
+    }
 
     this.summary = res.summary || this.summary;
     this.cdr.markForCheck();
@@ -269,7 +288,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // connected; this only makes the fallback path self-correcting instead
     // of permanently frozen.
     if (source.status !== undefined && source.status !== 'OFFLINE') {
-      target.received_at = Math.floor(Date.now() / 1000);
+      target.received_at = Math.max(Number(target.received_at) || 0, Number(source.received_at) || Math.floor(Date.now() / 1000));
     }
     /* status and alarm: the socket owns them while it is delivering for this
        machine. When it has been silent for a minute (no plant room, blocked
@@ -289,9 +308,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
      MANUAL FETCH  (called on tab restore)
   ════════════════════════════════════════ */
   private fetchMetrics(): void {
-    this.service.getLive()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((res: any) => this.applyApiResponse(res));
+    this.refresh$.next();
   }
 
   /* ════════════════════════════════════════
@@ -334,15 +351,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ════════════════════════════════════════ */
   private handleSocketUpdate(data: any): void {
 
-    this.updateQueue.push(data);
+    if (document.hidden || !this.machineMap.has(data.machine_id)) return;
+    this.updateQueue.set(data.machine_id, data);
 
     if (!this.updateScheduled) {
       this.updateScheduled = true;
 
-      requestAnimationFrame(() => {
+      this.frame = requestAnimationFrame(() => {
 
-        const updates        = [...this.updateQueue];
-        this.updateQueue     = [];
+        const updates        = [...this.updateQueue.values()];
+        this.updateQueue.clear();
+        this.frame = null;
         this.updateScheduled = false;
 
         this.zone.run(() => {
@@ -353,7 +372,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
             const machine = this.machineMap.get(update.machine_id);
             if (!machine) continue;
+            if (Number(update.received_at) < Number(machine.received_at || 0)) continue;
             this.lastSocketMs.set(update.machine_id, Date.now());
+            machine.received_at = update.received_at ?? machine.received_at;
 
             /* ── Resolve status from socket payload ── */
             const nowSec         = Math.floor(Date.now() / 1000);
@@ -440,18 +461,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /* ── Live counts — always derived from machines array (same source as filter)
         so button counts ALWAYS match what the filter actually shows         ── */
   get runningCount(): number {
+    if (this.pagination) return Number(this.summary.running || 0);
     return this.machines.filter(m => m.status === 'RUNNING').length;
   }
 
   get idleCount(): number {
+    if (this.pagination) return Number(this.summary.idle || 0);
     return this.machines.filter(m => m.status === 'IDLE').length;
   }
 
   get alarmCount(): number {
+    if (this.pagination) return Number(this.summary.alarm || 0);
     return this.machines.filter(m => m.alarm).length;
   }
 
   get filteredMachines(): any[] {
+    if (this.pagination) return this.machines;
     switch (this.statusFilter) {
       case 'running': return this.machines.filter(m => m.status === 'RUNNING');
       case 'idle':    return this.machines.filter(m => m.status === 'IDLE');
@@ -461,22 +486,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   get totalPages(): number {
+    if (this.pagination) return this.pagination.total_pages;
     return Math.max(1, Math.ceil(this.filteredMachines.length / this.pageSize));
   }
 
   get pagedMachines(): any[] {
+    if (this.pagination) return this.machines;
     const start = (this.currentPage - 1) * this.pageSize;
     return this.filteredMachines.slice(start, start + this.pageSize);
   }
 
   get pageNumbers(): number[] {
-    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    const start = Math.max(1, Math.min(this.currentPage - 2, this.totalPages - 4));
+    return Array.from({ length: Math.min(5, this.totalPages) }, (_, i) => start + i);
   }
 
   setFilter(f: 'all' | 'running' | 'idle' | 'alarm'): void {
     // clicking the already-active filter OR clicking Total → reset to all
     this.statusFilter = (f === 'all' || this.statusFilter === f) ? 'all' : f;
     this.currentPage  = 1;
+    this.fetchMetrics();
     this.resetAutoPageTimer();
     this.cdr.markForCheck();
   }
@@ -484,6 +513,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   goToPage(n: number): void {
     if (n < 1 || n > this.totalPages) return;
     this.currentPage = n;
+    this.fetchMetrics();
     this.resetAutoPageTimer();
     this.cdr.markForCheck();
   }
@@ -511,9 +541,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private startAutoPageTimer(): void {
     if (this.autoPaused) return;
     this.autoPageTimer = setInterval(() => {
-      if (this.holdPage) return;
+      if (document.hidden || this.holdPage || this.totalPages <= 1) return;
       this.zone.run(() => {
         this.currentPage = this.currentPage >= this.totalPages ? 1 : this.currentPage + 1;
+        this.fetchMetrics();
         this.cdr.markForCheck();
       });
     }, AUTO_PAGE_MS);
@@ -553,7 +584,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
     document.removeEventListener('visibilitychange', this.visibilityHandler);
-    this.socketService.offMachineUpdate();
+    this.unsubscribeLive?.();
+    this.socketService.clearMachineScope('fleet');
+    if (this.frame !== null) cancelAnimationFrame(this.frame);
+    this.updateQueue.clear();
     clearInterval(this.clockInterval);
     clearInterval(this.autoPageTimer);
     clearInterval(this.staleCheckTimer);

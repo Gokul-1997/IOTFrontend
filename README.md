@@ -1,5 +1,22 @@
 # FrontendIOT
 
+
+
+Think like a UI/UX Designer and Full-Stack Developer with 20+ years of industry experience. Follow current design trends, modern development practices, and established market standards.
+
+Design and develop the complete solution with:
+
+* Clear visual hierarchy and consistent spacing
+* Modern, clean, and professional UI
+* Fully responsive layouts for mobile, tablet, and desktop
+* Accessibility following WCAG guidelines
+* Excellent usability and user experience
+* Consistent typography, colors, components, and design system
+* Proper validation, error handling, loading states, empty states, and success states
+* Scalable and maintainable frontend and backend architecture
+* Production-ready code and best practices
+
+
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.3.
 
 ## Development server
