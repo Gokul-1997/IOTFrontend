@@ -12,6 +12,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
+import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 4 — Periodic Maintenance Dashboard
@@ -28,7 +29,7 @@ import { updatedLabel } from '../../shared/updated-label';
 @Component({
   selector: 'app-periodic-dashboard',
   standalone: true,
-  imports: [AutoApplyDirective, FilterPanelDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [MexaPagerComponent, AutoApplyDirective, FilterPanelDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './periodic-dashboard.component.html'
 })
 export class PeriodicDashboardComponent implements OnInit, OnDestroy {

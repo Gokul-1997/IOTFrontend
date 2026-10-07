@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 /**
- * The table footer every MEXA dashboard draws the same way:
+ * The table footer every MEXA table draws the same way:
  * "Showing 11–20 of 126 · Rows per page [10] · ‹ Previous 1 2 … Next ›".
+ * With one page size on offer there is nothing to choose, so no "Rows per page".
  */
 @Component({
   selector: 'app-mexa-pager',
@@ -14,7 +15,7 @@ import { FormsModule } from '@angular/forms';
     <div class="mexa-pager" *ngIf="total > 0">
       <span aria-live="polite">Showing {{ from }}–{{ to }} of {{ total }}</span>
       <span class="inline-flex items-center gap-3 flex-wrap">
-        <label class="mexa-pagesize">
+        <label class="mexa-pagesize" *ngIf="sizes.length > 1">
           Rows per page
           <select class="mexa-select" [ngModel]="limit" (ngModelChange)="limitChange.emit(+$event)">
             <option *ngFor="let n of sizes" [ngValue]="n">{{ n }}</option>

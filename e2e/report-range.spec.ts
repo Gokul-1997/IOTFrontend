@@ -60,13 +60,14 @@ test('report dates stay within the last three months, and a full window is fetch
      always fetched directly, never tipped into the "too long" path. */
   const from = page.locator('input.filter-date').first();
   await expect(from).toHaveAttribute('min', daysAgo(92));
+  const before = dataCalls.length;
   await from.fill(daysAgo(200));
   await from.blur();
   await expect(from).toHaveValue(daysAgo(92));
   await expect(page.getByText(/too long to show on screen/i)).toHaveCount(0);
 
-  const before = dataCalls.length;
-  await page.getByRole('button', { name: /apply|search|submit/i }).first().click();
+  // no Apply: the changed date loads by itself once it has stopped changing
+  await expect(page.getByRole('button', { name: /^\s*(check\s*)?apply\s*$/i })).toHaveCount(0);
   await expect.poll(() => dataCalls.length).toBeGreaterThan(before);
   expect(new URL(dataCalls.at(-1)!).searchParams.get('date_from')).toBe(daysAgo(92));
 

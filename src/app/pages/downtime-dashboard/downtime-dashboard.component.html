@@ -358,32 +358,32 @@
         <caption class="sr-only">Downtime events matching the current filters, newest first</caption>
         <thead>
           <tr>
-            <th scope="col">#</th>
+            <th class="col-lg" scope="col">#</th>
             <th scope="col">Start Time</th>
-            <th scope="col">End Time</th>
+            <th class="col-lg" scope="col">End Time</th>
             <th class="qty" scope="col">Duration</th>
             <th scope="col">Machine</th>
-            <th scope="col">Shift</th>
+            <th class="col-md" scope="col">Shift</th>
             <th scope="col">Downtime Reason</th>
-            <th scope="col">Category</th>
-            <th scope="col">Operator</th>
+            <th class="col-lg" scope="col">Category</th>
+            <th class="col-md" scope="col">Operator</th>
             <th scope="col">Status</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let e of data.events.data; let i = index">
-            <td class="num">{{ (data.events.page - 1) * limit + i + 1 }}</td>
+            <td class="num col-lg">{{ (data.events.page - 1) * limit + i + 1 }}</td>
             <td class="num whitespace-nowrap">{{ e.started_at | date:'d MMM y, h:mm a' }}</td>
-            <td class="num whitespace-nowrap">{{ e.ended_at ? (e.ended_at | date:'d MMM y, h:mm a') : '-' }}</td>
+            <td class="num whitespace-nowrap col-lg">{{ e.ended_at ? (e.ended_at | date:'d MMM y, h:mm a') : '-' }}</td>
             <td class="num qty">{{ hours(e.duration_seconds) }}</td>
             <td class="strong">{{ e.machine_serial_no }}</td>
-            <td>{{ e.shift_name || '--' }}</td>
+            <td class="col-md">{{ e.shift_name || '--' }}</td>
             <td class="wrap">
               {{ e.reason || '--' }}
               <span *ngIf="e.sub_reason" class="mexa-rank-sub">{{ e.sub_reason }}</span>
             </td>
-            <td><span class="mexa-badge" [ngClass]="categoryBadge(e.category)">{{ e.category || '--' }}</span></td>
-            <td>{{ e.operator_name || '--' }}</td>
+            <td class="col-lg"><span class="mexa-badge" [ngClass]="categoryBadge(e.category)">{{ (e.category | enumLabel) || '--' }}</span></td>
+            <td class="col-md">{{ e.operator_name || '--' }}</td>
             <td>
               <span class="mexa-badge" [class.mexa-badge-warn]="e.is_open" [class.mexa-badge-info]="!e.is_open">
                 {{ e.is_open ? 'Open' : 'Closed' }}

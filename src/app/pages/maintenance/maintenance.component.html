@@ -89,13 +89,13 @@
       <div class="ui-field">
         <label class="ui-label" for="tk-issue">Issue type</label>
         <select id="tk-issue" [(ngModel)]="ticketForm.issue_type" class="ui-input">
-          <option *ngFor="let t of issueTypes" [value]="t">{{ t }}</option>
+          <option *ngFor="let t of issueTypes" [value]="t">{{ t | enumLabel }}</option>
         </select>
       </div>
       <div class="ui-field">
         <label class="ui-label" for="tk-priority">Priority</label>
         <select id="tk-priority" [(ngModel)]="ticketForm.priority" class="ui-input">
-          <option *ngFor="let p of priorities" [value]="p">{{ p }}</option>
+          <option *ngFor="let p of priorities" [value]="p">{{ p | enumLabel }}</option>
         </select>
       </div>
       <div class="ui-field">
@@ -133,11 +133,11 @@
           <tr>
             <th scope="col">Machine</th>
             <th scope="col">Title</th>
-            <th scope="col">Issue</th>
-            <th scope="col">Priority</th>
-            <th scope="col">Assigned to</th>
+            <th class="col-lg" scope="col">Issue</th>
+            <th class="col-md" scope="col">Priority</th>
+            <th class="col-md" scope="col">Assigned to</th>
             <th scope="col">Status</th>
-            <th scope="col">Created</th>
+            <th class="col-lg" scope="col">Created</th>
           </tr>
         </thead>
         <tbody>
@@ -145,11 +145,11 @@
             <tr *ngFor="let t of tickets" class="is-clickable" (click)="openTicket(t)">
               <td class="strong">{{ t.machine_serial_no }}</td>
               <td class="wrap"><button type="button" class="row-link" (click)="$event.stopPropagation(); openTicket(t)">{{ t.title }}</button></td>
-              <td>{{ t.issue_type }}</td>
-              <td><span class="mexa-badge" [ngClass]="priorityClass(t.priority)">{{ t.priority }}</span></td>
-              <td>{{ t.assigned_to_name || '--' }}</td>
-              <td><span class="mexa-badge" [ngClass]="ticketStatusClass(t.status)">{{ t.status }}</span></td>
-              <td class="num">{{ t.created_at | date:'d MMM y, h:mm a' }}</td>
+              <td class="col-lg">{{ t.issue_type | enumLabel }}</td>
+              <td class="col-md"><span class="mexa-badge" [ngClass]="priorityClass(t.priority)">{{ t.priority | enumLabel }}</span></td>
+              <td class="col-md">{{ t.assigned_to_name || '--' }}</td>
+              <td><span class="mexa-badge" [ngClass]="ticketStatusClass(t.status)">{{ t.status | enumLabel }}</span></td>
+              <td class="num col-lg">{{ t.created_at | date:'d MMM y, h:mm a' }}</td>
             </tr>
           </ng-container>
           <ng-template #noTickets>
@@ -183,9 +183,9 @@
 
       <div class="ui-dialog-body space-y-4">
         <div class="flex gap-2">
-          <span class="mexa-badge" [ngClass]="ticketStatusClass(selectedTicket.status)">{{ selectedTicket.status }}</span>
-          <span class="mexa-badge" [ngClass]="priorityClass(selectedTicket.priority)">{{ selectedTicket.priority }}</span>
-          <span class="mexa-badge mexa-badge-neutral">{{ selectedTicket.issue_type }}</span>
+          <span class="mexa-badge" [ngClass]="ticketStatusClass(selectedTicket.status)">{{ selectedTicket.status | enumLabel }}</span>
+          <span class="mexa-badge" [ngClass]="priorityClass(selectedTicket.priority)">{{ selectedTicket.priority | enumLabel }}</span>
+          <span class="mexa-badge mexa-badge-neutral">{{ selectedTicket.issue_type | enumLabel }}</span>
         </div>
 
         <p *ngIf="selectedTicket.description" class="ui-section-hint">{{ selectedTicket.description }}</p>
@@ -212,7 +212,7 @@
           <div class="flex flex-wrap gap-2 mt-1">
             <button type="button" *ngFor="let s of ticketStatuses" (click)="changeTicketStatus(s)"
               [disabled]="s === selectedTicket.status" class="ui-btn ui-btn-ghost ui-btn-xs">
-              {{ s }}
+              {{ s | enumLabel }}
             </button>
           </div>
           <input id="ticketNote" [(ngModel)]="statusNote" placeholder="Note (optional)" class="ui-input mt-2" />
@@ -253,7 +253,7 @@
       <div class="ui-field">
         <label class="ui-label" for="sc-type">Type</label>
         <select id="sc-type" [(ngModel)]="form.maintenance_type" class="ui-input">
-          <option *ngFor="let t of types" [value]="t">{{ t }}</option>
+          <option *ngFor="let t of types" [value]="t">{{ t | enumLabel }}</option>
         </select>
       </div>
       <div class="ui-field">
@@ -271,7 +271,7 @@
       <div class="ui-field">
         <label class="ui-label" for="sc-rec">Repeats</label>
         <select id="sc-rec" [(ngModel)]="form.recurrence" class="ui-input">
-          <option *ngFor="let r of recurrences" [value]="r">{{ r }}</option>
+          <option *ngFor="let r of recurrences" [value]="r">{{ r | enumLabel }}</option>
         </select>
       </div>
     </div>
@@ -293,9 +293,9 @@
           <tr>
             <th scope="col">Machine</th>
             <th scope="col">Title</th>
-            <th scope="col">Type</th>
+            <th class="col-lg" scope="col">Type</th>
             <th scope="col">Scheduled</th>
-            <th scope="col">Assigned to</th>
+            <th class="col-md" scope="col">Assigned to</th>
             <th scope="col">Status</th>
             <th class="actions" scope="col">Action</th>
           </tr>
@@ -305,10 +305,10 @@
             <tr *ngFor="let s of schedules">
               <td class="strong">{{ s.machine_serial_no }}</td>
               <td class="wrap">{{ s.title }}</td>
-              <td>{{ s.maintenance_type }}</td>
+              <td class="col-lg">{{ s.maintenance_type | enumLabel }}</td>
               <td class="num">{{ s.scheduled_at | date:'d MMM y, h:mm a' }}</td>
-              <td>{{ s.assigned_to || '--' }}</td>
-              <td><span class="mexa-badge" [ngClass]="statusClass(s.status)">{{ s.status }}</span></td>
+              <td class="col-md">{{ s.assigned_to || '--' }}</td>
+              <td><span class="mexa-badge" [ngClass]="statusClass(s.status)">{{ s.status | enumLabel }}</span></td>
               <td class="actions"><button type="button" (click)="deleteSchedule(s.id)" class="ui-btn ui-btn-danger-ghost ui-btn-xs">Remove</button></td>
             </tr>
           </ng-container>
@@ -344,7 +344,7 @@
       <div class="ui-field">
         <label class="ui-label" for="lg-type">Type</label>
         <select id="lg-type" [(ngModel)]="logForm.maintenance_type" class="ui-input">
-          <option *ngFor="let t of types" [value]="t">{{ t }}</option>
+          <option *ngFor="let t of types" [value]="t">{{ t | enumLabel }}</option>
         </select>
       </div>
       <div class="ui-field">
@@ -377,9 +377,9 @@
           <tr>
             <th scope="col">Machine</th>
             <th scope="col">Title</th>
-            <th scope="col">Type</th>
+            <th class="col-lg" scope="col">Type</th>
             <th scope="col">Started</th>
-            <th scope="col">Technician</th>
+            <th class="col-md" scope="col">Technician</th>
             <th scope="col">Status</th>
           </tr>
         </thead>
@@ -388,10 +388,10 @@
             <tr *ngFor="let l of logs">
               <td class="strong">{{ l.machine_serial_no }}</td>
               <td class="wrap">{{ l.title }}</td>
-              <td>{{ l.maintenance_type }}</td>
+              <td class="col-lg">{{ l.maintenance_type | enumLabel }}</td>
               <td class="num">{{ l.started_at | date:'d MMM y, h:mm a' }}</td>
-              <td>{{ l.technician_name || '--' }}</td>
-              <td><span class="mexa-badge" [ngClass]="statusClass(l.status)">{{ l.status }}</span></td>
+              <td class="col-md">{{ l.technician_name || '--' }}</td>
+              <td><span class="mexa-badge" [ngClass]="statusClass(l.status)">{{ l.status | enumLabel }}</span></td>
             </tr>
           </ng-container>
           <ng-template #noLogs>

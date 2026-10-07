@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { MaintenanceService } from '../../core/services/maintenance.service';
 import { TicketService } from '../../core/services/ticket.service';
 import { MachinesService } from '../machines/machines.service';
+import { EnumLabelPipe } from '../../shared/enum-label.pipe';
 
 @Component({
   selector: 'app-maintenance',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, EnumLabelPipe],
   templateUrl: './maintenance.component.html',
   styles: [`
     .num-col { text-align: right; }

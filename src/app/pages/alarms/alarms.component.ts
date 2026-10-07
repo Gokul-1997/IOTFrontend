@@ -7,11 +7,12 @@ import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { SEVERITY, severityOf } from '../../shared/severity';
+import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 
 @Component({
   selector: 'app-alarms',
   standalone: true,
-  imports: [FilterPanelDirective, CommonModule, FormsModule],
+  imports: [FilterPanelDirective, CommonModule, FormsModule, MexaPagerComponent],
   templateUrl: './alarms.component.html',
   styles: [`
     .alarm-note { width: 11rem; min-height: 1.875rem; padding: .25rem .55rem; font-size: .8rem; }

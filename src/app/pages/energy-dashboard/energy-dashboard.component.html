@@ -258,11 +258,11 @@
           <tr>
             <th scope="col">Machine</th>
             <th class="qty" scope="col">Energy</th>
-            <th class="qty" scope="col">Operating Time</th>
+            <th class="qty col-lg" scope="col">Operating Time</th>
             <th class="qty" scope="col">Production</th>
-            <th class="qty" scope="col">kWh / Part</th>
+            <th class="qty col-md" scope="col">kWh / Part</th>
             <th class="qty" scope="col">Cost ({{ data.currency }})</th>
-            <th class="qty" scope="col">Peak kW</th>
+            <th class="qty col-md" scope="col">Peak kW</th>
             <th scope="col">Status</th>
           </tr>
         </thead>
@@ -277,11 +277,11 @@
               <!-- said in words: no counter is different from no usage -->
               <span *ngIf="m.kwh === null" class="mexa-rank-sub">not reporting</span>
             </td>
-            <td class="num whitespace-nowrap qty">{{ hours(m.run_seconds) }}</td>
+            <td class="num whitespace-nowrap qty col-lg">{{ hours(m.run_seconds) }}</td>
             <td class="num qty">{{ m.produced }}</td>
-            <td class="num qty">{{ num(m.kwh_per_part) }}</td>
+            <td class="num qty col-md">{{ num(m.kwh_per_part) }}</td>
             <td class="num qty">{{ num(m.cost) }}</td>
-            <td class="num qty">{{ num(m.peak_kw) }}</td>
+            <td class="num qty col-md">{{ num(m.peak_kw) }}</td>
             <td>
               <span *ngIf="m.is_overloaded" class="mexa-badge mexa-badge-bad">Overload</span>
               <span *ngIf="!m.is_overloaded" class="mexa-rank-sub">--</span>
@@ -294,18 +294,9 @@
       </table>
     </div>
 
-    <div class="mexa-pager" *ngIf="data.machines.total > 0">
-      <span aria-live="polite">
-        Showing: {{ data.machines.data.length }} of {{ data.machines.total }}
-      </span>
-      <span class="inline-flex items-center gap-2">
-        <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
-                [disabled]="data.machines.page <= 1">‹ Previous</button>
-        <span>{{ data.machines.page }} / {{ data.machines.totalPages }}</span>
-        <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
-                [disabled]="data.machines.page >= data.machines.totalPages">Next ›</button>
-      </span>
-    </div>
+    <app-mexa-pager [page]="data.machines.page" [totalPages]="data.machines.totalPages" [total]="data.machines.total"
+                    [shown]="data.machines.data.length" [limit]="limit" [sizes]="[limit]"
+                    (pageChange)="changePage($event - page)"></app-mexa-pager>
   </section>
 
   <!-- ══════════ ENERGY METER ══════════

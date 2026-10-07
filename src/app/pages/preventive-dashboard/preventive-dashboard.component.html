@@ -352,21 +352,21 @@
         <caption class="sr-only">Preventive maintenance tickets raised from alarms</caption>
         <thead>
           <tr>
-            <th scope="col">#</th>
-            <th scope="col">Ticket No</th>
+            <th class="col-lg" scope="col">#</th>
+            <th class="col-md" scope="col">Ticket No</th>
             <th scope="col">Machine</th>
             <th scope="col">Alarm Name</th>
             <th scope="col">Priority</th>
-            <th scope="col">Triggered On</th>
+            <th class="col-md" scope="col">Triggered On</th>
             <th scope="col">Due Date</th>
             <th scope="col">Status</th>
-            <th class="qty" scope="col">Age</th>
+            <th class="qty col-lg" scope="col">Age</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let t of data.tickets.data; let i = index">
-            <td class="num">{{ (data.tickets.page - 1) * limit + i + 1 }}</td>
-            <td class="num strong">{{ t.ticket_id }}</td>
+            <td class="num col-lg">{{ (data.tickets.page - 1) * limit + i + 1 }}</td>
+            <td class="num strong col-md">{{ t.ticket_id }}</td>
             <td>{{ t.machine_serial_no }}</td>
             <td class="wrap">
               {{ t.alarm_name }}
@@ -375,14 +375,14 @@
               </span>
             </td>
             <td><span class="mexa-badge" [ngClass]="priorityBadge(t.priority)">{{ t.priority | titlecase }}</span></td>
-            <td class="num whitespace-nowrap">{{ t.created_at | date:'d MMM y, h:mm a' }}</td>
+            <td class="num whitespace-nowrap col-md">{{ t.created_at | date:'d MMM y, h:mm a' }}</td>
             <td class="num whitespace-nowrap">
               {{ t.due_date ? (t.due_date | date:'d MMM y, h:mm a') : '--' }}
               <!-- overdue is a fact about the row, so it is said on the row -->
               <span *ngIf="t.is_overdue" class="mexa-rank-sub" style="color:var(--mexa-bad)">overdue</span>
             </td>
             <td><span class="mexa-badge" [ngClass]="statusBadge(t.status)">{{ statusWord(t.status) }}</span></td>
-            <td class="num qty">{{ age(t.age_hours) }}</td>
+            <td class="num qty col-lg">{{ age(t.age_hours) }}</td>
           </tr>
           <tr *ngIf="!data.tickets.data.length">
             <td colspan="9" >
@@ -474,10 +474,10 @@
             <th scope="col">Scope</th>
             <th scope="col">Alarm Type</th>
             <th class="qty" scope="col">Occurrences</th>
-            <th class="qty" scope="col">Window</th>
-            <th class="qty" scope="col">Due In</th>
+            <th class="qty col-lg" scope="col">Window</th>
+            <th class="qty col-md" scope="col">Due In</th>
             <th scope="col">Priority</th>
-            <th class="qty" scope="col">Tickets Raised</th>
+            <th class="qty col-lg" scope="col">Tickets Raised</th>
             <th scope="col">Active</th>
           </tr>
         </thead>
@@ -486,10 +486,10 @@
             <td class="strong">{{ r.machine_serial_no || r.scope_machine || 'All machines' }}</td>
             <td>{{ r.alarm_type || 'Any' }}</td>
             <td class="num qty">{{ r.threshold_count }}</td>
-            <td class="num qty">{{ r.window_hours }}h</td>
-            <td class="num qty">{{ r.due_hours }}h</td>
+            <td class="num qty col-lg">{{ r.window_hours }}h</td>
+            <td class="num qty col-md">{{ r.due_hours }}h</td>
             <td><span class="mexa-badge" [ngClass]="priorityBadge(r.priority)">{{ r.priority | titlecase }}</span></td>
-            <td class="num qty">{{ r.tickets_created ?? 0 }}</td>
+            <td class="num qty col-lg">{{ r.tickets_created ?? 0 }}</td>
             <td>
               <span class="mexa-badge" [class.mexa-badge-good]="r.is_active"
                     [class.mexa-badge-neutral]="!r.is_active">

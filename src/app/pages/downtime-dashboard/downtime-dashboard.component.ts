@@ -11,6 +11,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { EnumLabelPipe } from '../../shared/enum-label.pipe';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
@@ -33,7 +34,7 @@ import { lostCostLine, LOST_COST_HINT } from '../../shared/lost-cost';
 @Component({
   selector: 'app-downtime-dashboard',
   standalone: true,
-  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, RouterModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
+  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, RouterModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent, EnumLabelPipe],
   templateUrl: './downtime-dashboard.component.html'
 })
 export class DowntimeDashboardComponent implements OnInit, OnDestroy {

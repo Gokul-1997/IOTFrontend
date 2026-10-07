@@ -295,14 +295,14 @@
         <thead>
           <tr>
             <th scope="col">Program</th>
-            <th scope="col">Direction</th>
+            <th class="col-md" scope="col">Direction</th>
             <th scope="col">Machine</th>
             <th scope="col">Status</th>
-            <th scope="col" class="wrap">Message</th>
-            <th scope="col">Replaced program</th>
-            <th scope="col">By</th>
+            <th scope="col" class="wrap col-lg">Message</th>
+            <th class="col-lg" scope="col">Replaced program</th>
+            <th class="col-md" scope="col">By</th>
             <th scope="col">Asked</th>
-            <th scope="col">Finished</th>
+            <th class="col-lg" scope="col">Finished</th>
           </tr>
         </thead>
         <tbody>
@@ -312,7 +312,7 @@
               <span *ngIf="j.target_file" class="sub">{{ j.action === 'SEND' ? 'Saved at ' : 'Read from ' }}{{ j.target_file }}</span>
               <span *ngIf="j.file_name" class="sub">{{ j.file_name }}</span>
             </td>
-            <td>
+            <td class="col-md">
               <span class="mexa-badge" [ngClass]="j.action === 'FETCH' ? 'mexa-badge-info' : 'mexa-badge-violet'">
                 <span class="material-icons" aria-hidden="true">{{ j.action === 'FETCH' ? 'south_west' : 'north_east' }}</span>{{ j.action === 'FETCH' ? 'From machine' : 'To machine' }}
               </span>
@@ -323,16 +323,16 @@
                 <span class="material-icons" aria-hidden="true">{{ statusIcon(j.status) }}</span>{{ statusLabel(j) }}
               </span>
             </td>
-            <td class="wrap" [class.muted]="!j.message">{{ j.message || '--' }}</td>
-            <td>
+            <td class="wrap col-lg" [class.muted]="!j.message">{{ j.message || '--' }}</td>
+            <td class="col-lg">
               <span *ngIf="j.backup_name" class="mexa-badge mexa-badge-neutral" [title]="j.backup_name">
                 <span class="material-icons" aria-hidden="true">inventory_2</span>Kept
               </span>
               <span *ngIf="!j.backup_name" class="is-missing">--</span>
             </td>
-            <td [class.muted]="!j.requested_by_name">{{ j.requested_by_name || '--' }}</td>
+            <td class="col-md" [class.muted]="!j.requested_by_name">{{ j.requested_by_name || '--' }}</td>
             <td class="num">{{ j.requested_at | date:'d MMM y, h:mm a' }}</td>
-            <td class="num" [class.muted]="!j.finished_at">{{ j.finished_at ? (j.finished_at | date:'d MMM y, h:mm a') : '--' }}</td>
+            <td class="num col-lg" [class.muted]="!j.finished_at">{{ j.finished_at ? (j.finished_at | date:'d MMM y, h:mm a') : '--' }}</td>
           </tr>
           <tr *ngIf="!loadingHistory && history.length === 0">
             <td colspan="9" class="mexa-empty">No transfers for this machine yet.</td>

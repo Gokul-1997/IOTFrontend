@@ -48,44 +48,53 @@
 
 <!-- Events -->
 <div *ngIf="activeTab === 'events'" class="mexa-card mexa-card-flush" role="tabpanel">
-  <div *ngIf="loading" class="mexa-empty" role="status"><span class="ui-spinner" aria-hidden="true"></span> Loading events…</div>
-  <div *ngIf="!loading" class="mexa-tablewrap" tabindex="0" role="region" aria-label="Downtime events">
+  <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Downtime events">
     <table class="mexa-table">
+      <caption class="sr-only">Downtime events, newest first</caption>
       <thead>
         <tr>
           <th scope="col">Machine</th>
           <th scope="col">Reason</th>
-          <th scope="col">Category</th>
+          <th scope="col" class="col-md">Category</th>
           <th scope="col">Started</th>
           <th class="qty" scope="col">Duration</th>
-          <th scope="col">Entered by</th>
+          <th scope="col" class="col-lg">Entered by</th>
         </tr>
       </thead>
-      <tbody>
-        <ng-container *ngIf="events.length > 0; else noEvents">
+      <tbody *ngIf="loading" appSkeletonRows [cols]="6" label="Loading downtime events…"></tbody>
+      <tbody *ngIf="!loading">
+        <tr *ngIf="eventsError">
+          <td colspan="6" class="mexa-empty">
+            <app-state kind="error" title="Could not load the downtime events" text="Check the connection, then try again."
+                       action="Try again" (act)="loadEvents()"></app-state>
+          </td>
+        </tr>
+        <ng-container *ngIf="!eventsError">
           <tr *ngFor="let e of events">
             <td class="strong">{{ e.machine_serial_no }}</td>
-            <td>{{ e.reason_name || '--' }}</td>
-            <td><span class="mexa-badge" [ngClass]="categoryClass(e.category)">{{ e.category || '--' }}</span></td>
+            <td><span class="clip" [title]="e.reason_name || ''">{{ e.reason_name || '--' }}</span></td>
+            <td class="col-md"><span class="mexa-badge" [ngClass]="categoryClass(e.category)">{{ categoryLabel(e.category) }}</span></td>
             <td class="num">{{ e.started_at | date:'d MMM y, h:mm a' }}</td>
             <td class="num qty">{{ e.duration_seconds ? ((e.duration_seconds / 60) | number:'1.0-0') + ' min' : '--' }}</td>
-            <td>{{ e.entered_by_name || '--' }}</td>
+            <td class="col-lg">{{ e.entered_by_name || '--' }}</td>
+          </tr>
+          <tr *ngIf="!events.length">
+            <td colspan="6" class="mexa-empty">
+              <app-state kind="empty" title="No downtime events yet" text="Events appear here as they are logged."></app-state>
+            </td>
           </tr>
         </ng-container>
-        <ng-template #noEvents>
-          <tr><td colspan="6" >
-            <div class="mexa-empty">
-            No events found </div>
-          </td></tr>
-        </ng-template>
       </tbody>
     </table>
   </div>
+  <app-mexa-pager *ngIf="!loading && !eventsError" [page]="filter.page" [totalPages]="pagination.totalPages || 1"
+                  [total]="pagination.total || events.length" [shown]="events.length" [limit]="filter.limit"
+                  [sizes]="[20, 50, 100]" (pageChange)="goToPage($event)" (limitChange)="setLimit($event)"></app-mexa-pager>
 </div>
 
 <!-- Reason codes -->
-<div *ngIf="activeTab === 'reasons'" role="tabpanel" class="mexa-card">
-  <div *ngIf="showReasonForm" class="mexa-card reason-form">
+<div *ngIf="activeTab === 'reasons'" role="tabpanel" class="mexa-card mexa-card-flush">
+  <div *ngIf="showReasonForm" class="reason-form">
     <h2 class="mexa-card-title mexa-card-title-left">New reason code</h2>
     <div class="reason-grid">
       <div class="ui-field">
@@ -109,46 +118,104 @@
     </div>
   </div>
 
-  <div class="reason-cards">
-    <div *ngFor="let r of reasons" class="mexa-card reason-card">
-      <div class="reason-code">{{ r.code }}</div>
-      <div class="reason-body">
-        <p class="reason-name">{{ r.name }}</p>
-        <span class="mexa-badge" [ngClass]="categoryClass(r.category)">{{ r.category }}</span>
-      </div>
-    </div>
-    <div *ngIf="!reasons.length" class="mexa-card mexa-empty">No reason codes yet.</div>
+  <div class="tbl-toolbar">
+    <label class="mexa-searchbox">
+      <span class="material-icons" aria-hidden="true">search</span>
+      <input class="mexa-search ui-input" type="search" [(ngModel)]="reasonSearch"
+             placeholder="Search code or name" aria-label="Search reason codes" />
+    </label>
+    <span class="tbl-count" aria-live="polite">{{ shownReasons.length }} of {{ reasons.length }} reason codes</span>
+  </div>
+
+  <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Reason codes">
+    <table class="mexa-table is-compact">
+      <caption class="sr-only">Downtime reason codes</caption>
+      <thead>
+        <tr>
+          <th scope="col" [attr.aria-sort]="reasonAriaSort('code')">
+            <button type="button" class="mexa-sort" (click)="sortReasons('code')" [attr.aria-current]="reasonSort === 'code'">
+              Code <span class="mexa-sort-arrow" aria-hidden="true">{{ reasonArrow('code') }}</span>
+            </button>
+          </th>
+          <th scope="col" [attr.aria-sort]="reasonAriaSort('name')">
+            <button type="button" class="mexa-sort" (click)="sortReasons('name')" [attr.aria-current]="reasonSort === 'name'">
+              Name <span class="mexa-sort-arrow" aria-hidden="true">{{ reasonArrow('name') }}</span>
+            </button>
+          </th>
+          <th scope="col" [attr.aria-sort]="reasonAriaSort('category')">
+            <button type="button" class="mexa-sort" (click)="sortReasons('category')" [attr.aria-current]="reasonSort === 'category'">
+              Category <span class="mexa-sort-arrow" aria-hidden="true">{{ reasonArrow('category') }}</span>
+            </button>
+          </th>
+          <th scope="col" class="col-md">Source</th>
+        </tr>
+      </thead>
+      <tbody *ngIf="reasonsState === 'loading'" appSkeletonRows [cols]="4" [rows]="6" label="Loading reason codes…"></tbody>
+      <tbody *ngIf="reasonsState !== 'loading'">
+        <tr *ngIf="reasonsState === 'error'">
+          <td colspan="4" class="mexa-empty">
+            <app-state kind="error" title="Could not load the reason codes" text="Check the connection, then try again."
+                       action="Try again" (act)="loadReasons()"></app-state>
+          </td>
+        </tr>
+        <ng-container *ngIf="reasonsState === 'ready'">
+          <tr *ngFor="let r of shownReasons; trackBy: trackReason">
+            <td class="code strong">{{ r.code }}</td>
+            <td><span class="clip" [title]="r.name">{{ r.name }}</span></td>
+            <td><span class="mexa-badge" [ngClass]="categoryClass(r.category)">{{ categoryLabel(r.category) }}</span></td>
+            <td class="col-md muted">{{ r.company_id ? 'Your company' : 'Built-in' }}</td>
+          </tr>
+          <tr *ngIf="!reasons.length">
+            <td colspan="4" class="mexa-empty">
+              <app-state kind="empty" title="No reason codes yet" text="Add one with “Add reason code” to classify downtime."></app-state>
+            </td>
+          </tr>
+          <tr *ngIf="reasons.length && !shownReasons.length">
+            <td colspan="4" class="mexa-empty">
+              <app-state kind="empty" icon="search_off" [title]="'No reason code matches “' + reasonSearch + '”'"
+                         text="Search by code or name." action="Clear search" (act)="reasonSearch = ''"></app-state>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
   </div>
 </div>
 
 <!-- Summary -->
 <div *ngIf="activeTab === 'summary'" class="mexa-card mexa-card-flush" role="tabpanel">
   <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Downtime summary">
-    <table class="mexa-table">
+    <table class="mexa-table is-compact">
+      <caption class="sr-only">Downtime by reason, last 7 days, longest first</caption>
       <thead>
         <tr>
           <th scope="col">Reason</th>
-          <th scope="col">Category</th>
+          <th scope="col" class="col-md">Category</th>
           <th scope="col" class="qty">Events</th>
           <th scope="col" class="qty">Total time</th>
         </tr>
       </thead>
-      <tbody>
-        <ng-container *ngIf="summary.length > 0; else noSummary">
+      <tbody *ngIf="summaryState === 'loading'" appSkeletonRows [cols]="4" [rows]="4" label="Loading the downtime summary…"></tbody>
+      <tbody *ngIf="summaryState !== 'loading'">
+        <tr *ngIf="summaryState === 'error'">
+          <td colspan="4" class="mexa-empty">
+            <app-state kind="error" title="Could not load the downtime summary" text="Check the connection, then try again."
+                       action="Try again" (act)="loadSummary()"></app-state>
+          </td>
+        </tr>
+        <ng-container *ngIf="summaryState === 'ready'">
           <tr *ngFor="let s of summary">
-            <td class="strong">{{ s.reason_name || 'Unknown' }} ({{ s.code }})</td>
-            <td><span class="mexa-badge" [ngClass]="categoryClass(s.category)">{{ s.category }}</span></td>
+            <td class="strong">{{ s.reason_name || 'Unknown' }} <span class="sub code">{{ s.code }}</span></td>
+            <td class="col-md"><span class="mexa-badge" [ngClass]="categoryClass(s.category)">{{ categoryLabel(s.category) }}</span></td>
             <td class="num qty">{{ s.event_count }}</td>
             <td class="num qty">{{ (s.total_seconds / 3600 | number:'1.1-1') }} hrs</td>
           </tr>
+          <tr *ngIf="!summary.length">
+            <td colspan="4" class="mexa-empty">
+              <app-state kind="empty" title="No downtime in the last 7 days" text="The summary fills in as events are logged."></app-state>
+            </td>
+          </tr>
         </ng-container>
-        <ng-template #noSummary>
-          <tr><td colspan="4">
-            <div class="mexa-empty">
-            No data
-            </div>
-          </td></tr>
-        </ng-template>
       </tbody>
     </table>
   </div>

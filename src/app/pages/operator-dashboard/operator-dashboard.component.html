@@ -242,26 +242,8 @@
       </table>
     </div>
 
-    <div class="mexa-pager" *ngIf="data.operators.total > 0">
-      <span aria-live="polite">Showing: {{ data.operators.data.length }} of {{ data.operators.total }}</span>
-      <span class="inline-flex items-center gap-3 flex-wrap">
-        <label class="mexa-pagesize">
-          Show Items Per Page
-          <select class="mexa-select" [ngModel]="limit" (ngModelChange)="setPageSize($event)" name="pageSize">
-            <option *ngFor="let n of pageSizes" [ngValue]="n">{{ n < 10 ? '0' + n : n }}</option>
-          </select>
-        </label>
-        <nav class="inline-flex items-center gap-1" aria-label="Pages">
-          <button type="button" class="mexa-pagebtn" (click)="changePage(-1)" [disabled]="data.operators.page <= 1">‹ Previous</button>
-          <ng-container *ngFor="let p of pageList">
-            <span *ngIf="p === '…'" class="px-1" aria-hidden="true">…</span>
-            <button *ngIf="p !== '…'" type="button" class="mexa-pagebtn" (click)="goTo(+p)"
-                    [attr.aria-current]="p === data.operators.page ? 'page' : null">{{ p }}</button>
-          </ng-container>
-          <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
-                  [disabled]="data.operators.page >= data.operators.totalPages">Next ›</button>
-        </nav>
-      </span>
-    </div>
+    <app-mexa-pager [page]="data.operators.page" [totalPages]="data.operators.totalPages" [total]="data.operators.total"
+                    [shown]="data.operators.data.length" [limit]="limit" [sizes]="pageSizes"
+                    (pageChange)="goTo($event)" (limitChange)="setPageSize($event)"></app-mexa-pager>
   </section>
 </ng-container>

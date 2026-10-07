@@ -14,6 +14,7 @@ import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
+import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 
 /* ─────────────────────────────────────────────────────────────
    Maintenance Report
@@ -28,7 +29,7 @@ import { MetricHelpComponent } from '../../shared/metric-help/metric-help.compon
 @Component({
   selector: 'app-maintenance-report',
   standalone: true,
-  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [MexaPagerComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './maintenance-report.component.html'
 })
 export class MaintenanceReportComponent implements OnInit, OnDestroy {

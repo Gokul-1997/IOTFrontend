@@ -37,10 +37,10 @@
         <thead>
           <tr>
             <th scope="col">Plan</th>
-            <th scope="col">Limits</th>
+            <th class="col-md" scope="col">Limits</th>
             <th scope="col">Companies</th>
             <th scope="col">Status</th>
-            <th scope="col" class="admin-center">Actions</th>
+            <th scope="col" class="actions">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -53,7 +53,7 @@
               </div>
               <p *ngIf="plan.description" class="text-xs text-gray-500 mt-1">{{ plan.description }}</p>
             </td>
-            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 col-md">
               <div>Users: <strong>{{ plan.max_users }}</strong></div>
               <div>Plants: <strong>{{ plan.max_plants }}</strong></div>
               <div>Machines: <strong>{{ plan.max_machines }}</strong></div>
@@ -66,8 +66,8 @@
                 {{ plan.is_active ? 'Available' : 'Retired' }}
               </span>
             </td>
-            <td class="px-4 py-3 text-center">
-              <div class="flex items-center justify-center gap-2">
+            <td class="actions">
+              <div class="flex items-center gap-2">
                 <button (click)="openEdit(plan)"
                   class="ui-btn ui-btn-ghost ui-btn-xs">
                   Edit

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OeeReportsService } from './oee.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, Subscription, takeUntil } from 'rxjs';
 
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -24,6 +24,7 @@ import { ReportDateDirective } from '../../shared/report-date.directive';
   styleUrl: './oee-reports.scss'
 })
 export class OeeReportsComponent implements OnInit, OnDestroy {
+  private reportSub?: Subscription;
   /** Shown as a tab inside Reports: the Reports page supplies the heading. */
   @Input() embedded = false;
 
@@ -107,7 +108,10 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
       sort_order: this.sortOrder
     };
 
-    this.service.getReports(filters)
+    /* Filters apply on change, so a newer request can overtake an older one:
+       the older is dropped, and only the latest choice is shown. */
+    this.reportSub?.unsubscribe();
+    this.reportSub = this.service.getReports(filters)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res: any) => {

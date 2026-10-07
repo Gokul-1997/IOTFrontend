@@ -150,7 +150,9 @@
        FILTER BAR
   ══════════════════════════════════════════════ -->
   <div class="">
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
+    <!-- The filters apply themselves, as on the dashboards: a choice loads at
+         once, a date when it has stopped changing. -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 items-end" appAutoApply (autoApply)="applyFilters()">
 
       <!-- Date From -->
       <div class="flex flex-col gap-1">
@@ -196,13 +198,9 @@
         </select>
       </div>
 
-      <!-- Action buttons -->
+      <!-- Reset: today, every machine, operator and shift -->
       <div class="flex gap-2">
-        <button (click)="applyFilters()"
-          class="btn-apply flex-1 min-w-0 inline-flex items-center justify-center gap-1">
-          <span class="material-icons text-[18px]" aria-hidden="true">check</span> Apply
-        </button>
-        <button (click)="resetFilters()"
+        <button type="button" (click)="resetFilters()"
           class="btn-clear flex-1 min-w-0 inline-flex items-center justify-center gap-1">
           <span class="material-icons text-[18px]" aria-hidden="true">restart_alt</span> Reset
         </button>
@@ -277,19 +275,19 @@
       <span *ngIf="filters.machine_id"
         class="inline-flex items-center gap-1 rounded-full bg-purple-900 border border-purple-200 px-2.5 py-1 text-sm text-white">
         <span class="material-icons text-[16px]" aria-hidden="true">precision_manufacturing</span> {{ labelOf(machines, filters.machine_id) }}
-        <button type="button" (click)="filters.machine_id = ''; onMachineChange()" class="chip-x" aria-label="Remove the machine filter"><span class="material-icons" aria-hidden="true">close</span></button>
+        <button type="button" (click)="filters.machine_id = ''; onMachineChange(); applyFilters()" class="chip-x" aria-label="Remove the machine filter"><span class="material-icons" aria-hidden="true">close</span></button>
       </span>
 
       <span *ngIf="filters.operator_id"
         class="inline-flex items-center gap-1 rounded-full bg-green-900 border border-green-200 px-2.5 py-1 text-sm text-white">
         <span class="material-icons text-[16px]" aria-hidden="true">person</span> {{ labelOf(operators, filters.operator_id) }}
-        <button type="button" (click)="filters.operator_id = ''" class="chip-x" aria-label="Remove the operator filter"><span class="material-icons" aria-hidden="true">close</span></button>
+        <button type="button" (click)="filters.operator_id = ''; applyFilters()" class="chip-x" aria-label="Remove the operator filter"><span class="material-icons" aria-hidden="true">close</span></button>
       </span>
 
       <span *ngIf="filters.shift_id"
         class="inline-flex items-center gap-1 rounded-full bg-amber-900 border border-amber-200 px-2.5 py-1 text-sm text-white">
         <span class="material-icons text-[16px]" aria-hidden="true">schedule</span> {{ labelOf(shifts, filters.shift_id) }}
-        <button type="button" (click)="filters.shift_id = ''" class="chip-x" aria-label="Remove the shift filter"><span class="material-icons" aria-hidden="true">close</span></button>
+        <button type="button" (click)="filters.shift_id = ''; applyFilters()" class="chip-x" aria-label="Remove the shift filter"><span class="material-icons" aria-hidden="true">close</span></button>
       </span>
     </div>
   </div>
@@ -339,7 +337,7 @@
 
     <!-- Data table -->
     <div *ngIf="!loading && rows.length > 0 && selectedCount > 0" class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Report table — scroll to see every row and column">
-      <table class="mexa-table">
+      <table class="mexa-table is-dense is-striped">
         <thead>
           <tr>
             <th scope="col" class="col-index">#</th>

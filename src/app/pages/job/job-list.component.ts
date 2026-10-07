@@ -13,6 +13,7 @@ import { JobService } from './job.service';
 import { JobCreateModalComponent } from './job-create-modal.component';
 import { AuthService } from '../../core/services/auth.service';
 
+import { StateComponent } from '../../shared/state/state.component';
 @Component({
   standalone: true,
   selector: 'app-job-list',
@@ -20,7 +21,7 @@ import { AuthService } from '../../core/services/auth.service';
     CommonModule,
     MatTableModule, MatPaginatorModule, MatSortModule,
     MatButtonModule, MatIconModule,
-    JobCreateModalComponent
+    JobCreateModalComponent, StateComponent
   ],
   templateUrl: './job-list.component.html'
 })
@@ -31,6 +32,11 @@ export class JobListComponent implements OnInit {
 
   activeSource  = new MatTableDataSource<any>();
   historySource = new MatTableDataSource<any>();
+
+  /* A failed request is not an empty list: "No jobs running" after a network
+     error told the floor every machine was free. */
+  activeState:  'loading' | 'ready' | 'error' = 'loading';
+  historyState: 'loading' | 'ready' | 'error' = 'loading';
 
   showModal     = false;
   tab: 'active' | 'history' = 'active';
@@ -91,16 +97,18 @@ setProfileTab(tab: 'account' | 'password' | 'security'): void {
    * until the user happened to click something else.
    */
   loadActive() {
+    this.activeState = 'loading'; this.cdr.markForCheck();
     this.service.getJobs().subscribe({
-      next: (res: any) => { this.activeSource.data = res.data || []; this.cdr.markForCheck(); },
-      error: () => { this.activeSource.data = []; this.cdr.markForCheck(); }
+      next: (res: any) => { this.activeSource.data = res.data || []; this.activeState = 'ready'; this.cdr.markForCheck(); },
+      error: () => { this.activeSource.data = []; this.activeState = 'error'; this.cdr.markForCheck(); }
     });
   }
 
   loadHistory() {
+    this.historyState = 'loading'; this.cdr.markForCheck();
     this.service.getJobHistory().subscribe({
-      next: (res: any) => { this.historySource.data = res.data || []; this.cdr.markForCheck(); },
-      error: () => { this.historySource.data = []; this.cdr.markForCheck(); }
+      next: (res: any) => { this.historySource.data = res.data || []; this.historyState = 'ready'; this.cdr.markForCheck(); },
+      error: () => { this.historySource.data = []; this.historyState = 'error'; this.cdr.markForCheck(); }
     });
   }
 

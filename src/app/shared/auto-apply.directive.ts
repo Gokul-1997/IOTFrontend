@@ -3,6 +3,7 @@ import { Subject, Subscription, debounce, timer } from 'rxjs';
 
 /*
  * <form class="mexa-titlebar" appAutoApply (autoApply)="submit()">
+ * <div class="filters" appAutoApply (autoApply)="load()">
  *
  * A dashboard's filters apply themselves: choosing from a dropdown asks for
  * the data straight away, and a date once it has stopped changing. It
@@ -21,7 +22,8 @@ export const SELECT_WAIT_MS = 150;
 export const DATE_WAIT_MS = 600;
 
 @Directive({
-  selector: 'form[appAutoApply]',
+  // a <form> on the dashboards; a filter row (<div>) on the report pages
+  selector: '[appAutoApply]',
   standalone: true,
   host: { '(change)': 'onChange($event)' }
 })

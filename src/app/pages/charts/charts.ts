@@ -4,13 +4,15 @@ import { FormsModule } from '@angular/forms';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { ChartsService } from './charts.service';
 import { AuthService } from '../../core/services/auth.service';
-import { ReportDateDirective } from '../../shared/report-date.directive';
+import { ReportDateDirective, plantToday } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
+import { AutoApplyDirective } from '../../shared/auto-apply.directive';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-charts',
   standalone: true,
-  imports: [FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, NgApexchartsModule],
+  imports: [FilterPanelDirective, ReportDateDirective, AutoApplyDirective, CommonModule, FormsModule, NgApexchartsModule],
   templateUrl: './charts.html',
   styleUrl: './charts.scss'
 })
@@ -22,8 +24,14 @@ export class Charts implements OnInit, OnDestroy {
 
   selectedMachine: number | null = null;
   selectedShift:   number | null = null;
-  selectedDate = new Date().toISOString().split('T')[0];
-  today        = new Date().toISOString().split('T')[0];
+  // the plant's date: toISOString() is UTC, which is still yesterday before 05:30 IST
+  selectedDate = plantToday();
+  today        = plantToday();
+
+  /* The filters apply themselves, so a newer choice can come while the last
+     one's charts are still loading: those requests are dropped. */
+  private hourlySub?: Subscription;
+  private partSub?: Subscription;
 
   totalProduced  = 0;
   totalRunMin    = 0;
@@ -143,9 +151,9 @@ export class Charts implements OnInit, OnDestroy {
     });
   }
 
-  submit() { this.loadAll(); }
-
   loadAll() {
+    this.hourlySub?.unsubscribe();
+    this.partSub?.unsubscribe();
     // Load hourly first to get authoritative totalProduced, then cap parts to that count
     this.loadHourlyChart(() => this.loadPartChart(this.totalProduced));
   }
@@ -155,7 +163,7 @@ export class Charts implements OnInit, OnDestroy {
     if (!this.selectedMachine) return;
     this.loadingParts = true;
 
-    this.service.getPartTiming(this.selectedMachine, this.buildShiftStartEpoch(), this.buildShiftEndEpoch(), maxParts).subscribe({
+    this.partSub = this.service.getPartTiming(this.selectedMachine, this.buildShiftStartEpoch(), this.buildShiftEndEpoch(), maxParts).subscribe({
       next: res => {
         const rows: any[] = res.data || [];
         this.totalRunMin  = res.totalRunMin  ?? 0;
@@ -222,7 +230,7 @@ export class Charts implements OnInit, OnDestroy {
     if (this.selectedShift)   params.shift_id   = this.selectedShift;
 
     this.loadingHourly = true;
-    this.service.getChartData(params).subscribe({
+    this.hourlySub = this.service.getChartData(params).subscribe({
       next: res => {
         const rows: any[] = res.data.hourlyCount || [];
         this.totalProduced   = res.data.totalProduced;
@@ -243,5 +251,7 @@ export class Charts implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.themeObserver?.disconnect();
+    this.hourlySub?.unsubscribe();
+    this.partSub?.unsubscribe();
   }
 }

@@ -33,7 +33,7 @@
           <th scope="col">Alarm</th>
           <th scope="col">Severity</th>
           <th scope="col">Started</th>
-          <th scope="col">Status</th>
+          <th scope="col" class="col-md">Status</th>
           <th scope="col" class="actions">Action</th>
         </tr>
       </thead>
@@ -55,7 +55,7 @@
               </span>
             </td>
             <td class="num">{{ alarm.started_at | date:'d MMM y, h:mm:ss a' }}</td>
-            <td>
+            <td class="col-md">
               <span *ngIf="alarm.is_resolved" class="mexa-badge mexa-badge-good"><span class="material-icons" aria-hidden="true">check_circle</span>Resolved</span>
               <span *ngIf="!alarm.is_resolved" class="mexa-badge mexa-badge-warn"><span class="material-icons" aria-hidden="true">notifications_active</span>Active</span>
             </td>
@@ -95,15 +95,7 @@
     </table>
   </div>
 
-  <div *ngIf="pagination.totalPages > 1" class="mexa-tablebar">
-    <span class="mexa-drill">Page <strong>{{ filter.page }}</strong> of {{ pagination.totalPages }}</span>
-    <div class="mexa-pager">
-      <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" [disabled]="filter.page <= 1" (click)="filter.page = filter.page - 1; load()">
-        <span class="material-icons" aria-hidden="true">chevron_left</span>Previous
-      </button>
-      <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" [disabled]="filter.page >= pagination.totalPages" (click)="filter.page = filter.page + 1; load()">
-        Next<span class="material-icons" aria-hidden="true">chevron_right</span>
-      </button>
-    </div>
-  </div>
+  <app-mexa-pager *ngIf="pagination.total > filter.limit || filter.page > 1" [page]="filter.page" [totalPages]="pagination.totalPages || 1"
+                  [total]="pagination.total || alarms.length" [shown]="alarms.length" [limit]="filter.limit" [sizes]="[20, 50, 100]"
+                  (pageChange)="filter.page = $event; load()" (limitChange)="filter.limit = $event; filter.page = 1; load()"></app-mexa-pager>
 </div>

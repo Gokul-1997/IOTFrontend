@@ -15,6 +15,7 @@ import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { UiTabsDirective } from '../../shared/ui-tabs.directive';
+import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 7 — Operator Performance
@@ -41,7 +42,7 @@ type Tab = Exclude<Board, 'oee'>;
 @Component({
   selector: 'app-operator-dashboard',
   standalone: true,
-  imports: [MetricHelpComponent, UiTabsDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [MexaPagerComponent, MetricHelpComponent, UiTabsDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './operator-dashboard.component.html'
 })
 export class OperatorDashboardComponent implements OnInit, OnDestroy {
@@ -152,7 +153,6 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
     this.page = page;
     this.load();
   }
-  changePage(delta: number): void { this.goTo(this.page + delta); }
 
   setPageSize(size: number): void { this.limit = Number(size) || 10; this.page = 1; this.load(); }
 
@@ -401,18 +401,6 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
     EXCELLENT: 'mexa-badge-good', GOOD: 'mexa-badge-info', AVERAGE: 'mexa-badge-warn',
     NEEDS_HELP: 'mexa-badge-bad', UNRATED: 'mexa-badge-neutral'
   };
-
-  /** Page buttons: all of them when few, else first, last and the neighbours of this one. */
-  get pageList(): (number | '…')[] {
-    const total = this.data?.operators?.totalPages || 1;
-    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-    const cur = this.page;
-    const set = new Set([1, total, cur - 1, cur, cur + 1].filter(n => n >= 1 && n <= total));
-    const nums = [...set].sort((a, b) => a - b);
-    const out: (number | '…')[] = [];
-    nums.forEach((n, i) => { if (i && n - nums[i - 1] > 1) out.push('…'); out.push(n); });
-    return out;
-  }
 
   private todayStr(): string {
     return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))

@@ -51,7 +51,7 @@
     </div>
 
     <div class="table-wrapper">
-      <table mat-table [dataSource]="rows" matSort (matSortChange)="onSort($event)" class="machines-table">
+      <table mat-table [dataSource]="rows" matSort (matSortChange)="onSort($event)" class="machines-table is-dense">
 
         <!-- # -->
         <ng-container matColumnDef="index">
@@ -61,16 +61,16 @@
 
         <!-- Line -->
         <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class=" thead-custm">Line</th>
-          <td mat-cell *matCellDef="let r">
-            <span class="badge badge-line">{{ r.name || '—' }}</span>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="thead-custm col-md">Line</th>
+          <td mat-cell *matCellDef="let r" class="col-md">
+            {{ r.name || '—' }}
           </td>
         </ng-container>
 
         <!-- Image -->
         <ng-container matColumnDef="image_url">
-          <th mat-header-cell *matHeaderCellDef class=" thead-custm">Image</th>
-          <td mat-cell *matCellDef="let r">
+          <th mat-header-cell *matHeaderCellDef class="thead-custm col-md">Image</th>
+          <td mat-cell *matCellDef="let r" class="col-md">
             <img *ngIf="r.image_url" [src]="r.image_url" [alt]="r.machine_serial_no || 'Machine'" class="machine-thumb" />
             <span *ngIf="!r.image_url" class="no-image">—</span>
           </td>
@@ -80,102 +80,100 @@
         <ng-container matColumnDef="machine_serial_no">
           <th mat-header-cell *matHeaderCellDef mat-sort-header class=" thead-custm">Machine No</th>
           <td mat-cell *matCellDef="let r">
-            <span class="serial-no">{{ r.machine_serial_no }}</span>
+            <span class="serial-no strong">{{ r.machine_serial_no }}</span>
           </td>
         </ng-container>
 
         <!-- Model -->
         <ng-container matColumnDef="model">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class=" thead-custm">Model</th>
-          <td mat-cell *matCellDef="let r">{{ r.model || '—' }}</td>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="thead-custm col-md">Model</th>
+          <td mat-cell *matCellDef="let r" class="col-md">{{ r.model || '—' }}</td>
         </ng-container>
 
         <!-- Controller -->
         <ng-container matColumnDef="controller">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class=" thead-custm">Controller</th>
-          <td mat-cell *matCellDef="let r">{{ r.controller || '—' }}</td>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="thead-custm col-md">Controller</th>
+          <td mat-cell *matCellDef="let r" class="col-md">{{ r.controller || '—' }}</td>
         </ng-container>
 
         <!-- Spindle RPM -->
         <ng-container matColumnDef="spindle_rpm">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class=" thead-custm">RPM</th>
-          <td mat-cell *matCellDef="let r">{{ r.spindle_rpm || '—' }}</td>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="thead-custm qty col-md">RPM</th>
+          <td mat-cell *matCellDef="let r" class="qty col-md">{{ r.spindle_rpm || '—' }}</td>
         </ng-container>
 
         <!-- X Axis -->
         <ng-container matColumnDef="x_axis">
-          <th mat-header-cell *matHeaderCellDef class=" thead-custm">X</th>
-          <td mat-cell *matCellDef="let r">{{ r.x_axis ?? '—' }}</td>
+          <th mat-header-cell *matHeaderCellDef class="thead-custm qty col-lg">X</th>
+          <td mat-cell *matCellDef="let r" class="qty col-lg">{{ r.x_axis ?? '—' }}</td>
         </ng-container>
 
         <!-- Y Axis -->
         <ng-container matColumnDef="y_axis">
-          <th mat-header-cell *matHeaderCellDef class=" thead-custm">Y</th>
-          <td mat-cell *matCellDef="let r">{{ r.y_axis ?? '—' }}</td>
+          <th mat-header-cell *matHeaderCellDef class="thead-custm qty col-lg">Y</th>
+          <td mat-cell *matCellDef="let r" class="qty col-lg">{{ r.y_axis ?? '—' }}</td>
         </ng-container>
 
         <!-- Z Axis -->
         <ng-container matColumnDef="z_axis">
-          <th mat-header-cell *matHeaderCellDef class=" thead-custm">Z</th>
-          <td mat-cell *matCellDef="let r">{{ r.z_axis ?? '—' }}</td>
+          <th mat-header-cell *matHeaderCellDef class="thead-custm qty col-lg">Z</th>
+          <td mat-cell *matCellDef="let r" class="qty col-lg">{{ r.z_axis ?? '—' }}</td>
         </ng-container>
 
         <!-- 4th Axis -->
         <ng-container matColumnDef="fourth_axis" class=" thead-custm">
-          <th mat-header-cell *matHeaderCellDef>4th</th>
-          <td mat-cell *matCellDef="let r">{{ r.fourth_axis ?? '—' }}</td>
+          <th mat-header-cell *matHeaderCellDef class="qty col-lg">4th</th>
+          <td mat-cell *matCellDef="let r" class="qty col-lg">{{ r.fourth_axis ?? '—' }}</td>
         </ng-container>
 
         <!-- 5th Axis -->
         <ng-container matColumnDef="fifth_axis" class=" thead-custm">
-          <th mat-header-cell *matHeaderCellDef>5th</th>
-          <td mat-cell *matCellDef="let r">{{ r.fifth_axis ?? '—' }}</td>
+          <th mat-header-cell *matHeaderCellDef class="qty col-lg">5th</th>
+          <td mat-cell *matCellDef="let r" class="qty col-lg">{{ r.fifth_axis ?? '—' }}</td>
         </ng-container>
 
         <!-- Twin Spindle -->
         <ng-container matColumnDef="twin_spindle" class=" thead-custm">
-          <th mat-header-cell *matHeaderCellDef>Twin Spindle</th>
-          <td mat-cell *matCellDef="let r">
-            <span class="badge" [class.badge-yes]="r.twin_spindle" [class.badge-no]="!r.twin_spindle">
-              {{ r.twin_spindle ? 'Yes' : 'No' }}
-            </span>
+          <th mat-header-cell *matHeaderCellDef class="col-lg">Twin Spindle</th>
+          <td mat-cell *matCellDef="let r" class="col-lg">
+            <span [class.muted]="!r.twin_spindle">{{ r.twin_spindle ? 'Yes' : 'No' }}</span>
           </td>
         </ng-container>
 
         <!-- Twin Table -->
         <ng-container matColumnDef="twin_table" class=" thead-custm">
-          <th mat-header-cell *matHeaderCellDef>Twin Table</th>
-          <td mat-cell *matCellDef="let r">
-            <span class="badge" [class.badge-yes]="r.twin_table" [class.badge-no]="!r.twin_table">
-              {{ r.twin_table ? 'Yes' : 'No' }}
-            </span>
+          <th mat-header-cell *matHeaderCellDef class="col-lg">Twin Table</th>
+          <td mat-cell *matCellDef="let r" class="col-lg">
+            <span [class.muted]="!r.twin_table">{{ r.twin_table ? 'Yes' : 'No' }}</span>
           </td>
         </ng-container>
 
         <!-- ATC -->
         <ng-container matColumnDef="atc_tool_capacity" class=" thead-custm">
-          <th mat-header-cell *matHeaderCellDef>ATC Cap.</th>
-          <td mat-cell *matCellDef="let r">{{ r.atc_tool_capacity || '—' }}</td>
+          <th mat-header-cell *matHeaderCellDef class="qty col-lg">ATC Cap.</th>
+          <td mat-cell *matCellDef="let r" class="qty col-lg">{{ r.atc_tool_capacity || '—' }}</td>
         </ng-container>
 
         <!-- MMC -->
         <ng-container matColumnDef="mmc_no" class=" thead-custm">
-          <th mat-header-cell *matHeaderCellDef>Serial No</th>
-          <td mat-cell *matCellDef="let r">{{ r.mmc_no || '—' }}</td>
+          <th mat-header-cell *matHeaderCellDef class="col-lg">Serial No</th>
+          <td mat-cell *matCellDef="let r" class="col-lg">{{ r.mmc_no || '—' }}</td>
         </ng-container>
 
         <!-- API Key -->
         <ng-container matColumnDef="api_key" class=" thead-custm">
-          <th mat-header-cell *matHeaderCellDef>API Key</th>
-          <td mat-cell *matCellDef="let r" class="api-key-td">
-            <code class="api-key-cell">{{ r.api_key ? r.api_key.substring(0, 8) + '…' : '—' }}</code>
-            <button *ngIf="r.api_key"
-              mat-icon-button
-              class="copy-btn"
-              (click)="copyApiKey(r.api_key)"
-              matTooltip="Copy API Key" [attr.aria-label]="'Copy the API key of ' + r.machine_serial_no">
-              <mat-icon>content_copy</mat-icon>
-            </button>
+          <th mat-header-cell *matHeaderCellDef class="col-md">API Key</th>
+          <td mat-cell *matCellDef="let r" class="col-md">
+            <span class="api-key-td">
+              <code class="api-key-cell">{{ r.api_key ? r.api_key.substring(0, 8) + '…' : '—' }}</code>
+              <button *ngIf="r.api_key"
+                mat-icon-button
+                class="copy-btn"
+                (click)="copyApiKey(r.api_key)"
+                matTooltip="Copy API Key" [attr.aria-label]="'Copy the API key of ' + r.machine_serial_no">
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </span>
           </td>
         </ng-container>
 
@@ -211,11 +209,8 @@
     </div>
 
     <!-- Empty state -->
-    <div *ngIf="!loading && rows.length === 0" class="empty-state">
-      <mat-icon>precision_manufacturing</mat-icon>
-      <p>No machines found</p>
-      <span>Try adjusting your search or add a new machine.</span>
-    </div>
+    <app-state *ngIf="!loading && rows.length === 0" icon="precision_manufacturing" title="No machines found"
+               text="Try another search, or add a machine."></app-state>
 
     <!-- Paginator -->
     <mat-paginator

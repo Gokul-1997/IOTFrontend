@@ -52,14 +52,14 @@
         <thead>
           <tr>
             <th scope="col">Role</th>
-            <th scope="col">Access</th>
-            <th scope="col" class="center w-72">Actions</th>
+            <th scope="col" class="col-md">Access</th>
+            <th scope="col" class="actions">Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let role of roles">
             <td class="px-4 py-3">
-              <div class="flex items-center gap-2">
+              <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span class="font-semibold text-gray-800 dark:text-white">{{ role.role_name }}</span>
                 <span *ngIf="isCompanyAdminRole(role)"
                   class="mexa-badge mexa-badge-violet">
@@ -67,7 +67,7 @@
                 </span>
               </div>
             </td>
-            <td class="px-4 py-3">
+            <td class="px-4 py-3 col-md">
               <span *ngIf="isCompanyAdminRole(role)" class="text-sm text-gray-600 dark:text-gray-300 font-medium">
                 Everything the company has access to
               </span>
@@ -80,14 +80,15 @@
                   <span class="text-xs text-gray-400">
                     ({{ getActionCount(role) }} {{ getActionCount(role) === 1 ? 'action' : 'actions' }})
                   </span>
-                  <span class="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs">{{ getPageNames(role) }}</span>
+                  <!-- the page names: in full on hover; below a laptop the count alone, so the row's buttons keep their room -->
+                  <span class="hidden lg:block text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs" [title]="getPageNames(role)">{{ getPageNames(role) }}</span>
                 </div>
               </div>
             </td>
-            <td class="px-4 py-3 text-center">
+            <td class="actions">
               <!-- Company Admin is set by Manage Access. Every other role, the
                    five defaults included, is the company's own. -->
-              <div class="flex items-center justify-center gap-2">
+              <div class="flex items-center gap-2">
                 <button *ngIf="!role.is_system"
                   (click)="openPagesModal(role)"
                   class="ui-btn ui-btn-ghost ui-btn-xs">

@@ -223,36 +223,36 @@
         <caption class="sr-only">Maintenance tickets, most recently raised first</caption>
         <thead>
           <tr>
-            <th scope="col">#</th>
+            <th class="col-lg" scope="col">#</th>
             <th scope="col">Machine</th>
             <th scope="col">Title</th>
-            <th scope="col">Type</th>
+            <th class="col-lg" scope="col">Type</th>
             <th scope="col">Priority</th>
-            <th scope="col">Raised</th>
-            <th class="qty" scope="col">Repair</th>
+            <th class="col-md" scope="col">Raised</th>
+            <th class="qty col-lg" scope="col">Repair</th>
             <th class="qty" scope="col">Downtime</th>
-            <th scope="col">Assigned To</th>
+            <th class="col-md" scope="col">Assigned To</th>
             <th scope="col">Status</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let r of data.tickets.data; let i = index">
-            <td class="num">{{ (data.tickets.page - 1) * limit + i + 1 }}</td>
+            <td class="num col-lg">{{ (data.tickets.page - 1) * limit + i + 1 }}</td>
             <td class="strong">{{ r.machine_serial_no }}</td>
             <td class="wrap">{{ r.title }}</td>
-            <td>{{ words(r.issue_type) }}</td>
+            <td class="col-lg">{{ words(r.issue_type) }}</td>
             <td>
               <span class="mexa-badge" [ngClass]="priorityBadge(r.priority)">{{ words(r.priority) }}</span>
             </td>
-            <td class="whitespace-nowrap">{{ r.created_at | date:'d MMM, h:mm a' }}</td>
+            <td class="whitespace-nowrap col-md">{{ r.created_at | date:'d MMM, h:mm a' }}</td>
             <!-- an unresolved ticket has no repair time yet: a dash, not zero -->
-            <td class="num whitespace-nowrap qty">{{ hours(r.repair_hours) }}</td>
+            <td class="num whitespace-nowrap qty col-lg">{{ hours(r.repair_hours) }}</td>
             <!-- read as hours and minutes, as everywhere else on the page;
                  a ticket with nothing entered is a dash, not 0m -->
             <td class="num whitespace-nowrap qty">
               {{ r.downtime_minutes === null || r.downtime_minutes === undefined ? '--' : minutes(r.downtime_minutes) }}
             </td>
-            <td>{{ r.assigned_to_name || 'Unassigned' }}</td>
+            <td class="col-md">{{ r.assigned_to_name || 'Unassigned' }}</td>
             <td>
               <span class="mexa-badge" [ngClass]="statusBadge(r.status)">{{ words(r.status) }}</span>
             </td>
@@ -264,15 +264,8 @@
       </table>
     </div>
 
-    <div class="mexa-pager" *ngIf="data.tickets.total > 0">
-      <span aria-live="polite">Showing: {{ data.tickets.data.length }} of {{ data.tickets.total }}</span>
-      <span class="inline-flex items-center gap-2">
-        <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
-                [disabled]="data.tickets.page <= 1">‹ Previous</button>
-        <span>{{ data.tickets.page }} / {{ data.tickets.totalPages }}</span>
-        <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
-                [disabled]="data.tickets.page >= data.tickets.totalPages">Next ›</button>
-      </span>
-    </div>
+    <app-mexa-pager [page]="data.tickets.page" [totalPages]="data.tickets.totalPages" [total]="data.tickets.total"
+                    [shown]="data.tickets.data.length" [limit]="limit" [sizes]="[limit]"
+                    (pageChange)="changePage($event - page)"></app-mexa-pager>
   </section>
 </ng-container>

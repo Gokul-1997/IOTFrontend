@@ -13,10 +13,13 @@
 
     <div class="toolbar-right">
       <div class="flex items-center gap-3 w-full">
+      <!-- The filters apply themselves, as on the dashboards: machine and shift
+           load at once, the date when it settles. The line reloads its
+           machines first (onLineChange) and loads from there. -->
       <div class="w-full mt-4 md:mt-0 
        sm:grid sm:grid-cols-2 
        md:flex 
-       items-end gap-4">
+       items-end gap-4" appAutoApply (autoApply)="loadDashboard()">
 
         <!-- LINE -->
         <div class="flex flex-col md:flex-row gap-2 items-left md:items-center">
@@ -26,7 +29,7 @@
 
           <select
             [(ngModel)]="selectedLine"
-            (change)="onLineChange()"
+            (change)="onLineChange(); $event.stopPropagation()"
             class="filter-select" aria-label="Line Name" >
 
             <option [ngValue]="null">All lines</option>
@@ -91,23 +94,6 @@
             class="filter-date" aria-label="Date" />
         </div>
 
-        <!-- SUBMIT -->
-        <button
-          (click)="submit()"
-          class="btn-primary">
-
-          Submit
-
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="3"
-            viewBox="0 0 24 24">
-            <path d="M5 13l4 4L19 7" />
-          </svg>
-
-        </button>
 
       </div>
     </div>

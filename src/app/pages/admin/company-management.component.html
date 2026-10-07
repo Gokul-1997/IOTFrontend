@@ -47,9 +47,9 @@
           <tr>
             <th scope="col">Company</th>
             <th scope="col">Plan</th>
-            <th scope="col" class="center">Limits</th>
+            <th scope="col" class="center col-lg">Limits</th>
             <th scope="col" class="center">Status</th>
-            <th scope="col" class="center">Actions</th>
+            <th scope="col" class="actions">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -67,7 +67,7 @@
               </span>
               <span *ngIf="!c.plan_name" class="text-xs text-red-400 italic">No plan</span>
             </td>
-            <td class="px-4 py-3 text-center">
+            <td class="px-4 py-3 text-center col-lg">
               <div *ngIf="c.plan_name" class="text-xs text-gray-500 space-y-0.5">
                 <div>Users: <strong>{{ c.max_users }}</strong></div>
                 <div>Plants: <strong>{{ c.max_plants }}</strong></div>
@@ -77,10 +77,10 @@
             </td>
             <td class="px-4 py-3 text-center">
               <span *ngIf="c.is_active" class="mexa-badge mexa-badge-good">Active</span>
-              <span *ngIf="!c.is_active" class="mexa-badge mexa-badge-bad">Inactive</span>
+              <span *ngIf="!c.is_active" class="mexa-badge mexa-badge-neutral">Inactive</span>
             </td>
-            <td class="px-4 py-3 text-center">
-              <div class="flex items-center justify-center gap-1.5 flex-wrap">
+            <td class="actions is-wrap">
+              <div class="flex items-center gap-1.5">
                 <button (click)="openPlantsModal(c)"
                   class="ui-btn ui-btn-ghost ui-btn-xs">
                   Plants
@@ -556,27 +556,27 @@
       <table class="mexa-table">
         <thead>
           <tr>
-            <th scope="col">#</th>
+            <th class="col-lg" scope="col">#</th>
             <th scope="col">Code</th>
             <th scope="col">Name</th>
-            <th scope="col">Location</th>
+            <th class="col-md" scope="col">Location</th>
             <th scope="col" class="center">Status</th>
-            <th scope="col" class="center">Actions</th>
+            <th scope="col" class="actions">Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let p of plants; let i = index">
-            <td class="num muted">{{ i + 1 }}</td>
+            <td class="num muted col-lg">{{ i + 1 }}</td>
             <td class="num strong">{{ p.plant_code }}</td>
             <td class="strong">{{ p.plant_name }}</td>
-            <td [class.muted]="!p.location">{{ p.location || '—' }}</td>
+            <td class="col-md" [class.muted]="!p.location">{{ p.location || '—' }}</td>
             <td class="center">
-              <span class="mexa-badge" [ngClass]="p.is_active ? 'mexa-badge-good' : 'mexa-badge-bad'">
+              <span class="mexa-badge" [ngClass]="p.is_active ? 'mexa-badge-good' : 'mexa-badge-neutral'">
                 {{ p.is_active ? 'Active' : 'Inactive' }}
               </span>
             </td>
-            <td class="center">
-              <div class="flex items-center justify-center gap-2">
+            <td class="actions">
+              <div class="flex items-center gap-2">
                 <button (click)="openPlantEdit(p)"
                   class="ui-btn ui-btn-ghost ui-btn-xs">Edit</button>
                 <button (click)="togglePlantStatus(p)"

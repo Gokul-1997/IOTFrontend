@@ -98,20 +98,41 @@
   --fs-th: .78rem;            /* table header */
   --fs-td: .84rem;            /* table cell */
 
-  /* ── 3. Tables ── */
-  --tbl-head-bg: #1C3D6F;     /* the indigo header the dashboards already use */
-  --tbl-head-ink: #ffffff;
+  /* ── 3. Tables ──
+     A light header with a navy rule under it, thin row rules, no zebra
+     (opt in with .is-striped on wide report tables), rows ~40px. The dark
+     indigo header bar on every table read heavy on the white cards; the navy
+     stays in the header text, the rule, the sort arrow and the focus ring. */
+  --tbl-accent: #2b3990;            /* STM navy */
+  --tbl-head-bg: #f3f5fa;
+  --tbl-head-ink: #33415f;          /* 9.5:1 on the header */
+  --tbl-head-rule: #c9d1e4;
+  --tbl-col-rule: #e2e7f1;          /* between header cells */
   --tbl-row: var(--mexa-card, #fff);
-  --tbl-row-alt: var(--mexa-row-alt, #f5f4fc);
-  --tbl-row-hover: #eceefb;
-  --tbl-row-selected: #e0e4fb;
-  --tbl-rule: var(--mexa-rule, #e3e6ef);
-  --tbl-pad-x: .5rem;
-  --tbl-pad-y: .25rem;
+  --tbl-row-alt: #f9fafd;
+  --tbl-row-hover: #f0f3fc;
+  --tbl-row-selected: #e6ebfb;
+  --tbl-rule: #edf0f6;
+  --tbl-pad-x: .75rem;
+  --tbl-pad-y: .55rem;
+  --tbl-dense-pad-y: .32rem;
+  --tbl-bad: #b42318;
+  --tbl-warn: #9a5b00;
+  --tbl-good: #13703f;
 }
 :root[data-theme="dark"], .dark {
-  --tbl-row-hover: #232846;
-  --tbl-row-selected: #2b3160;
+  --tbl-accent: #8ea2ff;
+  --tbl-head-bg: #1b2036;
+  --tbl-head-ink: #c9d0e6;
+  --tbl-head-rule: #34406a;
+  --tbl-col-rule: #2a3150;
+  --tbl-row-alt: #1a1f34;
+  --tbl-row-hover: #232a46;
+  --tbl-row-selected: #2a3160;
+  --tbl-rule: #262c45;
+  --tbl-bad: #f59aa6;
+  --tbl-warn: #f7c667;
+  --tbl-good: #6fdba0;
 }
 
 html, body { font-family: var(--font-ui); }
@@ -189,30 +210,38 @@ html, body { font-family: var(--font-ui); }
   font-size: var(--fs-td);
 }
 
-/* Header */
+/* Header: tinted, the navy rule under it, a hairline between columns */
 .mexa-table thead th {
   position: sticky; top: 0; z-index: 2;
   background: var(--tbl-head-bg);
   color: var(--tbl-head-ink);
   font-size: var(--fs-th);
   line-height: 1.3;
-  padding: .65rem var(--tbl-pad-x);
+  letter-spacing: .01em;
+  padding: .62rem var(--tbl-pad-x);
   vertical-align: middle;
-  border-bottom: 0;
+  border-bottom: 1px solid var(--tbl-head-rule);
 }
+.mexa-table thead th + th { box-shadow: inset 1px 0 0 var(--tbl-col-rule); }
 :where(.mexa-table thead th) { font-weight: 600; text-align: left; white-space: nowrap; }
 .mexa-table thead tr:first-child th:first-child { border-top-left-radius: 10px; }
 .mexa-table thead tr:first-child th:last-child  { border-top-right-radius: 10px; }
-.mexa-table thead th .mexa-sort { color: inherit; font-weight: inherit; font-size: inherit; min-height: 24px; }
-.mexa-table thead th .mexa-sort-arrow { color: rgba(255, 255, 255, .7); }
-.mexa-table thead th .mexa-sort[aria-current="true"] .mexa-sort-arrow { color: #fff; }
+.mexa-table thead th .mexa-sort {
+  color: inherit; font-weight: inherit; font-size: inherit; min-height: 24px;
+  display: inline-flex; align-items: center; gap: .3rem; border-radius: 4px;
+}
+.mexa-table thead th .mexa-sort:hover { color: var(--tbl-accent); }
+.mexa-table thead th.qty .mexa-sort { flex-direction: row; justify-content: flex-end; width: 100%; }
+.mexa-table thead th .mexa-sort-arrow { color: var(--mexa-ink-3); font-size: .7rem; }
+.mexa-table thead th .mexa-sort[aria-current="true"] { color: var(--tbl-accent); }
+.mexa-table thead th .mexa-sort[aria-current="true"] .mexa-sort-arrow { color: var(--tbl-accent); }
 
-/* Rows */
+/* Rows: thin rules, a quiet hover, the selected row marked in navy */
 .mexa-table tbody tr { background: var(--tbl-row); transition: background-color .12s; }
-.mexa-table tbody tr:nth-child(even) { background: var(--tbl-row-alt); }
+.mexa-table.is-striped tbody tr:nth-child(even) { background: var(--tbl-row-alt); }
 .mexa-table tbody tr:hover { background: var(--tbl-row-hover); }
 .mexa-table tbody tr.is-selected,
-.mexa-table tbody tr[aria-selected="true"] { background: var(--tbl-row-selected); box-shadow: inset 3px 0 0 #2b3990; }
+.mexa-table tbody tr[aria-selected="true"] { background: var(--tbl-row-selected); box-shadow: inset 3px 0 0 var(--tbl-accent); }
 .mexa-table tbody td {
   padding: var(--tbl-pad-y) var(--tbl-pad-x);
   line-height: 1.45;
@@ -220,6 +249,10 @@ html, body { font-family: var(--font-ui); }
   vertical-align: middle;
   overflow-wrap: break-word;
 }
+/* Many columns of figures (the reports): shorter rows */
+.mexa-table.is-dense tbody td { padding-top: var(--tbl-dense-pad-y); padding-bottom: var(--tbl-dense-pad-y); }
+.mexa-table.is-dense thead th { padding-top: .5rem; padding-bottom: .5rem; }
+@media (prefers-reduced-motion: reduce) { .mexa-table tbody tr, .mat-mdc-table .mat-mdc-row { transition: none; } }
 :where(.mexa-table tbody td) { font-size: var(--fs-td); color: var(--mexa-ink-2); white-space: nowrap; }
 /* A long-text column (alarm names, messages, notes) wraps inside a sensible
    width instead of making every row two lines tall or the table endless. */
@@ -234,40 +267,106 @@ html, body { font-family: var(--font-ui); }
 .mexa-table :is(th, td).center { text-align: center; }
 .mexa-table :is(th, td).actions { text-align: right; white-space: nowrap; width: 1%; }
 .mexa-table td.muted, .mexa-table .is-missing { color: var(--mexa-ink-3); }
-.mexa-table td .clip {
+.mexa-table td .clip, .mat-mdc-table .clip {
   display: block; max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* A value outside its normal range: one colour and weight, used sparingly */
+.mexa-table .is-bad,  .mat-mdc-table .is-bad  { color: var(--tbl-bad);  font-weight: 600; }
+.mexa-table .is-warn, .mat-mdc-table .is-warn { color: var(--tbl-warn); font-weight: 600; }
+.mexa-table .is-good, .mat-mdc-table .is-good { color: var(--tbl-good); font-weight: 600; }
+/* A code or id that has to line up character by character */
+.mexa-table .code, .mat-mdc-table .code { font-family: var(--font-mono); font-size: .8rem; letter-spacing: 0; }
+/* Columns that give way on smaller screens, so the ones that matter stay
+   readable instead of every column squeezing: .col-lg below a laptop,
+   .col-md below a tablet. On the <th> and its <td>s alike. */
+@media (max-width: 1023.98px) {
+  .mexa-table :is(th, td).col-lg, .mat-mdc-table .col-lg { display: none; }
+}
+@media (max-width: 767.98px) {
+  .mexa-table :is(th, td).col-md, .mat-mdc-table .col-md { display: none; }
+  /* On a phone a table is as wide as its columns, not 40rem: one with a
+     few columns fits the screen; one with many still scrolls sideways */
+  .mexa-table { min-width: 0; }
+  .mexa-table td.wrap { min-width: 8rem; }
+  /* the row counter says nothing a phone has room for */
+  :is(.mexa-table, .mat-mdc-table) .col-index { display: none; }
+  /* and the cells sit a little closer */
+  :is(.mexa-table, .mat-mdc-table) { --tbl-pad-x: .5rem; }
 }
 .mexa-table :is(th, td).sticky-col { position: sticky; left: 0; z-index: 1; background: inherit; }
 .mexa-table thead th.sticky-col { z-index: 3; background: var(--tbl-head-bg); }
 .mexa-table tbody td.sticky-col { box-shadow: 1px 0 0 var(--tbl-rule); }
 
-/* Empty, loading and error rows */
+/* Empty, no-results, loading and error rows: one full-width cell. A cell
+   stays a table cell (.mexa-empty elsewhere is a flex column). */
 .mexa-table td.mexa-empty {
+  display: table-cell;
   padding: 2.25rem 1rem; text-align: center; white-space: normal;
   color: var(--mexa-ink-3); font-size: var(--fs-body);
 }
+.mexa-table td.mexa-empty .ux-state { margin: 0 auto; }
 .mexa-table tbody tr:has(> td.mexa-empty):hover { background: var(--tbl-row); }
 
-/* Badges inside tables keep one size */
-.mexa-table .mexa-badge { font-size: var(--fs-small); font-weight: 600; line-height: 1.5; }
+/* Skeleton rows while a table loads (tbody[appSkeletonRows]): bars shaped
+   like the rows to come; still when the viewer asks for less motion */
+.tbl-skel-bar {
+  display: block; height: .7rem; border-radius: 4px; max-width: 100%;
+  background: linear-gradient(90deg, var(--tbl-rule) 0%, var(--tbl-row-hover) 50%, var(--tbl-rule) 100%);
+  background-size: 200% 100%;
+  animation: tbl-skel 1.2s ease-in-out infinite;
+}
+@keyframes tbl-skel { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .tbl-skel-bar { animation: none; } }
+.mexa-table tbody.tbl-skel tr:hover { background: var(--tbl-row); }
+
+/* The dashboards' empty block (.downtime-empty) inside a table reads as the
+   shared state: no grey box inside the white card, the navy icon. Outside a
+   table it keeps its look; in the dark theme it gets a dark ground (its
+   light grey box and #273142 title were unreadable there). */
+.mexa-table .downtime-empty { background: transparent; border-radius: 0; padding: 1.5rem 1rem; }
+/* …with the shared state's icon (an empty tray in a soft circle, as
+   app-state draws it), not the warning sign: an empty list is not a fault */
+.mexa-table .downtime-empty .empty-icon { display: none; }
+.mexa-table .downtime-empty::before {
+  content: 'inbox';
+  font-family: 'Material Icons'; font-feature-settings: 'liga'; font-size: 24px; line-height: 1;
+  width: 2.75rem; height: 2.75rem; border-radius: 999px; margin-bottom: .55rem;
+  display: grid; place-items: center;
+  background: var(--mexa-row-alt); color: var(--tbl-accent);
+}
+.dark .mexa-table .downtime-empty::before { background: #1d2133; color: #9fb3ff; }
+.dark .downtime-empty { background: #1d2133; }
+.dark .downtime-empty .empty-title { color: var(--mexa-ink); }
+.dark .downtime-empty .empty-text { color: var(--mexa-ink-3); }
+.dark .mexa-table .downtime-empty { background: transparent; }
+
+/* Status badges: one size and shape in every table, a dot before the word
+   (the word carries the meaning; the colour and dot only help scanning) */
+:is(.mexa-table, .mat-mdc-table) .mexa-badge {
+  font-size: var(--fs-small); font-weight: 600; line-height: 1.5;
+  padding: .08rem .55rem; border-radius: 999px; white-space: nowrap;
+}
+:is(.mexa-table, .mat-mdc-table) .mexa-badge:is(.mexa-badge-good, .mexa-badge-warn, .mexa-badge-bad, .mexa-badge-info, .mexa-badge-neutral, .mexa-badge-violet):not(:has(.material-icons, mat-icon))::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none;
+}
 
 /* Angular Material tables (Machines, Shifts, Operators, Lines, Plants,
    Components, Jobs): the same look, set through Material's own tokens. */
 .mat-mdc-table {
   --mat-table-background-color: transparent;
-  --mat-table-header-container-height: 44px;
+  --mat-table-header-container-height: 42px;
   --mat-table-header-headline-color: var(--tbl-head-ink);
   --mat-table-header-headline-font: var(--font-ui);
   --mat-table-header-headline-size: var(--fs-th);
   --mat-table-header-headline-weight: 600;
   --mat-table-header-headline-tracking: 0;
-  --mat-table-row-item-container-height: 48px;
+  --mat-table-row-item-container-height: 44px;
   --mat-table-row-item-label-text-color: var(--mexa-ink-2);
   --mat-table-row-item-label-text-font: var(--font-ui);
   --mat-table-row-item-label-text-size: var(--fs-td);
   --mat-table-row-item-label-text-tracking: 0;
   --mat-table-row-item-outline-color: var(--tbl-rule);
-  --mat-sort-arrow-color: #fff;
+  --mat-sort-arrow-color: var(--tbl-accent);
   width: 100%;
 }
 .mat-mdc-table .mat-mdc-header-row { background: var(--tbl-head-bg); }
@@ -276,21 +375,56 @@ html, body { font-family: var(--font-ui); }
   background: var(--tbl-head-bg);
   color: var(--tbl-head-ink);
   text-transform: none;
-  letter-spacing: 0;
+  letter-spacing: .01em;
   padding: 0 var(--tbl-pad-x);
-  border-bottom: 0;
+  border-bottom: 1px solid var(--tbl-head-rule);
 }
+.mat-mdc-table .mat-mdc-header-cell + .mat-mdc-header-cell { box-shadow: inset 1px 0 0 var(--tbl-col-rule); }
 :where(.mat-mdc-table .mat-mdc-header-cell) { white-space: nowrap; }
 .mat-mdc-table .mat-mdc-header-cell .mat-sort-header-content { font-weight: 600; }
 .mat-mdc-table .mat-mdc-header-row .mat-mdc-header-cell:first-child { border-top-left-radius: 10px; }
 .mat-mdc-table .mat-mdc-header-row .mat-mdc-header-cell:last-child  { border-top-right-radius: 10px; }
 .mat-mdc-table .mat-mdc-row { background: var(--tbl-row); transition: background-color .12s; }
-.mat-mdc-table .mat-mdc-row:nth-child(even) { background: var(--tbl-row-alt); }
 .mat-mdc-table .mat-mdc-row:hover { background: var(--tbl-row-hover); }
+.mat-mdc-table .mat-mdc-cell { border-bottom-color: var(--tbl-rule); }
+.mat-mdc-table :is(.mat-mdc-header-cell, .mat-mdc-cell).qty { text-align: right; font-variant-numeric: tabular-nums; }
+.mat-mdc-table .mat-mdc-header-cell.qty .mat-sort-header-container { justify-content: flex-end; }
+.mat-mdc-table .mat-mdc-cell.strong { color: var(--mexa-ink); font-weight: 600; }
+.mat-mdc-table .mat-mdc-cell.muted { color: var(--mexa-ink-3); }
 .mat-mdc-table .mat-mdc-cell { padding: var(--tbl-pad-y) var(--tbl-pad-x); }
 :where(.mat-mdc-table .mat-mdc-cell) { white-space: nowrap; }
 .mat-mdc-table .mat-mdc-row:last-child .mat-mdc-cell { border-bottom: 0; }
 .mat-mdc-table .col-index { color: var(--mexa-ink-3); width: 48px; text-align: center; }
+/* Many columns (Machines): narrower cells and rows, so the table fits a
+   laptop screen before it has to scroll sideways */
+.mat-mdc-table.is-dense { --tbl-pad-x: .55rem; --mat-table-row-item-container-height: 40px; }
+
+/* Row actions (View, Edit, Delete, More): compact, one size, in a row */
+:is(.mexa-table td.actions, .mat-mdc-table .col-actions) :is(.ui-btn, .ux-icon-btn, button.mat-mdc-icon-button) {
+  min-height: 30px;
+}
+:is(.mexa-table td.actions, .mat-mdc-table .col-actions) .ui-btn-row,
+:is(.mexa-table td.actions, .mat-mdc-table .col-actions) > .flex { gap: .25rem; justify-content: flex-end; flex-wrap: nowrap; }
+
+/* Keyboard: every control in a table shows where focus is */
+:is(.mexa-table, .mat-mdc-table) :is(a, button, input, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--tbl-accent); outline-offset: 2px; border-radius: 4px;
+}
+:is(.mexa-tablewrap, .table-wrapper):focus-visible { outline: 2px solid var(--tbl-accent); outline-offset: 2px; }
+
+/* Above a table: search on the left, counts and controls on the right */
+.tbl-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: .5rem .75rem; padding: .75rem 1rem .5rem;
+}
+.tbl-count { font-size: var(--fs-label); color: var(--mexa-ink-3); font-variant-numeric: tabular-nums; }
+/* The pager under a table in an edge-to-edge card keeps the table's margins */
+.mexa-card-flush > app-mexa-pager > .mexa-pager { padding: .25rem 1rem 1rem; }
+/* On a phone: Previous, this page, Next — seven numbered buttons pushed the
+   page sideways (Machine OEE, 70 machines) */
+@media (max-width: 479.98px) {
+  .mexa-pager nav > :is(button.mexa-pagebtn:not(:first-child):not(:last-child):not([aria-current="page"]), span) { display: none; }
+}
 
 .mat-mdc-paginator {
   --mat-paginator-container-background-color: transparent;
@@ -355,6 +489,8 @@ html, body { font-family: var(--font-ui); }
 .mexa-table.is-compact td.wrap { min-width: 8rem; }
 /* The second line of a cell: a file name under a program, a model under a machine */
 .mexa-table .sub { display: block; font-size: var(--fs-small); color: var(--mexa-ink-3); white-space: normal; }
+/* …under a figure, it lines up on the right with the figure ("not reporting") */
+.mexa-table td.qty :is(.sub, .mexa-rank-sub) { justify-content: flex-end; text-align: right; }
 
 /* Red words inside a warning note: a darker red holds 4.5:1 on the amber */
 html:not(.dark) .mexa-note :is([class~="text-red-500"], [class~="text-red-600"]) { color: #b42318; }
@@ -383,6 +519,44 @@ html.dark .mexa-note :is([class~="text-red-500"], [class~="text-red-600"]) { col
 .mat-mdc-table .mat-mdc-slide-toggle .mdc-label { font-size: var(--fs-label); color: var(--mexa-ink-2); padding-left: .4rem; }
 /* Row actions stay on one line: a row is as tall as its text, not its buttons */
 .mexa-table td.actions :is(.ui-btn-row, .flex) { flex-wrap: nowrap; }
+/* Below a laptop a row's buttons may stack, so its other columns keep
+   their room (Alarms: Resolve over Create ticket) */
+@media (max-width: 1023.98px) {
+  /* as wide as its buttons in a row when there is room, narrower only when not */
+  .mexa-table :is(th, td).actions { width: auto; }
+  .mexa-table td.actions { white-space: normal; }
+  .mexa-table td.actions > :is(.ui-btn-row, .flex) { flex-wrap: wrap; justify-content: flex-end; }
+}
+/* …and a row with many (Companies) wraps them everywhere, from the right */
+.mexa-table td.actions.is-wrap { white-space: normal; width: auto; min-width: 21rem; }
+.mexa-table td.actions.is-wrap > .flex { flex-wrap: wrap; }
+/* Icon buttons in a row: 32px, not Material's 40px, so the row stays as
+   tall as its text (the touch target around each stays 48px) */
+:is(.mexa-table td.actions, .mat-mdc-table .col-actions) .mat-mdc-icon-button {
+  --mat-icon-button-state-layer-size: 32px;
+  width: 32px; height: 32px; padding: 4px;
+}
+/* A row header (energy tariff's machine rows) is set like the cells beside it */
+.mexa-table tbody th[scope="row"] {
+  padding: var(--tbl-pad-y) var(--tbl-pad-x);
+  border-bottom: 1px solid var(--tbl-rule);
+  text-align: left; vertical-align: middle; white-space: nowrap;
+  color: var(--mexa-ink); font-weight: 600; font-size: var(--fs-td);
+}
+.mexa-table tbody tr:last-child th[scope="row"] { border-bottom: 0; }
+
+/* The report filters' Reset (now alone where Apply was) takes the ghost
+   button's dark colours instead of staying a white block */
+.dark .btn-clear { color: #e5e7eb; background: #1c1c1c; border-color: #3e3e3e; }
+.dark .btn-clear:hover:not(:disabled) { background: #262626; }
+
+/* A centred tab strip wider than the screen starts at its first tab.
+   Centring with justify-content pushed the first tabs past the left edge,
+   out of scroll reach (Reports on a phone: no way back to "Production");
+   auto margins centre the strip only while it fits. */
+.ui-tabs-center { justify-content: flex-start; }
+.ui-tabs-center > :first-child { margin-left: auto; }
+.ui-tabs-center > :last-child { margin-right: auto; }
 
 /* Dashboard filters apply themselves (appAutoApply): while they do, the
    title bar's "Updated …" reads "Updating…" and its icon turns — unless the

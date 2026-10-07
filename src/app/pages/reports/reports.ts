@@ -1,6 +1,7 @@
 import {
   Component,
   OnInit,
+  OnDestroy,
   HostListener,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -18,6 +19,8 @@ import { UiTabsDirective } from '../../shared/ui-tabs.directive';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { AutoApplyDirective } from '../../shared/auto-apply.directive';
+import { Subscription } from 'rxjs';
 import { StateComponent } from '../../shared/state/state.component';
 import { qty } from '../../shared/format-number';
 
@@ -79,12 +82,15 @@ const COL_DEFS: Record<ReportType, ColDef[]> = {
 @Component({
   standalone: true,
   selector: 'app-reports',
-  imports: [MexaPagerComponent, StateComponent, MetricHelpComponent, ReportDateDirective, UiTabsDirective, CommonModule, FormsModule, OeeReportsComponent, MachineOeeReportComponent],
+  imports: [MexaPagerComponent, StateComponent, MetricHelpComponent, ReportDateDirective, UiTabsDirective, AutoApplyDirective, CommonModule, FormsModule, OeeReportsComponent, MachineOeeReportComponent],
   templateUrl: './reports.html',
   styleUrl: './reports.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class Reports implements OnInit {
+export class Reports implements OnInit, OnDestroy {
+  private reportSub?: Subscription;
+  ngOnDestroy(): void { this.reportSub?.unsubscribe(); }
+
 
   @ViewChild('colPanel') colPanelRef?: ElementRef;
   @ViewChild('colBtn')   colBtnRef?:   ElementRef;
@@ -320,7 +326,11 @@ export class Reports implements OnInit {
       this.activeTab === 'oee-hourly' ? this.svc.getOeeHourlyData(this.filters)  :
                                         this.svc.getShiftOeeData(this.filters);
 
-    obs$.subscribe({
+    /* The filters apply themselves, so a second change can come while the
+       first answer is on its way: the earlier request is dropped and only
+       the latest choice is ever shown. */
+    this.reportSub?.unsubscribe();
+    this.reportSub = obs$.subscribe({
       next: (res: any) => {
         this.rows    = res.data.rows    || [];
         this.summary = res.data.summary || {};

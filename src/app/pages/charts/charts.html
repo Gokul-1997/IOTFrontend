@@ -9,7 +9,8 @@
     
 
     <div class="toolbar-right">
-      <div appFilterPanel class="flex flex-wrap items-end gap-4 w-full justify-center md:justify-end">
+      <!-- The filters apply themselves, as on the dashboards: a choice loads at once, a date when it settles -->
+      <div appFilterPanel appAutoApply (autoApply)="loadAll()" class="flex flex-wrap items-end gap-4 w-full justify-center md:justify-end">
 
         <!-- Machine -->
         <div class="flex flex-col md:flex-row gap-2 items-center">
@@ -41,13 +42,6 @@
           <input type="date" appReportDate [(ngModel)]="selectedDate"
             class="filter-date" aria-label="Date" />
         </div>
-
-        <!-- Submit -->
-        <button type="button" (click)="submit()" data-filter-apply
-          class="btn-primary">
-          Submit
-          <span class="material-icons text-[18px]" aria-hidden="true">check</span>
-        </button>
 
       </div>
     </div>

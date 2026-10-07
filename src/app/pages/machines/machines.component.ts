@@ -37,6 +37,7 @@ const SORT_MAP: Record<string, string> = {
   is_active:          'm.is_active'
 };
 
+import { StateComponent } from '../../shared/state/state.component';
 @Component({
   standalone: true,
   selector: 'app-machines',
@@ -45,7 +46,7 @@ const SORT_MAP: Record<string, string> = {
     MatTableModule, MatPaginatorModule, MatSortModule,
     MatButtonModule, MatIconModule, MatInputModule,
     MatSlideToggleModule, MatProgressSpinnerModule,
-    MatTooltipModule, MatChipsModule, MatBadgeModule
+    MatTooltipModule, MatChipsModule, MatBadgeModule, StateComponent
   ],
   templateUrl: './machines.component.html',
   styleUrl: './machines.component.scss'

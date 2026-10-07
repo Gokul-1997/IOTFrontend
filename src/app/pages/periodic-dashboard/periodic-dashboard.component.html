@@ -233,17 +233,17 @@
           <caption class="sr-only">Maintenance due next, soonest first</caption>
           <thead>
             <tr>
-              <th scope="col">#</th>
+              <th class="col-lg" scope="col">#</th>
               <th scope="col">Machine</th>
               <th scope="col">Maintenance Title</th>
               <th scope="col">Due Date</th>
-              <th scope="col">Technician</th>
+              <th class="col-md" scope="col">Technician</th>
               <th scope="col">Status</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let u of upcomingRows; let i = index">
-              <td class="num">{{ i + 1 }}</td>
+              <td class="num col-lg">{{ i + 1 }}</td>
               <td class="strong">{{ u.machine_serial_no }}</td>
               <td>
                 {{ u.title }}
@@ -255,7 +255,7 @@
                   {{ dueLabel(u.due_date, u.is_overdue) }}
                 </span>
               </td>
-              <td>{{ u.assigned_to_name || 'Unassigned' }}</td>
+              <td class="col-md">{{ u.assigned_to_name || 'Unassigned' }}</td>
               <td>
                 <span class="mexa-badge" [class.mexa-badge-bad]="u.is_overdue"
                       [class.mexa-badge-info]="!u.is_overdue">
@@ -306,22 +306,22 @@
           <caption class="sr-only">Open and completed work by frequency band</caption>
           <thead>
             <tr>
-              <th scope="col">#</th>
+              <th class="col-lg" scope="col">#</th>
               <th scope="col">Maintenance Type</th>
               <th class="qty" scope="col">Open</th>
               <th class="qty" scope="col">Completed</th>
               <th class="qty" scope="col">Overdue</th>
-              <th scope="col">Next Due</th>
+              <th class="col-md" scope="col">Next Due</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let f of data.by_frequency; let i = index">
-              <td class="num">{{ i + 1 }}</td>
+              <td class="num col-lg">{{ i + 1 }}</td>
               <td class="strong">{{ frequencyLabel(f.frequency) }}</td>
               <td class="num qty">{{ f.open }}</td>
               <td class="num qty">{{ f.completed }}</td>
               <td class="num qty" [style.color]="f.overdue ? 'var(--mexa-bad)' : null">{{ f.overdue }}</td>
-              <td class="num whitespace-nowrap">
+              <td class="num whitespace-nowrap col-md">
                 {{ f.next_due_at ? (f.next_due_at | date:'d MMM y') : '--' }}
               </td>
             </tr>
@@ -410,33 +410,33 @@
         <caption class="sr-only">Periodic maintenance tickets, newest due first</caption>
         <thead>
           <tr>
-            <th scope="col">#</th>
-            <th scope="col">Ticket No</th>
-            <th scope="col">Assignee</th>
+            <th class="col-lg" scope="col">#</th>
+            <th class="col-md" scope="col">Ticket No</th>
+            <th class="col-md" scope="col">Assignee</th>
             <th scope="col">Machine</th>
             <th scope="col">Maintenance Title</th>
             <th scope="col">Priority</th>
-            <th scope="col">Frequency</th>
+            <th class="col-lg" scope="col">Frequency</th>
             <th scope="col">Due Date</th>
             <th scope="col">Status</th>
-            <th scope="col">Completed On</th>
+            <th class="col-lg" scope="col">Completed On</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let t of data.tickets.data; let i = index">
-            <td class="num">{{ (data.tickets.page - 1) * limit + i + 1 }}</td>
-            <td class="num strong">{{ t.id }}</td>
-            <td>{{ t.assigned_to_name || 'Unassigned' }}</td>
+            <td class="num col-lg">{{ (data.tickets.page - 1) * limit + i + 1 }}</td>
+            <td class="num strong col-md">{{ t.id }}</td>
+            <td class="col-md">{{ t.assigned_to_name || 'Unassigned' }}</td>
             <td>{{ t.machine_serial_no }}</td>
             <td>{{ t.title }}</td>
             <td><span class="mexa-badge" [ngClass]="priorityBadge(t.priority)">{{ t.priority | titlecase }}</span></td>
-            <td>{{ frequencyLabel(t.frequency) }}</td>
+            <td class="col-lg">{{ frequencyLabel(t.frequency) }}</td>
             <td class="num whitespace-nowrap">
               {{ t.due_date | date:'d MMM y' }}
               <span *ngIf="t.is_overdue" class="mexa-rank-sub" style="color:var(--mexa-bad)">overdue</span>
             </td>
             <td><span class="mexa-badge" [ngClass]="statusBadge(t.status)">{{ statusWord(t.status) }}</span></td>
-            <td class="num whitespace-nowrap">
+            <td class="num whitespace-nowrap col-lg">
               {{ t.completed_at ? (t.completed_at | date:'d MMM y, h:mm a') : '-' }}
             </td>
           </tr>
@@ -476,16 +476,9 @@
       </table>
     </div>
 
-    <div class="mexa-pager" *ngIf="data.tickets.total > 0">
-      <span aria-live="polite">Showing: {{ data.tickets.data.length }} of {{ data.tickets.total }}</span>
-      <span class="inline-flex items-center gap-2">
-        <button type="button" class="mexa-pagebtn" (click)="changePage(-1)"
-                [disabled]="data.tickets.page <= 1">‹ Previous</button>
-        <span>{{ data.tickets.page }} / {{ data.tickets.totalPages }}</span>
-        <button type="button" class="mexa-pagebtn" (click)="changePage(1)"
-                [disabled]="data.tickets.page >= data.tickets.totalPages">Next ›</button>
-      </span>
-    </div>
+    <app-mexa-pager [page]="data.tickets.page" [totalPages]="data.tickets.totalPages" [total]="data.tickets.total"
+                    [shown]="data.tickets.data.length" [limit]="limit" [sizes]="[limit]"
+                    (pageChange)="changePage($event - page)"></app-mexa-pager>
   </section>
 
   <!-- ══════════ THE PLAN ══════════ -->
@@ -539,8 +532,8 @@
             <th scope="col">Maintenance Title</th>
             <th scope="col">Frequency</th>
             <th scope="col">Next Due</th>
-            <th scope="col">Grace</th>
-            <th scope="col">Assignee</th>
+            <th class="col-lg" scope="col">Grace</th>
+            <th class="col-md" scope="col">Assignee</th>
             <th scope="col">Active</th>
           </tr>
         </thead>
@@ -552,8 +545,8 @@
             <td class="num whitespace-nowrap">
               {{ s.next_due_at ? (s.next_due_at | date:'d MMM y') : '--' }}
             </td>
-            <td class="num">{{ s.grace_days }}d</td>
-            <td>{{ s.assigned_to_name || 'Unassigned' }}</td>
+            <td class="num col-lg">{{ s.grace_days }}d</td>
+            <td class="col-md">{{ s.assigned_to_name || 'Unassigned' }}</td>
             <td>
               <span class="mexa-badge" [class.mexa-badge-good]="s.is_active"
                     [class.mexa-badge-neutral]="!s.is_active">

@@ -222,8 +222,10 @@
    (styles/_dialog.scss), so its bespoke .modal-backdrop / .delete-modal /
    .btn-cancel / .btn-danger rules were dead and have been removed. */
 
+/* inside the cell, not the cell itself: a <td> made flex leaves the table
+   (its rule under the row no longer lines up with the others) */
 .api-key-td {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
 
@@ -252,6 +254,12 @@
   width: 28px !important;
   height: 28px !important;
   line-height: 28px !important;
+  /* Material pads a 40px icon button by 8px: in 28px that pushed the icon
+     below the key beside it */
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
 
   mat-icon {
     font-size: 16px;

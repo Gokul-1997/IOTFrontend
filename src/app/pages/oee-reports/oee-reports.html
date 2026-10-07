@@ -68,11 +68,9 @@
       <input type="date" appReportDate [rdAfter]="fromDate" [(ngModel)]="toDate" (change)="onDateChange()" class="filter-date" aria-label="To Date" />
     </div>
 
+    <!-- Every filter applies itself on change, as on the dashboards -->
     <div class="filter-actions">
-      <button class="btn-apply" (click)="loadReports()" [disabled]="loading || loadingMeta">
-        <mat-icon>check</mat-icon> Apply
-      </button>
-      <button class="btn-clear" (click)="clearFilters()" [disabled]="loading || loadingMeta">
+      <button type="button" class="btn-clear" (click)="clearFilters()" [disabled]="loading || loadingMeta">
         <mat-icon>close</mat-icon> Clear
       </button>
     </div>
@@ -97,11 +95,11 @@
 
     <!-- TABLE WRAPPER -->
     <div class="table-wrapper" tabindex="0" role="region" aria-label="OEE report table — scroll sideways to see every column">
-      <table class="mexa-table">
+      <table class="mexa-table is-dense is-striped">
         <caption class="sr-only">OEE records by shift</caption>
         <thead>
           <tr>
-            <th scope="col" class="col-index">#</th>
+            <th scope="col" class="col-index col-lg">#</th>
             <th scope="col" [attr.aria-sort]="ariaSort('shift_date')">
               <button type="button" class="mexa-sort" (click)="changeSort('shift_date')" [attr.aria-current]="sortBy === 'shift_date'">
                 Date <span class="mexa-sort-arrow" aria-hidden="true">{{ getSortIcon('shift_date') }}</span>
@@ -112,28 +110,28 @@
                 Machine <span class="mexa-sort-arrow" aria-hidden="true">{{ getSortIcon('machine_serial_no') }}</span>
               </button>
             </th>
-            <th scope="col" [attr.aria-sort]="ariaSort('shift_code')">
+            <th class="col-md" scope="col" [attr.aria-sort]="ariaSort('shift_code')">
               <button type="button" class="mexa-sort" (click)="changeSort('shift_code')" [attr.aria-current]="sortBy === 'shift_code'">
                 Shift <span class="mexa-sort-arrow" aria-hidden="true">{{ getSortIcon('shift_code') }}</span>
               </button>
             </th>
-            <th scope="col">Operator</th>
+            <th class="col-lg" scope="col">Operator</th>
             <th scope="col" *ngIf="auth.hasWidget('oee-reports', 'oee')" class="qty" [attr.aria-sort]="ariaSort('oee')">
               <button type="button" class="mexa-sort" (click)="changeSort('oee')" [attr.aria-current]="sortBy === 'oee'">
                 OEE (%) <span class="mexa-sort-arrow" aria-hidden="true">{{ getSortIcon('oee') }}</span>
               </button>
             </th>
-            <th scope="col" *ngIf="auth.hasWidget('oee-reports', 'availability')" class="qty" [attr.aria-sort]="ariaSort('availability')">
+            <th scope="col" *ngIf="auth.hasWidget('oee-reports', 'availability')" class="qty col-md" [attr.aria-sort]="ariaSort('availability')">
               <button type="button" class="mexa-sort" (click)="changeSort('availability')" [attr.aria-current]="sortBy === 'availability'">
                 Availability (%) <span class="mexa-sort-arrow" aria-hidden="true">{{ getSortIcon('availability') }}</span>
               </button>
             </th>
-            <th scope="col" *ngIf="auth.hasWidget('oee-reports', 'performance')" class="qty" [attr.aria-sort]="ariaSort('performance')">
+            <th scope="col" *ngIf="auth.hasWidget('oee-reports', 'performance')" class="qty col-md" [attr.aria-sort]="ariaSort('performance')">
               <button type="button" class="mexa-sort" (click)="changeSort('performance')" [attr.aria-current]="sortBy === 'performance'">
                 Performance (%) <span class="mexa-sort-arrow" aria-hidden="true">{{ getSortIcon('performance') }}</span>
               </button>
             </th>
-            <th scope="col" *ngIf="auth.hasWidget('oee-reports', 'quality')" class="qty" [attr.aria-sort]="ariaSort('quality')">
+            <th scope="col" *ngIf="auth.hasWidget('oee-reports', 'quality')" class="qty col-md" [attr.aria-sort]="ariaSort('quality')">
               <button type="button" class="mexa-sort" (click)="changeSort('quality')" [attr.aria-current]="sortBy === 'quality'">
                 Quality (%) <span class="mexa-sort-arrow" aria-hidden="true">{{ getSortIcon('quality') }}</span>
               </button>
@@ -148,11 +146,11 @@
           </tr>
 
           <tr *ngFor="let row of rows; let i = index">
-            <td class="col-index num">{{ rowIndex(i) }}</td>
+            <td class="col-index num col-lg">{{ rowIndex(i) }}</td>
             <td class="num">{{ formatDate(row.shift_date) }}</td>
             <td class="strong">{{ row.machine_serial_no }}</td>
-            <td>{{ row.shift_code }}</td>
-            <td [class.muted]="!row.operator_name">{{ row.operator_name || '--' }}</td>
+            <td class="col-md">{{ row.shift_code }}</td>
+            <td class="col-lg" [class.muted]="!row.operator_name">{{ row.operator_name || '--' }}</td>
 
             <td *ngIf="auth.hasWidget('oee-reports', 'oee')" class="qty">
               <div class="metric-cell">
@@ -163,19 +161,19 @@
                 </div>
               </div>
             </td>
-            <td *ngIf="auth.hasWidget('oee-reports', 'availability')" class="qty">
+            <td *ngIf="auth.hasWidget('oee-reports', 'availability')" class="qty col-md">
               <div class="metric-cell">
                 <span class="metric-val">{{ row.availability }}%</span>
                 <div class="metric-bar"><div class="metric-fill avail-fill" [style.width]="getBarWidth(row.availability)"></div></div>
               </div>
             </td>
-            <td *ngIf="auth.hasWidget('oee-reports', 'performance')" class="qty">
+            <td *ngIf="auth.hasWidget('oee-reports', 'performance')" class="qty col-md">
               <div class="metric-cell">
                 <span class="metric-val">{{ row.performance }}%</span>
                 <div class="metric-bar"><div class="metric-fill perf-fill" [style.width]="getBarWidth(row.performance)"></div></div>
               </div>
             </td>
-            <td *ngIf="auth.hasWidget('oee-reports', 'quality')" class="qty">
+            <td *ngIf="auth.hasWidget('oee-reports', 'quality')" class="qty col-md">
               <div class="metric-cell">
                 <span class="metric-val">{{ row.quality }}%</span>
                 <div class="metric-bar"><div class="metric-fill qual-fill" [style.width]="getBarWidth(row.quality)"></div></div>

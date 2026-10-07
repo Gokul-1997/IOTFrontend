@@ -83,7 +83,7 @@ test.describe('Job page', () => {
     await page.goto('/job');
     await expect(page.getByText('PartA').first()).toBeVisible({ timeout: 10_000 });
 
-    await page.getByRole('button', { name: /^stop$/i }).first().click();
+    await page.getByRole('button', { name: /^stop the job on /i }).first().click();
     await page.getByRole('button', { name: /yes, stop job/i }).click();
 
     await expect(page.getByText('PartA')).toHaveCount(0, { timeout: 10_000 });
@@ -102,7 +102,7 @@ test.describe('Job page', () => {
     await page.goto('/job');
     await expect(page.getByText('PartA').first()).toBeVisible({ timeout: 10_000 });
 
-    await page.getByRole('button', { name: /^stop$/i }).first().click();
+    await page.getByRole('button', { name: /^stop the job on /i }).first().click();
     await page.getByRole('button', { name: /yes, stop job/i }).click();
 
     await expect(page.getByText('No active job found')).toBeVisible();

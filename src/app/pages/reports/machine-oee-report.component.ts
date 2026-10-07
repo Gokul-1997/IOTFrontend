@@ -1,12 +1,14 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil, catchError, of } from 'rxjs';
+import { Subject, Subscription, takeUntil, catchError, of } from 'rxjs';
 import { OeeDashboardService } from '../oee-dashboard/oee-dashboard.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { ReportDateDirective } from '../../shared/report-date.directive';
+import { AutoApplyDirective } from '../../shared/auto-apply.directive';
+import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
 
 /**
  * Machine Wise OEE Summary — one row per machine over a date range.
@@ -19,9 +21,10 @@ import { ReportDateDirective } from '../../shared/report-date.directive';
 @Component({
   selector: 'app-machine-oee-report',
   standalone: true,
-  imports: [ReportDateDirective, CommonModule, FormsModule, MexaPagerComponent],
+  imports: [ReportDateDirective, AutoApplyDirective, SkeletonRowsComponent, CommonModule, FormsModule, MexaPagerComponent],
   template: `
-  <div class="flex flex-wrap items-end gap-3 mb-4">
+  <!-- The filters apply themselves, as on the dashboards -->
+  <div class="flex flex-wrap items-end gap-3 mb-4" appAutoApply (autoApply)="load()">
     <label class="flex flex-col text-xs font-semibold text-[--mexa-ink-2] gap-1">From
       <input type="date" appReportDate [rdBefore]="f.to" class="ui-input" [(ngModel)]="f.from" name="moFrom">
     </label>
@@ -34,18 +37,18 @@ import { ReportDateDirective } from '../../shared/report-date.directive';
         <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_name || s.name }}</option>
       </select>
     </label>
-    <button type="button" class="ui-btn ui-btn-primary" (click)="load()" [disabled]="loading">{{ loading ? 'Loading…' : 'Apply' }}</button>
+    <span *ngIf="loading" class="text-xs text-[--mexa-ink-3] self-center" role="status">Updating…</span>
     <!-- no search or export row here: the Reports toolbar exports this tab -->
   </div>
 
   <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
 
   <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Machine OEE table — scroll sideways to see every column">
-    <table class="mexa-table">
+    <table class="mexa-table is-dense is-striped">
       <caption class="sr-only">OEE by machine</caption>
       <thead>
         <tr>
-          <th scope="col">#</th>
+          <th scope="col" class="col-index">#</th>
           <th scope="col" *ngFor="let c of columns" [class]="$any(c).cls || ''" [attr.aria-sort]="aria(c.key)">
             <button type="button" class="mexa-sort" (click)="sortBy(c.key)" [attr.aria-current]="sort === c.key">
               {{ c.label }}
@@ -54,22 +57,22 @@ import { ReportDateDirective } from '../../shared/report-date.directive';
           </th>
         </tr>
       </thead>
-      <tbody>
-        <tr *ngIf="loading && !rows.length"><td [attr.colspan]="columns.length + 1" class="mexa-empty">Loading…</td></tr>
+      <tbody *ngIf="loading && !rows.length" appSkeletonRows [cols]="columns.length + 1" label="Loading the machine OEE report…"></tbody>
+      <tbody *ngIf="!(loading && !rows.length)">
         <tr *ngFor="let m of pageRows; let i = index">
-          <td class="num">{{ (page - 1) * limit + i + 1 }}</td>
+          <td class="num col-index">{{ (page - 1) * limit + i + 1 }}</td>
           <td class="strong">{{ m.machine_serial_no }}</td>
           <td><span class="mexa-badge" [ngClass]="statusClass(m.status)">{{ m.status | titlecase }}</span></td>
-          <td class="num qty">{{ pct(m.availability_pct) }}</td>
-          <td class="num qty">{{ pct(m.performance_pct) }}</td>
-          <td class="num qty">{{ pct(m.quality_pct) }}</td>
+          <td class="num qty col-md">{{ pct(m.availability_pct) }}</td>
+          <td class="num qty col-md">{{ pct(m.performance_pct) }}</td>
+          <td class="num qty col-md">{{ pct(m.quality_pct) }}</td>
           <td class="num strong qty">{{ pct(m.oee_pct) }}</td>
-          <td class="num qty">{{ m.produced }}</td>
-          <td class="num qty">{{ m.good }}</td>
-          <td class="num qty">{{ m.rejected }}</td>
-          <td class="num qty">{{ m.rework }}</td>
-          <td class="num qty">{{ pct(m.rejection_rate_pct) }}</td>
-          <td class="num whitespace-nowrap qty">{{ hms(m.idle_seconds) }}</td>
+          <td class="num qty col-md">{{ m.produced }}</td>
+          <td class="num qty col-lg">{{ m.good }}</td>
+          <td class="num qty col-lg">{{ m.rejected }}</td>
+          <td class="num qty col-lg">{{ m.rework }}</td>
+          <td class="num qty col-lg">{{ pct(m.rejection_rate_pct) }}</td>
+          <td class="num whitespace-nowrap qty col-md">{{ hms(m.idle_seconds) }}</td>
         </tr>
         <tr *ngIf="!loading && !pageRows.length">
           <td [attr.colspan]="columns.length + 1" class="mexa-empty">No machines match these filters.</td>
@@ -95,12 +98,13 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
   limit = 10;
 
   readonly columns = [
+    // col-md / col-lg: the columns that give way on a tablet / a laptop (the cells carry the same)
     { key: 'machine_serial_no', label: 'Machine' }, { key: 'status', label: 'Status' },
-    { key: 'availability_pct', label: 'Availability (%)', cls: 'qty' }, { key: 'performance_pct', label: 'Performance (%)', cls: 'qty' },
-    { key: 'quality_pct', label: 'Quality (%)', cls: 'qty' }, { key: 'oee_pct', label: 'OEE (%)', cls: 'qty' },
-    { key: 'produced', label: 'Produced', cls: 'qty' }, { key: 'good', label: 'Good', cls: 'qty' },
-    { key: 'rejected', label: 'Rejected', cls: 'qty' }, { key: 'rework', label: 'Rework', cls: 'qty' },
-    { key: 'rejection_rate_pct', label: 'Rejected (%)', cls: 'qty' }, { key: 'idle_seconds', label: 'Downtime', cls: 'qty' }
+    { key: 'availability_pct', label: 'Availability (%)', cls: 'qty col-md' }, { key: 'performance_pct', label: 'Performance (%)', cls: 'qty col-md' },
+    { key: 'quality_pct', label: 'Quality (%)', cls: 'qty col-md' }, { key: 'oee_pct', label: 'OEE (%)', cls: 'qty' },
+    { key: 'produced', label: 'Produced', cls: 'qty col-md' }, { key: 'good', label: 'Good', cls: 'qty col-lg' },
+    { key: 'rejected', label: 'Rejected', cls: 'qty col-lg' }, { key: 'rework', label: 'Rework', cls: 'qty col-lg' },
+    { key: 'rejection_rate_pct', label: 'Rejected (%)', cls: 'qty col-lg' }, { key: 'idle_seconds', label: 'Downtime', cls: 'qty col-md' }
   ];
 
   private destroy$ = new Subject<void>();
@@ -116,10 +120,13 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
     this.load();
   }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
+  private loadSub?: Subscription;
 
   load(): void {
     this.loading = true; this.errorMsg = ''; this.cdr.markForCheck();
-    this.svc.getOee({ ...this.f, page: 1, limit: 200 })
+    // a newer choice of filters drops the request still on its way
+    this.loadSub?.unsubscribe();
+    this.loadSub = this.svc.getOee({ ...this.f, page: 1, limit: 200 })
       .pipe(takeUntil(this.destroy$), catchError(err => {
         this.errorMsg = err?.error?.message || 'Unable to load the machine OEE report.';
         return of(null);

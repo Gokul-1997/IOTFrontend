@@ -2,24 +2,20 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DowntimeService } from '../../core/services/downtime.service';
+import { StateComponent } from '../../shared/state/state.component';
+import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
+import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 
 @Component({
   selector: 'app-downtime',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, StateComponent, SkeletonRowsComponent, MexaPagerComponent],
   templateUrl: './downtime.component.html',
   styles: [`
     .num-col { text-align: right; }
-    .reason-form { margin-bottom: 1rem; }
+    .reason-form { padding: 1rem 1rem .25rem; border-bottom: 1px solid var(--tbl-rule); }
     .reason-grid { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
     .reason-actions { margin-top: .9rem; }
-    .reason-cards { display: grid; gap: .85rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
-    .reason-cards .mexa-card + .mexa-card { margin-top: 0; }
-    .reason-card { display: flex; align-items: center; gap: .8rem; }
-    .reason-code { width: 2.75rem; height: 2.75rem; flex: none; border-radius: 12px; display: grid; place-items: center;
-                   background: var(--mexa-row-alt); color: var(--mexa-submit); font-weight: 700; font-size: .85rem; }
-    .reason-body { min-width: 0; }
-    .reason-name { margin: 0 0 .25rem; font-weight: 600; color: var(--mexa-ink); }
   `]
 })
 export class DowntimeComponent implements OnInit {
@@ -29,6 +25,12 @@ export class DowntimeComponent implements OnInit {
   summary: any[] = [];
   pagination: any = {};
   loading = false;
+  eventsError = false;
+  reasonsState: 'loading' | 'ready' | 'error' = 'loading';
+  summaryState: 'loading' | 'ready' | 'error' = 'loading';
+  reasonSearch = '';
+  reasonSort: 'code' | 'name' | 'category' = 'code';
+  reasonDir: 'asc' | 'desc' = 'asc';
   showReasonForm = false;
   reasonForm: any = { code: '', name: '', category: 'UNPLANNED' };
   filter: any = { from_date: '', to_date: '', page: 1, limit: 20 };
@@ -46,13 +48,36 @@ export class DowntimeComponent implements OnInit {
   ngOnInit() { this.loadReasons(); this.loadEvents(); }
 
   loadReasons() {
+    this.reasonsState = 'loading';
+    this.cdr.markForCheck();
     this.svc.getReasons().subscribe({
-      next: r => { this.reasons = r.data || []; this.cdr.markForCheck(); }
+      next: r => { this.reasons = r.data || []; this.reasonsState = 'ready'; this.cdr.markForCheck(); },
+      error: () => { this.reasonsState = 'error'; this.cdr.markForCheck(); }
     });
   }
 
+  /** The reason codes the search matches, in the chosen order. */
+  get shownReasons(): any[] {
+    const q = this.reasonSearch.trim().toLowerCase();
+    const sign = this.reasonDir === 'asc' ? 1 : -1;
+    const k = this.reasonSort;
+    return this.reasons
+      .filter(r => !q || `${r.code} ${r.name}`.toLowerCase().includes(q))
+      .sort((a, b) => sign * String(a[k] ?? '').localeCompare(String(b[k] ?? ''), undefined, { numeric: true }));
+  }
+  sortReasons(k: 'code' | 'name' | 'category') {
+    if (this.reasonSort === k) this.reasonDir = this.reasonDir === 'asc' ? 'desc' : 'asc';
+    else { this.reasonSort = k; this.reasonDir = 'asc'; }
+  }
+  reasonArrow(k: string): string { return this.reasonSort === k ? (this.reasonDir === 'asc' ? '▲' : '▼') : '⇅'; }
+  reasonAriaSort(k: string): string | null {
+    return this.reasonSort === k ? (this.reasonDir === 'asc' ? 'ascending' : 'descending') : null;
+  }
+  trackReason = (_: number, r: any) => r.id;
+
   loadEvents() {
     this.loading = true;
+    this.eventsError = false;
     this.cdr.markForCheck();
 
     const params: any = { ...this.filter };
@@ -64,16 +89,24 @@ export class DowntimeComponent implements OnInit {
         this.loading = false;
         this.cdr.markForCheck();
       },
-      error: () => { this.loading = false; this.cdr.markForCheck(); }
+      error: () => { this.loading = false; this.eventsError = true; this.cdr.markForCheck(); }
     });
   }
+
+  goToPage(p: number) { this.filter.page = p; this.loadEvents(); }
+  setLimit(n: number) { this.filter.limit = n; this.filter.page = 1; this.loadEvents(); }
 
   loadSummary() {
     const params: any = {};
     if (this.filter.from_date) params['from_date'] = this.filter.from_date;
     if (this.filter.to_date)   params['to_date']   = this.filter.to_date;
+    this.summaryState = 'loading';
+    this.cdr.markForCheck();
+    /* A failed request says so: the empty "No downtime to summarise" here
+       used to cover a server error. */
     this.svc.getSummary(params).subscribe({
-      next: r => { this.summary = r.data || []; this.cdr.markForCheck(); }
+      next: r => { this.summary = r.data || []; this.summaryState = 'ready'; this.cdr.markForCheck(); },
+      error: () => { this.summaryState = 'error'; this.cdr.markForCheck(); }
     });
   }
 
@@ -93,6 +126,11 @@ export class DowntimeComponent implements OnInit {
          outcome of a failed save; silently closing it implies success. */
       error: () => this.cdr.markForCheck()
     });
+  }
+
+  /** UNPLANNED → Unplanned: a badge reads as a word, not a shout. */
+  categoryLabel(cat: string): string {
+    return cat ? cat.charAt(0) + cat.slice(1).toLowerCase() : '--';
   }
 
   categoryClass(cat: string) {

@@ -7,6 +7,8 @@ import { EnergyDashboardService } from '../energy-dashboard/energy-dashboard.ser
 import { MachinesService } from '../machines/machines.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
+import { StateComponent } from '../../shared/state/state.component';
+import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
 
 /** One machine's row in the hour-rate table: what is saved, and what is typed. */
 interface RateRow { id: number; name: string; model: string | null; saved: number | null; value: number | null; }
@@ -34,7 +36,7 @@ const toRate = (v: any): number | null =>
 @Component({
   selector: 'app-energy-tariff',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, StateComponent, SkeletonRowsComponent],
   template: `
   <form class="mexa-titlebar" (ngSubmit)="save()">
     <h1 class="mexa-title">Tariff &amp; Rates</h1>
@@ -87,21 +89,24 @@ const toRate = (v: any): number | null =>
       <table class="mexa-table">
         <caption class="sr-only">Configured energy tariffs and limits</caption>
         <thead>
-          <tr><th scope="col">Scope</th><th scope="col">Cost per kWh</th><th scope="col">Currency</th>
-              <th scope="col">Overload Above</th><th scope="col"><span class="sr-only">Actions</span></th></tr>
+          <tr><th scope="col">Scope</th><th scope="col" class="qty">Cost per kWh</th><th scope="col" class="col-md">Currency</th>
+              <th scope="col" class="qty">Overload above</th><th scope="col" class="actions"><span class="sr-only">Actions</span></th></tr>
         </thead>
-        <tbody>
-          <tr *ngIf="loading"><td colspan="5" class="mexa-empty">Loading…</td></tr>
+        <tbody *ngIf="loading" appSkeletonRows [cols]="5" [rows]="3" label="Loading tariffs…"></tbody>
+        <tbody *ngIf="!loading">
           <tr *ngFor="let s of settings">
             <td class="strong">{{ s.machine_serial_no || 'Company default' }}</td>
-            <td class="num">{{ s.cost_per_kwh ?? '--' }}</td>
-            <td>{{ s.currency }}</td>
-            <td class="num">{{ s.overload_kw ? s.overload_kw + ' kW' : '--' }}</td>
-            <td><button type="button" class="mexa-pagebtn" (click)="edit(s)"
-                        [attr.aria-label]="'Edit ' + (s.machine_serial_no || 'company default')">Edit</button></td>
+            <td class="num qty">{{ s.cost_per_kwh ?? '--' }}</td>
+            <td class="col-md">{{ s.currency }}</td>
+            <td class="num qty">{{ s.overload_kw ? s.overload_kw + ' kW' : '--' }}</td>
+            <td class="actions"><button type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="edit(s)"
+                        [attr.aria-label]="'Edit ' + (s.machine_serial_no || 'company default')">
+              <span class="material-icons" aria-hidden="true">edit</span>Edit</button></td>
           </tr>
-          <tr *ngIf="!loading && !settings.length">
-            <td colspan="5" class="mexa-empty">No tariff set yet. Energy shows in kWh until one is.</td>
+          <tr *ngIf="!settings.length">
+            <td colspan="5" class="mexa-empty">
+              <app-state title="No tariff set yet" text="Energy shows in kWh until one is."></app-state>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -119,14 +124,14 @@ const toRate = (v: any): number | null =>
       <table class="mexa-table">
         <caption class="sr-only">Hour rate of each machine, in rupees per hour</caption>
         <thead>
-          <tr><th scope="col">Machine</th><th scope="col">Model</th><th scope="col">₹ per hour</th></tr>
+          <tr><th scope="col">Machine</th><th scope="col" class="col-md">Model</th><th scope="col" class="qty">₹ per hour</th></tr>
         </thead>
-        <tbody>
-          <tr *ngIf="ratesLoading"><td colspan="3" class="mexa-empty">Loading…</td></tr>
+        <tbody *ngIf="ratesLoading" appSkeletonRows [cols]="3" [rows]="4" label="Loading hour rates…"></tbody>
+        <tbody *ngIf="!ratesLoading">
           <tr *ngFor="let r of rates; trackBy: rateKey" [class.hr-changed]="isChanged(r)">
             <th scope="row" class="strong hr-name">{{ r.name }}</th>
-            <td>{{ r.model || '--' }}</td>
-            <td>
+            <td class="col-md">{{ r.model || '--' }}</td>
+            <td class="qty">
               <input type="number" min="0" max="1000000" step="0.01" inputmode="decimal" class="ui-input hr-input"
                      [(ngModel)]="r.value" [ngModelOptions]="{ standalone: true }" placeholder="--"
                      [disabled]="!canEditRates || ratesSaving"
@@ -134,7 +139,9 @@ const toRate = (v: any): number | null =>
                      [attr.aria-invalid]="badRate(r.value) ? true : null">
             </td>
           </tr>
-          <tr *ngIf="!ratesLoading && !rates.length"><td colspan="3" class="mexa-empty">No machines yet.</td></tr>
+          <tr *ngIf="!rates.length"><td colspan="3" class="mexa-empty">
+            <app-state icon="precision_manufacturing" title="No machines yet" text="Add machines first; their hour rates are set here."></app-state>
+          </td></tr>
         </tbody>
       </table>
     </div>

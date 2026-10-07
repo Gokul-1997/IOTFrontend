@@ -38,17 +38,17 @@
       <table class="mexa-table">
         <thead>
           <tr>
-            <th scope="col">#</th>
+            <th class="col-lg" scope="col">#</th>
             <th scope="col">User</th>
             <th scope="col" *ngIf="auth.isSntSuper()" >Company</th>
-            <th scope="col">Roles</th>
+            <th class="col-md" scope="col">Roles</th>
             <th scope="col">Status</th>
-            <th scope="col" class="admin-center">Actions</th>
+            <th scope="col" class="actions">Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let user of users; let i = index">
-            <td class="px-4 py-3 text-sm text-gray-400">{{ i + 1 }}</td>
+            <td class="px-4 py-3 text-sm text-gray-400 col-lg">{{ i + 1 }}</td>
             <td class="px-4 py-3">
               <div class="flex items-center gap-3">
                 <div class="admin-avatar" aria-hidden="true">
@@ -69,7 +69,7 @@
               <span *ngIf="!user.company_name"
                     class="text-xs text-amber-600 dark:text-amber-400 italic">No company</span>
             </td>
-            <td class="px-4 py-3">
+            <td class="px-4 py-3 col-md">
               <div class="flex flex-wrap gap-1">
                 <span *ngFor="let role of user.roles"
                       class="mexa-badge mexa-badge-info">
@@ -86,19 +86,19 @@
                     title="Nobody in this company can sign in until it is turned back on, on the Companies page">
                 Company disabled
               </span>
-              <span *ngIf="user.company_active !== false" class="mexa-badge" [ngClass]="user.is_active ? 'mexa-badge-good' : 'mexa-badge-bad'">
+              <span *ngIf="user.company_active !== false" class="mexa-badge" [ngClass]="user.is_active ? 'mexa-badge-good' : 'mexa-badge-neutral'">
                 {{ user.is_active ? 'Active' : 'Inactive' }}
               </span>
             </td>
-            <td class="px-4 py-3 text-center">
-              <div class="flex items-center justify-center gap-2">
+            <td class="actions">
+              <div class="flex items-center gap-2">
                 <button (click)="openEditModal(user)"
                   class="ui-btn ui-btn-ghost ui-btn-xs">
                   <span class="ui-tab-icon material-icons" aria-hidden="true">edit</span>
                   Edit
                 </button>
                 <button (click)="toggleUserActive(user)" class="ui-btn ui-btn-ghost ui-btn-xs">
-                  <span class="ui-tab-icon material-icons" aria-hidden="true">visibilityoff</span>
+                  <span class="ui-tab-icon material-icons" aria-hidden="true">{{ user.is_active ? 'block' : 'check_circle' }}</span>
                   {{ user.is_active ? 'Disable' : 'Enable' }}
                 </button>
                 <!-- A company's admin goes only with the company: S&T can't add

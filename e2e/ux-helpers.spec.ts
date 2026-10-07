@@ -60,7 +60,7 @@ test('the (i) beside MTTR explains it, and gives focus back on Escape', async ({
 
 test('the label keeps its own words: the (i) adds no text to it', async ({ page }) => {
   await open(page);
-  await expect(page.locator('.mexa-kpi-label', { hasText: 'Mean Time' })).toHaveText(/^\s*Mean Timeto Repair\s*$/);
+  await expect(page.locator('.mexa-kpi-label', { hasText: 'Mean Time' })).toHaveText(/^\s*Mean Time\s*to Repair\s*$/);
 });
 
 test('on a phone the filters fold behind one button that reads them back', async ({ page }) => {

@@ -1,4 +1,4 @@
-import { Component, ViewChild, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, ViewChild, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgApexchartsModule, ChartComponent } from "ng-apexcharts";
@@ -7,15 +7,20 @@ import { AuthService } from '../../core/services/auth.service';
 import { ReportDateDirective, plantToday } from '../../shared/report-date.directive';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { StateComponent } from '../../shared/state/state.component';
+import { AutoApplyDirective } from '../../shared/auto-apply.directive';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-quality',
   standalone: true,
-  imports: [MetricHelpComponent, StateComponent, ReportDateDirective, CommonModule, FormsModule, NgApexchartsModule],
+  imports: [MetricHelpComponent, StateComponent, ReportDateDirective, AutoApplyDirective, CommonModule, FormsModule, NgApexchartsModule],
   templateUrl: './quality.html',
   styleUrl: './quality.scss'
 })
-export class Quality implements OnInit {
+export class Quality implements OnInit, OnDestroy {
+  private dashSub?: Subscription;
+  ngOnDestroy(): void { this.dashSub?.unsubscribe(); }
+
 
   @ViewChild("chart") chart!: ChartComponent;
 
@@ -150,14 +155,6 @@ export class Quality implements OnInit {
   }
 
   ////////////////////////////////////////////////////
-  // MANUAL SUBMIT
-  ////////////////////////////////////////////////////
-
-  submit() {
-    this.loadDashboard();
-  }
-
-  ////////////////////////////////////////////////////
   // DASHBOARD API
   ////////////////////////////////////////////////////
 
@@ -166,7 +163,11 @@ export class Quality implements OnInit {
     if (!this.selectedMachine || !this.selectedShift || !this.selectedDate) return;
 
     this.loadState = 'loading';
-    this.service.getDashboard({
+    /* The filters apply themselves, so a newer choice can come while the last
+       answer is on its way: the older request is dropped and only the latest
+       machine, shift and date are ever shown. */
+    this.dashSub?.unsubscribe();
+    this.dashSub = this.service.getDashboard({
       machine_id: this.selectedMachine,
       shift_id: this.selectedShift,
       date: this.selectedDate
