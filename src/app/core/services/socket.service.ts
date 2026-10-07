@@ -14,20 +14,31 @@ export class SocketService {
   private refreshing = false;   // guard: only one token refresh at a time
 
   private plantId?: number;
+  /** Whose token the socket was opened with: the server put it in that
+   *  person's company room, and nothing about it changes afterwards. */
+  private userId: number | null = null;
 
   constructor(
     private zone:   NgZone,
     private auth:   AuthService,
     private router: Router
-  ) { }
+  ) {
+    // a socket never outlives the session it was opened for
+    this.auth.sessionChanged$.subscribe(() => this.disconnect());
+  }
 
   /* ================= CONNECT ================= */
 
   async connect(): Promise<void> {
 
+    // opened for someone else (signed in again without a sign-out event): start afresh
+    const userId = this.auth.getUser()?.id ?? null;
+    if (this.socket && this.userId !== userId) this.disconnect();
+
     if (this.socket?.connected) return;
 
     if (!this.socket) {
+      this.userId = userId;
 
       /* Keep trying, backing off to every 30 s. It gave up after 5 attempts
          (about 10 s), so a server restart or deploy longer than that left a
@@ -231,6 +242,7 @@ export class SocketService {
     this.socket.disconnect();
     (this.socket as any) = null;
     this.plantId       = undefined;
+    this.userId        = null;
     this.isConnecting  = false;
     this.refreshing    = false;
 

@@ -16,13 +16,41 @@ export class AuthService {
    *  company no longer has until the next reload. */
   readonly grantsChanged$ = new Subject<void>();
 
-  constructor(private http: HttpClient, private router: Router) {}
+  /** Fires on every sign-in and sign-out, so what belongs to one session is
+   *  dropped before the next: the live-data socket (it stays in the company
+   *  room it was opened for) and the unread count. Without it, whoever signed
+   *  in next in the same tab — another company's user included — kept the
+   *  previous person's socket and its machine updates. */
+  readonly sessionChanged$ = new Subject<'signed-in' | 'signed-out'>();
+
+  /** Whose session this tab is showing; see the storage listener below. */
+  private shownUserId: number | null = this.getUser()?.id ?? null;
+
+  constructor(private http: HttpClient, private router: Router) {
+    /* Every tab shares localStorage. When another tab signs out, or signs in
+       as someone else, this tab's pages, socket and data belong to the
+       previous person: start this tab over rather than mix the two. A token
+       refresh or a grants update (same person) changes nothing here. */
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', e => {
+        if (e.key !== 'user' && e.key !== null) return;     // null: localStorage.clear()
+        const now = this.getUser()?.id ?? null;
+        if (now !== this.shownUserId) this.startOver();
+      });
+    }
+  }
+
+  /** Reload the tab: the one way to be sure nothing of the previous session's
+   *  pages, sockets or requests survives. A method so tests can watch it. */
+  startOver(): void { location.reload(); }
 
   private setSession(res: any): void {
     localStorage.setItem('token', res.accessToken);
     localStorage.setItem('refreshToken', res.refreshToken);
     localStorage.setItem('user', JSON.stringify(res.user));
+    this.shownUserId = res.user?.id ?? null;
     this.scheduleRefresh(res.accessToken);
+    this.sessionChanged$.next('signed-in');
   }
 
   login(data: any) {
@@ -87,6 +115,8 @@ export class AuthService {
       this.http.post(`${this.api}/logout`, { refreshToken }).subscribe({ error: () => {} });
     }
     localStorage.clear();
+    this.shownUserId = null;
+    this.sessionChanged$.next('signed-out');
     if (reason) {
       try { sessionStorage.setItem('signedOutReason', reason); } catch { /* shown only if storage works */ }
     }
