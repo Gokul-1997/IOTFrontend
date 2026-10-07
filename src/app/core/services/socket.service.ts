@@ -2,250 +2,135 @@ import { Injectable, NgZone } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
-import { Router } from '@angular/router';
+import { Subject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class SocketService {
-
-  private socket!: Socket;
-
-  private isConnecting = false;
+  readonly connected$ = new Subject<void>();
+  private socket: Socket | null = null;
+  private connecting: Promise<void> | null = null;
+  private cancelConnect?: () => void;
   private paused = false;
-  private refreshing = false;   // guard: only one token refresh at a time
-
-  private plantId?: number;
-  /** Whose token the socket was opened with: the server put it in that
-   *  person's company room, and nothing about it changes afterwards. */
+  private refreshing = false;
   private userId: number | null = null;
+  private plantId?: number;
+  private machineListeners = new Set<(data: any) => void>();
+  private jobListeners = new Set<(job: any) => void>();
+  private scopes = new Map<string, number[]>();
 
-  constructor(
-    private zone:   NgZone,
-    private auth:   AuthService,
-    private router: Router
-  ) {
-    // a socket never outlives the session it was opened for
+  constructor(private zone: NgZone, private auth: AuthService) {
     this.auth.sessionChanged$.subscribe(() => this.disconnect());
   }
 
-  /* ================= CONNECT ================= */
-
-  async connect(): Promise<void> {
-
-    // opened for someone else (signed in again without a sign-out event): start afresh
+  connect(): Promise<void> {
     const userId = this.auth.getUser()?.id ?? null;
     if (this.socket && this.userId !== userId) this.disconnect();
-
-    if (this.socket?.connected) return;
-
+    if (this.socket?.connected) return Promise.resolve();
+    if (this.connecting) return this.connecting;
     if (!this.socket) {
       this.userId = userId;
-
-      /* Keep trying, backing off to every 30 s. It gave up after 5 attempts
-         (about 10 s), so a server restart or deploy longer than that left a
-         shop-floor screen on the 30-second poll until someone reloaded it. */
-      this.socket = io(environment.socketUrl, {
-        transports: ['websocket'],
-        autoConnect: false,
-        reconnection: true,
-        reconnectionAttempts: Infinity,
-        reconnectionDelay: 2000,
-        reconnectionDelayMax: 30000,
-        randomizationFactor: 0.5,
-        auth: {
-          token: localStorage.getItem('token')
-        }
+      const socket = this.socket = io(environment.socketUrl, {
+        transports: ['websocket'], autoConnect: false, reconnection: true,
+        reconnectionAttempts: Infinity, reconnectionDelay: 2000,
+        reconnectionDelayMax: 30000, randomizationFactor: 0.5,
+        auth: { token: localStorage.getItem('token') }
       });
-
-      /* ===== PERSISTENT EVENT LISTENERS (set up once) ===== */
-
-      this.socket.on('connect', () => {
-        console.log('✅ Socket connected:', this.socket.id);
+      socket.on('connect', () => {
+        if (socket !== this.socket) return;
         this.refreshing = false;
-
-        if (this.plantId) {
-          this.joinPlant(this.plantId);
-        }
+        this.sendScope();
+        if (this.plantId) socket.emit('joinPlant', this.plantId);
+        this.connected$.next();
       });
-
-      this.socket.on('disconnect', (reason) => {
-        console.log('⚠ Socket disconnected:', reason);
+      socket.on('machineUpdate', data => {
+        if (this.paused || document.hidden) return;
+        this.zone.run(() => { for (const callback of this.machineListeners) callback(data); });
       });
-
-      /*
-       * TOKEN_EXPIRED  → backend explicitly says the JWT expired.
-       *                  Refresh the access token silently, swap it
-       *                  into socket.auth, then reconnect.
-       *
-       * Unauthorized   → invalid token (tampered / wrong secret).
-       *                  Logout immediately — no point retrying.
-       *
-       * Old code sent generic 'Unauthorized' for ALL jwt errors, so
-       * 'TOKEN_EXPIRED' never matched and the page was left broken.
-       * Backend now sends distinct messages (see server.js).
-       */
-      this.socket.on('connect_error', (err) => {
-        console.error('❌ Socket connect error:', err.message);
-
-        if (err.message === 'TOKEN_EXPIRED') {
-
-          if (this.refreshing) return;   // refresh already in progress
+      socket.on('programJob', job => this.zone.run(() => {
+        for (const callback of this.jobListeners) callback(job);
+      }));
+      socket.on('connect_error', err => {
+        if (socket !== this.socket) return;
+        if (err.message === 'TOKEN_EXPIRED' && !this.refreshing) {
           this.refreshing = true;
-
           this.auth.refreshToken().subscribe({
-            next: (res) => {
-              (this.socket.auth as any).token = res.accessToken;
-              this.socket.connect();
-            },
-            error: () => {
-              // Refresh token also expired / revoked → force login
-              console.warn('🔒 Refresh failed — redirecting to login');
+            next: res => {
+              if (socket !== this.socket) return;
               this.refreshing = false;
-              this.auth.logout();
+              socket.auth = { token: res.accessToken };
+              socket.connect();
+            },
+            error: err => {
+              if (socket !== this.socket) return;
+              this.refreshing = false;
+              if (err?.status === 401 || err?.status === 403) this.auth.logout();
+              else this.cancelConnect?.();
             }
           });
-
-        } else if (err.message === 'Unauthorized') {
-          // Invalid token — clear session and go to login
-          console.warn('🔒 Unauthorized socket — redirecting to login');
-          this.auth.logout();
-        }
+        } else if (err.message === 'Unauthorized') this.auth.logout();
       });
-
     }
-
-    if (this.isConnecting) return;
-
-    this.isConnecting = true;
-
-    return new Promise((resolve, reject) => {
-
-      this.socket.once('connect', () => {
-        this.isConnecting = false;
-        resolve();
-      });
-
-      /*
-       * Only reject on non-recoverable errors.
-       * TOKEN_EXPIRED is recoverable (refresh is in progress above),
-       * so we resolve after the reconnect succeeds via the persistent
-       * 'connect' listener — don't reject here for that case.
-       */
-      this.socket.once('connect_error', (err) => {
-        this.isConnecting = false;
-        if (err.message !== 'TOKEN_EXPIRED') {
-          reject(err);
-        } else {
-          // Token refresh is underway; resolve when the socket reconnects
-          this.socket.once('connect', () => resolve());
-        }
-      });
-
-      this.socket.connect();
-
+    const socket = this.socket;
+    const attempt = new Promise<void>((resolve, reject) => {
+      const finish = (error?: Error) => {
+        clearTimeout(timeout);
+        socket.off('connect', connected);
+        socket.off('connect_error', failed);
+        if (this.cancelConnect === cancelled) this.cancelConnect = undefined;
+        error ? reject(error) : resolve();
+      };
+      const connected = () => finish();
+      const failed = (error: Error) => { if (error.message !== 'TOKEN_EXPIRED') finish(error); };
+      const cancelled = () => finish(new Error('Session ended'));
+      const timeout = setTimeout(() => finish(new Error('Live connection timed out')), 15000);
+      this.cancelConnect = cancelled;
+      socket.on('connect', connected);
+      socket.on('connect_error', failed);
+      socket.connect();
     });
-
+    const pending = attempt.finally(() => { if (this.connecting === pending) this.connecting = null; });
+    this.connecting = pending;
+    return pending;
   }
-
-  /* ================= JOIN ROOM ================= */
 
   joinPlant(plantId: number): void {
-
     this.plantId = plantId;
-
-    if (!this.socket?.connected) {
-      console.warn('⚠ Cannot join plant. Socket not connected.');
-      return;
-    }
-
-    console.log('🏭 Joining plant:', plantId);
-
-    this.socket.emit('joinPlant', plantId);
-
+    this.socket?.emit('joinPlant', plantId);
   }
 
-  /* ================= MACHINE UPDATES ================= */
-
-  onMachineUpdate(callback: (data: any) => void): void {
-
-    if (!this.socket) return;
-
-    this.socket.off('machineUpdate');
-
-    this.socket.on('machineUpdate', (data) => {
-
-      if (this.paused) return;
-
-      /* Run inside Angular zone for UI updates */
-      this.zone.run(() => {
-        callback(data);
-      });
-
-    });
-
+  onMachineUpdate(callback: (data: any) => void): () => void {
+    this.machineListeners.add(callback);
+    return () => { this.machineListeners.delete(callback); };
   }
 
-  /* ================= PROGRAM TRANSFER JOBS ================= */
-
-  /** A Program Transfer job this user asked for changed: queued, taken by
-   *  the machine's device, done or failed. The server emits into a
-   *  per-user room, so no filtering is needed here. */
-  onProgramJob(callback: (job: any) => void): void {
-
-    if (!this.socket) return;
-
-    this.socket.off('programJob');
-
-    this.socket.on('programJob', (job) => {
-      // deliberately not gated on `paused` — that pauses dashboard polling,
-      // but a job the user just started must keep reporting.
-      this.zone.run(() => callback(job));
-    });
+  onProgramJob(callback: (job: any) => void): () => void {
+    this.jobListeners.add(callback);
+    return () => { this.jobListeners.delete(callback); };
   }
 
-  offProgramJob(): void {
-    if (!this.socket) return;
-    this.socket.off('programJob');
+  setMachineScope(owner: string, ids: number[]): void {
+    this.scopes.set(owner, [...new Set(ids)]);
+    this.sendScope();
   }
-
-  /* ================= PAUSE / RESUME ================= */
-
-  pauseUpdates(): void {
-    console.log('⏸ Socket updates paused');
-    this.paused = true;
+  clearMachineScope(owner: string): void { this.scopes.delete(owner); this.sendScope(); }
+  private sendScope(): void {
+    if (this.socket?.connected) this.socket.emit('subscribeMachines', this.paused || document.hidden ? [] : [...new Set([...this.scopes.values()].flat())]);
   }
+  pauseUpdates(): void { this.paused = true; this.sendScope(); }
+  resumeUpdates(): void { this.paused = false; this.sendScope(); }
 
-  resumeUpdates(): void {
-    console.log('▶ Socket updates resumed');
-    this.paused = false;
-  }
-
-  /* ================= OFF MACHINE UPDATE ================= */
-
-  /** Unregister the machineUpdate listener without disconnecting the socket.
-   *  Call this from component ngOnDestroy instead of disconnect(). */
-  offMachineUpdate(): void {
-    if (!this.socket) return;
-    this.socket.off('machineUpdate');
-  }
-
-  /* ================= DISCONNECT ================= */
-
-  /** Full disconnect — call only on logout, not on component destroy.
-   *  Nulls out the socket so the next connect() rebuilds it cleanly. */
   disconnect(): void {
-
-    if (!this.socket) return;
-
-    console.log('🔌 Disconnecting socket');
-
-    this.socket.removeAllListeners();
-    this.socket.disconnect();
-    (this.socket as any) = null;
-    this.plantId       = undefined;
-    this.userId        = null;
-    this.isConnecting  = false;
-    this.refreshing    = false;
-
+    this.cancelConnect?.();
+    this.socket?.removeAllListeners();
+    this.socket?.disconnect();
+    this.socket = null;
+    this.connecting = null;
+    this.userId = null;
+    this.plantId = undefined;
+    this.refreshing = false;
+    this.paused = false;
+    this.scopes.clear();
+    this.machineListeners.clear();
+    this.jobListeners.clear();
   }
-
 }

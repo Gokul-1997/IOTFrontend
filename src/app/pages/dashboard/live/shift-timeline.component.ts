@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { Subscription, interval, startWith, switchMap, catchError, of } from 'rxjs';
 import { DashboardService } from '../dashboard.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { visibleRefresh } from '../../../shared/visible-refresh';
 
 type State = 'RUNNING' | 'IDLE' | 'ALARM' | 'OFF';
 interface Seg { state: State; from: number; to: number; }
@@ -158,13 +159,10 @@ export class ShiftTimelineComponent implements OnInit, OnDestroy {
   get canEditShifts(): boolean { return this.auth.hasPermission('page:shifts'); }
 
   ngOnInit(): void {
-    this.sub = interval(POLL_MS).pipe(
-      startWith(0),
-      switchMap(() => this.svc.getTimeline(this.machineId).pipe(catchError(err => {
+    this.sub = visibleRefresh(() => this.svc.getTimeline(this.machineId).pipe(catchError(err => {
         this.error = err?.error?.message || 'Could not load the shift timeline.';
         return of(null);
-      })))
-    ).subscribe((res: any) => {
+      })), POLL_MS).subscribe((res: any) => {
       this.loading = false;
       if (res?.data !== undefined) {
         this.error = '';

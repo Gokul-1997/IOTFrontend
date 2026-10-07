@@ -8,6 +8,7 @@ import { DashboardService } from '../dashboard.service';
 import { MetricHelpComponent } from '../../../shared/metric-help/metric-help.component';
 import { StateComponent } from '../../../shared/state/state.component';
 import { SEVERITY } from '../../../shared/severity';
+import { visibleRefresh } from '../../../shared/visible-refresh';
 
 /*
  * Spindle load, spindle speed and feed rate on the machine page: what they
@@ -265,10 +266,9 @@ export class SpindlePanelComponent implements OnInit, OnChanges, OnDestroy {
     if (!this.showLoad) this.metric = 'feed';
     // a new range loads at once; the same range refreshes every 30 s
     this.sub = this.range$.pipe(
-      switchMap(r => interval(POLL_MS).pipe(startWith(0), map(() => r))),
-      switchMap(r => this.api.getMachineSpindle(this.machineId, r).pipe(
+      switchMap(r => visibleRefresh(() => this.api.getMachineSpindle(this.machineId, r).pipe(
         map((res: any) => ({ ok: res?.status === 'success', data: res?.data as SpindleData })),
-        catchError(() => of({ ok: false, data: null as any })))))
+        catchError(() => of({ ok: false, data: null as any }))), POLL_MS)))
       .subscribe(({ ok, data }) => {
         if (ok && data) { this.data = data; this.state = 'ready'; }
         else this.state = 'error';

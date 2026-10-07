@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Subject, tap } from 'rxjs';
+import { Observable, Subject, finalize, shareReplay, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { jwtDecode } from 'jwt-decode';
 import { Router } from '@angular/router';
@@ -10,6 +10,14 @@ export class AuthService {
 
   private api = environment.apiUrl + '/auth';
   private refreshTimer: any;
+  private generation = 0;
+  private refreshInFlight: Observable<any> | null = null;
+  private refreshGeneration = -1;
+  get sessionVersion(): number { return this.generation; }
+
+  assertSession(version: number): void {
+    if (version !== this.generation) throw Object.assign(new Error('Session changed'), { code: 'SESSION_CHANGED' });
+  }
 
   /** Fires when a refresh brings a different set of grants than the browser
    *  held — so the header can rebuild its menu instead of showing a page the
@@ -45,6 +53,7 @@ export class AuthService {
   startOver(): void { location.reload(); }
 
   private setSession(res: any): void {
+    this.generation++;
     localStorage.setItem('token', res.accessToken);
     localStorage.setItem('refreshToken', res.refreshToken);
     localStorage.setItem('user', JSON.stringify(res.user));
@@ -54,20 +63,30 @@ export class AuthService {
   }
 
   login(data: any) {
+    const version = ++this.generation;
     return this.http.post<any>(`${this.api}/login`, data).pipe(
-      tap(res => this.setSession(res))
+      tap(res => { this.assertSession(version); this.setSession(res); })
     );
   }
 
   refreshToken() {
+    const version = this.generation;
+    if (this.refreshInFlight && this.refreshGeneration === version) return this.refreshInFlight;
     const refreshToken = localStorage.getItem('refreshToken');
-    return this.http.post<any>(`${this.api}/refresh`, { refreshToken }).pipe(
+    const pending = this.http.post<any>(`${this.api}/refresh`, { refreshToken }).pipe(
       tap(res => {
+        this.assertSession(version);
+        if (refreshToken !== localStorage.getItem('refreshToken')) throw Object.assign(new Error('Session changed'), { code: 'SESSION_CHANGED' });
         localStorage.setItem('token', res.accessToken);
         this.mergeGrants(res);
         this.scheduleRefresh(res.accessToken);
-      })
+      }),
+      finalize(() => { if (this.refreshInFlight === pending) this.refreshInFlight = null; }),
+      shareReplay({ bufferSize: 1, refCount: true })
     );
+    this.refreshGeneration = version;
+    this.refreshInFlight = pending;
+    return pending;
   }
 
   /**
@@ -109,6 +128,8 @@ export class AuthService {
   /** `reason`, when given, is shown on the sign-in page — so someone signed
    *  out by the server (their company was turned off) is told why. */
   logout(reason?: string): void {
+    this.generation++;
+    this.refreshInFlight = null;
     clearTimeout(this.refreshTimer);
     const refreshToken = localStorage.getItem('refreshToken');
     if (refreshToken) {
@@ -138,7 +159,10 @@ export class AuthService {
       const decoded: any = jwtDecode(token);
       const refreshTime = decoded.exp * 1000 - Date.now() - 60_000;
       if (refreshTime <= 0) return;
-      this.refreshTimer = setTimeout(() => this.refreshToken().subscribe(), refreshTime);
+      const version = this.generation;
+      this.refreshTimer = setTimeout(() => this.refreshToken().subscribe({ error: err => {
+        if (version === this.generation && (err?.status === 401 || err?.status === 403)) this.logout();
+      } }), refreshTime);
     } catch { this.logout(); }
   }
 
