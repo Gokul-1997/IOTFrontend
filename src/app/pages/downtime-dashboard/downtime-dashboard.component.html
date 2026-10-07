@@ -69,7 +69,7 @@
   <div class="mexa-kpis">
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Total<br>Downtime <app-metric-help topic="declared_downtime"></app-metric-help></span>
+        <span class="mexa-kpi-label">Total Downtime <app-metric-help topic="declared_downtime"></app-metric-help></span>
         <span class="mexa-kpi-icon red" style="background:#dc2626" aria-hidden="true">
           <mat-icon>timer_off</mat-icon>
         </span>
@@ -91,7 +91,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Downtime<br>Events <app-metric-help topic="downtime_reasons"></app-metric-help></span>
+        <span class="mexa-kpi-label">Downtime Events <app-metric-help topic="downtime_reasons"></app-metric-help></span>
         <span class="mexa-kpi-icon sky" style="background:#3b9ae1" aria-hidden="true">
           <mat-icon>report</mat-icon>
         </span>
@@ -102,7 +102,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Running<br>Time <app-metric-help topic="run_time"></app-metric-help></span>
+        <span class="mexa-kpi-label">Running Time <app-metric-help topic="run_time"></app-metric-help></span>
         <span class="mexa-kpi-icon purple" style="background:#2f2d8f" aria-hidden="true">
           <mat-icon>play_circle</mat-icon>
         </span>
@@ -112,7 +112,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Idle<br>Time <app-metric-help topic="idle_time"></app-metric-help></span>
+        <span class="mexa-kpi-label">Idle Time <app-metric-help topic="idle_time"></app-metric-help></span>
         <span class="mexa-kpi-icon yellow" style="background:#b45309" aria-hidden="true">
           <mat-icon>pause_circle</mat-icon>
         </span>
@@ -124,7 +124,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Alarm<br>Time <app-metric-help topic="alarm_time"></app-metric-help></span>
+        <span class="mexa-kpi-label">Alarm Time <app-metric-help topic="alarm_time"></app-metric-help></span>
         <span class="mexa-kpi-icon blue" style="background:#9b7ec8" aria-hidden="true">
           <mat-icon>error</mat-icon>
         </span>
@@ -145,9 +145,34 @@
         [dataLabels]="paretoChart.dataLabels" [legend]="paretoChart.legend"
         [xaxis]="paretoChart.xaxis" [yaxis]="paretoChart.yaxis" [grid]="paretoChart.grid"
         [tooltip]="paretoChart.tooltip" [noData]="paretoChart.noData"></apx-chart>
-      <p *ngIf="!data.by_reason.length" class="mexa-empty">
-        No downtime reasons recorded for this period.
-      </p>
+      <div *ngIf="!data.by_reason.length" class="mexa-empty">
+        
+        <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No downtime reasons recorded for this period.</p>
+        </div>
+      </div>
     </section>
 
     <section class="mexa-card">
@@ -178,7 +203,36 @@
               </td>
             </tr>
             <tr *ngIf="!data.by_reason.length">
-              <td colspan="4" class="mexa-empty">Nothing recorded.</td>
+              <td colspan="4">
+                
+                <div class="mexa-empty">
+              <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">Nothing recorded.</p>
+        </div>
+        </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -209,7 +263,35 @@
           </li>
         </ul>
       </div>
-      <ng-template #noShift><p class="mexa-empty">Nothing recorded by shift.</p></ng-template>
+      <ng-template #noShift>
+        <div class="mexa-empty">
+              <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">Nothing recorded by shift.</p>
+        </div>
+        </div>
+      </ng-template>
     </section>
 
     <section class="mexa-card">
@@ -309,7 +391,36 @@
             </td>
           </tr>
           <tr *ngIf="!data.events.data.length">
-            <td colspan="10" class="mexa-empty">No downtime events match these filters.</td>
+            <td colspan="10">
+              
+              <div class="mexa-empty">
+              <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No downtime events match these filters.</p>
+        </div>
+        </div>
+            </td>
           </tr>
         </tbody>
       </table>

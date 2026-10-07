@@ -54,7 +54,7 @@
   <div class="mexa-kpis">
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Scheduled<br>Ticket</span>
+        <span class="mexa-kpi-label">Scheduled Ticket</span>
         <span class="mexa-kpi-icon navy" style="background:#2f2d8f" aria-hidden="true">
           <mat-icon>assignment</mat-icon>
         </span>
@@ -65,7 +65,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Due<br>Today</span>
+        <span class="mexa-kpi-label">Due Today</span>
         <span class="mexa-kpi-icon green" style="background:#17b3a3" aria-hidden="true">
           <mat-icon>event_available</mat-icon>
         </span>
@@ -149,7 +149,36 @@
           </li>
         </ul>
       </div>
-      <ng-template #noWorkload><p class="mexa-empty">No open tickets to assign.</p></ng-template>
+      <ng-template #noWorkload>
+        <div class="mexa-empty">
+        
+        <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No open tickets to assign.</p>
+        </div>
+        </div>
+    </ng-template>
     </section>
 
     <section class="mexa-card">
@@ -235,7 +264,35 @@
               </td>
             </tr>
             <tr *ngIf="!upcomingRows.length">
-              <td colspan="6" class="mexa-empty">Nothing due.</td>
+              <td colspan="6">
+                <div class="mexa-empty">
+              <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">Nothing due.</p>
+        </div>
+        </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -269,7 +326,35 @@
               </td>
             </tr>
             <tr *ngIf="!data.by_frequency.length">
-              <td colspan="6" class="mexa-empty">Nothing scheduled.</td>
+              <td colspan="6">
+<div class="mexa-empty">
+              <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">Nothing scheduled.</p>
+        </div>
+        </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -356,7 +441,36 @@
             </td>
           </tr>
           <tr *ngIf="!data.tickets.data.length">
-            <td colspan="10" class="mexa-empty">No tickets match these filters.</td>
+            <td colspan="10">
+              
+              <div class="mexa-empty">
+              <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No tickets match these filters.</p>
+        </div>
+        </div>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -448,7 +562,37 @@
             </td>
           </tr>
           <tr *ngIf="!schedules.length">
-            <td colspan="7" class="mexa-empty">No schedules configured yet.</td>
+            <td colspan="7" class="mexa-empty">
+
+              <div class="mexa-empty">
+        
+        <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No schedules configured yet.</p>
+        </div>
+        </div>
+            </td>
           </tr>
         </tbody>
       </table>

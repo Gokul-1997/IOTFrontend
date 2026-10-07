@@ -58,11 +58,7 @@ const BATTERY_LEVEL: Record<string, number> = { Healthy: 1, Stable: 0.55, Critic
 /* The six fan positions the design shows, as a FANUC cabinet has them. */
 const DESIGN_FANS = [
   { name: 'Internal Fan 1', place: 'Power Supply · Spindle Motor' },
-  { name: 'Internal Fan 1', place: 'Servo Amplifier' },
-  { name: 'Internal Fan 2', place: 'Power Supply · Spindle Motor' },
-  { name: 'Internal Fan 2', place: 'Servo Amplifier' },
-  { name: 'Radiator Fan 1', place: 'Servo & Spindle Amplifier' },
-  { name: 'Radiator Fan 2', place: 'Servo & Spindle Amplifier' }
+
 ];
 
 /** API key → the words a maintenance engineer would use. */

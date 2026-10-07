@@ -371,7 +371,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   get machineChart(): any {
     return this.charts.memo('machineChart', () => {
     return {
-      chart:  { type: 'bar', height:220, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'bar', height:200, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
       colors: this.palette,
       dataLabels: { enabled: false },

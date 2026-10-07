@@ -331,13 +331,15 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
           { name: 'Performance', data: col('efficiency_pct') },
           { name: 'Quality', data: col('quality_rate_pct') }
         ],
-        chart: { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
+        chart: { type: 'bar', height: 270, toolbar: { show: false }, 
+        fontFamily: 'inherit', animations: { enabled: false } 
+      },
         plotOptions: { bar: { borderRadius: 2, columnWidth: '62%' } },
         colors: ['#2f2d8f', '#4a76c8', '#9b7ec8'],
         dataLabels: { enabled: false },
-        legend: { position: 'top', markers: { shape: 'circle' } },
+        legend: { position: 'bottom', markers: { shape: 'circle' } },
         xaxis: { categories: rows.map((r: any) => r.operator_name), 
-          labels: { rotate: -30, trim: true } },
+          labels: { rotate:0, trim: true } },
         yaxis: { min: 0, max: 100, tickAmount: 5, labels: { formatter: (v: number) => `${Math.round(v)}%` } },
         grid: { borderColor: 'rgba(148,163,184,.25)' },
         tooltip: {
@@ -349,7 +351,17 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy {
             return r ? `${r.operator_name} — OEE ${r.oee_pct == null ? '--' : r.oee_pct + '%'}` : '';
           } }
         },
-        noData: { text: 'Nothing measured for this period' }
+        noData: { text: 'Nothing measured for this period' },
+        responsive: [
+  {
+    breakpoint: 1600,
+    options: {
+      chart: {
+        height: 240
+      }
+    }
+  }
+]
       };
     }, this.drawn('oee'));
   }

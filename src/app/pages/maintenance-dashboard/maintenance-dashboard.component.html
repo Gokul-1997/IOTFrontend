@@ -115,14 +115,27 @@
       <p class="mt-lastseen" *ngIf="rowStatus(r) === 'OFFLINE'">
         {{ r.received_at ? 'Last reading ' + (r.received_at | date:'d MMM, h:mm a') : 'No reading in this window' }}
       </p>
-      <dl class="mt-facts">
-        <div><dt>Machine Id</dt><dd>{{ r.machine_id }}</dd></div>
-        <div><dt>Component ID</dt><dd>{{ r.component_id || '--' }}</dd></div>
-        <div><dt>Operator</dt><dd>{{ r.operator_name || 'Unassigned' }}</dd></div>
-        <div><dt>Operation Number</dt><dd>{{ r.sequence_number != null ? 'N' + r.sequence_number : '--' }}</dd></div>
-        <div><dt>Part</dt><dd>{{ r.part_name || '--' }}</dd></div>
-        <div><dt>Run Time</dt><dd>{{ hm(r.run_seconds) }}</dd></div>
+      <div class="mt-facts-top">
+          <div class="flex">
+              <div><dt>Operator</dt><dd>{{ r.operator_name || 'Unassigned' }}</dd></div>
+          </div>
+          <!-- <div class="flex justify-between">
+              <div class="mt-facts-inner"><dt>Machine Id</dt><dd>{{ r.machine_id }}</dd></div>
+              <div class="mt-facts-inner"><dt>Component ID</dt><dd>{{ r.component_id || '--' }}</dd></div>
+              <div class="mt-facts-inner"><dt>Run Time</dt><dd>{{ hm(r.run_seconds) }}</dd></div>
+          </div> -->
+          <dl class="mt-facts">
+        <div class="mt-facts-inner"><dt>Machine Id</dt><dd>{{ r.machine_id }}</dd></div>
+        <div class="mt-facts-inner"><dt>Component ID</dt><dd>{{ r.component_id || '--' }}</dd></div>
+        <div class="mt-facts-inner"><dt>Run Time</dt><dd>{{ hm(r.run_seconds) }}</dd></div>       
+        
       </dl>
+          <div class="flex justify-start gap-3 mt-3">
+              <div class="mt-facts-inner"><dt>Operation Number</dt><dd>{{ r.sequence_number != null ? 'N' + r.sequence_number : '--' }}</dd></div>
+        <div class="mt-facts-inner"><dt>Part</dt><dd>{{ r.part_name || '--' }}</dd></div>
+          </div>
+      </div>
+      
     </section>
 
     <!-- spindle: load, temperature, insulation resistance, then the encoders -->
@@ -158,7 +171,35 @@
           [grid]="b.grid" [tooltip]="b.tooltip"></apx-chart>
       </ng-container>
       </div>
-      <ng-template #noEnc><p class="mexa-empty">Encoder temperature not reported.</p></ng-template>
+      <ng-template #noEnc><div class="mexa-empty">
+
+        <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">Encoder temperature not reported.</p>
+          <p class="empty-text">Encoder temperature not reported for this machine.</p>
+        </div>
+      </div></ng-template>
     </section>
 
     <!-- servo: load per axis, then motor temperature per axis -->
@@ -181,7 +222,36 @@
         <p *ngIf="servoTempMissing" class="mexa-card-hint mt-center">{{ servoTempMissing }} not reporting a temperature.</p>
       </ng-container>
       </div>
-      <ng-template #noServoTemp><p class="mexa-empty">Servo temperature not reported.</p></ng-template>
+      <ng-template #noServoTemp>
+        <div class="mexa-empty">
+<div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">Servo temperature not reported.</p>
+          <p class="empty-text">Servo temperature not reported for this machine.</p>
+        </div>
+        </div>
+      </ng-template>
     </section>
 
     <!-- fans and batteries. A fan's icon turns only while the controller says
@@ -204,15 +274,15 @@
             </g>
           </svg>
           </span>
+          <div>
           <p class="mt-fan-name">{{ f.name }}</p>
           <p class="mt-fan-place" *ngIf="f.place">{{ f.place }}</p>
           <p class="mt-fan-reading" *ngIf="f.reading">{{ f.reading }}</p>
           <p class="mt-word" [ngClass]="bandText(f.status)">{{ f.status }}</p>
+          </div>
         </div>
-      </section>
-
-      <div class="mt-tiles">
-        <section class="mexa-card mt-tile" aria-label="CNC fans">
+        <!-- <div class="mt-fan">
+            <span class="mt-fan-hub">
           <svg class="mt-fan-icon" [class.is-spinning]="live && fansRunning" viewBox="0 0 24 24" aria-hidden="true">
             <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
               <path d="M12 12c0-4 1.2-7 3.6-7 2.4 0 3 3.2.6 5.2-1.3 1.1-2.8 1.5-4.2 1.8Z"/>
@@ -221,24 +291,41 @@
               <circle cx="12" cy="12" r="1.4"/>
             </g>
           </svg>
+          </span>
+          <div>
           <p class="mt-tile-name">CNC Fans</p>
           <p class="mt-word" [ngClass]="bandText(fansOverall)">{{ fansOverall }}</p>
-        </section>
+          </div>
+        </div> -->
+      </section>
+      <!-- <section class="mexa-card mt-tile" aria-label="CNC fans">
+          
+        </section> -->
+
+      <div class="mt-tiles">
+        
         <section class="mexa-card mt-tile" aria-label="CNC battery" [class.is-new-alert]="freshAlerts.has('battery:cnc')">
+          <span class="mt-battery-holder">
+          <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><rect class="mt-battery-fill" x="3.6" y="5.6" width="6.8" height="14.8" rx=".8" [style.fill]="bandColour(cncBattery.word)" [style.transform]="'scaleY(' + cncBattery.level + ')'"/></svg>
+            </span>
+          <div>
           <p class="mt-tile-name">CNC battery</p>
           <p class="mt-tile-value">
-            <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><rect class="mt-battery-fill" x="3.6" y="5.6" width="6.8" height="14.8" rx=".8" [style.fill]="bandColour(cncBattery.word)" [style.transform]="'scaleY(' + cncBattery.level + ')'"/></svg>
             <span>{{ cncBattery.value }}</span>
           </p>
           <p class="mt-word" [ngClass]="bandText(cncBattery.word)">{{ cncBattery.word || 'Not reported' }}</p>
+          </div>
         </section>
         <section class="mexa-card mt-tile" aria-label="APC battery" [class.is-new-alert]="freshAlerts.has('battery:apc')">
-          <p class="mt-tile-name">APC battery</p>
-          <p class="mt-tile-value">
+          
+            <span class="mt-battery-holder">
             <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><rect class="mt-battery-fill" x="3.6" y="5.6" width="6.8" height="14.8" rx=".8" [style.fill]="bandColour(apcBattery.word)" [style.transform]="'scaleY(' + apcBattery.level + ')'"/></svg>
-            <span>{{ apcBattery.value }}</span>
-          </p>
+            </span>
+          <div>
+          <p class="mt-tile-name">APC battery</p>   
+          <p class="mt-tile-value"><span>{{ apcBattery.value }}</span>  </p>     
           <p class="mt-word" [ngClass]="bandText(apcBattery.word)">{{ apcBattery.word || 'Not reported' }}</p>
+          </div>
         </section>
       </div>
     </div>
@@ -259,7 +346,36 @@
         [xaxis]="cycleChart.xaxis" [yaxis]="cycleChart.yaxis" [grid]="cycleChart.grid"
         [tooltip]="cycleChart.tooltip" [noData]="cycleChart.noData"></apx-chart>
        </div>
-      <ng-template #noCycle><p class="mexa-empty">No parts made in this window, so no cycle time yet.</p></ng-template>
+      <ng-template #noCycle>
+        <div class="mexa-empty">
+          <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No parts made in this window.</p>
+          <p class="empty-text">No parts made in this window, so no cycle time yet.</p>
+        </div>
+        </div>
+      </ng-template>
     </section>
 
     <section class="mexa-card mt-trend mexa-card-cht" aria-labelledby="mtTrend">
@@ -279,7 +395,35 @@
         [dataLabels]="tempTrendChart.dataLabels" [legend]="tempTrendChart.legend"
         [xaxis]="tempTrendChart.xaxis" [yaxis]="tempTrendChart.yaxis" [grid]="tempTrendChart.grid"
         [tooltip]="tempTrendChart.tooltip" [noData]="tempTrendChart.noData"></apx-chart>
-      <p *ngIf="!trendIsIr && !tempTrendSeries.length" class="mexa-empty">No temperature reported for this machine in this window.</p>
+      <div *ngIf="!trendIsIr && !tempTrendSeries.length" class="mexa-empty">
+        
+        <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No temperature reported.</p>
+          <p class="empty-text">No temperature reported for this machine in this window.</p>
+        </div>
+      </div>
     </section>
 
     <section class="mexa-card mt-alarms mexa-card-cht" aria-labelledby="mtAlarms">
@@ -296,7 +440,35 @@
           <li><span class="mt-dot" [style.background]="SEV.info.color" aria-hidden="true"></span><span>Information</span><strong>{{ alarmShare(data.alarms.information) }}</strong></li>
         </ul>
       </ng-container>
-      <ng-template #noAlarms><p class="mexa-empty">No alarms in this window.</p></ng-template>
+      <ng-template #noAlarms>
+        <div class="mexa-empty">
+<div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No alarms in this window.</p>
+        </div>
+        </div>
+      </ng-template>
     </section>
   </div>
 

@@ -185,7 +185,36 @@
           </li>
         </ul>
       </div>
-      <ng-template #noShift><p class="mexa-empty">No alarms in this period.</p></ng-template>
+      <ng-template #noShift>
+            <div class="mexa-empty">
+              <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No alarms in this period.</p>
+        </div>
+        </div>
+
+      </ng-template>
     </section>
 
     <section class="mexa-card">
@@ -217,7 +246,35 @@
           </li>
         </ul>
       </div>
-      <ng-template #noSeverity><p class="mexa-empty">No alarms in this period.</p></ng-template>
+      <ng-template #noSeverity>
+        <div class="mexa-empty">
+              <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No alarms in this period.</p>
+        </div>
+        </div>
+      </ng-template>
     </section>
 
     <section class="mexa-card">
@@ -303,7 +360,36 @@
             <td class="num whitespace-nowrap">{{ a.ended_at ? (a.ended_at | date:'d MMM y, h:mm:ss a') : '-' }}</td>
           </tr>
           <tr *ngIf="!data.alarms.data.length">
-            <td colspan="10" class="mexa-empty">No alarms match these filters.</td>
+            <td colspan="10">
+              
+              <div class="mexa-empty">
+              <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No alarms match these filters.</p>
+        </div>
+        </div>
+            </td>
           </tr>
         </tbody>
       </table>

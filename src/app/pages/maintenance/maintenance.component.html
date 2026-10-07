@@ -110,9 +110,13 @@
         <textarea id="tk-desc" [(ngModel)]="ticketForm.description" rows="3" class="ui-input"></textarea>
       </div>
     </div>
-    <div class="ui-btn-row mt-actions">
-      <button type="button" (click)="saveTicket()" class="ui-btn ui-btn-primary">Create</button>
-      <button type="button" (click)="showTicketForm=false" class="ui-btn ui-btn-ghost">Cancel</button>
+    <div class="mt-actions flex gap-3 justify-end">
+      <button type="button" (click)="saveTicket()" class="ui-btn ui-btn-primary">
+        Create
+      </button>
+      <button type="button" (click)="showTicketForm=false" class="ui-btn ui-btn-ghost">
+        Cancel
+      </button>
     </div>
   </div>
 
@@ -149,7 +153,11 @@
             </tr>
           </ng-container>
           <ng-template #noTickets>
-            <tr><td colspan="7" class="mexa-empty">No tickets</td></tr>
+            <tr><td colspan="7">
+              <div class="mexa-empty">
+              No tickets
+              </div>
+            </td></tr>
           </ng-template>
         </tbody>
       </table>
@@ -268,8 +276,13 @@
       </div>
     </div>
     <div class="ui-btn-row mt-actions">
-      <button type="button" (click)="saveSchedule()" class="ui-btn ui-btn-primary">Save</button>
-      <button type="button" (click)="showForm=false" class="ui-btn ui-btn-ghost">Cancel</button>
+      <button type="button" (click)="saveSchedule()" class="ui-btn ui-btn-primary">
+        import SaveIcon from '@mui/icons-material/Save';
+        Save
+      </button>
+      <button type="button" (click)="showForm=false" class="ui-btn ui-btn-ghost">
+        Cancel
+      </button>
     </div>
   </div>
 
@@ -300,7 +313,11 @@
             </tr>
           </ng-container>
           <ng-template #noSchedules>
-            <tr><td colspan="7" class="mexa-empty">No schedules</td></tr>
+            <tr><td colspan="7">
+              <div class="mexa-empty">
+              No schedules
+              </div>
+            </td></tr>
           </ng-template>
         </tbody>
       </table>
@@ -378,7 +395,11 @@
             </tr>
           </ng-container>
           <ng-template #noLogs>
-            <tr><td colspan="6" class="mexa-empty">No maintenance logs</td></tr>
+            <tr><td colspan="6" >
+              <div class="mexa-empty">
+              No maintenance logs
+              </div>
+            </td></tr>
           </ng-template>
         </tbody>
       </table>
@@ -408,7 +429,11 @@
           </tr>
         </ng-container>
         <ng-template #noMttr>
-          <tr><td colspan="4" class="mexa-empty">No data</td></tr>
+          <tr><td colspan="4">
+            <div  class="mexa-empty">
+            No data
+            </div>
+          </td></tr>
         </ng-template>
       </tbody>
     </table>

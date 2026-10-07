@@ -257,7 +257,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
 .mexa-kpi {
   border: 0;
   border-radius: 16px;
-  padding: .5rem 1rem;
+  padding: .5rem ;
   box-shadow: var(--mexa-card-shadow);
   min-width: 0;
   color: #ffffff;
@@ -296,7 +296,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
 }
 
 .mexa-kpi-head {
-  display: flex; align-items: center; justify-content: space-between; gap: .6rem;
+  display: flex; align-items: center; justify-content: space-between; gap: .2rem;
 }
 
 .mexa-kpi-label {
@@ -425,6 +425,7 @@ button.mexa-kpi[aria-pressed="true"] {
     text-align: center;
     margin-bottom:.2rem;
     line-height: 25px;
+    white-space: n;
 }
 /* Tables and lists read better with the title on the left; charts are
    centred, as in the mock. */
@@ -533,7 +534,8 @@ button.mexa-kpi[aria-pressed="true"] {
 .mexa-sort-arrow { font-size: .7rem; color: #c7c1ff; }
 .mexa-sort[aria-current="true"] .mexa-sort-arrow { color: var(--mexa-submit); }
 
-.mexa-empty { text-align: center; padding: 2.5rem 1rem; color: var(--mexa-ink-3); }
+.mexa-empty { text-align: center; padding: 1.5rem 1rem; color: var(--mexa-ink-3); display: flex;
+  flex-direction: column; height: 100%;}
 
 /* Search box above a table */
 .mexa-search {
@@ -920,8 +922,9 @@ a.mexa-pill { text-decoration: none; }
 .mexa-keylist .mexa-key-swatch {
   flex: none; width: .4rem; align-self: stretch; min-height: 2.1rem;
   border-radius: 999px; background: var(--swatch, var(--mexa-navy));
+  
 }
-.mexa-keylist .mexa-key-label { font-size: .88rem; font-weight: 700; color: var(--mexa-ink); }
+.mexa-keylist .mexa-key-label { font-size: .88rem; font-weight: 700; color: var(--mexa-ink); white-space: nowrap;}
 .mexa-keylist .mexa-key-value { display: block; font-size: .84rem; color: var(--mexa-ink-2); font-weight: 600; }
 
 /* A donut and its key side by side; stacks under ~520px. */
@@ -1154,7 +1157,7 @@ a.mexa-pill { text-decoration: none; }
 .mexa-kpi {
     border: 0;
     border-radius: 16px;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem .5rem;
     box-shadow: var(--mexa-card-shadow) 0 10px 28px rgba(18, 14, 64, .18), 0 1px 3px rgba(18, 14, 64, .08);
     min-width: 0;
     color: #202652;

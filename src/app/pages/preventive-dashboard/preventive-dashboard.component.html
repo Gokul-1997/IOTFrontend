@@ -128,7 +128,61 @@
         [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
         [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
         </div>
-      <p *ngIf="!trendSeries.length" class="mexa-empty">No critical alarms in this period.</p>
+      <div *ngIf="!trendSeries.length" class="mexa-empty">
+        
+        <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <div class="empty-title">
+            
+            <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No critical alarms in this period.</p>
+        </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="mexa-card">
@@ -163,7 +217,35 @@
           </li>
         </ul>
       </div>
-      <ng-template #noSeverity><p class="mexa-empty">No alarms in this period.</p></ng-template>
+      <ng-template #noSeverity>
+        <div class="mexa-empty">
+<div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No alarms in this period.</p>
+        </div>
+        </div>
+      </ng-template>
     </section>
 
     <section class="mexa-card">
@@ -173,7 +255,40 @@
         [colors]="machineChart.colors" [dataLabels]="machineChart.dataLabels" [legend]="machineChart.legend"
         [xaxis]="machineChart.xaxis" [yaxis]="machineChart.yaxis" [grid]="machineChart.grid"
         [tooltip]="machineChart.tooltip" [noData]="machineChart.noData"></apx-chart>
-      <p *ngIf="!machineCategories.length" class="mexa-empty">No critical alarms in this period.</p>
+      <div *ngIf="!machineCategories.length" class="mexa-empty">
+        
+        <div class="downtime-empty">
+          
+
+          <div class="empty-title">
+            <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No critical alarms in this period.</p>
+        </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="mexa-card">
@@ -183,7 +298,33 @@
         [colors]="reasonChart.colors" [dataLabels]="reasonChart.dataLabels" [legend]="reasonChart.legend"
         [xaxis]="reasonChart.xaxis" [grid]="reasonChart.grid" [tooltip]="reasonChart.tooltip"
         [noData]="reasonChart.noData"></apx-chart>
-      <p *ngIf="!reasonSeries.length" class="mexa-empty">No critical alarms in this period.</p>
+      <div *ngIf="!reasonSeries.length" class="mexa-empty">
+        <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No critical alarms in this period.</p>
+        </div>
+      </div>
     </section>
   </div>
 
@@ -244,7 +385,35 @@
             <td class="num qty">{{ age(t.age_hours) }}</td>
           </tr>
           <tr *ngIf="!data.tickets.data.length">
-            <td colspan="9" class="mexa-empty">No tickets match these filters.</td>
+            <td colspan="9" >
+              <div class="mexa-empty">
+              <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No tickets match these filters.</p>
+        </div>
+        </div>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -329,7 +498,36 @@
             </td>
           </tr>
           <tr *ngIf="!thresholds.length">
-            <td colspan="8" class="mexa-empty">No rules configured yet.</td>
+            <td colspan="8" >
+
+              <div class="mexa-empty">
+              <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No rules configured yet.</p>
+        </div>
+        </div>
+            </td>
           </tr>
         </tbody>
       </table>

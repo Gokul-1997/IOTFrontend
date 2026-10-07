@@ -354,7 +354,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   get trendChart(): any {
     return this.charts.memo('trendChart', () => {
     return {
-      chart:  { type: 'area', height: 200, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'area', height: 220, toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: 2, curve: 'smooth' },
       fill:   { type: 'gradient', gradient: { shadeIntensity: 0.3, opacityFrom: 0.4, opacityTo: 0.05 } },
       colors: ['#dc2626'],
@@ -362,7 +362,33 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
       xaxis:  { categories: this.trendCategories },
       yaxis:  { title: { text: 'Critical alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'light' }
+      tooltip:{ theme: 'light' },
+      responsive: [
+          {
+            breakpoint: 1600,
+            options: {
+              chart: {
+                height: 280
+              }
+            }
+          },
+          {
+            breakpoint: 1280,
+            options: {
+              chart: {
+                height: 250
+              }
+            }
+          },
+          {
+            breakpoint: 768,
+            options: {
+              chart: {
+                height: 220
+              }
+            }
+          }
+        ]
     };
   });
   }
@@ -373,7 +399,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   get machineChart(): any {
     return this.charts.memo('machineChart', () => {
     return {
-      chart:  { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'bar', height: 230, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
       colors: this.palette,
       dataLabels: { enabled: false },

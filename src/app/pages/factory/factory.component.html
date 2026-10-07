@@ -192,7 +192,36 @@
         [plotOptions]="runtimeDonut.plotOptions" [legend]="runtimeDonut.legend"
         [tooltip]="runtimeDonut.tooltip" [noData]="runtimeDonut.noData"></apx-chart>
         </div>
-      <p *ngIf="!runtimeSeries.length" class="mexa-empty">No run or idle time recorded.</p>
+      <div *ngIf="!runtimeSeries.length" class="mexa-empty">
+        <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No run or idle time recorded.</p>
+          <p class="empty-text">No run or idle time were reported during this period.</p>
+        </div>
+
+      </div>
+
 
       <div class="grid grid-cols-2 gap-2 text-center mt-1" *ngIf="runtimeSeries.length">
         <div>
@@ -272,16 +301,44 @@
       </p>
 
       <h3 class="mexa-card-title mexa-card-title-left !mb-1">Energy Consumption Trend</h3>
-      <div style="height: 200px; overflow: hidden;">
-      <apx-chart *ngIf="energySeries.length"
+      <div *ngIf="energySeries.length" style="height: 200px; overflow:hidded;">
+      <apx-chart 
         [series]="energySeries" [chart]="energyChart.chart" [stroke]="energyChart.stroke"
         [colors]="energyChart.colors" [markers]="energyChart.markers" [dataLabels]="energyChart.dataLabels"
         [xaxis]="energyChart.xaxis" [yaxis]="energyChart.yaxis" [grid]="energyChart.grid"
         [tooltip]="energyChart.tooltip"></apx-chart>
         </div>
-      <p *ngIf="!energySeries.length" class="mexa-card-hint text-center !mt-2">
-        No machine is reporting an energy reading yet.
-      </p>
+      <div *ngIf="!energySeries.length" class="mexa-card-hint text-center !mt-2">
+        
+        <div *ngIf="!downtimeSeries.length" class="mexa-empty">
+       <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No machine is reporting.</p>
+          <p class="empty-text">No machine is reporting an energy reading yet.</p>
+        </div>
+</div>
+      </div>
     </section>
   </div>
 
@@ -297,9 +354,34 @@
         [xaxis]="{ categories: downtimeLabels, title: { text: 'Minutes' } }"
         [grid]="downtimeChart.grid" [tooltip]="downtimeChart.tooltip"
         [legend]="downtimeChart.legend" [noData]="downtimeChart.noData"></apx-chart>
-      <p *ngIf="!downtimeSeries.length" class="mexa-empty">
-        No downtime reasons recorded for this period.
-      </p>
+      <div *ngIf="!downtimeSeries.length" class="mexa-empty">
+       <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No downtime recorded</p>
+          <p class="empty-text">No downtime reasons were reported during this period.</p>
+        </div>
+</div>
     </section>
 
     <section class="mexa-card xl:col-span-2 lg:col-span-1">
@@ -309,7 +391,35 @@
         [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels" [markers]="trendChart.markers"
         [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
         [legend]="trendChart.legend" [tooltip]="trendChart.tooltip"></apx-chart>
-      <p *ngIf="!trendSeries.length" class="mexa-empty">No hourly data for this period.</p>
+      <div *ngIf="!trendSeries.length" class="mexa-empty">
+<div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No hourly data.</p>
+          <p class="empty-text">No hourly data for this period.</p>
+        </div>
+        
+      </div>
     </section>
 
     <section class="mexa-card ">
@@ -347,9 +457,35 @@
 </div>
       <!-- Stated plainly rather than shown as an empty ring: no alarms have
            ever been recorded because the machines do not report them yet. -->
-      <p *ngIf="data.alarms.total === 0" class="mexa-empty">
-        No alarms recorded. Machines are not reporting alarm states yet.
-      </p>
+      <div *ngIf="data.alarms.total === 0" class="mexa-empty">
+        
+        <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">No alarms recorded.</p>
+          <p class="empty-text">Machines are not reporting alarm states yet.</p>
+        </div>
+      </div>
 
       
     </section>

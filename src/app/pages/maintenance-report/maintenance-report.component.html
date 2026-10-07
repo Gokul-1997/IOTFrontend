@@ -65,7 +65,7 @@
   <div class="mexa-kpis">
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Total<br>Tickets</span>
+        <span class="mexa-kpi-label">Total Tickets</span>
         <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true">
           <mat-icon>assignment</mat-icon>
         </span>
@@ -76,7 +76,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Still<br>Open</span>
+        <span class="mexa-kpi-label">Still Open</span>
         <span class="mexa-kpi-icon" style="background:#c8384b" aria-hidden="true">
           <mat-icon>pending_actions</mat-icon>
         </span>
@@ -87,7 +87,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Resolved /<br>Closed</span>
+        <span class="mexa-kpi-label">Resolved / Closed</span>
         <span class="mexa-kpi-icon" style="background:#2f9e6f" aria-hidden="true">
           <mat-icon>task_alt</mat-icon>
         </span>
@@ -98,7 +98,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Mean Time<br>to Repair <app-metric-help topic="mttr"></app-metric-help></span>
+        <span class="mexa-kpi-label">Mean Time to Repair <app-metric-help topic="mttr"></app-metric-help></span>
         <span class="mexa-kpi-icon" style="background:#4a76c8" aria-hidden="true">
           <mat-icon>timer</mat-icon>
         </span>
@@ -110,7 +110,7 @@
 
     <div class="mexa-kpi">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Recorded<br>Downtime <app-metric-help topic="declared_downtime"></app-metric-help></span>
+        <span class="mexa-kpi-label">Recorded Downtime <app-metric-help topic="declared_downtime"></app-metric-help></span>
         <span class="mexa-kpi-icon" style="background:#e0a341" aria-hidden="true">
           <mat-icon>hourglass_bottom</mat-icon>
         </span>
@@ -121,7 +121,7 @@
   </div>
 
   <!-- ══════════ CHARTS ══════════ -->
-  <div class="mexa-grid lg:grid-cols-2">
+  <div class="mexa-grid grid grid-cols-[1fr_0.3fr] gap-4">
     <section class="mexa-card">
       <h2 class="mexa-card-title mexa-card-title-left">Tickets Raised vs Resolved</h2>
       <apx-chart *ngIf="trendSeries.length"

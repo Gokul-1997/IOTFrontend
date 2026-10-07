@@ -12,7 +12,7 @@
 /* ── the two rows ── */
 .mt-row1, .mt-row2 { display: grid; gap: 1rem; margin-bottom: 1rem; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
 @media (min-width: 768px)  { .mt-row1 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1280px) { .mt-row1 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1280px) { .mt-row1 { grid-template-columns: repeat(3, minmax(0, 1fr)) 0.5fr;} }
 /* between tablet and wide desktop three charts were too narrow ("Cycle Time
    (Min)" wrapped into its own headline): cycle time and alarms side by side,
    the trend across both under them */
@@ -64,10 +64,17 @@
 .mt-attention-icon { width: 1.05rem; height: 1.05rem; flex: none; }
 .mt-attention-text { min-width: 0; overflow-wrap: anywhere; }
 .mt-lastseen { margin: 0 0 .3rem; text-align: center; font-size: .75rem; color: var(--mexa-ink-3); }
-.mt-facts { display: grid; grid-template-columns: 1fr 1fr; gap: .2rem; margin: .5rem 0 0; }
+.mt-facts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .2rem; margin: .5rem 0 0; }
 .mt-facts dt { font-size: .78rem; color: var(--mexa-ink-2); }
 .mt-facts dd { margin: .1rem 0 0; font-size: .9rem; font-weight: 700; color: var(--mexa-ink); overflow-wrap: anywhere; }
 
+.mt-facts-top dt { font-size: .78rem; color: var(--mexa-ink-2); }
+.mt-facts-top dd { margin: .1rem 0 0; font-size: .9rem; font-weight: 700; color: var(--mexa-ink); overflow-wrap: anywhere; }
+.mt-facts-inner{
+  padding: 5px;
+  border-radius: 10px;
+  background: #f5f5ff;
+}
 /* ── gauges ── */
 .mt-chip {
   margin: 0 0 .75rem; padding: .45rem .6rem; border-radius: 10px; text-align: center;
@@ -88,12 +95,13 @@
 
 /* ── fans and batteries ── */
 .mt-cooling { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
-.mt-fans { flex: 1; display: grid; grid-template-columns: repeat(var(--mt-fan-cols, 3), minmax(0, 1fr)); gap: .6rem 0; }
+// .mt-fans { flex: 1; display: grid; grid-template-columns: repeat(var(--mt-fan-cols, 3), minmax(0, 1fr)); gap: .6rem 0; }
+.mt-fans{}
 /* one row of fans (a controller with two) sits in the middle of the card, not along its top */
 .mt-fans.is-one-row { align-content: center; }
-.mt-fan { text-align: center; padding: .15rem .35rem; min-width: 0; }
-.mt-fan:not(:nth-child(3n + 1)) { border-left: 1px solid var(--mexa-rule); }
-.mt-fan-icon { width: 1.9rem; height: 1.9rem; color: var(--mexa-ink); display: block; margin: 0 auto .25rem;
+.mt-fan { text-align: center; padding: .15rem .35rem; min-width: 0; display: flex; align-items: center;}
+.mt-fan:not(:nth-child(3n + 1)) { border-top: 1px solid var(--mexa-rule); padding-top: 6px;}
+.mt-fan-icon { width: 1.9rem; height: 1.9rem; color: var(--mexa-ink); display: block; margin: 0 auto .0rem;
                 transition: color .3s ease; }
 .mt-fan.is-still .mt-fan-icon { color: var(--mexa-ink-3); }
 .mt-fan.is-fault .mt-fan-icon { color: #e03131; }
@@ -106,10 +114,10 @@
 .mt-fan.is-fault .mt-fan-hub { background: rgba(224, 49, 49, .13); }
 .mt-fan-hub .mt-fan-icon { width: 1.65rem; height: 1.65rem; margin: 0; }
 /* two or three fans get the card's room: a bigger disc, the speed as the figure */
-.mt-fans.is-one-row .mt-fan-hub { width: 3.75rem; height: 3.75rem; margin-bottom: .55rem; }
+.mt-fans.is-one-row .mt-fan-hub { width: 2.75rem; height: 2.75rem; margin-bottom: .55rem; }
 .mt-fans.is-one-row .mt-fan-hub .mt-fan-icon { width: 2.2rem; height: 2.2rem; }
 .mt-fans.is-one-row .mt-fan-name { font-size: .85rem; }
-.mt-fans.is-one-row .mt-fan-reading { font-size: 1.2rem; margin-top: .15rem; }
+.mt-fans.is-one-row .mt-fan-reading { font-size: 1rem; margin-top: .0rem; }
 
 /* A turning fan, and only a turning one. The whole <svg> turns — one
    transform the browser runs off the main thread, no repaint per frame —
@@ -119,15 +127,35 @@
 @keyframes mt-fan-spin { to { transform: rotate(360deg); } }
 .mt-fan-icon.is-spinning { animation: mt-fan-spin var(--mt-spin, 1.2s) linear infinite; }
 .is-paused .mt-fan-icon.is-spinning { animation-play-state: paused; }
-.mt-fan-name { margin: 0; font-size: .8rem; font-weight: 700; color: var(--mexa-ink); }
+.mt-fan-name { margin: 0; 
+    font-size: 0.78rem;
+    color: var(--mexa-ink-2);}
 .mt-fan-place { margin: .1rem 0 0; font-size: .7rem; color: var(--mexa-ink-2); line-height: 1.25; }
 .mt-fan-reading { margin: .1rem 0 0; font-size: .88rem; font-weight: 800; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
-.mt-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; }
-.mt-tile { text-align: center; padding: .7rem .4rem !important; }
-.mt-tile-name { margin: 0; font-size: .8rem; font-weight: 600; color: var(--mexa-ink); }
-.mt-tile-value { display: flex; align-items: center; justify-content: center; gap: .3rem; margin: .35rem 0 0;
+.mt-tiles { display: grid; 
+  // grid-template-columns: repeat(3, minmax(0, 1fr)); 
+  gap: .6rem; 
+  height: 100%;
+  align-items: center;
+}
+.mt-tile { text-align: center; padding: .7rem .4rem !important; display: flex; gap: 14px; justify-content: center; height: 100%; align-items: center;}
+.mt-tile-name { margin: 0; 
+  font-size: 0.78rem;
+    color: var(--mexa-ink-2);
+ }
+.mt-tile-value { display: flex; align-items: center; justify-content: center; gap: .3rem; margin: .0rem 0 0;
                  font-size: 1.05rem; font-weight: 800; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
-.mt-battery { width: .8rem; height: 1.35rem; color: var(--mexa-ink); flex: none; }
+.mt-battery-holder{width: 3.75rem;
+    height: 3.75rem;
+    margin-bottom: 0.55rem;
+  // margin: 0 auto 0.35rem;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.13);
+    align-items: center;
+    display: flex;
+    justify-content: center;
+  }            
+.mt-battery { width: 1.5rem; height: auto; color: var(--mexa-ink); flex: none; }
 /* filled to its band (full / half / low / empty when not reported); a change of band slides */
 .mt-battery-fill { transform-box: fill-box; transform-origin: 50% 100%;
                    transition: transform .4s cubic-bezier(.2, .8, .25, 1), fill .3s ease; }

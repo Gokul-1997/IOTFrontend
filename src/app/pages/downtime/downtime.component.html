@@ -18,6 +18,7 @@
           [attr.aria-selected]="activeTab === 'events'"
           [attr.tabindex]="activeTab === 'events' ? 0 : -1"
           (click)="setTab('events')">
+          <span class="ui-tab-icon material-icons" aria-hidden="true">calendar_today</span>
     Events
   </button>
 
@@ -28,6 +29,7 @@
           [attr.aria-selected]="activeTab === 'reasons'"
           [attr.tabindex]="activeTab === 'reasons' ? 0 : -1"
           (click)="setTab('reasons')">
+          <span class="ui-tab-icon material-icons" aria-hidden="true">textsms</span>
     Reason codes
   </button>
 
@@ -38,6 +40,7 @@
           [attr.aria-selected]="activeTab === 'summary'"
           [attr.tabindex]="activeTab === 'summary' ? 0 : -1"
           (click)="setTab('summary')">
+          <span class="ui-tab-icon material-icons" aria-hidden="true">listAlt</span>
     Summary
   </button>
 
@@ -70,7 +73,10 @@
           </tr>
         </ng-container>
         <ng-template #noEvents>
-          <tr><td colspan="6" class="mexa-empty">No events found</td></tr>
+          <tr><td colspan="6" >
+            <div class="mexa-empty">
+            No events found </div>
+          </td></tr>
         </ng-template>
       </tbody>
     </table>
@@ -137,7 +143,11 @@
           </tr>
         </ng-container>
         <ng-template #noSummary>
-          <tr><td colspan="4" class="mexa-empty">No data</td></tr>
+          <tr><td colspan="4">
+            <div class="mexa-empty">
+            No data
+            </div>
+          </td></tr>
         </ng-template>
       </tbody>
     </table>
