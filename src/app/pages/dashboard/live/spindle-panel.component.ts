@@ -93,6 +93,7 @@ export function niceScale(top: number): { max: number; ticks: number } {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host { display: block; }
+    apx-chart { display: block; width: 100%; min-width: 0; }
     .sp-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem .75rem; margin-bottom: .75rem; }
     .sp-title { margin: 0; font-size: var(--fs-card-title, .9375rem); font-weight: 700; color: var(--mexa-ink); }
     .sp-cards { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr)); margin-bottom: 1rem; }
@@ -406,7 +407,7 @@ export class SpindlePanelComponent implements OnInit, OnChanges, OnDestroy {
     const fmtY = (v: number) => (v === null || v === undefined ? '' : n0.format(v));
     this.chartCache = {
       series: [{ name: 'Average', data: avg }, { name: 'Highest', data: max }],
-      chart: { type: 'line', height: 240, toolbar: { show: false }, zoom: { enabled: false }, animations: { enabled: false },
+      chart: { type: 'line', width: '100%', height: 240, toolbar: { show: false }, zoom: { enabled: false }, animations: { enabled: false },
                fontFamily: 'inherit', foreColor: ink },
       colors: ['#2b3990', '#9b7ec8'],
       stroke: { width: [2.5, 1.5], curve: 'straight', dashArray: [0, 4] },
