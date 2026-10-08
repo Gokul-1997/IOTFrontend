@@ -32,7 +32,9 @@
     </span>
     <!-- Where the cost per kWh is set. Up here so it can be found; it used
          to sit in the machine table's toolbar at the bottom of the page. -->
-    <a *ngIf="canEditSettings" routerLink="/energy-tariff" class="mexa-submit">Tariff &amp; rates</a>
+    <a *ngIf="canEditSettings" routerLink="/energy-tariff" class="mexa-submit">
+      <span class="ui-tab-icon material-icons" aria-hidden="true">list_alt</span>
+      Tariff &amp; rates</a>
   </div>
 </form>
 
@@ -151,7 +153,7 @@
   </div>
 
   <!-- ══════════ ROW 2 — trend + distribution ══════════ -->
-  <div class="mexa-grid lg:grid-cols-3">
+  <div class="mexa-grid grid-cols-2 lg:grid-cols-3">
 
     <section class="mexa-card lg:col-span-2">
       <h2 class="mexa-card-title mexa-card-title-left">Energy Consumption Over Time (kWh)</h2>

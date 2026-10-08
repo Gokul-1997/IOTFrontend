@@ -19,7 +19,7 @@ import { EnumLabelPipe } from '../../shared/enum-label.pipe';
     .mt-actions { margin-top: .9rem; }
     .mt-upcoming { margin-bottom: 1rem; }
     .mt-upcoming ul { list-style: none; margin: .5rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
-    .row-link { background: none; border: 0; padding: 0; font: inherit; color: var(--mexa-ink); font-weight: 600; cursor: pointer; text-align: left; }
+    .row-link { background: none; border: 0; padding: 0; font: inherit; color: var(--mexa-ink); cursor: pointer; text-align: left; }
     .row-link:hover { text-decoration: underline; }
     .row-link:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 2px; border-radius: 4px; }
     tr.is-clickable { cursor: pointer; }

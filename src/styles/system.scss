@@ -172,7 +172,8 @@ html, body { font-family: var(--font-ui); }
 
 /* Buttons */
 .ui-btn, .btn-primary, .btn-apply, .btn-clear, .btn-secondary, .btn-cancel, .btn-danger, .mexa-submit {
-  font-family: inherit; font-size: var(--fs-body); font-weight: 600; letter-spacing: 0;
+  font-family: inherit; font-size: var(--fs-body); font-weight: 400; letter-spacing: 0;     display: flex;
+    gap: 5px;
 }
 .ui-btn-sm, .ui-btn-xs, .mexa-pagebtn { font-size: var(--fs-label); font-weight: 500; }
 
@@ -218,7 +219,7 @@ html, body { font-family: var(--font-ui); }
   font-size: var(--fs-th);
   line-height: 1.3;
   letter-spacing: .01em;
-  padding: .62rem var(--tbl-pad-x);
+  padding: .4rem var(--tbl-pad-x);
   vertical-align: middle;
   border-bottom: 1px solid var(--tbl-head-rule);
 }
@@ -243,7 +244,7 @@ html, body { font-family: var(--font-ui); }
 .mexa-table tbody tr.is-selected,
 .mexa-table tbody tr[aria-selected="true"] { background: var(--tbl-row-selected); box-shadow: inset 3px 0 0 var(--tbl-accent); }
 .mexa-table tbody td {
-  padding: var(--tbl-pad-y) var(--tbl-pad-x);
+  padding: 3px var(--tbl-pad-x);
   line-height: 1.45;
   border-bottom: 1px solid var(--tbl-rule);
   vertical-align: middle;
@@ -251,7 +252,7 @@ html, body { font-family: var(--font-ui); }
 }
 /* Many columns of figures (the reports): shorter rows */
 .mexa-table.is-dense tbody td { padding-top: var(--tbl-dense-pad-y); padding-bottom: var(--tbl-dense-pad-y); }
-.mexa-table.is-dense thead th { padding-top: .5rem; padding-bottom: .5rem; }
+.mexa-table.is-dense thead th { padding-top: .1rem; padding-bottom: .1rem; }
 @media (prefers-reduced-motion: reduce) { .mexa-table tbody tr, .mat-mdc-table .mat-mdc-row { transition: none; } }
 :where(.mexa-table tbody td) { font-size: var(--fs-td); color: var(--mexa-ink-2); white-space: nowrap; }
 /* A long-text column (alarm names, messages, notes) wraps inside a sensible
@@ -275,7 +276,7 @@ html, body { font-family: var(--font-ui); }
 .mexa-table .is-warn, .mat-mdc-table .is-warn { color: var(--tbl-warn); font-weight: 600; }
 .mexa-table .is-good, .mat-mdc-table .is-good { color: var(--tbl-good); font-weight: 600; }
 /* A code or id that has to line up character by character */
-.mexa-table .code, .mat-mdc-table .code { font-family: var(--font-mono); font-size: .8rem; letter-spacing: 0; }
+.mexa-table .code, .mat-mdc-table .code {font-size: .8rem; letter-spacing: 0; }
 /* Columns that give way on smaller screens, so the ones that matter stay
    readable instead of every column squeezing: .col-lg below a laptop,
    .col-md below a tablet. On the <th> and its <td>s alike. */
@@ -343,7 +344,7 @@ html, body { font-family: var(--font-ui); }
 /* Status badges: one size and shape in every table, a dot before the word
    (the word carries the meaning; the colour and dot only help scanning) */
 :is(.mexa-table, .mat-mdc-table) .mexa-badge {
-  font-size: var(--fs-small); font-weight: 600; line-height: 1.5;
+  font-size: var(--fs-small); line-height: 1.5;
   padding: .08rem .55rem; border-radius: 999px; white-space: nowrap;
 }
 :is(.mexa-table, .mat-mdc-table) .mexa-badge:is(.mexa-badge-good, .mexa-badge-warn, .mexa-badge-bad, .mexa-badge-info, .mexa-badge-neutral, .mexa-badge-violet):not(:has(.material-icons, mat-icon))::before {
@@ -391,7 +392,7 @@ html, body { font-family: var(--font-ui); }
 .mat-mdc-table .mat-mdc-header-cell.qty .mat-sort-header-container { justify-content: flex-end; }
 .mat-mdc-table .mat-mdc-cell.strong { color: var(--mexa-ink); font-weight: 600; }
 .mat-mdc-table .mat-mdc-cell.muted { color: var(--mexa-ink-3); }
-.mat-mdc-table .mat-mdc-cell { padding: var(--tbl-pad-y) var(--tbl-pad-x); }
+.mat-mdc-table .mat-mdc-cell { padding: 0px var(--tbl-pad-x); }
 :where(.mat-mdc-table .mat-mdc-cell) { white-space: nowrap; }
 .mat-mdc-table .mat-mdc-row:last-child .mat-mdc-cell { border-bottom: 0; }
 .mat-mdc-table .col-index { color: var(--mexa-ink-3); width: 48px; text-align: center; }
@@ -592,4 +593,7 @@ html.dark .mexa-note :is([class~="text-red-500"], [class~="text-red-600"]) { col
   box-shadow:
     0 16px 40px rgba(18, 14, 64, 0.2),
     0 0 0 1px rgba(18, 14, 64, 0.06);
+}
+.ui-btn.small {
+    padding: 0.3rem .5rem;
 }

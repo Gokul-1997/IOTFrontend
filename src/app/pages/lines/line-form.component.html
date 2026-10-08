@@ -31,7 +31,7 @@
           </p>
         </div>
 
-        <div class="ui-field">
+        <div class="ui-field mt-4">
           <label class="ui-toggle">
             <input type="checkbox" formControlName="is_active" />
             <span>
@@ -46,9 +46,12 @@
       <div class="ui-dialog-footer is-split">
         <p class="ui-hint !mt-0"><span class="ui-req" aria-hidden="true">*</span> Required fields</p>
         <div class="flex items-center gap-2">
-          <button type="button" class="ui-btn ui-btn-ghost" (click)="close.emit()">Cancel</button>
-          <button type="button" class="ui-btn ui-btn-primary" (click)="submit()" [disabled]="saving">
+          <button type="button" class="ui-btn small ui-btn-ghost" (click)="close.emit()">
+            <span class="ui-tab-icon material-icons" aria-hidden="true">close</span>
+            Cancel</button>
+          <button type="button" class="ui-btn small ui-btn-primary" (click)="submit()" [disabled]="saving">
             <span *ngIf="saving" class="ui-spinner" aria-hidden="true"></span>
+            <span class="ui-tab-icon material-icons" aria-hidden="true">save</span>
             {{ saving ? 'Saving…' : (data ? 'Save changes' : 'Create line') }}
           </button>
         </div>

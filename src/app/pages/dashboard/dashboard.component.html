@@ -7,9 +7,9 @@
             text-white rounded-xl px-1 md:px-4 py-1 mb-3
             flex flex-col md:flex-row items-center justify-between">
 
-    <div class="flex flex-row md:flex-row items-center gap-4">
+    <div class="flex flex-row md:flex-row sm:flex-col items-center gap-4">
       <h1 class="text-xl font-medium">Live Dashboard</h1>
-      <div class="flex gap-1 md:gap-5 hidden md:flex">
+      <div class="hidden md:flex gap-1 md:gap-5 ">
         <div><span class="status_dot running"></span>Running</div>
         <div><span class="status_dot idle"></span>Idle</div>
         <div><span class="status_dot alarm"></span>Alarm</div>
@@ -50,8 +50,8 @@
           </button>
         </div>
       </div>
-<div class="rounded-md flex px-4 py-1">
-      <div class="flex  border_status pr-2">
+<div class="rounded-md flex xs:px-0 md:px-4  py-1">
+      <div class="flex border_status pr-2">
         <div class="items-center font-medium ml-1"> {{ shift.shift_code }}</div>
       </div>
       <span class="material-icons text-white text-[22px]" aria-hidden="true">calendar_today</span>
@@ -193,7 +193,7 @@
 
         <!-- UTILIZATION DONUT — controlled by widget:utilization -->
 
-        <div class="flex flex-row md:flex-col items-center justify-center util">
+        <div class="gap-6 md:gap-0 flex flex-row md:flex-col items-center justify-center util">
           <div *ngIf="auth.hasWidget('dashboard', 'utilization')" class="flex flex-col justify-center items-center">
           <div class="relative w-20 h-20">
 
@@ -235,7 +235,7 @@
           
 
           <!-- Target / Achieved — controlled by widget:target and widget:partcount -->
-          <div class="flex flex-row md:flex-col justify-center gap-1 mt-2 text-sm md:gap-0 lg:gap-4 xl:gap-2">
+          <div class="flex flex-col md:flex-col justify-center gap-1 mt-2 text-sm md:gap-0 lg:gap-4 xl:gap-2">
 
             <div *ngIf="auth.hasWidget('dashboard', 'target')" class="text-center flex gap-2 items-center w-full">
               <span class="material-icons text-[#2b3990] dark:text-[#9fb3ff]" aria-hidden="true">flag</span>

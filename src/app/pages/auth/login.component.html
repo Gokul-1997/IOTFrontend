@@ -28,11 +28,11 @@ hover:scale-105 transition">
           <!-- EACH SLIDE -->
           <div *ngFor="let slide of slides" class="w-full flex-shrink-0 text-white select-none">
             <!-- IMAGE -->
-            <div class="relative flex justify-center">
+            <div class="relative flex justify-center log-holder-top">
               <div
-                class="absolute w-96 h-96 bg-white rounded-full blur-[120px] opacity-40 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                class="absolute  bg-white rounded-full blur-[120px] opacity-40 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
               </div>
-              <img [src]="slide.image" alt="" class="relative mb-10 mx-auto pointer-events-none">
+              <img [src]="slide.image" alt="" class="relative mb-10 mx-auto pointer-events-none login-holder" >
             </div>
             <!-- TEXT -->
             <div class="max-w-md mx-auto px-6 md:-mt-4">
@@ -50,7 +50,7 @@ hover:scale-105 transition">
       </div>
     </div>
     <!-- Indicators -->
-    <div class="absolute md:bottom-5 bottom-32 left-40 flex gap-3">
+    <div class="absolute md:bottom-5 bottom-32 right-20 flex gap-3">
       <div *ngFor="let slide of slides; let i=index" (click)="goToSlide(i)" class="w-3 h-3 rounded-full cursor-pointer"
         [ngClass]="currentSlide === i ? 'bg-white' : 'bg-white/40'"></div>
     </div>

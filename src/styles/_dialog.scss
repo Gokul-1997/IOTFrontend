@@ -192,7 +192,7 @@
 
 .ui-input {
   width: 100%;
-  padding: 0.5625rem 1.75rem 0.5625rem 10px;
+  padding: 0.4rem;
   font-size: 0.875rem;
   color: #0f172a;
   background-color: #fff;
@@ -633,7 +633,7 @@ select.ui-input {
 
 .dark .ui-tab { background: #232323; color: #cbd5e1; }
 .dark .ui-tab:hover:not(.is-active) { background: #2c2c2c; color: #f1f5f9; }
-.dark .ui-tab.is-active { background: #111; border-color: #2e2e2e; color: #f1f5f9; }
+.dark .ui-tab.is-active { background: rgb(22 26 35); border-color: #2e2e2e; color: #f1f5f9; }
 
 .ui-tab-icon { font-size: 0.9375rem; line-height: 1; }
 

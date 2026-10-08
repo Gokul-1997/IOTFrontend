@@ -69,8 +69,7 @@ export class Charts implements OnInit, OnDestroy {
 
     
     this.partChartOptions = {
-      chart: { type: 'bar', height: 370, stacked: true, toolbar: { show: true },
-               background: bg },
+      chart: { type: 'bar', height: 370, stacked: true, toolbar: { show: true }},
       plotOptions: { bar: { horizontal: false, columnWidth: '55%', borderRadius: 4 } },
       dataLabels: {
         enabled: true,
@@ -86,7 +85,7 @@ export class Charts implements OnInit, OnDestroy {
       grid:   { borderColor: gridColor },
       theme:  { mode: dark ? 'dark' : 'light' },
       tooltip: {
-        shared: true, intersect: false, theme: dark ? 'dark' : 'light',
+        shared: true, intersect: false, theme: dark ? 'light' : 'light',
         y: {
           formatter: (val: number) => {
             const totalSec = Math.round(val * 60);
@@ -101,7 +100,6 @@ export class Charts implements OnInit, OnDestroy {
     this.hourlyChartOptions = {
       chart: {
         type: 'line', height: 350, toolbar: { show: false }, zoom: { enabled: false },
-        background: bg,
         dropShadow: { enabled: true, color: '#000', top: 18, left: 7, blur: 10, opacity: 0.15 }
       },
       colors:     ['#3b5bdb'],
@@ -114,7 +112,7 @@ export class Charts implements OnInit, OnDestroy {
       xaxis:      { labels: { style: { colors: textColor } } },
       legend:     { position: 'bottom', labels: { colors: textColor } },
       theme:      { mode: dark ? 'dark' : 'light' },
-      tooltip:    { theme: dark ? 'dark' : 'light', y: { formatter: (val: number) => `${val} pcs` } }
+      tooltip:    { theme: dark ? 'light' : 'light', y: { formatter: (val: number) => `${val} pcs` } }
     };
   }
 
