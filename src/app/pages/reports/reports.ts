@@ -425,9 +425,9 @@ export class Reports implements OnInit, OnDestroy {
   }
 
   oeeColor(val: number): string {
-    if (val >= 85) return 'text-green-600 font-semibold';
-    if (val >= 60) return 'text-yellow-600 font-semibold';
-    return 'text-red-500 font-semibold';
+    if (val >= 85) return 'text-green-600 ';
+    if (val >= 60) return 'text-yellow-600 ';
+    return 'text-red-500 ';
   }
 
   /* ── export ── */

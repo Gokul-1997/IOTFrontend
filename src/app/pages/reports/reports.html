@@ -296,7 +296,7 @@
        KPI CARDS
   ══════════════════════════════════════════════ -->
   <!-- KPI CARDS — controlled by widget:kpi -->
-  <div *ngIf="auth.hasWidget('reports', 'kpi')" class="mexa-kpis rep-kpis">
+  <div *ngIf="auth.hasWidget('reports', 'kpi')" class="reports-kpis mexa-kpis rep-kpis">
     <div *ngFor="let kpi of kpis" class="mexa-kpi repcard flex items-center">
       <div class="bg-white/20 rounded-lg p-2 mr-2 grid place-items-center" aria-hidden="true"><span class="material-icons text-[22px]">{{ kpi.icon }}</span></div>
       <div>
@@ -313,13 +313,13 @@
   <div class="table-wrap">
 
     <!-- Table toolbar -->
-    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+    <!-- <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
       <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">
         {{ activeTab === 'production' ? 'Production Report' : activeTab === 'oee-hourly' ? 'OEE Hourly Report' : 'Shift OEE Report' }}
         <span class="ml-2 text-sm font-normal text-gray-400">({{ rows.length }} records)</span>
       </p>
 
-    </div>
+    </div> -->
 
     <!-- No columns selected warning -->
     <div *ngIf="!loading && selectedCount === 0"

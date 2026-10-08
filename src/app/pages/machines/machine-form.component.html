@@ -122,7 +122,7 @@
         <!-- ══ 2. Spindle & tooling ══ -->
         <section class="ui-section" aria-labelledby="mfSecSpindle">
           <h3 id="mfSecSpindle" class="ui-section-title">Spindle &amp; tooling</h3>
-          <p class="ui-section-hint">Used to set performance baselines in OEE reporting.</p>
+          <!-- <p class="ui-section-hint">Used to set performance baselines in OEE reporting.</p> -->
 
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
             <div>
@@ -167,7 +167,7 @@
         <!-- ══ 3. Axis travel ══ -->
         <section class="ui-section" aria-labelledby="mfSecAxis">
           <h3 id="mfSecAxis" class="ui-section-title">Axis travel</h3>
-          <p class="ui-section-hint">Maximum travel per axis. Leave the rotary axes blank if not fitted.</p>
+          <!-- <p class="ui-section-hint">Maximum travel per axis. Leave the rotary axes blank if not fitted.</p> -->
 
           <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-4">
             <div *ngFor="let ax of axes">
@@ -199,12 +199,13 @@
           </div>
         </section>
 
+        <div class="flex gap-4 mt-8">
         <!-- ══ 4. Cost ══ -->
-        <section class="ui-section" aria-labelledby="mfSecCost">
+        <section class="" aria-labelledby="mfSecCost">
           <h3 id="mfSecCost" class="ui-section-title">Cost</h3>
-          <p class="ui-section-hint">What an hour of this machine costs. The Downtime and OEE screens price its idle and alarm time with it.</p>
+          <!-- <p class="ui-section-hint">What an hour of this machine costs. The Downtime and OEE screens price its idle and alarm time with it.</p> -->
 
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+          <div class="grid gap-4 mt-4">
             <div>
               <label class="ui-label" for="mfRate">Hour rate</label>
               <div class="ui-unit-wrap mf-unit-wide">
@@ -224,11 +225,11 @@
         </section>
 
         <!-- ══ 5. Network ══ -->
-        <section class="ui-section" aria-labelledby="mfSecNet">
+        <section class="" aria-labelledby="mfSecNet">
           <h3 id="mfSecNet" class="ui-section-title">Network</h3>
-          <p class="ui-section-hint">
+          <!-- <p class="ui-section-hint">
             The machine’s address on the shop LAN, and where its programs live for Program Transfer.
-          </p>
+          </p> -->
 
           <div class="grid grid-cols-2 lg:grid-cols-6 gap-4 mt-4">
             <div class="col-span-2">
@@ -259,7 +260,7 @@
             </div>
           </div>
         </section>
-
+</div>
       </div>
 
       <!-- ─────────── footer ─────────── -->
@@ -268,10 +269,13 @@
           <span class="ui-req" aria-hidden="true">*</span> Required fields
         </p>
         <div class="flex items-center gap-2">
-          <button type="button" class="ui-btn ui-btn-ghost" (click)="close.emit()">Cancel</button>
-          <button type="button" class="ui-btn ui-btn-primary"
+          <button type="button" class="ui-btn small ui-btn-ghost" (click)="close.emit()">
+            <span class="ui-tab-icon material-icons" aria-hidden="true">close</span>
+            Cancel</button>
+          <button type="button" class="ui-btn small ui-btn-primary"
                   (click)="save()" [disabled]="uploading || isUnchanged">
-            {{ uploading ? 'Uploading…' : (data ? 'Save changes' : 'Create machine') }}
+                  <span class="ui-tab-icon material-icons" aria-hidden="true">add</span>
+            {{ uploading ? 'Uploading…' : (data ? 'Save Changes' : 'Create Machine') }}
           </button>
         </div>
       </div>

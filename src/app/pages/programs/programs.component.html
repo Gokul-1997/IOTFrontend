@@ -75,9 +75,13 @@
                placeholder="//CNC_MEM/USER/PATH1/" aria-labelledby="ptPathLabel"
                [attr.aria-invalid]="!!pathError" [attr.aria-describedby]="pathError ? 'ptPathErr' : null" />
         <button type="submit" class="ui-btn ui-btn-primary ui-btn-xs" [disabled]="savingPath">
-          <span *ngIf="savingPath" class="ui-spinner" aria-hidden="true"></span>Save
+          <span *ngIf="savingPath" class="ui-spinner" aria-hidden="true"></span>
+          <span class="ui-tab-icon material-icons" aria-hidden="true">save</span>
+          Save
         </button>
-        <button type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="cancelPathEdit()" [disabled]="savingPath">Cancel</button>
+        <button type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="cancelPathEdit()" [disabled]="savingPath">
+          <span class="ui-tab-icon material-icons" aria-hidden="true">close</span>
+          Cancel</button>
       </form>
       <p *ngIf="editingPath && pathError" id="ptPathErr" class="ui-error" role="alert">{{ pathError }}</p>
     </div>
@@ -90,7 +94,7 @@
   <!-- ══════════ PROGRAMS ══════════ -->
   <div class="ui-tabpanel" role="tabpanel" id="panel-programs" aria-labelledby="tab-programs" *ngIf="tab === 'programs'">
 
-    <p *ngIf="selectedMachine && !hasPath" class="ui-alert ui-alert-warn" role="status">
+    <p *ngIf="selectedMachine && !hasPath" class="ui-alert ui-alert-warn mb-4" role="status">
       <strong>{{ selectedMachine.machine_serial_no }} has no program path yet</strong> — the folder on the machine where its device
       saves programs. Nothing can be sent to it or read from it until it is set{{ canManageDevice ? ' (Set, above).' : '; ask an admin to set it.' }}
     </p>

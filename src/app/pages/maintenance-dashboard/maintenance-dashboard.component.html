@@ -146,19 +146,19 @@
       <div class="mt-gauges">
         <div class="mt-gauge" [class.is-new-alert]="freshAlerts.has('spindle_load')">
           <p class="mt-gauge-label">Spindle Load</p>
-          <app-condition-gauge [value]="r.spindle_load" [max]="150" [zones]="LOAD_ZONES" unit="%"
+          <app-condition-gauge class="mobile-gauge" [value]="r.spindle_load" [max]="150" [zones]="LOAD_ZONES" unit="%"
             [ariaLabel]="'Spindle load ' + reading(r.spindle_load, '%', 0)"></app-condition-gauge>
           <p class="mt-word" [ngClass]="bandText(band(r.spindle_load, LOAD_BANDS))">{{ band(r.spindle_load, LOAD_BANDS) || 'Not reported' }}</p>
         </div>
         <div class="mt-gauge" [class.is-new-alert]="freshAlerts.has('spindle_temp')">
           <p class="mt-gauge-label">Spindle Temp</p>
-          <app-condition-gauge [value]="r.spindle_motor_temp" [max]="120" [zones]="TEMP_ZONES" unit="°C"
+          <app-condition-gauge class="mobile-gauge" [value]="r.spindle_motor_temp" [max]="120" [zones]="TEMP_ZONES" unit="°C"
             [ariaLabel]="'Spindle temperature ' + reading(r.spindle_motor_temp, '°C', 0)"></app-condition-gauge>
           <p class="mt-word" [ngClass]="bandText(band(r.spindle_motor_temp, TEMP_BANDS))">{{ band(r.spindle_motor_temp, TEMP_BANDS) || 'Not reported' }}</p>
         </div>
         <div class="mt-gauge" [class.is-new-alert]="freshAlerts.has('spindle_ir')">
           <p class="mt-gauge-label">Spindle IR</p>
-          <app-condition-gauge [value]="r.spindle_insulation_res" [max]="200" [zones]="IR_ZONES" unit=" MΩ"
+          <app-condition-gauge class="mobile-gauge" [value]="r.spindle_insulation_res" [max]="200" [zones]="IR_ZONES" unit=" MΩ"
             [ariaLabel]="'Spindle insulation resistance ' + reading(r.spindle_insulation_res, 'megohm', 0)"></app-condition-gauge>
           <p class="mt-word" [ngClass]="bandText(bandLow(r.spindle_insulation_res, IR_BANDS))">{{ bandLow(r.spindle_insulation_res, IR_BANDS) || 'Not reported' }}</p>
         </div>

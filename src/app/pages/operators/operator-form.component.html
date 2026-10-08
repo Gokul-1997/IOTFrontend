@@ -111,8 +111,8 @@
       <div class="ui-dialog-footer is-split">
         <p class="ui-hint !mt-0"><span class="ui-req" aria-hidden="true">*</span> Required fields</p>
         <div class="flex items-center gap-2">
-          <button type="button" class="ui-btn ui-btn-ghost" (click)="close.emit()">Cancel</button>
-          <button type="button" class="ui-btn ui-btn-primary" (click)="submit()" [disabled]="saving">
+          <button type="button" class="ui-btn small ui-btn-ghost" (click)="close.emit()">Cancel</button>
+          <button type="button" class="ui-btn small ui-btn-primary" (click)="submit()" [disabled]="saving">
             <span *ngIf="saving" class="ui-spinner" aria-hidden="true"></span>
             {{ saving ? 'Saving…' : (data ? 'Save changes' : 'Create operator') }}
           </button>

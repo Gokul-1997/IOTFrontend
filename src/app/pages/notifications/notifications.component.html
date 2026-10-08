@@ -18,6 +18,7 @@
           [attr.aria-selected]="!unreadOnly"
           [attr.tabindex]="!unreadOnly ? 0 : -1"
           (click)="setUnreadOnly(false)">
+          <span class="ui-tab-icon material-icons" aria-hidden="true">notifications</span>
     All
   </button>
 
@@ -28,6 +29,7 @@
           [attr.aria-selected]="unreadOnly"
           [attr.tabindex]="unreadOnly ? 0 : -1"
           (click)="setUnreadOnly(true)">
+          <span class="ui-tab-icon material-icons" aria-hidden="true">mark_email_unread</span>
     Unread
   </button>
 

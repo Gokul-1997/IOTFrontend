@@ -100,13 +100,13 @@
 
         <!-- ── Break times: when the breaks happen, for the machine page's shift timeline ── -->
         <fieldset class="ui-field mt-2 border-t border-gray-200 dark:border-gray-700 pt-4" aria-describedby="brkHint">
-          <legend class="ui-label !mb-1">Break times</legend>
+          <legend class="ui-label  ">Break times</legend>
           <p id="brkHint" class="ui-hint !mt-0 mb-3">
             When each break happens — shown on the machine page's shift timeline.
             The Break minutes above is still what planned time uses.
           </p>
 
-          <p *ngIf="!data" class="ui-hint">Create the shift first, then open it again to add its break times.</p>
+          <p *ngIf="!data" class="ui-hint mb-2">Create the shift first, then open it again to add its break times.</p>
           <p *ngIf="data && !breaksAvailable" class="ui-hint">
             Break times are not set up on this server yet (database update 028 is pending).
           </p>
@@ -166,8 +166,8 @@
       <div class="ui-dialog-footer is-split">
         <p class="ui-hint !mt-0"><span class="ui-req" aria-hidden="true">*</span> Required fields</p>
         <div class="flex items-center gap-2">
-          <button type="button" class="ui-btn ui-btn-ghost" (click)="close.emit()">Cancel</button>
-          <button type="button" class="ui-btn ui-btn-primary" (click)="submit()" [disabled]="saving">
+          <button type="button" class="ui-btn small ui-btn-ghost" (click)="close.emit()">Cancel</button>
+          <button type="button" class="ui-btn small ui-btn-primary" (click)="submit()" [disabled]="saving">
             <span *ngIf="saving" class="ui-spinner" aria-hidden="true"></span>
             {{ saving ? 'Saving…' : (data ? 'Save changes' : 'Create shift') }}
           </button>

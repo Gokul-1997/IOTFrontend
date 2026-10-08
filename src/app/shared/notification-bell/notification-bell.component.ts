@@ -27,7 +27,9 @@ import { NotificationService } from '../../core/services/notification.service';
                bg-white rounded-xl shadow-2xl border border-gray-100 z-50">
         <div class="flex items-center justify-between gap-2 p-4 border-b">
           <h3 class="font-semibold text-gray-800">Notifications</h3>
-          <button type="button" (click)="markAllRead()" class="ui-btn ui-btn-ghost ui-btn-sm">Mark all read</button>
+          <button type="button" (click)="markAllRead()" class="ui-btn ui-btn-ghost ui-btn-sm">
+          <span class="ui-tab-icon material-icons" aria-hidden="true">done_all</span>
+          Mark all read</button>
         </div>
         <div class="max-h-80 overflow-y-auto divide-y divide-gray-50">
           <ng-container *ngIf="notifications.length > 0; else noNotifs">

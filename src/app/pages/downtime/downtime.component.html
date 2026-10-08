@@ -112,9 +112,13 @@
         </select>
       </div>
     </div>
-    <div class="ui-btn-row reason-actions">
-      <button type="button" (click)="saveReason()" class="ui-btn ui-btn-primary">Save</button>
-      <button type="button" (click)="showReasonForm=false" class="ui-btn ui-btn-ghost">Cancel</button>
+    <div class="reason-actions flex gap-2 justify-end">
+      <button type="button" (click)="saveReason()" class="ui-btn small ui-btn-primary">
+        <span class="ui-tab-icon material-icons" aria-hidden="true">save</span>
+        Save</button>
+      <button type="button" (click)="showReasonForm=false" class="ui-btn small ui-btn-ghost">
+        <span class="ui-tab-icon material-icons" aria-hidden="true">close</span>
+        Cancel</button>
     </div>
   </div>
 

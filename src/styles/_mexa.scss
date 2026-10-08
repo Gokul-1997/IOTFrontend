@@ -263,29 +263,33 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   color: #ffffff;
 }
 .mexa-kpi.oee{
-  background: #384BCA;
+  background: #384BCA!important;
   color: #ffffff;
+  padding: 1.5rem;
 }
-.mexa-kpi.oee .mexa-kpi-icon,
-.mexa-kpi.avail .mexa-kpi-icon,
-.mexa-kpi.perf .mexa-kpi-icon,
-.mexa-kpi.qual .mexa-kpi-icon {
-  background: rgba(255, 255, 255,0.1) !important;
-  color: #ffffff;
-}
+// .mexa-kpi.oee .mexa-kpi-icon,
+// .mexa-kpi.avail .mexa-kpi-icon,
+// .mexa-kpi.perf .mexa-kpi-icon,
+// .mexa-kpi.qual .mexa-kpi-icon {
+//   background: rgba(255, 255, 255,0.1) !important;
+//   color: #ffffff;
+// }
 /* Tile colours are the darkest shade of each hue that keeps white text at
    4.5:1 (WCAG AA) — the brighter #0CAD5D / #0EA5E9 / #8B5CF6 read at 2.8–4.2:1. */
 .mexa-kpi.avail{
-  background: #098447;
+  background: #098447!important;
   color: #ffffff;
+  padding: 1.5rem;
 }
 .mexa-kpi.perf{
-  background: #0B7CAF;
+  background: #0B7CAF!important;
   color: #ffffff;
+  padding: 1.5rem;
 }
 .mexa-kpi.qual{
-  background: #8452F5;
+  background: #8452F5!important;
   color: #ffffff;
+  padding: 1.5rem;
 }
 .rep-kpis .mexa-kpi.repcard {
   color: #fff;
@@ -557,7 +561,7 @@ button.mexa-kpi[aria-pressed="true"] {
 
 .mexa-pager {
   display: flex; flex-wrap: wrap; align-items: center; gap: .75rem;
-  justify-content: space-between; padding-top: .3rem;
+  justify-content: space-between; padding: .8rem;
   font-size: .84rem; color: var(--mexa-ink-3);
 }
 .mexa-pagebtn {
@@ -1190,11 +1194,11 @@ a.mexa-pill { text-decoration: none; }
 }
 
 
-.dark .mexa-kpi-icon,
-:root[data-theme="dark"] .mexa-kpi-icon {
-  background: rgba(255, 255, 255, .07) !important;
-  color: var(--mexa-ink-2);
-}
+// .dark .mexa-kpi-icon,
+// :root[data-theme="dark"] .mexa-kpi-icon {
+//   background: rgba(255, 255, 255, .07) !important;
+//   color: var(--mexa-ink-2);
+// }
 
 /* ── Readout: a label and its reading ─────────────────────────
    Most of the Maintenance screen is this shape — a machine's condition is a
@@ -1305,3 +1309,7 @@ a.mexa-pill { text-decoration: none; }
 //     padding:0 !important
 //   }
 // }
+.dark .mexa-kpi{
+    color: #ffffff;
+    background:#111;
+}

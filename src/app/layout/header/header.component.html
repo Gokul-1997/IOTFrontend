@@ -111,7 +111,9 @@
         <a *ngFor="let item of sec.items" [routerLink]="item.path" (click)="toggleMobileMenu()"
            class="mm-item" [class.active]="isActive(item.path)" [attr.aria-current]="isActive(item.path) ? 'page' : null">
           <span class="material-icons" aria-hidden="true">{{ item.icon }}</span>
-          <span class="mm-text"><span class="mm-label">{{ item.label }}</span><span class="mm-hint" *ngIf="item.hint">{{ item.hint }}</span></span>
+          <span class="mm-text"><span class="mm-label">{{ item.label }}</span>
+          <!-- <span class="mm-hint" *ngIf="item.hint">{{ item.hint }}</span> -->
+        </span>
         </a>
       </div>
     </div>

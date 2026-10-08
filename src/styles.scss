@@ -439,7 +439,7 @@ h4 {
   background-color: #EAEDFF
 }
 .dark .menu-default {
-    background-color: #0d0f15;
+    background-color: rgb(34 34 34);
 }
 /* Machine card (Live Dashboard, machine page): a white card lifted off the
    STM field, its state shown by a coloured stripe along the top — the same
@@ -1305,4 +1305,10 @@ html.dark [class~="bg-blue-600"][class~="text-white"] { color: #fff; }
   margin: 5px 0 0;
   font-size: 13px;
   color: #6B778C;
+}
+.mat-mdc-row, .mat-mdc-row{
+  height: 35px!important;
+}
+.dark .bar-cht, .dark .mt-facts-inner{
+  background-color: rgb(31 35 48)!important;
 }
