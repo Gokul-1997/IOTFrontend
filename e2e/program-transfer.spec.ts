@@ -31,6 +31,8 @@ const job = (o: any = {}) => ({ id: 11, machine_id: 7, machine_serial: 'VMC-1', 
   file_size: 2048, requested_by_name: 'Priya', requested_at: ago(5), delivered_at: null, finished_at: null, ...o });
 
 async function stub(page: any, opts: { open?: any[]; history?: any[] } = {}) {
+  await page.routeWebSocket(/.*/, (socket: any) => socket.close());
+  await page.route('**/*', (route: any) => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
   await page.route('**/api/**', (r: any) => r.fulfill(ok({ status: 'success', data: [] })));
   await page.route('**/api/programs/machines', (r: any) => r.fulfill(ok({ status: 'success', data: machines })));
   await page.route('**/api/programs/machines/*/controller-files', (r: any) => r.fulfill(ok({ status: 'success', data: {
@@ -39,7 +41,7 @@ async function stub(page: any, opts: { open?: any[]; history?: any[] } = {}) {
   await page.route('**/api/programs/files?*', (r: any) => r.fulfill(ok({ status: 'success', data: files, total: files.length })));
   await page.route('**/api/programs/jobs?*', (r: any) => {
     const open = new URL(r.request().url()).searchParams.get('status') === 'open';
-    const data = open ? (opts.open || []) : (opts.history || []);
+    const data = open ? (opts.open || []) : (opts.history || opts.open || []);
     return r.fulfill(ok({ status: 'success', data, total: data.length }));
   });
 }
@@ -48,22 +50,24 @@ test('the machine, its device and its program path are shown first — not the s
   await stub(page);
   await page.goto('/programs');
   await expect(page.getByLabel('CNC Machine')).toHaveValue(/./);
-  await expect(page.getByRole('status').filter({ hasText: 'Online' })).toContainText('checked in');
+  await expect(page.getByRole('status').filter({ hasText: 'Device online' })).toBeVisible();
+  await page.getByText('Machine setup', { exact: true }).click();
   await expect(page.getByText('Program path on the machine')).toBeVisible();
   await expect(page.getByText('//CNC_MEM/USER/PATH1/', { exact: true })).toBeVisible();
   await expect(page.getByText(/ProgramTransfer\//)).toHaveCount(0);
   await expect(page.getByText('20261005-103020_BACKUP_O1234.nc')).toBeVisible();
+  await page.getByRole('tab', { name: 'Get from machine', exact: true }).click();
   await expect(page.getByRole('region', { name: /on the machine's controller/ }).getByText('O2001')).toBeVisible();
+  await page.getByRole('tab', { name: 'Send to machine', exact: true }).click();
 
   // a machine without a device or a program path says so, and sends nothing
   await page.getByLabel('CNC Machine').selectOption({ label: 'VMC-2 — 192.168.200.4' });
   await expect(page.getByRole('status').filter({ hasText: 'No device linked' })).toBeVisible();
-  await expect(page.getByText(/has no device linked yet/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Link a device' })).toBeVisible();
   await expect(page.getByText('Not set', { exact: true })).toBeVisible();
-  await expect(page.getByRole('status').filter({ hasText: 'VMC-2 has no program path yet' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'Set a program path' })).toBeVisible();
   await page.getByRole('checkbox', { name: 'Select 20261005-103012_NEW_O1234.nc' }).check();
-  await expect(page.getByRole('button', { name: /Send to VMC-2/ })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Send selected (1)', exact: true })).toBeDisabled();
 });
 
 test('the program path is set right there, for the machine', async ({ authedPage: page }) => {
@@ -93,11 +97,11 @@ test('send queues a job; a program already on the machine asks before overwritin
   });
   await page.goto('/programs');
   await page.getByRole('checkbox', { name: 'Select 20261005-103012_NEW_O1234.nc' }).check();
-  await page.getByRole('button', { name: /Send to VMC-1/ }).click();
+  await page.getByRole('button', { name: 'Send selected (1)', exact: true }).click();
 
   const dialog = page.getByRole('dialog', { name: 'Already on the machine' });
   await expect(dialog).toContainText('O1234.nc on VMC-1');
-  await expect(dialog).toContainText('saves the one on the machine as a Backup');
+  await expect(dialog).toContainText('saves the existing one as a Backup');
   await dialog.getByRole('button', { name: 'Overwrite' }).click();
 
   await expect(dialog).toHaveCount(0);
@@ -126,7 +130,8 @@ test('Get asks the device for a program on the controller', async ({ authedPage:
   let body: any = null;
   await page.route('**/api/programs/jobs', (r: any) => { body = r.request().postDataJSON(); return r.fulfill(ok({ status: 'success', data: { jobs: [job({ action: 'FETCH' })] } }, 201)); });
   await page.goto('/programs');
-  await page.getByRole('button', { name: 'Copy O2001 to the server folder' }).click();
+  await page.getByRole('tab', { name: 'Get from machine', exact: true }).click();
+  await page.getByRole('button', { name: 'Get O2001', exact: true }).click();
   await expect.poll(() => body).toEqual({ action: 'FETCH', machine_id: 7, program_names: ['O2001'] });
 });
 
@@ -138,13 +143,14 @@ test('upload goes into the chosen machine\'s folder and can be sent at once', as
     return r.fulfill(ok({ status: 'success', data: { file: files[0], job: job() }, message: 'Uploaded and queued' }, 201));
   });
   await page.goto('/programs');
-  await page.getByRole('button', { name: 'Upload Program' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Upload Program' });
+  await page.getByRole('button', { name: 'Send a new file', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Send a program', exact: true });
   await dialog.getByLabel(/G-code file/).setInputFiles({ name: 'O3000.nc', mimeType: 'text/plain', buffer: Buffer.from('%\nO3000\nM30\n%\n') });
+  await dialog.getByText('Program name and note (optional)', { exact: true }).click();
   await expect(dialog.getByLabel('Name on the machine')).toHaveValue('O3000.nc');
   await expect(dialog.getByRole('checkbox', { name: /Send it to VMC-1 now/ })).toBeChecked();
-  await expect(dialog).toContainText('Its device saves it at //CNC_MEM/USER/PATH1/O3000.nc');
-  await dialog.getByRole('button', { name: 'Upload & Send' }).click();
+  await expect(dialog).toContainText('The device saves it at //CNC_MEM/USER/PATH1/O3000.nc');
+  await dialog.getByRole('button', { name: 'Send program', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   for (const part of ['name="machine_id"\r\n\r\n7', 'name="send"\r\n\r\ntrue', 'name="overwrite"\r\n\r\nfalse', 'filename="O3000.nc"']) {
     expect(sent).toContain(part);
@@ -156,6 +162,7 @@ test('a device token is shown once, as the device\'s configuration', async ({ au
   await page.route('**/api/programs/machines/7/device-token', (r: any) => r.fulfill(ok({ status: 'success',
     data: { token: 'mxd_' + 'x'.repeat(43), device: { id: 4 } } }, 201)));
   await page.goto('/programs');
+  await page.getByText('Machine setup', { exact: true }).click();
   await page.getByRole('button', { name: 'Device token' }).click();
   const dialog = page.getByRole('dialog', { name: 'Device at VMC-1' });
   await expect(dialog).toContainText('mxd_AbCdEfGh…');
@@ -202,11 +209,11 @@ test('a role that may only look sees no upload, send, get, delete or device cont
   await stub(page);
   await page.goto('/programs');
   await expect(page.getByText('20261005-103012_NEW_O1234.nc')).toBeVisible();
-  for (const name of ['Upload Program', /Send to/, 'Device token']) {
+  for (const name of ['Send a new file', /^Send O/, 'Device token']) {
     await expect(page.getByRole('button', { name })).toHaveCount(0);
   }
   await expect(page.getByRole('button', { name: /^Delete / })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /^Copy .* to the server folder/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Get O/ })).toHaveCount(0);
   await expect(page.getByRole('checkbox')).toHaveCount(0);
   await expect(page.getByText('Sending to a machine is not part of your role.')).toBeVisible();
 });
@@ -219,8 +226,8 @@ test('the history says what happened, including the program kept before an overw
   await page.goto('/programs');
   await page.getByRole('tab', { name: /Transfer History/ }).click();
   const table = page.getByRole('region', { name: 'Transfer history' });
-  await expect(table).toContainText('To machine');
-  await expect(table).toContainText('From machine');
+  await expect(table).toContainText('To VMC-1');
+  await expect(table).toContainText('From VMC-1');
   await expect(table).toContainText('MISSING.nc is not on the controller.');
-  await expect(table.getByTitle('20261005-103020_BACKUP_O1234.nc')).toContainText('Kept');
+  await expect(table.getByTitle('20261005-103020_BACKUP_O1234.nc')).toContainText('Backup kept');
 });

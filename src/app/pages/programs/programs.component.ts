@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Subject, takeUntil } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -27,10 +28,11 @@ const POLL_MS = 10_000;
   standalone: true,
   imports: [CommonModule, FormsModule, UiTabsDirective, MatIconModule],
   templateUrl: './programs.component.html',
-  styleUrl: './programs.component.scss'
+  styleUrl: './programs.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProgramsComponent implements OnInit, OnDestroy {
-  tab: 'programs' | 'history' = 'programs';
+  tab: 'send' | 'get' | 'history' = 'send';
 
   machines: PtMachine[] = [];
   selectedMachineId: number | null = null;
@@ -53,6 +55,7 @@ export class ProgramsComponent implements OnInit, OnDestroy {
 
   /* ── jobs ── */
   openJobs: PtJob[] = [];
+  recentJobs: PtJob[] = [];
   history: PtJob[] = [];
   historyTotal = 0;
   historyPage = 1;
@@ -70,7 +73,7 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   uploading = false;
 
   /** a send the machine refused because the program is already there */
-  overwritePrompt: { names: string[]; retry: (overwrite: boolean) => void } | null = null;
+  overwritePrompt: { names: string[]; machineLabel: string; retry: (overwrite: boolean) => void } | null = null;
 
   /* ── the machine's program path (where its device saves programs) ── */
   editingPath = false;
@@ -95,6 +98,11 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   } | null = null;
 
   private timer: any = null;
+  private refreshTimer?: ReturnType<typeof setTimeout>;
+  private readonly destroy$ = new Subject<void>();
+  private readonly pendingFetch = new Set<string>();
+  private versions = { machines: 0, files: 0, controller: 0, open: 0, recent: 0, history: 0 };
+  private visibilityChanged = () => { if (!document.hidden) this.refreshAfterJob(); };
   now = Date.now();
 
   constructor(
@@ -118,13 +126,27 @@ export class ProgramsComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loadMachines(true);
-    this.unsubscribeJobs = this.socket.onProgramJob(() => this.refreshAfterJob());
+    this.unsubscribeJobs = this.socket.onProgramJob(job => {
+      if (document.hidden || (job?.machine_id && Number(job.machine_id) !== this.selectedMachineId)) return;
+      // A batch of jobs can emit many events; refresh once for the batch.
+      if (!this.refreshTimer) this.refreshTimer = setTimeout(() => {
+        this.refreshTimer = undefined;
+        this.refreshAfterJob();
+      }, 250);
+    });
+    this.socket.connected$.pipe(takeUntil(this.destroy$)).subscribe(() => this.refreshAfterJob());
+    void this.socket.connect().catch(() => { /* HTTP polling continues while reconnecting. */ });
+    document.addEventListener('visibilitychange', this.visibilityChanged);
     // device online/offline and job states move on their own: keep up
     this.timer = setInterval(() => {
       if (document.hidden) return;
       this.now = Date.now();
       this.loadMachines(false);
-      if (this.selectedMachineId) this.loadOpenJobs();
+      if (this.selectedMachineId) {
+        this.loadOpenJobs();
+        if (this.tab === 'get') this.loadController();
+        if (this.tab === 'history') this.loadHistory();
+      }
       this.touch();
     }, POLL_MS);
   }
@@ -134,6 +156,10 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.unsubscribeJobs?.();
     if (this.timer) clearInterval(this.timer);
+    if (this.refreshTimer) clearTimeout(this.refreshTimer);
+    document.removeEventListener('visibilitychange', this.visibilityChanged);
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   /* ─────────────── machines ─────────────── */
@@ -143,22 +169,43 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   }
 
   loadMachines(first: boolean) {
-    this.programs.getMachines().subscribe({
+    const version = ++this.versions.machines;
+    this.programs.getMachines().pipe(takeUntil(this.destroy$)).subscribe({
       next: res => {
+        if (version !== this.versions.machines) return;
         this.machines = res.data || [];
-        if (first && !this.selectedMachineId && this.machines.length) {
+        if (!this.selectedMachineId && this.machines.length) {
           this.selectedMachineId = this.machines[0].id;
+          this.onMachineChange();
+        }
+        if (this.selectedMachineId && !this.selectedMachine) {
+          this.selectedMachineId = this.machines[0]?.id ?? null;
           this.onMachineChange();
         }
         this.touch();
       },
-      error: err => { if (first) this.toast.error(err.error?.message || 'Could not load the machines'); this.touch(); }
+      error: err => { if (first && version === this.versions.machines) this.toast.error(err.error?.message || 'Could not load the machines'); this.touch(); }
     });
   }
 
   onMachineChange() {
+    for (const key of ['files', 'controller', 'open', 'recent', 'history'] as const) this.versions[key]++;
     this.selectedFileIds.clear();
     this.filesPage = 1;
+    this.files = [];
+    this.filesTotal = 0;
+    this.loadingFiles = false;
+    this.loadingController = false;
+    this.loadingHistory = false;
+    this.openJobs = [];
+    this.recentJobs = [];
+    this.history = [];
+    this.historyTotal = 0;
+    this.historyPage = 1;
+    this.editingPath = false;
+    this.pathDraft = '';
+    this.pathError = '';
+    this.controllerSearch = '';
     this.controllerFiles = [];
     this.controllerReportedAt = null;
     this.loadFiles();
@@ -181,19 +228,23 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   savePath() {
     const m = this.selectedMachine;
     const path = this.pathDraft.trim();
-    if (!m) return;
+    if (!m || !this.canManageDevice || this.savingPath) return;
     if (!path) { this.pathError = 'Enter the folder on the machine, e.g. //CNC_MEM/USER/PATH1/'; return; }
     this.savingPath = true;
-    this.programs.setProgramPath(m.id, path).subscribe({
+    this.programs.setProgramPath(m.id, path).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.savingPath = false;
-        this.editingPath = false;
+        if (m.id === this.selectedMachineId) this.editingPath = false;
         m.program_path = path;
         this.toast.success(`Program path set for ${m.machine_serial_no}`);
         this.loadMachines(false);
         this.touch();
       },
-      error: err => { this.savingPath = false; this.pathError = err.error?.message || 'Could not save the path'; this.touch(); }
+      error: err => {
+        this.savingPath = false;
+        if (m.id === this.selectedMachineId) this.pathError = err.error?.message || 'Could not save the path';
+        this.touch();
+      }
     });
   }
 
@@ -215,21 +266,28 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   /* ─────────────── the folder ─────────────── */
 
   loadFiles() {
+    const version = ++this.versions.files;
     if (!this.selectedMachineId) { this.files = []; this.filesTotal = 0; return; }
     this.loadingFiles = true;
     this.programs.getFiles({
       machine_id: this.selectedMachineId, kind: this.kind, search: this.search.trim(),
       page: this.filesPage, limit: this.filesLimit
-    }).subscribe({
-      next: res => { this.files = res.data || []; this.filesTotal = res.total || 0; this.loadingFiles = false; this.touch(); },
-      error: err => { this.loadingFiles = false; this.toast.error(err.error?.message || 'Could not load the programs'); this.touch(); }
+    }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: res => {
+        if (version !== this.versions.files) return;
+        this.files = res.data || []; this.filesTotal = res.total || 0; this.loadingFiles = false; this.touch();
+      },
+      error: err => {
+        if (version !== this.versions.files) return;
+        this.loadingFiles = false; this.toast.error(err.error?.message || 'Could not load the programs'); this.touch();
+      }
     });
   }
 
   setKind(k: '' | PtKind) { this.kind = k; this.filesPage = 1; this.selectedFileIds.clear(); this.loadFiles(); }
 
   get filesPages(): number { return Math.max(1, Math.ceil(this.filesTotal / this.filesLimit)); }
-  changeFilesPage(step: number) { this.filesPage = Math.min(this.filesPages, Math.max(1, this.filesPage + step)); this.loadFiles(); }
+  changeFilesPage(step: number) { this.filesPage = Math.min(this.filesPages, Math.max(1, this.filesPage + step)); this.selectedFileIds.clear(); this.loadFiles(); }
 
   isSelected(id: number) { return this.selectedFileIds.has(id); }
   toggleFile(id: number) { this.selectedFileIds.has(id) ? this.selectedFileIds.delete(id) : this.selectedFileIds.add(id); }
@@ -252,12 +310,20 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   }
 
   download(f: PtFile) {
-    this.programs.download(f.id).subscribe({
+    this.downloadFile(f.id, f.stored_name);
+  }
+
+  downloadJob(j: PtJob) {
+    if (j.status === 'DONE' && j.action === 'FETCH' && j.file_id) this.downloadFile(j.file_id, j.file_name || j.program_name);
+  }
+
+  private downloadFile(id: number, name: string) {
+    this.programs.download(id).pipe(takeUntil(this.destroy$)).subscribe({
       next: blob => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = f.stored_name;
+        a.download = name;
         a.click();
         URL.revokeObjectURL(url);
       },
@@ -267,7 +333,7 @@ export class ProgramsComponent implements OnInit, OnDestroy {
 
   deleteFile(f: PtFile) {
     if (!confirm(`Delete ${f.stored_name} from the ProgramTransfer folder?`)) return;
-    this.programs.delete(f.id).subscribe({
+    this.programs.delete(f.id).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => { this.toast.success('Program deleted'); this.selectedFileIds.delete(f.id); this.loadFiles(); },
       error: err => { this.toast.error(err.error?.message || 'Delete failed'); this.touch(); }
     });
@@ -275,17 +341,29 @@ export class ProgramsComponent implements OnInit, OnDestroy {
 
   /* ─────────────── sending and fetching ─────────────── */
 
-  sendSelected(overwrite = false) {
+  sendSelected() {
+    this.sendFiles([...this.selectedFileIds]);
+  }
+
+  sendFile(f: PtFile) {
+    if (f.machine_id === this.selectedMachineId) this.sendFiles([f.id]);
+  }
+
+  private sendFiles(ids: number[]) {
     const machine = this.selectedMachine;
-    if (!machine || !this.selectedCount) return;
+    if (!machine || !machine.device_id || !ids.length || !this.canTransfer || this.busy || this.overwritePrompt) return;
     if (!machine.program_path) { this.toast.error(`Set the program path for ${machine.machine_serial_no} first`); return; }
-    const ids = [...this.selectedFileIds];
+    this.queueSend(machine, ids, false);
+  }
+
+  // Keep the original machine and files even if the selection changes during a request.
+  private queueSend(machine: PtMachine, ids: number[], overwrite: boolean) {
     this.busy = true;
-    this.programs.send(ids, [machine.id], overwrite).subscribe({
+    this.programs.send(ids, [machine.id], overwrite).pipe(takeUntil(this.destroy$)).subscribe({
       next: res => {
         this.busy = false;
         this.overwritePrompt = null;
-        this.selectedFileIds.clear();
+        if (this.selectedMachineId === machine.id) ids.forEach(id => this.selectedFileIds.delete(id));
         const n = res.data.jobs.length;
         this.toast.success(`${n} program${n === 1 ? '' : 's'} queued for ${machine.machine_serial_no}`);
         this.loadOpenJobs();
@@ -294,7 +372,8 @@ export class ProgramsComponent implements OnInit, OnDestroy {
       error: err => {
         this.busy = false;
         if (err.status === 409 && err.error?.code === 'FILE_EXISTS') {
-          this.overwritePrompt = { names: err.error.names || [], retry: o => this.sendSelected(o) };
+          this.overwritePrompt = { names: err.error.names || [], machineLabel: machine.machine_serial_no,
+            retry: o => this.queueSend(machine, ids, o) };
         } else {
           this.overwritePrompt = null;
           this.toast.error(err.error?.message || 'Could not queue the programs');
@@ -310,44 +389,90 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   }
 
   loadController() {
+    const version = ++this.versions.controller;
     const id = this.selectedMachineId;
     if (!id) return;
     this.loadingController = true;
-    this.programs.getControllerFiles(id).subscribe({
+    this.programs.getControllerFiles(id).pipe(takeUntil(this.destroy$)).subscribe({
       next: res => {
-        if (id !== this.selectedMachineId) return;
+        if (version !== this.versions.controller) return;
         this.controllerFiles = res.data.files || [];
         this.controllerReportedAt = res.data.reported_at;
         this.loadingController = false;
         this.touch();
       },
-      error: () => { this.loadingController = false; this.touch(); }
+      error: () => { if (version === this.versions.controller) { this.loadingController = false; this.touch(); } }
     });
   }
 
   /** a fetch already asked for and not finished */
   fetchWaiting(name: string): boolean {
-    return this.openJobs.some(j => j.action === 'FETCH' && j.program_name.toLowerCase() === name.toLowerCase());
+    return this.pendingFetch.has(`${this.selectedMachineId}:${name.toLowerCase()}`) ||
+      this.openJobs.some(j => j.action === 'FETCH' && j.program_name.toLowerCase() === name.toLowerCase());
   }
 
   fetchFile(f: PtControllerFile) {
     const machine = this.selectedMachine;
-    if (!machine) return;
-    this.programs.fetch(machine.id, [f.name]).subscribe({
-      next: () => { this.toast.success(`Asked ${machine.machine_serial_no} for ${f.name}`); this.loadOpenJobs(); this.touch(); },
-      error: err => { this.toast.error(err.error?.message || 'Could not ask the machine'); this.touch(); }
+    if (!machine || !machine.device_id || !machine.program_path || !this.canFetch || this.fetchWaiting(f.name)) return;
+    const key = `${machine.id}:${f.name.toLowerCase()}`;
+    this.pendingFetch.add(key);
+    this.programs.fetch(machine.id, [f.name]).pipe(takeUntil(this.destroy$)).subscribe({
+      next: res => {
+        this.pendingFetch.delete(key);
+        if (machine.id === this.selectedMachineId) {
+          const jobs = res.data.jobs.filter(j => j.status === 'QUEUED' || j.status === 'DELIVERED');
+          this.openJobs = [...this.openJobs.filter(j => !jobs.some(next => next.id === j.id)), ...jobs];
+        }
+        this.toast.success(`Queued ${f.name} from ${machine.machine_serial_no}. Download it when the transfer is done.`);
+        this.loadOpenJobs(); this.touch();
+      },
+      error: err => { this.pendingFetch.delete(key); this.toast.error(err.error?.message || 'Could not ask the machine'); this.touch(); }
     });
   }
 
   /* ─────────────── jobs ─────────────── */
 
   loadOpenJobs() {
+    const version = ++this.versions.open;
     const id = this.selectedMachineId;
     if (!id) { this.openJobs = []; return; }
-    this.programs.getJobs({ machine_id: id, status: 'open', limit: 50 }).subscribe({
-      next: res => { if (id === this.selectedMachineId) { this.openJobs = res.data || []; this.touch(); } },
+    this.programs.getJobs({ machine_id: id, status: 'open', limit: 50 }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: res => {
+        if (version !== this.versions.open) return;
+        const next = res.data || [];
+        const finished = this.openJobs.some(j => !next.some(current => current.id === j.id));
+        this.openJobs = next;
+        if (finished) this.refreshFilesAfterCompletion();
+        this.touch();
+      },
       error: () => {}
     });
+    this.loadRecentJobs();
+  }
+
+  private loadRecentJobs() {
+    const version = ++this.versions.recent;
+    const id = this.selectedMachineId;
+    if (!id) return;
+    this.programs.getJobs({ machine_id: id, limit: 5 }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: res => {
+        if (version !== this.versions.recent) return;
+        const next = res.data || [];
+        if (next.some(j => (j.status === 'DONE' || j.status === 'FAILED') &&
+          !this.recentJobs.some(previous => previous.id === j.id && previous.status === j.status))) {
+          this.refreshFilesAfterCompletion();
+        }
+        this.recentJobs = next;
+        this.touch();
+      },
+      error: () => {}
+    });
+  }
+
+  private refreshFilesAfterCompletion() {
+    this.loadFiles();
+    this.loadController();
+    if (this.tab === 'history') this.loadHistory();
   }
 
   /** a job moved: what it touched may have changed too */
@@ -360,7 +485,8 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   }
 
   cancelJob(j: PtJob) {
-    this.programs.cancelJob(j.id).subscribe({
+    if (j.status !== 'QUEUED' || !(j.action === 'SEND' ? this.canTransfer : this.canFetch)) return;
+    this.programs.cancelJob(j.id).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => { this.toast.success('Cancelled'); this.loadOpenJobs(); this.touch(); },
       error: err => { this.toast.error(err.error?.message || 'Could not cancel'); this.loadOpenJobs(); this.touch(); }
     });
@@ -380,16 +506,26 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     return s === 'DONE' ? 'check_circle' : s === 'FAILED' ? 'error_outline' : s === 'CANCELLED' ? 'block' : s === 'DELIVERED' ? 'sync' : 'schedule';
   }
 
-  switchTab(t: 'programs' | 'history') {
+  switchTab(t: 'send' | 'get' | 'history') {
     this.tab = t;
     if (t === 'history') { this.historyPage = 1; this.loadHistory(); }
+    if (t === 'get') this.loadController();
+    if (t === 'send') this.loadFiles();
   }
 
   loadHistory() {
+    const version = ++this.versions.history;
+    if (!this.selectedMachineId) { this.history = []; this.historyTotal = 0; this.loadingHistory = false; return; }
     this.loadingHistory = true;
-    this.programs.getJobs({ machine_id: this.selectedMachineId, page: this.historyPage, limit: this.historyLimit }).subscribe({
-      next: res => { this.history = res.data || []; this.historyTotal = res.total || 0; this.loadingHistory = false; this.touch(); },
-      error: err => { this.loadingHistory = false; this.toast.error(err.error?.message || 'Could not load the history'); this.touch(); }
+    this.programs.getJobs({ machine_id: this.selectedMachineId, page: this.historyPage, limit: this.historyLimit }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: res => {
+        if (version !== this.versions.history) return;
+        this.history = res.data || []; this.historyTotal = res.total || 0; this.loadingHistory = false; this.touch();
+      },
+      error: err => {
+        if (version !== this.versions.history) return;
+        this.loadingHistory = false; this.toast.error(err.error?.message || 'Could not load the history'); this.touch();
+      }
     });
   }
   get historyPages(): number { return Math.max(1, Math.ceil(this.historyTotal / this.historyLimit)); }
@@ -398,18 +534,25 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   /* ─────────────── upload ─────────────── */
 
   openUpload() {
+    if (!this.canUpload || !this.selectedMachine || this.uploading || this.overwritePrompt) return;
     this.uploadFile = null;
     this.uploadName = '';
     this.uploadNote = '';
-    this.uploadSend = this.canTransfer && this.hasPath;
+    this.uploadSend = this.canTransfer && this.hasPath && !!this.selectedMachine?.device_id;
     this.uploadMachineId = this.selectedMachineId;
     this.showUpload = true;
   }
 
+  closeUpload() {
+    if (!this.uploading && !this.overwritePrompt) this.showUpload = false;
+  }
+
   onFileSelected(e: Event) {
+    if (this.uploading || this.overwritePrompt) return;
     const input = e.target as HTMLInputElement;
+    const previousName = this.uploadFile?.name;
     this.uploadFile = input.files?.[0] || null;
-    if (this.uploadFile && !this.uploadName) this.uploadName = this.uploadFile.name;
+    if (!this.uploadName || this.uploadName === previousName) this.uploadName = this.uploadFile?.name || '';
   }
 
   get uploadMachine(): PtMachine | null {
@@ -424,14 +567,20 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     return /[\\/]$/.test(path) ? path + name : path + (path.includes('\\') && !path.includes('/') ? '\\' : '/') + name;
   }
 
-  upload(overwrite = false) {
-    if (!this.uploadFile || !this.uploadMachineId) return;
+  upload() {
+    if (!this.uploadFile || !this.uploadMachineId || !this.canUpload || this.uploading || this.overwritePrompt) return;
     const machine = this.uploadMachine;
-    this.uploading = true;
-    this.programs.upload({
+    if (!machine) return;
+    const request = {
       file: this.uploadFile, machineId: this.uploadMachineId, programName: this.uploadName.trim(),
-      note: this.uploadNote.trim(), send: this.uploadSend && this.canTransfer && !!this.uploadMachine?.program_path, overwrite
-    }).subscribe({
+      note: this.uploadNote.trim(), send: this.uploadSend && this.canTransfer && !!machine.program_path && !!machine.device_id
+    };
+    this.uploadRequest(machine, request, false);
+  }
+
+  private uploadRequest(machine: PtMachine, request: Parameters<ProgramService['upload']>[0], overwrite: boolean) {
+    this.uploading = true;
+    this.programs.upload({ ...request, overwrite }).pipe(takeUntil(this.destroy$)).subscribe({
       next: res => {
         this.uploading = false;
         this.showUpload = false;
@@ -439,15 +588,16 @@ export class ProgramsComponent implements OnInit, OnDestroy {
         this.toast.success(res.data.job
           ? `Uploaded and queued for ${machine?.machine_serial_no}`
           : `Uploaded to ${machine?.machine_serial_no}'s folder`);
-        if (this.uploadMachineId !== this.selectedMachineId) { this.selectedMachineId = this.uploadMachineId; this.onMachineChange(); }
-        else { this.loadFiles(); this.loadOpenJobs(); }
+        if (machine.id === this.selectedMachineId) { this.loadFiles(); this.loadOpenJobs(); }
         this.touch();
       },
       error: err => {
         this.uploading = false;
         if (err.status === 409 && err.error?.code === 'FILE_EXISTS') {
-          this.overwritePrompt = { names: err.error.names || [], retry: o => this.upload(o) };
+          this.overwritePrompt = { names: err.error.names || [], machineLabel: machine.machine_serial_no,
+            retry: o => this.uploadRequest(machine, request, o) };
         } else {
+          this.overwritePrompt = null;
           this.toast.error(err.error?.message || 'Upload failed');
         }
         this.touch();
@@ -455,8 +605,8 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     });
   }
 
-  cancelOverwrite() { this.overwritePrompt = null; }
-  confirmOverwrite() { this.overwritePrompt?.retry(true); }
+  cancelOverwrite() { if (!this.busy && !this.uploading) this.overwritePrompt = null; }
+  confirmOverwrite() { if (!this.busy && !this.uploading) this.overwritePrompt?.retry(true); }
 
   /* ─────────────── the machine's device ─────────────── */
 
@@ -470,17 +620,21 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     };
   }
 
-  closeDevice() { this.deviceDialog = null; this.loadMachines(false); }
+  closeDevice() {
+    if (this.deviceDialog?.working) return;
+    this.deviceDialog = null;
+    this.loadMachines(false);
+  }
 
   createToken() {
     const d = this.deviceDialog;
-    if (!d) return;
+    if (!d || d.working || !this.canManageDevice) return;
     if (d.machine.device_id && !d.confirmReplace) { d.confirmReplace = true; return; }
     const path = d.path.trim();
     if (!d.machine.program_path && !path) { d.error = 'Set the program path first — where the device saves programs on this machine.'; return; }
     d.error = '';
     d.working = true;
-    const issue = () => this.programs.createDeviceToken(d.machine.id, d.label.trim() || undefined).subscribe({
+    const issue = () => this.programs.createDeviceToken(d.machine.id, d.label.trim() || undefined).pipe(takeUntil(this.destroy$)).subscribe({
       next: res => {
         d.working = false; d.confirmReplace = false; d.token = res.data.token; d.showHelp = true;
         this.loadMachines(false); this.touch();
@@ -489,7 +643,7 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     });
     // a machine without a path gets it first, in the same step
     if (!d.machine.program_path) {
-      this.programs.setProgramPath(d.machine.id, path).subscribe({
+      this.programs.setProgramPath(d.machine.id, path).pipe(takeUntil(this.destroy$)).subscribe({
         next: () => { d.machine.program_path = path; issue(); },
         error: err => { d.working = false; d.error = err.error?.message || 'Could not save the path'; this.touch(); }
       });
@@ -500,11 +654,11 @@ export class ProgramsComponent implements OnInit, OnDestroy {
 
   revokeToken() {
     const d = this.deviceDialog;
-    if (!d) return;
+    if (!d || d.working || !this.canManageDevice) return;
     if (!d.confirmRevoke) { d.confirmRevoke = true; return; }
     d.working = true;
-    this.programs.revokeDeviceToken(d.machine.id).subscribe({
-      next: () => { this.toast.success(`${d.machine.machine_serial_no}'s device token revoked`); this.closeDevice(); this.touch(); },
+    this.programs.revokeDeviceToken(d.machine.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { d.working = false; this.toast.success(`${d.machine.machine_serial_no}'s device token revoked`); this.closeDevice(); this.touch(); },
       error: err => { d.working = false; this.toast.error(err.error?.message || 'Could not revoke the token'); this.touch(); }
     });
   }
@@ -581,8 +735,12 @@ export class ProgramsComponent implements OnInit, OnDestroy {
       `    path, name = job["program_path"], job["program_name"]`,
       `    if job["action"] == "SEND":                          # 3. NEW PROGRAM for the machine`,
       `        data = call("GET", "/jobs/%d/file" % job["id"])[1]`,
+      `        if len(data) != job["file"]["size"] or hashlib.sha256(data).hexdigest() != job["file"]["sha256"]:`,
+      `            result(job, "FAILED", "Download size or checksum mismatch"); continue`,
       `        old = read_from_machine(path, name)              # your FOCAS / FTP code`,
       `        if old is not None:`,
+      `            if not job.get("overwrite", False):`,
+      `                result(job, "FAILED", "Program exists; overwrite was not approved"); continue`,
       `            upload(old, "BACKUP", name, job["id"])       # 4. BACKUP first`,
       `        save_on_machine(path, name, data)                # your FOCAS / FTP code`,
       `        result(job, "DONE")`,
