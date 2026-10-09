@@ -6,7 +6,9 @@ import { test, expect } from './fixtures/auth';
  * share. The API serves the page in three parts (`part=` kpis, charts,
  * table), and a part is asked for only while it is on screen and out of date:
  *
- *   - the page opens on Charts and asks for the tiles and the charts alone;
+ *   - the page opens on Charts and asks for the tiles and the charts alone —
+ *     no table, and none of the lists only the details tab shows (the alarm
+ *     rules and the maintenance plan load when their buttons open them);
  *   - the details tab asks for its table once; back to Charts asks nothing;
  *   - a filter changed on the details tab loads the tiles and the table, and
  *     the charts follow, once, when Charts is next opened;
@@ -179,4 +181,102 @@ test('on a phone the open tab is in view and nothing is pushed sideways', async 
     expect(sideways).toBeLessThanOrEqual(1);
     await page.unrouteAll({ behavior: 'ignoreErrors' });
   }
+});
+
+/*
+ * Landing asks for the filter lists and the tiles and charts — nothing that
+ * only the details tab shows: not its table, and not the lists behind its
+ * Alarm rules and Create Ticket buttons, which load when those are opened.
+ */
+const detailsOnly = /\/api\/dashboard\/preventive\/thresholds|\/api\/dashboard\/periodic\/schedules|\/api\/downtime\/reasons/;
+
+for (const s of screens) {
+  test(`${s.title}: landing asks for nothing the details tab shows`, async ({ authedPage: page }) => {
+    const all: string[] = [];
+    page.on('request', (r: any) => { if (r.url().includes('/api/')) all.push(decodeURIComponent(r.url())); });
+    const seen = await open(page, s);
+    await expect.poll(() => seen.length).toBe(1);
+    await page.waitForTimeout(500);
+
+    expect(all.filter(u => detailsOnly.test(u))).toEqual([]);
+    const own = all.filter(u => s.api.test(u));
+    expect(own.map(partOf)).toEqual(['kpis,charts']);
+  });
+}
+
+test('Preventive: the alarm rules are asked for when shown, once', async ({ authedPage: page }) => {
+  const rules: string[] = [];
+  const seen = await open(page, screens[6], '/preventive-maintenance?view=details');
+  await page.route('**/api/dashboard/preventive/thresholds*', (r: any) => {
+    rules.push(r.request().url());
+    return r.fulfill(json({ status: 'success', data: [{ id: 1, alarm_type: 'SPINDLE OVERLOAD', threshold_count: 3, window_hours: 24, due_hours: 48, priority: 'HIGH', is_active: true }] }));
+  });
+  await expect.poll(() => seen.length).toBe(1);
+  await page.waitForTimeout(300);
+  expect(rules).toHaveLength(0);
+
+  const button = page.getByRole('button', { name: 'Alarm rules' });
+  await button.click();
+  await expect(page.getByRole('cell', { name: 'SPINDLE OVERLOAD' })).toBeVisible();
+  expect(rules).toHaveLength(1);
+
+  // hidden and shown again: the company's rules have not changed, nothing is asked
+  await page.getByRole('button', { name: 'Hide alarm rules' }).click();
+  await page.getByRole('button', { name: 'Alarm rules' }).click();
+  await expect(page.getByRole('cell', { name: 'SPINDLE OVERLOAD' })).toBeVisible();
+  await page.waitForTimeout(300);
+  expect(rules).toHaveLength(1);
+});
+
+test('Periodic: the plan is asked for when opened, and follows the machine while it is open', async ({ authedPage: page }) => {
+  const plans: string[] = [];
+  const seen = await open(page, screens[5]);
+  await page.route('**/api/dashboard/periodic/schedules*', (r: any) => {
+    plans.push(decodeURIComponent(r.request().url()));
+    return r.fulfill(json({ status: 'success', data: [] }));
+  });
+  await expect.poll(() => seen.length).toBe(1);
+  await page.waitForTimeout(300);
+  expect(plans).toHaveLength(0);
+
+  await page.getByRole('button', { name: 'Create Ticket' }).click();
+  await expect(page.getByRole('heading', { name: 'Maintenance Plan' })).toBeVisible();
+  await expect.poll(() => plans.length).toBe(1);
+  expect(plans[0]).not.toContain('machine_id');
+
+  await page.locator('#peMachine').selectOption({ label: 'CNC-02' });
+  await expect.poll(() => plans.length).toBe(2);
+  expect(plans[1]).toContain('machine_id=2');
+
+  // away to Charts and back: the plan for this machine is loaded already
+  await page.getByRole('tab', { name: 'Charts' }).click();
+  await page.getByRole('tab', { name: 'Maintenance Details' }).click();
+  await expect(page.getByRole('heading', { name: 'Maintenance Plan' })).toBeVisible();
+  await page.waitForTimeout(300);
+  expect(plans).toHaveLength(2);
+});
+
+test('the setup notes come with the tiles: no rule or plan list is loaded to know there is none', async ({ authedPage: page }) => {
+  const lists: string[] = [];
+  page.on('request', (r: any) => { if (detailsOnly.test(r.url())) lists.push(r.url()); });
+  await page.route('**/api/**', (r: any) => r.fulfill(json({ status: 'success', success: true, data: [] })));
+  await page.route('**/api/charts/meta*', (r: any) => r.fulfill(json(meta)));
+  await page.route(/\/api\/dashboard\/preventive\?/, (r: any) => r.fulfill(json({ status: 'success', data: {
+    updated_at: new Date().toISOString(), kpis: { rules: 0, pm_generated: 0 } } })));
+  await page.route(/\/api\/dashboard\/periodic\?/, (r: any) => r.fulfill(json({ status: 'success', data: {
+    updated_at: new Date().toISOString(), kpis: { plans: 0, scheduled: 0 } } })));
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  await page.goto('/preventive-maintenance');
+  await expect(page.getByText('No alarm rules yet')).toBeVisible();
+  await page.goto('/periodic-maintenance');
+  await expect(page.getByText('No maintenance plan yet')).toBeVisible();
+  expect(lists).toEqual([]);
+
+  // a company with rules sees no note
+  await page.route(/\/api\/dashboard\/preventive\?/, (r: any) => r.fulfill(json({ status: 'success', data: {
+    updated_at: new Date().toISOString(), kpis: { rules: 2, pm_generated: 0 } } })));
+  await page.goto('/preventive-maintenance');
+  await expect(page.locator('.mexa-kpi').first()).toBeVisible();
+  await expect(page.getByText('No alarm rules yet')).toHaveCount(0);
 });

@@ -58,7 +58,6 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy, DashViewHo
 
   machines: any[] = [];
   shifts: any[] = [];
-  reasons: any[] = [];
   f: any = this.blankFilters();
   page = 1;
   limit = 20;
@@ -101,13 +100,6 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy, DashViewHo
       .subscribe(res => {
         this.machines = res?.data?.machines ?? [];
         this.shifts   = res?.data?.shifts   ?? [];
-        this.cdr.markForCheck();
-      });
-
-    this.svc.getReasons()
-      .pipe(takeUntil(this.destroy$), catchError(() => of(null)))
-      .subscribe(res => {
-        this.reasons = res?.data ?? res ?? [];
         this.cdr.markForCheck();
       });
 

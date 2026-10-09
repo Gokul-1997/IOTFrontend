@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, Subscription, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { PeriodicDashboardService } from './periodic-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -74,6 +74,9 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
   /* ── the plan ── */
   schedules: any[] = [];
   showPlan = false;
+  /** The machine the plan's schedules were asked for; null until the plan is opened. */
+  private plansFor: string | null = null;
+  private plansSub = Subscription.EMPTY;
   savingSchedule = false;
   scheduleForm: any = this.blankSchedule();
 
@@ -125,7 +128,6 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
       .pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => { this.page = 1; this.load(); });
 
-    this.loadSchedules();
     this.load();
   }
 
@@ -149,6 +151,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
     this.showPlan = !this.showPlan;
     if (this.showPlan) {
       this.setView('details');
+      this.ensureSchedules();
       revealWhenShown('pePlan', 'pePlanTitle');
     }
     this.cdr.markForCheck();
@@ -164,7 +167,6 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
     this.statusFilter = '';
     this.dueFilter = '';
     this.page = 1;
-    this.loadSchedules();
     this.load();
   }
 
@@ -179,6 +181,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
   load(): void {
     this.errorMsg = '';
     this.views.load();
+    this.ensureSchedules();
     this.cdr.markForCheck();
   }
 
@@ -267,13 +270,28 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
 
   /* ── the plan ── */
 
-  loadSchedules(): void {
-    this.svc.getSchedules(this.selectedMachine)
-      .pipe(takeUntil(this.destroy$), catchError(() => of(null)))
+  /**
+   * The plan's schedules, asked for only while the plan is open and only
+   * when the machine has changed since — never on landing, and never by
+   * paging the tickets.
+   */
+  private ensureSchedules(): void {
+    const key = JSON.stringify([this.selectedMachine]);
+    if (!this.showPlan || this.plansFor === key) return;
+    this.plansFor = key;
+    this.plansSub.unsubscribe();
+    this.plansSub = this.svc.getSchedules(this.selectedMachine)
+      .pipe(takeUntil(this.destroy$), catchError(() => { this.plansFor = null; return of(null); }))
       .subscribe(res => {
         this.schedules = res?.data ?? [];
         this.cdr.markForCheck();
       });
+  }
+
+  /** A schedule was saved, stopped or generated from: the plan loads again when it is (or next is) open. */
+  private reloadSchedules(): void {
+    this.plansFor = null;
+    this.ensureSchedules();
   }
 
   blankSchedule() {
@@ -290,6 +308,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
       next_due_at: s.next_due_at ? String(s.next_due_at).slice(0, 10) : this.todayStr()
     };
     this.showPlan = true;
+    this.ensureSchedules();
     this.cdr.markForCheck();
   }
 
@@ -309,7 +328,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
           this.savingSchedule = false;
           this.scheduleForm = this.blankSchedule();
           this.toast.success('Schedule saved');
-          this.loadSchedules();
+          this.reloadSchedules();
           this.reloadAll();
         },
         error: err => {
@@ -325,7 +344,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
     this.svc.deleteSchedule(s.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => { this.toast.success('Schedule stopped'); this.loadSchedules(); this.reloadAll(); },
+        next: () => { this.toast.success('Schedule stopped'); this.reloadSchedules(); this.reloadAll(); },
         error: err => this.toast.error(err?.error?.message || 'Could not stop the schedule')
       });
   }
@@ -339,7 +358,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
         next: res => {
           this.running = false;
           this.toast.success(res?.message || 'Schedules evaluated');
-          this.loadSchedules();
+          this.reloadSchedules();
           this.reloadAll();
         },
         error: err => {
@@ -460,7 +479,8 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
   /** True when there is genuinely no plan yet, as opposed to a filter that
    *  happens to match nothing. */
   get isUnconfigured(): boolean {
-    return !!this.data && this.schedules.length === 0 && (this.data.kpis?.scheduled ?? 0) === 0;
+    // how many schedules the company has comes with the tiles, so the plan need not be loaded to know
+    return !!this.data && this.data.kpis?.plans === 0 && (this.data.kpis?.scheduled ?? 0) === 0;
   }
 
   /** Compliance has no value until something has actually come due. */

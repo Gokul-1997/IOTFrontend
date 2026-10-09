@@ -15,11 +15,6 @@ export class DowntimeDashboardService {
     return this.http.get<any>(`${this.api}/charts/meta`);
   }
 
-  /** The reason codes operators pick from, for the filter dropdown. */
-  getReasons(): Observable<any> {
-    return this.http.get<any>(`${this.api}/downtime/reasons`);
-  }
-
   /** Only filters the user actually set are sent — a blank one would
    *  otherwise narrow the query to rows with an empty value. */
   private toQuery(f: any): any {

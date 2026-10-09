@@ -379,7 +379,7 @@
           <input id="pvSearch" type="search" class="mexa-search" placeholder="Search ticket, machine or alarm"
                  [(ngModel)]="search" name="search" (ngModelChange)="onSearchInput()">
         </span>
-        <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="showRules = !showRules"
+        <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="toggleRules()"
                 [attr.aria-expanded]="showRules">
           <span class="material-icons" aria-hidden="true">rule</span>{{ showRules ? 'Hide alarm rules' : 'Alarm rules' }}
         </button>

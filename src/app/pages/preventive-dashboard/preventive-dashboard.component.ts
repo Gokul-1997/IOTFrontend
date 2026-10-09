@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, Subscription, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { PreventiveDashboardService } from './preventive-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ChartMemo } from '../../shared/chart-memo';
@@ -79,6 +79,9 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
   /* ── threshold rules ── */
   thresholds: any[] = [];
   showRules = false;
+  /** The rules were asked for (they are company-wide: once is enough until one changes). */
+  private rulesAsked = false;
+  private rulesSub = Subscription.EMPTY;
   savingRule = false;
   ruleForm: any = this.blankRule();
 
@@ -115,7 +118,6 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
       .pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => { this.page = 1; this.load(); });
 
-    this.loadThresholds();
     this.load();
   }
 
@@ -273,13 +275,29 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
 
   /* ── threshold rules ── */
 
-  loadThresholds(): void {
-    this.svc.getThresholds()
-      .pipe(takeUntil(this.destroy$), catchError(() => of(null)))
+  /** The Alarm rules button: the rules are asked for when they are first shown, never on landing. */
+  toggleRules(): void {
+    this.showRules = !this.showRules;
+    this.ensureRules();
+    this.cdr.markForCheck();
+  }
+
+  private ensureRules(): void {
+    if (!this.showRules || this.rulesAsked) return;
+    this.rulesAsked = true;
+    this.rulesSub.unsubscribe();
+    this.rulesSub = this.svc.getThresholds()
+      .pipe(takeUntil(this.destroy$), catchError(() => { this.rulesAsked = false; return of(null); }))
       .subscribe(res => {
         this.thresholds = res?.data ?? [];
         this.cdr.markForCheck();
       });
+  }
+
+  /** A rule was saved or deleted: the rules load again (they are on screen — that is where it happened). */
+  private reloadRules(): void {
+    this.rulesAsked = false;
+    this.ensureRules();
   }
 
   blankRule() {
@@ -300,7 +318,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
           this.savingRule = false;
           this.ruleForm = this.blankRule();
           this.toast.success('Rule saved');
-          this.loadThresholds();
+          this.reloadRules();
           this.reloadAll();
         },
         error: err => {
@@ -316,7 +334,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
     this.svc.deleteThreshold(r.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => { this.toast.success('Rule deleted'); this.loadThresholds(); this.reloadAll(); },
+        next: () => { this.toast.success('Rule deleted'); this.reloadRules(); this.reloadAll(); },
         error: err => this.toast.error(err?.error?.message || 'Could not delete the rule')
       });
   }
@@ -345,7 +363,8 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
   /** True when there is genuinely nothing to report yet, as opposed to a
    *  filter that happens to match nothing. */
   get isUnconfigured(): boolean {
-    return !!this.data && this.thresholds.length === 0 && (this.data.kpis?.pm_generated ?? 0) === 0;
+    // how many rules the company has comes with the tiles, so the rules need not be loaded to know
+    return !!this.data && this.data.kpis?.rules === 0 && (this.data.kpis?.pm_generated ?? 0) === 0;
   }
 
   hours(v: number | null | undefined): string {
