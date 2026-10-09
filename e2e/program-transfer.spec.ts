@@ -1,233 +1,265 @@
+import type { Page } from '@playwright/test';
 import { test, expect, seedAuth } from './fixtures/auth';
 
-/*
- * Program Transfer through each machine's device. The server keeps the files
- * (ProgramTransfer/<company>/<machine IP>/) and hands out jobs; the device at
- * the machine collects them. So the page shows the device's state, sends by
- * queueing a job ("Waiting for the device"), asks before overwriting what the
- * device reported on the controller, and gives out a device token once.
- */
+const localOrigin = 'http://127.0.0.1:4495';
+const ago = (seconds: number) => new Date(Date.now() - seconds * 1000).toISOString();
+const response = (data: unknown, status = 200) => ({ status, json: { status: 'success', data } });
+const file = (machine: number, id: number, name: string, kind = 'NEW', current = false) => ({
+  id, machine_id: machine, machine_serial_no: `VMC-${machine - 6}`, folder: `company-4/machine-${machine}`,
+  stored_name: `${id}_${kind}_${name}`, program_name: name, kind, size_bytes: 2048,
+  sha256: 'a'.repeat(64), note: null, job_id: null, created_at: ago(60), uploaded_by_name: 'Operator', is_current: current
+});
+type FileRow = ReturnType<typeof file>;
+function gate() {
+  let release!: () => void;
+  const promise = new Promise<void>(resolve => { release = resolve; });
+  return { promise, release };
+}
+async function fixtures(page: Page) {
+  const state = {
+    machines: [7, 8].map((id, index) => ({ id, machine_serial_no: `VMC-${index + 1}`, ip_address: null,
+      program_path: null, folder: `company-4/machine-${id}`, device_id: index === 0 ? 3 : null,
+      device_label: 'CNC device', token_prefix: 'mxd_example', device_created_at: ago(86400),
+      last_seen_at: ago(5), last_seen_ip: '192.0.2.10', agent_version: null, online: index === 0,
+      open_jobs: 0, controller_reported_at: null })),
+    current: { 7: file(7, 40, 'O1234.nc', 'NEW', true), 8: file(8, 50, 'O8000.nc', 'NEW', true) } as Record<number, FileRow | null>,
+    backups: { 7: [file(7, 60, 'O2001.nc', 'BACKUP')], 8: [] } as Record<number, FileRow[]>,
+    files: { 7: [file(7, 40, 'O1234.nc', 'NEW', true), file(7, 39, 'O1000.nc')], 8: [file(8, 50, 'O8000.nc', 'NEW', true)] } as Record<number, FileRow[]>,
+    requests: [] as { method: string; path: string }[], downloads: [] as number[]
+  };
+  await page.routeWebSocket(/.*/, socket => socket.close());
+  await page.route('**/*', async route => {
+    const request = route.request(), url = new URL(request.url()), path = url.pathname;
+    if (!path.startsWith('/api/')) return url.origin === localOrigin ? route.continue() : route.abort();
+    state.requests.push({ method: request.method(), path });
+    if (path === '/api/auth/refresh') {
+      // Fake clocks clamp the shared year-long seed's refresh timer. Return a realistic local token.
+      const jwt = `eyJhbGciOiJIUzI1NiJ9.${Buffer.from(JSON.stringify({ sub: '1', exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url')}.e2e`;
+      return route.fulfill({ json: { accessToken: jwt, refreshToken: jwt } });
+    }
+    if (path === '/api/programs/machines') return route.fulfill(response(state.machines));
+    const current = path.match(/^\/api\/programs\/machines\/(\d+)\/current-program$/);
+    if (current && request.method() === 'GET') return route.fulfill(response({ file: state.current[Number(current[1])] || null }));
+    if (path === '/api/programs/files' && request.method() === 'GET') {
+      const id = Number(url.searchParams.get('machine_id'));
+      const data = url.searchParams.get('kind') === 'BACKUP' ? state.backups[id] : state.files[id];
+      return route.fulfill({ json: { data: data || [], total: data?.length || 0 } });
+    }
+    const download = path.match(/^\/api\/programs\/files\/(\d+)\/download$/);
+    if (download) {
+      state.downloads.push(Number(download[1]));
+      return route.fulfill({ contentType: 'application/octet-stream', body: '%\nO2001\nM30\n%\n' });
+    }
+    return route.fulfill(response([]));
+  });
+  return state;
+}
+const currentCard = (page: Page) => page.getByRole('region', { name: 'Current program', exact: true });
+const choose = (page: Page, machine: string) => page.getByLabel('CNC Machine').selectOption({ label: machine });
+async function openUpload(page: Page) {
+  await page.getByRole('button', { name: 'Upload program', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Upload program', exact: true });
+  await dialog.getByLabel(/G-code file/).setInputFiles({ name: 'O3000.nc', mimeType: 'text/plain', buffer: Buffer.from('%\nO3000\nM30\n%\n') });
+  return dialog;
+}
 
-const ok = (body: any, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) });
-const ago = (s: number) => new Date(Date.now() - s * 1000).toISOString();
+test('upload publishes one current file directly with no job request or send checkbox', async ({ authedPage: page }) => {
+  const state = await fixtures(page);
+  let body = '';
+  await page.route('**/api/programs/machines/7/current-program', route => {
+    if (route.request().method() === 'GET') return route.fallback();
+    body = route.request().postData() || '';
+    state.current[7] = file(7, 61, 'O3000.nc', 'NEW', true);
+    return route.fulfill(response({ file: state.current[7] }, 201));
+  });
+  await page.goto('/programs');
+  const dialog = await openUpload(page);
+  await expect(dialog).toContainText('VMC-1');
+  await expect(dialog.getByRole('checkbox')).toHaveCount(0);
+  await expect(dialog.getByRole('combobox')).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Upload', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(currentCard(page)).toContainText('O3000.nc');
+  await expect(currentCard(page)).toContainText('Ready for machine download');
+  expect(body).toContain('filename="O3000.nc"');
+  expect(body).not.toContain('name="send"');
+  expect(state.requests.filter(r => /jobs|controller-files/.test(r.path))).toEqual([]);
+  await expect(page.getByRole('tablist')).toHaveCount(0);
+  await page.getByText('API guide', { exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Download API guide', exact: true })).toHaveAttribute('href', '/integrations/PROGRAM_TRANSFER_DEVICE_API.md');
+  await expect(page.locator('a[href*="postman"], a[href*="PROGRAM_TRANSFER_QUICKSTART"]')).toHaveCount(0);
+});
 
-const machines = [
-  { id: 7, machine_serial_no: 'VMC-1', ip_address: '192.168.200.3', program_path: '//CNC_MEM/USER/PATH1/', folder: 'company-5/192.168.200.3', device_id: 3,
-    token_prefix: 'mxd_AbCdEfGh', device_label: 'Pi at VMC-1', device_created_at: ago(86400), last_seen_at: ago(12),
-    last_seen_ip: '203.0.113.9', agent_version: '1.0.0', online: true, open_jobs: 0, controller_reported_at: ago(90) },
-  { id: 8, machine_serial_no: 'VMC-2', ip_address: '192.168.200.4', program_path: null, folder: 'company-5/192.168.200.4', device_id: null,
-    token_prefix: null, device_label: null, device_created_at: null, last_seen_at: null, last_seen_ip: null,
-    agent_version: null, online: false, open_jobs: 0, controller_reported_at: null }
-];
-const files = [
-  { id: 40, machine_id: 7, machine_serial_no: 'VMC-1', folder: 'company-5/192.168.200.3', stored_name: '20261005-103012_NEW_O1234.nc',
-    program_name: 'O1234.nc', kind: 'NEW', size_bytes: 2048, sha256: 'a'.repeat(64), note: 'rev C', job_id: null, created_at: ago(3600), uploaded_by_name: 'Priya' },
-  { id: 41, machine_id: 7, machine_serial_no: 'VMC-1', folder: 'company-5/192.168.200.3', stored_name: '20261005-103020_BACKUP_O1234.nc',
-    program_name: 'O1234.nc', kind: 'BACKUP', size_bytes: 1990, sha256: 'b'.repeat(64), note: null, job_id: 1, created_at: ago(3500), uploaded_by_name: null }
-];
-const job = (o: any = {}) => ({ id: 11, machine_id: 7, machine_serial: 'VMC-1', action: 'SEND', program_name: 'O1234.nc', overwrite: false,
-  program_path: '//CNC_MEM/USER/PATH1/', target_file: '//CNC_MEM/USER/PATH1/O1234.nc',
-  status: 'QUEUED', message: null, file_id: 40, file_name: '20261005-103012_NEW_O1234.nc', backup_file_id: null, backup_name: null,
-  file_size: 2048, requested_by_name: 'Priya', requested_at: ago(5), delivered_at: null, finished_at: null, ...o });
+test('publishing works before a device token or controller path is configured', async ({ authedPage: page }) => {
+  await fixtures(page);
+  let calls = 0;
+  await page.route('**/api/programs/machines/8/current-program', route => {
+    if (route.request().method() === 'GET') return route.fallback();
+    calls++;
+    return route.fulfill(response({ file: file(8, 62, 'O3000.nc', 'NEW', true) }, 201));
+  });
+  await page.goto('/programs');
+  await choose(page, 'VMC-2');
+  const dialog = await openUpload(page);
+  await expect(dialog).toContainText('VMC-2');
+  await dialog.getByRole('button', { name: 'Upload', exact: true }).click();
+  await expect(currentCard(page)).toContainText('O3000.nc');
+  expect(calls).toBe(1);
+});
 
-async function stub(page: any, opts: { open?: any[]; history?: any[] } = {}) {
-  await page.routeWebSocket(/.*/, (socket: any) => socket.close());
-  await page.route('**/*', (route: any) => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
-  await page.route('**/api/**', (r: any) => r.fulfill(ok({ status: 'success', data: [] })));
-  await page.route('**/api/programs/machines', (r: any) => r.fulfill(ok({ status: 'success', data: machines })));
-  await page.route('**/api/programs/machines/*/controller-files', (r: any) => r.fulfill(ok({ status: 'success', data: {
-    files: [{ name: 'O1234.nc', size: 2010, modified: ago(7200), comment: null }, { name: 'O2001', size: 512, modified: null, comment: 'FLANGE' }],
-    reported_at: ago(90) } })));
-  await page.route('**/api/programs/files?*', (r: any) => r.fulfill(ok({ status: 'success', data: files, total: files.length })));
-  await page.route('**/api/programs/jobs?*', (r: any) => {
-    const open = new URL(r.request().url()).searchParams.get('status') === 'open';
-    const data = open ? (opts.open || []) : (opts.history || opts.open || []);
-    return r.fulfill(ok({ status: 'success', data, total: data.length }));
+test('Backup downloads the latest machine backup without changing the current program', async ({ authedPage: page }) => {
+  const state = await fixtures(page);
+  await page.goto('/programs');
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Backup', exact: true }).click();
+  expect((await download).suggestedFilename()).toBe('O2001.nc');
+  expect(state.downloads).toEqual([60]);
+  await expect(currentCard(page)).toContainText('O1234.nc');
+  expect(state.requests.filter(r => r.method === 'POST' && r.path.startsWith('/api/programs'))).toEqual([]);
+});
+
+test('no publication and no backup are shown honestly, without manufacturing a current file from history', async ({ authedPage: page }) => {
+  const state = await fixtures(page);
+  state.current[7] = null; state.backups[7] = [];
+  await page.goto('/programs');
+  await expect(currentCard(page)).toContainText('No current program');
+  await expect(page.getByRole('button', { name: 'Backup', exact: true })).toBeDisabled();
+  await page.getByText('Previous files and backups', { exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Saved files and backups' })).toContainText('O1000.nc');
+});
+
+test('a pending upload locks the form and cannot submit twice', async ({ authedPage: page }) => {
+  await fixtures(page);
+  const pending = gate(); let posts = 0;
+  await page.route('**/api/programs/machines/7/current-program', async route => {
+    if (route.request().method() === 'GET') return route.fallback();
+    posts++; await pending.promise;
+    return route.fulfill(response({ file: file(7, 61, 'O3000.nc', 'NEW', true) }, 201));
+  });
+  await page.goto('/programs');
+  const dialog = await openUpload(page);
+  await dialog.getByRole('button', { name: 'Upload', exact: true }).click();
+  await expect(dialog.getByLabel(/G-code file/)).toBeDisabled();
+  await expect(dialog.getByRole('button', { name: 'Close upload' })).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Uploading…', exact: true }).dispatchEvent('click');
+  pending.release();
+  await expect(dialog).toHaveCount(0);
+  expect(posts).toBe(1);
+});
+
+test('upload failure leaves the previous current program and shows the error in the dialog', async ({ authedPage: page }) => {
+  await fixtures(page);
+  await page.route('**/api/programs/machines/7/current-program', route => route.request().method() === 'GET' ? route.fallback() : route.fulfill({ status: 422, json: { message: 'The file is not a text NC program.' } }));
+  await page.goto('/programs');
+  const dialog = await openUpload(page);
+  await dialog.getByRole('button', { name: 'Upload', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('not a text NC program');
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(currentCard(page)).toContainText('O1234.nc');
+});
+
+test('failed current-program lookup is not presented as an empty machine', async ({ authedPage: page }) => {
+  await fixtures(page);
+  await page.route('**/api/programs/machines/7/current-program', route => route.fulfill({ status: 500, json: { message: 'Current program is temporarily unavailable.' } }));
+  await page.goto('/programs');
+  await expect(currentCard(page).getByRole('alert')).toContainText('temporarily unavailable');
+  await expect(currentCard(page)).not.toContainText('No current program');
+});
+
+test('switching machines discards old current, backup and file responses', async ({ authedPage: page }) => {
+  await fixtures(page);
+  const pending = gate(); let waiting = 0;
+  await page.route('**/api/programs/machines/7/current-program', async route => {
+    waiting++; await pending.promise; await route.fulfill(response({ file: file(7, 40, 'OLD.nc') })).catch(() => {});
+  });
+  await page.route('**/api/programs/files?*', async route => {
+    if (new URL(route.request().url()).searchParams.get('machine_id') !== '7') return route.fallback();
+    waiting++; await pending.promise; await route.fulfill({ json: { data: [file(7, 99, 'OLD.nc')], total: 1 } }).catch(() => {});
+  });
+  await page.goto('/programs');
+  await expect.poll(() => waiting).toBe(3);
+  await choose(page, 'VMC-2');
+  await expect(currentCard(page)).toContainText('O8000.nc');
+  pending.release();
+  await page.getByText('Previous files and backups', { exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Saved files and backups' })).toContainText('O8000.nc');
+  await expect(page.getByText('OLD.nc', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Backup', exact: true })).toBeDisabled();
+});
+
+test('visible polling updates current program and backup without any job or socket', async ({ authedPage: page }) => {
+  await page.clock.install();
+  const state = await fixtures(page);
+  await page.goto('/programs');
+  await expect(currentCard(page)).toContainText('O1234.nc');
+  state.current[7] = file(7, 70, 'NEW.nc', 'NEW', true);
+  state.backups[7] = [file(7, 71, 'MACHINE.nc', 'BACKUP')];
+  await page.clock.runFor(10_100);
+  await expect(currentCard(page)).toContainText('NEW.nc');
+  await expect(page.getByRole('region', { name: 'Machine backup', exact: true })).toContainText('MACHINE.nc');
+  expect(state.requests.filter(r => r.path.includes('/jobs'))).toEqual([]);
+});
+
+for (const role of ['read-only', 'upload-only']) {
+  test(`${role} permissions cannot publish or change machine credentials`, async ({ page }) => {
+    const permissions = ['page:programs:view', 'machine.view', ...(role === 'upload-only' ? ['page:programs:upload'] : [])];
+    await seedAuth(page, { roles: ['SETTER'], permissions, company_permissions: permissions });
+    await fixtures(page); await page.goto('/programs');
+    await expect(currentCard(page)).toContainText('O1234.nc');
+    await expect(page.getByRole('button', { name: 'Upload program', exact: true })).toHaveCount(0);
+    await page.getByText('Machine connection', { exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Device token', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^Delete / })).toHaveCount(0);
   });
 }
 
-test('the machine, its device and its program path are shown first — not the server folder', async ({ authedPage: page }) => {
-  await stub(page);
-  await page.goto('/programs');
-  await expect(page.getByLabel('CNC Machine')).toHaveValue(/./);
-  await expect(page.getByRole('status').filter({ hasText: 'Device online' })).toBeVisible();
-  await page.getByText('Machine setup', { exact: true }).click();
-  await expect(page.getByText('Program path on the machine')).toBeVisible();
-  await expect(page.getByText('//CNC_MEM/USER/PATH1/', { exact: true })).toBeVisible();
-  await expect(page.getByText(/ProgramTransfer\//)).toHaveCount(0);
-  await expect(page.getByText('20261005-103020_BACKUP_O1234.nc')).toBeVisible();
-  await page.getByRole('tab', { name: 'Get from machine', exact: true }).click();
-  await expect(page.getByRole('region', { name: /on the machine's controller/ }).getByText('O2001')).toBeVisible();
-  await page.getByRole('tab', { name: 'Send to machine', exact: true }).click();
-
-  // a machine without a device or a program path says so, and sends nothing
-  await page.getByLabel('CNC Machine').selectOption({ label: 'VMC-2 — 192.168.200.4' });
-  await expect(page.getByRole('status').filter({ hasText: 'No device linked' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Link a device' })).toBeVisible();
-  await expect(page.getByText('Not set', { exact: true })).toBeVisible();
-  await expect(page.getByRole('status').filter({ hasText: 'Set a program path' })).toBeVisible();
-  await page.getByRole('checkbox', { name: 'Select 20261005-103012_NEW_O1234.nc' }).check();
-  await expect(page.getByRole('button', { name: 'Send selected (1)', exact: true })).toBeDisabled();
-});
-
-test('the program path is set right there, for the machine', async ({ authedPage: page }) => {
-  await stub(page);
-  let put: any = null;
-  await page.route('**/api/machines/8', (r: any) => { put = r.request().postDataJSON(); return r.fulfill(ok({ status: 'success', data: {} })); });
-  await page.goto('/programs');
-  await page.getByLabel('CNC Machine').selectOption({ label: 'VMC-2 — 192.168.200.4' });
-  await page.getByRole('button', { name: 'Set the program path for VMC-2' }).click();
-  // empty is not a path
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('Enter the folder on the machine');
-  await page.getByLabel('Program path on the machine').fill('M01:\\PRG\\USER\\');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect.poll(() => put).toEqual({ program_path: 'M01:\\PRG\\USER\\' });
-});
-
-test('send queues a job; a program already on the machine asks before overwriting', async ({ authedPage: page }) => {
-  await stub(page);
-  const posts: any[] = [];
-  await page.route('**/api/programs/jobs', (r: any) => {
-    const body = r.request().postDataJSON();
-    posts.push(body);
-    return body.overwrite
-      ? r.fulfill(ok({ status: 'success', data: { jobs: [job({ overwrite: true })] } }, 201))
-      : r.fulfill(ok({ status: 'error', code: 'FILE_EXISTS', names: ['O1234.nc on VMC-1'], message: 'Already on the machine' }, 409));
+test('current file cannot be deleted, and creating a device token requires no program path', async ({ authedPage: page }) => {
+  const state = await fixtures(page);
+  let body: unknown;
+  await page.route('**/api/programs/machines/8/device-token', route => {
+    body = route.request().postDataJSON();
+    return route.fulfill(response({ token: 'mxd_' + 'x'.repeat(43), device: {} }, 201));
   });
   await page.goto('/programs');
-  await page.getByRole('checkbox', { name: 'Select 20261005-103012_NEW_O1234.nc' }).check();
-  await page.getByRole('button', { name: 'Send selected (1)', exact: true }).click();
-
-  const dialog = page.getByRole('dialog', { name: 'Already on the machine' });
-  await expect(dialog).toContainText('O1234.nc on VMC-1');
-  await expect(dialog).toContainText('saves the existing one as a Backup');
-  await dialog.getByRole('button', { name: 'Overwrite' }).click();
-
-  await expect(dialog).toHaveCount(0);
-  expect(posts).toEqual([
-    { action: 'SEND', file_ids: [40], machine_ids: [7], overwrite: false },
-    { action: 'SEND', file_ids: [40], machine_ids: [7], overwrite: true }
-  ]);
-});
-
-test('jobs still with the device are listed, and a queued one can be cancelled', async ({ authedPage: page }) => {
-  await stub(page, { open: [job(), job({ id: 12, action: 'FETCH', program_name: 'O2001', status: 'DELIVERED', file_id: null })] });
-  let cancelled = false;
-  await page.route('**/api/programs/jobs/11/cancel', (r: any) => { cancelled = true; return r.fulfill(ok({ status: 'success', data: job({ status: 'CANCELLED' }) })); });
-  await page.goto('/programs');
-  const inProgress = page.locator('.pt-jobs');
-  await expect(inProgress).toContainText('Waiting for the device');
-  await expect(inProgress).toContainText('Taken by the device');
-  // the device has already taken the FETCH: no cancel for it
-  await expect(page.getByRole('button', { name: 'Cancel O2001' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Cancel O1234.nc' }).click();
-  await expect.poll(() => cancelled).toBe(true);
-});
-
-test('Get asks the device for a program on the controller', async ({ authedPage: page }) => {
-  await stub(page);
-  let body: any = null;
-  await page.route('**/api/programs/jobs', (r: any) => { body = r.request().postDataJSON(); return r.fulfill(ok({ status: 'success', data: { jobs: [job({ action: 'FETCH' })] } }, 201)); });
-  await page.goto('/programs');
-  await page.getByRole('tab', { name: 'Get from machine', exact: true }).click();
-  await page.getByRole('button', { name: 'Get O2001', exact: true }).click();
-  await expect.poll(() => body).toEqual({ action: 'FETCH', machine_id: 7, program_names: ['O2001'] });
-});
-
-test('upload goes into the chosen machine\'s folder and can be sent at once', async ({ authedPage: page }) => {
-  await stub(page);
-  let sent = '';
-  await page.route('**/api/programs/files', (r: any) => {
-    sent = r.request().postData() || '';
-    return r.fulfill(ok({ status: 'success', data: { file: files[0], job: job() }, message: 'Uploaded and queued' }, 201));
-  });
-  await page.goto('/programs');
-  await page.getByRole('button', { name: 'Send a new file', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Send a program', exact: true });
-  await dialog.getByLabel(/G-code file/).setInputFiles({ name: 'O3000.nc', mimeType: 'text/plain', buffer: Buffer.from('%\nO3000\nM30\n%\n') });
-  await dialog.getByText('Program name and note (optional)', { exact: true }).click();
-  await expect(dialog.getByLabel('Name on the machine')).toHaveValue('O3000.nc');
-  await expect(dialog.getByRole('checkbox', { name: /Send it to VMC-1 now/ })).toBeChecked();
-  await expect(dialog).toContainText('The device saves it at //CNC_MEM/USER/PATH1/O3000.nc');
-  await dialog.getByRole('button', { name: 'Send program', exact: true }).click();
-  await expect(dialog).toHaveCount(0);
-  for (const part of ['name="machine_id"\r\n\r\n7', 'name="send"\r\n\r\ntrue', 'name="overwrite"\r\n\r\nfalse', 'filename="O3000.nc"']) {
-    expect(sent).toContain(part);
-  }
-});
-
-test('a device token is shown once, as the device\'s configuration', async ({ authedPage: page }) => {
-  await stub(page);
-  await page.route('**/api/programs/machines/7/device-token', (r: any) => r.fulfill(ok({ status: 'success',
-    data: { token: 'mxd_' + 'x'.repeat(43), device: { id: 4 } } }, 201)));
-  await page.goto('/programs');
-  await page.getByText('Machine setup', { exact: true }).click();
-  await page.getByRole('button', { name: 'Device token' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Device at VMC-1' });
-  await expect(dialog).toContainText('mxd_AbCdEfGh…');
-  await expect(dialog).toContainText('203.0.113.9');
-
-  // replacing a live token takes a second, explicit yes
-  await dialog.getByRole('button', { name: 'New token' }).click();
-  await expect(dialog.getByRole('alert')).toContainText('stops working at once');
-  await dialog.getByRole('button', { name: 'Yes, replace it' }).click();
-
-  const config = dialog.getByLabel('Device configuration');
-  await expect(config).toContainText('MEXA_URL=http://localhost:8000');
-  await expect(config).toContainText('MEXA_DEVICE_TOKEN=mxd_' + 'x'.repeat(43));
-  await expect(dialog).toContainText('shown only once');
-
-  // how to use it comes with it: which call does what, and samples holding this token and path
-  const help = dialog.getByRole('region', { name: 'How the device uses the token' });
-  await expect(help.getByRole('table')).toContainText('POST /files with type=BACKUP');
-  await expect(help.getByRole('table')).toContainText('POST /files with type=FETCHED');
-  await expect(help.getByLabel('Python sample')).toContainText('TOKEN = "mxd_' + 'x'.repeat(43) + '"');
-  await help.getByRole('button', { name: 'curl', exact: true }).click();
-  await expect(help.getByLabel('curl sample')).toContainText('-F type=BACKUP');
-  await expect(help.getByLabel('curl sample')).toContainText('//CNC_MEM/USER/PATH1/O1234.nc');
-});
-
-test('a machine without a program path gets one before its device token', async ({ authedPage: page }) => {
-  await stub(page);
-  const calls: string[] = [];
-  await page.route('**/api/machines/8', (r: any) => { calls.push('path ' + r.request().postDataJSON().program_path); return r.fulfill(ok({ status: 'success', data: {} })); });
-  await page.route('**/api/programs/machines/8/device-token', (r: any) => { calls.push('token'); return r.fulfill(ok({ status: 'success', data: { token: 'mxd_' + 'y'.repeat(43), device: {} } }, 201)); });
-  await page.goto('/programs');
-  await page.getByLabel('CNC Machine').selectOption({ label: 'VMC-2 — 192.168.200.4' });
-  await page.getByRole('button', { name: 'Link a device' }).click();
+  await page.getByText('Previous files and backups', { exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Delete 40_NEW_O1234.nc', exact: true })).toHaveCount(0);
+  await choose(page, 'VMC-2');
+  await page.getByText('Machine connection', { exact: true }).click();
+  await page.getByRole('button', { name: 'Create device token', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Device at VMC-2' });
-  await expect(dialog.getByRole('button', { name: 'Create token' })).toBeDisabled();
-  await dialog.getByLabel(/Program path on the machine/).fill('//CNC_MEM/USER/PATH1/');
-  await dialog.getByRole('button', { name: 'Create token' }).click();
-  await expect(dialog.getByLabel('Device configuration')).toContainText('mxd_' + 'y'.repeat(43));
-  expect(calls).toEqual(['path //CNC_MEM/USER/PATH1/', 'token']);
+  await expect(dialog.getByLabel(/Program path/)).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Create token', exact: true }).click();
+  await expect(dialog.getByLabel('Device configuration')).toContainText('mxd_' + 'x'.repeat(43));
+  expect(body).toEqual({ label: 'CNC device' });
+  expect(state.requests.some(r => r.method === 'PUT')).toBe(false);
 });
 
-test('a role that may only look sees no upload, send, get, delete or device controls', async ({ page }) => {
-  await seedAuth(page, { roles: ['SETTER'], permissions: ['page:programs:view', 'machine.view'], company_permissions: ['page:programs:view'] });
-  await stub(page);
+test('replacing a device token asks explicitly before invalidating the old token', async ({ authedPage: page }) => {
+  await fixtures(page); let calls = 0;
+  await page.route('**/api/programs/machines/7/device-token', route => {
+    calls++; return route.fulfill(response({ token: 'mxd_' + 'x'.repeat(43), device: {} }, 201));
+  });
   await page.goto('/programs');
-  await expect(page.getByText('20261005-103012_NEW_O1234.nc')).toBeVisible();
-  for (const name of ['Send a new file', /^Send O/, 'Device token']) {
-    await expect(page.getByRole('button', { name })).toHaveCount(0);
+  await page.getByText('Machine connection', { exact: true }).click();
+  await page.getByRole('button', { name: 'Device token', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Device at VMC-1' });
+  await dialog.getByRole('button', { name: 'New token', exact: true }).click();
+  expect(calls).toBe(0);
+  await dialog.getByRole('button', { name: 'Yes, replace it', exact: true }).click();
+  await expect(dialog.getByLabel('Device configuration')).toBeVisible();
+  expect(calls).toBe(1);
+});
+
+test('the compact screen and upload dialog fit phones, tablets and desktop', async ({ authedPage: page }, testInfo) => {
+  await fixtures(page); await page.goto('/programs');
+  await expect(currentCard(page)).toContainText('O1234.nc');
+  for (const width of [360, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    if (width === 390 || width === 1440) await page.screenshot({ path: testInfo.outputPath(`programs-${width}.png`), fullPage: true, animations: 'disabled' });
   }
-  await expect(page.getByRole('button', { name: /^Delete / })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /^Get O/ })).toHaveCount(0);
-  await expect(page.getByRole('checkbox')).toHaveCount(0);
-  await expect(page.getByText('Sending to a machine is not part of your role.')).toBeVisible();
-});
-
-test('the history says what happened, including the program kept before an overwrite', async ({ authedPage: page }) => {
-  await stub(page, { history: [
-    job({ status: 'DONE', overwrite: true, backup_name: '20261005-103020_BACKUP_O1234.nc', finished_at: ago(1) }),
-    job({ id: 12, action: 'FETCH', program_name: 'MISSING.nc', status: 'FAILED', message: 'MISSING.nc is not on the controller.', file_id: null, file_name: null })
-  ] });
-  await page.goto('/programs');
-  await page.getByRole('tab', { name: /Transfer History/ }).click();
-  const table = page.getByRole('region', { name: 'Transfer history' });
-  await expect(table).toContainText('To VMC-1');
-  await expect(table).toContainText('From VMC-1');
-  await expect(table).toContainText('MISSING.nc is not on the controller.');
-  await expect(table.getByTitle('20261005-103020_BACKUP_O1234.nc')).toContainText('Backup kept');
+  await page.setViewportSize({ width: 390, height: 844 });
+  const dialog = await openUpload(page);
+  await expect(dialog).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
