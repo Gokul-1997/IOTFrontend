@@ -24,6 +24,8 @@ export class PreventiveDashboardService {
     search?: string;
     page?: number;
     limit?: number;
+    /** Which parts: 'kpis', 'charts', 'table', comma-separated (Backend dashboard/parts.js). */
+    part?: string;
   }): Observable<any> {
     const query: any = {};
     if (params.from)       query.from       = params.from;
@@ -32,6 +34,8 @@ export class PreventiveDashboardService {
     if (params.search)     query.search     = params.search;
     if (params.page)       query.page       = params.page;
     if (params.limit)      query.limit      = params.limit;
+    // which parts of the dashboard: the tiles, the charts, the tables (Backend dashboard/parts.js)
+    if (params.part)       query.part       = params.part;
     return this.http.get<any>(`${this.api}/dashboard/preventive`, { params: query });
   }
 

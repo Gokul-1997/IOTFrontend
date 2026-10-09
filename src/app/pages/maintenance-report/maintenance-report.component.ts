@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
+import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { MaintenanceReportService } from './maintenance-report.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -15,6 +15,14 @@ import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl } from '../../shared/dash-view/dash-view';
+import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
+
+/** Charts | Ticket Details (Machine Summary and Maintenance Tickets), under the tiles both share. */
+const TABS: DashTab[] = [
+  { key: 'charts',  label: 'Charts',         icon: 'bar_chart',  parts: ['kpis', 'charts'] },
+  { key: 'details', label: 'Ticket Details', icon: 'table_rows', parts: ['kpis', 'table'] }
+];
 
 /* ─────────────────────────────────────────────────────────────
    Maintenance Report
@@ -29,10 +37,16 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 @Component({
   selector: 'app-maintenance-report',
   standalone: true,
-  imports: [MexaPagerComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './maintenance-report.component.html'
 })
-export class MaintenanceReportComponent implements OnInit, OnDestroy {
+export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHooks {
+
+  /* ── Charts | Ticket Details ──
+     Each part of the page is asked for only while it is on screen and out
+     of date (shared/dash-view). */
+  private url = viewInUrl(TABS);
+  readonly views = new DashViews(this, TABS, this.url.initial);
 
   private charts = new ChartMemo();
 
@@ -45,8 +59,10 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy {
   page = 1;
   readonly limit = 20;
 
+  /** The page's data, each part merged in as it arrives. */
   data: any = null;
-  loading = false;
+  /** Something on screen is waiting for its data ("Updating…"). */
+  get loading(): boolean { return this.views.loading; }
   errorMsg = '';
   updatedAt = '';
   exporting = '';
@@ -56,8 +72,6 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy {
   typeSeries: number[] = [];    typeLabels: string[] = [];
 
   private destroy$ = new Subject<void>();
-  /** The request on its way; a newer filter choice replaces it, so an older answer can never land last. */
-  private loadSub?: Subscription;
   private search$ = new RxSubject<string>();
 
   constructor(
@@ -85,7 +99,16 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy {
     this.load();
   }
 
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
+  ngOnDestroy(): void { this.views.cancel(); this.destroy$.next(); this.destroy$.complete(); }
+
+  /** Open a tab; nothing is asked for that is already up to date. */
+  setView(tab: string): void {
+    if (tab === this.views.tab) return;
+    this.errorMsg = '';
+    this.views.show(tab);
+    this.url.write(tab);
+    this.cdr.markForCheck();
+  }
 
   blankFilters() {
     const today = this.todayStr();
@@ -104,31 +127,51 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy {
     this.load();
   }
 
+  /** Bring what is on screen up to date with the filters; the other tab follows when it is opened. */
   load(): void {
-    this.loading = true;
     this.errorMsg = '';
+    this.views.load();
     this.cdr.markForCheck();
-
-    this.loadSub?.unsubscribe();
-    this.loadSub = this.svc.getReport({ ...this.f, page: this.page, limit: this.limit })
-      .pipe(takeUntil(this.destroy$), catchError(err => {
-        this.errorMsg = err?.error?.message || 'Unable to load the maintenance report.';
-        return of(null);
-      }))
-      .subscribe(res => this.apply(res));
   }
 
-  private apply(res: any): void {
-    this.charts.bump();
-    this.loading = false;
-    if (!res || res.status !== 'success' || !res.data) {
-      if (!this.errorMsg) this.errorMsg = 'No maintenance data available.';
-      this.cdr.markForCheck();
-      return;
-    }
+  /* What each part depends on: the tiles and charts on the filters (the
+     ticket search narrows them too); the tables on those and the page. */
+  partKeys(): Record<DashPart, string> {
+    const shared = JSON.stringify(this.f);
+    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.page, this.limit]) };
+  }
 
-    const d = this.data = this.normalise(res.data);
+  fetchParts(parts: DashPart[]) {
+    const paging = parts.includes('table') ? { page: this.page, limit: this.limit } : {};
+    return this.svc.getReport({ ...this.f, ...paging, part: parts.join(',') }).pipe(takeUntil(this.destroy$));
+  }
+
+  applyParts(parts: DashPart[], res: any, err?: any): boolean {
+    if (!res || res.status !== 'success' || !res.data) {
+      this.errorMsg = err?.error?.message || (err ? 'Unable to load the maintenance report.' : 'No maintenance data available.');
+      this.cdr.markForCheck();
+      return false;
+    }
+    const d = res.data;
+    const next: any = { ...(this.data ?? {}) };
+    if (parts.includes('kpis')) next.kpis = {
+      tickets: 0, open: 0, settled: 0, breakdowns: 0, critical: 0,
+      downtime_minutes: 0, downtime_unrecorded: 0, mttr_hours: null,
+      mttr_basis: 0, mttr_basis_note: '', downtime_note: null, ...(d.kpis ?? {})
+    };
+    if (parts.includes('charts') || parts.includes('table')) next.by_machine = d.by_machine ?? [];
+    if (parts.includes('charts')) Object.assign(next, this.normalise(d));
+    if (parts.includes('table')) next.tickets = { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d.tickets ?? {}) };
+    this.data = next;
+    if (parts.includes('charts')) this.applyCharts(next);
     this.updatedAt = updatedLabel(d.updated_at);
+    this.cdr.markForCheck();
+    return true;
+  }
+
+  /** The charts' series, built once per answer rather than in getters. */
+  private applyCharts(d: any): void {
+    this.charts.bump();
 
     const trend = d.trend || [];
     this.trendCategories = trend.map((t: any) => this.dayLabel(t.day));
@@ -148,25 +191,16 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy {
     const types = Object.entries(d.by_type || {}).filter(([, n]) => Number(n) > 0);
     this.typeLabels = types.map(([k]) => this.words(k));
     this.typeSeries = types.map(([, n]) => Number(n));
-
-    this.cdr.markForCheck();
   }
 
   /* A template expression that throws aborts the whole change-detection
-     pass, freezing unrelated components. Defend at the boundary. */
+     pass, freezing unrelated components. Defend at the boundary. (The tiles
+     and the tables are filled in by applyParts.) */
   private normalise(d: any): any {
     return {
-      ...d,
-      kpis: {
-        tickets: 0, open: 0, settled: 0, breakdowns: 0, critical: 0,
-        downtime_minutes: 0, downtime_unrecorded: 0, mttr_hours: null,
-        mttr_basis: 0, mttr_basis_note: '', downtime_note: null, ...(d?.kpis ?? {})
-      },
-      by_machine: d?.by_machine ?? [],
       by_type:    d?.by_type    ?? {},
       by_status:  d?.by_status  ?? {},
-      trend:      d?.trend      ?? [],
-      tickets: { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d?.tickets ?? {}) }
+      trend:      d?.trend      ?? []
     };
   }
 

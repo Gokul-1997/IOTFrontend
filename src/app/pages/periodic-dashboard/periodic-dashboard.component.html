@@ -22,7 +22,8 @@
         <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
       </select>
     </span>
-    <button type="button" class="mexa-submit" (click)="showPlan = !showPlan"
+    <!-- the plan is on the Maintenance Details tab: opening it goes there -->
+    <button type="button" class="mexa-submit" (click)="togglePlan()"
             [attr.aria-expanded]="showPlan">
             <span class="ui-tab-icon material-icons" aria-hidden="true">sticky_note_2</span>
       {{ showPlan ? 'Hide Plan' : 'Create Ticket' }}
@@ -59,15 +60,11 @@
 <!-- First load: placeholders shaped like the cards that are coming, so
      the page does not jump when the data lands. No values are shown —
      a placeholder reading would be a claim about a machine. -->
-<ng-container *ngIf="loading && !data">
+<ng-container *ngIf="loading && !views.has('kpis')">
   <app-skeleton kind="kpis" [count]="5" label="Loading dashboard"></app-skeleton>
-  <div class="mexa-grid lg:grid-cols-2">
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-  </div>
 </ng-container>
 
-<ng-container *ngIf="data">
+<ng-container *ngIf="views.has('kpis')">
 
   <!-- No plan means no tickets are ever generated. A setup gap, not an
        empty result, so it is said in words with the fix attached. -->
@@ -138,6 +135,20 @@
     </div>
   </div>
 
+</ng-container>
+
+<!-- ══════════ CHARTS | MAINTENANCE DETAILS ══════════
+     The charts, and the tables and the plan, on two tabs under the tiles.
+     Each tab asks the API for its own part, and only when it is open (shared/dash-view). -->
+<app-dash-view-tabs [tabs]="views.tabs" [active]="views.tab" (activeChange)="setView($event)"
+                    label="Periodic Maintenance views"></app-dash-view-tabs>
+
+<div class="ui-tab-content">
+  <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="mexa-card">
+  <div *ngIf="loading && !views.has('charts')" class="mexa-grid lg:grid-cols-3">
+    <section class="mexa-card" *ngFor="let i of [1, 2, 3]"><app-skeleton kind="chart" label="Loading the charts"></app-skeleton></section>
+  </div>
+  <ng-container *ngIf="views.has('charts')">
   <!-- ══════════ ROW 2 ══════════ -->
   <div class="mexa-grid lg:grid-cols-3">
 
@@ -214,7 +225,7 @@
           <span class="mexa-attention-n" style="background:#e03131">{{ data.kpis.overdue }}</span>
           <span class="mexa-attention-label">
             <strong>Overdue</strong>
-            <span>{{ dueFilter === 'overdue' ? 'Showing these below — tap to clear' : 'Show only these below' }}</span>
+            <span>{{ dueFilter === 'overdue' ? 'Showing these in Maintenance Details — tap to clear' : 'Show only these in Maintenance Details' }}</span>
           </span>
           <mat-icon class="mexa-chev" aria-hidden="true">chevron_right</mat-icon>
         </button>
@@ -224,7 +235,7 @@
           <span class="mexa-attention-n" style="background:#e8618c">{{ data.kpis.due_today }}</span>
           <span class="mexa-attention-label">
             <strong>Due today</strong>
-            <span>{{ dueFilter === 'today' ? 'Showing these below — tap to clear' : 'Show only these below' }}</span>
+            <span>{{ dueFilter === 'today' ? 'Showing these in Maintenance Details — tap to clear' : 'Show only these in Maintenance Details' }}</span>
           </span>
           <mat-icon class="mexa-chev" aria-hidden="true">chevron_right</mat-icon>
         </button>
@@ -242,6 +253,14 @@
     </section>
   </div>
 
+  </ng-container>
+  </div>
+
+  <div *ngIf="views.tab === 'details'" id="dashPanel-details" role="tabpanel" aria-labelledby="dashTab-details" class="mexa-card">
+  <section *ngIf="loading && !views.has('table')" class="mexa-card">
+    <app-skeleton kind="table" [count]="8" label="Loading the maintenance tables"></app-skeleton>
+  </section>
+  <ng-container *ngIf="views.has('table')">
   <!-- ══════════ ROW 3 — upcoming + by frequency ══════════ -->
   <div class="mexa-grid lg:grid-cols-2">
 
@@ -388,9 +407,9 @@
   </div>
 
   <!-- ══════════ TICKETS ══════════ -->
-  <section class="mexa-card">
+  <section class="mexa-card mexa-scroll-target" id="peTickets" aria-labelledby="peTicketsTitle">
     <div class="mexa-tablebar">
-      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Periodic Maintenance Tickets</h2>
+      <h2 id="peTicketsTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left" style="margin:0">Periodic Maintenance Tickets</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="peStatus">Status</label>
         <select id="peStatus" class="mexa-search" [(ngModel)]="statusFilter" name="status"
@@ -507,8 +526,8 @@
   </section>
 
   <!-- ══════════ THE PLAN ══════════ -->
-  <section class="mexa-card" *ngIf="showPlan">
-    <h2 class="mexa-card-title mexa-card-title-left">Maintenance Plan</h2>
+  <section class="mexa-card mexa-scroll-target" id="pePlan" aria-labelledby="pePlanTitle" *ngIf="showPlan">
+    <h2 id="pePlanTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left">Maintenance Plan</h2>
     <p class="mexa-card-hint">
       Each schedule generates tickets on its own cadence. Grace days delay when a
       ticket counts as overdue.
@@ -617,3 +636,5 @@
     </div>
   </section>
 </ng-container>
+  </div>
+</div>

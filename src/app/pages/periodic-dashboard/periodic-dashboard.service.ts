@@ -25,6 +25,8 @@ export class PeriodicDashboardService {
     due?: string;
     page?: number;
     limit?: number;
+    /** Which parts: 'kpis', 'charts', 'table', comma-separated (Backend dashboard/parts.js). */
+    part?: string;
   }): Observable<any> {
     const query: any = {};
     if (params.machine_id) query.machine_id = params.machine_id;
@@ -33,6 +35,8 @@ export class PeriodicDashboardService {
     if (params.due)        query.due        = params.due;
     if (params.page)       query.page       = params.page;
     if (params.limit)      query.limit      = params.limit;
+    // which parts of the dashboard: the tiles, the charts, the tables (Backend dashboard/parts.js)
+    if (params.part)       query.part       = params.part;
     return this.http.get<any>(`${this.api}/dashboard/periodic`, { params: query });
   }
 

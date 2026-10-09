@@ -75,15 +75,11 @@
 
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
-<ng-container *ngIf="loading && !data">
+<ng-container *ngIf="loading && !views.has('kpis')">
   <app-skeleton kind="kpis" [count]="5" label="Loading dashboard"></app-skeleton>
-  <div class="mexa-grid lg:grid-cols-2">
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-  </div>
 </ng-container>
 
-<ng-container *ngIf="data">
+<ng-container *ngIf="views.has('kpis')">
 
   <!-- One line: the problem and its count. Why, and what to do, are behind
        the (i). (The shared-machine caveat moved to the table's (i), and is
@@ -142,32 +138,20 @@
   </div>
 
 
-  <div class="ui-tabs ui-tabs-center" role="tablist" aria-label="Machine analytics">
-  <button
-    type="button"
-    class="ui-tab"
-    role="tab"
-    [class.is-active]="activeTab === 'charts'"
-    [attr.aria-selected]="activeTab === 'charts'"
-    (click)="activeTab = 'charts'">
-    <span class="ui-tab-icon material-icons" aria-hidden="true">bar_chart</span>
-    Charts
-  </button>
+</ng-container>
 
-  <button
-    type="button"
-    class="ui-tab"
-    role="tab"
-    [class.is-active]="activeTab === 'operator'"
-    [attr.aria-selected]="activeTab === 'operator'"
-    (click)="activeTab = 'operator'">
-    <span class="ui-tab-icon material-icons" aria-hidden="true">show_chart</span>
-    Operator Performance Details
-  </button>
-</div>
+<!-- ══════════ CHARTS | OPERATOR PERFORMANCE DETAILS ══════════
+     The rankings and the operator list on two tabs, under the tiles. Each
+     tab asks the API for its own part, and only when it is open (shared/dash-view). -->
+<app-dash-view-tabs [tabs]="views.tabs" [active]="views.tab" (activeChange)="setView($event)"
+                    label="Operator Performance views"></app-dash-view-tabs>
 
 <div class="ui-tab-content">
-  <div *ngIf="activeTab === 'charts'" role="tabpanel" class="mexa-card">
+  <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="mexa-card">
+  <div *ngIf="loading && !views.has('charts')" class="mexa-grid lg:grid-cols-2">
+    <section class="mexa-card" *ngFor="let i of [1, 2]"><app-skeleton kind="chart" label="Loading the rankings"></app-skeleton></section>
+  </div>
+  <ng-container *ngIf="views.has('charts')">
     <!-- ══════════ RANKINGS ══════════
        Operator Score, Rejection Rate and Downtime Contribution are one card
        with a tab each (6 Oct 2026); OEE keeps its own. Every tab and every
@@ -225,9 +209,14 @@
       </div>
     </section>
   </div>
+  </ng-container>
   </div>
 
-  <div *ngIf="activeTab === 'operator'" role="tabpanel" class="mexa-card">
+  <div *ngIf="views.tab === 'details'" id="dashPanel-details" role="tabpanel" aria-labelledby="dashTab-details" class="mexa-card">
+  <section *ngIf="loading && !views.has('table')" class="mexa-card">
+    <app-skeleton kind="table" [count]="8" label="Loading the operator list"></app-skeleton>
+  </section>
+  <ng-container *ngIf="views.has('table')">
     <!-- ══════════ OPERATOR DETAIL ══════════ -->
   <section class="mexa-card">
     <div class="mexa-tablebar">
@@ -304,9 +293,6 @@
                     [shown]="data.operators.data.length" [limit]="limit" [sizes]="pageSizes"
                     (pageChange)="goTo($event)" (limitChange)="setPageSize($event)"></app-mexa-pager>
   </section>
+  </ng-container>
   </div>
 </div>
-  
-
-  
-</ng-container>

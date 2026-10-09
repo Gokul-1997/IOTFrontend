@@ -25,7 +25,7 @@ export class DowntimeDashboardService {
   private toQuery(f: any): any {
     const q: any = {};
     for (const k of ['from', 'to', 'machine_id', 'shift_id', 'operator_id',
-                     'reason_id', 'category', 'search', 'page', 'limit']) {
+                     'reason_id', 'category', 'search', 'page', 'limit', 'part']) {
       if (f[k] !== null && f[k] !== undefined && f[k] !== '') q[k] = f[k];
     }
     return q;
@@ -38,7 +38,7 @@ export class DowntimeDashboardService {
   /** responseType 'blob': the default JSON parse would corrupt an xlsx or
    *  pdf body before it reached the browser's save dialog. */
   exportAs(format: 'xlsx' | 'csv' | 'pdf', filters: any): Observable<Blob> {
-    const { page, limit, ...rest } = this.toQuery(filters);
+    const { page, limit, part, ...rest } = this.toQuery(filters);
     return this.http.get(`${this.api}/dashboard/downtime/export/${format}`,
       { params: rest, responseType: 'blob' });
   }

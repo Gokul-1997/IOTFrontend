@@ -64,22 +64,16 @@
 <!-- First load: placeholders shaped like the cards that are coming, so
      the page does not jump when the data lands. No values are shown —
      a placeholder reading would be a claim about a machine. -->
-<ng-container *ngIf="loading && !data">
+<ng-container *ngIf="loading && !views.has('kpis')">
   <app-skeleton kind="kpis" [count]="5" label="Loading dashboard"></app-skeleton>
-  <div class="mexa-grid lg:grid-cols-2">
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-  </div>
 </ng-container>
 
-<ng-container *ngIf="data">
+<ng-container *ngIf="views.has('kpis')">
 
   <!-- No rules means no tickets will ever be raised. A setup gap, not an
        empty result, so it is said in words with the fix attached. -->
   <p *ngIf="isUnconfigured" class="mexa-note mexa-note-warn">
-    <strong>No alarm rules yet</strong> — tickets come from repeated critical alarms; add a rule under <strong>Alarm rules</strong> below.
+    <strong>No alarm rules yet</strong> — tickets come from repeated critical alarms; add a rule under <strong>Alarm rules</strong> on the PM Ticket Details tab.
   </p>
 
   <!-- ══════════ KPI TILES ══════════ -->
@@ -140,6 +134,20 @@
     </div>
   </div>
 
+</ng-container>
+
+<!-- ══════════ CHARTS | PM TICKET DETAILS ══════════
+     The charts, and the ticket list and alarm rules, on two tabs under the
+     tiles. Each tab asks the API for its own part, and only when it is open (shared/dash-view). -->
+<app-dash-view-tabs [tabs]="views.tabs" [active]="views.tab" (activeChange)="setView($event)"
+                    label="Preventive Maintenance views"></app-dash-view-tabs>
+
+<div class="ui-tab-content">
+  <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="mexa-card">
+  <div *ngIf="loading && !views.has('charts')" class="mexa-grid lg:grid-cols-2">
+    <section class="mexa-card" *ngFor="let i of [1, 2, 3, 4]"><app-skeleton kind="chart" label="Loading the charts"></app-skeleton></section>
+  </div>
+  <ng-container *ngIf="views.has('charts')">
   <!-- ══════════ ROW 2 ══════════ -->
   <div class="mexa-grid grid-cols-2 xl:grid-cols-4 lg:grid-cols-2">
 
@@ -352,6 +360,14 @@
     </section>
   </div>
 
+  </ng-container>
+  </div>
+
+  <div *ngIf="views.tab === 'details'" id="dashPanel-details" role="tabpanel" aria-labelledby="dashTab-details" class="mexa-card">
+  <section *ngIf="loading && !views.has('table')" class="mexa-card">
+    <app-skeleton kind="table" [count]="8" label="Loading the PM tickets"></app-skeleton>
+  </section>
+  <ng-container *ngIf="views.has('table')">
   <!-- ══════════ PM TICKETS ══════════ -->
   <section class="mexa-card">
     <div class="mexa-tablebar mb-3">
@@ -558,3 +574,5 @@
     </div>
   </section>
 </ng-container>
+  </div>
+</div>

@@ -17,7 +17,7 @@ export class EnergyDashboardService {
 
   private toQuery(f: any): any {
     const q: any = {};
-    for (const k of ['from', 'to', 'machine_id', 'search', 'page', 'limit']) {
+    for (const k of ['from', 'to', 'machine_id', 'search', 'page', 'limit', 'part']) {
       if (f[k] !== null && f[k] !== undefined && f[k] !== '') q[k] = f[k];
     }
     return q;
@@ -36,7 +36,7 @@ export class EnergyDashboardService {
   }
 
   exportAs(format: 'xlsx' | 'csv' | 'pdf', filters: any): Observable<Blob> {
-    const { page, limit, ...rest } = this.toQuery(filters);
+    const { page, limit, part, ...rest } = this.toQuery(filters);
     return this.http.get(`${this.api}/dashboard/energy/export/${format}`,
       { params: rest, responseType: 'blob' });
   }

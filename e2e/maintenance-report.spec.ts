@@ -54,14 +54,15 @@ async function mockApi(page: any, body: any = report()) {
     status: 200, contentType: 'application/json', body: JSON.stringify(body) }));
 }
 
-async function open(page: any, grants = GRANTS, body?: any) {
+/** The tables, with their search and exports, are on the Ticket Details tab (`?view=details`). */
+async function open(page: any, grants = GRANTS, body?: any, view: 'charts' | 'details' = 'charts') {
   await seedAuth(page, {
     roles: ['MAINTENANCE'], user_type: 'MAINTENANCE',
     permissions: GRANTS, company_permissions: grants
   });
   await mockApi(page, body);
   await page.setViewportSize({ width: 1500, height: 1200 });
-  await page.goto('/maintenance-report');
+  await page.goto(view === 'details' ? '/maintenance-report?view=details' : '/maintenance-report');
 }
 
 test('the report opens with its KPIs, charts and tables', async ({ page }) => {
@@ -71,11 +72,14 @@ test('the report opens with its KPIs, charts and tables', async ({ page }) => {
   await expect(page.locator('.mexa-kpi', { hasText: 'Total' }).getByText('12')).toBeVisible();
   await expect(page.locator('.mexa-kpi', { hasText: 'Mean Time' }).getByText('4.25h')).toBeVisible();
   await expect(page.getByText('Tickets Raised vs Resolved')).toBeVisible();
-  await expect(page.getByText('Machine Summary')).toBeVisible();
-  await expect(page.getByRole('cell', { name: 'VMC-1' }).first()).toBeVisible();
   // Apex animates on first draw; capture the settled frame, not a half-drawn one
   await page.waitForTimeout(1200);
   await page.screenshot({ path: 'mexa-maintenance-report.png', fullPage: true });
+  // the tables are on the other tab, under the same tiles
+  await page.getByRole('tab', { name: 'Ticket Details' }).click();
+  await expect(page.getByText('Machine Summary')).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'VMC-1' }).first()).toBeVisible();
+  await expect(page.locator('.mexa-kpi', { hasText: 'Total' }).getByText('12')).toBeVisible();
 });
 
 test('MTTR says how many tickets it averaged, so the figure can be judged', async ({ page }) => {
@@ -101,7 +105,7 @@ test('an open ticket shows a dash for repair time, never a zero', async ({ page 
   await open(page, GRANTS, report({
     tickets: [ticket({ status: 'OPEN', resolved_at: null, repair_hours: null,
                        downtime_minutes: null, assigned_to_name: null })]
-  }));
+  }), 'details');
 
   const row = page.locator('tbody tr', { hasText: 'Spindle noise' });
   await expect(row.getByText('--').first()).toBeVisible();
@@ -110,13 +114,14 @@ test('an open ticket shows a dash for repair time, never a zero', async ({ page 
 });
 
 test('export is its own grant — view alone hides the buttons', async ({ page }) => {
-  await open(page, ['page:maintenance-report:view']);
+  await open(page, ['page:maintenance-report:view'], undefined, 'details');
   await expect(page.getByRole('heading', { name: 'Maintenance Report' })).toBeVisible();
+  await expect(page.getByText('Machine Summary')).toBeVisible();
   await expect(page.getByRole('group', { name: 'Download the filtered list' })).toHaveCount(0);
 });
 
 test('with the export grant, all three formats are offered', async ({ page }) => {
-  await open(page);
+  await open(page, GRANTS, undefined, 'details');
   const group = page.getByRole('group', { name: 'Download the filtered list' });
   await expect(group.getByRole('button', { name: 'Excel' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'CSV' })).toBeVisible();
@@ -140,7 +145,7 @@ test('the empty period reads as empty, not as broken', async ({ page }) => {
             downtime_minutes: 0, downtime_unrecorded: 0, mttr_hours: null, mttr_basis: 0,
             mttr_basis_note: 'No ticket has been resolved in this period', downtime_note: null },
     by_machine: [], by_type: { BREAKDOWN: 0, ALARM: 0, INSPECTION: 0, OTHER: 0 }, trend: [], tickets: []
-  }));
+  }), 'details');
 
   await expect(page.getByText('No machine has a ticket in this period.')).toBeVisible();
   await expect(page.getByText('No maintenance tickets match these filters.')).toBeVisible();

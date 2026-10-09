@@ -434,21 +434,30 @@ test('Periodic Attention Required filters the ticket table', async ({ authedPage
   await page.goto('/periodic-maintenance');
   await expect(page.locator('.mexa-attention-row')).toHaveCount(3);
 
+  // the tickets are on Maintenance Details: the row opens that tab, narrowed
   await page.getByRole('button', { name: /Overdue/ }).first().click();
-  await expect.poll(() => seen.some(u => u.includes('due=overdue'))).toBe(true);
+  await expect(page.getByRole('tab', { name: 'Maintenance Details' })).toHaveAttribute('aria-selected', 'true');
+  await expect.poll(() => seen.some(u => u.includes('due=overdue') && u.includes('part=table'))).toBe(true);
   await expect(page.locator('.mexa-note')).toContainText('overdue');
 
-  // clicking the active row again clears it, so nobody gets stuck in a filter
-  await page.getByRole('button', { name: /Overdue/ }).first().click();
-  await expect.poll(() => seen.filter(u => u.includes('due=')).length).toBeGreaterThan(0);
+  // back on Charts the row says it is applied; clicking it again clears it, so nobody gets stuck in a filter
+  await page.getByRole('tab', { name: 'Charts' }).click();
+  const overdue = page.getByRole('button', { name: /Overdue/ }).first();
+  await expect(overdue).toHaveAttribute('aria-pressed', 'true');
+  await overdue.click();
+  await expect(overdue).toHaveAttribute('aria-pressed', 'false');
+  await page.getByRole('tab', { name: 'Maintenance Details' }).click();
+  await expect.poll(() => seen.at(-1)).not.toContain('due=');
   await expect(page.locator('.mexa-note')).toHaveCount(0);
 });
 
 test('a past due date that is not overdue reads as "ago", never "in -82d"', async ({ authedPage: page }) => {
   await mockApi(page);
-  await page.goto('/periodic-maintenance');
+  // Upcoming Maintenance is on the Maintenance Details tab
+  await page.goto('/periodic-maintenance?view=details');
 
-  const upcoming = page.locator('.mexa-card', { hasText: 'Upcoming Maintenance' });
+  // the card itself, not the tab panel around it
+  const upcoming = page.locator('.mexa-card', { hasText: 'Upcoming Maintenance' }).last();
   // CNC-01 is dated in the past but not flagged overdue: still within grace
   await expect(upcoming).toContainText('ago');
   await expect(upcoming).toContainText('overdue');
@@ -494,7 +503,10 @@ test('Alarm Report: a card click narrows the table to that card', async ({ authe
   await expect(critical).toHaveAttribute('aria-pressed', 'false');
   await critical.click();
   await expect(critical).toHaveAttribute('aria-pressed', 'true');
+  // the alarm list is on Alarms Details: the card opens that tab, and asks for the table
+  await expect(page.getByRole('tab', { name: 'Alarms Details' })).toHaveAttribute('aria-selected', 'true');
   await expect.poll(() => seen.at(-1)).toContain('show=critical');
+  expect(seen.at(-1)).toContain('part=');
   await expect(page.locator('.mexa-drill')).toContainText('Showing critical alarms only');
   // focus goes to the results, so a keyboard user lands there too
   await expect(page.locator('#alDetailsTitle')).toBeFocused();

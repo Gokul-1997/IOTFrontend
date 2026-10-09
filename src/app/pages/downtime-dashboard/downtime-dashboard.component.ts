@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
+import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { DowntimeDashboardService } from './downtime-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -18,6 +18,14 @@ import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { lostCostLine, LOST_COST_HINT } from '../../shared/lost-cost';
+import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl } from '../../shared/dash-view/dash-view';
+import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
+
+/** Charts | Downtime Details (the reason summary and the events), under the tiles both share. */
+const TABS: DashTab[] = [
+  { key: 'charts',  label: 'Charts',           icon: 'bar_chart',  parts: ['kpis', 'charts'] },
+  { key: 'details', label: 'Downtime Details', icon: 'table_rows', parts: ['kpis', 'table'] }
+];
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 6 — Downtime Reason Loss Analysis
@@ -34,15 +42,17 @@ import { lostCostLine, LOST_COST_HINT } from '../../shared/lost-cost';
 @Component({
   selector: 'app-downtime-dashboard',
   standalone: true,
-  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, RouterModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent, EnumLabelPipe],
+  imports: [DashViewTabsComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, RouterModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent, EnumLabelPipe],
   templateUrl: './downtime-dashboard.component.html'
 })
-export class DowntimeDashboardComponent implements OnInit, OnDestroy {
-activeTab: 'charts' | 'Downtime_Details' = 'Downtime_Details';
+export class DowntimeDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
 
-setTab(tab: 'charts' | 'Downtime_Details'): void {
-  this.activeTab = tab;
-}
+  /* ── Charts | Downtime Details ──
+     The charts on one tab, the reason summary and the events on the other,
+     the tiles above both; each part of the page is asked for only while it
+     is on screen and out of date (shared/dash-view). */
+  private url = viewInUrl(TABS);
+  readonly views = new DashViews(this, TABS, this.url.initial);
   /** Chart options keep the same reference until apply() bumps this. */
   private charts = new ChartMemo();
 
@@ -53,8 +63,10 @@ setTab(tab: 'charts' | 'Downtime_Details'): void {
   page = 1;
   limit = 20;
 
+  /** The page's data, each part merged in as it arrives. */
   data: any = null;
-  loading = false;
+  /** Something on screen is waiting for its data ("Updating…"). */
+  get loading(): boolean { return this.views.loading; }
   errorMsg = '';
   updatedAt = '';
   exporting = '';
@@ -71,8 +83,6 @@ setTab(tab: 'charts' | 'Downtime_Details'): void {
   readonly CATEGORIES = ['PLANNED', 'UNPLANNED', 'QUALITY', 'CHANGEOVER'];
 
   private destroy$ = new Subject<void>();
-  /** The request on its way; a newer filter choice replaces it, so an older answer can never land last. */
-  private loadSub?: Subscription;
   private search$ = new RxSubject<string>();
 
   constructor(
@@ -109,8 +119,18 @@ setTab(tab: 'charts' | 'Downtime_Details'): void {
   }
 
   ngOnDestroy(): void {
+    this.views.cancel();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /** Open a tab; nothing is asked for that is already up to date. */
+  setView(tab: string): void {
+    if (tab === this.views.tab) return;
+    this.errorMsg = '';
+    this.views.show(tab);
+    this.url.write(tab);
+    this.cdr.markForCheck();
   }
 
   blankFilters() {
@@ -138,32 +158,53 @@ setTab(tab: 'charts' | 'Downtime_Details'): void {
     this.load();
   }
 
+  /** Bring what is on screen up to date with the filters; the other tab follows when it is opened. */
   load(): void {
-    this.loading = true;
     this.errorMsg = '';
+    this.views.load();
     this.cdr.markForCheck();
-
-    this.loadSub?.unsubscribe();
-    this.loadSub = this.svc.getDowntime({ ...this.f, page: this.page, limit: this.limit })
-      .pipe(takeUntil(this.destroy$), catchError(err => {
-        this.errorMsg = err?.error?.message || 'Unable to load downtime data.';
-        return of(null);
-      }))
-      .subscribe(res => this.apply(res));
   }
 
-  private apply(res: any): void {
-    this.charts.bump();
-    this.loading = false;
+  /* What each part depends on: the tiles and charts on the filters (the
+     search narrows them too); the tables on those and the page. */
+  partKeys(): Record<DashPart, string> {
+    const shared = JSON.stringify(this.f);
+    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.page, this.limit]) };
+  }
 
+  fetchParts(parts: DashPart[]) {
+    const paging = parts.includes('table') ? { page: this.page, limit: this.limit } : {};
+    return this.svc.getDowntime({ ...this.f, ...paging, part: parts.join(',') }).pipe(takeUntil(this.destroy$));
+  }
+
+  applyParts(parts: DashPart[], res: any, err?: any): boolean {
     if (!res || res.status !== 'success' || !res.data) {
-      if (!this.errorMsg) this.errorMsg = 'No downtime data available.';
+      this.errorMsg = err?.error?.message || (err ? 'Unable to load downtime data.' : 'No downtime data available.');
       this.cdr.markForCheck();
-      return;
+      return false;
     }
-
-    const d = this.data = this.normalise(res.data);
+    const d = res.data;
+    const next = { ...(this.data ?? {}) };
+    if (parts.includes('kpis')) next.kpis = {
+      total_downtime_seconds: 0, downtime_events: 0, open_events: 0,
+      run_seconds: 0, idle_seconds: 0, alarm_seconds: 0,
+      availability_pct: null, unaccounted_seconds: 0, reason_coverage_pct: null,
+      ...(d.kpis ?? {})
+    };
+    if (parts.includes('charts') || parts.includes('table')) next.by_reason = d.by_reason ?? [];
+    if (parts.includes('charts')) Object.assign(next, this.normalise(d));
+    if (parts.includes('table')) next.events = { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d.events ?? {}) };
+    this.data = next;
+    // the charts part always comes with the tiles it shares the status donut's seconds with, or after them
+    if (parts.includes('charts')) this.applyCharts(next);
     this.updatedAt = updatedLabel(d.updated_at);
+    this.cdr.markForCheck();
+    return true;
+  }
+
+  /** The charts' series, built once per answer rather than in getters. */
+  private applyCharts(d: any): void {
+    this.charts.bump();
 
     /* A Pareto is bars plus the cumulative line — the line is the point,
        because it is what shows how few reasons cover most of the loss. */
@@ -198,27 +239,17 @@ setTab(tab: 'charts' | 'Downtime_Details'): void {
     ].filter(r => r.seconds > 0);
     this.statusSeries = this.statusRows.map(r => r.seconds);
     this.statusTotal = this.statusSeries.reduce((a, b) => a + b, 0);
-
-    this.cdr.markForCheck();
   }
 
   /* A template expression that throws aborts the whole change-detection
-     pass, freezing unrelated components. Defend at the boundary. */
+     pass, freezing unrelated components. Defend at the boundary. (The tiles
+     and the tables are filled in by applyParts.) */
   private normalise(d: any): any {
     return {
-      ...d,
-      kpis: {
-        total_downtime_seconds: 0, downtime_events: 0, open_events: 0,
-        run_seconds: 0, idle_seconds: 0, alarm_seconds: 0,
-        availability_pct: null, unaccounted_seconds: 0, reason_coverage_pct: null,
-        ...(d?.kpis ?? {})
-      },
-      by_reason:   d?.by_reason   ?? [],
       top_reasons: d?.top_reasons ?? [],
       by_category: d?.by_category ?? [],
       by_shift:    d?.by_shift    ?? [],
-      hourly:      d?.hourly      ?? [],
-      events: { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d?.events ?? {}) }
+      hourly:      d?.hourly      ?? []
     };
   }
 
@@ -267,7 +298,7 @@ setTab(tab: 'charts' | 'Downtime_Details'): void {
   /** True when telemetry exists but nobody has entered a single reason —
    *  a setup gap, not an empty filter result. */
   get hasNoReasons(): boolean {
-    return !!this.data && this.data.kpis.downtime_events === 0 && this.data.kpis.idle_seconds > 0;
+    return this.data?.kpis?.downtime_events === 0 && this.data.kpis.idle_seconds > 0;
   }
 
   hours(seconds: number | null | undefined): string {

@@ -19,7 +19,7 @@ export class MaintenanceReportService {
    *  narrow the query to rows with an empty value. */
   private toQuery(f: any): any {
     const q: any = {};
-    for (const k of ['from', 'to', 'machine_id', 'status', 'issue_type', 'priority', 'search', 'page', 'limit']) {
+    for (const k of ['from', 'to', 'machine_id', 'status', 'issue_type', 'priority', 'search', 'page', 'limit', 'part']) {
       if (f[k] !== null && f[k] !== undefined && f[k] !== '') q[k] = f[k];
     }
     return q;
@@ -31,7 +31,7 @@ export class MaintenanceReportService {
 
   /** responseType 'blob': a JSON parse would corrupt xlsx and pdf bodies. */
   exportAs(format: 'xlsx' | 'csv' | 'pdf', filters: any): Observable<Blob> {
-    const { page, limit, ...rest } = this.toQuery(filters);
+    const { page, limit, part, ...rest } = this.toQuery(filters);
     return this.http.get(`${this.api}/dashboard/maintenance-report/export/${format}`,
       { params: rest, responseType: 'blob' });
   }

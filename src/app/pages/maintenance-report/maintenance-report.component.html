@@ -46,15 +46,11 @@
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
 
-<ng-container *ngIf="loading && !data">
+<ng-container *ngIf="loading && !views.has('kpis')">
   <app-skeleton kind="kpis" [count]="5" label="Loading maintenance report"></app-skeleton>
-  <div class="mexa-grid lg:grid-cols-2">
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-  </div>
 </ng-container>
 
-<ng-container *ngIf="data">
+<ng-container *ngIf="views.has('kpis')">
 
   <!-- Both caveats are shown, not buried: an average over three tickets is
        not the claim an average over three hundred is, and a ticket with no
@@ -120,6 +116,20 @@
     </div>
   </div>
 
+</ng-container>
+
+<!-- ══════════ CHARTS | TICKET DETAILS ══════════
+     The charts and the two tables on two tabs, under the tiles. Each tab
+     asks the API for its own part, and only when it is open (shared/dash-view). -->
+<app-dash-view-tabs [tabs]="views.tabs" [active]="views.tab" (activeChange)="setView($event)"
+                    label="Maintenance Report views"></app-dash-view-tabs>
+
+<div class="ui-tab-content">
+  <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="mexa-card">
+  <div *ngIf="loading && !views.has('charts')" class="mexa-grid lg:grid-cols-2">
+    <section class="mexa-card" *ngFor="let i of [1, 2]"><app-skeleton kind="chart" label="Loading the charts"></app-skeleton></section>
+  </div>
+  <ng-container *ngIf="views.has('charts')">
   <!-- ══════════ CHARTS ══════════ -->
   <div class="mexa-grid grid grid-cols-1 md:grid-cols-[1fr_0.3fr] gap-4">
     <section class="mexa-card">
@@ -161,6 +171,14 @@
     <p *ngIf="!downtimeSeries.length" class="mexa-empty">No downtime was recorded on these tickets.</p>
   </section>
 
+  </ng-container>
+  </div>
+
+  <div *ngIf="views.tab === 'details'" id="dashPanel-details" role="tabpanel" aria-labelledby="dashTab-details" class="mexa-card">
+  <section *ngIf="loading && !views.has('table')" class="mexa-card">
+    <app-skeleton kind="table" [count]="8" label="Loading the maintenance tables"></app-skeleton>
+  </section>
+  <ng-container *ngIf="views.has('table')">
   <!-- ══════════ PER-MACHINE SUMMARY ══════════ -->
   <section class="mexa-card mb-4">
     <h2 class="mexa-card-title mexa-card-title-left">Machine Summary</h2>
@@ -269,3 +287,5 @@
                     (pageChange)="changePage($event - page)"></app-mexa-pager>
   </section>
 </ng-container>
+  </div>
+</div>
