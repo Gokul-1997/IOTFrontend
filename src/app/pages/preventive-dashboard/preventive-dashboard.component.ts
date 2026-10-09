@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
+import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { PreventiveDashboardService } from './preventive-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ChartMemo } from '../../shared/chart-memo';
@@ -14,6 +14,14 @@ import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { SEVERITY } from '../../shared/severity';
+import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl } from '../../shared/dash-view/dash-view';
+import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
+
+/** Charts | PM Ticket Details (the tickets and the alarm rules), under the tiles both share. */
+const TABS: DashTab[] = [
+  { key: 'charts',  label: 'Charts',            icon: 'bar_chart',  parts: ['kpis', 'charts'] },
+  { key: 'details', label: 'PM Ticket Details', icon: 'table_rows', parts: ['kpis', 'table'] }
+];
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 3 — Preventive Maintenance Dashboard
@@ -31,12 +39,18 @@ import { SEVERITY } from '../../shared/severity';
 @Component({
   selector: 'app-preventive-dashboard',
   standalone: true,
-  imports: [AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
+  imports: [DashViewTabsComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
   templateUrl: './preventive-dashboard.component.html'
 })
-export class PreventiveDashboardComponent implements OnInit, OnDestroy {
+export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
 
-  /** Chart options keep the same reference until apply() bumps this. */
+  /* ── Charts | PM Ticket Details ──
+     Each part of the page is asked for only while it is on screen and out
+     of date (shared/dash-view). */
+  private url = viewInUrl(TABS);
+  readonly views = new DashViews(this, TABS, this.url.initial);
+
+  /** Chart options keep the same reference until applyCharts() bumps this. */
   private charts = new ChartMemo();
 
   /* ── filters ── */
@@ -54,8 +68,10 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   limit = 10;
 
   /* ── state ── */
+  /** The page's data, each part merged in as it arrives. */
   data: any = null;
-  loading   = false;
+  /** Something on screen is waiting for its data ("Updating…"). */
+  get loading(): boolean { return this.views.loading; }
   errorMsg  = '';
   updatedAt = '';
   running   = false;
@@ -77,8 +93,6 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   reasonCategories: string[] = [];
 
   private destroy$ = new Subject<void>();
-  /** The request on its way; a newer filter choice replaces it, so an older answer can never land last. */
-  private loadSub?: Subscription;
   private search$  = new RxSubject<string>();
 
   constructor(
@@ -106,8 +120,18 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.views.cancel();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /** Open a tab; nothing is asked for that is already up to date. */
+  setView(tab: string): void {
+    if (tab === this.views.tab) return;
+    this.errorMsg = '';
+    this.views.show(tab);
+    this.url.write(tab);
+    this.cdr.markForCheck();
   }
 
   onSearchInput(): void { this.search$.next(this.search); }
@@ -150,39 +174,57 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
     this.load();
   }
 
+  /** Bring what is on screen up to date with the filters; the other tab follows when it is opened. */
   load(): void {
-    this.loading = true;
     this.errorMsg = '';
+    this.views.load();
     this.cdr.markForCheck();
-
-    this.loadSub?.unsubscribe();
-    this.loadSub = this.svc.getPreventive({
-      from: this.fromDate,
-      to: this.toDate,
-      machine_id: this.selectedMachine,
-      search: this.search,
-      page: this.page,
-      limit: this.limit
-    })
-      .pipe(takeUntil(this.destroy$), catchError(err => {
-        this.errorMsg = err?.error?.message || 'Unable to load preventive maintenance data.';
-        return of(null);
-      }))
-      .subscribe(res => this.apply(res));
   }
 
-  private apply(res: any): void {
-    this.charts.bump();
-    this.loading = false;
+  /** A rule changed, or tickets were raised: every part loads again. */
+  private reloadAll(): void {
+    this.views.stale();
+    this.load();
+  }
 
+  /* What each part depends on: the tiles and charts on the dates and the
+     machine; the ticket list — the backlog, not bounded by the dates — on
+     the machine, its search and its page. */
+  partKeys(): Record<DashPart, string> {
+    const window = JSON.stringify([this.fromDate, this.toDate, this.selectedMachine]);
+    return { kpis: window, charts: window, table: JSON.stringify([this.selectedMachine, this.search, this.page, this.limit]) };
+  }
+
+  fetchParts(parts: DashPart[]) {
+    const table = parts.includes('table') ? { search: this.search, page: this.page, limit: this.limit } : {};
+    return this.svc.getPreventive({ from: this.fromDate, to: this.toDate, machine_id: this.selectedMachine, ...table, part: parts.join(',') })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  applyParts(parts: DashPart[], res: any, err?: any): boolean {
     if (!res || res.status !== 'success' || !res.data) {
-      if (!this.errorMsg) this.errorMsg = 'No preventive maintenance data available.';
+      this.errorMsg = err?.error?.message || (err ? 'Unable to load preventive maintenance data.' : 'No preventive maintenance data available.');
       this.cdr.markForCheck();
-      return;
+      return false;
     }
-
-    const d = this.data = this.normalise(res.data);
+    const d = res.data;
+    const next: any = { ...(this.data ?? {}) };
+    if (parts.includes('kpis')) next.kpis = {
+      critical_alarms: 0, critical_alarms_open: 0, pm_generated: 0, pm_open: 0,
+      pm_completed: 0, pm_overdue: 0, avg_resolution_hours: null, resolved_count: 0, ...(d.kpis ?? {})
+    };
+    if (parts.includes('charts')) Object.assign(next, this.normalise(d));
+    if (parts.includes('table')) next.tickets = { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d.tickets ?? {}) };
+    this.data = next;
+    if (parts.includes('charts')) this.applyCharts(next);
     this.updatedAt = updatedLabel(d.updated_at);
+    this.cdr.markForCheck();
+    return true;
+  }
+
+  /** The charts' series, built once per answer rather than in getters. */
+  private applyCharts(d: any): void {
+    this.charts.bump();
 
     this.trendCategories = (d.alarm_trend || []).map((t: any) =>
       new Date(t.day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
@@ -205,7 +247,6 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
     this.reasonSeries = reasons.length
       ? [{ name: 'Occurrences', data: reasons.map((r: any) => r.occurrences ?? r.critical ?? 0) }] : [];
 
-    this.cdr.markForCheck();
   }
 
   /*
@@ -220,19 +261,12 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
    */
   private normalise(d: any): any {
     return {
-      ...d,
       filters:  d?.filters  ?? { from: this.fromDate, to: this.toDate, machine_id: null, search: null },
-      kpis: {
-        critical_alarms: 0, critical_alarms_open: 0, pm_generated: 0, pm_open: 0,
-        pm_completed: 0, pm_overdue: 0, avg_resolution_hours: null, resolved_count: 0,
-        ...(d?.kpis ?? {})
-      },
       alarm_trend:       d?.alarm_trend       ?? [],
       alarm_severity:    { critical: 0, non_critical: 0, information: 0, ...(d?.alarm_severity ?? {}) },
       alarms_by_machine: d?.alarms_by_machine ?? [],
       top_alarm_reasons: d?.top_alarm_reasons ?? [],
       ticket_status:     { open: 0, in_progress: 0, completed: 0, ...(d?.ticket_status ?? {}) },
-      tickets:           { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d?.tickets ?? {}) },
       alarm_triggers:    d?.alarm_triggers    ?? []
     };
   }
@@ -267,7 +301,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
           this.ruleForm = this.blankRule();
           this.toast.success('Rule saved');
           this.loadThresholds();
-          this.load();
+          this.reloadAll();
         },
         error: err => {
           this.savingRule = false;
@@ -282,7 +316,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
     this.svc.deleteThreshold(r.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => { this.toast.success('Rule deleted'); this.loadThresholds(); this.load(); },
+        next: () => { this.toast.success('Rule deleted'); this.loadThresholds(); this.reloadAll(); },
         error: err => this.toast.error(err?.error?.message || 'Could not delete the rule')
       });
   }
@@ -296,7 +330,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy {
         next: res => {
           this.running = false;
           this.toast.success(res?.message || 'Rules evaluated');
-          this.load();
+          this.reloadAll();
         },
         error: err => {
           this.running = false;

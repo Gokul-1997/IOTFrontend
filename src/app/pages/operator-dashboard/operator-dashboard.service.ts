@@ -19,7 +19,7 @@ export class OperatorDashboardService {
    *  narrow the query to rows with an empty value. */
   private toQuery(f: any): any {
     const q: any = {};
-    for (const k of ['from', 'to', 'machine_id', 'shift_id', 'operator_id', 'search', 'sort', 'dir', 'page', 'limit']) {
+    for (const k of ['from', 'to', 'machine_id', 'shift_id', 'operator_id', 'search', 'sort', 'dir', 'page', 'limit', 'part']) {
       if (f[k] !== null && f[k] !== undefined && f[k] !== '') q[k] = f[k];
     }
     return q;
@@ -31,7 +31,7 @@ export class OperatorDashboardService {
 
   /** responseType 'blob': a JSON parse would corrupt xlsx and pdf bodies. */
   exportAs(format: 'xlsx' | 'csv' | 'pdf', filters: any): Observable<Blob> {
-    const { page, limit, ...rest } = this.toQuery(filters);   // sort and dir kept: the file matches the table
+    const { page, limit, part, ...rest } = this.toQuery(filters);   // sort and dir kept: the file matches the table
     return this.http.get(`${this.api}/dashboard/operators/export/${format}`,
       { params: rest, responseType: 'blob' });
   }

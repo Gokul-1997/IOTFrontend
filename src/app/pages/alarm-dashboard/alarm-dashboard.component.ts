@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
+import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { AlarmDashboardService } from './alarm-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -15,6 +15,14 @@ import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { ALARM_STATE, SEVERITY, severityOf } from '../../shared/severity';
+import { DashPart, DashTab, DashViewHooks, DashViews, revealWhenShown, viewInUrl } from '../../shared/dash-view/dash-view';
+import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
+
+/** Charts | Alarms Details, under the cards both share. */
+const TABS: DashTab[] = [
+  { key: 'charts',  label: 'Charts',         icon: 'bar_chart',  parts: ['kpis', 'charts'] },
+  { key: 'details', label: 'Alarms Details', icon: 'table_rows', parts: ['kpis', 'table'] }
+];
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 5 — Alarm Dashboard & Reports
@@ -28,10 +36,10 @@ import { ALARM_STATE, SEVERITY, severityOf } from '../../shared/severity';
 @Component({
   selector: 'app-alarm-dashboard',
   standalone: true,
-  imports: [AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
+  imports: [DashViewTabsComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
   templateUrl: './alarm-dashboard.component.html'
 })
-export class AlarmDashboardComponent implements OnInit, OnDestroy {
+export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
 
   /** Chart options keep the same reference until apply() bumps this. */
   private charts = new ChartMemo();
@@ -54,9 +62,16 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     { key: 'ended_at', label: 'Closed' }
   ];
 
+  /* ── Charts | Alarms Details ──
+     The charts on one tab, the alarm list on the other, the cards above
+     both; each part of the page is asked for only while it is on screen
+     and out of date (shared/dash-view). */
+  private url = viewInUrl(TABS);
+  readonly views = new DashViews(this, TABS, this.url.initial);
+
   /* ── KPI card drill-down ──
-     A card opens the alarms behind its number in the Alarms Details table
-     below. The server narrows the table only (?show=), never the cards or
+     A card opens the alarms behind its number in Alarms Details, on its own
+     tab. The server narrows the table only (?show=), never the cards or
      charts, so the other cards keep their figures while one is selected.
      Max Duration is not a subset: it sorts the table longest first. */
   drillKind: '' | 'critical' | 'normal' | 'open' | 'longest' = '';
@@ -76,7 +91,11 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     this.drillKind = next;
     this.page = 1;
     this.scrollToTable = true;
-    this.load();
+    // the alarms are on the Alarms Details tab: the card opens it, narrowed
+    if (this.views.tab !== 'details') this.setView('details');
+    else this.load();
+    // already loaded for this narrowing: say so at once
+    if (!this.views.loading) this.revealTable();
   }
 
   /** What the server narrows the table to; "longest" is a sort, not a subset. */
@@ -98,8 +117,10 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   setLimit(n: number): void { this.limit = n || 10; this.page = 1; this.load(); }
 
   /* ── state ── */
+  /** The page's data, each part merged in as it arrives. */
   data: any = null;
-  loading = false;
+  /** Something on screen is waiting for its data ("Updating…"). */
+  get loading(): boolean { return this.views.loading; }
   errorMsg = '';
   updatedAt = '';
   exporting = '';
@@ -117,8 +138,6 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   severitySeries: number[] = [];
 
   private destroy$ = new Subject<void>();
-  /** The request on its way; a newer filter choice replaces it, so an older answer can never land last. */
-  private loadSub?: Subscription;
   private search$ = new RxSubject<string>();
 
   constructor(
@@ -148,8 +167,18 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.views.cancel();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /** Open a tab; nothing is asked for that is already up to date. */
+  setView(tab: string): void {
+    if (tab === this.views.tab) return;
+    this.errorMsg = '';
+    this.views.show(tab);
+    this.url.write(tab);
+    this.cdr.markForCheck();
   }
 
   blankFilters() {
@@ -179,32 +208,51 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     this.load();
   }
 
+  /** Bring what is on screen up to date with the filters; the other tab follows when it is opened. */
   load(): void {
-    this.loading = true;
     this.errorMsg = '';
+    this.views.load();
     this.cdr.markForCheck();
-
-    this.loadSub?.unsubscribe();
-    this.loadSub = this.svc.getAlarms({ ...this.f, show: this.show, sort: this.sort || null, dir: this.dir, page: this.page, limit: this.limit })
-      .pipe(takeUntil(this.destroy$), catchError(err => {
-        this.errorMsg = err?.error?.message || 'Unable to load alarm data.';
-        return of(null);
-      }))
-      .subscribe(res => this.apply(res));
   }
 
-  private apply(res: any): void {
-    this.charts.bump();
-    this.loading = false;
+  /* What each part depends on: the cards and charts on the filters (the
+     search narrows them too); the list on those and its narrowing, order and page. */
+  partKeys(): Record<DashPart, string> {
+    const shared = JSON.stringify(this.f);
+    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.show, this.sort, this.dir, this.page, this.limit]) };
+  }
 
+  fetchParts(parts: DashPart[]) {
+    const table = parts.includes('table')
+      ? { show: this.show, sort: this.sort || null, dir: this.dir, page: this.page, limit: this.limit } : {};
+    return this.svc.getAlarms({ ...this.f, ...table, part: parts.join(',') }).pipe(takeUntil(this.destroy$));
+  }
+
+  applyParts(parts: DashPart[], res: any, err?: any): boolean {
     if (!res || res.status !== 'success' || !res.data) {
-      if (!this.errorMsg) this.errorMsg = 'No alarm data available.';
+      this.errorMsg = err?.error?.message || (err ? 'Unable to load alarm data.' : 'No alarm data available.');
       this.cdr.markForCheck();
-      return;
+      return false;
     }
-
-    const d = this.data = this.normalise(res.data);
+    const d = res.data;
+    const next = { ...(this.data ?? {}) };
+    if (parts.includes('kpis')) {
+      next.kpis = { total: 0, critical: 0, normal: 0, open: 0, max_duration_seconds: 0, avg_duration_seconds: 0, ...(d.kpis ?? {}) };
+      next.facets = { types: [], codes: [], ...(d.facets ?? {}) };
+    }
+    if (parts.includes('charts')) Object.assign(next, this.normalise(d));
+    if (parts.includes('table')) next.alarms = { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d.alarms ?? {}) };
+    this.data = next;
+    if (parts.includes('charts')) this.applyCharts(next);
+    if (parts.includes('table') && this.scrollToTable) this.revealTable();
     this.updatedAt = updatedLabel(d.updated_at);
+    this.cdr.markForCheck();
+    return true;
+  }
+
+  /** The charts' series, built once per answer rather than in getters. */
+  private applyCharts(d: any): void {
+    this.charts.bump();
 
     // one day selected: hour by hour, as the design's "Alarms Trend (By Hour)"
     this.trendCategories = (d.trend || []).map((t: any) => d.trend_by === 'hour'
@@ -223,43 +271,29 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
     this.shiftDonutSeries = (d.by_shift || []).map((s: any) => Number(s.total) || 0);
     this.shiftTotal = this.shiftDonutSeries.reduce((a, b) => a + b, 0);
     this.severitySeries = [Number(d.by_severity.critical) || 0, Number(d.by_severity.normal) || 0];
-
-    this.cdr.markForCheck();
-    if (this.scrollToTable) { this.scrollToTable = false; this.revealTable(); }
   }
 
   /** After a card click: bring the table into view and move focus to its
    *  heading, so a keyboard or screen-reader user lands on the results too. */
   private revealTable(): void {
-    setTimeout(() => {
-      const section = document.getElementById('alDetails');
-      const heading = document.getElementById('alDetailsTitle');
-      if (!section || !heading) return;
-      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-      section.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-      heading.focus({ preventScroll: true });
-    });
+    this.scrollToTable = false;
+    revealWhenShown('alDetails', 'alDetailsTitle');
   }
 
   /*
-   * Fill in anything the payload is missing before it reaches the template.
-   * A template expression that throws aborts the whole change-detection
-   * pass, so a partial response would freeze unrelated components on the
-   * page — it reads as a broken menu rather than a broken dashboard.
+   * Fill in anything the charts' part is missing before it reaches the
+   * template. A template expression that throws aborts the whole
+   * change-detection pass, so a partial response would freeze unrelated
+   * components on the page — it reads as a broken menu rather than a broken
+   * dashboard. (The cards and the list are filled in by applyParts.)
    */
   private normalise(d: any): any {
     return {
-      ...d,
-      kpis: {
-        total: 0, critical: 0, normal: 0, open: 0,
-        max_duration_seconds: 0, avg_duration_seconds: 0, ...(d?.kpis ?? {})
-      },
       by_machine:  d?.by_machine  ?? [],
       by_shift:    d?.by_shift    ?? [],
       by_severity: { critical: 0, normal: 0, ...(d?.by_severity ?? {}) },
       trend:       d?.trend       ?? [],
-      facets:      { types: [], codes: [], ...(d?.facets ?? {}) },
-      alarms: { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d?.alarms ?? {}) }
+      trend_by:    d?.trend_by    ?? 'day'
     };
   }
 
@@ -297,7 +331,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy {
    *  happens to match nothing. The distinction matters: one is a setup
    *  problem, the other is a normal empty result. */
   get isUnconfigured(): boolean {
-    return !!this.data && this.data.kpis.total === 0 && this.data.facets.types.length === 0;
+    return this.data?.kpis?.total === 0 && (this.data?.facets?.types?.length ?? 0) === 0;
   }
 
   /** HH:MM:SS, as the design writes a duration; hours run past 24. */

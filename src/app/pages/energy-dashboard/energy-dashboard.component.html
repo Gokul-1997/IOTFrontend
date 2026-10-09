@@ -68,17 +68,11 @@
 <!-- First load: placeholders shaped like the cards that are coming, so
      the page does not jump when the data lands. No values are shown —
      a placeholder reading would be a claim about a machine. -->
-<ng-container *ngIf="loading && !data">
+<ng-container *ngIf="loading && !views.has('kpis')">
   <app-skeleton kind="kpis" [count]="5" label="Loading dashboard"></app-skeleton>
-  <div class="mexa-grid lg:grid-cols-2">
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-  </div>
 </ng-container>
 
-<ng-container *ngIf="data">
+<ng-container *ngIf="views.has('kpis')">
 
   <!-- Said plainly rather than shown as zeros, which would read as a
        remarkably efficient factory. Where the figure comes from is behind the (i). -->
@@ -179,47 +173,24 @@
 
 
 
-<!-- Tabs -->
-<div class="ui-tabs ui-tabs-center" role="tablist" aria-label="Machine information">
-  <button
-    type="button"
-    class="ui-tab"
-    [class.is-active]="activeTab === 'chart'"
-    [attr.aria-selected]="activeTab === 'chart'"
-    role="tab"
-    (click)="activeTab = 'chart'">
-    <span class="ui-tab-icon material-icons" aria-hidden="true">bar_chart</span>
-    Chart
-  </button>
+</ng-container>
 
-  <button
-    type="button"
-    class="ui-tab"
-    [class.is-active]="activeTab === 'machine'"
-    [attr.aria-selected]="activeTab === 'machine'"
-    role="tab"
-    (click)="activeTab = 'machine'">
-    <span class="ui-tab-icon material-icons" aria-hidden="true">description</span>
-    Machine Detail
-  </button>
-
-  <button
-    type="button"
-    class="ui-tab"
-    [class.is-active]="activeTab === 'energy'"
-    [attr.aria-selected]="activeTab === 'energy'"
-    role="tab"
-    (click)="activeTab = 'energy'">
-    <span class="ui-tab-icon material-icons" aria-hidden="true">bolt</span>
-    Energy Meter
-  </button>
-</div>
+<!-- ══════════ CHARTS | MACHINE DETAIL | ENERGY METER ══════════
+     Under the tiles. Each tab asks the API for its own part, and only when
+     it is open (shared/dash-view); the meter panel loads, and polls, only
+     while its tab is open. -->
+<app-dash-view-tabs [tabs]="views.tabs" [active]="views.tab" (activeChange)="setView($event)"
+                    label="Energy Dashboard views"></app-dash-view-tabs>
 
 <!-- Tab Content -->
 <div class="ui-tab-content">
 
-  <!-- Chart -->
-  <div *ngIf="activeTab === 'chart'" role="tabpanel" class="mexa-card">
+  <!-- Charts -->
+  <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="mexa-card">
+  <div *ngIf="loading && !views.has('charts')" class="mexa-grid lg:grid-cols-2">
+    <section class="mexa-card" *ngFor="let i of [1, 2, 3, 4]"><app-skeleton kind="chart" label="Loading the charts"></app-skeleton></section>
+  </div>
+  <ng-container *ngIf="views.has('charts')">
      <!-- ══════════ ROW 2 — trend + distribution ══════════ -->
   <div class="mexa-grid grid-cols-2 lg:grid-cols-3">
 
@@ -294,10 +265,13 @@
       <p *ngIf="!monthSeries.length" class="mexa-empty">Nothing recorded for this period.</p>
     </section>
   </div>
+  </ng-container>
   </div>
 
   <!-- Machine Detail -->
-  <div *ngIf="activeTab === 'machine'" role="tabpanel" class="mexa-card">
+  <div *ngIf="views.tab === 'details'" id="dashPanel-details" role="tabpanel" aria-labelledby="dashTab-details" class="mexa-card">
+  <app-skeleton *ngIf="loading && !views.has('table')" kind="table" [count]="8" label="Loading Machine Detail"></app-skeleton>
+  <ng-container *ngIf="views.has('table')">
       <!-- ══════════ MACHINE DETAIL ══════════ -->
 
     <div class="mexa-tablebar mb-2">
@@ -376,11 +350,11 @@
     <app-mexa-pager [page]="data.machines.page" [totalPages]="data.machines.totalPages" [total]="data.machines.total"
                     [shown]="data.machines.data.length" [limit]="limit" [sizes]="[limit]"
                     (pageChange)="changePage($event - page)"></app-mexa-pager>
-
+  </ng-container>
   </div>
 
   <!-- Energy Meter -->
-  <div *ngIf="activeTab === 'energy'" role="tabpanel" class="mexa-card">
+  <div *ngIf="views.tab === 'meter'" id="dashPanel-meter" role="tabpanel" aria-labelledby="dashTab-meter" class="mexa-card">
     <!-- ══════════ ENERGY METER ══════════
        Every value a 3-phase meter sends, for the machines that have one;
        nothing at all, and no polling, for a company without (meter-panel). -->
@@ -388,18 +362,3 @@
   </div>
 
 </div>
-
-
-
- 
-
-
-
-  
-</ng-container>
-
-
-
-
-
-

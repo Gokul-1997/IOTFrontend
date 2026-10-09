@@ -105,9 +105,11 @@ test('Energy: view alone hides Export and Tariff settings', async ({ page }) => 
   });
   await mockApi(page);
   await page.setViewportSize({ width: 1500, height: 900 });
-  await page.goto('/energy-dashboard');
+  // the machine table and its exports are on the Machine Detail tab
+  await page.goto('/energy-dashboard?view=details');
 
-  await expect(page.getByText('Machine Detail')).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Machine Detail' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#dashPanel-details table')).toBeVisible();
   await expect(page.getByRole('group', { name: 'Download the filtered list' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Tariff & rates' })).toHaveCount(0);
 });
@@ -120,7 +122,8 @@ test('Energy: export granted shows Export but still not Tariff settings', async 
   });
   await mockApi(page);
   await page.setViewportSize({ width: 1500, height: 900 });
-  await page.goto('/energy-dashboard');
+  // the machine table and its exports are on the Machine Detail tab
+  await page.goto('/energy-dashboard?view=details');
 
   await expect(page.getByRole('group', { name: 'Download the filtered list' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Tariff & rates' })).toHaveCount(0);
@@ -134,7 +137,8 @@ test('Energy: all three grants show everything', async ({ page }) => {
   });
   await mockApi(page);
   await page.setViewportSize({ width: 1500, height: 900 });
-  await page.goto('/energy-dashboard');
+  // the machine table and its exports are on the Machine Detail tab
+  await page.goto('/energy-dashboard?view=details');
 
   await expect(page.getByRole('group', { name: 'Download the filtered list' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Tariff & rates' })).toBeVisible();

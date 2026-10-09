@@ -69,17 +69,11 @@
 <!-- First load: placeholders shaped like the cards that are coming, so
      the page does not jump when the data lands. No values are shown —
      a placeholder reading would be a claim about a machine. -->
-<ng-container *ngIf="loading && !data">
+<ng-container *ngIf="loading && !views.has('kpis')">
   <app-skeleton kind="kpis" [count]="6" label="Loading dashboard"></app-skeleton>
-  <div class="mexa-grid lg:grid-cols-2">
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-  </div>
 </ng-container>
 
-<ng-container *ngIf="data">
+<ng-container *ngIf="views.has('kpis')">
 
   <!-- Telemetry shows idle time but nobody entered a reason: a setup gap,
        not an empty filter result, and worth saying in words. -->
@@ -159,36 +153,24 @@
   </div>
 
 
-<div class="ui-tabs ui-tabs-center" role="tablist" aria-label="Machine analytics">
-  <button
-    type="button"
-    class="ui-tab"
-    role="tab"
-    [class.is-active]="activeTab === 'charts'"
-    [attr.aria-selected]="activeTab === 'charts'"
-    (click)="activeTab = 'charts'">
-    <span class="ui-tab-icon material-icons" aria-hidden="true">bar_chart</span>
-    Charts
-  </button>
+</ng-container>
 
-  <button
-    type="button"
-    class="ui-tab"
-    role="tab"
-    [class.is-active]="activeTab === 'Downtime_Details'"
-    [attr.aria-selected]="activeTab === 'Downtime_Details'"
-    (click)="activeTab = 'Downtime_Details'">
-    <span class="ui-tab-icon material-icons" aria-hidden="true">speed</span>
-    Downtime Details
-  </button>
-</div>
+<!-- ══════════ CHARTS | DOWNTIME DETAILS ══════════
+     The charts and the tables on two tabs, under the tiles. Each tab asks
+     the API for its own part, and only when it is open (shared/dash-view). -->
+<app-dash-view-tabs [tabs]="views.tabs" [active]="views.tab" (activeChange)="setView($event)"
+                    label="Downtime Reason Analysis views"></app-dash-view-tabs>
 
 <div class="ui-tab-content">
-  <div *ngIf="activeTab === 'charts'" role="tabpanel" class="mexa-card">
-    <!-- ══════════ ROW 2 — Pareto + reason summary ══════════ -->
-  <div class="mexa-grid lg:grid-cols-3">
+  <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="mexa-card">
+  <div *ngIf="loading && !views.has('charts')" class="mexa-grid lg:grid-cols-2">
+    <section class="mexa-card" *ngFor="let i of [1, 2, 3, 4]"><app-skeleton kind="chart" label="Loading the charts"></app-skeleton></section>
+  </div>
+  <ng-container *ngIf="views.has('charts')">
+    <!-- ══════════ ROW 2 — Pareto (its reason summary table is on Downtime Details) ══════════ -->
+  <div class="mexa-grid">
 
-    <section class="mexa-card lg:col-span-2">
+    <section class="mexa-card">
       <h2 class="mexa-card-title mexa-card-title-left">Downtime by Reason (Pareto)</h2>
       <apx-chart *ngIf="paretoSeries.length && data.by_reason.length"
         [series]="paretoSeries" [chart]="paretoChart.chart" [stroke]="paretoChart.stroke"
@@ -223,70 +205,6 @@
 
           <p class="empty-title">No downtime reasons recorded for this period.</p>
         </div>
-      </div>
-    </section>
-
-    <section class="mexa-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Downtime By Reason Summary</h2>
-      <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
-        <table class="mexa-table" style="min-width:0">
-          <caption class="sr-only">Downtime reasons, largest first</caption>
-          <thead>
-            <tr>
-              <th scope="col">Downtime Reason</th>
-              <th class="qty" scope="col">Occurrences</th>
-              <th class="qty" scope="col">Total downtime</th>
-              <th scope="col">Contribution</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let r of data.by_reason">
-              <td class="strong">{{ r.reason }}</td>
-              <td class="num qty">{{ r.events }}</td>
-              <td class="num qty">{{ hours(r.seconds) }}</td>
-              <td>
-                <!-- bar and number together; the bar alone would not be
-                     readable to a screen reader or in greyscale -->
-                <span class="mexa-meter" aria-hidden="true">
-                  <span class="mexa-meter-fill" [style.width.%]="r.share_pct"></span>
-                </span>
-                <span class="num">{{ pct(r.share_pct) }}</span>
-              </td>
-            </tr>
-            <tr *ngIf="!data.by_reason.length">
-              <td colspan="4">
-                
-                <div class="mexa-empty">
-              <div class="downtime-empty">
-          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-            stroke="currentColor"
-            stroke-width="2"
-          />
-          <path
-            d="M12 7.5V13"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-          <circle
-            cx="12"
-            cy="16.5"
-            r="1"
-            fill="currentColor"
-          />
-        </svg>
-
-          <p class="empty-title">Nothing recorded.</p>
-        </div>
-        </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
       </div>
     </section>
   </div>
@@ -376,9 +294,81 @@
       <p *ngIf="!hourlySeries.length" class="mexa-empty">No downtime recorded for this period.</p>
     </section>
   </div>
+  </ng-container>
   </div>
 
-  <div *ngIf="activeTab === 'Downtime_Details'" role="tabpanel" class="mexa-card">
+  <div *ngIf="views.tab === 'details'" id="dashPanel-details" role="tabpanel" aria-labelledby="dashTab-details" class="mexa-card">
+  <section *ngIf="loading && !views.has('table')" class="mexa-card">
+    <app-skeleton kind="table" [count]="8" label="Loading the downtime tables"></app-skeleton>
+  </section>
+  <ng-container *ngIf="views.has('table')">
+  <!-- ══════════ REASON SUMMARY ══════════ -->
+  <div class="mexa-grid">
+    <section class="mexa-card">
+      <h2 class="mexa-card-title mexa-card-title-left">Downtime By Reason Summary</h2>
+      <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
+        <table class="mexa-table" style="min-width:0">
+          <caption class="sr-only">Downtime reasons, largest first</caption>
+          <thead>
+            <tr>
+              <th scope="col">Downtime Reason</th>
+              <th class="qty" scope="col">Occurrences</th>
+              <th class="qty" scope="col">Total downtime</th>
+              <th scope="col">Contribution</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of data.by_reason">
+              <td class="strong">{{ r.reason }}</td>
+              <td class="num qty">{{ r.events }}</td>
+              <td class="num qty">{{ hours(r.seconds) }}</td>
+              <td>
+                <!-- bar and number together; the bar alone would not be
+                     readable to a screen reader or in greyscale -->
+                <span class="mexa-meter" aria-hidden="true">
+                  <span class="mexa-meter-fill" [style.width.%]="r.share_pct"></span>
+                </span>
+                <span class="num">{{ pct(r.share_pct) }}</span>
+              </td>
+            </tr>
+            <tr *ngIf="!data.by_reason.length">
+              <td colspan="4">
+                
+                <div class="mexa-empty">
+              <div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M12 7.5V13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle
+            cx="12"
+            cy="16.5"
+            r="1"
+            fill="currentColor"
+          />
+        </svg>
+
+          <p class="empty-title">Nothing recorded.</p>
+        </div>
+        </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
      <!-- ══════════ DOWNTIME DETAILS ══════════ -->
   <section class="mexa-card">
     <div class="mexa-tablebar">
@@ -482,13 +472,6 @@
                     [shown]="data.events.data.length" [limit]="limit"
                     (pageChange)="goTo($event)" (limitChange)="setLimit($event)"></app-mexa-pager>
   </section>
+  </ng-container>
   </div>
 </div>
-
-
-  
-
-  
-
- 
-</ng-container>

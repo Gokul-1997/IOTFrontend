@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
+import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { PeriodicDashboardService } from './periodic-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -13,6 +13,14 @@ import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { DashPart, DashTab, DashViewHooks, DashViews, revealWhenShown, viewInUrl } from '../../shared/dash-view/dash-view';
+import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
+
+/** Charts | Maintenance Details (upcoming, by type, the tickets and the plan), under the tiles both share. */
+const TABS: DashTab[] = [
+  { key: 'charts',  label: 'Charts',              icon: 'bar_chart',  parts: ['kpis', 'charts'] },
+  { key: 'details', label: 'Maintenance Details', icon: 'table_rows', parts: ['kpis', 'table'] }
+];
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 4 — Periodic Maintenance Dashboard
@@ -29,10 +37,16 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 @Component({
   selector: 'app-periodic-dashboard',
   standalone: true,
-  imports: [MexaPagerComponent, AutoApplyDirective, FilterPanelDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [DashViewTabsComponent, MexaPagerComponent, AutoApplyDirective, FilterPanelDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './periodic-dashboard.component.html'
 })
-export class PeriodicDashboardComponent implements OnInit, OnDestroy {
+export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
+
+  /* ── Charts | Maintenance Details ──
+     Each part of the page is asked for only while it is on screen and out
+     of date (shared/dash-view). */
+  private url = viewInUrl(TABS);
+  readonly views = new DashViews(this, TABS, this.url.initial);
 
   /** Chart options keep the same reference until apply() bumps this. */
   private charts = new ChartMemo();
@@ -48,8 +62,10 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
   readonly limit = 10;
 
   /* ── state ── */
+  /** The page's data, each part merged in as it arrives. */
   data: any = null;
-  loading = false;
+  /** Something on screen is waiting for its data ("Updating…"). */
+  get loading(): boolean { return this.views.loading; }
   errorMsg = '';
   updatedAt = '';
   running = false;
@@ -70,8 +86,6 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
   readonly STATUSES = ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
 
   private destroy$ = new Subject<void>();
-  /** The request on its way; a newer filter choice replaces it, so an older answer can never land last. */
-  private loadSub?: Subscription;
   private search$ = new RxSubject<string>();
 
   constructor(
@@ -116,8 +130,28 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.views.cancel();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /** Open a tab; nothing is asked for that is already up to date. */
+  setView(tab: string): void {
+    if (tab === this.views.tab) return;
+    this.errorMsg = '';
+    this.views.show(tab);
+    this.url.write(tab);
+    this.cdr.markForCheck();
+  }
+
+  /** The title bar's plan button: the plan is on Maintenance Details, so opening it goes there. */
+  togglePlan(): void {
+    this.showPlan = !this.showPlan;
+    if (this.showPlan) {
+      this.setView('details');
+      revealWhenShown('pePlan', 'pePlanTitle');
+    }
+    this.cdr.markForCheck();
   }
 
   onSearchInput(): void { this.search$.next(this.search); }
@@ -141,39 +175,65 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
     this.load();
   }
 
+  /** Bring what is on screen up to date with the filters; the other tab follows when it is opened. */
   load(): void {
-    this.loading = true;
     this.errorMsg = '';
+    this.views.load();
     this.cdr.markForCheck();
-
-    this.loadSub?.unsubscribe();
-    this.loadSub = this.svc.getPeriodic({
-      machine_id: this.selectedMachine,
-      search: this.search,
-      status: this.statusFilter,
-      due: this.dueFilter,
-      page: this.page,
-      limit: this.limit
-    })
-      .pipe(takeUntil(this.destroy$), catchError(err => {
-        this.errorMsg = err?.error?.message || 'Unable to load periodic maintenance data.';
-        return of(null);
-      }))
-      .subscribe(res => this.apply(res));
   }
 
-  private apply(res: any): void {
-    this.charts.bump();
-    this.loading = false;
+  /** Something changed the tickets or the plan (saved, stopped, generated): every part loads again. */
+  private reloadAll(): void {
+    this.views.stale();
+    this.load();
+  }
 
+  /* What each part depends on: the tiles and charts on the machine alone;
+     the tables on it and the ticket search, status, due and page. */
+  partKeys(): Record<DashPart, string> {
+    const machine = JSON.stringify([this.selectedMachine]);
+    return {
+      kpis: machine, charts: machine,
+      table: JSON.stringify([this.selectedMachine, this.search, this.statusFilter, this.dueFilter, this.page, this.limit])
+    };
+  }
+
+  fetchParts(parts: DashPart[]) {
+    const table = parts.includes('table')
+      ? { search: this.search, status: this.statusFilter, due: this.dueFilter, page: this.page, limit: this.limit } : {};
+    return this.svc.getPeriodic({ machine_id: this.selectedMachine, ...table, part: parts.join(',') })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  applyParts(parts: DashPart[], res: any, err?: any): boolean {
     if (!res || res.status !== 'success' || !res.data) {
-      if (!this.errorMsg) this.errorMsg = 'No periodic maintenance data available.';
+      this.errorMsg = err?.error?.message || (err ? 'Unable to load periodic maintenance data.' : 'No periodic maintenance data available.');
       this.cdr.markForCheck();
-      return;
+      return false;
     }
-
-    const d = this.data = this.normalise(res.data);
+    const d = res.data;
+    const next: any = { ...(this.data ?? {}) };
+    if (parts.includes('kpis')) next.kpis = {
+      scheduled: 0, due_today: 0, due_this_week: 0, overdue: 0, completed: 0,
+      compliance_pct: null, compliance_basis: { on_time: 0, judged: 0 }, ...(d.kpis ?? {})
+    };
+    if (parts.includes('kpis') || parts.includes('charts')) next.technician_workload = d.technician_workload ?? [];
+    if (parts.includes('charts')) Object.assign(next, this.normalise(d));
+    if (parts.includes('table')) {
+      next.by_frequency = d.by_frequency ?? [];
+      next.upcoming     = d.upcoming     ?? [];
+      next.tickets      = { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d.tickets ?? {}) };
+    }
+    this.data = next;
+    if (parts.includes('charts')) this.applyCharts(next);
     this.updatedAt = updatedLabel(d.updated_at);
+    this.cdr.markForCheck();
+    return true;
+  }
+
+  /** The charts' series, built once per answer rather than in getters. */
+  private applyCharts(d: any): void {
+    this.charts.bump();
 
     this.trendCategories = (d.compliance_trend || []).map((t: any) =>
       new Date(t.week_start).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
@@ -185,8 +245,6 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
     /* Donuts take a flat number array; the {name,data} series shape
        renders an empty chart with no error. */
     this.workloadSeries = (d.technician_workload || []).map((w: any) => Number(w.open) || 0);
-
-    this.cdr.markForCheck();
   }
 
   /*
@@ -201,18 +259,9 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
    */
   private normalise(d: any): any {
     return {
-      ...d,
       filters: d?.filters ?? { machine_id: null, search: null, status: null },
-      kpis: {
-        scheduled: 0, due_today: 0, due_this_week: 0, overdue: 0, completed: 0,
-        compliance_pct: null, compliance_basis: { on_time: 0, judged: 0 },
-        ...(d?.kpis ?? {})
-      },
       compliance_trend:    d?.compliance_trend    ?? [],
-      by_frequency:        d?.by_frequency        ?? [],
-      technician_workload: d?.technician_workload ?? [],
-      upcoming:            d?.upcoming            ?? [],
-      tickets: { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d?.tickets ?? {}) }
+      technician_workload: d?.technician_workload ?? []
     };
   }
 
@@ -261,7 +310,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
           this.scheduleForm = this.blankSchedule();
           this.toast.success('Schedule saved');
           this.loadSchedules();
-          this.load();
+          this.reloadAll();
         },
         error: err => {
           this.savingSchedule = false;
@@ -276,7 +325,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
     this.svc.deleteSchedule(s.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => { this.toast.success('Schedule stopped'); this.loadSchedules(); this.load(); },
+        next: () => { this.toast.success('Schedule stopped'); this.loadSchedules(); this.reloadAll(); },
         error: err => this.toast.error(err?.error?.message || 'Could not stop the schedule')
       });
   }
@@ -291,7 +340,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
           this.running = false;
           this.toast.success(res?.message || 'Schedules evaluated');
           this.loadSchedules();
-          this.load();
+          this.reloadAll();
         },
         error: err => {
           this.running = false;
@@ -338,7 +387,13 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy {
     this.dueFilter = this.dueFilter === kind ? '' : kind;
     this.statusFilter = '';
     this.page = 1;
-    this.load();
+    // a narrowing opens the tickets, on Maintenance Details; clearing it stays where it is
+    if (this.dueFilter && this.views.tab !== 'details') {
+      this.setView('details');
+      revealWhenShown('peTickets', 'peTicketsTitle');
+    } else {
+      this.load();
+    }
   }
 
   /** Technicians carrying at least one overdue ticket. */

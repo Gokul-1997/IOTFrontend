@@ -51,7 +51,8 @@ function meter(range: string, over: any = {}) {
   } };
 }
 
-const panel = (page: any) => page.locator('app-meter-panel section');
+// the panel, not the Meter totals section inside it
+const panel = (page: any) => page.locator('app-meter-panel section').first();
 const card = (page: any, name: string) => panel(page).getByRole('article', { name, exact: true });
 
 async function openEnergy(page: any, respond: (url: URL) => any, asked: string[] = []) {
@@ -63,7 +64,8 @@ async function openEnergy(page: any, respond: (url: URL) => any, asked: string[]
     return body === 'fail' ? r.fulfill({ status: 500, contentType: 'application/json', body: '{}' }) : r.fulfill(ok(body));
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('/energy-dashboard');
+  // the meter has its own tab on the Energy screen
+  await page.goto('/energy-dashboard?view=meter');
 }
 
 test.describe('energy meter — Energy screen', () => {

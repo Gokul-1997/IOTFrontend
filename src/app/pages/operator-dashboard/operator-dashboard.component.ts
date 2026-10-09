@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
+import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { OperatorDashboardService } from './operator-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -16,6 +16,14 @@ import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { UiTabsDirective } from '../../shared/ui-tabs.directive';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl } from '../../shared/dash-view/dash-view';
+import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
+
+/** Charts | Operator Performance Details, under the tiles both share. */
+const VIEWS: DashTab[] = [
+  { key: 'charts',  label: 'Charts',                       icon: 'bar_chart',  parts: ['kpis', 'charts'] },
+  { key: 'details', label: 'Operator Performance Details', icon: 'table_rows', parts: ['kpis', 'table'] }
+];
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 7 — Operator Performance
@@ -42,11 +50,17 @@ type Tab = Exclude<Board, 'oee'>;
 @Component({
   selector: 'app-operator-dashboard',
   standalone: true,
-  imports: [MexaPagerComponent, MetricHelpComponent, UiTabsDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, UiTabsDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
   templateUrl: './operator-dashboard.component.html'
 })
-export class OperatorDashboardComponent implements OnInit, OnDestroy {
-activeTab: 'charts' | 'operator' = 'charts';
+export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
+
+  /* ── Charts | Operator Performance Details ──
+     The page's tabs (not to be confused with `tab` below: the ranking
+     card's own). Each part of the page is asked for only while it is on
+     screen and out of date (shared/dash-view). */
+  private url = viewInUrl(VIEWS);
+  readonly views = new DashViews(this, VIEWS, this.url.initial);
 
   /** Chart options keep their reference until their own figures change (deps). */
   private charts = new ChartMemo();
@@ -61,8 +75,10 @@ activeTab: 'charts' | 'operator' = 'charts';
   sort = 'score';
   dir: 'asc' | 'desc' = 'desc';
 
+  /** The page's data, each part merged in as it arrives. */
   data: any = null;
-  loading = false;
+  /** Something on screen is waiting for its data ("Updating…"). */
+  get loading(): boolean { return this.views.loading; }
   errorMsg = '';
   updatedAt = '';
   exporting = '';
@@ -84,8 +100,6 @@ activeTab: 'charts' | 'operator' = 'charts';
   get tabInfo() { return this.tabs.find(t => t.key === this.tab)!; }
 
   private destroy$ = new Subject<void>();
-  /** The request on its way; a newer filter choice replaces it, so an older answer can never land last. */
-  private loadSub?: Subscription;
   private search$ = new RxSubject<string>();
 
   /** The table's columns, in the mock's order. `key` is what the server sorts by. */
@@ -133,7 +147,16 @@ activeTab: 'charts' | 'operator' = 'charts';
     this.load();
   }
 
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
+  ngOnDestroy(): void { this.views.cancel(); this.destroy$.next(); this.destroy$.complete(); }
+
+  /** Open a page tab; nothing is asked for that is already up to date. */
+  setView(tab: string): void {
+    if (tab === this.views.tab) return;
+    this.errorMsg = '';
+    this.views.show(tab);
+    this.url.write(tab);
+    this.cdr.markForCheck();
+  }
 
   blankFilters() {
     const today = this.todayStr();
@@ -185,51 +208,58 @@ activeTab: 'charts' | 'operator' = 'charts';
     this.cdr.markForCheck();
   }
 
+  /** Bring what is on screen up to date with the filters; the other tab follows when it is opened. */
   load(): void {
-    this.loading = true;
     this.errorMsg = '';
+    this.views.load();
     this.cdr.markForCheck();
-
-    this.loadSub?.unsubscribe();
-    this.loadSub = this.svc.getOperators({ ...this.f, sort: this.sort, dir: this.dir, page: this.page, limit: this.limit })
-      .pipe(takeUntil(this.destroy$), catchError(err => {
-        this.errorMsg = err?.error?.message || 'Unable to load operator performance.';
-        return of(null);
-      }))
-      .subscribe(res => this.apply(res));
   }
 
-  private apply(res: any): void {
-    this.loading = false;
-    if (!res || res.status !== 'success' || !res.data) {
-      if (!this.errorMsg) this.errorMsg = 'No operator performance data available.';
-      this.cdr.markForCheck();
-      return;
-    }
-    const d = this.data = this.normalise(res.data);
-    this.operatorList = d.operator_list;
-    this.updatedAt = updatedLabel(d.updated_at);
-    this.cdr.markForCheck();
+  /* What each part depends on: the tiles and rankings on the filters (the
+     operator search narrows them too); the list on those and its order and page. */
+  partKeys(): Record<DashPart, string> {
+    const shared = JSON.stringify(this.f);
+    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.sort, this.dir, this.page, this.limit]) };
+  }
+
+  fetchParts(parts: DashPart[]) {
+    const table = parts.includes('table') ? { sort: this.sort, dir: this.dir, page: this.page, limit: this.limit } : {};
+    return this.svc.getOperators({ ...this.f, ...table, part: parts.join(',') }).pipe(takeUntil(this.destroy$));
   }
 
   /* A template expression that throws aborts the whole change-detection
-     pass, freezing unrelated components. Defend at the boundary. */
-  private normalise(d: any): any {
-    const empty = { top: [], bottom: [] };
-    const lb = d?.leaders ?? {};
-    return {
-      ...d,
-      attribution:  { operators: 0, shared_machines: 0, note: '', ...(d?.attribution ?? {}) },
-      oee_coverage: { machines: 0, with_cycle_time: 0, ...(d?.oee_coverage ?? {}) },
-      score_bands:  { excellent: 75, good: 60, average: 45, ...(d?.score_bands ?? {}) },
-      bands:        { excellent: 0, good: 0, average: 0, needs_help: 0, unrated: 0, ...(d?.bands ?? {}) },
-      leaders: {
+     pass, freezing unrelated components: each part is filled in where the
+     payload is short before it reaches the template. */
+  applyParts(parts: DashPart[], res: any, err?: any): boolean {
+    if (!res || res.status !== 'success' || !res.data) {
+      this.errorMsg = err?.error?.message || (err ? 'Unable to load operator performance.' : 'No operator performance data available.');
+      this.cdr.markForCheck();
+      return false;
+    }
+    const d = res.data;
+    const next: any = { ...(this.data ?? {}) };
+    if (parts.includes('kpis')) {
+      next.attribution  = { operators: 0, shared_machines: 0, note: '', ...(d.attribution ?? {}) };
+      next.oee_coverage = { machines: 0, with_cycle_time: 0, ...(d.oee_coverage ?? {}) };
+      next.score_bands  = { excellent: 75, good: 60, average: 45, ...(d.score_bands ?? {}) };
+      next.bands        = { excellent: 0, good: 0, average: 0, needs_help: 0, unrated: 0, ...(d.bands ?? {}) };
+      next.kpis         = d.kpis ?? {};
+      // the operator list for the filter comes with the tiles
+      this.operatorList = d.operator_list ?? this.operatorList;
+    }
+    if (parts.includes('charts')) {
+      const empty = { top: [], bottom: [] };
+      const lb = d.leaders ?? {};
+      next.leaders = {
         score: { ...empty, ...(lb.score ?? {}) }, rejection: { ...empty, ...(lb.rejection ?? {}) },
         downtime: { ...empty, ...(lb.downtime ?? {}) }, oee: { ...empty, ...(lb.oee ?? {}) }
-      },
-      operator_list: d?.operator_list ?? [],
-      operators: { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d?.operators ?? {}) }
-    };
+      };
+    }
+    if (parts.includes('table')) next.operators = { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d.operators ?? {}) };
+    this.data = next;
+    this.updatedAt = updatedLabel(d.updated_at);
+    this.cdr.markForCheck();
+    return true;
   }
 
   export(format: 'xlsx' | 'csv' | 'pdf'): void {

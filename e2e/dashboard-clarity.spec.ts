@@ -127,11 +127,15 @@ test.describe('Operator Performance: one ranking card', () => {
     await expect(page.getByRole('region', { name: 'Operator ranking' })).toBeVisible();
     await expect(page.locator('.mexa-card-hint')).toHaveCount(0);
     await expect(page.getByText('appear in each of their rows')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'What is Operator rows?' })).toBeVisible();
     // the cycle-time gap: one line, the count, and an (i)
     const note = page.locator('.mexa-note-warn');
     await expect(note).toContainText('2 of 6 running machines have no cycle time');
     await expect(note.getByRole('button', { name: /^What is/ })).toBeVisible();
+    // the operator list, and the (i) on it, are on the Operator Performance Details tab
+    await page.getByRole('tab', { name: 'Operator Performance Details' }).click();
+    await expect(page.getByRole('button', { name: 'What is Operator rows?' })).toBeVisible();
+    await expect(page.locator('.mexa-card-hint')).toHaveCount(0);
+    await expect(page.getByText('appear in each of their rows')).toHaveCount(0);
   });
 });
 

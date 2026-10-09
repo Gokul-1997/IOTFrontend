@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
+import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { EnergyDashboardService } from './energy-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -18,6 +18,16 @@ import { compactQty, qty } from '../../shared/format-number';
 import { MeterPanelComponent } from '../../shared/meter-panel/meter-panel.component';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl } from '../../shared/dash-view/dash-view';
+import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
+
+/** Charts | Machine Detail | Energy Meter, under the tiles all three share. The meter
+ *  panel fetches its own readings, so its tab needs nothing more from this page. */
+const TABS: DashTab[] = [
+  { key: 'charts',  label: 'Charts',         icon: 'bar_chart',  parts: ['kpis', 'charts'] },
+  { key: 'details', label: 'Machine Detail', icon: 'table_rows', parts: ['kpis', 'table'] },
+  { key: 'meter',   label: 'Energy Meter',   icon: 'bolt',       parts: ['kpis'] }
+];
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 9 — Energy Monitoring
@@ -36,11 +46,16 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 @Component({
   selector: 'app-energy-dashboard',
   standalone: true,
-  imports: [MexaPagerComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MeterPanelComponent],
+  imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MeterPanelComponent],
   templateUrl: './energy-dashboard.component.html'
 })
-export class EnergyDashboardComponent implements OnInit, OnDestroy {
-activeTab: 'chart' | 'machine' | 'energy' | 'events' = 'chart';
+export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
+
+  /* ── Charts | Machine Detail | Energy Meter ──
+     Each part of the page is asked for only while it is on screen and out
+     of date (shared/dash-view). */
+  private url = viewInUrl(TABS);
+  readonly views = new DashViews(this, TABS, this.url.initial);
   /** Chart options keep their reference until their own figures change (deps). */
   private charts = new ChartMemo();
 
@@ -49,8 +64,10 @@ activeTab: 'chart' | 'machine' | 'energy' | 'events' = 'chart';
   page = 1;
   readonly limit = 20;
 
+  /** The page's data, each part merged in as it arrives. */
   data: any = null;
-  loading = false;
+  /** Something on screen is waiting for its data ("Updating…"). */
+  get loading(): boolean { return this.views.loading; }
   errorMsg = '';
   updatedAt = '';
   exporting = '';
@@ -66,8 +83,6 @@ activeTab: 'chart' | 'machine' | 'energy' | 'events' = 'chart';
   monthCategories: string[] = [];
 
   private destroy$ = new Subject<void>();
-  /** The request on its way; a newer filter choice replaces it, so an older answer can never land last. */
-  private loadSub?: Subscription;
   private search$ = new RxSubject<string>();
 
   constructor(
@@ -80,10 +95,15 @@ activeTab: 'chart' | 'machine' | 'energy' | 'events' = 'chart';
   /** Export is its own grant — a company can have this page without being able to take data off it. */
   get canExport(): boolean { return this.auth.hasAction('analytics-energy', 'export'); }
   get canEditSettings(): boolean { return this.auth.hasAction('analytics-energy', 'settings'); }
-  
-setTab(tab: 'chart' | 'machine' | 'energy'): void {
-  this.activeTab = tab;
-}
+
+  /** Open a tab; nothing is asked for that is already up to date. */
+  setView(tab: string): void {
+    if (tab === this.views.tab) return;
+    this.errorMsg = '';
+    this.views.show(tab);
+    this.url.write(tab);
+    this.cdr.markForCheck();
+  }
 
   ngOnInit(): void {
     this.svc.getMeta()
@@ -97,7 +117,7 @@ setTab(tab: 'chart' | 'machine' | 'energy'): void {
     this.load();
   }
 
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
+  ngOnDestroy(): void { this.views.cancel(); this.destroy$.next(); this.destroy$.complete(); }
 
   blankFilters() {
     const today = this.todayStr();
@@ -116,30 +136,49 @@ setTab(tab: 'chart' | 'machine' | 'energy'): void {
     this.load();
   }
 
+  /** Bring what is on screen up to date with the filters; the other tabs follow when they are opened. */
   load(): void {
-    this.loading = true;
     this.errorMsg = '';
+    this.views.load();
     this.cdr.markForCheck();
-
-    this.loadSub?.unsubscribe();
-    this.loadSub = this.svc.getEnergy({ ...this.f, page: this.page, limit: this.limit })
-      .pipe(takeUntil(this.destroy$), catchError(err => {
-        this.errorMsg = err?.error?.message || 'Unable to load energy data.';
-        return of(null);
-      }))
-      .subscribe(res => this.apply(res));
   }
 
-  private apply(res: any): void {
-    this.loading = false;
-    if (!res || res.status !== 'success' || !res.data) {
-      if (!this.errorMsg) this.errorMsg = 'No energy data available.';
-      this.cdr.markForCheck();
-      return;
-    }
+  /* What each part depends on: the tiles and charts on the filters (the
+     machine search narrows the totals too); the table on those and its page. */
+  partKeys(): Record<DashPart, string> {
+    const shared = JSON.stringify(this.f);
+    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.page, this.limit]) };
+  }
 
-    const d = this.data = this.normalise(res.data);
+  fetchParts(parts: DashPart[]) {
+    const paging = parts.includes('table') ? { page: this.page, limit: this.limit } : {};
+    return this.svc.getEnergy({ ...this.f, ...paging, part: parts.join(',') }).pipe(takeUntil(this.destroy$));
+  }
+
+  applyParts(parts: DashPart[], res: any, err?: any): boolean {
+    if (!res || res.status !== 'success' || !res.data) {
+      this.errorMsg = err?.error?.message || (err ? 'Unable to load energy data.' : 'No energy data available.');
+      this.cdr.markForCheck();
+      return false;
+    }
+    const d = res.data;
+    const next: any = { ...(this.data ?? {}), currency: d.currency || 'INR', rate_per_kwh: d.rate_per_kwh ?? null };
+    if (parts.includes('kpis')) {
+      next.kpis = { total_kwh: null, total_operating_seconds: 0, total_produced: 0, kwh_per_part: null,
+                    total_cost: null, overload_alerts: 0, ...(d.kpis ?? {}) };
+      next.coverage = { machines: 0, reporting: 0, tariff_configured: false, note: '', ...(d.coverage ?? {}) };
+    }
+    if (parts.includes('charts')) Object.assign(next, this.normalise(d));
+    if (parts.includes('table')) next.machines = { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d.machines ?? {}) };
+    this.data = next;
+    if (parts.includes('charts')) this.applyCharts(next);
     this.updatedAt = updatedLabel(d.updated_at);
+    this.cdr.markForCheck();
+    return true;
+  }
+
+  /** The charts' series: the same arrays while the figures are the same, so no chart is drawn again for nothing. */
+  private applyCharts(d: any): void {
 
     /* keep(): the same arrays as last time when the figures are the same, so
        paging or searching the machine table redraws no chart. */
@@ -160,25 +199,16 @@ setTab(tab: 'chart' | 'machine' | 'energy'): void {
     this.shiftTotal = this.shiftDonutSeries.reduce((a, b) => a + b, 0);
 
     this.buildCostTrend();
-
-    this.cdr.markForCheck();
   }
 
+  /** The charts' part, filled in where the payload is short. (The tiles and the table: applyParts.) */
   private normalise(d: any): any {
     return {
-      ...d,
-      currency: d?.currency || 'INR',
-      kpis: {
-        total_kwh: null, total_operating_seconds: 0, total_produced: 0,
-        kwh_per_part: null, total_cost: null, overload_alerts: 0, ...(d?.kpis ?? {})
-      },
-      coverage: { machines: 0, reporting: 0, tariff_configured: false, note: '', ...(d?.coverage ?? {}) },
       trend:     d?.trend     ?? [],
       by_shift:  d?.by_shift  ?? [],
       by_month:  d?.by_month  ?? [],
       top_consumers: d?.top_consumers ?? [],
-      overloads: d?.overloads ?? [],
-      machines: { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d?.machines ?? {}) }
+      overloads: d?.overloads ?? []
     };
   }
 
@@ -214,7 +244,7 @@ setTab(tab: 'chart' | 'machine' | 'energy'): void {
   /** True when not one machine reports a counter — a device gap, not an
    *  empty filter result, and worth saying plainly. */
   get noEnergyData(): boolean {
-    return !!this.data && this.data.coverage.reporting === 0;
+    return this.data?.coverage?.reporting === 0;
   }
 
   /** Unknown shows as a dash, never 0 — they are different claims. */
@@ -230,8 +260,9 @@ setTab(tab: 'chart' | 'machine' | 'energy'): void {
   }
 
   /** An overload is only judged against a limit; 0 alerts with none set is no all-clear. */
+  /** Judged over every machine (the server says), not just the page of the table on show. */
   get overloadLimitSet(): boolean {
-    return (this.data?.machines?.data || []).some((m: any) => m.overload_kw != null);
+    return !!this.data?.kpis?.overload_limit_set;
   }
 
   hours(seconds: number | null | undefined): string {

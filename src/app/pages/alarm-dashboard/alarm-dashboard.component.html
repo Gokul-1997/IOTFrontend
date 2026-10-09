@@ -88,17 +88,11 @@
 <!-- First load: placeholders shaped like the cards that are coming, so
      the page does not jump when the data lands. No values are shown —
      a placeholder reading would be a claim about a machine. -->
-<ng-container *ngIf="loading && !data">
+<ng-container *ngIf="loading && !views.has('kpis')">
   <app-skeleton kind="kpis" [count]="5" label="Loading dashboard"></app-skeleton>
-  <div class="mexa-grid lg:grid-cols-2">
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-    <section class="mexa-card"><app-skeleton kind="chart"></app-skeleton></section>
-  </div>
 </ng-container>
 
-<ng-container *ngIf="data">
+<ng-container *ngIf="views.has('kpis')">
 
   <!-- Nothing ever recorded is a setup problem, not an empty filter. -->
   <p *ngIf="isUnconfigured" class="mexa-note mexa-note-warn">
@@ -106,10 +100,10 @@
   </p>
 
   <!-- ══════════ KPI TILES ══════════
-       Each card opens the alarms behind its number in Alarms Details below
-       (Max Duration sorts it longest first). Same card again shows all. -->
+       Each card opens the alarms behind its number in Alarms Details, on its
+       tab (Max Duration sorts it longest first). Same card again shows all. -->
   <div class="mexa-kpis">
-    <button type="button" class="mexa-kpi" (click)="drill('all')" aria-controls="alDetails">
+    <button type="button" class="mexa-kpi" (click)="drill('all')">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Alarms</span>
         <span class="mexa-kpi-icon navy" style="background:#2f2d8f" aria-hidden="true">
@@ -121,7 +115,7 @@
       <!-- <span class="mexa-kpi-go">View all <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
-    <button type="button" class="mexa-kpi" (click)="drill('critical')" aria-controls="alDetails"
+    <button type="button" class="mexa-kpi" (click)="drill('critical')"
             [attr.aria-pressed]="drillKind === 'critical'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Critical Alarms</span>
@@ -134,7 +128,7 @@
       <!-- <span class="mexa-kpi-go">{{ drillKind === 'critical' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
-    <button type="button" class="mexa-kpi" (click)="drill('normal')" aria-controls="alDetails"
+    <button type="button" class="mexa-kpi" (click)="drill('normal')"
             [attr.aria-pressed]="drillKind === 'normal'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Non-critical Alarms</span>
@@ -147,7 +141,7 @@
       <!-- <span class="mexa-kpi-go">{{ drillKind === 'normal' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
-    <button type="button" class="mexa-kpi" (click)="drill('open')" aria-controls="alDetails"
+    <button type="button" class="mexa-kpi" (click)="drill('open')"
             [attr.aria-pressed]="drillKind === 'open'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Open Alarms</span>
@@ -160,7 +154,7 @@
       <!-- <span class="mexa-kpi-go">{{ drillKind === 'open' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
-    <button type="button" class="mexa-kpi" (click)="drill('longest')" aria-controls="alDetails"
+    <button type="button" class="mexa-kpi" (click)="drill('longest')"
             [attr.aria-pressed]="drillKind === 'longest'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Max Duration</span>
@@ -177,6 +171,20 @@
     </button>
   </div>
 
+</ng-container>
+
+<!-- ══════════ CHARTS | ALARMS DETAILS ══════════
+     The charts and the alarm list on two tabs, under the cards. Each tab
+     asks the API for its own part, and only when it is open (shared/dash-view). -->
+<app-dash-view-tabs [tabs]="views.tabs" [active]="views.tab" (activeChange)="setView($event)"
+                    label="Alarm Report views"></app-dash-view-tabs>
+
+<div class="ui-tab-content">
+  <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="mexa-card">
+  <div *ngIf="loading && !views.has('charts')" class="mexa-grid grid-cols-2 xl:grid-cols-4 lg:grid-cols-2">
+    <section class="mexa-card" *ngFor="let i of [1, 2, 3, 4]"><app-skeleton kind="chart" label="Loading the charts"></app-skeleton></section>
+  </div>
+  <ng-container *ngIf="views.has('charts')">
   <!-- ══════════ ROW 2 ══════════ -->
   <div class="mexa-grid grid-cols-2 xl:grid-cols-4 lg:grid-cols-2">
 
@@ -315,6 +323,14 @@
     </section>
   </div>
 
+  </ng-container>
+  </div>
+
+  <div *ngIf="views.tab === 'details'" id="dashPanel-details" role="tabpanel" aria-labelledby="dashTab-details" class="mexa-card">
+  <section *ngIf="loading && !views.has('table')" class="mexa-card">
+    <app-skeleton kind="table" [count]="8" label="Loading the alarm list"></app-skeleton>
+  </section>
+  <ng-container *ngIf="views.has('table')">
   <!-- ══════════ ALARMS DETAILS ══════════ -->
   <section class="mexa-card mexa-scroll-target" id="alDetails" aria-labelledby="alDetailsTitle">
     <div class="mexa-tablebar">
@@ -426,3 +442,5 @@
                     (pageChange)="goTo($event)" (limitChange)="setLimit($event)"></app-mexa-pager>
   </section>
 </ng-container>
+  </div>
+</div>

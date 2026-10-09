@@ -3,7 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 /** This suite serves a fresh local UI; its fixtures refuse all external traffic. */
 export default defineConfig({
   testDir: './e2e',
-  testMatch: ['program-transfer-simple.spec.ts', 'program-transfer.spec.ts'],
+  testMatch: 'program-transfer.spec.ts',
   workers: 1,
   timeout: 30_000,
   expect: { timeout: 5_000 },

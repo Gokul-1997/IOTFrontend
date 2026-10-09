@@ -41,7 +41,8 @@ for (const s of screens) {
     await page.setViewportSize({ width: 1366, height: 768 });
     await page.goto(s.path);
 
-    const bar = page.locator('form.mexa-titlebar');
+    // the title bar is the form itself, or (Alarm Report, Operator Performance) sits over a form of its own
+    const bar = page.locator('.mexa-titlebar');
     // the filters are in the title bar, or in their own form just under it (Alarm Report, Operator Performance)
     const filters = page.locator('form.mexa-titlebar, form.mexa-filters');
     await expect(bar.getByRole('heading', { name: s.title })).toBeVisible();
