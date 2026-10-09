@@ -88,7 +88,7 @@ async function expectContent(page: Page) {
   for (const text of [operatorName, partName, componentId]) {
     await expect(page.getByText(text, { exact: true })).toBeVisible();
   }
-  // Preserve the API-owned values and operator controls through the redesign.
+  // The values the API sends and the operator's controls stay on the page at every width.
   const detail = page.locator('app-live');
   for (const text of ['02h 14m 22s', '00h 37m 15s', '01h 01m 01s', '61.5%', 'Accepted', 'Rejected', 'Utilization']) {
     await expect(detail).toContainText(text);

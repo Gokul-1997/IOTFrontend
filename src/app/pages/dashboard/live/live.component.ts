@@ -8,11 +8,15 @@ import {
 } from '@angular/core';
 
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { NgApexchartsModule } from 'ng-apexcharts';
 import { DashboardService } from '../dashboard.service';
 import { SocketService } from '../../../core/services/socket.service';
 import { AuthService } from '../../../core/services/auth.service';
 import {
   Subject,
+  interval,
+  switchMap,
+  startWith,
   takeUntil
 } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -36,9 +40,8 @@ const POLL_MS = 30_000;
 @Component({
   standalone: true,
   selector: 'app-live',
-  imports: [MetricHelpComponent, CommonModule, RouterModule, SpindlePanelComponent, ShiftTimelineComponent],
+  imports: [MetricHelpComponent, NgApexchartsModule, CommonModule, RouterModule, SpindlePanelComponent, ShiftTimelineComponent],
   templateUrl: './live.component.html',
-  styleUrl: './live.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LiveComponent implements OnInit, OnDestroy {
@@ -93,8 +96,15 @@ export class LiveComponent implements OnInit, OnDestroy {
   currentDateStr   = '';
   private clockInterval: any;
 
-  runningShare = 0;
-  hasRecordedTime = false;
+  /* ── Chart series ── */
+  utilSeries:    number[] = [0];
+  oeeSeries:     number[] = [0];
+  timePieSeries: number[] = [0, 0];
+
+  /* ── Chart configs ── */
+  utilChart:    any;
+  oeeChart:     any;
+  timePieChart: any;
 
   constructor(
     private route:            ActivatedRoute,
@@ -115,6 +125,8 @@ export class LiveComponent implements OnInit, OnDestroy {
 
     const id      = this.route.snapshot.paramMap.get('id');
     this.machineId = Number(id);
+
+    this.initCharts();
 
     /* ── Socket: connect, then join the plant room ──
        joinPlant() must wait for the connection or the join is ignored — but
@@ -229,7 +241,11 @@ export class LiveComponent implements OnInit, OnDestroy {
       this.activeAlarms = Array.isArray(d.live.active_alarms) ? d.live.active_alarms : [];
     }
 
-    this.updateTimeSplit();
+    /* Update chart series */
+    this.utilSeries = [this.utilization];
+    this.oeeSeries  = [Math.min(Number(this.oee?.oee || 0), 100)];
+
+    this.updateTimePie();
     this.currentDate = new Date();
 
     this.cdr.markForCheck();
@@ -311,23 +327,21 @@ export class LiveComponent implements OnInit, OnDestroy {
   /* ════════════════════════════════════════
      TIME PIE
   ════════════════════════════════════════ */
-  private updateTimeSplit(): void {
-    const run = this.timeToSec(this.runTime);
-    const total = run + this.timeToSec(this.idleTime);
-    this.hasRecordedTime = total > 0;
-    this.runningShare = total > 0 ? run * 100 / total : 0;
-  }
+  private updateTimePie(): void {
 
-  boundedPercent(value: unknown): number {
-    const number = Number(value);
-    return Number.isFinite(number) ? Math.max(0, Math.min(number, 100)) : 0;
-  }
+    const r     = this.timeToSec(this.runTime);
+    const i     = this.timeToSec(this.idleTime);
+    const total = r + i;
 
-  fallbackImage(event: Event): void {
-    const image = event.target as HTMLImageElement;
-    if (image.dataset['fallback']) return;
-    image.dataset['fallback'] = 'true';
-    image.src = '/images/product/machine_login_02.png';
+    if (total === 0) {
+      this.timePieSeries = [0, 100];
+      return;
+    }
+
+    this.timePieSeries = [
+      Number(((r / total) * 100).toFixed(1)),
+      Number(((i / total) * 100).toFixed(1))
+    ];
   }
 
   private timeToSec(t: string): number {
@@ -350,6 +364,7 @@ export class LiveComponent implements OnInit, OnDestroy {
     // Primary: MANUAL-mode seconds accumulated this shift (from production_hourly)
     const manualSec = Number((this.production as any)?.manual_seconds || 0);
     if (manualSec > 0) {
+      // seconds as h:m:s — the bare number read as 3,725 hours instead of 1h 02m 05s
       return this.formatDuration(`${Math.floor(manualSec / 3600)}:${Math.floor(manualSec % 3600 / 60)}:${Math.floor(manualSec % 60)}`);
     }
     // Fallback: setting_time_start/end from job
@@ -369,4 +384,101 @@ export class LiveComponent implements OnInit, OnDestroy {
     return '--';
   }
 
+  /* ════════════════════════════════════════
+     CHART INIT
+     Enterprise speedometer style:
+     • Utilization / OEE  → full radialBar (–135° to 135°)
+     • Spindle / Feed     → half-arc gauge (–90° to 90°)
+       with colour zones: green → amber → red
+  ════════════════════════════════════════ */
+  private initCharts(): void {
+
+    /* ── Utilization ── */
+    this.utilChart = {
+      chart: { type: 'radialBar', height: 140},
+      plotOptions: {
+        radialBar: {
+          startAngle: -135,
+          endAngle:    135,
+          hollow: { size: '58%' },
+          track: { background: '#e8eaf0', strokeWidth: '97%' },
+          dataLabels: {
+            name: {
+              show: true,
+              offsetY: 18,
+              fontSize: '11px',
+              color: '#6b7280',
+              fontFamily: 'inherit'
+            },
+            value: {
+              show: true,
+              offsetY: -15,
+              fontSize: '16px',
+              fontWeight: '700',
+              color: '#3B4CCA',
+              fontFamily: 'inherit',
+              formatter: (val: number) => val + '%'
+            }
+          }
+        }
+      },
+      colors: ['#3B4CCA'],
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shade: 'dark', type: 'horizontal',
+          gradientToColors: ['#9B3F70'], stops: [0, 100]
+        }
+      }
+    };
+
+    /* ── OEE — dashed-segment radialBar ── */
+    this.oeeChart = {
+      chart: { type: 'radialBar', height: 220, sparkline: { enabled: true } },
+      labels: ['OEE'],
+      plotOptions: {
+        radialBar: {
+          startAngle: -135,
+          endAngle:    135,
+          hollow: { size: '42%' },
+          track: {
+            show: true,
+            background: '#E0E0E0', // background: isDark ? '#1f2937' : '#e5e7eb',
+            strokeWidth: '100%',
+            opacity: 0.5,
+            margin: 0
+          },
+          dataLabels: {
+            name:  { show: false },
+            value: { show: false }   // value overlaid via HTML
+          }
+        }
+      },
+      dataLabels: { enabled: false },
+      fill:   { type: 'solid', colors: ['#3B4CCA'] },
+      stroke: { dashArray: 4 }
+    };
+
+    // const isDark = document.body.classList.contains('dark');
+    
+    /* ── Time Pie ── */
+    this.timePieChart = {
+  chart: { type: 'pie', height: 120 },
+  labels: ['Running', 'Idle'],
+  colors: ['#0CAD5D', '#dfb400'],
+  legend: { show: false },
+  stroke: { width: 1 },
+  dataLabels: {
+    minAngleToShowLabel: 15,
+    formatter: (v: any) => `${v.toFixed(1)}%`,
+    offset: -25,
+    style: {
+      fontSize: '14px',
+      fontWeight: 600,
+      colors: ['#fff'],
+
+    }
+  }
+};
+  }
 }
