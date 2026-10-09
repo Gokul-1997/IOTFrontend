@@ -6,16 +6,16 @@
 <form class="mexa-titlebar" (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
   <h1 class="mexa-title">OEE Dashboard</h1>
   <div class="flex flex-col">
-    <p class="mexa-updated" *ngIf="updatedAt || loading">
+    <!-- <p class="mexa-updated" *ngIf="updatedAt || loading">
   <mat-icon class="!w-4 !h-4 !text-base" [class.mexa-spin]="loading" aria-hidden="true">refresh</mat-icon>
-  {{ loading ? 'Updating…' : 'Updated ' + updatedAt }}
-</p>
-  <div class="mexa-statuschips" *ngIf="data">
+  
+</p> -->
+  <!-- <div class="mexa-statuschips" *ngIf="data">
     <span class="mexa-statuschip" style="--chip:#22c55e">Running: {{ data.status_counts.RUNNING }}</span>
     <span class="mexa-statuschip" style="--chip:#f5a623">Idle: {{ data.status_counts.IDLE }}</span>
     <span class="mexa-statuschip" style="--chip:#e03131">Alarm: {{ data.status_counts.ALARM }}</span>
     <span class="mexa-statuschip" style="--chip:#94a3b8">Offline: {{ data.status_counts.OFFLINE }}</span>
-  </div>
+  </div> -->
   
 </div>
   <span class="mexa-titlebar-spacer"></span>
@@ -37,6 +37,30 @@
     </span>
   </div>
 </form>
+
+<div class="last-updated-vertical">
+  <svg
+    class="refresh-icon"
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M20 7v5h-5"></path>
+    <path d="M4 17v-5h5"></path>
+    <path d="M5.6 9a7 7 0 0 1 11.9-3.5L20 12"></path>
+    <path d="M18.4 15a7 7 0 0 1-11.9 3.5L4 12"></path>
+  </svg>
+
+  <!-- <span class="updated-label">LAST UPDATED</span> -->
+  <span class="updated-time">{{ loading ? 'Updating…' : 'Updated ' + updatedAt }}</span>
+</div>
 
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
@@ -158,56 +182,36 @@
     </div>
   </div>
 
-  <!-- ══════════ WHERE OEE IS LOST · TREND ══════════ -->
-  <div class="mexa-grid lg:grid-cols-5">
-    <section class="mexa-card lg:col-span-2" aria-labelledby="oeLossTitle">
-      <h2 id="oeLossTitle" class="mexa-card-title mexa-card-title-left">Where OEE is lost <app-metric-help topic="oee_loss"></app-metric-help></h2>
+<div class="ui-tabs ui-tabs-center" role="tablist" aria-label="Machine analytics">
+  <button
+    type="button"
+    class="ui-tab"
+    role="tab"
+    [class.is-active]="activeTab === 'oee'"
+    [attr.aria-selected]="activeTab === 'oee'"
+    (click)="activeTab = 'oee'">
+    <span class="ui-tab-icon material-icons" aria-hidden="true">donut_small</span>
+    Machine OEE
+  </button>
 
-      <ng-container *ngIf="loss; else noLoss">
-        <!-- the list below carries the same figures as text -->
-        <div class="mexa-lossbar" aria-hidden="true">
-          <span class="mexa-factor-oee" [style.--w.%]="loss.oee"></span>
-          <span *ngFor="let i of loss.items" [ngClass]="'mexa-factor-' + i.key" [style.--w.%]="i.pts"></span>
-        </div>
-        <ul class="mexa-losslist">
-          <li class="mexa-factor-oee">
-            <i aria-hidden="true"></i>
-            <span>Good output (OEE)</span>
-            <strong>{{ loss.oee | number:'1.1-1' }}%</strong>
-          </li>
-          <li *ngFor="let i of loss.items" [ngClass]="'mexa-factor-' + i.key" [class.is-biggest]="i === loss.biggest && i.pts > 0">
-            <i aria-hidden="true"></i>
-            <span>{{ i.label }}<small *ngIf="i.note">{{ i.note }}</small></span>
-            <strong>{{ i.pts | number:'1.1-1' }} pts</strong>
-          </li>
-        </ul>
-        <!-- the problem, and where to act on it -->
-        <p class="mexa-loss-verdict" *ngIf="loss.biggest.pts > 0">
-          Biggest loss: <strong>{{ loss.biggest.name }}</strong>
-          <ng-container *ngIf="lossAction(loss.biggest) as a"> · <a [routerLink]="a.path" class="mexa-kpi-link">{{ a.text }}</a></ng-container>
-        </p>
-      </ng-container>
-      <ng-template #noLoss>
-        <p class="mexa-empty">Needs a machine with a cycle time and production in this period.</p>
-      </ng-template>
-    </section>
+  <button
+    type="button"
+    class="ui-tab"
+    role="tab"
+    [class.is-active]="activeTab === 'charts'"
+    [attr.aria-selected]="activeTab === 'charts'"
+    (click)="activeTab = 'charts'">
+    <span class="ui-tab-icon material-icons" aria-hidden="true">bar_chart</span>
+    Charts
+  </button>
+</div>
 
-    <section class="mexa-card lg:col-span-3" aria-labelledby="oeTrendTitle">
-      <h2 id="oeTrendTitle" class="mexa-card-title mexa-card-title-left">OEE Trend <app-metric-help topic="oee_trend"></app-metric-help></h2>
-      <apx-chart *ngIf="trendSeries.length"
-        [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke" [markers]="trendChart.markers"
-        [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels" [legend]="trendChart.legend"
-        [annotations]="trendChart.annotations"
-        [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
-        [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
-      <p *ngIf="!trendSeries.length" class="mexa-empty">No production was recorded in this period.</p>
-    </section>
-  </div>
-
-  <!-- ══════════ MACHINE OEE ══════════
+<div class="ui-tab-content">
+  <div *ngIf="activeTab === 'oee'" role="tabpanel" class="mexa-card">
+    <!-- ══════════ MACHINE OEE ══════════
        Every machine, ranked. Top 5 / Bottom 5 are the design's two views;
        the machine-wise table is on Reports → Machine OEE. -->
-  <section class="mexa-card" aria-labelledby="oeMachinesTitle">
+  <section aria-labelledby="oeMachinesTitle">
     <div class="mexa-card-head">
       <h2 id="oeMachinesTitle" class="mexa-card-title mexa-card-title-left">Machine OEE</h2>
       <span class="mexa-seg" role="group" aria-label="Machines to show">
@@ -276,4 +280,60 @@
       </nav>
     </div>
   </section>
+  </div>
+
+  <div *ngIf="activeTab === 'charts'" role="tabpanel" class="mexa-card">
+    <!-- ══════════ WHERE OEE IS LOST · TREND ══════════ -->
+  <div class="mexa-grid lg:grid-cols-5">
+    <section class="mexa-card lg:col-span-2" aria-labelledby="oeLossTitle">
+      <h2 id="oeLossTitle" class="mexa-card-title mexa-card-title-left">Where OEE is lost <app-metric-help topic="oee_loss"></app-metric-help></h2>
+
+      <ng-container *ngIf="loss; else noLoss">
+        <!-- the list below carries the same figures as text -->
+        <div class="mexa-lossbar" aria-hidden="true">
+          <span class="mexa-factor-oee" [style.--w.%]="loss.oee"></span>
+          <span *ngFor="let i of loss.items" [ngClass]="'mexa-factor-' + i.key" [style.--w.%]="i.pts"></span>
+        </div>
+        <ul class="mexa-losslist">
+          <li class="mexa-factor-oee">
+            <i aria-hidden="true"></i>
+            <span>Good output (OEE)</span>
+            <strong>{{ loss.oee | number:'1.1-1' }}%</strong>
+          </li>
+          <li *ngFor="let i of loss.items" [ngClass]="'mexa-factor-' + i.key" [class.is-biggest]="i === loss.biggest && i.pts > 0">
+            <i aria-hidden="true"></i>
+            <span>{{ i.label }}<small *ngIf="i.note">{{ i.note }}</small></span>
+            <strong>{{ i.pts | number:'1.1-1' }} pts</strong>
+          </li>
+        </ul>
+        <!-- the problem, and where to act on it -->
+        <p class="mexa-loss-verdict" *ngIf="loss.biggest.pts > 0">
+          Biggest loss: <strong>{{ loss.biggest.name }}</strong>
+          <ng-container *ngIf="lossAction(loss.biggest) as a"> · <a [routerLink]="a.path" class="mexa-kpi-link">{{ a.text }}</a></ng-container>
+        </p>
+      </ng-container>
+      <ng-template #noLoss>
+        <p class="mexa-empty">Needs a machine with a cycle time and production in this period.</p>
+      </ng-template>
+    </section>
+
+    <section class="mexa-card lg:col-span-3" aria-labelledby="oeTrendTitle">
+      <h2 id="oeTrendTitle" class="mexa-card-title mexa-card-title-left">OEE Trend <app-metric-help topic="oee_trend"></app-metric-help></h2>
+      <apx-chart *ngIf="trendSeries.length"
+        [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke" [markers]="trendChart.markers"
+        [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels" [legend]="trendChart.legend"
+        [annotations]="trendChart.annotations"
+        [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
+        [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
+      <p *ngIf="!trendSeries.length" class="mexa-empty">No production was recorded in this period.</p>
+    </section>
+  </div>
+  </div>
+</div>
+
+
+
+  
+
+  
 </ng-container>

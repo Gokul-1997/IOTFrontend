@@ -6,10 +6,10 @@
 <form class="mexa-titlebar" (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
   <div class="flex gap-2">
   <h1 class="mexa-title">Energy Dashboard</h1>
-  <p class="mexa-updated" *ngIf="updatedAt || loading">
+  <!-- <p class="mexa-updated" *ngIf="updatedAt || loading">
   <mat-icon class="!w-4 !h-4 !text-base" [class.mexa-spin]="loading" aria-hidden="true">refresh</mat-icon>
-  {{ loading ? 'Updating…' : 'Updated ' + updatedAt }}
-</p>
+  
+</p> -->
 </div>
   <div class="mexa-filters" appFilterPanel>
     <span class="mexa-filter-set">
@@ -19,6 +19,7 @@
         <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
       </select>
     </span>
+    
 
     <!-- The design shows one date; energy is a counter difference, so a
          range is the only thing that can be measured. Both ends shown. -->
@@ -37,6 +38,30 @@
       Tariff &amp; rates</a>
   </div>
 </form>
+
+<div class="last-updated-vertical">
+  <svg
+    class="refresh-icon"
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M20 7v5h-5"></path>
+    <path d="M4 17v-5h5"></path>
+    <path d="M5.6 9a7 7 0 0 1 11.9-3.5L20 12"></path>
+    <path d="M18.4 15a7 7 0 0 1-11.9 3.5L4 12"></path>
+  </svg>
+
+  <!-- <span class="updated-label">LAST UPDATED</span> -->
+  <span class="updated-time">{{ loading ? 'Updating…' : 'Updated ' + updatedAt }}</span>
+</div>
 
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
@@ -152,7 +177,50 @@
     </div>
   </div>
 
-  <!-- ══════════ ROW 2 — trend + distribution ══════════ -->
+
+
+<!-- Tabs -->
+<div class="ui-tabs ui-tabs-center" role="tablist" aria-label="Machine information">
+  <button
+    type="button"
+    class="ui-tab"
+    [class.is-active]="activeTab === 'chart'"
+    [attr.aria-selected]="activeTab === 'chart'"
+    role="tab"
+    (click)="activeTab = 'chart'">
+    <span class="ui-tab-icon material-icons" aria-hidden="true">bar_chart</span>
+    Chart
+  </button>
+
+  <button
+    type="button"
+    class="ui-tab"
+    [class.is-active]="activeTab === 'machine'"
+    [attr.aria-selected]="activeTab === 'machine'"
+    role="tab"
+    (click)="activeTab = 'machine'">
+    <span class="ui-tab-icon material-icons" aria-hidden="true">description</span>
+    Machine Detail
+  </button>
+
+  <button
+    type="button"
+    class="ui-tab"
+    [class.is-active]="activeTab === 'energy'"
+    [attr.aria-selected]="activeTab === 'energy'"
+    role="tab"
+    (click)="activeTab = 'energy'">
+    <span class="ui-tab-icon material-icons" aria-hidden="true">bolt</span>
+    Energy Meter
+  </button>
+</div>
+
+<!-- Tab Content -->
+<div class="ui-tab-content">
+
+  <!-- Chart -->
+  <div *ngIf="activeTab === 'chart'" role="tabpanel" class="mexa-card">
+     <!-- ══════════ ROW 2 — trend + distribution ══════════ -->
   <div class="mexa-grid grid-cols-2 lg:grid-cols-3">
 
     <section class="mexa-card lg:col-span-2">
@@ -226,9 +294,12 @@
       <p *ngIf="!monthSeries.length" class="mexa-empty">Nothing recorded for this period.</p>
     </section>
   </div>
+  </div>
 
-  <!-- ══════════ MACHINE DETAIL ══════════ -->
-  <section class="mexa-card">
+  <!-- Machine Detail -->
+  <div *ngIf="activeTab === 'machine'" role="tabpanel" class="mexa-card">
+      <!-- ══════════ MACHINE DETAIL ══════════ -->
+
     <div class="mexa-tablebar mb-2">
       <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Machine Detail</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
@@ -240,13 +311,16 @@
         </span>
         <span *ngIf="canExport" class="ui-btn-row" role="group" aria-label="Download the filtered list">
           <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('xlsx')" [disabled]="exporting">
-              <img src="/images/icons/FileXls.svg" alt="Excel" class="w-5 h-5">{{ exporting === 'xlsx' ? 'Preparing…' : 'Excel' }}
+              <img src="/images/icons/FileXls.svg" alt="Excel" class="w-5 h-5">
+              <!-- {{ exporting === 'xlsx' ? 'Preparing…' : 'Excel' }} -->
             </button>
           <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('csv')" [disabled]="exporting">
-              <img src="/images/icons/FileCsv.svg" alt="Csv" class="w-5 h-5">{{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
+              <img src="/images/icons/FileCsv.svg" alt="Csv" class="w-5 h-5">
+              <!-- {{ exporting === 'csv' ? 'Preparing…' : 'CSV' }} -->
             </button>
           <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('pdf')" [disabled]="exporting">
-              <img src="/images/icons/FilePdf.svg" alt="PDF" class="w-5 h-5">{{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
+              <img src="/images/icons/FilePdf.svg" alt="PDF" class="w-5 h-5">
+              <!-- {{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }} -->
             </button>
         </span>
         <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()"><span class="material-icons" aria-hidden="true">restart_alt</span>Reset filters</button>
@@ -259,6 +333,7 @@
         <thead>
           <tr>
             <th scope="col">Machine</th>
+            <th scope="col">Sub</th>
             <th class="qty" scope="col">Energy</th>
             <th class="qty col-lg" scope="col">Operating Time</th>
             <th class="qty" scope="col">Production</th>
@@ -272,11 +347,13 @@
           <tr *ngFor="let m of data.machines.data">
             <td>
               <span class="strong">{{ m.machine_serial_no }}</span>
+            </td>
+            <td>
               <span class="mexa-rank-sub">{{ m.model }}</span>
             </td>
             <td class="num strong qty">
-              {{ num(m.kwh) }}
-              <!-- said in words: no counter is different from no usage -->
+               
+              <span *ngIf="m.kwh !== null">{{ num(m.kwh) }}</span>
               <span *ngIf="m.kwh === null" class="mexa-rank-sub">not reporting</span>
             </td>
             <td class="num whitespace-nowrap qty col-lg">{{ hours(m.run_seconds) }}</td>
@@ -299,11 +376,30 @@
     <app-mexa-pager [page]="data.machines.page" [totalPages]="data.machines.totalPages" [total]="data.machines.total"
                     [shown]="data.machines.data.length" [limit]="limit" [sizes]="[limit]"
                     (pageChange)="changePage($event - page)"></app-mexa-pager>
-  </section>
 
-  <!-- ══════════ ENERGY METER ══════════
+  </div>
+
+  <!-- Energy Meter -->
+  <div *ngIf="activeTab === 'energy'" role="tabpanel" class="mexa-card">
+    <!-- ══════════ ENERGY METER ══════════
        Every value a 3-phase meter sends, for the machines that have one;
        nothing at all, and no polling, for a company without (meter-panel). -->
   <app-meter-panel class="mt-4"></app-meter-panel>
+  </div>
+
+</div>
+
+
+
+ 
+
+
+
+  
 </ng-container>
+
+
+
+
+
 

@@ -38,7 +38,11 @@ import { lostCostLine, LOST_COST_HINT } from '../../shared/lost-cost';
   templateUrl: './downtime-dashboard.component.html'
 })
 export class DowntimeDashboardComponent implements OnInit, OnDestroy {
+activeTab: 'charts' | 'Downtime_Details' = 'Downtime_Details';
 
+setTab(tab: 'charts' | 'Downtime_Details'): void {
+  this.activeTab = tab;
+}
   /** Chart options keep the same reference until apply() bumps this. */
   private charts = new ChartMemo();
 

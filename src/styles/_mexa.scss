@@ -783,8 +783,8 @@ a.mexa-pill { text-decoration: none; }
 .mexa-grade-excellent { --band: #15803d; --band-ink: #11652f; }
 .mexa-grade-good      { --band: #2f2d8f; --band-ink: #2f2d8f; }
 .mexa-grade-avg       { --band: #F59E0B; --band-ink: #8a3f06; }
-.mexa-grade-poor      { --band: #FD5353; --band-ink: #a11f31; }
-.mexa-grade-unknown   { --band: #64748b; --band-ink: #475467; }
+.mexa-grade-poor      { --band: #af3647; --band-ink: #a11f31; }
+.mexa-grade-unknown   { --band: #626d7c; --band-ink: #475467; }
 .mexa-grade-excellent, .mexa-grade-good, .mexa-grade-avg, .mexa-grade-poor, .mexa-grade-unknown {
   --band-soft: color-mix(in srgb, var(--band) 90%, var(--mexa-card));
 }
@@ -995,7 +995,7 @@ a.mexa-pill { text-decoration: none; }
 
 /* A machine whose OEE cannot be computed at all — a missing cycle time,
    not a bad score. Grey says "no reading", never "failing". */
-.mexa-grade-unknown { --band: #94a3b8; }
+.mexa-grade-unknown { --band: #6e7683; }
 
 /* ── Per-axis readout under a servo chart ─────────────────────
    Each axis in words, including "--" for a silent one, so a gap in the

@@ -9,10 +9,10 @@
 <form class="mexa-titlebar" (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
   <div class="flex gap-2">
   <h1 class="mexa-title">Downtime Reason Analysis</h1>
-  <p class="mexa-updated" *ngIf="updatedAt || loading">
+  <!-- <p class="mexa-updated" *ngIf="updatedAt || loading">
   <mat-icon class="!w-4 !h-4 !text-base" [class.mexa-spin]="loading" aria-hidden="true">refresh</mat-icon>
-  {{ loading ? 'Updating…' : 'Updated ' + updatedAt }}
-</p>
+  
+</p> -->
 </div>
   <div class="mexa-filters" appFilterPanel>
     <span class="mexa-filter-set">
@@ -40,6 +40,30 @@
   </div>
 </form>
 
+
+<div class="last-updated-vertical">
+  <svg
+    class="refresh-icon"
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M20 7v5h-5"></path>
+    <path d="M4 17v-5h5"></path>
+    <path d="M5.6 9a7 7 0 0 1 11.9-3.5L20 12"></path>
+    <path d="M18.4 15a7 7 0 0 1-11.9 3.5L4 12"></path>
+  </svg>
+
+  <!-- <span class="updated-label">LAST UPDATED</span> -->
+  <span class="updated-time">{{ loading ? 'Updating…' : 'Updated ' + updatedAt }}</span>
+</div>
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
 <!-- First load: placeholders shaped like the cards that are coming, so
@@ -134,7 +158,34 @@
     </div>
   </div>
 
-  <!-- ══════════ ROW 2 — Pareto + reason summary ══════════ -->
+
+<div class="ui-tabs ui-tabs-center" role="tablist" aria-label="Machine analytics">
+  <button
+    type="button"
+    class="ui-tab"
+    role="tab"
+    [class.is-active]="activeTab === 'charts'"
+    [attr.aria-selected]="activeTab === 'charts'"
+    (click)="activeTab = 'charts'">
+    <span class="ui-tab-icon material-icons" aria-hidden="true">bar_chart</span>
+    Charts
+  </button>
+
+  <button
+    type="button"
+    class="ui-tab"
+    role="tab"
+    [class.is-active]="activeTab === 'Downtime_Details'"
+    [attr.aria-selected]="activeTab === 'Downtime_Details'"
+    (click)="activeTab = 'Downtime_Details'">
+    <span class="ui-tab-icon material-icons" aria-hidden="true">speed</span>
+    Downtime Details
+  </button>
+</div>
+
+<div class="ui-tab-content">
+  <div *ngIf="activeTab === 'charts'" role="tabpanel" class="mexa-card">
+    <!-- ══════════ ROW 2 — Pareto + reason summary ══════════ -->
   <div class="mexa-grid lg:grid-cols-3">
 
     <section class="mexa-card lg:col-span-2">
@@ -239,7 +290,6 @@
       </div>
     </section>
   </div>
-
   <!-- ══════════ ROW 3 — shift, status mix, hourly ══════════ -->
   <div class="mexa-grid lg:grid-cols-3">
 
@@ -326,8 +376,10 @@
       <p *ngIf="!hourlySeries.length" class="mexa-empty">No downtime recorded for this period.</p>
     </section>
   </div>
+  </div>
 
-  <!-- ══════════ DOWNTIME DETAILS ══════════ -->
+  <div *ngIf="activeTab === 'Downtime_Details'" role="tabpanel" class="mexa-card">
+     <!-- ══════════ DOWNTIME DETAILS ══════════ -->
   <section class="mexa-card">
     <div class="mexa-tablebar">
       <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Downtime Details</h2>
@@ -430,4 +482,13 @@
                     [shown]="data.events.data.length" [limit]="limit"
                     (pageChange)="goTo($event)" (limitChange)="setLimit($event)"></app-mexa-pager>
   </section>
+  </div>
+</div>
+
+
+  
+
+  
+
+ 
 </ng-container>

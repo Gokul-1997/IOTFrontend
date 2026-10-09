@@ -46,6 +46,7 @@ type Tab = Exclude<Board, 'oee'>;
   templateUrl: './operator-dashboard.component.html'
 })
 export class OperatorDashboardComponent implements OnInit, OnDestroy {
+activeTab: 'charts' | 'operator' = 'charts';
 
   /** Chart options keep their reference until their own figures change (deps). */
   private charts = new ChartMemo();

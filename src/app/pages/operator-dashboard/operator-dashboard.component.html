@@ -3,16 +3,14 @@
 
 
 <!-- ══════════ TITLE BAR ══════════ -->
-<form class="mexa-titlebar" (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
+<div class="mexa-titlebar">
   <h1 class="mexa-title">Operator Performance Dashboard</h1>
-  <p class="mexa-updated" *ngIf="updatedAt || loading">
+  <!-- <p class="mexa-updated" *ngIf="updatedAt || loading">
     <mat-icon class="!w-4 !h-4 !text-base" [class.mexa-spin]="loading" aria-hidden="true">refresh</mat-icon>
     {{ loading ? 'Updating…' : 'Updated ' + updatedAt }}
-  </p>
-  
-</form>
-<!-- the filters sit under the title bar, in their own form, so a change still loads at once (appAutoApply) -->
-<form class="mexa-filters mb-3" appFilterPanel (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
+  </p> -->
+  <!-- the filters sit under the title bar, in their own form, so a change still loads at once (appAutoApply) -->
+<form class="mexa-filters" appFilterPanel (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
     <span class="mexa-filter-set">
       <label class="mexa-filter-label" for="opShift">Shift</label>
       <select id="opShift" class="mexa-select" [(ngModel)]="f.shift_id" name="shift">
@@ -44,6 +42,37 @@
       <input id="opTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to" aria-label="To date">
     </span>
   </form>
+</div>
+
+<div class="last-updated-vertical">
+  <svg
+    class="refresh-icon"
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M20 7v5h-5"></path>
+    <path d="M4 17v-5h5"></path>
+    <path d="M5.6 9a7 7 0 0 1 11.9-3.5L20 12"></path>
+    <path d="M18.4 15a7 7 0 0 1-11.9 3.5L4 12"></path>
+  </svg>
+
+  <!-- <span class="updated-label">LAST UPDATED</span> -->
+  <span class="updated-time">{{ loading ? 'Updating…' : 'Updated ' + updatedAt }}</span>
+</div>
+
+
+
+
+
+
 <!-- ══════════ STATES ══════════ -->
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
 <ng-container *ngIf="loading && !data">
@@ -112,7 +141,34 @@
     </div>
   </div>
 
-  <!-- ══════════ RANKINGS ══════════
+
+  <div class="ui-tabs ui-tabs-center" role="tablist" aria-label="Machine analytics">
+  <button
+    type="button"
+    class="ui-tab"
+    role="tab"
+    [class.is-active]="activeTab === 'charts'"
+    [attr.aria-selected]="activeTab === 'charts'"
+    (click)="activeTab = 'charts'">
+    <span class="ui-tab-icon material-icons" aria-hidden="true">bar_chart</span>
+    Charts
+  </button>
+
+  <button
+    type="button"
+    class="ui-tab"
+    role="tab"
+    [class.is-active]="activeTab === 'operator'"
+    [attr.aria-selected]="activeTab === 'operator'"
+    (click)="activeTab = 'operator'">
+    <span class="ui-tab-icon material-icons" aria-hidden="true">show_chart</span>
+    Operator Performance Details
+  </button>
+</div>
+
+<div class="ui-tab-content">
+  <div *ngIf="activeTab === 'charts'" role="tabpanel" class="mexa-card">
+    <!-- ══════════ RANKINGS ══════════
        Operator Score, Rejection Rate and Downtime Contribution are one card
        with a tab each (6 Oct 2026); OEE keeps its own. Every tab and every
        Top 5 / Bottom 5 is already in the page's one answer: switching asks
@@ -169,8 +225,10 @@
       </div>
     </section>
   </div>
+  </div>
 
-  <!-- ══════════ OPERATOR DETAIL ══════════ -->
+  <div *ngIf="activeTab === 'operator'" role="tabpanel" class="mexa-card">
+    <!-- ══════════ OPERATOR DETAIL ══════════ -->
   <section class="mexa-card">
     <div class="mexa-tablebar">
       <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Operator Performance Details <app-metric-help topic="operator_rows"></app-metric-help></h2>
@@ -246,4 +304,9 @@
                     [shown]="data.operators.data.length" [limit]="limit" [sizes]="pageSizes"
                     (pageChange)="goTo($event)" (limitChange)="setPageSize($event)"></app-mexa-pager>
   </section>
+  </div>
+</div>
+  
+
+  
 </ng-container>

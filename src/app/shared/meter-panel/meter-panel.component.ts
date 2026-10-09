@@ -156,11 +156,11 @@ let uidSeq = 0;
     .mp-rows dt { color: var(--mexa-ink-3); font-weight: 600; white-space: nowrap; }
     .mp-rows dd { margin: 0; color: var(--mexa-ink); font-variant-numeric: tabular-nums; text-align: right; }
     .mp-phases { display: grid; grid-template-columns: repeat(3, 1fr); gap: .3rem; margin: .35rem 0 .4rem; }
-    .mp-phase { border-radius: 8px; background: var(--mexa-row-alt); padding: .3rem .4rem; text-align: center; min-width: 0; }
+    .mp-phase { border-radius: 8px; padding: .3rem .4rem; text-align: center; min-width: 0; }
     .mp-phase b { display: block; font-size: 11px; font-weight: 700; color: var(--mexa-ink-3); }
     .mp-phase span { font-size: .9rem; font-weight: 700; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
     .mp-totals { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); margin: 0 0 1rem; }
-    .mp-total { border-radius: 10px; background: var(--mexa-row-alt); padding: .5rem .7rem; }
+    .mp-total { border-radius: 10px; padding: .5rem .7rem; }
     .mp-total dt { margin: 0; font-size: var(--fs-small, .75rem); color: var(--mexa-ink-3); font-weight: 600; }
     .mp-total dd { margin: .1rem 0 0; font-size: 1.05rem; font-weight: 700; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
     .mp-total dd small { font-size: .75rem; font-weight: 600; color: var(--mexa-ink-2); margin-left: .2rem; }
@@ -173,7 +173,7 @@ let uidSeq = 0;
     @media (pointer: coarse) { .mexa-seg button { min-height: 40px; } }
   `],
   template: `
-    <section *ngIf="visible" class="mexa-card" [attr.aria-labelledby]="ids.title">
+    <section *ngIf="visible" [attr.aria-labelledby]="ids.title">
       <div class="mp-head">
         <div class="mp-titlewrap">
           <h2 class="mp-title" [id]="ids.title">Energy meter</h2>
@@ -210,96 +210,290 @@ let uidSeq = 0;
 
         <ng-container *ngIf="latest">
           <!-- ── now ── -->
-          <div class="mp-cards">
-            <article class="mp-card" [attr.aria-labelledby]="ids.power">
-              <p class="mp-label" [id]="ids.power">Power</p>
-              <p class="mp-value">{{ fmtAuto(latest.kw_total) }}<small>kW</small></p>
-              <p class="mp-sub">Total of the three phases</p>
-              <div class="mp-phases" role="list" aria-label="Power by phase">
-                <span class="mp-phase" role="listitem"><b>R</b><span>{{ fmtAuto(latest.kw1) }}</span></span>
-                <span class="mp-phase" role="listitem"><b>Y</b><span>{{ fmtAuto(latest.kw2) }}</span></span>
-                <span class="mp-phase" role="listitem"><b>B</b><span>{{ fmtAuto(latest.kw3) }}</span></span>
-              </div>
-              <dl class="mp-rows">
-                <ng-container *ngIf="latest.kva_total !== null"><dt>Apparent</dt><dd>{{ fmtAuto(latest.kva_total) }} kVA</dd></ng-container>
-                <ng-container *ngIf="latest.kvar_total !== null"><dt>Reactive</dt><dd>{{ fmtAuto(latest.kvar_total) }} kVAr</dd></ng-container>
-                <ng-container *ngIf="latest.kw_demand_max !== null || latest.kva_demand_max !== null">
-                  <dt>Highest demand</dt><dd>{{ fmtAuto(latest.kw_demand_max) }} kW · {{ fmtAuto(latest.kva_demand_max) }} kVA</dd>
-                </ng-container>
-              </dl>
-            </article>
+      
+<!-- Energy meter KPI cards -->
+<div class="mp-cards">
 
-            <article class="mp-card" [attr.aria-labelledby]="ids.volt">
-              <p class="mp-label" [id]="ids.volt">Voltage</p>
-              <p class="mp-value">{{ fmt(latest.v_ll_avg, 1) }}<small>V</small>
-                <span *ngIf="vBand as b" class="mexa-badge" [ngClass]="b.badge"><span class="material-icons" aria-hidden="true">{{ b.icon }}</span>{{ b.label }}</span>
-              </p>
-              <p class="mp-sub">Phase to phase, average · {{ limits.v_ll_nominal }} V ±{{ limits.v_tolerance_pct }} %</p>
-              <div class="mp-phases" role="list" aria-label="Voltage between phases">
-                <span class="mp-phase" role="listitem"><b>R–Y</b><span>{{ fmt(latest.v12, 1) }}</span></span>
-                <span class="mp-phase" role="listitem"><b>Y–B</b><span>{{ fmt(latest.v23, 1) }}</span></span>
-                <span class="mp-phase" role="listitem"><b>B–R</b><span>{{ fmt(latest.v31, 1) }}</span></span>
-              </div>
-              <dl class="mp-rows">
-                <ng-container *ngIf="latest.v1n !== null || latest.v2n !== null || latest.v3n !== null">
-                  <dt>Phase to neutral</dt><dd>{{ fmt(latest.v1n, 1) }} · {{ fmt(latest.v2n, 1) }} · {{ fmt(latest.v3n, 1) }} V</dd>
-                </ng-container>
-                <dt>Imbalance</dt>
-                <dd>{{ vImbalance === null ? '--' : fmt(vImbalance, 1) + ' %' }}
-                  <span *ngIf="vImbalance !== null && vImbalance > limits.v_imbalance_pct" class="mexa-badge mexa-badge-warn">Over {{ limits.v_imbalance_pct }} %</span></dd>
-                <ng-container *ngIf="vMaxRecorded !== null"><dt>Highest recorded</dt><dd>{{ fmt(vMaxRecorded, 1) }} V</dd></ng-container>
-              </dl>
-            </article>
+  <!-- POWER -->
+  <article class="mp-card mp-card-power" [attr.aria-labelledby]="ids.power">
+    <div class="mp-card-top">
+      <div>
+        <p class="mp-label" [id]="ids.power">Power</p>
+        <p class="mp-value">
+          {{ fmtAuto(latest.kw_total) }}<small>kW</small>
+        </p>
+        <p class="mp-sub">Total of three phases</p>
+      </div>
+      <div class="mp-icon mp-icon-blue">
+        <span class="material-icons" aria-hidden="true">bolt</span>
+      </div>
+    </div>
 
-            <article class="mp-card" [attr.aria-labelledby]="ids.amp">
-              <p class="mp-label" [id]="ids.amp">Current</p>
-              <p class="mp-value">{{ fmtAuto(latest.i_avg) }}<small>A</small></p>
-              <p class="mp-sub">Average of the three phases</p>
-              <div class="mp-phases" role="list" aria-label="Current by phase">
-                <span class="mp-phase" role="listitem"><b>R</b><span>{{ fmtAuto(latest.i1) }}</span></span>
-                <span class="mp-phase" role="listitem"><b>Y</b><span>{{ fmtAuto(latest.i2) }}</span></span>
-                <span class="mp-phase" role="listitem"><b>B</b><span>{{ fmtAuto(latest.i3) }}</span></span>
-              </div>
-              <dl class="mp-rows">
-                <dt>Imbalance</dt>
-                <dd>{{ iImbalanceText }}
-                  <span *ngIf="iImbalanceHigh" class="mexa-badge mexa-badge-warn">Over {{ limits.i_imbalance_pct }} %</span></dd>
-                <ng-container *ngIf="latest.i1_max !== null || latest.i2_max !== null || latest.i3_max !== null">
-                  <dt>Highest recorded</dt><dd>{{ fmtAuto(latest.i1_max) }} · {{ fmtAuto(latest.i2_max) }} · {{ fmtAuto(latest.i3_max) }} A</dd>
-                </ng-container>
-              </dl>
-            </article>
+    <div class="mp-phase-heading">PHASE DISTRIBUTION</div>
+    <div class="mp-phases" role="list" aria-label="Power by phase">
+      <span class="mp-phase mp-phase-r" role="listitem">
+        <b class="mp-phase-r">R</b><span>{{ fmtAuto(latest.kw1) }}</span>
+      </span>
+      <span class="mp-phase mp-phase-y" role="listitem">
+        <b class="mp-phase-y">Y</b><span>{{ fmtAuto(latest.kw2) }}</span>
+      </span>
+      <span class="mp-phase mp-phase-b" role="listitem">
+        <b class="mp-phase-b">B</b><span>{{ fmtAuto(latest.kw3) }}</span>
+      </span>
+    </div>
 
-            <article class="mp-card" [attr.aria-labelledby]="ids.pf">
-              <p class="mp-label" [id]="ids.pf">Power factor</p>
-              <p class="mp-value">{{ fmt(latest.pf_avg, 2) }}
-                <span *ngIf="pfBandNow as b" class="mexa-badge" [ngClass]="b.badge"><span class="material-icons" aria-hidden="true">{{ b.icon }}</span>{{ b.label }}</span>
-              </p>
-              <p class="mp-sub">Electricity boards expect 0.9 or better</p>
-              <div class="mp-phases" role="list" aria-label="Power factor by phase">
-                <span class="mp-phase" role="listitem"><b>R</b><span>{{ fmt(latest.pf1, 2) }}</span></span>
-                <span class="mp-phase" role="listitem"><b>Y</b><span>{{ fmt(latest.pf2, 2) }}</span></span>
-                <span class="mp-phase" role="listitem"><b>B</b><span>{{ fmt(latest.pf3, 2) }}</span></span>
-              </div>
-              <dl class="mp-rows" *ngIf="latest.frequency_hz !== null">
-                <dt>Frequency</dt>
-                <dd>{{ fmt(latest.frequency_hz, 2) }} Hz
-                  <span *ngIf="hzBandNow as b" class="mexa-badge" [ngClass]="b.badge">{{ b.label }}</span></dd>
-              </dl>
-            </article>
-          </div>
+    <dl class="mp-rows">
+      <ng-container *ngIf="latest.kva_total !== null">
+        <dt>Apparent power</dt>
+        <dd>{{ fmtAuto(latest.kva_total) }} kVA</dd>
+      </ng-container>
+      <ng-container *ngIf="latest.kvar_total !== null">
+        <dt>Reactive power</dt>
+        <dd>{{ fmtAuto(latest.kvar_total) }} kVAr</dd>
+      </ng-container>
+      <ng-container *ngIf="latest.kw_demand_max !== null || latest.kva_demand_max !== null">
+        <dt>Highest demand</dt>
+        <dd>{{ fmtAuto(latest.kw_demand_max) }} kW · {{ fmtAuto(latest.kva_demand_max) }} kVA</dd>
+      </ng-container>
+    </dl>
+  </article>
+
+  <!-- VOLTAGE -->
+  <article class="mp-card mp-card-voltage" [attr.aria-labelledby]="ids.volt">
+    <div class="mp-card-top">
+      <div>
+        <p class="mp-label" [id]="ids.volt">Voltage</p>
+        <p class="mp-value">
+          {{ fmt(latest.v_ll_avg, 1) }}<small>V</small>
+        </p>
+        <p class="mp-sub">Average phase-to-phase</p>
+      </div>
+      <div class="mp-icon mp-icon-teal">
+        <span class="material-icons" aria-hidden="true">electrical_services</span>
+      </div>
+    </div>
+
+    <div class="mp-status-row" *ngIf="vBand as b">
+      <span class="mp-status" [ngClass]="b.badge">
+        <span class="material-icons" aria-hidden="true">{{ b.icon }}</span>
+        {{ b.label }}
+      </span>
+      <span class="mp-status-caption">Voltage status</span>
+    </div>
+
+    <p class="mp-phase-heading">PHASE-TO-PHASE VOLTAGE</p>
+    <div class="mp-phases" role="list" aria-label="Voltage between phases">
+      <span class="mp-phase mp-phase-r" role="listitem">
+        <b class="mp-phase-r">R–Y</b><span>{{ fmt(latest.v12, 1) }}</span>
+      </span>
+      <span class="mp-phase mp-phase-y" role="listitem">
+        <b class="mp-phase-y">Y–B</b><span>{{ fmt(latest.v23, 1) }}</span>
+      </span>
+      <span class="mp-phase mp-phase-b" role="listitem">
+        <b class="mp-phase-b">B–R</b><span>{{ fmt(latest.v31, 1) }}</span>
+      </span>
+    </div>
+
+    <dl class="mp-rows">
+      <ng-container *ngIf="latest.v1n !== null || latest.v2n !== null || latest.v3n !== null">
+        <dt>Phase to neutral</dt>
+        <dd>{{ fmt(latest.v1n, 1) }} · {{ fmt(latest.v2n, 1) }} · {{ fmt(latest.v3n, 1) }} V</dd>
+      </ng-container>
+      <dt>Imbalance</dt>
+      <dd>
+        {{ vImbalance === null ? '--' : fmt(vImbalance, 1) + ' %' }}
+        <span *ngIf="vImbalance !== null && vImbalance > limits.v_imbalance_pct"
+              class="mexa-badge mexa-badge-warn">
+          Over {{ limits.v_imbalance_pct }} %
+        </span>
+      </dd>
+      <ng-container *ngIf="vMaxRecorded !== null">
+        <dt>Highest recorded</dt>
+        <dd>{{ fmt(vMaxRecorded, 1) }} V</dd>
+      </ng-container>
+    </dl>
+  </article>
+
+  <!-- CURRENT -->
+  <article class="mp-card mp-card-current" [attr.aria-labelledby]="ids.amp">
+    <div class="mp-card-top">
+      <div>
+        <p class="mp-label" [id]="ids.amp">Current</p>
+        <p class="mp-value">
+          {{ fmtAuto(latest.i_avg) }}<small>A</small>
+        </p>
+        <p class="mp-sub">Average of three phases</p>
+      </div>
+      <div class="mp-icon mp-icon-purple">
+        <span class="material-icons" aria-hidden="true">speed</span>
+      </div>
+    </div>
+
+    <p class="mp-phase-heading">PHASE CURRENT</p>
+    <div class="mp-phases" role="list" aria-label="Current by phase">
+      <span class="mp-phase mp-phase-r" role="listitem">
+        <b class="mp-phase-r">R</b><span>{{ fmtAuto(latest.i1) }}</span>
+      </span>
+      <span class="mp-phase mp-phase-y" role="listitem">
+        <b class="mp-phase-y">Y</b><span>{{ fmtAuto(latest.i2) }}</span>
+      </span>
+      <span class="mp-phase mp-phase-b" role="listitem">
+        <b class="mp-phase-b">B</b><span>{{ fmtAuto(latest.i3) }}</span>
+      </span>
+    </div>
+
+    <dl class="mp-rows">
+      <dt>Imbalance</dt>
+      <dd>
+        {{ iImbalanceText }}
+        <span *ngIf="iImbalanceHigh" class="mexa-badge mexa-badge-warn">
+          Over {{ limits.i_imbalance_pct }} %
+        </span>
+      </dd>
+      <ng-container *ngIf="latest.i1_max !== null || latest.i2_max !== null || latest.i3_max !== null">
+        <dt>Highest recorded</dt>
+        <dd>{{ fmtAuto(latest.i1_max) }} · {{ fmtAuto(latest.i2_max) }} · {{ fmtAuto(latest.i3_max) }} A</dd>
+      </ng-container>
+    </dl>
+  </article>
+
+  <!-- POWER FACTOR -->
+  <article class="mp-card mp-card-pf" [attr.aria-labelledby]="ids.pf">
+    <div class="mp-card-top">
+      <div>
+        <p class="mp-label" [id]="ids.pf">Power factor</p>
+        <p class="mp-value">{{ fmt(latest.pf_avg, 2) }}</p>
+        <p class="mp-sub">Target: 0.90 or better</p>
+      </div>
+      <div class="mp-icon mp-icon-green">
+        <span class="material-icons" aria-hidden="true">analytics</span>
+      </div>
+    </div>
+
+    <div class="mp-status-row" *ngIf="pfBandNow as b">
+      <span class="mp-status" [ngClass]="b.badge">
+        <span class="material-icons" aria-hidden="true">{{ b.icon }}</span>
+        {{ b.label }}
+      </span>
+      <span class="mp-status-caption">Power factor status</span>
+    </div>
+
+    <p class="mp-phase-heading">POWER FACTOR BY PHASE</p>
+    <div class="mp-phases" role="list" aria-label="Power factor by phase">
+      <span class="mp-phase mp-phase-r" role="listitem">
+        <b class="mp-phase-r">R</b><span>{{ fmt(latest.pf1, 2) }}</span>
+      </span>
+      <span class="mp-phase mp-phase-y" role="listitem">
+        <b class="mp-phase-y">Y</b><span>{{ fmt(latest.pf2, 2) }}</span>
+      </span>
+      <span class="mp-phase mp-phase-b" role="listitem">
+        <b class="mp-phase-b">B</b><span>{{ fmt(latest.pf3, 2) }}</span>
+      </span>
+    </div>
+
+    <dl class="mp-rows" *ngIf="latest.frequency_hz !== null">
+      <dt>Frequency</dt>
+      <dd>
+        {{ fmt(latest.frequency_hz, 2) }} Hz
+        <span *ngIf="hzBandNow as b" class="mexa-badge" [ngClass]="b.badge">
+          {{ b.label }}
+        </span>
+      </dd>
+    </dl>
+  </article>
+
+</div>
+
+
 
           <!-- the meter's own running totals -->
-          <h3 class="mp-section">Meter totals, since it was installed</h3>
-          <dl class="mp-totals">
-            <div class="mp-total"><dt>Total energy</dt><dd>{{ fmt(latest.kwh_total, 1) }}<small>kWh</small></dd></div>
-            <div class="mp-total"><dt>Import</dt><dd>{{ fmt(latest.kwh_import, 1) }}<small>kWh</small></dd></div>
-            <div class="mp-total"><dt>Export</dt><dd>{{ fmt(latest.kwh_export, 1) }}<small>kWh</small></dd></div>
-            <div class="mp-total"><dt>Reactive</dt><dd>{{ fmt(latest.kvarh_total, 1) }}<small>kVArh</small></dd></div>
-            <div class="mp-total"><dt>Apparent</dt><dd>{{ fmt(latest.kvah_total, 1) }}<small>kVAh</small></dd></div>
-            <div class="mp-total"><dt>Meter run time</dt><dd>{{ fmt(latest.run_hours, 1) }}<small>h</small></dd></div>
-            <div class="mp-total"><dt>Supply interruptions</dt><dd>{{ fmt(latest.aux_interrupts, 0) }}</dd></div>
-          </dl>
+        
+<!-- Meter totals -->
+<section class="mp-totals-section" aria-labelledby="meter-totals-title">
+  <div class="mp-section-heading">
+    <div>
+      <h3 class="mp-section" id="meter-totals-title">Meter totals</h3>
+      <p class="mp-section-sub">Cumulative readings since installation</p>
+    </div>
+    <span class="material-icons mp-section-icon" aria-hidden="true">database</span>
+  </div>
+
+  <dl class="mp-totals">
+
+    <div class="mp-total mp-total-energy">
+      <div class="mp-total-icon">
+        <span class="material-icons" aria-hidden="true">bolt</span>
+      </div>
+      <div class="mp-total-content">
+        <dt>Total energy</dt>
+        <dd>{{ fmt(latest.kwh_total, 1) }}<small>kWh</small></dd>
+      </div>
+    </div>
+
+    <div class="mp-total mp-total-import">
+      <div class="mp-total-icon">
+        <span class="material-icons" aria-hidden="true">south_west</span>
+      </div>
+      <div class="mp-total-content">
+        <dt>Import energy</dt>
+        <dd>{{ fmt(latest.kwh_import, 1) }}<small>kWh</small></dd>
+      </div>
+    </div>
+
+    <div class="mp-total mp-total-export">
+      <div class="mp-total-icon">
+        <span class="material-icons" aria-hidden="true">north_east</span>
+      </div>
+      <div class="mp-total-content">
+        <dt>Export energy</dt>
+        <dd>{{ fmt(latest.kwh_export, 1) }}<small>kWh</small></dd>
+      </div>
+    </div>
+
+    <div class="mp-total mp-total-reactive">
+      <div class="mp-total-icon">
+        <span class="material-icons" aria-hidden="true">waves</span>
+      </div>
+      <div class="mp-total-content">
+        <dt>Reactive energy</dt>
+        <dd>{{ fmt(latest.kvarh_total, 1) }}<small>kVArh</small></dd>
+      </div>
+    </div>
+
+    <div class="mp-total mp-total-apparent">
+      <div class="mp-total-icon">
+        <span class="material-icons" aria-hidden="true">show_chart</span>
+      </div>
+      <div class="mp-total-content">
+        <dt>Apparent energy</dt>
+        <dd>{{ fmt(latest.kvah_total, 1) }}<small>kVAh</small></dd>
+      </div>
+    </div>
+
+    <div class="mp-total mp-total-runtime">
+      <div class="mp-total-icon">
+        <span class="material-icons" aria-hidden="true">schedule</span>
+      </div>
+      <div class="mp-total-content">
+        <dt>Meter run time</dt>
+        <dd>{{ fmt(latest.run_hours, 1) }}<small>h</small></dd>
+      </div>
+    </div>
+
+    <div class="mp-total mp-total-interruptions">
+      <div class="mp-total-icon">
+        <span class="material-icons" aria-hidden="true">power_off</span>
+      </div>
+      <div class="mp-total-content">
+        <dt>Supply interruptions</dt>
+        <dd>{{ fmt(latest.aux_interrupts, 0) }}</dd>
+      </div>
+    </div>
+
+  </dl>
+</section>
+
+
         </ng-container>
 
         <!-- ── over the range ── -->

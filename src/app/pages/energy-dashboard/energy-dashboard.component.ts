@@ -40,7 +40,7 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
   templateUrl: './energy-dashboard.component.html'
 })
 export class EnergyDashboardComponent implements OnInit, OnDestroy {
-
+activeTab: 'chart' | 'machine' | 'energy' | 'events' = 'chart';
   /** Chart options keep their reference until their own figures change (deps). */
   private charts = new ChartMemo();
 
@@ -80,7 +80,10 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
   /** Export is its own grant — a company can have this page without being able to take data off it. */
   get canExport(): boolean { return this.auth.hasAction('analytics-energy', 'export'); }
   get canEditSettings(): boolean { return this.auth.hasAction('analytics-energy', 'settings'); }
-
+  
+setTab(tab: 'chart' | 'machine' | 'energy'): void {
+  this.activeTab = tab;
+}
 
   ngOnInit(): void {
     this.svc.getMeta()
@@ -202,6 +205,9 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy {
         }
       });
   }
+
+
+
 
   /* ── view helpers ── */
 

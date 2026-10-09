@@ -58,10 +58,12 @@ const LOSS_ACTIONS: Partial<Record<Loss['key'], { text: string; path: string; pe
   templateUrl: './oee-dashboard.component.html'
 })
 export class OeeDashboardComponent implements OnInit, OnDestroy {
-
+activeTab: 'oee' | 'charts' = 'oee';
   /** Chart options keep the same reference until apply() bumps this. */
   private charts = new ChartMemo();
-
+setTab(tab: 'oee' | 'charts'): void {
+  this.activeTab = tab;
+}
   machines: any[] = [];
   shifts: any[] = [];
   f: any = this.blankFilters();
