@@ -354,9 +354,14 @@ for (const s of screens) {
   test(`${s.title} renders in the MEXA design`, async ({ authedPage: page }) => {
     const errors: string[] = [];
     // an Angular template that throws aborts change detection silently;
-    // the page still renders, just wrong, so console errors are failures
+    // the page still renders, just wrong, so console errors are failures —
+    // except the browser's own note that the live connection could not be
+    // opened: every signed-in page opens it (the unread count comes over
+    // it), and this harness keeps it from reaching the server
     page.on('pageerror', (e: Error) => errors.push(e.message));
-    page.on('console', (m: any) => { if (m.type() === 'error') errors.push(m.text()); });
+    page.on('console', (m: any) => {
+      if (m.type() === 'error' && !/^WebSocket connection to '[^']*\/socket\.io\//.test(m.text())) errors.push(m.text());
+    });
 
     await mockApi(page);
     await page.setViewportSize({ width: 1600, height: 1200 });

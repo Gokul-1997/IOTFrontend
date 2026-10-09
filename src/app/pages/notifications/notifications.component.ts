@@ -98,14 +98,14 @@ export class NotificationsComponent implements OnInit {
 
   open(n: any): void {
     if (!n.is_read) {
+      // the unread count drops at once, in the service; the row when the server agrees
       this.notif.markRead(n.id).subscribe({
         next: () => {
           n.is_read = true;
           n.read_at = new Date().toISOString();
-          const count = this.notif.unreadCount$.value;
-          if (count > 0) this.notif.unreadCount$.next(count - 1);
           this.cdr.markForCheck();
-        }
+        },
+        error: () => {}
       });
     }
     // A notification's link is server-supplied application-relative data
@@ -118,9 +118,9 @@ export class NotificationsComponent implements OnInit {
     this.notif.markAllRead().subscribe({
       next: () => {
         this.notifications.forEach(n => { n.is_read = true; n.read_at = new Date().toISOString(); });
-        this.notif.unreadCount$.next(0);
         this.cdr.markForCheck();
-      }
+      },
+      error: () => {}
     });
   }
 

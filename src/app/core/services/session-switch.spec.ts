@@ -119,27 +119,28 @@ describe('another tab switching user', () => {
 });
 
 describe('the unread count', () => {
-  test('is not asked for while signed out, survives a failed request, and resets with the session', () => {
+  /* How it is kept up to date — once, then the live connection, polling only
+     without one — is notification.service.spec.ts; here, only that it
+     belongs to one session. */
+  test('is not asked for while signed out, is asked for at sign-in, and resets with the session', async () => {
     vi.useFakeTimers();
     const notes = TestBed.inject(NotificationService);
-    vi.advanceTimersByTime(0);             // the first tick, signed out
+    await vi.advanceTimersByTimeAsync(60000);             // signed out: nothing asked
     http.expectNone(r => r.url.endsWith('/unread-count'));
 
     login(11, 1);
     http.expectOne(r => r.url.endsWith('/unread-count')).flush({ count: 4 });
     expect(notes.unreadCount$.value).toBe(4);
 
-    vi.advanceTimersByTime(30000);
-    http.expectOne(r => r.url.endsWith('/unread-count')).flush('down', { status: 503, statusText: 'Unavailable' });
-    vi.advanceTimersByTime(30000);
-    http.expectOne(r => r.url.endsWith('/unread-count')).flush({ count: 5 });
-    expect(notes.unreadCount$.value).toBe(5);
-
     auth.logout();
     http.match(r => r.url.endsWith('/logout')).forEach(r => r.flush({}));
     expect(notes.unreadCount$.value).toBe(0);
-    vi.advanceTimersByTime(30000);
+    await vi.advanceTimersByTimeAsync(60000);
     http.expectNone(r => r.url.endsWith('/unread-count'));
+
+    login(22, 2);                                         // the next person starts from their own count
+    http.expectOne(r => r.url.endsWith('/unread-count')).flush({ count: 1 });
+    expect(notes.unreadCount$.value).toBe(1);
     vi.useRealTimers();
   });
 });

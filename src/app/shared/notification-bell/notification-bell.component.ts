@@ -98,18 +98,19 @@ export class NotificationBellComponent implements OnInit {
     if (this.open) this.load();
   }
 
+  /* The count on the badge changes at once in the service (and, from the
+     server, on every other tab and device of this person). */
   onRead(n: any) {
     if (!n.is_read) {
-      this.notifService.markRead(n.id).subscribe();
+      this.notifService.markRead(n.id).subscribe({ error: () => {} });
       n.is_read = true;
-      const count = this.notifService.unreadCount$.value;
-      if (count > 0) this.notifService.unreadCount$.next(count - 1);
     }
   }
 
   markAllRead() {
     this.notifService.markAllRead().subscribe({
-      next: () => { this.notifications.forEach(n => n.is_read = true); this.notifService.unreadCount$.next(0); }
+      next: () => { this.notifications.forEach(n => n.is_read = true); },
+      error: () => {}
     });
   }
 }

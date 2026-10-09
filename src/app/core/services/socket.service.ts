@@ -6,7 +6,10 @@ import { Subject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class SocketService {
+  /** Every time the live connection comes up — the first time and after each drop. */
   readonly connected$ = new Subject<void>();
+  /** The live connection dropped (not when it is closed on purpose: sign-out, another user). */
+  readonly disconnected$ = new Subject<void>();
   private socket: Socket | null = null;
   private connecting: Promise<void> | null = null;
   private cancelConnect?: () => void;
@@ -16,6 +19,10 @@ export class SocketService {
   private plantId?: number;
   private machineListeners = new Set<(data: any) => void>();
   private jobListeners = new Set<(job: any) => void>();
+  /* The unread count's listener belongs to NotificationService, a root
+     service that lives as long as the app: a sign-out closes the socket but
+     keeps it, so the next session's socket delivers to it as well. */
+  private unreadListeners = new Set<(count: number) => void>();
   private scopes = new Map<string, number[]>();
 
   constructor(private zone: NgZone, private auth: AuthService) {
@@ -49,6 +56,16 @@ export class SocketService {
       socket.on('programJob', job => this.zone.run(() => {
         for (const callback of this.jobListeners) callback(job);
       }));
+      // the server says when this person's unread count changes (Backend notifications announceUnread)
+      socket.on('unreadCount', payload => {
+        if (socket !== this.socket) return;
+        const count = Number(payload?.count);
+        if (!Number.isFinite(count) || count < 0) return;
+        this.zone.run(() => { for (const callback of this.unreadListeners) callback(count); });
+      });
+      socket.on('disconnect', () => {
+        if (socket === this.socket) this.disconnected$.next();
+      });
       socket.on('connect_error', err => {
         if (socket !== this.socket) return;
         if (err.message === 'TOKEN_EXPIRED' && !this.refreshing) {
@@ -107,6 +124,13 @@ export class SocketService {
     this.jobListeners.add(callback);
     return () => { this.jobListeners.delete(callback); };
   }
+
+  onUnreadCount(callback: (count: number) => void): () => void {
+    this.unreadListeners.add(callback);
+    return () => { this.unreadListeners.delete(callback); };
+  }
+
+  get isConnected(): boolean { return !!this.socket?.connected; }
 
   setMachineScope(owner: string, ids: number[]): void {
     this.scopes.set(owner, [...new Set(ids)]);
