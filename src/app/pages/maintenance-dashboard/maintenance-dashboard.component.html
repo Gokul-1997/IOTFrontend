@@ -259,8 +259,12 @@
          fill to their band. Motion pauses off-screen and in a hidden tab
          (appPauseOffscreen) and stays still for reduced-motion users. -->
     <div class="mt-cooling" appPauseOffscreen>
-      <section class="mexa-card mt-fans" aria-label="Cooling fans"
-               [class.is-one-row]="fanTiles.length <= fanCols" [style.--mt-fan-cols]="fanCols">
+      <section class="mexa-card mt-fans-card" aria-label="Cooling fans">
+        <!-- how many fans the controller reports, and each by its number -->
+        <p class="mt-fans-head" *ngIf="fansReported">
+          CNC fans <span class="mt-count" [attr.aria-label]="fanTiles.length + (fanTiles.length === 1 ? ' fan' : ' fans')">{{ fanTiles.length }}</span>
+        </p>
+        <div class="mt-fans" [class.is-one-row]="fanTiles.length <= fanCols" [style.--mt-fan-cols]="fanCols">
         <div class="mt-fan" *ngFor="let f of fanTiles; trackBy: fanKey"
              [class.is-still]="!f.running" [class.is-fault]="f.status === 'Critical'"
              [class.is-new-alert]="freshAlerts.has('fan:' + f.name)">
@@ -280,6 +284,7 @@
           <p class="mt-fan-reading" *ngIf="f.reading">{{ f.reading }}</p>
           <p class="mt-word" [ngClass]="bandText(f.status)">{{ f.status }}</p>
           </div>
+        </div>
         </div>
         <!-- <div class="mt-fan">
             <span class="mt-fan-hub">
@@ -316,20 +321,36 @@
           <p class="mt-word" [ngClass]="bandText(cncBattery.word)">{{ cncBattery.word || 'Not reported' }}</p>
           </div>
         </section>
-        <section class="mexa-card mt-tile" aria-label="APC battery" [class.is-new-alert]="freshAlerts.has('battery:apc')">
-          
+        <section class="mexa-card mt-tile" aria-label="APC battery" [class.mt-apc]="apcAxes.length"
+                 [class.is-new-alert]="freshAlerts.has('battery:apc')">
+          <!-- one battery per axis, as the controller flags them (X Y Z, and A, B or W on a 4- or 5-axis machine) -->
+          @if (apcAxes.length) {
+            <div class="mt-apc-head">
+              <p class="mt-tile-name">APC battery <span class="mt-count">{{ apcAxes.length }} axes</span></p>
+              <p class="mt-word" [ngClass]="bandText(apcBattery.word)">{{ apcBattery.word }}</p>
+            </div>
+            <p class="mt-tile-value mt-apc-volts" *ngIf="apcVolts">{{ apcVolts }}</p>
+            <app-axis-batteries [axes]="apcAxes" [fresh]="freshAxes"></app-axis-batteries>
+          } @else {
             <span class="mt-battery-holder">
             <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><rect class="mt-battery-fill" x="3.6" y="5.6" width="6.8" height="14.8" rx=".8" [style.fill]="bandColour(apcBattery.word)" [style.transform]="'scaleY(' + apcBattery.level + ')'"/></svg>
             </span>
-          <div>
-          <p class="mt-tile-name">APC battery</p>   
-          <p class="mt-tile-value"><span>{{ apcBattery.value }}</span>  </p>     
-          <p class="mt-word" [ngClass]="bandText(apcBattery.word)">{{ apcBattery.word || 'Not reported' }}</p>
-          </div>
+            <div>
+            <p class="mt-tile-name">APC battery</p>
+            <p class="mt-tile-value"><span>{{ apcBattery.value }}</span></p>
+            <p class="mt-word" [ngClass]="bandText(apcBattery.word)">{{ apcBattery.word || 'Not reported' }}</p>
+            </div>
+          }
         </section>
       </div>
     </div>
   </div>
+
+  <!-- ══════════ SUPPLY VOLTAGE — the machine's energy meter, phase by phase ══════════
+       Phase to neutral and phase to phase as two groups (the embedded team's
+       LN and LL parameters), each with its average and how far its phases
+       are apart. A phase outside the supply's tolerance is red. -->
+  <app-supply-voltage [supply]="supply" [fresh]="freshAlerts.has('supply')"></app-supply-voltage>
 
   <!-- ══════════ ROW 2 — cycle time · condition trend · alarm summary ══════════ -->
   <div class="mt-row2">

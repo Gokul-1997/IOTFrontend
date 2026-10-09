@@ -14,6 +14,8 @@ import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { SEVERITY } from '../../shared/severity';
 import { PauseOffscreenDirective } from '../../shared/pause-offscreen.directive';
+import { SupplyVoltageComponent, SupplyView, supplyView } from './supply-voltage.component';
+import { AxisBatteriesComponent, AxisBattery, axisBatteries } from './axis-batteries.component';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 2 — Maintenance Dashboard
@@ -75,7 +77,7 @@ const SIGNAL_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-maintenance-dashboard',
   standalone: true,
-  imports: [AutoApplyDirective, FilterPanelDirective, ReportDateDirective, PauseOffscreenDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, ConditionGaugeComponent],
+  imports: [AutoApplyDirective, FilterPanelDirective, ReportDateDirective, PauseOffscreenDirective, SupplyVoltageComponent, AxisBatteriesComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, ConditionGaugeComponent],
   templateUrl: './maintenance-dashboard.component.html',
   styleUrl: './maintenance-dashboard.component.scss'
 })
@@ -137,12 +139,21 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
      battery flag it keeps per axis; `level` is how full the icon is drawn. */
   apcBattery: BatteryTile = { value: '--', word: '', level: 0 };
   cncBattery: BatteryTile = { value: '--', word: '', level: 0 };
+  /* The APC battery axis by axis, as the controller flags them — five or six
+     on a machine with A, B or W axes — instead of one line for all. */
+  apcAxes: AxisBattery[] = [];
+  /** The APC battery's voltage, when a controller sends one besides the flags. */
+  apcVolts = '';
+  /* The supply voltage from the machine's energy meter, or null when it has none. */
+  supply: SupplyView | null = null;
 
   /* What needs attention on this machine now, worst first — the line under its
      name — and which readings have just got worse since the last refresh,
      which pulse briefly and are told to a screen reader once. */
   attention: Watched[] = [];
   freshAlerts = new Set<string>();
+  /** The axes whose APC battery has just gone low, for the per-axis list to pulse. */
+  freshAxes = new Set<string>();
   alertNote = '';
   private lastBands = new Map<string, Band>();
   private lastMachine: number | null = null;
@@ -309,6 +320,10 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     this.fansRunning = this.fanTiles.some(f => f.running);
     this.apcBattery = this.batteryTile(this.focusRow?.apc_battery_voltage, this.focusRow?.apc_battery_status);
     this.cncBattery = this.batteryTile(this.focusRow?.cnc_battery_voltage, null);
+    this.apcAxes = axisBatteries(this.focusRow?.apc_battery_status);
+    const volts = this.focusRow?.apc_battery_voltage;
+    this.apcVolts = volts !== null && volts !== undefined && Number.isFinite(Number(volts)) ? `${Number(volts).toFixed(2)} v` : '';
+    this.supply = supplyView(d.supply);
     this.noteAlerts(this.focusRow);
 
     /* Cycle time: run time per part in each hour. Hours with no part are
@@ -539,11 +554,21 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       }
       if (this.fansReported) {
         for (const f of this.fanTiles) {
-          if (f.status in BAND_RANK) watched.push({ key: `fan:${f.name}`, label: f.name, value: f.reading, band: f.status as Band });
+          // "Fan 1" sits under the CNC fans heading; on its own the line says "CNC fan 1"
+          const label = /^Fan \d+$/.test(f.name) ? `CNC ${f.name.toLowerCase()}` : f.name;
+          if (f.status in BAND_RANK) watched.push({ key: `fan:${f.name}`, label, value: f.reading, band: f.status as Band });
         }
       }
       watched.push({ key: 'battery:cnc', label: 'CNC battery', value: this.cncBattery.value, band: this.cncBattery.word as Band });
-      watched.push({ key: 'battery:apc', label: 'APC battery', value: this.apcBattery.value, band: this.apcBattery.word as Band });
+      if (this.apcAxes.length) {
+        // each axis on its own, so the line says which battery to change
+        for (const a of this.apcAxes) {
+          watched.push({ key: `battery:apc:${a.axis}`, label: `APC battery ${a.axis}`, value: a.low ? 'low' : '', band: a.low ? 'Critical' : 'Healthy' });
+        }
+      } else {
+        watched.push({ key: 'battery:apc', label: 'APC battery', value: this.apcBattery.value, band: this.apcBattery.word as Band });
+      }
+      if (this.supply) watched.push({ key: 'supply', label: 'Supply voltage', value: this.supply.problem, band: this.supply.word });
     }
 
     this.attention = watched
@@ -555,6 +580,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       ? this.attention.filter(w => BAND_RANK[w.band] > BAND_RANK[this.lastBands.get(w.key) ?? ''])
       : [];
     this.freshAlerts = new Set(fresh.map(w => w.key));
+    this.freshAxes = new Set(fresh.filter(w => w.key.startsWith('battery:apc:')).map(w => w.key.slice('battery:apc:'.length)));
     this.alertNote = fresh.length
       ? 'Now ' + fresh.map(w => `${w.band.toLowerCase()}: ${w.label}${w.value ? ' ' + w.value : ''}`).join('; ')
       : '';
@@ -582,8 +608,14 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     return `${f.name}|${f.place}`;
   }
 
-  /** "CNC_FAN1" → "CNC Fan 1", "radiator_fan2" → "Radiator Fan 2", the way the design names fans. */
+
+  /**
+   * "CNC_FAN1" → "Fan 1" (the card is headed CNC fans, so the number is what
+   * tells one from the other), "radiator_fan2" → "Radiator Fan 2".
+   */
   private fanName(key: string): string {
+    const cnc = /^\s*cnc[\s_-]*fan[\s_-]*(\d+)\s*$/i.exec(String(key));
+    if (cnc) return `Fan ${Number(cnc[1])}`;
     return String(key).replace(/[_-]+/g, ' ').replace(/([a-z])(\d)/gi, '$1 $2').trim().split(/\s+/)
       .map(w => /^fan$/i.test(w) ? 'Fan' : w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ');

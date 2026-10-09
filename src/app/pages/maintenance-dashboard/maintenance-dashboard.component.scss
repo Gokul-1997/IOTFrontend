@@ -160,6 +160,33 @@
 .mt-battery-fill { transform-box: fill-box; transform-origin: 50% 100%;
                    transition: transform .4s cubic-bezier(.2, .8, .25, 1), fill .3s ease; }
 
+/* the fans card: how many the controller reports, then each by its number */
+.mt-fans-card { display: flex; flex-direction: column; gap: .35rem; }
+.mt-fans-head { display: flex; align-items: center; justify-content: center; gap: .4rem; margin: 0;
+                font-size: .78rem; font-weight: 600; color: var(--mexa-ink-2); }
+.mt-count {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 1.35rem; height: 1.35rem;
+  padding: 0 .35rem; border-radius: 999px; background: var(--mexa-row-alt); color: var(--mexa-ink);
+  font-size: .72rem; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+
+/* a fan's icon and words sit together in the middle of the row; the hub's
+   auto margins spread them to the two edges of a wide (tablet) card */
+.mt-fans-card .mt-fan { justify-content: center; gap: .75rem; }
+.mt-fans-card .mt-fan-hub { margin: 0; }
+/* on a phone three fans share one row: each stacks its icon over its words,
+   so "10,206 rpm" stays on one line */
+@media (max-width: 767px) {
+  .mt-fans-card .mt-fan { flex-direction: column; gap: .15rem; }
+  .mt-fans-card .mt-fan-hub { margin-bottom: .1rem; }
+  .mt-fans-card .mt-fan-reading { white-space: nowrap; font-size: .85rem; }
+}
+
+/* the APC battery tile with one battery per axis (app-axis-batteries) */
+.mt-tile.mt-apc { flex-direction: column; gap: .45rem; align-items: stretch; }
+.mt-apc-head { display: flex; align-items: center; justify-content: space-between; gap: .4rem; flex-wrap: wrap; }
+.mt-apc-head .mt-tile-name, .mt-apc-head .mt-word { margin: 0; display: inline-flex; align-items: center; gap: .35rem; }
+
 /* the readings above the bars sit on the card, so they take its ink — in
    either theme, and at once when the theme is switched */
 :host ::ng-deep .mt-bars .apexcharts-datalabel { fill: var(--mexa-ink); }

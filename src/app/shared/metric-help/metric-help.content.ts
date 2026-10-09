@@ -262,6 +262,15 @@ export function metricHelp(topic: string, basis: HelpBasis = 'period'): MetricHe
         example: 'About 415 V is normal for a 3-phase supply; phase to neutral it would read about 240 V.',
         why: 'A supply well above or below 415 V strains motors and drives. Shows "--" when no machine sends a voltage.'
       };
+    case 'supply_voltage':
+      return {
+        title: 'Supply voltage',
+        what: 'The voltage reaching the machine, from its energy meter: each phase to neutral (L-N) and each pair of phases (L-L), with their averages.',
+        formula: ['In tolerance: within ±10 % of 415 V phase to phase, 240 V phase to neutral',
+                  'Phases apart = furthest phase from the average ÷ the average'],
+        example: 'L1-L2 421.2, L2-L3 421.2, L3-L1 419.1 V: average 420.5 V, phases 0.3 % apart — Healthy.',
+        why: 'A phase out of tolerance is red and the card reads Critical: it strains motors and drives. Phases more than 2 % apart read Stable — worth a look. Only machines with an energy meter report it.'
+      };
     case 'avg_current':
       return {
         title: 'Average current',
