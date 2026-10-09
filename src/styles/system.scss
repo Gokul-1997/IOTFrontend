@@ -173,7 +173,7 @@ html, body { font-family: var(--font-ui); }
 /* Buttons */
 .ui-btn, .btn-primary, .btn-apply, .btn-clear, .btn-secondary, .btn-cancel, .btn-danger, .mexa-submit {
   font-family: inherit; font-size: var(--fs-body); font-weight: 400; letter-spacing: 0;     display: flex;
-    gap: 5px;
+    gap: 5px; align-items: center;
 }
 .ui-btn-sm, .ui-btn-xs, .mexa-pagebtn { font-size: var(--fs-label); font-weight: 500; }
 
@@ -201,7 +201,9 @@ html, body { font-family: var(--font-ui); }
   mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent);
 }
 /* Long lists: the box scrolls and the header stays in view */
-.mexa-tablewrap.is-scroll, .table-wrapper.is-scroll { max-height: min(70vh, 42rem); }
+.mexa-tablewrap.is-scroll, .table-wrapper.is-scroll { 
+  // max-height: min(70vh, 42rem);
+ }
 
 .mexa-table {
   width: 100%;

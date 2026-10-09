@@ -23,8 +23,8 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
      through its right-hand end as in the design. */
   --mexa-bar:        linear-gradient(90deg, rgba(43, 57, 144, .92) 0%, rgba(58, 56, 140, .70) 55%, rgba(72, 50, 130, .45) 100%);
   --mexa-bar-solid:  #3a388c;
-  --mexa-submit:     #2f2d8f;
-  --mexa-submit-h:   #26247a;
+  --mexa-submit: linear-gradient( 0deg, rgb(110, 59, 113) 0%, rgb(221, 64, 62) 100%);
+  --mexa-submit-h: linear-gradient( 90deg, rgb(110, 59, 113) 0%, rgb(221, 64, 62) 100%);
 
   /* The STM field: the diagonal navy-to-crimson of the logo, as the
      client's design (MEXA_DS_dashboard_UI_02.pdf) draws it behind every
@@ -232,12 +232,13 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   color: #fff;
   border: 0;
   border-radius: 9px;
-  padding: .55rem 1.4rem;
+  padding:0.45rem 1.4rem;
   font: inherit;
   font-size: .92rem;
   font-weight: 700;
   cursor: pointer;
   transition: background .15s;
+  border: 1px solid #97545b;
 }
 .mexa-submit:hover:not(:disabled) { background: var(--mexa-submit-h); }
 .mexa-submit:disabled { opacity: .6; cursor: not-allowed; }
@@ -566,7 +567,7 @@ button.mexa-kpi[aria-pressed="true"] {
 }
 .mexa-pagebtn {
   /* #68758D, not the lighter #98A2B3: white text needs 4.5:1 (it was 2.6:1) */
-  background: #68758D; border: 0; font: inherit; font-size: .86rem; font-weight: 500;
+  background: #3b4893; border: 0; font: inherit; font-size: .86rem; font-weight: 500;
   color:#fff; cursor: pointer; padding: .1rem .6rem; border-radius: 7px;
 }
 .mexa-pagebtn:hover:not(:disabled) { background: #4F5A6E; }

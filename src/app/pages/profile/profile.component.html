@@ -48,18 +48,89 @@
 
       <!-- view mode -->
       <dl *ngIf="!editing" class="prof-dl">
-        <div class="txt-card"><dt>Username</dt><dd>{{ profile.username }}</dd></div>
-        <div class="txt-card"><dt>Role</dt><dd>{{ roleLabel(profile.user_type) }}</dd></div>
-        <div class="txt-card"><dt>Email</dt><dd>{{ profile.email || '--' }}</dd></div>
-        <div class="txt-card"><dt>Mobile</dt><dd>{{ profile.mobile || '--' }}</dd></div>
-        <div class="txt-card"><dt>Company</dt><dd>{{ profile.company_name || '--' }}</dd></div>
-        <div class="txt-card"><dt>Plant</dt><dd>{{ profile.plant_name || '--' }}</dd></div>
-        <div class="txt-card"><dt>Last login</dt>
-          <dd>
-            {{ profile.last_login_at ? (profile.last_login_at | date:'d MMM y, h:mm:ss a') : 'This is your first login' }}
-          </dd>
-        </div>
-      </dl>
+
+  <!-- Username -->
+  <div class="txt-card">
+    <div class="prof-icon">
+      <i class="material-icons">person</i>
+    </div>
+    <div class="prof-info">
+      <dt>Username</dt>
+      <dd>{{ profile.username }}</dd>
+    </div>
+  </div>
+
+  <!-- Role -->
+  <div class="txt-card">
+    <div class="prof-icon">
+      <i class="material-icons">admin_panel_settings</i>
+    </div>
+    <div class="prof-info">
+      <dt>Role</dt>
+      <dd>{{ roleLabel(profile.user_type) }}</dd>
+    </div>
+  </div>
+
+  <!-- Email -->
+  <div class="txt-card">
+    <div class="prof-icon">
+      <i class="material-icons">mail</i>
+    </div>
+    <div class="prof-info">
+      <dt>Email</dt>
+      <dd>{{ profile.email || '--' }}</dd>
+    </div>
+  </div>
+
+  <!-- Mobile -->
+  <div class="txt-card">
+    <div class="prof-icon">
+      <i class="material-icons">phone_iphone</i>
+    </div>
+    <div class="prof-info">
+      <dt>Mobile</dt>
+      <dd>{{ profile.mobile || '--' }}</dd>
+    </div>
+  </div>
+
+  <!-- Company -->
+  <div class="txt-card">
+    <div class="prof-icon">
+      <i class="material-icons">business</i>
+    </div>
+    <div class="prof-info">
+      <dt>Company</dt>
+      <dd>{{ profile.company_name || '--' }}</dd>
+    </div>
+  </div>
+
+  <!-- Plant -->
+  <div class="txt-card">
+    <div class="prof-icon">
+      <i class="material-icons">factory</i>
+    </div>
+    <div class="prof-info">
+      <dt>Plant</dt>
+      <dd>{{ profile.plant_name || '--' }}</dd>
+    </div>
+  </div>
+
+  <!-- Last Login -->
+  <div class="txt-card">
+    <div class="prof-icon">
+      <i class="material-icons">schedule</i>
+    </div>
+    <div class="prof-info">
+      <dt>Last Login</dt>
+      <dd>
+        {{ profile.last_login_at
+          ? (profile.last_login_at | date:'d MMM y, h:mm:ss a')
+          : 'This is your first login' }}
+      </dd>
+    </div>
+  </div>
+
+</dl>
 
       <!-- edit mode: only email and mobile — username, role and company are
            admin-controlled, so this form cannot touch them -->
@@ -88,8 +159,10 @@
 
       <p *ngIf="saveNote && !editing" class="prof-ok" role="status">{{ saveNote }}</p>
     </section>
-    <div class="text-right">
-<button type="button" *ngIf="!editing" (click)="startEdit()" class="ui-btn ui-btn-primary ui-btn-xs mt-4">Edit</button>
+    <div class="text-right flex justify-end">
+<button type="button" *ngIf="!editing" (click)="startEdit()" class="ui-btn ui-btn-primary ui-btn-xs mt-4">
+  <span class="ui-tab-icon material-icons" aria-hidden="true">edit</span>
+  Edit</button>
   </div>
 </section>
 
@@ -123,10 +196,13 @@
         </div>
         <p *ngIf="pwErr" class="ui-error" role="alert">{{ pwErr }}</p>
         <p *ngIf="pwNote" class="prof-ok" role="status">{{ pwNote }}</p>
+        <div class="flex justify-end">
         <button type="submit" [disabled]="changingPw"
           class="ui-btn ui-btn-primary">
+          <span class="ui-tab-icon material-icons" aria-hidden="true">lock</span>
           {{ changingPw ? 'Changing…' : 'Change password' }}
         </button>
+        </div>
       </form>
     </section>
 

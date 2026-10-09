@@ -192,7 +192,7 @@
 
 .ui-input {
   width: 100%;
-  padding: 0.4rem;
+  padding: 0.4rem 1.2rem 0.4rem 0.4rem;
   font-size: 0.875rem;
   color: #0f172a;
   background-color: #fff;
@@ -415,7 +415,8 @@ select.ui-input {
 .ui-btn-danger:hover:not(:disabled) { background: #b91c1c; }
 .ui-btn-danger:focus-visible { outline-color: #dc2626; }
 
-.ui-btn-ghost { color: #334155; background: #fff; border-color: #d1d5db; }
+.ui-btn-ghost { color: #334155; background: linear-gradient(
+183deg, #ffffff 0%, #dddddd 100%); border-color: #d1d5db; }
 .ui-btn-ghost:hover:not(:disabled) { background: #f1f5f9; }
 .dark .ui-btn-ghost { color: #e5e7eb; background: #1c1c1c; border-color: #3e3e3e; }
 .dark .ui-btn-ghost:hover:not(:disabled) { background: #262626; }

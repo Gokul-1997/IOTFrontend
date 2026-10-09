@@ -189,7 +189,7 @@ h4 {
   font-size:15px;
   transition: all 0.15s ease;
   // background: #EAEDFF;
-  background: rgb(43, 57, 144);
+  background:linear-gradient(170deg, #4b5ed1 0%, #283278 100%);
   // border:1px solid #d0d5dd;
   color: #fff;
 }
@@ -201,7 +201,7 @@ h4 {
 }
 
 .nav-btn:hover {
-  background: #863567;
+  background: linear-gradient(0deg, rgb(110 59 113) 0%, rgb(221 64 62) 100%);
   color: #fff;
 }
 
@@ -218,7 +218,7 @@ h4 {
 }
 
 .nav-btn.active {
-  background: #863567;
+  background: linear-gradient(0deg, rgb(110 59 113) 0%, rgb(221 64 62) 100%);
   color: white;
 }
 
@@ -760,8 +760,8 @@ $radius: 10px;
 
 
 .btn-primary {
-  display: inline-flex; align-items: center; gap: 6px; background:#2b3990; color: #fff;
-  border: none; border-radius: $radius; padding: 0 20px; height: 42px;
+  display: inline-flex; align-items: center; gap: 6px; background:linear-gradient(0deg,rgb(110, 59, 113) 0%,rgb(221, 64, 62) 100%); color: #fff;
+  border: 1px solid #97545b; border-radius: $radius; padding: 0 20px; height: 42px;
   font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.2s, box-shadow 0.2s;
   mat-icon { font-size: 18px; width: 18px; height: 18px; }
   &:hover { background: #2f4ac4; box-shadow: 0 4px 12px rgba(59,91,219,0.35); }
@@ -802,14 +802,14 @@ $radius: 10px;
    used to flash red and white every second, which made its figures
    unreadable exactly when someone needs to read them. */
 .alarm-blink {
-  --card-status: #e03131;
-  border-color: #e03131 !important;
-  box-shadow: 0 0 0 2px #e03131, var(--mexa-card-shadow) !important;
+  --card-status: #c33f4a;
+  border-color: #c33f4a !important;
+  box-shadow: 0 0 0 2px #c33f4a, var(--mexa-card-shadow) !important;
   animation: alarmPulse 1.4s ease-out infinite;
 }
 @keyframes alarmPulse {
-  0%   { box-shadow: 0 0 0 2px #e03131, 0 0 0 2px rgba(224, 49, 49, .55), var(--mexa-card-shadow); }
-  100% { box-shadow: 0 0 0 2px #e03131, 0 0 0 14px rgba(224, 49, 49, 0), var(--mexa-card-shadow); }
+  0%   { box-shadow: 0 0 0 2px #c33f4a, 0 0 0 2px rgba(224, 49, 49, .55), var(--mexa-card-shadow); }
+  100% { box-shadow: 0 0 0 2px #c33f4a, 0 0 0 14px rgba(224, 49, 49, 0), var(--mexa-card-shadow); }
 }
 
 .dark .alarm-blink { animation: alarmPulse 1.4s ease-out infinite; }
@@ -853,7 +853,7 @@ input[type="date"] {
 input[type="date"]::after {
     content: "📅"; /* or SVG */
     position: absolute;
-    right: 10px;
+    right: 5px;
     top: 50%;
     transform: translateY(-50%);
     pointer-events: none;
@@ -1884,4 +1884,74 @@ html.dark [class~="bg-blue-600"][class~="text-white"] { color: #fff; }
   .refresh-icon {
     animation: none;
   }
+}
+
+// scrollbar styles
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+// Scrllbar Dark theme
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f8fafc;
+}
+.prof-icon {
+    width: 50px;
+    height: 50px;
+    background: #eff2ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50px;
+    padding: 10px;
+    color: #2b3990;
+}
+.prof-dl .txt-card{
+  display: flex;
+  gap:10px;
 }

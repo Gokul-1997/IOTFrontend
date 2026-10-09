@@ -21,7 +21,7 @@ import { LucideAngularModule, User, Lock, ShieldCheck } from 'lucide-angular';
     .prof-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); align-items: start; }
     .prof-stack { display: grid; gap: 1rem; }
     .prof-grid .mexa-card + .mexa-card, .prof-stack .mexa-card + .mexa-card { margin-top: 0; }
-    .prof-dl { display: grid; gap: 1rem 1.5rem; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); margin: 0; font-size: .9rem; }
+    .prof-dl { display: grid; gap: 1rem 1.5rem; grid-template-columns: repeat(2, minmax(12rem, 1fr)); margin: 0; font-size: .9rem; }
     .prof-dl dt { color: var(--mexa-ink-3); font-size: .8rem; }
     .prof-dl dd { margin: .15rem 0 0; color: var(--mexa-ink); font-weight: 600; overflow-wrap: anywhere; }
     .prof-form { display: grid; gap: .9rem; max-width: 26rem; }

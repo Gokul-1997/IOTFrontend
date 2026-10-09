@@ -102,9 +102,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #2b3990;
+  background: linear-gradient(170deg, rgb(75, 94, 209) 0%, rgb(40, 50, 120) 100%);
   color: #fff;
-  border: none;
+  border: 1px solid #4759c6;
   border-radius: 10px;
   padding: 0 20px;
   height: 42px;

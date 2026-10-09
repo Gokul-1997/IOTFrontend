@@ -31,6 +31,7 @@
         <tr>
           <th scope="col">Machine</th>
           <th scope="col">Alarm</th>
+          <th scope="col">Code</th>
           <th scope="col">Severity</th>
           <th scope="col">Started</th>
           <th scope="col" class="col-md">Status</th>
@@ -44,6 +45,8 @@
             <!-- the alarm in words; its code and type underneath when they add something -->
             <td class="wrap">
               <span class="block text-[var(--mexa-ink)]">{{ alarm.message || alarm.alarm_type || '--' }}</span>
+            </td>
+            <td class="wrap">
               <span *ngIf="alarm.alarm_code || (alarm.alarm_type && alarm.message && !alarm.message.startsWith(alarm.alarm_type))"
                     class="block text-xs text-[var(--mexa-ink-3)]">
                 {{ alarm.alarm_code }}<ng-container *ngIf="alarm.alarm_type && alarm.message && !alarm.message.startsWith(alarm.alarm_type)">{{ alarm.alarm_code ? ' · ' : '' }}{{ alarm.alarm_type }}</ng-container>
@@ -72,7 +75,7 @@
                     Cancel</button>
                 </div>
                 <div *ngIf="resolvingId !== alarm.id" class="ui-btn-row">
-                  <button type="button" (click)="resolvingId=alarm.id" class="ui-btn ui-btn-primary ui-btn-xs">
+                  <button type="button" (click)="resolvingId=alarm.id" class="ui-btn ui-btn-ghost ui-btn-xs">
                     <span class="material-icons" aria-hidden="true">mark_chat_read</span>
                     Resolve</button>
                   <span *ngIf="ticketedAlarmIds.has(alarm.id)" class="mexa-badge mexa-badge-neutral">
