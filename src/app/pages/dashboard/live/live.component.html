@@ -129,12 +129,12 @@
 
           <div class="min-w-0">
             <p class="text-sm text-gray-500 dark:text-[#939393]">
-              Operator
+              Operator: <span class="font-bold truncate text-black">
+              {{ operator?.operator_name || '--' }}
+            </span>
             </p>
 
-            <p class="font-bold truncate">
-              {{ operator?.operator_name || '--' }}
-            </p>
+            
 
             <div class="flex">
               <span>ID:</span>
@@ -282,12 +282,12 @@
  
       <!-- Power Consumption -->
       <div *ngIf="auth.hasWidget('dashboard:live', 'power-consume')" class="border-t pt-1 dark:border-gray-700">
-        <p class="flex items-center gap-2 text-sm font-semibold mb-2 justify-center">
+        <p class="flex items-center gap-2 text-sm font-semibold mb-2 justify-center mt-2">
           <span class="flex items-center justify-center w-6 h-6 rounded-md bg-green-500"><span class="material-icons text-white text-[18px]" aria-hidden="true">bolt</span></span>
           Power Consumption
         </p>
         <div class="grid grid-cols-2 gap-2">
-          <div class="bg-gray-50 dark:bg-[#111111] border dark:border-gray-700 rounded-xl flex items-center gap-2 px-3 py-1 justify-center">
+          <div class="bg-gray-50 dark:bg-[#111111] border dark:border-gray-700 rounded-xl flex items-center gap-2 px-3 py-2 justify-center">
             <div class="text-sm text-gray-700  dark:text-[#939393] leading-tight">
               <span class="font-medium">{{shift?.shift_code}}</span><br>
             </div>
@@ -297,7 +297,7 @@
               <span class="text-xs text-gray-700 dark:text-[#939393] ml-0.5 -mt-1">kWh</span>
             </div>
           </div>
-          <div class="bg-gray-50 dark:bg-[#111111] border dark:border-gray-700 rounded-xl flex items-center gap-2 px-3 py-1 justify-center">
+          <div class="bg-gray-50 dark:bg-[#111111] border dark:border-gray-700 rounded-xl flex items-center gap-2 px-3 py-2 justify-center">
             <div class="text-sm text-gray-700 dark:text-[#939393] leading-tight font-medium">Total</div>
             <span class="text-gray-400 font-medium">›</span>
             <div class="flex flex-col justify-center items-center">
@@ -316,12 +316,12 @@
     <div class="xl:col-span-3 mexa-lift rounded-xl  p-2  machine_status">
       <!-- ══════════════ OEE ══════════════ -->
     <div class="rounded-xl flex flex-col items-center  ">
-      <!-- <h3 class="text-base font-semibold text-center -mb-2">OEE <app-metric-help topic="oee" basis="shift"></app-metric-help></h3> -->
+      <h3 class="text-base font-semibold text-center -mb-2">OEE <app-metric-help topic="oee" basis="shift"></app-metric-help></h3>
 
-      <div class="flex items-center justify-center w-full overflow-hidden">
+      <div class="chart_container">
 
         <!-- Dashed radialBar with HTML value overlay -->
-        <div class="relative flex-shrink-0 -mt-6" style="width:250px; height:200px; overflow:hidden">
+        <div class="relative flex-shrink-0 -mt-6" style="width:200px; overflow:hidden">
           <apx-chart
             [series]="oeeSeries"
             [chart]="oeeChart.chart"
@@ -333,7 +333,7 @@
           </apx-chart>
           <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-16"
                style="padding-bottom:30px">
-            <span class="text-2xl font-bold" style="color:#3B4CCA">
+            <span class="text-sm font-bold" style="color:#3B4CCA">
               {{ oee?.oee || 0 }}%
             </span>
             <span class="text-base text-gray-800 -mt-1 font-bold">OEE</span>
@@ -371,14 +371,18 @@
       
 
       <!-- Accepted / Rejected + Radial chart -->
-      <div class="flex items-center justify-between gap-2 -mt-6">
+      <div class="mt-2 border-t pt-1">
 
         <!-- Left: quality metrics -->
-        <div class="flex gap-1 -mr-5 ml-5 mt-4">
+        <div class="flex gap-1 justify-center">
           <div class="">
-          <h3 class="text-base font-semibold mb-2">Machine Status</h3>
-          <div class="flex">
-          <div class="flex items-center gap-3">
+          <h3 class="flex items-center gap-2 text-sm font-semibold mb-2 justify-center mt-2">
+            <span class="flex items-center justify-center w-6 h-6 rounded-md bg-green-500">
+            <span class="material-icons text-white text-[18px]" aria-hidden="true">incomplete_circle</span>
+            </span>
+            Machine Status</h3>
+          <div class="flex justify-between gap-3">
+          <div class="bg-gray-50 dark:bg-[#111111] border dark:border-gray-700 rounded-xl flex items-center gap-2 px-3 py-2 justify-center">
             <span class="flex items-center justify-center w-7 h-7 rounded-full bg-green-500 flex-shrink-0 text-white"><span class="material-icons text-[20px]" aria-hidden="true">check</span></span>
             <div>
               <p class="text-sm text-gray-700 dark:text-[#939393] leading-none flex">Accepted <app-metric-help topic="accepted" basis="shift"></app-metric-help></p>
@@ -386,7 +390,7 @@
             </div>
           </div>
 
-          <div class="flex items-center gap-3">
+          <div class="bg-gray-50 dark:bg-[#111111] border dark:border-gray-700 rounded-xl flex items-center gap-2 px-3 py-2 justify-center">
             <span class="flex items-center justify-center w-7 h-7 rounded-full bg-red-500 flex-shrink-0 text-white"><span class="material-icons text-[20px]" aria-hidden="true">block</span></span>
             <div>
               <p class="text-sm text-gray-700 dark:text-[#939393] leading-none flex">Rejected <app-metric-help topic="rejected" basis="shift"></app-metric-help></p>
@@ -398,8 +402,8 @@
         </div>
 
         <!-- Right: utilization radial chart -->
-        <div class="overflow-hidden w-1/2 relative">
-          <!-- level with the chart's own "Utilization" label, not beside the card title -->
+        <!-- <div class="overflow-hidden w-1/2 relative">
+          
           <app-metric-help topic="utilization" basis="shift" class="absolute right-0 top-1/2 -translate-y-1/2 z-[1]"></app-metric-help>
           <div class="chart-align-center">
           <apx-chart
@@ -411,7 +415,7 @@
             [labels]="['Utilization']">
           </apx-chart>
           </div>
-        </div>
+        </div> -->
 
       </div>
 

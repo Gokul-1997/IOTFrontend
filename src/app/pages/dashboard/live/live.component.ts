@@ -434,13 +434,13 @@ export class LiveComponent implements OnInit, OnDestroy {
 
     /* ── OEE — dashed-segment radialBar ── */
     this.oeeChart = {
-      chart: { type: 'radialBar', height: 220, sparkline: { enabled: true } },
+      chart: { type: 'radialBar', height: 240, sparkline: { enabled: true } },
       labels: ['OEE'],
       plotOptions: {
         radialBar: {
           startAngle: -135,
           endAngle:    135,
-          hollow: { size: '42%' },
+          hollow: { size: '50%' },
           track: {
             show: true,
             background: '#E0E0E0', // background: isDark ? '#1f2937' : '#e5e7eb',
