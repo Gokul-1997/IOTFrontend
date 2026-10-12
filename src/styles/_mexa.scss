@@ -324,7 +324,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   // letter-spacing: .05em;
   text-transform: uppercase;
   // color: var(--mexa-ink-3);
-  line-height: 1;
+  line-height: 15px;
   min-width: 0;
 }
 
@@ -1188,39 +1188,78 @@ a.mexa-pill { text-decoration: none; }
   background: rgba(255, 255, 255, .1)!important;
   
 }
+// .mexa-kpi.green{
+//   background:linear-gradient(to right, #00645a, #009688)!important;
+//   color: #fff;
+// }
+// .mexa-kpi.yellow{
+//   background:linear-gradient(to right, #b47405, #F59E0B)!important;
+//   color: #fff;
+// }
+
+// .mexa-kpi.navy{
+//   background:linear-gradient(to right, #273dca, #4b62ff)!important;
+//   color: #fff;
+// }
+// .mexa-kpi.sky{
+//   background: linear-gradient(to right, #046896, #0EA5E9)!important;
+//   color: #fff;
+// }
+// .mexa-kpi.purple{
+//   background:linear-gradient(to right, #7a4897, #9365B0)!important;
+//   color: #fff;
+// }
+// .mexa-kpi.blue{
+//   background:linear-gradient(to right, #645ccf, #857cff)!important;
+//   color: #fff;
+// }
+// .mexa-kpi.red{
+//   background:linear-gradient(to right, #ad3c33, #d74e44)!important;
+//   color: #fff;
+// }
+// .mexa-kpi.grey{
+//   background:linear-gradient(to right, #505663, #6b7280)!important;
+//   color: #fff;
+// }
+
 .mexa-kpi.green{
-  background:linear-gradient(to right, #00645a, #009688)!important;
+  background:#00645a!important;
   color: #fff;
 }
 .mexa-kpi.yellow{
-  background:linear-gradient(to right, #b47405, #F59E0B)!important;
+  background:#b47405!important;
   color: #fff;
 }
 
 .mexa-kpi.navy{
-  background:linear-gradient(to right, #273dca, #4b62ff)!important;
+  background: #4b62ff!important;
   color: #fff;
 }
 .mexa-kpi.sky{
-  background: linear-gradient(to right, #046896, #0EA5E9)!important;
+  background:#0EA5E9!important;
   color: #fff;
 }
 .mexa-kpi.purple{
-  background:linear-gradient(to right, #7a4897, #9365B0)!important;
+  background:#9365B0!important;
   color: #fff;
 }
 .mexa-kpi.blue{
-  background:linear-gradient(to right, #645ccf, #857cff)!important;
+  background :#857cff !important;
   color: #fff;
 }
 .mexa-kpi.red{
-  background:linear-gradient(to right, #ad3c33, #d74e44)!important;
+  background: #d74e44!important;
   color: #fff;
 }
 .mexa-kpi.grey{
-  background:linear-gradient(to right, #505663, #6b7280)!important;
+  background:#6b7280!important;
   color: #fff;
 }
+
+
+
+
+
 .mexa-kpi-icon.green .mat-icon{
   color: #fff!important;
 }
