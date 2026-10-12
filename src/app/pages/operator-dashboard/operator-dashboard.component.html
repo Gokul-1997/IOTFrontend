@@ -91,46 +91,46 @@
 
   <!-- ══════════ KPI TILES ══════════ -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi">
+    <div class="mexa-kpi navy">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Operators</span>
-        <span class="mexa-kpi-icon navy" style="background:#2f2d8f" aria-hidden="true"><mat-icon>groups</mat-icon></span>
+        <span class="mexa-kpi-icon navy"  aria-hidden="true"><mat-icon>groups</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.attribution.operators }}</p>
       <p class="mexa-kpi-sub" *ngIf="data.bands.unrated">{{ data.bands.unrated }} with nothing measured</p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi green">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Excellent Performer</span>
-        <span class="mexa-kpi-icon green" style="background:#22c55e" aria-hidden="true"><mat-icon>star</mat-icon></span>
+        <span class="mexa-kpi-icon green"  aria-hidden="true"><mat-icon>star</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.bands.excellent }}</p>
       <p class="mexa-kpi-sub">Score {{ data.score_bands.excellent }}% and above</p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi sky">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Good Performer</span>
-        <span class="mexa-kpi-icon sky" style="background:#3b9ae1" aria-hidden="true"><mat-icon>verified</mat-icon></span>
+        <span class="mexa-kpi-icon sky"  aria-hidden="true"><mat-icon>verified</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.bands.good }}</p>
       <p class="mexa-kpi-sub">Score {{ data.score_bands.good }}–{{ data.score_bands.excellent }}%</p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi purple">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Avg Performer</span>
-        <span class="mexa-kpi-icon purple" style="background:#9b7ec8" aria-hidden="true"><mat-icon>shield</mat-icon></span>
+        <span class="mexa-kpi-icon purple"  aria-hidden="true"><mat-icon>shield</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.bands.average }}</p>
       <p class="mexa-kpi-sub">Score {{ data.score_bands.average }}–{{ data.score_bands.good }}%</p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi blue">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Who Needs Help</span>
-        <span class="mexa-kpi-icon blue" style="background:#6b7280" aria-hidden="true"><mat-icon>help</mat-icon></span>
+        <span class="mexa-kpi-icon blue"  aria-hidden="true"><mat-icon>help</mat-icon></span>
       </div>
       <p class="mexa-kpi-value">{{ data.bands.needs_help }}</p>
       <p class="mexa-kpi-sub">Score below {{ data.score_bands.average }}%</p>

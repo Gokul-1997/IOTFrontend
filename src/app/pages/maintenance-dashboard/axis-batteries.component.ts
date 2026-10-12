@@ -72,5 +72,5 @@ export class AxisBatteriesComponent {
 
   axisKey(_: number, a: AxisBattery): string { return a.axis; }
 
-  get cols(): number { const n = this.axes.length; return n <= 4 ? Math.max(1, n) : 3; }
+  get cols(): number { const n = this.axes.length; return n <= 4 ? Math.max(1, n) : 5; }
 }

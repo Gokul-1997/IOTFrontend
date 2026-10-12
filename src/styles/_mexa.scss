@@ -56,6 +56,18 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   --mexa-teal:   #17b3a3;
   --mexa-slate:  #6b7280;
 
+  --mexa-green : #22c55e!important;
+  --mexa-yellow : #F59E0B!important;
+
+--mexa-navyb : #15268f!important;
+--mexa-sky : #0EA5E9!important;
+--mexa-purple : #9365B0!important;
+
+--mexa-blueb : #4B6CB7!important;
+--mexa-redb : #a81e14!important;
+
+--mexa-grey : #6b7280!important;
+
   /* Semantic. Separate from the series palette on purpose: a bar being
      "the third series" and a machine being "critical" are different
      kinds of statement and must not share a colour. */
@@ -309,7 +321,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
      is unambiguously the thing being read. */
   font-size: .72rem;
   font-weight: 600;
-  letter-spacing: .05em;
+  // letter-spacing: .05em;
   text-transform: uppercase;
   // color: var(--mexa-ink-3);
   line-height: 1;
@@ -343,10 +355,10 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
 .mexa-kpi-sub {
   // margin-top: .3rem;
   font-size: .78rem;
-  color: var(--mexa-ink-3);
+  color: #fff;
 }
 /* lost time in rupees, under an idle or alarm time (lost-cost.ts) */
-.mexa-kpi-cost { color: var(--mexa-ink-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+.mexa-kpi-cost { color: #fff; font-weight: 500; font-variant-numeric: tabular-nums; }
 
 /* A KPI card that opens the records behind its number. A real <button>, so
    it is reachable by keyboard and announced as pressable; the "View" cue is
@@ -393,8 +405,8 @@ button.mexa-kpi[aria-pressed="true"] {
 /* Direction is stated with an arrow as well as a colour, so the meaning
    survives for a reader who cannot separate red from green. */
 .mexa-delta { font-weight: 700; }
-.mexa-delta-up   { color: var(--mexa-good); }
-.mexa-delta-down { color: var(--mexa-bad); }
+.mexa-delta-up   { color: #fff; }
+.mexa-delta-down { color: #fff; }
 /* For a figure where up is the bad direction (energy used): the colour
    follows the meaning, the arrow follows the number. */
 .mexa-delta-good { color: var(--mexa-good); }
@@ -783,7 +795,7 @@ a.mexa-pill { text-decoration: none; }
    and the tiles agree. */
 .mexa-grade-excellent { --band: #15803d; --band-ink: #11652f; }
 .mexa-grade-good      { --band: #2f2d8f; --band-ink: #2f2d8f; }
-.mexa-grade-avg       { --band: #F59E0B; --band-ink: #8a3f06; }
+.mexa-grade-avg       { --band: #d68903; --band-ink: #8a3f06; }
 .mexa-grade-poor      { --band: #af3647; --band-ink: #a11f31; }
 .mexa-grade-unknown   { --band: #626d7c; --band-ink: #475467; }
 .mexa-grade-excellent, .mexa-grade-good, .mexa-grade-avg, .mexa-grade-poor, .mexa-grade-unknown {
@@ -814,7 +826,10 @@ a.mexa-pill { text-decoration: none; }
 }
 .mexa-oeecard-status {
   display: inline-flex; align-items: center; gap: .3rem;
-  font-size: .72rem; font-weight: 600; color: var(--mexa-white); white-space: nowrap;
+  font-size: .72rem; font-weight: 600; color: #2e2e2e; white-space: nowrap;
+  background: #fff;
+  border-radius: 50px;
+  padding: 2px 10px;
 }
 .mexa-oeecard-status::before {
   content: ''; width: .5rem; height: .5rem; border-radius: 50%;
@@ -881,9 +896,9 @@ a.mexa-pill { text-decoration: none; }
    tick at the target where there is one. */
 .mexa-kpi-track {
   position: relative; height: 5px; border-radius: 99px; margin-top: .55rem;
-  background: color-mix(in srgb, var(--mexa-ink-3) 18%, transparent);
+  background: color-mix(in srgb, #fff 18%, transparent);
 }
-.mexa-kpi-track > i { display: block; height: 100%; width: var(--v, 0%); border-radius: inherit; background: var(--c, var(--mexa-navy)); }
+.mexa-kpi-track > i { display: block; height: 100%; width: var(--v, 0%); border-radius: inherit; background: #fff }
 .mexa-kpi-track > b {
   position: absolute; top: -3px; bottom: -3px; left: var(--t); width: 2px;
   background: var(--mexa-ink); border-radius: 1px;
@@ -1169,29 +1184,66 @@ a.mexa-pill { text-decoration: none; }
     background: #fff;
 }
 
-.mexa-kpi-icon.green{
-  background: #22c55e!important;
+.mexa-kpi-icon{
+  background: rgba(255, 255, 255, .1)!important;
+  
 }
-.mexa-kpi-icon.yellow{
-  background: #F59E0B!important;
+.mexa-kpi.green{
+  background:linear-gradient(to right, #00645a, #009688)!important;
+  color: #fff;
 }
-.mexa-kpi-icon.navy{
-  background: #384BCA!important;
+.mexa-kpi.yellow{
+  background:linear-gradient(to right, #b47405, #F59E0B)!important;
+  color: #fff;
 }
-.mexa-kpi-icon.sky{
-  background: #0EA5E9!important;
+
+.mexa-kpi.navy{
+  background:linear-gradient(to right, #273dca, #4b62ff)!important;
+  color: #fff;
 }
-.mexa-kpi-icon.purple{
-  background: #9365B0!important;
+.mexa-kpi.sky{
+  background: linear-gradient(to right, #046896, #0EA5E9)!important;
+  color: #fff;
 }
-.mexa-kpi-icon.blue{
-  background: #4B6CB7!important;
+.mexa-kpi.purple{
+  background:linear-gradient(to right, #7a4897, #9365B0)!important;
+  color: #fff;
 }
-.mexa-kpi-icon.red{
-  background: #EF4136!important;
+.mexa-kpi.blue{
+  background:linear-gradient(to right, #645ccf, #857cff)!important;
+  color: #fff;
 }
-.mexa-kpi-icon.grey{
-  background: #6b7280!important;
+.mexa-kpi.red{
+  background:linear-gradient(to right, #ad3c33, #d74e44)!important;
+  color: #fff;
+}
+.mexa-kpi.grey{
+  background:linear-gradient(to right, #505663, #6b7280)!important;
+  color: #fff;
+}
+.mexa-kpi-icon.green .mat-icon{
+  color: #fff!important;
+}
+.mexa-kpi-icon.yellow .mat-icon{
+  color: #fff!important;
+}
+.mexa-kpi-icon.navy .mat-icon{
+  color: #fff!important;
+}
+.mexa-kpi-icon.sky .mat-icon{
+  color: #fff!important;
+}
+.mexa-kpi-icon.purple .mat-icon{
+  color: #fff!important;
+}
+.mexa-kpi-icon.blue .mat-icon{
+  color: #fff!important;
+}
+.mexa-kpi-icon.red .mat-icon{
+  color: #fff!important;
+}
+.mexa-kpi-icon.grey .mat-icon{
+  color: #fff!important;
 }
 
 

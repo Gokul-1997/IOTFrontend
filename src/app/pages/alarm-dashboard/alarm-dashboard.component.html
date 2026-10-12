@@ -103,10 +103,10 @@
        Each card opens the alarms behind its number in Alarms Details, on its
        tab (Max Duration sorts it longest first). Same card again shows all. -->
   <div class="mexa-kpis">
-    <button type="button" class="mexa-kpi" (click)="drill('all')">
+    <button type="button" class="mexa-kpi navy" (click)="drill('all')">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Alarms</span>
-        <span class="mexa-kpi-icon navy" style="background:#2f2d8f" aria-hidden="true">
+        <span class="mexa-kpi-icon navy"  aria-hidden="true">
           <mat-icon>notifications</mat-icon>
         </span>
       </span>
@@ -115,7 +115,7 @@
       <!-- <span class="mexa-kpi-go">View all <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
-    <button type="button" class="mexa-kpi" (click)="drill('critical')"
+    <button type="button" class="mexa-kpi red" (click)="drill('critical')"
             [attr.aria-pressed]="drillKind === 'critical'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Critical Alarms</span>
@@ -128,11 +128,11 @@
       <!-- <span class="mexa-kpi-go">{{ drillKind === 'critical' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
-    <button type="button" class="mexa-kpi" (click)="drill('normal')"
+    <button type="button" class="mexa-kpi sky" (click)="drill('normal')"
             [attr.aria-pressed]="drillKind === 'normal'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Non-critical Alarms</span>
-        <span class="mexa-kpi-icon" [style.background]="SEV.noncritical.color" aria-hidden="true">
+        <span class="mexa-kpi-icon sky" [style.background]="SEV.noncritical.color" aria-hidden="true">
           <mat-icon>{{ SEV.noncritical.icon }}</mat-icon>
         </span>
       </span>
@@ -141,11 +141,11 @@
       <!-- <span class="mexa-kpi-go">{{ drillKind === 'normal' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
-    <button type="button" class="mexa-kpi" (click)="drill('open')"
+    <button type="button" class="mexa-kpi blue" (click)="drill('open')"
             [attr.aria-pressed]="drillKind === 'open'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Open Alarms</span>
-        <span class="mexa-kpi-icon blue" style="background:#4a76c8" aria-hidden="true">
+        <span class="mexa-kpi-icon blue"  aria-hidden="true">
           <mat-icon>pending</mat-icon>
         </span>
       </span>
@@ -154,11 +154,11 @@
       <!-- <span class="mexa-kpi-go">{{ drillKind === 'open' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
-    <button type="button" class="mexa-kpi" (click)="drill('longest')"
+    <button type="button" class="mexa-kpi purple" (click)="drill('longest')"
             [attr.aria-pressed]="drillKind === 'longest'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Max Duration</span>
-        <span class="mexa-kpi-icon purple" style="background:#6b7280" aria-hidden="true">
+        <span class="mexa-kpi-icon purple"  aria-hidden="true">
           <mat-icon>timelapse</mat-icon>
         </span>
       </span>

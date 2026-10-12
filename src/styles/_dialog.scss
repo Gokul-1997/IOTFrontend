@@ -609,7 +609,7 @@ select.ui-input {
   border: 1px solid transparent;
   border-bottom: 0;
   border-radius: 10px 10px 0 0;
-  background: #dbe4f3;
+  background: linear-gradient(to bottom, #ffffff, #b7c1ff);
   color: #334155;              /* 8.0:1 on #dbe4f3 */
   font-size: 0.8125rem;
   font-weight: 550;
@@ -618,7 +618,7 @@ select.ui-input {
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
-.ui-tab:hover:not(.is-active) { background: #cfdcef; color: #0f172a; }
+.ui-tab:hover:not(.is-active) { background: linear-gradient(to bottom, #b7c1ff, #ffffff); color: #0f172a; }
 .ui-tab:focus-visible {
   outline: 2px solid #2b3990;
   outline-offset: -2px;

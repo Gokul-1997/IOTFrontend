@@ -59,10 +59,10 @@
 
   <!-- ══════════ KPI TILES ══════════ -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi">
+    <div class="mexa-kpi navy">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Tickets</span>
-        <span class="mexa-kpi-icon" style="background:#2f2d8f" aria-hidden="true">
+        <span class="mexa-kpi-icon" aria-hidden="true">
           <mat-icon>assignment</mat-icon>
         </span>
       </div>
@@ -70,10 +70,10 @@
       <p class="mexa-kpi-sub">{{ data.kpis.breakdowns }} breakdown(s)</p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi red">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Still Open</span>
-        <span class="mexa-kpi-icon" style="background:#c8384b" aria-hidden="true">
+        <span class="mexa-kpi-icon" aria-hidden="true">
           <mat-icon>pending_actions</mat-icon>
         </span>
       </div>
@@ -81,10 +81,10 @@
       <p class="mexa-kpi-sub">{{ data.kpis.critical }} critical</p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi green">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Resolved / Closed</span>
-        <span class="mexa-kpi-icon" style="background:#2f9e6f" aria-hidden="true">
+        <span class="mexa-kpi-icon" aria-hidden="true">
           <mat-icon>task_alt</mat-icon>
         </span>
       </div>
@@ -92,10 +92,10 @@
       <p class="mexa-kpi-sub">of {{ data.kpis.tickets }} raised</p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi blue">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Mean Time to Repair <app-metric-help topic="mttr"></app-metric-help></span>
-        <span class="mexa-kpi-icon" style="background:#4a76c8" aria-hidden="true">
+        <span class="mexa-kpi-icon" aria-hidden="true">
           <mat-icon>timer</mat-icon>
         </span>
       </div>
@@ -104,10 +104,10 @@
       <p class="mexa-kpi-sub">{{ data.kpis.mttr_basis_note }}</p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi yellow">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Recorded Downtime <app-metric-help topic="declared_downtime"></app-metric-help></span>
-        <span class="mexa-kpi-icon" style="background:#e0a341" aria-hidden="true">
+        <span class="mexa-kpi-icon" aria-hidden="true">
           <mat-icon>hourglass_bottom</mat-icon>
         </span>
       </div>

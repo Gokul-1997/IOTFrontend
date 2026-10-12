@@ -246,7 +246,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
       chart:  { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 6, columnWidth: '45%' } },
       dataLabels: { enabled: true },
-      colors: ['#2B3990'],
+      colors: ['#17236C'],
       xaxis:  { categories: this.shiftCategories },
       yaxis:  { title: { text: 'Qty' } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
@@ -283,7 +283,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
       fontFamily: 'inherit', 
       sparkline: { enabled: false } },
       stroke: { width: 2, curve: 'straight' },
-      colors: ['#9b7ec8'],
+      colors: ['#6E398F'],
       markers: { size: 4 },
       dataLabels: { enabled: false },
       // a small chart: every fourth hour, level, instead of 24 slanted labels on top of each other
@@ -364,7 +364,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
           }
         }
       },
-      colors: ['#9b7ec8', '#4a76c8', '#2b3a8f'],
+      colors: ['#1E2B7E', '#274994', '#6E398F'],
       labels: ['Availability', 'Performance', 'Quality'],
       stroke: { lineCap: 'round' },
       legend: { show: false },
@@ -388,7 +388,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
     return {
       chart: { type: 'donut', height: 280, fontFamily: 'inherit' },
       labels: ['Run Time', 'Idle Time'],
-      colors: ['#22c55e', '#f5a623'],
+      colors: ['#16A34A', '#F59E0B'],
       dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%`,
                     style: { fontSize: '1rem', fontWeight: 700 } },
       plotOptions: { pie: { donut: { size: '58%' } } },

@@ -189,7 +189,7 @@ h4 {
   font-size:15px;
   transition: all 0.15s ease;
   // background: #EAEDFF;
-  background:linear-gradient(170deg, #4b5ed1 0%, #283278 100%);
+  background:linear-gradient(270deg, #4b5ed1 0%, #283278 100%);
   // border:1px solid #d0d5dd;
   color: #fff;
 }
@@ -201,7 +201,7 @@ h4 {
 }
 
 .nav-btn:hover {
-  background: linear-gradient(0deg, rgb(110 59 113) 0%, rgb(221 64 62) 100%);
+  background: linear-gradient(88deg, rgb(110 59 113) 0%, rgb(221 64 62) 100%);
   color: #fff;
 }
 
@@ -218,7 +218,7 @@ h4 {
 }
 
 .nav-btn.active {
-  background: linear-gradient(0deg, rgb(110 59 113) 0%, rgb(221 64 62) 100%);
+  background: linear-gradient(88deg, rgb(110 59 113) 0%, rgb(221 64 62) 100%);
   color: white;
 }
 
@@ -428,7 +428,7 @@ h4 {
 }
 
 .red {
-  background-color: #dc2626;
+  background-color: #d74e44;
 }
 
 .gray {
@@ -452,7 +452,7 @@ h4 {
   border-radius: 18px !important;
   box-shadow: var(--mexa-card-shadow) !important;
 
-  &.green-full  { --card-status: #22c55e; }
+  &.green-full  { --card-status: #15803d; }
   &.yellow-full { --card-status: #f5a623; }
   &.red-full    { --card-status: #e03131; }
   &.gray-full   { --card-status: #94a3b8; }
@@ -1165,8 +1165,8 @@ html:not(.dark) [class~="text-slate-500"] { color: #55607a; }
 html:not(.dark) :is([class~="text-green-500"], [class~="text-green-600"]) { color: #15803d; }
 html:not(.dark) [class~="text-red-500"] { color: #dc2626; }
 html:not(.dark) [class~="text-emerald-600"] { color: #047857; }   /* 3.8 → 5.5 */
-html:not(.dark) .mexa-delta-up   { color: #15803d; }
-html:not(.dark) .mexa-delta-down { color: #dc2626; }
+html:not(.dark) .mexa-delta-up   { color: #fff; }
+html:not(.dark) .mexa-delta-down { color: #fff; }
 
 /* 4. Dark theme. Greys with no dark: shade of their own sit on dark cards. */
 html.dark [class~="text-gray-500"]:not([class*="dark:text-"]) { color: #9ca3af; }
@@ -1262,11 +1262,11 @@ html.dark [class~="bg-blue-600"][class~="text-white"] { color: #fff; }
 
 .txt-card {
   background: var(--mexa-card);
-  border: 0;
+  border: 1px solid #e1e1e1;
   border-radius: 18px;
   padding: .8rem;
   /* On the STM field the card is lifted by a soft shadow, as in the design */
-  box-shadow: var(--mexa-card-shadow);
+  // box-shadow: var(--mexa-card-shadow);
   min-width: 0;
 }
 .\!text-base {
@@ -1819,7 +1819,7 @@ html.dark [class~="bg-blue-600"][class~="text-white"] { color: #fff; }
   align-items: center;
   gap: 10px;
 
-  padding: 16px 10px;
+  padding: 12px 5px;
   background: #ffffff;
   color: #64748b;
 
@@ -1850,7 +1850,7 @@ html.dark [class~="bg-blue-600"][class~="text-white"] { color: #fff; }
   writing-mode: vertical-rl;
   transform: rotate(180deg);
 
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
   color: #334155;
@@ -1954,4 +1954,10 @@ html.dark [class~="bg-blue-600"][class~="text-white"] { color: #fff; }
 .prof-dl .txt-card{
   display: flex;
   gap:10px;
+}
+/* Removes the focus ring on click, but preserves accessibility flags */
+img:focus-visible,
+a:focus-visible img {
+    outline: none;
+    box-shadow: none; /* Fallback for browsers using box-shadow */
 }

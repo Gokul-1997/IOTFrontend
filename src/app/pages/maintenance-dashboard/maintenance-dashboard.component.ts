@@ -739,7 +739,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     return {
       chart: { type: 'bar', height: 245, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
       plotOptions: { bar: { columnWidth: '55%', borderRadius: 4, distributed: true, dataLabels: { position: 'top' } } },
-      colors: ['#2f2d8f', '#4a76c8', '#9b7ec8'],
+      colors: ['#18215B', '#1E4AAE', '#59237B'],
       dataLabels: { enabled: true, offsetY: -18, formatter: (v: number | null) => v == null ? '--' : Number(v).toFixed(0),
                     style: { fontSize: '.72rem', colors: [document.documentElement.classList.contains('dark') ? '#e8ebf2' : '#1f2430'] } },
       legend: { show: false },
@@ -802,7 +802,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
 
   /** One colour per line, kept with its line when a line has nothing to draw. */
   private trendColours(lines: { name: string }[]): string[] {
-    const colour: Record<string, string> = { 'Servo X': '#2f2d8f', 'Servo Y': '#4a76c8', 'Servo Z': '#9b7ec8', 'Spindle': '#e8618c' };
+    const colour: Record<string, string> = { 'Servo X': '#B2580C', 'Servo Y': '#073B9D', 'Servo Z': '#471E87', 'Spindle': '#0B7267' };
     return lines.map(l => colour[l.name] ?? '#64748b');
   }
 

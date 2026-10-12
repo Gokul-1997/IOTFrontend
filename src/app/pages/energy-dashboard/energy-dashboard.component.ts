@@ -295,7 +295,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
   }
 
   /** The MEXA palette, in the order the design cycles it. */
-  private readonly palette = ['#2f2d8f', '#4a76c8', '#9b7ec8', '#17b3a3', '#6b7280', '#f5811f'];
+  private readonly palette = ['#151458', '#073B9D', '#471E87', '#0B7267', '#3B414D', '#9D8248', '#0079AF'];
 
   donutColour(i: number): string { return this.palette[i % this.palette.length]; }
 

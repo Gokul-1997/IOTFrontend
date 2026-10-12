@@ -74,10 +74,10 @@
 
   <!-- ══════════ KPI TILES ══════════ -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi">
+    <div class="mexa-kpi navy">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Scheduled Ticket</span>
-        <span class="mexa-kpi-icon navy" style="background:#2f2d8f" aria-hidden="true">
+        <span class="mexa-kpi-icon navy"  aria-hidden="true">
           <mat-icon>assignment</mat-icon>
         </span>
       </div>
@@ -85,20 +85,20 @@
       <p class="mexa-kpi-sub">{{ data.kpis.due_this_week }} due this week</p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi green">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Due Today</span>
-        <span class="mexa-kpi-icon green" style="background:#17b3a3" aria-hidden="true">
+        <span class="mexa-kpi-icon green"  aria-hidden="true">
           <mat-icon>event_available</mat-icon>
         </span>
       </div>
       <p class="mexa-kpi-value">{{ data.kpis.due_today }}</p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi red">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overdue</span>
-        <span class="mexa-kpi-icon red" style="background:#dc2626" aria-hidden="true">
+        <span class="mexa-kpi-icon red"  aria-hidden="true">
           <mat-icon>event_busy</mat-icon>
         </span>
       </div>
@@ -108,10 +108,10 @@
       </p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi purple">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Completed</span>
-        <span class="mexa-kpi-icon purple" style="background:#9b7ec8" aria-hidden="true">
+        <span class="mexa-kpi-icon purple"  aria-hidden="true">
           <mat-icon>event_note</mat-icon>
         </span>
       </div>
@@ -119,10 +119,10 @@
       <p class="mexa-kpi-sub">Scheduled {{ data.kpis.scheduled }}</p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi blue">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Compliance</span>
-        <span class="mexa-kpi-icon blue" style="background:#6b7280" aria-hidden="true">
+        <span class="mexa-kpi-icon blue"  aria-hidden="true">
           <mat-icon>fact_check</mat-icon>
         </span>
       </div>
@@ -222,7 +222,7 @@
       <div class="mexa-attention">
         <button type="button" class="mexa-attention-row" (click)="focusDue('overdue')"
                 [attr.aria-pressed]="dueFilter === 'overdue'">
-          <span class="mexa-attention-n" style="background:#e03131">{{ data.kpis.overdue }}</span>
+          <span class="mexa-attention-n red" >{{ data.kpis.overdue }}</span>
           <span class="mexa-attention-label">
             <strong>Overdue</strong>
             <span>{{ dueFilter === 'overdue' ? 'Showing these in Maintenance Details — tap to clear' : 'Show only these in Maintenance Details' }}</span>
@@ -232,7 +232,7 @@
 
         <button type="button" class="mexa-attention-row" (click)="focusDue('today')"
                 [attr.aria-pressed]="dueFilter === 'today'">
-          <span class="mexa-attention-n" style="background:#e8618c">{{ data.kpis.due_today }}</span>
+          <span class="mexa-attention-n red" >{{ data.kpis.due_today }}</span>
           <span class="mexa-attention-label">
             <strong>Due today</strong>
             <span>{{ dueFilter === 'today' ? 'Showing these in Maintenance Details — tap to clear' : 'Show only these in Maintenance Details' }}</span>
@@ -243,7 +243,7 @@
         <!-- not a button: there is no "overloaded" filter to apply, and a
              control that looks clickable but does nothing is worse than a row -->
         <div class="mexa-attention-row" style="cursor:default">
-          <span class="mexa-attention-n" style="background:#f5a623">{{ overloadedTechnicians }}</span>
+          <span class="mexa-attention-n red" >{{ overloadedTechnicians }}</span>
           <span class="mexa-attention-label">
             <strong>Technicians overloaded</strong>
             <span>Carrying at least one overdue ticket</span>

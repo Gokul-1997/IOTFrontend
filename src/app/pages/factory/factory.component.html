@@ -83,7 +83,7 @@
 
   <!-- ══════════ KPI TILES ══════════ -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi">
+    <div class="mexa-kpi green">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Machines<br>Running <app-metric-help topic="machine_status"></app-metric-help></span>
         <span class="mexa-kpi-icon green" aria-hidden="true">
@@ -96,7 +96,7 @@
       <p class="mexa-kpi-sub">of {{ data.machines.total }} machines</p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi yellow">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Machines<br>Idle</span>
         <span class="mexa-kpi-icon yellow" style="background:#f5a623" aria-hidden="true">
@@ -109,7 +109,7 @@
       </p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi navy">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overall<br>OEE <app-metric-help topic="oee"></app-metric-help></span>
         <span class="mexa-kpi-icon navy" style="background:#2b3a8f" aria-hidden="true">
@@ -128,7 +128,7 @@
       </p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi sky">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overall<br>Utilisation <app-metric-help topic="running_share"></app-metric-help></span>
         <span class="mexa-kpi-icon sky" style="background:#3b9ae1" aria-hidden="true">
@@ -139,7 +139,7 @@
       <p class="mexa-kpi-value">{{ utilisation === null ? '--' : utilisation + '%' }}</p>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi purple">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overall<br>Production <app-metric-help topic="production_vs_target"></app-metric-help></span>
         <span class="mexa-kpi-icon purple" style="background:#9b7ec8" aria-hidden="true">
@@ -157,7 +157,7 @@
       </ng-template>
     </div>
 
-    <div class="mexa-kpi">
+    <div class="mexa-kpi blue">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Power<br>Consumption</span>
         <span class="mexa-kpi-icon blue" style="background:#3b63b0" aria-hidden="true">
@@ -297,14 +297,14 @@
       <h2 class="mexa-card-title">Energy Cost Analysis</h2>
 
       <div class="grid grid-cols-2 gap-2 mb-3">
-        <div class="rounded-xl p-2 text-white" style="background:#3b63b0">
+        <div class="rounded-xl p-2 text-white" style="background:#204181">
           <span class="block text-xs">Today's Cost</span>
           <p class="text-base font-bold">{{ money(data.energy.cost_day) }}</p>
           <span *ngIf="data.energy.day_vs_yesterday_pct !== null" class="block text-xs">
             {{ change(data.energy.day_vs_yesterday_pct) }} vs Yest
           </span>
         </div>
-        <div class="rounded-xl p-2 text-white" style="background:#6b7280">
+        <div class="rounded-xl p-2 text-white" style="background:#5d6168">
           <span class="block text-xs">Monthly Cost</span>
           <p class="text-base font-bold">{{ money(data.energy.cost_month) }}</p>
           <span *ngIf="data.energy.month_vs_last_pct !== null" class="block text-xs">

@@ -467,7 +467,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
   });
   }
 
-  private readonly palette = ['#2f2d8f', '#4a76c8', '#9b7ec8', '#17b3a3', '#6b7280'];
+  private readonly palette = ['#151458', '#073B9D', '#471E87', '#0B7267', '#3B414D'];
 
   /** Completed over raised. Null-safe: nothing raised is not 0% compliant. */
   get compliance(): string {

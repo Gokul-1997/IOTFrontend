@@ -81,7 +81,7 @@ export class Charts implements OnInit, OnDestroy {
       xaxis:  { labels: { style: { colors: textColor } } },
       legend: { position: 'top', labels: { colors: textColor } },
       fill:   { opacity: 1 },
-      colors: ['#51cf66', '#ff6b6b'],
+      colors: ['#0CAD5D', '#C24B4B'],
       grid:   { borderColor: gridColor },
       theme:  { mode: dark ? 'dark' : 'light' },
       tooltip: {

@@ -75,7 +75,7 @@
 /* ── gauges ── */
 .mt-chip {
   margin: 0 0 .75rem; padding: .45rem .6rem; border-radius: 10px; text-align: center;
-  background: var(--mexa-row-alt); color: #3a4ab8; font-size: .92rem; font-weight: 600;
+  background: #3a4ab8; color: #fff; font-size: .92rem; font-weight: 600;
 }
 :host-context(.dark) .mt-chip { color: #b9b6ff; }
 .mt-gauges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .25rem; margin-bottom: .25rem; }
@@ -99,16 +99,16 @@
 .mt-fan { text-align: center; padding: .15rem .35rem; min-width: 0; display: flex; align-items: center;
           justify-content: center; gap: .75rem; }
 .mt-fan:not(:nth-child(3n + 1)) { border-top: 1px solid var(--mexa-rule); padding-top: 6px;}
-.mt-fan-icon { width: 1.65rem; height: 1.65rem; color: var(--mexa-ink); display: block; margin: 0;
+.mt-fan-icon { width: 1.65rem; height: 1.65rem; color: #fff; display: block; margin: 0;
                 transition: color .3s ease; }
 .mt-fan.is-still .mt-fan-icon { color: var(--mexa-ink-3); }
 .mt-fan.is-fault .mt-fan-icon { color: #e03131; }
 /* each fan sits on a disc tinted by its state: turning, still, or faulted */
 .mt-fan-hub {
   display: grid; place-items: center; width: 2.75rem; height: 2.75rem; margin: 0;
-  border-radius: 999px; background: rgba(34, 197, 94, .13); transition: background-color .3s ease;
+  border-radius: 999px; background: rgb(4 120 87); transition: background-color .3s ease;
 }
-.mt-fan.is-still .mt-fan-hub { background: rgba(148, 163, 184, .16); }
+.mt-fan.is-still .mt-fan-hub { background: rgb(4 120 87); }
 .mt-fan.is-fault .mt-fan-hub { background: rgba(224, 49, 49, .13); }
 /* two or three fans get the card's room: a bigger disc, the speed as the figure */
 .mt-fans.is-one-row .mt-fan-hub { margin-bottom: .55rem; }

@@ -203,6 +203,7 @@
               <path
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 fill="none"
+                
                 class="stroke-[#E0E0E0] dark:stroke-[#2D2D2D]"
                 stroke="currentColor"
                 stroke-width="3" />
@@ -217,7 +218,13 @@
               <path
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 fill="none"
-                stroke="#2B3990"
+                [ngClass]="{
+  'stroke-[#15803d]': m.status === 'RUNNING' && !m.alarm,
+  'stroke-[#dfb400]': m.status === 'IDLE' && !m.alarm,
+  'stroke-[#6e6e6e]': m.status === 'OFFLINE' && !m.alarm,
+
+}"
+                stroke="currentColor"
                 stroke-width="3"
                 stroke-linecap="round"
                 [attr.stroke-dasharray]="(m.utilization > 100 ? 100 : (m.utilization || 0)) + ',100'" />
