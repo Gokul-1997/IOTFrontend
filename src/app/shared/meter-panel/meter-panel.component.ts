@@ -145,7 +145,7 @@ let uidSeq = 0;
     :host-context(.dark) .mp-at.is-stale { color: #f7c667; }
     .mp-at .material-icons { font-size: 14px; }
     .mp-cards { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(14.5rem, 1fr)); margin: .25rem 0 .75rem; }
-    .mp-card { border: 1px solid var(--mexa-rule); border-radius: 12px; padding: .75rem .9rem; background: var(--mexa-card); min-width: 0; }
+    .mp-card { border: 1px solid var(--mexa-rule); border-radius: 12px; padding:0.75rem 0.9rem 0.75rem 1.2rem; background: var(--mexa-card); min-width: 0; }
     .mp-label { margin: 0; font-size: var(--fs-label, .8125rem); font-weight: 600; color: var(--mexa-ink-2); }
     .mp-value { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .45rem; margin: .2rem 0 .1rem; font-size: 1.6rem; font-weight: 700; line-height: 1.15;
                 color: var(--mexa-ink); font-variant-numeric: tabular-nums; }

@@ -65,7 +65,7 @@
 .mt-attention-text { min-width: 0; overflow-wrap: anywhere; }
 .mt-lastseen { margin: 0 0 .3rem; text-align: center; font-size: .75rem; color: var(--mexa-ink-3); }
 .mt-facts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .2rem; margin: .5rem 0 0; }
-.mt-facts dt, .mt-facts-top dt { font-size: .78rem; color: var(--mexa-ink-2); }
+.mt-facts dt, .mt-facts-top dt { font-size: .78rem; color: #262c38; }
 .mt-facts dd, .mt-facts-top dd { margin: .1rem 0 0; font-size: .9rem; font-weight: 700; color: var(--mexa-ink); overflow-wrap: anywhere; }
 .mt-facts-inner{
   padding: 5px;

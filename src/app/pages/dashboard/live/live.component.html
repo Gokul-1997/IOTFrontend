@@ -50,7 +50,7 @@
     </div>
 
     <!-- Right: Back button -->
-    <a routerLink="/dashboard" class="bg-[var(--color-stm-primary)] dark:bg-[#683b74] text-white pr-4 ps-2 py-1.5 rounded-lg font-medium text-sm flex items-center gap-1">
+    <a routerLink="/dashboard" class="btn-primary">
       <span class="material-icons text-[18px]" aria-hidden="true">arrow_back</span>
       Back
     </a>
@@ -287,7 +287,7 @@
           Power Consumption
         </p>
         <div class="grid grid-cols-2 gap-2">
-          <div class="bg-gray-50 dark:bg-[#111111] border dark:border-gray-700 rounded-xl flex items-center gap-2 px-3 py-2 justify-center">
+          <div class="bg-[#c5ccff] dark:bg-[#111111] rounded-xl flex items-center gap-2 px-3 py-2 justify-center">
             <div class="text-sm text-gray-700  dark:text-[#939393] leading-tight">
               <span class="font-medium">{{shift?.shift_code}}</span><br>
             </div>
@@ -297,7 +297,7 @@
               <span class="text-xs text-gray-700 dark:text-[#939393] ml-0.5 -mt-1">kWh</span>
             </div>
           </div>
-          <div class="bg-gray-50 dark:bg-[#111111] border dark:border-gray-700 rounded-xl flex items-center gap-2 px-3 py-2 justify-center">
+          <div class="bg-[#bceaff] dark:bg-[#111111] rounded-xl flex items-center gap-2 px-3 py-2 justify-center">
             <div class="text-sm text-gray-700 dark:text-[#939393] leading-tight font-medium">Total</div>
             <span class="text-gray-400 font-medium">›</span>
             <div class="flex flex-col justify-center items-center">
@@ -318,10 +318,10 @@
     <div class="rounded-xl flex flex-col items-center  ">
       <h3 class="text-base font-semibold text-center -mb-2">OEE <app-metric-help topic="oee" basis="shift"></app-metric-help></h3>
 
-      <div class="chart_container">
+      <div class="chart_container mb-4">
 
         <!-- Dashed radialBar with HTML value overlay -->
-        <div class="relative flex-shrink-0 -mt-6" style="width:200px; overflow:hidden">
+        <div class="relative flex-shrink-0 -mt-10" style="width:200px; overflow:hidden">
           <apx-chart
             [series]="oeeSeries"
             [chart]="oeeChart.chart"
@@ -375,14 +375,14 @@
 
         <!-- Left: quality metrics -->
         <div class="flex gap-1 justify-center">
-          <div class="">
+          <div class="w-full">
           <h3 class="flex items-center gap-2 text-sm font-semibold mb-2 justify-center mt-2">
             <span class="flex items-center justify-center w-6 h-6 rounded-md bg-green-500">
             <span class="material-icons text-white text-[18px]" aria-hidden="true">incomplete_circle</span>
             </span>
-            Machine Status</h3>
+            Good Bad Parts</h3>
           <div class="flex justify-between gap-3">
-          <div class="bg-gray-50 dark:bg-[#111111] border dark:border-gray-700 rounded-xl flex items-center gap-2 px-3 py-2 justify-center">
+          <div class="bg-[#dbffe8] dark:bg-[#111111] rounded-xl flex flex-1 items-center gap-2 px-3 py-2 justify-center">
             <span class="flex items-center justify-center w-7 h-7 rounded-full bg-green-500 flex-shrink-0 text-white"><span class="material-icons text-[20px]" aria-hidden="true">check</span></span>
             <div>
               <p class="text-sm text-gray-700 dark:text-[#939393] leading-none flex">Accepted <app-metric-help topic="accepted" basis="shift"></app-metric-help></p>
@@ -390,7 +390,7 @@
             </div>
           </div>
 
-          <div class="bg-gray-50 dark:bg-[#111111] border dark:border-gray-700 rounded-xl flex items-center gap-2 px-3 py-2 justify-center">
+          <div class="bg-[#ffdada] dark:bg-[#111111] rounded-xl flex flex-1 items-center gap-2 px-3 py-2 justify-center">
             <span class="flex items-center justify-center w-7 h-7 rounded-full bg-red-500 flex-shrink-0 text-white"><span class="material-icons text-[20px]" aria-hidden="true">block</span></span>
             <div>
               <p class="text-sm text-gray-700 dark:text-[#939393] leading-none flex">Rejected <app-metric-help topic="rejected" basis="shift"></app-metric-help></p>

@@ -36,7 +36,9 @@ export interface ConditionZone { to: number; color: string; }
       <ng-container *ngIf="hasValue; else offRing">
         <path *ngFor="let z of pieces" [attr.d]="arc(z.from, z.to)" fill="none" [attr.stroke]="z.color"
               stroke-width="11" stroke-linecap="butt"/>
+
         <g class="needle-turn" [style.transform-origin]="'60px 58px'" [style.transform]="'rotate(' + needleDeg + 'deg)'">
+        
           <line class="needle" x1="60" y1="58" x2="60" y2="24" stroke-width="3.2" stroke-linecap="round"/>
         </g>
         <circle class="hub" cx="60" cy="58" r="4.5"/>
@@ -89,4 +91,6 @@ export class ConditionGaugeComponent implements OnChanges {
     const [x2, y2] = pt(b);
     return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A 44 44 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
   }
+
+
 }

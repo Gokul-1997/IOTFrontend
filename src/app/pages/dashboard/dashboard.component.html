@@ -79,7 +79,8 @@
     <div
       *ngFor="let m of pagedMachines; trackBy: trackByMachine"
       (click)="goToLive(m.machine_id)"
-      class="relative dark:bg-[#111111] rounded-2xl shadow-xl p-2 hover:shadow-2xl transition cursor-pointer border-big"
+      class="machine-child relative dark:bg-[#111111] rounded-2xl shadow-xl p-2 hover:shadow-2xl transition cursor-pointer border-big"
+      [class.alarm-blink]="true"
       [ngClass]="{
         'bg-white':    !m.alarm,
         'alarm-blink': m.alarm,

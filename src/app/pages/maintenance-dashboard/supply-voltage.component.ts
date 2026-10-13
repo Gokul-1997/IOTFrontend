@@ -94,10 +94,10 @@ export function supplyView(s: any): SupplyView | null {
     .title span { font-weight: 500; color: var(--mexa-ink-3); }
     dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem; margin: 0; }
     @media (max-width: 420px) { dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    .phase { padding: .45rem .55rem; border-radius: 10px; background: var(--mexa-row-alt); min-width: 0; }
+    .phase { padding: .45rem .55rem; border-radius: 10px; min-width: 0; }
     dt { font-size: .72rem; font-weight: 600; color: var(--mexa-ink-2); }
     dd { margin: .1rem 0 0; font-size: 1.05rem; font-weight: 800; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
-    .phase.is-avg { background: transparent; box-shadow: inset 0 0 0 1px var(--mexa-rule); }
+    .phase.is-avg {box-shadow: inset 0 0 0 1px var(--mexa-rule); }
     .phase.is-out { background: rgba(224, 49, 49, .1); }
     .phase.is-out dd { color: #b42334; }
     :host-context(.dark) .phase.is-out dd { color: #f59aa6; }
@@ -122,7 +122,12 @@ export function supplyView(s: any): SupplyView | null {
           <div class="group" *ngFor="let g of sv.groups; trackBy: groupKey" role="group" [attr.aria-label]="g.title + ' voltage'">
             <p class="title">{{ g.title }} <span>· {{ g.short }} · V</span></p>
             <dl>
-              <div class="phase" *ngFor="let p of g.phases" [class.is-out]="p.out">
+              <div  class="phase"
+  *ngFor="let p of g.phases; let i = index"
+  [class.one]="i === 0"
+  [class.two]="i === 1"
+  [class.three]="i === 2"
+  [class.is-out]="p.out">
                 <dt>{{ p.label }}</dt>
                 <dd>{{ p.value }}<span class="sr-only"> volts{{ p.out ? ', outside the supply tolerance' : '' }}</span></dd>
               </div>

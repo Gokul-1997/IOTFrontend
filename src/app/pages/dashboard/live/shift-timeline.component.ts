@@ -59,26 +59,18 @@ const clock = new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-dig
     :host-context(.dark) .tl-bar:focus-visible { box-shadow: 0 0 0 3px #9fb3ff; }
   `],
   template: `
-  <section class="bg-white dark:bg-[#111111] rounded-xl p-2 shadow-xl mt-2 shift_timeline" aria-labelledby="tlTitle">
+  <section class="bg-white dark:bg-[#111111] rounded-xl p-4 shadow-xl mt-2 shift_timeline" aria-labelledby="tlTitle">
     <h3 *ngIf="!data" id="tlTitle" class="text-base font-semibold mb-3">Shift Timeline</h3>
     <div *ngIf="loading && !data" class="h-9 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" aria-busy="true" aria-label="Loading the shift timeline"></div>
     <p *ngIf="error" class="text-sm text-red-700 dark:text-red-400" role="alert">{{ error }}</p>
 
     <ng-container *ngIf="data as d">
-    <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 mb-0">
+    <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 mb-1">
       <h3 id="tlTitle" class="text-base font-semibold">
         Shift Timeline<span *ngIf="d.shift" class="font-normal text-gray-600 dark:text-gray-400">
           · {{ d.shift.code }} ({{ t(d.shift.start) }} – {{ t(d.shift.end) }})</span>
       </h3>
-      <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mt-0 text-sm text-gray-700 dark:text-gray-300">
-        <span *ngFor="let s of states" class="inline-flex items-center gap-1.5">
-          <i class="tl-swatch" [style.background]="color(s)" aria-hidden="true"></i>
-          {{ word(s) }} <strong class="tabular-nums">{{ dur(d.totals[s]) }}</strong>
-        </span>
-        <span class="inline-flex items-center gap-1.5">
-          <i class="tl-swatch tl-swatch-break" aria-hidden="true"></i> Break
-        </span>
-      </div>
+      
       <p *ngIf="d.totals" class="text-xs text-gray-700 dark:text-gray-300">
         Elapsed : <strong>{{ dur(d.totals.elapsed) }}</strong>
         <span class="mx-2 text-gray-300 dark:text-gray-600" aria-hidden="true">|</span>
@@ -120,14 +112,22 @@ const clock = new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-dig
 
       <!-- spoken when the keyboard steps to a period -->
       <p class="sr-only" aria-live="polite">{{ spoken }}</p>
-    <div class="text-center">
-      
+    <div class="text-center flex gap-8 pt-4 justify-center items-center mt-4">
+      <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mt-0 text-sm text-gray-700 dark:text-gray-300">
+        <span *ngFor="let s of states" class="inline-flex items-center gap-1.5">
+          <i class="tl-swatch" [style.background]="color(s)" aria-hidden="true"></i>
+          {{ word(s) }} <strong class="tabular-nums">{{ dur(d.totals[s]) }}</strong>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <i class="tl-swatch tl-swatch-break" aria-hidden="true"></i> Break
+        </span>
+      </div>
 
-      <p *ngIf="d.breaks.length" class="text-xs text-center text-gray-600 dark:text-gray-400 mt-2">
+      <p *ngIf="d.breaks.length" class="text-xs text-center text-gray-600 dark:text-gray-400">
         Breaks:
         <span *ngFor="let b of d.breaks; let last = last">{{ b.name }} {{ t(b.from) }}–{{ t(b.to) }}{{ last ? '' : ' · ' }}</span>
       </p>
-      <p *ngIf="!d.breaks.length" class="text-xs text-center text-gray-600 dark:text-gray-400 mt-2">
+      <p *ngIf="!d.breaks.length" class="text-xs text-center text-gray-600 dark:text-gray-400">
         <ng-container *ngIf="d.breaks_configured; else notSetUp">
           No break times entered for {{ d.shift.code }}<ng-container *ngIf="canEditShifts"> —
             <a routerLink="/shifts" class="underline font-semibold">add them under Shifts</a></ng-container>.

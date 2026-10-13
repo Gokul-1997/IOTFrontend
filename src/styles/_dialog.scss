@@ -398,7 +398,7 @@ select.ui-input {
   font-size: 0.875rem;
   font-weight: 600;
   border-radius: 9px;
-  border: 1px solid #cd3e40;
+  // border: 1px solid #cd3e40;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
   // min-height: 2.5rem;   /* comfortable touch target */
@@ -407,17 +407,18 @@ select.ui-input {
 .ui-btn:focus-visible { outline: 2px solid #2b3990; outline-offset: 2px; }
 .ui-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
-.ui-btn-primary { color: #fff; background: #1C3D6F; }
+.ui-btn-primary { color: #fff; background:linear-gradient(0deg, rgb(54 56 138) 0%, rgb(89 106 215) 100%) }
 
-.ui-btn-primary:hover:not(:disabled) { background: #1C3D6F; }
+.ui-btn-primary:hover:not(:disabled) { background:linear-gradient(0deg, rgb(89 106 215) 100% rgb(54 56 138) 0%, ) }
 
 .ui-btn-danger { color: #fff; background: #dc2626; }
 .ui-btn-danger:hover:not(:disabled) { background: #b91c1c; }
 .ui-btn-danger:focus-visible { outline-color: #dc2626; }
 
 .ui-btn-ghost { color: #334155; background: linear-gradient(
-183deg, #ffffff 0%, #dddddd 100%); border-color: #d1d5db; }
-.ui-btn-ghost:hover:not(:disabled) { background: #f1f5f9; }
+183deg, #ffffff 0%, #dddddd 100%); border-color: #d1d5db; border:1px solid #dfdfdf; }
+.ui-btn-ghost:hover:not(:disabled) { background: linear-gradient(
+183deg, #dddddd 0%, #ffffff 100%); }
 .dark .ui-btn-ghost { color: #e5e7eb; background: #1c1c1c; border-color: #3e3e3e; }
 .dark .ui-btn-ghost:hover:not(:disabled) { background: #262626; }
 
@@ -609,7 +610,7 @@ select.ui-input {
   border: 1px solid transparent;
   border-bottom: 0;
   border-radius: 10px 10px 0 0;
-  background: linear-gradient(to bottom, #ffffff, #b7c1ff);
+  background: linear-gradient(to bottom, #ffffff, #b9a1cd);
   color: #334155;              /* 8.0:1 on #dbe4f3 */
   font-size: 0.8125rem;
   font-weight: 550;
@@ -618,7 +619,10 @@ select.ui-input {
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
-.ui-tab:hover:not(.is-active) { background: linear-gradient(to bottom, #b7c1ff, #ffffff); color: #0f172a; }
+.ui-tab:hover:not(.is-active) { background: linear-gradient(
+      to bottom,
+      #b9a1cd,
+      #ffd2d2); color: #0f172a; }
 .ui-tab:focus-visible {
   outline: 2px solid #2b3990;
   outline-offset: -2px;

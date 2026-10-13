@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -83,6 +83,7 @@ const SIGNAL_LABELS: Record<string, string> = {
 })
 export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
 
+  
   /** Chart options keep the same reference until apply() bumps this. */
   private charts = new ChartMemo();
 
@@ -228,6 +229,8 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
+
+
 
   /** The filters changed (they apply themselves): fetch now with them.
    *  Before the first machine is chosen there is nothing to refresh yet;

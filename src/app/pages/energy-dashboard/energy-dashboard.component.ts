@@ -339,7 +339,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
       dataLabels: { enabled: false },
       // the key list beside the donut already names every shift
       legend: { show: false },
-      tooltip: { y: { formatter: (v: number) => `${v} kWh` } },
+      tooltip: { theme: 'light', y: { formatter: (v: number) => `${v} kWh` } },
       noData: { text: 'Nothing recorded by shift' }
     };
   }, JSON.stringify(this.data?.by_shift ?? []));

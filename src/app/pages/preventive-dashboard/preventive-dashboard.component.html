@@ -72,15 +72,17 @@
 
   <!-- No rules means no tickets will ever be raised. A setup gap, not an
        empty result, so it is said in words with the fix attached. -->
-  <p *ngIf="isUnconfigured" class="mexa-note mexa-note-warn">
-    <strong>No alarm rules yet</strong> — tickets come from repeated critical alarms; add a rule under <strong>Alarm rules</strong> on the PM Ticket Details tab.
-  </p>
+  <div *ngIf="isUnconfigured" class="mexa-note mexa-note-warn ">
+    <div class="marquee">
+    <span><strong>No alarm rules yet</strong> — tickets come from repeated critical alarms; add a rule under <strong>Alarm rules</strong> on the PM Ticket Details tab. </span>
+ </div>
+</div>
 
   <!-- ══════════ KPI TILES ══════════ -->
   <div class="mexa-kpis">
     <div class="mexa-kpi red">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Total Critical<br>Alarms</span>
+        <span class="mexa-kpi-label">Total Critical Alarms</span>
         <span class="mexa-kpi-icon red" aria-hidden="true">
           <mat-icon>notification_important</mat-icon>
         </span>
@@ -91,7 +93,7 @@
 
     <div class="mexa-kpi sky">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Open <abbr title="Preventive maintenance">PM</abbr><br>Tickets</span>
+        <span class="mexa-kpi-label">Open PM Tickets</span>
         <span class="mexa-kpi-icon sky"  aria-hidden="true">
           <mat-icon>notifications_active</mat-icon>
         </span>
@@ -102,7 +104,7 @@
 
     <div class="mexa-kpi purple">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Completed <abbr title="Preventive maintenance">PM</abbr><br>Tickets</span>
+        <span class="mexa-kpi-label">Completed PM Tickets</span>
         <span class="mexa-kpi-icon purple"  aria-hidden="true">
           <mat-icon>task_alt</mat-icon>
         </span>
@@ -124,7 +126,7 @@
 
     <div class="mexa-kpi navy">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Avg. Resolution<br>Time</span>
+        <span class="mexa-kpi-label">Avg. Resolution Time</span>
         <span class="mexa-kpi-icon navy" aria-hidden="true">
           <mat-icon>hourglass_bottom</mat-icon>
         </span>

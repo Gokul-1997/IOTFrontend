@@ -171,7 +171,9 @@
         <div class="mt-gauge" [class.is-new-alert]="freshAlerts.has('spindle_load')">
           <p class="mt-gauge-label">Spindle Load</p>
           <app-condition-gauge class="mobile-gauge" [value]="r.spindle_load" [max]="150" [zones]="LOAD_ZONES" unit="%"
-            [ariaLabel]="'Spindle load ' + reading(r.spindle_load, '%', 0)"></app-condition-gauge>
+            [ariaLabel]="'Spindle load ' + reading(r.spindle_load, '%', 0)">
+
+          </app-condition-gauge>
           <p class="mt-word" [ngClass]="bandText(band(r.spindle_load, LOAD_BANDS))">{{ band(r.spindle_load, LOAD_BANDS) || 'Not reported' }}</p>
         </div>
         <div class="mt-gauge" [class.is-new-alert]="freshAlerts.has('spindle_temp')">

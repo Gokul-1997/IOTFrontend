@@ -244,9 +244,9 @@ export class FactoryComponent implements OnInit, OnDestroy {
     return this.charts.memo('shiftChart', () => {
     return {
       chart:  { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
-      plotOptions: { bar: { borderRadius: 6, columnWidth: '45%' } },
+      plotOptions: { bar: { borderRadius: 6, columnWidth: '45%', distributed: true } },
       dataLabels: { enabled: true },
-      colors: ['#17236C'],
+      colors: ['#2F2D8F', '#9365B0'],
       xaxis:  { categories: this.shiftCategories },
       yaxis:  { title: { text: 'Qty' } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },

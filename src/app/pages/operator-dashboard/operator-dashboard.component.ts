@@ -300,7 +300,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
 
   /* ── charts ── */
 
-  private readonly palette = ['#151458', '#073B9D', '#471E87', '#0B7267', '#3B414D'];
+  private readonly palette = ['#2740E9', '#0A8BC5', '#764396', '#857CFF', '#4F43E9'];
 
   /** What a ranking's chart is drawn from: rebuilt — and the chart redrawn — only when this changes. */
   private drawn(board: Board): string {
@@ -365,8 +365,8 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
         chart: { type: 'bar', height: 270, toolbar: { show: false }, 
         fontFamily: 'inherit', animations: { enabled: false } 
       },
-        plotOptions: { bar: { borderRadius: 2, columnWidth: '62%' } },
-        colors: ['#151458', '#073B9D', '#471E87'],
+        plotOptions: { bar: { borderRadius: 2, columnWidth: '50%' } },
+        colors: ['#2740E9', '#0A8BC5', '#764396',],
         dataLabels: { enabled: false },
         legend: { position: 'bottom', markers: { shape: 'circle' } },
         xaxis: { categories: rows.map((r: any) => r.operator_name), 

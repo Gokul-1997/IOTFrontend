@@ -165,7 +165,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   color: #fff; background: rgba(255, 255, 255, .12); border-color: rgba(255, 255, 255, .28);
 }
 .mexa-titlebar .ui-btn-ghost:hover:not(:disabled) { background: rgba(255, 255, 255, .2); }
-.mexa-titlebar .ui-btn-primary { background: var(--mexa-submit); }
+.mexa-titlebar .ui-btn-primary { background: var(--mexa-submit); border: 1px solid #c13e48; }
 .mexa-titlebar .ui-btn:focus-visible { outline-color: #fff; }
 
 /* Text and controls that sit on the field itself, outside any card */
@@ -490,7 +490,7 @@ button.mexa-kpi[aria-pressed="true"] {
   color: var(--mexa-ink-3); padding: .2rem .6rem; border-radius: 999px; cursor: pointer;
   white-space: nowrap;
 }
-.mexa-seg button[aria-pressed="true"] { background: var(--mexa-card); color: var(--mexa-submit); box-shadow: 0 1px 2px rgba(17,20,45,.08); }
+.mexa-seg button[aria-pressed="true"] { background: #283278; color: #fff; box-shadow: 0 1px 2px rgba(17,20,45,.08); }
 .dark .mexa-seg button[aria-pressed="true"] { color: #b9b6ff; }
 .mexa-seg button:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 1px; }
 .mexa-seg button { transition: background .2s ease, color .2s ease, box-shadow .2s ease; }
@@ -1223,7 +1223,7 @@ a.mexa-pill { text-decoration: none; }
 // }
 
 .mexa-kpi.green{
-  background:#00645a!important;
+  background:#009688!important;
   color: #fff;
 }
 .mexa-kpi.yellow{
@@ -1252,7 +1252,7 @@ a.mexa-pill { text-decoration: none; }
   color: #fff;
 }
 .mexa-kpi.grey{
-  background:#6b7280!important;
+  background:#ad4972 !important;
   color: #fff;
 }
 

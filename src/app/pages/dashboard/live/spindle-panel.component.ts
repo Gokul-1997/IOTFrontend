@@ -97,8 +97,8 @@ export function niceScale(top: number): { max: number; ticks: number } {
     .sp-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem .75rem; margin-bottom: .75rem; }
     .sp-title { margin: 0; font-size: var(--fs-card-title, .9375rem); font-weight: 700; color: var(--mexa-ink); }
     .sp-cards { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr)); margin-bottom: 1rem; }
-    .sp-card { border: 1px solid var(--mexa-rule); border-radius: 12px; padding: .75rem .9rem; background: var(--mexa-card); min-width: 0; }
-    .sp-card-label { display: flex; align-items: center; gap: .25rem; margin: 0; font-size: var(--fs-label, .8125rem); font-weight: 600; color: var(--mexa-ink-2); }
+    .sp-card {border-radius: 12px; padding: .75rem .9rem;  min-width: 0; }
+    .sp-card-label { display: flex; align-items: center; gap: .25rem; margin: 0; font-size: var(--fs-label, .8125rem); font-weight: 600; color: #232834; }
     .sp-value { margin: .2rem 0 0; font-size: 1.75rem; font-weight: 700; line-height: 1.15; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
     .sp-value small { font-size: .9rem; font-weight: 600; color: var(--mexa-ink-2); margin-left: .3rem; }
     .sp-value.is-missing { color: var(--mexa-ink-3); }
@@ -110,15 +110,15 @@ export function niceScale(top: number): { max: number; ticks: number } {
     .sp-scale > span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
     .sp-scale > span:first-child { transform: none; }
     .sp-scale > span:last-child { transform: translateX(-100%); }
-    .sp-note { margin: .35rem 0 0; font-size: var(--fs-small, .75rem); line-height: 1.45; color: var(--mexa-ink-3); }
-    .sp-at { display: flex; align-items: center; gap: .25rem; margin: .35rem 0 0; font-size: var(--fs-small, .75rem); color: var(--mexa-ink-3); }
+    .sp-note { margin: .35rem 0 0; font-size: var(--fs-small, .75rem); line-height: 1.45; color:#293142; }
+    .sp-at { display: flex; align-items: center; gap: .25rem; margin: .35rem 0 0; font-size: var(--fs-small, .75rem); color: #293142; }
     .sp-at.is-stale { color: #b45309; font-weight: 600; }
     :host-context(.dark) .sp-at.is-stale { color: #f7c667; }
     .sp-at .material-icons { font-size: 14px; }
     .sp-chartbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .25rem; }
     .sp-stats { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); margin: .5rem 0 0; }
-    .sp-stat { border-radius: 10px; background: var(--mexa-row-alt); padding: .5rem .7rem; }
-    .sp-stat dt { margin: 0; font-size: var(--fs-small, .75rem); color: var(--mexa-ink-3); font-weight: 600; }
+    .sp-stat { border-radius: 10px; padding: .5rem .7rem; }
+    .sp-stat dt { margin: 0; font-size: var(--fs-small, .75rem); color: #353f54; font-weight: 600; }
     .sp-stat dd { margin: .1rem 0 0; font-size: 1.05rem; font-weight: 700; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
     .sp-stat dd small { font-size: .75rem; font-weight: 600; color: var(--mexa-ink-2); margin-left: .2rem; }
     .sp-basis { margin: .5rem 0 0; font-size: var(--fs-small, .75rem); color: var(--mexa-ink-3); }
@@ -140,7 +140,7 @@ export function niceScale(top: number): { max: number; ticks: number } {
 
       <!-- ── now ── -->
       <div class="sp-cards">
-        <article class="sp-card" *ngIf="showLoad" aria-labelledby="spLoadLabel">
+        <article class="sp-card blue" *ngIf="showLoad" aria-labelledby="spLoadLabel">
           <p class="sp-card-label" id="spLoadLabel">Spindle load <app-metric-help topic="spindle_load"></app-metric-help></p>
           <p class="sp-value" [class.is-missing]="now.load === null">
             {{ now.load === null ? '--' : fmt0(now.load) }}<small *ngIf="now.load !== null">%</small>
@@ -160,7 +160,7 @@ export function niceScale(top: number): { max: number; ticks: number } {
           <p class="sp-at" [class.is-stale]="now.stale"><span class="material-icons" aria-hidden="true">{{ now.stale ? 'history' : 'schedule' }}</span>{{ asOf }}</p>
         </article>
 
-        <article class="sp-card" *ngIf="showLoad" aria-labelledby="spRpmLabel">
+        <article class="sp-card purple" *ngIf="showLoad" aria-labelledby="spRpmLabel">
           <p class="sp-card-label" id="spRpmLabel">Spindle speed <app-metric-help topic="spindle_speed"></app-metric-help></p>
           <p class="sp-value" [class.is-missing]="now.rpm === null">
             {{ now.rpm === null ? '--' : fmt0(now.rpm) }}<small *ngIf="now.rpm !== null">rpm</small>
@@ -178,7 +178,7 @@ export function niceScale(top: number): { max: number; ticks: number } {
           <p class="sp-at" [class.is-stale]="speedStale"><span class="material-icons" aria-hidden="true">{{ speedStale ? 'history' : 'schedule' }}</span>{{ speedAsOf }}</p>
         </article>
 
-        <article class="sp-card" *ngIf="showFeed" aria-labelledby="spFeedLabel">
+        <article class="sp-card yellow" *ngIf="showFeed" aria-labelledby="spFeedLabel">
           <p class="sp-card-label" id="spFeedLabel">Feed rate <app-metric-help topic="feed_rate"></app-metric-help></p>
           <p class="sp-value" [class.is-missing]="now.feed === null">
             {{ now.feed === null ? '--' : fmt0(now.feed) }}<small *ngIf="now.feed !== null">mm/min</small>
@@ -217,22 +217,22 @@ export function niceScale(top: number): { max: number; ticks: number } {
           <!-- the figures behind the chart, over the time the spindle turned -->
           <dl class="sp-stats">
             <ng-container *ngIf="metric === 'load'">
-              <div class="sp-stat"><dt>Lowest</dt><dd>{{ stat(data.summary.load.min) }}<small>%</small></dd></div>
-              <div class="sp-stat"><dt>Average</dt><dd>{{ stat(data.summary.load.avg, 1) }}<small>%</small></dd></div>
-              <div class="sp-stat"><dt>Highest</dt><dd>{{ stat(data.summary.load.max) }}<small>%</small></dd></div>
-              <div class="sp-stat"><dt>High (80 % or more)</dt><dd>{{ stat(data.summary.load.high_pct, 1) }}<small>% of the time</small></dd></div>
-              <div class="sp-stat"><dt>Overload (over 100 %)</dt><dd>{{ stat(data.summary.load.overload_pct, 1) }}<small>% of the time</small></dd></div>
+              <div class="sp-stat one"><dt>Lowest</dt><dd>{{ stat(data.summary.load.min) }}<small>%</small></dd></div>
+              <div class="sp-stat two"><dt>Average</dt><dd>{{ stat(data.summary.load.avg, 1) }}<small>%</small></dd></div>
+              <div class="sp-stat three"><dt>Highest</dt><dd>{{ stat(data.summary.load.max) }}<small>%</small></dd></div>
+              <div class="sp-stat four"><dt>High (80 % or more)</dt><dd>{{ stat(data.summary.load.high_pct, 1) }}<small>% of the time</small></dd></div>
+              <div class="sp-stat five"><dt>Overload (over 100 %)</dt><dd>{{ stat(data.summary.load.overload_pct, 1) }}<small>% of the time</small></dd></div>
             </ng-container>
             <ng-container *ngIf="metric === 'rpm'">
-              <div class="sp-stat"><dt>Lowest</dt><dd>{{ stat(data.summary.rpm.min) }}<small>rpm</small></dd></div>
-              <div class="sp-stat"><dt>Average</dt><dd>{{ stat(data.summary.rpm.avg) }}<small>rpm</small></dd></div>
-              <div class="sp-stat"><dt>Highest</dt><dd>{{ stat(data.summary.rpm.max) }}<small>rpm</small></dd></div>
-              <div class="sp-stat" *ngIf="rated"><dt>Highest vs rated</dt><dd>{{ stat(data.summary.rpm.max_of_rated_pct, 1) }}<small>% of {{ fmt0(rated) }}</small></dd></div>
+              <div class="sp-stat one"><dt>Lowest</dt><dd>{{ stat(data.summary.rpm.min) }}<small>rpm</small></dd></div>
+              <div class="sp-stat two"><dt>Average</dt><dd>{{ stat(data.summary.rpm.avg) }}<small>rpm</small></dd></div>
+              <div class="sp-stat three"><dt>Highest</dt><dd>{{ stat(data.summary.rpm.max) }}<small>rpm</small></dd></div>
+              <div class="sp-stat four" *ngIf="rated"><dt>Highest vs rated</dt><dd>{{ stat(data.summary.rpm.max_of_rated_pct, 1) }}<small>% of {{ fmt0(rated) }}</small></dd></div>
             </ng-container>
             <ng-container *ngIf="metric === 'feed'">
-              <div class="sp-stat"><dt>Lowest</dt><dd>{{ stat(data.summary.feed.min) }}<small>mm/min</small></dd></div>
-              <div class="sp-stat"><dt>Average</dt><dd>{{ stat(data.summary.feed.avg) }}<small>mm/min</small></dd></div>
-              <div class="sp-stat"><dt>Highest (rapids included)</dt><dd>{{ stat(data.summary.feed.max) }}<small>mm/min</small></dd></div>
+              <div class="sp-stat one"><dt>Lowest</dt><dd>{{ stat(data.summary.feed.min) }}<small>mm/min</small></dd></div>
+              <div class="sp-stat two"><dt>Average</dt><dd>{{ stat(data.summary.feed.avg) }}<small>mm/min</small></dd></div>
+              <div class="sp-stat three"><dt>Highest (rapids included)</dt><dd>{{ stat(data.summary.feed.max) }}<small>mm/min</small></dd></div>
             </ng-container>
           </dl>
           <p class="sp-basis">{{ basis }}</p>
