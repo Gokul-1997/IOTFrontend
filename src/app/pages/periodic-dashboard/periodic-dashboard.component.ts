@@ -392,7 +392,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
 
   /* ── export ── */
 
-  export(format: 'xlsx' | 'csv' | 'pdf'): void {
+  export(format: 'xlsx' | 'csv'): void {
     this.exporting = format;
     this.cdr.markForCheck();
 

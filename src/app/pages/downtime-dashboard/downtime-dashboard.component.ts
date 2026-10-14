@@ -262,7 +262,7 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy, DashViewHo
     };
   }
 
-  export(format: 'xlsx' | 'csv' | 'pdf'): void {
+  export(format: 'xlsx' | 'csv'): void {
     this.exporting = format;
     this.cdr.markForCheck();
 

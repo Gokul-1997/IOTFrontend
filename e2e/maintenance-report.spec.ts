@@ -2,7 +2,8 @@ import { test, expect, seedAuth } from './fixtures/auth';
 
 /*
  * Maintenance Report — the agreement's "generate and export maintenance
- * reports in Excel, CSV and PDF".
+ * reports in Excel, CSV and PDF" (Excel and CSV since 14 Oct 2026: the PDF
+ * exports were taken out).
  *
  * What is worth testing here is not that the numbers render, but that the
  * page never overstates what it knows: MTTR is a claim about resolved
@@ -120,12 +121,12 @@ test('export is its own grant — view alone hides the buttons', async ({ page }
   await expect(page.getByRole('group', { name: 'Download the filtered list' })).toHaveCount(0);
 });
 
-test('with the export grant, all three formats are offered', async ({ page }) => {
+test('with the export grant, Excel and CSV are offered — no PDF', async ({ page }) => {
   await open(page, GRANTS, undefined, 'details');
   const group = page.getByRole('group', { name: 'Download the filtered list' });
   await expect(group.getByRole('button', { name: 'Excel' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'CSV' })).toBeVisible();
-  await expect(group.getByRole('button', { name: 'PDF' })).toBeVisible();
+  await expect(group.getByRole('button', { name: /PDF/ })).toHaveCount(0);
 });
 
 test('a company without the page cannot reach it by URL', async ({ page }) => {

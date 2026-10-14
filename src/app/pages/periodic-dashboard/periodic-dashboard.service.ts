@@ -66,9 +66,9 @@ export class PeriodicDashboardService {
    * Download an export.
    *
    * responseType 'blob' matters: the default JSON parse would corrupt an
-   * xlsx or pdf body before it ever reached the browser's save dialog.
+   * xlsx body before it ever reached the browser's save dialog.
    */
-  exportAs(format: 'xlsx' | 'csv' | 'pdf', params: {
+  exportAs(format: 'xlsx' | 'csv', params: {
     machine_id?: number | null; search?: string; status?: string; due?: string;
   }): Observable<Blob> {
     const query: any = {};

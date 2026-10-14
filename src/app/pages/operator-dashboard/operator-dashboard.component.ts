@@ -284,7 +284,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
     return true;
   }
 
-  export(format: 'xlsx' | 'csv' | 'pdf'): void {
+  export(format: 'xlsx' | 'csv'): void {
     this.exporting = format;
     this.cdr.markForCheck();
     this.svc.exportAs(format, { ...this.f, show: this.drill.kind || null, sort: this.sort, dir: this.dir })

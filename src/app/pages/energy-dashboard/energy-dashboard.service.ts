@@ -36,7 +36,7 @@ export class EnergyDashboardService {
     return this.http.post<any>(`${this.api}/dashboard/energy/settings`, s);
   }
 
-  exportAs(format: 'xlsx' | 'csv' | 'pdf', filters: any): Observable<Blob> {
+  exportAs(format: 'xlsx' | 'csv', filters: any): Observable<Blob> {
     const { page, limit, part, ...rest } = this.toQuery(filters);
     return this.http.get(`${this.api}/dashboard/energy/export/${format}`,
       { params: rest, responseType: 'blob' });

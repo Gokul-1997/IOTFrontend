@@ -231,9 +231,6 @@
           <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('csv')" [disabled]="exporting">
               <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
             </button>
-          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('pdf')" [disabled]="exporting">
-              <span class="material-icons" aria-hidden="true">download</span>{{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
-            </button>
         </span>
         <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()"><span class="material-icons" aria-hidden="true">restart_alt</span>Reset filters</button>
       </span>

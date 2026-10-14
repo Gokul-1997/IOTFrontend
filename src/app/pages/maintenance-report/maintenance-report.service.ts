@@ -30,8 +30,8 @@ export class MaintenanceReportService {
     return this.http.get<any>(`${this.api}/dashboard/maintenance-report`, { params: this.toQuery(filters) });
   }
 
-  /** responseType 'blob': a JSON parse would corrupt xlsx and pdf bodies. */
-  exportAs(format: 'xlsx' | 'csv' | 'pdf', filters: any): Observable<Blob> {
+  /** responseType 'blob': a JSON parse would corrupt an xlsx body. */
+  exportAs(format: 'xlsx' | 'csv', filters: any): Observable<Blob> {
     const { page, limit, part, ...rest } = this.toQuery(filters);
     return this.http.get(`${this.api}/dashboard/maintenance-report/export/${format}`,
       { params: rest, responseType: 'blob' });

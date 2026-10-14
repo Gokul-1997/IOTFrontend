@@ -30,8 +30,8 @@ export class OperatorDashboardService {
     return this.http.get<any>(`${this.api}/dashboard/operators`, { params: this.toQuery(filters) });
   }
 
-  /** responseType 'blob': a JSON parse would corrupt xlsx and pdf bodies. */
-  exportAs(format: 'xlsx' | 'csv' | 'pdf', filters: any): Observable<Blob> {
+  /** responseType 'blob': a JSON parse would corrupt an xlsx body. */
+  exportAs(format: 'xlsx' | 'csv', filters: any): Observable<Blob> {
     const { page, limit, part, ...rest } = this.toQuery(filters);   // sort and dir kept: the file matches the table
     return this.http.get(`${this.api}/dashboard/operators/export/${format}`,
       { params: rest, responseType: 'blob' });

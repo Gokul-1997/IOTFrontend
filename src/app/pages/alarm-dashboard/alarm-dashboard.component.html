@@ -350,9 +350,6 @@
           <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('csv')" [disabled]="exporting">
             <mat-icon aria-hidden="true">download</mat-icon>{{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
           </button>
-          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('pdf')" [disabled]="exporting">
-            <mat-icon aria-hidden="true">download</mat-icon>{{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
-          </button>
         </span>
         <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()">
           <mat-icon aria-hidden="true">restart_alt</mat-icon>Reset filters

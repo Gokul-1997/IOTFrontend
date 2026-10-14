@@ -327,7 +327,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
     };
   }
 
-  export(format: 'xlsx' | 'csv' | 'pdf'): void {
+  export(format: 'xlsx' | 'csv'): void {
     this.exporting = format;
     this.cdr.markForCheck();
 

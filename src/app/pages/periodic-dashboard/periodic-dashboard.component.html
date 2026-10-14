@@ -434,9 +434,6 @@
           <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('csv')" [disabled]="exporting">
               <img src="/images/icons/FileCsv.svg" alt="CSV" class="w-5 h-5" /> {{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
             </button>
-          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('pdf')" [disabled]="exporting">
-              <img src="/images/icons/FilePdf.svg" alt="PDF" class="w-5 h-5" /> {{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
-            </button>
         </span>
         <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="runEngine()" [disabled]="running">
           <span class="material-icons" aria-hidden="true">playlist_add_check</span>{{ running ? 'Generating…' : 'Generate due tickets' }}

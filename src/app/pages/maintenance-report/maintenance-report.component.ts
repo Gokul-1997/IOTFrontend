@@ -30,8 +30,8 @@ const TABS: DashTab[] = [
    The Maintenance Dashboard answers "what is the floor doing now".
    This answers "what did maintenance do over this period, and what did
    it cost in stopped time" — so it reads the ticket record, and every
-   figure on it is exportable to Excel, CSV and PDF, which is the form
-   the agreement asks for.
+   figure on it is exportable to Excel and CSV. (The agreement also names
+   PDF; the PDF exports were taken out on 14 Oct 2026 — nobody used them.)
 ───────────────────────────────────────────────────────────── */
 
 @Component({
@@ -225,7 +225,7 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHo
     };
   }
 
-  export(format: 'xlsx' | 'csv' | 'pdf'): void {
+  export(format: 'xlsx' | 'csv'): void {
     this.exporting = format;
     this.cdr.markForCheck();
     this.svc.exportAs(format, { ...this.f, show: this.drill.kind || null })

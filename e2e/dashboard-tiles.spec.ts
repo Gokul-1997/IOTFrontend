@@ -174,3 +174,19 @@ test('OEE Dashboard: a tile opens Reports → Machine OEE on the same dates, ran
   await expect(table.locator('th[aria-sort="descending"]')).toContainText('Availability');
   await expect(table.locator('tbody tr').first()).toContainText('CNC-01');
 });
+
+/* No PDF anywhere: every table that downloads offers Excel and CSV only (14 Oct 2026). */
+const withAlarms = [...cases, { path: '/alarm-report', api: /\/api\/dashboard\/alarms\?/, details: 'Alarms Details' } as Case];
+for (const c of withAlarms) {
+  test(`${c.path}: the details table downloads Excel and CSV — no PDF`, async ({ authedPage: page }) => {
+    await open(page, `${c.path}?view=details`, c.api);
+    await expect(page.getByRole('tab', { name: c.details })).toHaveAttribute('aria-selected', 'true');
+    const downloads = page.getByRole('group', { name: 'Download the filtered list' });
+    if (await downloads.count()) {
+      await expect(downloads.getByRole('button', { name: /excel/i })).toBeVisible();
+      await expect(downloads.getByRole('button', { name: /csv/i })).toBeVisible();
+    }
+    await expect(page.getByRole('button', { name: /pdf/i })).toHaveCount(0);
+    await expect(page.locator('img[alt="PDF"]')).toHaveCount(0);
+  });
+}
