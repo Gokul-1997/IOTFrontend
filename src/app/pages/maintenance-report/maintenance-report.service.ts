@@ -20,7 +20,7 @@ export class MaintenanceReportService {
    *  narrow the query to rows with an empty value. */
   private toQuery(f: any): any {
     const q: any = {};
-    for (const k of ['from', 'to', 'machine_id', 'status', 'issue_type', 'priority', 'search', 'page', 'limit', 'part']) {
+    for (const k of ['from', 'to', 'machine_id', 'status', 'issue_type', 'priority', 'search', 'show', 'page', 'limit', 'part']) {
       if (f[k] !== null && f[k] !== undefined && f[k] !== '') q[k] = f[k];
     }
     return q;

@@ -12,22 +12,8 @@ import { AuthService } from './auth.service';
 import { SocketService } from './socket.service';
 import { NotificationService } from './notification.service';
 
-const sockets: any[] = [];
-vi.mock('socket.io-client', () => ({
-  io: vi.fn((_url: string, opts: any) => {
-    const handlers: Record<string, Function[]> = {};
-    const s: any = {
-      opts, connected: false, auth: opts.auth,
-      on: vi.fn((ev: string, fn: Function) => { (handlers[ev] ||= []).push(fn); }),
-      once: vi.fn((ev: string, fn: Function) => { (handlers[ev] ||= []).push(fn); }),
-      off: vi.fn(), emit: vi.fn(),
-      removeAllListeners: vi.fn(), disconnect: vi.fn(() => { s.connected = false; }),
-      connect: vi.fn(() => { s.connected = true; (handlers['connect'] || []).forEach(f => f()); }),
-    };
-    sockets.push(s);
-    return s;
-  })
-}));
+import { fakeSockets as sockets, fakeSocketIo } from '../../../testing/fake-socket-io';
+vi.mock('socket.io-client', () => import('../../../testing/fake-socket-io'));
 
 const signIn = (id: number, company_id: number) => ({
   accessToken: `token-${id}`, refreshToken: `refresh-${id}`,
@@ -40,6 +26,7 @@ let http: HttpTestingController;
 beforeEach(() => {
   localStorage.clear();
   sockets.length = 0;
+  fakeSocketIo.autoConnect = true;
   TestBed.configureTestingModule({
     imports: [HttpClientTestingModule],
     providers: [{ provide: Router, useValue: { navigate: vi.fn() } }]

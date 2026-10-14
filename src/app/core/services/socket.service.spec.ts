@@ -3,30 +3,15 @@ import { Subject } from 'rxjs';
 import { AuthService } from './auth.service';
 import { SocketService } from './socket.service';
 
-const sockets: any[] = [];
-vi.mock('socket.io-client', () => ({ io: vi.fn(() => {
-  const handlers = new Map<string, Set<Function>>();
-  const socket: any = {
-    connected: false, auth: {},
-    on(event: string, callback: Function) { if (!handlers.has(event)) handlers.set(event, new Set()); handlers.get(event)!.add(callback); return socket; },
-    off(event: string, callback: Function) { handlers.get(event)?.delete(callback); return socket; },
-    emit: vi.fn(), connect: vi.fn(),
-    disconnect: vi.fn(() => { socket.connected = false; socket.trigger('disconnect', 'io client disconnect'); }),
-    removeAllListeners: () => handlers.clear(),
-    trigger(event: string, value?: any) {
-      if (event === 'connect') socket.connected = true;
-      if (event === 'disconnect') socket.connected = false;
-      for (const callback of [...(handlers.get(event) ?? [])]) callback(value);
-    }
-  };
-  sockets.push(socket); return socket;
-}) }));
+import { fakeSockets as sockets, fakeSocketIo } from '../../../testing/fake-socket-io';
+vi.mock('socket.io-client', () => import('../../../testing/fake-socket-io'));
 
 let service: SocketService;
 let refresh: Subject<any>;
 let auth: any;
 beforeEach(() => {
   sockets.length = 0;
+  fakeSocketIo.autoConnect = false;          // these tests say when the connection comes up
   refresh = new Subject();
   auth = {
     sessionVersion: 0, getUser: () => ({ id: 7 }), sessionChanged$: new Subject(),

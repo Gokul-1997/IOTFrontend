@@ -81,18 +81,20 @@
     <app-metric-help topic="energy_consumed"></app-metric-help>
   </p>
 
-  <!-- ══════════ KPI TILES ══════════ -->
+  <!-- ══════════ KPI TILES ══════════
+       Each tile opens Machine Detail — every machine, whose figures the
+       tile adds up or averages; Overload Alerts, the overloaded ones. -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi navy">
+    <div class="mexa-kpi navy mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Energy<br>Consumed <app-metric-help topic="energy_consumed"></app-metric-help></span>
         <span class="mexa-kpi-icon navy" aria-hidden="true">
           <mat-icon>battery_charging_full</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('')" aria-labelledby="enk1-name enk1-value enk1-act"><span id="enk1-value">
         {{ num(data.kpis.total_kwh) }}<small *ngIf="data.kpis.total_kwh !== null">kWh</small>
-      </p>
+      </span></button></p><span hidden id="enk1-name">Total energy consumed:</span><span hidden id="enk1-act">show each machine</span>
       <!-- more energy than the day before is the bad direction, so it is red -->
       <p class="mexa-kpi-sub" *ngIf="data.kpis.kwh_vs_yesterday_pct != null">
         <span class="mexa-delta" [class.mexa-delta-bad]="data.kpis.kwh_vs_yesterday_pct > 0"
@@ -104,14 +106,14 @@
       </p>
     </div>
 
-    <div class="mexa-kpi sky">
+    <div class="mexa-kpi sky mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Energy<br>Cost <app-metric-help topic="energy_cost"></app-metric-help></span>
         <span class="mexa-kpi-icon blue" aria-hidden="true">
           <mat-icon>account_balance_wallet</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ money(data.kpis.total_cost) }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('')" aria-labelledby="enk2-name enk2-value enk2-act"><span id="enk2-value">{{ money(data.kpis.total_cost) }}</span></button></p><span hidden id="enk2-name">Total energy cost:</span><span hidden id="enk2-act">show each machine</span>
       <p class="mexa-kpi-sub" *ngIf="data.rate_per_kwh != null">{{ money(data.rate_per_kwh, 2) }} per kWh</p>
       <!-- no tariff: said on the tile it empties, with the way to set one -->
       <p class="mexa-kpi-sub" *ngIf="data.rate_per_kwh == null && !data.coverage.tariff_configured">
@@ -119,37 +121,37 @@
       </p>
     </div>
 
-    <div class="mexa-kpi purple">
+    <div class="mexa-kpi purple mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Energy<br>per Part <app-metric-help topic="energy_per_part"></app-metric-help></span>
         <span class="mexa-kpi-icon purple" aria-hidden="true">
           <mat-icon>bolt</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ num(data.kpis.kwh_per_part) }}<small *ngIf="data.kpis.kwh_per_part != null">kWh</small></p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('')" aria-labelledby="enk3-name enk3-value enk3-act"><span id="enk3-value">{{ num(data.kpis.kwh_per_part) }}<small *ngIf="data.kpis.kwh_per_part != null">kWh</small></span></button></p><span hidden id="enk3-name">Energy per part:</span><span hidden id="enk3-act">show each machine</span>
       <p class="mexa-kpi-sub">{{ data.kpis.total_produced | number }} parts</p>
     </div>
 
-    <div class="mexa-kpi blue">
+    <div class="mexa-kpi blue mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>Voltage <app-metric-help topic="avg_voltage"></app-metric-help></span>
         <span class="mexa-kpi-icon blue" aria-hidden="true"><mat-icon>electrical_services</mat-icon></span>
       </div>
       <!-- the meters' line-to-line figure (~415 V), not phase-to-neutral (~240 V) -->
-      <p class="mexa-kpi-value">{{ num(data.kpis.avg_voltage) }}<small *ngIf="data.kpis.avg_voltage != null">V</small></p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('')" aria-labelledby="enk4-name enk4-value enk4-act"><span id="enk4-value">{{ num(data.kpis.avg_voltage) }}<small *ngIf="data.kpis.avg_voltage != null">V</small></span></button></p><span hidden id="enk4-name">Average voltage:</span><span hidden id="enk4-act">show each machine</span>
       <p class="mexa-kpi-sub" *ngIf="data.kpis.avg_voltage == null">Not reported</p>
     </div>
 
-    <div class="mexa-kpi green">
+    <div class="mexa-kpi green mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>Current <app-metric-help topic="avg_current"></app-metric-help></span>
         <span class="mexa-kpi-icon green" aria-hidden="true"><mat-icon>power</mat-icon></span>
       </div>
-      <p class="mexa-kpi-value">{{ num(data.kpis.avg_current) }}<small *ngIf="data.kpis.avg_current != null">A</small></p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('')" aria-labelledby="enk5-name enk5-value enk5-act"><span id="enk5-value">{{ num(data.kpis.avg_current) }}<small *ngIf="data.kpis.avg_current != null">A</small></span></button></p><span hidden id="enk5-name">Average current:</span><span hidden id="enk5-act">show each machine</span>
       <p class="mexa-kpi-sub" *ngIf="data.kpis.avg_current == null">Not reported</p>
     </div>
 
-    <div class="mexa-kpi grey">
+    <div class="mexa-kpi grey mexa-kpi-drill" [class.is-on]="drill.kind === 'overload'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overload<br>Alerts <app-metric-help topic="overload"></app-metric-help></span>
         <span class="mexa-kpi-icon grey" [style.background]="data.kpis.overload_alerts > 0 ? '#dc2626' : '#6b7280'"
@@ -159,12 +161,12 @@
       </div>
       <!-- the machine furthest over its limit, as the design names it -->
       <ng-container *ngIf="data.kpis.overload_top as o; else noOverload">
-        <p class="mexa-kpi-value mexa-kpi-alert">{{ o.machine_serial_no }}</p>
+        <p class="mexa-kpi-value mexa-kpi-alert"><button type="button" class="mexa-kpi-open" (click)="openTile('overload')" [attr.aria-pressed]="drill.kind === 'overload'" aria-labelledby="enk6-name enk6-value enk6-act"><span id="enk6-value">{{ o.machine_serial_no }}</span></button></p><span hidden id="enk6-name">Overload alerts, worst:</span><span hidden id="enk6-act">show the overloaded machines</span>
         <p class="mexa-kpi-sub"><strong class="text-red-600">+{{ o.exceeded_kw }} kW</strong> over the limit<span
           *ngIf="data.kpis.overload_alerts > 1"> · {{ data.kpis.overload_alerts }} machines</span></p>
       </ng-container>
       <ng-template #noOverload>
-        <p class="mexa-kpi-value">0</p>
+        <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('overload')" [attr.aria-pressed]="drill.kind === 'overload'" aria-labelledby="enk7-name enk7-value enk7-act"><span id="enk7-value">0</span></button></p><span hidden id="enk7-name">Overload alerts:</span><span hidden id="enk7-act">show the overloaded machines</span>
         <!-- 0 with no limit set is not a clean bill of health -->
         <p class="mexa-kpi-sub" *ngIf="!overloadLimitSet">No limit set</p>
       </ng-template>
@@ -274,8 +276,8 @@
   <ng-container *ngIf="views.has('table')">
       <!-- ══════════ MACHINE DETAIL ══════════ -->
 
-    <div class="mexa-tablebar mb-2">
-      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Machine Detail</h2>
+    <div class="mexa-tablebar mb-2 mexa-scroll-target" id="enDetails">
+      <h2 id="enDetailsTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left" style="margin:0">Machine Detail</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="enSearch">Search machines</label>
         <span class="mexa-searchbox">
@@ -300,6 +302,12 @@
         <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()"><span class="material-icons" aria-hidden="true">restart_alt</span>Reset filters</button>
       </span>
     </div>
+
+    <!-- what a tile narrowed the list to, and the way back -->
+    <p *ngIf="drill.kind" class="mexa-drill" role="status">
+      <span>Showing <strong>{{ drillLabels[drill.kind] }}</strong> · {{ data.machines.total }} {{ data.machines.total === 1 ? 'machine' : 'machines' }}</span>
+      <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="clearTile()">Show all</button>
+    </p>
 
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table">

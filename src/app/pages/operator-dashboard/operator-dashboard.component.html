@@ -89,50 +89,52 @@
     <app-metric-help topic="performance"></app-metric-help>
   </p>
 
-  <!-- ══════════ KPI TILES ══════════ -->
+  <!-- ══════════ KPI TILES ══════════
+       Each band tile opens its operators in Operator Performance Details;
+       Total Operators, every operator. Same tile again shows all. -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi navy">
+    <div class="mexa-kpi navy mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Operators</span>
         <span class="mexa-kpi-icon navy"  aria-hidden="true"><mat-icon>groups</mat-icon></span>
       </div>
-      <p class="mexa-kpi-value">{{ data.attribution.operators }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('')" aria-labelledby="opk1-name opk1-value opk1-act"><span id="opk1-value">{{ data.attribution.operators }}</span></button></p><span hidden id="opk1-name">Total operators:</span><span hidden id="opk1-act">show every operator</span>
       <p class="mexa-kpi-sub" *ngIf="data.bands.unrated">{{ data.bands.unrated }} with nothing measured</p>
     </div>
 
-    <div class="mexa-kpi green">
+    <div class="mexa-kpi green mexa-kpi-drill" [class.is-on]="drill.kind === 'excellent'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Excellent Performer</span>
         <span class="mexa-kpi-icon green"  aria-hidden="true"><mat-icon>star</mat-icon></span>
       </div>
-      <p class="mexa-kpi-value">{{ data.bands.excellent }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('excellent')" [attr.aria-pressed]="drill.kind === 'excellent'" aria-labelledby="opk2-name opk2-value opk2-act"><span id="opk2-value">{{ data.bands.excellent }}</span></button></p><span hidden id="opk2-name">Excellent performers:</span><span hidden id="opk2-act">show them</span>
       <p class="mexa-kpi-sub">Score {{ data.score_bands.excellent }}% and above</p>
     </div>
 
-    <div class="mexa-kpi sky">
+    <div class="mexa-kpi sky mexa-kpi-drill" [class.is-on]="drill.kind === 'good'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Good Performer</span>
         <span class="mexa-kpi-icon sky"  aria-hidden="true"><mat-icon>verified</mat-icon></span>
       </div>
-      <p class="mexa-kpi-value">{{ data.bands.good }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('good')" [attr.aria-pressed]="drill.kind === 'good'" aria-labelledby="opk3-name opk3-value opk3-act"><span id="opk3-value">{{ data.bands.good }}</span></button></p><span hidden id="opk3-name">Good performers:</span><span hidden id="opk3-act">show them</span>
       <p class="mexa-kpi-sub">Score {{ data.score_bands.good }}–{{ data.score_bands.excellent }}%</p>
     </div>
 
-    <div class="mexa-kpi purple">
+    <div class="mexa-kpi purple mexa-kpi-drill" [class.is-on]="drill.kind === 'average'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Avg Performer</span>
         <span class="mexa-kpi-icon purple"  aria-hidden="true"><mat-icon>shield</mat-icon></span>
       </div>
-      <p class="mexa-kpi-value">{{ data.bands.average }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('average')" [attr.aria-pressed]="drill.kind === 'average'" aria-labelledby="opk4-name opk4-value opk4-act"><span id="opk4-value">{{ data.bands.average }}</span></button></p><span hidden id="opk4-name">Average performers:</span><span hidden id="opk4-act">show them</span>
       <p class="mexa-kpi-sub">Score {{ data.score_bands.average }}–{{ data.score_bands.good }}%</p>
     </div>
 
-    <div class="mexa-kpi blue">
+    <div class="mexa-kpi blue mexa-kpi-drill" [class.is-on]="drill.kind === 'needs_help'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Who Needs Help</span>
         <span class="mexa-kpi-icon blue"  aria-hidden="true"><mat-icon>help</mat-icon></span>
       </div>
-      <p class="mexa-kpi-value">{{ data.bands.needs_help }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('needs_help')" [attr.aria-pressed]="drill.kind === 'needs_help'" aria-labelledby="opk5-name opk5-value opk5-act"><span id="opk5-value">{{ data.bands.needs_help }}</span></button></p><span hidden id="opk5-name">Who needs help:</span><span hidden id="opk5-act">show them</span>
       <p class="mexa-kpi-sub">Score below {{ data.score_bands.average }}%</p>
     </div>
   </div>
@@ -218,9 +220,9 @@
   </section>
   <ng-container *ngIf="views.has('table')">
     <!-- ══════════ OPERATOR DETAIL ══════════ -->
-  <section class="mexa-card">
+  <section class="mexa-card mexa-scroll-target" id="opDetails" aria-labelledby="opDetailsTitle">
     <div class="mexa-tablebar">
-      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Operator Performance Details <app-metric-help topic="operator_rows"></app-metric-help></h2>
+      <h2 id="opDetailsTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left" style="margin:0">Operator Performance Details <app-metric-help topic="operator_rows"></app-metric-help></h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="opSearch">Search operators</label>
         <span class="mexa-searchbox">
@@ -242,6 +244,12 @@
         <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()"><span class="material-icons" aria-hidden="true">restart_alt</span>Reset filters</button>
       </span>
     </div>
+
+    <!-- what a tile narrowed the list to, and the way back -->
+    <p *ngIf="drill.kind" class="mexa-drill" role="status">
+      <span>Showing <strong>{{ drillLabels[drill.kind] }}</strong> · {{ data.operators.total }} {{ data.operators.total === 1 ? 'operator' : 'operators' }}</span>
+      <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="clearTile()">Show all</button>
+    </p>
 
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table">

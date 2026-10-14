@@ -18,7 +18,7 @@ export class EnergyDashboardService {
 
   private toQuery(f: any): any {
     const q: any = {};
-    for (const k of ['from', 'to', 'machine_id', 'search', 'page', 'limit', 'part']) {
+    for (const k of ['from', 'to', 'machine_id', 'search', 'show', 'page', 'limit', 'part']) {
       if (f[k] !== null && f[k] !== undefined && f[k] !== '') q[k] = f[k];
     }
     return q;

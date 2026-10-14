@@ -13,26 +13,9 @@ import { NotificationService } from './notification.service';
 import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 
 /* A socket that connects at once (or never), and lets a test fire what the server would send. */
-const sockets: any[] = [];
-let connects = true;
-vi.mock('socket.io-client', () => ({
-  io: vi.fn((_url: string, opts: any) => {
-    const handlers: Record<string, Function[]> = {};
-    const s: any = {
-      opts, connected: false, auth: opts.auth,
-      on: vi.fn((ev: string, fn: Function) => { (handlers[ev] ||= []).push(fn); }),
-      off: vi.fn((ev: string, fn: Function) => { handlers[ev] = (handlers[ev] || []).filter(f => f !== fn); }),
-      emit: vi.fn(),
-      removeAllListeners: vi.fn(() => { for (const k of Object.keys(handlers)) delete handlers[k]; }),
-      disconnect: vi.fn(() => { s.connected = false; }),
-      connect: vi.fn(() => { if (connects) { s.connected = true; s.fire('connect'); } }),
-      fire: (ev: string, ...args: any[]) => (handlers[ev] || []).slice().forEach(f => f(...args)),
-      listeners: (ev: string) => (handlers[ev] || []).length
-    };
-    sockets.push(s);
-    return s;
-  })
-}));
+import { fakeSockets as sockets, fakeSocketIo } from '../../../testing/fake-socket-io';
+vi.mock('socket.io-client', () => import('../../../testing/fake-socket-io'));
+const never = () => { fakeSocketIo.autoConnect = false; };
 
 const UNREAD = (r: any) => r.url.endsWith('/notifications/unread-count');
 let hidden = false;
@@ -55,7 +38,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   localStorage.clear();
   sockets.length = 0;
-  connects = true;
+  fakeSocketIo.autoConnect = true;
   hidden = false;
   Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
   TestBed.configureTestingModule({
@@ -114,7 +97,7 @@ describe('with the live connection', () => {
 
 describe('without a live connection', () => {
   test('every 30 s while shown; nothing while hidden; once as soon as it is shown again', async () => {
-    connects = false;
+    never();
     const notes = TestBed.inject(NotificationService);
     login();
     await vi.advanceTimersByTimeAsync(0);
@@ -137,7 +120,7 @@ describe('without a live connection', () => {
   });
 
   test('a failed request is skipped; the next tick asks again', async () => {
-    connects = false;
+    never();
     const notes = TestBed.inject(NotificationService);
     login();
     await vi.advanceTimersByTimeAsync(0);
@@ -150,7 +133,7 @@ describe('without a live connection', () => {
 
 describe('never more requests than needed', () => {
   test('never two at a time: a request on its way is not sent again', async () => {
-    connects = false;
+    never();
     TestBed.inject(NotificationService);
     login();
     await vi.advanceTimersByTimeAsync(15_000);
@@ -239,7 +222,7 @@ describe('reading changes the count at once', () => {
   });
 
   test('an answer to a request sent before marking all read does not bring the old count back', async () => {
-    connects = false;
+    never();
     const notes = TestBed.inject(NotificationService);
     login();
     await vi.advanceTimersByTimeAsync(0);

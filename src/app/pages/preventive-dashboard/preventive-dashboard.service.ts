@@ -23,12 +23,15 @@ export class PreventiveDashboardService {
     to?: string;
     machine_id?: number | null;
     search?: string;
+    /** A ticket tile's narrowing of the list: 'open' | 'completed' | 'resolved' | 'raised'. */
+    show?: string | null;
     page?: number;
     limit?: number;
     /** Which parts: 'kpis', 'charts', 'table', comma-separated (Backend dashboard/parts.js). */
     part?: string;
   }): Observable<any> {
     const query: any = {};
+    if (params.show)       query.show       = params.show;
     if (params.from)       query.from       = params.from;
     if (params.to)         query.to         = params.to;
     if (params.machine_id) query.machine_id = params.machine_id;

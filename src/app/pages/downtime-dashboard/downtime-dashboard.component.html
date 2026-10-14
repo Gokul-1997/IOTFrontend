@@ -87,71 +87,73 @@
     </div>
   </div>
 
-  <!-- ══════════ KPI TILES ══════════ -->
+  <!-- ══════════ KPI TILES ══════════
+       Each tile opens Downtime Details: the declared downtime and its events
+       at the event list; the measured times at the reason summary. -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi red">
+    <div class="mexa-kpi red mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Downtime <app-metric-help topic="declared_downtime"></app-metric-help></span>
         <span class="mexa-kpi-icon red"  aria-hidden="true">
           <mat-icon>timer_off</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ hours(data.kpis.total_downtime_seconds) }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openEvents('')" aria-labelledby="dtk1-name dtk1-value dtk1-act"><span id="dtk1-value">{{ hours(data.kpis.total_downtime_seconds) }}</span></button></p><span hidden id="dtk1-name">Total downtime:</span><span hidden id="dtk1-act">show the downtime events</span>
       <p class="mexa-kpi-sub">{{ data.kpis.open_events }} still open</p>
     </div>
 
-    <div class="mexa-kpi green">
+    <div class="mexa-kpi green mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Availability <app-metric-help topic="onoff_availability"></app-metric-help></span>
         <span class="mexa-kpi-icon green"  aria-hidden="true">
           <mat-icon>check_circle</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ pct(data.kpis.availability_pct) }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openReasons('')" aria-labelledby="dtk2-name dtk2-value dtk2-act"><span id="dtk2-value">{{ pct(data.kpis.availability_pct) }}</span></button></p><span hidden id="dtk2-name">Availability:</span><span hidden id="dtk2-act">show the downtime tables</span>
       <p class="mexa-kpi-sub">Run time ÷ switched-on time</p>
     </div>
 
-    <div class="mexa-kpi sky">
+    <div class="mexa-kpi sky mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Downtime Events <app-metric-help topic="downtime_reasons"></app-metric-help></span>
         <span class="mexa-kpi-icon sky"  aria-hidden="true">
           <mat-icon>report</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.kpis.downtime_events }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openEvents('')" aria-labelledby="dtk3-name dtk3-value dtk3-act"><span id="dtk3-value">{{ data.kpis.downtime_events }}</span></button></p><span hidden id="dtk3-name">Downtime events:</span><span hidden id="dtk3-act">show them</span>
       <p class="mexa-kpi-sub">{{ pct(data.kpis.reason_coverage_pct) }} have a reason</p>
     </div>
 
-    <div class="mexa-kpi purple">
+    <div class="mexa-kpi purple mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Running Time <app-metric-help topic="run_time"></app-metric-help></span>
         <span class="mexa-kpi-icon purple"  aria-hidden="true">
           <mat-icon>play_circle</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ hours(data.kpis.run_seconds) }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openReasons('')" aria-labelledby="dtk4-name dtk4-value dtk4-act"><span id="dtk4-value">{{ hours(data.kpis.run_seconds) }}</span></button></p><span hidden id="dtk4-name">Running time:</span><span hidden id="dtk4-act">show the downtime tables</span>
     </div>
 
-    <div class="mexa-kpi yellow">
+    <div class="mexa-kpi yellow mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Idle Time <app-metric-help topic="idle_time"></app-metric-help></span>
         <span class="mexa-kpi-icon yellow"  aria-hidden="true">
           <mat-icon>pause_circle</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ hours(data.kpis.idle_seconds) }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openReasons('')" aria-labelledby="dtk5-name dtk5-value dtk5-act"><span id="dtk5-value">{{ hours(data.kpis.idle_seconds) }}</span></button></p><span hidden id="dtk5-name">Idle time:</span><span hidden id="dtk5-act">show the downtime tables</span>
       <p class="mexa-kpi-sub">{{ hours(data.kpis.unaccounted_seconds) }} unaccounted</p>
       <p class="mexa-kpi-sub mexa-kpi-cost" *ngIf="idleCostLine" [title]="costHint">{{ idleCostLine }}</p>
     </div>
 
-    <div class="mexa-kpi blue">
+    <div class="mexa-kpi blue mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Alarm Time <app-metric-help topic="alarm_time"></app-metric-help></span>
         <span class="mexa-kpi-icon blue"  aria-hidden="true">
           <mat-icon>error</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ hours(data.kpis.alarm_seconds) }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openReasons('')" aria-labelledby="dtk6-name dtk6-value dtk6-act"><span id="dtk6-value">{{ hours(data.kpis.alarm_seconds) }}</span></button></p><span hidden id="dtk6-name">Alarm time:</span><span hidden id="dtk6-act">show the downtime tables</span>
       <p class="mexa-kpi-sub mexa-kpi-cost" *ngIf="alarmCostLine" [title]="costHint">{{ alarmCostLine }}</p>
     </div>
   </div>
@@ -308,8 +310,8 @@
   <ng-container *ngIf="views.has('table')">
   <!-- ══════════ REASON SUMMARY ══════════ -->
   <div class="mexa-grid">
-    <section class="mexa-card">
-      <h2 class="mexa-card-title mexa-card-title-left">Downtime By Reason Summary</h2>
+    <section class="mexa-card mexa-scroll-target" id="dtReasons" aria-labelledby="dtReasonsTitle">
+      <h2 id="dtReasonsTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left">Downtime By Reason Summary</h2>
       <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
         <table class="mexa-table" style="min-width:0">
           <caption class="sr-only">Downtime reasons, largest first</caption>
@@ -374,9 +376,9 @@
   </div>
 
      <!-- ══════════ DOWNTIME DETAILS ══════════ -->
-  <section class="mexa-card">
+  <section class="mexa-card mexa-scroll-target" id="dtEvents" aria-labelledby="dtEventsTitle">
     <div class="mexa-tablebar">
-      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Downtime Details</h2>
+      <h2 id="dtEventsTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left" style="margin:0">Downtime Details</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="dtSearch">Search downtime events</label>
         <span class="mexa-searchbox">

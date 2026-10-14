@@ -411,7 +411,7 @@ test('OEE dashboard has no Report tab; the machine table lives in Reports', asyn
   await expect(page.getByRole('searchbox', { name: 'Search machines' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Export CSV: Machine OEE' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Excel: Machine OEE' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'PDF: Machine OEE' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^PDF/ })).toHaveCount(0);
 });
 
 test('Reports holds every report as a tab, and Analytics has one Reports entry', async ({ authedPage: page }) => {
@@ -439,21 +439,22 @@ test('Periodic Attention Required filters the ticket table', async ({ authedPage
   await page.goto('/periodic-maintenance');
   await expect(page.locator('.mexa-attention-row')).toHaveCount(3);
 
-  // the tickets are on Maintenance Details: the row opens that tab, narrowed
-  await page.getByRole('button', { name: /Overdue/ }).first().click();
+  // the tickets are on Maintenance Details: the row opens that tab, narrowed (as the Overdue tile does)
+  const overdue = page.locator('button.mexa-attention-row', { hasText: 'Overdue' });
+  await overdue.click();
   await expect(page.getByRole('tab', { name: 'Maintenance Details' })).toHaveAttribute('aria-selected', 'true');
   await expect.poll(() => seen.some(u => u.includes('due=overdue') && u.includes('part=table'))).toBe(true);
-  await expect(page.locator('.mexa-note')).toContainText('overdue');
+  await expect(page.locator('.mexa-drill')).toContainText('overdue');
 
   // back on Charts the row says it is applied; clicking it again clears it, so nobody gets stuck in a filter
   await page.getByRole('tab', { name: 'Charts' }).click();
-  const overdue = page.getByRole('button', { name: /Overdue/ }).first();
   await expect(overdue).toHaveAttribute('aria-pressed', 'true');
   await overdue.click();
-  await expect(overdue).toHaveAttribute('aria-pressed', 'false');
-  await page.getByRole('tab', { name: 'Maintenance Details' }).click();
+  await expect(page.getByRole('tab', { name: 'Maintenance Details' })).toHaveAttribute('aria-selected', 'true');
   await expect.poll(() => seen.at(-1)).not.toContain('due=');
-  await expect(page.locator('.mexa-note')).toHaveCount(0);
+  await expect(page.locator('.mexa-drill')).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Charts' }).click();
+  await expect(overdue).toHaveAttribute('aria-pressed', 'false');
 });
 
 test('a past due date that is not overdue reads as "ago", never "in -82d"', async ({ authedPage: page }) => {

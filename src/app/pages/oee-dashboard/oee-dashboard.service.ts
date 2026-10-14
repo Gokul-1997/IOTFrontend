@@ -29,7 +29,7 @@ export class OeeDashboardService {
     return this.http.get<any>(`${this.api}/dashboard/oee`, { params: this.toQuery(filters) });
   }
 
-  exportAs(format: 'xlsx' | 'csv' | 'pdf', filters: any): Observable<Blob> {
+  exportAs(format: 'xlsx' | 'csv', filters: any): Observable<Blob> {
     const { page, limit, ...rest } = this.toQuery(filters);
     return this.http.get(`${this.api}/dashboard/oee/export/${format}`,
       { params: rest, responseType: 'blob' });

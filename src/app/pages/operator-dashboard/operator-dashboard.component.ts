@@ -16,7 +16,7 @@ import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { UiTabsDirective } from '../../shared/ui-tabs.directive';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
-import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl } from '../../shared/dash-view/dash-view';
+import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 
 /** Charts | Operator Performance Details, under the tiles both share. */
@@ -169,8 +169,29 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
   reset(): void {
     this.f = this.blankFilters();
     this.page = 1; this.sort = 'score'; this.dir = 'desc';
+    this.drill.clear();
     this.load();
   }
+
+  /* ── KPI tile → the operators behind its number (shared/dash-view TileDrill) ── */
+  readonly drill = new TileDrill<'excellent' | 'good' | 'average' | 'needs_help'>('opDetails', 'opDetailsTitle');
+  readonly drillLabels: Record<string, string> = {
+    excellent:  'excellent performers',
+    good:       'good performers',
+    average:    'average performers',
+    needs_help: 'operators who need help'
+  };
+
+  /** A tile: Operator Performance Details, narrowed to that band. */
+  openTile(kind: '' | 'excellent' | 'good' | 'average' | 'needs_help'): void {
+    this.drill.pick(kind);
+    this.page = 1;
+    if (this.views.tab !== 'details') this.setView('details');
+    else this.load();
+    if (!this.views.loading) this.drill.revealIfAsked();
+  }
+
+  clearTile(): void { this.drill.clear(); this.page = 1; this.load(); }
 
   goTo(page: number): void {
     if (page < 1 || page > (this.data?.operators?.totalPages || 1) || page === this.page) return;
@@ -219,11 +240,11 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
      operator search narrows them too); the list on those and its order and page. */
   partKeys(): Record<DashPart, string> {
     const shared = JSON.stringify(this.f);
-    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.sort, this.dir, this.page, this.limit]) };
+    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.drill.kind, this.sort, this.dir, this.page, this.limit]) };
   }
 
   fetchParts(parts: DashPart[]) {
-    const table = parts.includes('table') ? { sort: this.sort, dir: this.dir, page: this.page, limit: this.limit } : {};
+    const table = parts.includes('table') ? { show: this.drill.kind || null, sort: this.sort, dir: this.dir, page: this.page, limit: this.limit } : {};
     return this.svc.getOperators({ ...this.f, ...table, part: parts.join(',') }).pipe(takeUntil(this.destroy$));
   }
 
@@ -257,6 +278,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
     }
     if (parts.includes('table')) next.operators = { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d.operators ?? {}) };
     this.data = next;
+    if (parts.includes('table')) this.drill.revealIfAsked();
     this.updatedAt = updatedLabel(d.updated_at);
     this.cdr.markForCheck();
     return true;
@@ -265,7 +287,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
   export(format: 'xlsx' | 'csv' | 'pdf'): void {
     this.exporting = format;
     this.cdr.markForCheck();
-    this.svc.exportAs(format, { ...this.f, sort: this.sort, dir: this.dir })
+    this.svc.exportAs(format, { ...this.f, show: this.drill.kind || null, sort: this.sort, dir: this.dir })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: blob => {

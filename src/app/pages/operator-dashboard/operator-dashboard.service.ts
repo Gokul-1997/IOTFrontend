@@ -20,7 +20,7 @@ export class OperatorDashboardService {
    *  narrow the query to rows with an empty value. */
   private toQuery(f: any): any {
     const q: any = {};
-    for (const k of ['from', 'to', 'machine_id', 'shift_id', 'operator_id', 'search', 'sort', 'dir', 'page', 'limit', 'part']) {
+    for (const k of ['from', 'to', 'machine_id', 'shift_id', 'operator_id', 'search', 'show', 'sort', 'dir', 'page', 'limit', 'part']) {
       if (f[k] !== null && f[k] !== undefined && f[k] !== '') q[k] = f[k];
     }
     return q;

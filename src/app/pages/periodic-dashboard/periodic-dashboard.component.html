@@ -73,61 +73,63 @@
     <span><strong>No maintenance plan yet</strong> — add a schedule under <strong>Create Ticket</strong>.</span></div>
     </div>
 
-  <!-- ══════════ KPI TILES ══════════ -->
+  <!-- ══════════ KPI TILES ══════════
+       Each tile opens the tickets behind its number in Maintenance Details
+       (Scheduled and Compliance: every ticket). Same tile again shows all. -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi navy">
+    <div class="mexa-kpi navy mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Scheduled Ticket</span>
         <span class="mexa-kpi-icon navy"  aria-hidden="true">
           <mat-icon>assignment</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.kpis.scheduled }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('')" aria-labelledby="pek1-name pek1-value pek1-act"><span id="pek1-value">{{ data.kpis.scheduled }}</span></button></p><span hidden id="pek1-name">Scheduled tickets:</span><span hidden id="pek1-act">show every ticket</span>
       <p class="mexa-kpi-sub">{{ data.kpis.due_this_week }} due this week</p>
     </div>
 
-    <div class="mexa-kpi green">
+    <div class="mexa-kpi green mexa-kpi-drill" [class.is-on]="drill.kind === 'today'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Due Today</span>
         <span class="mexa-kpi-icon green"  aria-hidden="true">
           <mat-icon>event_available</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.kpis.due_today }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('today')" [attr.aria-pressed]="drill.kind === 'today'" aria-labelledby="pek2-name pek2-value pek2-act"><span id="pek2-value">{{ data.kpis.due_today }}</span></button></p><span hidden id="pek2-name">Due today:</span><span hidden id="pek2-act">show these tickets</span>
     </div>
 
-    <div class="mexa-kpi red">
+    <div class="mexa-kpi red mexa-kpi-drill" [class.is-on]="drill.kind === 'overdue'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overdue</span>
         <span class="mexa-kpi-icon red"  aria-hidden="true">
           <mat-icon>event_busy</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.kpis.overdue }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('overdue')" [attr.aria-pressed]="drill.kind === 'overdue'" aria-labelledby="pek3-name pek3-value pek3-act"><span id="pek3-value">{{ data.kpis.overdue }}</span></button></p><span hidden id="pek3-name">Overdue:</span><span hidden id="pek3-act">show these tickets</span>
       <p class="mexa-kpi-sub" *ngIf="overloadedTechnicians">
         across {{ overloadedTechnicians }} technician(s)
       </p>
     </div>
 
-    <div class="mexa-kpi purple">
+    <div class="mexa-kpi purple mexa-kpi-drill" [class.is-on]="drill.kind === 'completed'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Completed</span>
         <span class="mexa-kpi-icon purple"  aria-hidden="true">
           <mat-icon>event_note</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.kpis.completed }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('completed')" [attr.aria-pressed]="drill.kind === 'completed'" aria-labelledby="pek4-name pek4-value pek4-act"><span id="pek4-value">{{ data.kpis.completed }}</span></button></p><span hidden id="pek4-name">Completed:</span><span hidden id="pek4-act">show these tickets</span>
       <p class="mexa-kpi-sub">Scheduled {{ data.kpis.scheduled }}</p>
     </div>
 
-    <div class="mexa-kpi blue">
+    <div class="mexa-kpi blue mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Compliance</span>
         <span class="mexa-kpi-icon blue"  aria-hidden="true">
           <mat-icon>fact_check</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ complianceLabel }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('')" aria-labelledby="pek5-name pek5-value pek5-act"><span id="pek5-value">{{ complianceLabel }}</span></button></p><span hidden id="pek5-name">Compliance:</span><span hidden id="pek5-act">show every ticket</span>
       <!-- a percentage with no denominator is not a measurement -->
       <p class="mexa-kpi-sub">
         {{ data.kpis.compliance_basis.on_time }} on time of
@@ -442,12 +444,10 @@
       </span>
     </div>
 
-    <!-- the filter is stated, because the table below is a subset -->
-    <p *ngIf="dueFilter" class="mexa-note">
-      Showing only tickets that are <strong>{{ dueFilter === 'overdue' ? 'overdue' : 'due today' }}</strong>.
-      <button type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="focusDue(dueFilter === 'overdue' ? 'overdue' : 'today')">
-        Show all tickets
-      </button>
+    <!-- the filter is stated, because the table below is a subset — a tile's or an Attention row's -->
+    <p *ngIf="dueFilter" class="mexa-drill" role="status">
+      <span>Showing <strong>{{ drillLabels[dueFilter] }}</strong> · {{ data.tickets.total }} {{ data.tickets.total === 1 ? 'ticket' : 'tickets' }}</span>
+      <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="clearTile()">Show all</button>
     </p>
 
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">

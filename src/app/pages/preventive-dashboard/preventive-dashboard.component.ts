@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,6 +7,7 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, Subscription, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { PreventiveDashboardService } from './preventive-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
@@ -14,7 +16,7 @@ import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { SEVERITY } from '../../shared/severity';
-import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl } from '../../shared/dash-view/dash-view';
+import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 
 /** Charts | PM Ticket Details (the tickets and the alarm rules), under the tiles both share. */
@@ -101,8 +103,41 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
   constructor(
     private svc: PreventiveDashboardService,
     private toast: ToastService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private auth: AuthService,
+    private router: Router
   ) {}
+
+  /* ── KPI tile → the records behind its number (shared/dash-view TileDrill) ── */
+  readonly drill = new TileDrill<'open' | 'completed' | 'resolved' | 'raised'>('pvTickets', 'pvTicketsTitle');
+  readonly drillLabels: Record<string, string> = {
+    open:      'open PM tickets',
+    completed: 'completed PM tickets',
+    resolved:  'resolved PM tickets — what the average resolution time is taken over',
+    raised:    'every PM ticket'
+  };
+
+  /** A ticket tile: PM Ticket Details, narrowed to the tickets behind its number. */
+  openTile(kind: '' | 'open' | 'completed' | 'resolved' | 'raised'): void {
+    this.drill.pick(kind);
+    this.page = 1;
+    if (this.views.tab !== 'details') this.setView('details');
+    else this.load();
+    if (!this.views.loading) this.drill.revealIfAsked();
+  }
+
+  /** Back to the whole backlog. */
+  clearTile(): void { this.drill.clear(); this.page = 1; this.load(); }
+
+  /** The critical alarms are listed on the Alarm Report — for anyone who may open it. */
+  get canSeeAlarms(): boolean { return this.auth.hasPermission('page:analytics-alarms'); }
+
+  /** Total Critical Alarms: the Alarm Report's Alarms Details, critical only, for these dates and machine. */
+  openCriticalAlarms(): void {
+    void this.router.navigate(['/alarm-report'], { queryParams: {
+      view: 'details', show: 'critical', from: this.fromDate, to: this.toDate, machine_id: this.selectedMachine || null
+    } });
+  }
 
   ngOnInit(): void {
     this.svc.getMeta()
@@ -161,6 +196,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
     this.toDate = this.istDate(0);
     this.rangeError = '';
     this.search = '';
+    this.drill.clear();
     this.page = 1;
     this.load();
   }
@@ -194,11 +230,13 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
      the machine, its search and its page. */
   partKeys(): Record<DashPart, string> {
     const window = JSON.stringify([this.fromDate, this.toDate, this.selectedMachine]);
-    return { kpis: window, charts: window, table: JSON.stringify([this.selectedMachine, this.search, this.page, this.limit]) };
+    // a tile's narrowing is bounded by the dates, as the tiles are; the backlog is not
+    const tile = this.drill.kind ? [this.drill.kind, this.fromDate, this.toDate] : null;
+    return { kpis: window, charts: window, table: JSON.stringify([this.selectedMachine, this.search, tile, this.page, this.limit]) };
   }
 
   fetchParts(parts: DashPart[]) {
-    const table = parts.includes('table') ? { search: this.search, page: this.page, limit: this.limit } : {};
+    const table = parts.includes('table') ? { search: this.search, show: this.drill.kind || null, page: this.page, limit: this.limit } : {};
     return this.svc.getPreventive({ from: this.fromDate, to: this.toDate, machine_id: this.selectedMachine, ...table, part: parts.join(',') })
       .pipe(takeUntil(this.destroy$));
   }
@@ -218,6 +256,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
     if (parts.includes('charts')) Object.assign(next, this.normalise(d));
     if (parts.includes('table')) next.tickets = { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d.tickets ?? {}) };
     this.data = next;
+    if (parts.includes('table')) this.drill.revealIfAsked();
     if (parts.includes('charts')) this.applyCharts(next);
     this.updatedAt = updatedLabel(d.updated_at);
     this.cdr.markForCheck();

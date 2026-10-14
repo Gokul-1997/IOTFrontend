@@ -371,7 +371,8 @@ button.mexa-kpi {
   transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
 button.mexa-kpi:hover { border-color: var(--mexa-blue); box-shadow: 0 4px 14px rgba(43, 58, 143, .12); }
-button.mexa-kpi:focus-visible { outline: 3px solid var(--mexa-navy); outline-offset: 2px; }
+/* white: the tiles sit on the STM field, where a navy ring all but disappears */
+button.mexa-kpi:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 button.mexa-kpi[aria-pressed="true"] {
   border-color: var(--mexa-navy);
   box-shadow: 0 0 0 2px var(--mexa-navy) inset, 0 4px 14px rgba(43, 58, 143, .14);
@@ -387,6 +388,23 @@ button.mexa-kpi[aria-pressed="true"] {
   border-color: #9fb3ff; box-shadow: 0 0 0 2px #9fb3ff inset;
 }
 @media (prefers-reduced-motion: reduce) { button.mexa-kpi { transition: none; } }
+
+/* A tile whose number opens the records behind it, when the tile also holds
+   an (i) or a link — which a <button> tile cannot. The number is the button,
+   its hit area stretched over the whole tile; the (i) and links sit above it
+   and keep their own clicks. */
+.mexa-kpi-drill { position: relative; cursor: pointer; }
+.mexa-kpi-open {
+  font: inherit; color: inherit; letter-spacing: inherit; text-align: inherit;
+  background: none; border: 0; padding: 0; margin: 0; cursor: pointer;
+}
+.mexa-kpi-open::after { content: ''; position: absolute; inset: 0; border-radius: 16px; }
+.mexa-kpi-drill app-metric-help, .mexa-kpi-drill a { position: relative; z-index: 1; }
+/* the focus ring goes round the whole tile, as on a <button> tile */
+.mexa-kpi-open:focus-visible { outline: none; }
+.mexa-kpi-open:focus-visible::after { outline: 3px solid #fff; outline-offset: 2px; }
+/* the tile that narrowed the table */
+.mexa-kpi-drill.is-on { box-shadow: 0 0 0 3px rgba(255, 255, 255, .85) inset, 0 4px 14px rgba(43, 58, 143, .18); }
 
 /* Where a card click scrolls to: clear of the sticky top bar, so the
    heading the user is taken to is not hidden underneath it. */

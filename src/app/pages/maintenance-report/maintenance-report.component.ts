@@ -15,7 +15,7 @@ import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
-import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl } from '../../shared/dash-view/dash-view';
+import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 
 /** Charts | Ticket Details (Machine Summary and Maintenance Tickets), under the tiles both share. */
@@ -58,6 +58,15 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHo
   f: any = this.blankFilters();
   page = 1;
   readonly limit = 20;
+
+  /* ── KPI tile → the tickets behind its number (shared/dash-view TileDrill) ── */
+  readonly drill = new TileDrill<'open' | 'settled' | 'repaired' | 'downtime'>('mrTickets', 'mrTicketsTitle');
+  readonly drillLabels: Record<string, string> = {
+    open:     'tickets still open',
+    settled:  'resolved and closed tickets',
+    repaired: 'repaired tickets — what Mean Time to Repair averages',
+    downtime: 'tickets with downtime entered'
+  };
 
   /** The page's data, each part merged in as it arrives. */
   data: any = null;
@@ -118,7 +127,18 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHo
 
   onSearchInput(): void { this.search$.next(this.f.search); }
   submit(): void { this.page = 1; this.load(); }
-  reset(): void { this.f = this.blankFilters(); this.page = 1; this.load(); }
+  reset(): void { this.f = this.blankFilters(); this.drill.clear(); this.page = 1; this.load(); }
+
+  /** A tile: Ticket Details, narrowed to the tickets behind its number. */
+  openTile(kind: '' | 'open' | 'settled' | 'repaired' | 'downtime'): void {
+    this.drill.pick(kind);
+    this.page = 1;
+    if (this.views.tab !== 'details') this.setView('details');
+    else this.load();
+    if (!this.views.loading) this.drill.revealIfAsked();
+  }
+
+  clearTile(): void { this.drill.clear(); this.page = 1; this.load(); }
 
   changePage(delta: number): void {
     const next = this.page + delta;
@@ -138,11 +158,11 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHo
      ticket search narrows them too); the tables on those and the page. */
   partKeys(): Record<DashPart, string> {
     const shared = JSON.stringify(this.f);
-    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.page, this.limit]) };
+    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.drill.kind, this.page, this.limit]) };
   }
 
   fetchParts(parts: DashPart[]) {
-    const paging = parts.includes('table') ? { page: this.page, limit: this.limit } : {};
+    const paging = parts.includes('table') ? { show: this.drill.kind || null, page: this.page, limit: this.limit } : {};
     return this.svc.getReport({ ...this.f, ...paging, part: parts.join(',') }).pipe(takeUntil(this.destroy$));
   }
 
@@ -163,6 +183,7 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHo
     if (parts.includes('charts')) Object.assign(next, this.normalise(d));
     if (parts.includes('table')) next.tickets = { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d.tickets ?? {}) };
     this.data = next;
+    if (parts.includes('table')) this.drill.revealIfAsked();
     if (parts.includes('charts')) this.applyCharts(next);
     this.updatedAt = updatedLabel(d.updated_at);
     this.cdr.markForCheck();
@@ -207,7 +228,7 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHo
   export(format: 'xlsx' | 'csv' | 'pdf'): void {
     this.exporting = format;
     this.cdr.markForCheck();
-    this.svc.exportAs(format, this.f)
+    this.svc.exportAs(format, { ...this.f, show: this.drill.kind || null })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: blob => {

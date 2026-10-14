@@ -92,16 +92,18 @@
 
   <!-- ══════════ KPI TILES ══════════
        Each factor carries a thin track in its own colour — the same colour
-       its line has in the trend and its bar on every machine tile. -->
+       its line has in the trend and its bar on every machine tile. Each tile
+       opens the machine-wise table behind it (Reports → Machine OEE, same
+       dates and shift, ranked by that figure) for anyone who may open it. -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi navy">
+    <div class="mexa-kpi navy" [class.mexa-kpi-drill]="canOpenMachineOee">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>OEE <app-metric-help topic="oee"></app-metric-help></span>
         <span class="mexa-kpi-icon navy" aria-hidden="true">
           <mat-icon>settings</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ pct(data.kpis.oee_pct) }}</p>
+      <p class="mexa-kpi-value"><button *ngIf="canOpenMachineOee; else oeeTilePlain0" type="button" class="mexa-kpi-open" (click)="openMachineOee('oee_pct')" aria-labelledby="oek1-name oek1-value oek1-act"><span id="oek1-value">{{ pct(data.kpis.oee_pct) }}</span></button><ng-template #oeeTilePlain0>{{ pct(data.kpis.oee_pct) }}</ng-template></p><span hidden id="oek1-name">Average OEE:</span><span hidden id="oek1-act">show each machine in Reports, Machine OEE</span>
       <div class="mexa-kpi-track mexa-factor-oee" aria-hidden="true"
            [style.--v.%]="data.kpis.oee_pct || 0" [style.--t.%]="data.thresholds.good">
         <i></i><b></b>
@@ -118,60 +120,60 @@
       </p>
     </div>
 
-    <div class="mexa-kpi green">
+    <div class="mexa-kpi green" [class.mexa-kpi-drill]="canOpenMachineOee">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>Availability <app-metric-help topic="availability"></app-metric-help></span>
         <span class="mexa-kpi-icon green" aria-hidden="true">
           <mat-icon>schedule</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ pct(data.kpis.availability_pct) }}</p>
+      <p class="mexa-kpi-value"><button *ngIf="canOpenMachineOee; else oeeTilePlain1" type="button" class="mexa-kpi-open" (click)="openMachineOee('availability_pct')" aria-labelledby="oek2-name oek2-value oek2-act"><span id="oek2-value">{{ pct(data.kpis.availability_pct) }}</span></button><ng-template #oeeTilePlain1>{{ pct(data.kpis.availability_pct) }}</ng-template></p><span hidden id="oek2-name">Average availability:</span><span hidden id="oek2-act">show each machine in Reports, Machine OEE</span>
       <div class="mexa-kpi-track mexa-factor-a" aria-hidden="true" [style.--v.%]="data.kpis.availability_pct || 0"><i></i></div>
       <p class="mexa-kpi-sub" *ngIf="data.kpis.vs_yesterday?.availability != null">
         <span class="mexa-delta" [class.mexa-delta-up]="data.kpis.vs_yesterday.availability >= 0" [class.mexa-delta-down]="data.kpis.vs_yesterday.availability < 0">{{ change(data.kpis.vs_yesterday.availability) }}</span> vs Yesterday
       </p>
     </div>
 
-    <div class="mexa-kpi sky">
+    <div class="mexa-kpi sky" [class.mexa-kpi-drill]="canOpenMachineOee">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>Performance <app-metric-help topic="performance"></app-metric-help></span>
         <span class="mexa-kpi-icon sky" aria-hidden="true">
           <mat-icon>speed</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ pct(data.kpis.performance_pct) }}</p>
+      <p class="mexa-kpi-value"><button *ngIf="canOpenMachineOee; else oeeTilePlain2" type="button" class="mexa-kpi-open" (click)="openMachineOee('performance_pct')" aria-labelledby="oek3-name oek3-value oek3-act"><span id="oek3-value">{{ pct(data.kpis.performance_pct) }}</span></button><ng-template #oeeTilePlain2>{{ pct(data.kpis.performance_pct) }}</ng-template></p><span hidden id="oek3-name">Average performance:</span><span hidden id="oek3-act">show each machine in Reports, Machine OEE</span>
       <div class="mexa-kpi-track mexa-factor-p" aria-hidden="true" [style.--v.%]="data.kpis.performance_pct || 0"><i></i></div>
       <p class="mexa-kpi-sub" *ngIf="data.kpis.vs_yesterday?.performance != null">
         <span class="mexa-delta" [class.mexa-delta-up]="data.kpis.vs_yesterday.performance >= 0" [class.mexa-delta-down]="data.kpis.vs_yesterday.performance < 0">{{ change(data.kpis.vs_yesterday.performance) }}</span> vs Yesterday
       </p>
     </div>
 
-    <div class="mexa-kpi purple">
+    <div class="mexa-kpi purple" [class.mexa-kpi-drill]="canOpenMachineOee">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>Quality <app-metric-help topic="quality"></app-metric-help></span>
         <span class="mexa-kpi-icon purple" aria-hidden="true">
           <mat-icon>water_drop</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ pct(data.kpis.quality_pct) }}</p>
+      <p class="mexa-kpi-value"><button *ngIf="canOpenMachineOee; else oeeTilePlain3" type="button" class="mexa-kpi-open" (click)="openMachineOee('quality_pct')" aria-labelledby="oek4-name oek4-value oek4-act"><span id="oek4-value">{{ pct(data.kpis.quality_pct) }}</span></button><ng-template #oeeTilePlain3>{{ pct(data.kpis.quality_pct) }}</ng-template></p><span hidden id="oek4-name">Average quality:</span><span hidden id="oek4-act">show each machine in Reports, Machine OEE</span>
       <div class="mexa-kpi-track mexa-factor-q" aria-hidden="true" [style.--v.%]="data.kpis.quality_pct || 0"><i></i></div>
       <p class="mexa-kpi-sub" *ngIf="data.kpis.vs_yesterday?.quality != null">
         <span class="mexa-delta" [class.mexa-delta-up]="data.kpis.vs_yesterday.quality >= 0" [class.mexa-delta-down]="data.kpis.vs_yesterday.quality < 0">{{ change(data.kpis.vs_yesterday.quality) }}</span> vs Yesterday
       </p>
     </div>
 
-    <div class="mexa-kpi blue">
+    <div class="mexa-kpi blue" [class.mexa-kpi-drill]="canOpenMachineOee">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total<br>Production <app-metric-help topic="produced"></app-metric-help></span>
         <span class="mexa-kpi-icon blue " aria-hidden="true">
           <mat-icon>inventory_2</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.kpis.produced | number }}<small>pcs</small></p>
+      <p class="mexa-kpi-value"><button *ngIf="canOpenMachineOee; else oeeTilePlain4" type="button" class="mexa-kpi-open" (click)="openMachineOee('produced')" aria-labelledby="oek5-name oek5-value oek5-act"><span id="oek5-value">{{ data.kpis.produced | number }}<small>pcs</small></span></button><ng-template #oeeTilePlain4>{{ data.kpis.produced | number }}<small>pcs</small></ng-template></p><span hidden id="oek5-name">Total production:</span><span hidden id="oek5-act">show each machine in Reports, Machine OEE</span>
       <p class="mexa-kpi-sub">{{ data.kpis.good | number }} good · {{ data.kpis.rejected | number }} rejected</p>
     </div>
 
-    <div class="mexa-kpi yellow">
+    <div class="mexa-kpi yellow" [class.mexa-kpi-drill]="canOpenMachineOee">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total<br>Downtime <app-metric-help topic="idle_time"></app-metric-help></span>
         <span class="mexa-kpi-icon yellow" aria-hidden="true">
@@ -181,7 +183,7 @@
       <!-- measured: time the machines were on but not running. Downtime
            reasons are rarely entered, so the event total read 0. Hours and
            minutes: "1594:14:50" across a fleet-week could not be read. -->
-      <p class="mexa-kpi-value" [title]="hms(data.kpis.idle_seconds) + ' (HH:MM:SS)'">{{ longHours(data.kpis.idle_seconds) }}</p>
+      <p class="mexa-kpi-value" [title]="hms(data.kpis.idle_seconds) + ' (HH:MM:SS)'"><button *ngIf="canOpenMachineOee; else oeeTilePlain5" type="button" class="mexa-kpi-open" (click)="openMachineOee('idle_seconds')" aria-labelledby="oek6-name oek6-value oek6-act"><span id="oek6-value">{{ longHours(data.kpis.idle_seconds) }}</span></button><ng-template #oeeTilePlain5>{{ longHours(data.kpis.idle_seconds) }}</ng-template></p><span hidden id="oek6-name">Total downtime:</span><span hidden id="oek6-act">show each machine in Reports, Machine OEE</span>
       <p class="mexa-kpi-sub mexa-kpi-cost" *ngIf="idleCostLine" [title]="costHint">{{ idleCostLine }}</p>
     </div>
   </div>

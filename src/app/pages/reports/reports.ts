@@ -121,7 +121,6 @@ export class Reports implements OnInit, OnDestroy {
     if (this.isBuilt) this.downloadFullExcel();
     else if (this.activeTab === 'machine-oee') this.machineOee?.export('xlsx');
   }
-  toolbarPdf(): void { this.machineOee?.export('pdf'); }
 
   /* ── tabs ── */
   /* Every report lives here — the OEE Reports page and the OEE Dashboard's
