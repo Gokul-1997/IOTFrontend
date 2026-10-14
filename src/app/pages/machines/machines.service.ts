@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { MasterDataService } from '../../core/services/master-data.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
@@ -8,14 +9,14 @@ export class MachinesService {
   private plantsApi = `${environment.apiUrl}/plants`;
   private linesApi = `${environment.apiUrl}/lines`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private master: MasterDataService) {}
 
   getMachines(params: any) {
     return this.http.get<any>(this.api, { params });
   }
 
   getAllForDropdown() {
-    return this.http.get<any>(`${environment.apiUrl}/master/machines`);
+    return this.master.get('machines');
   }
 
   create(data: any) {
@@ -35,7 +36,7 @@ export class MachinesService {
   }
 
   getPlants() {
-    return this.http.get<any>(this.plantsApi);
+    return this.master.get('plants');
   }
     uploadToS3(file: File) {
     const formData = new FormData();
@@ -45,6 +46,6 @@ export class MachinesService {
   }
 
   getLines() {
-  return this.http.get<any>(this.linesApi);
+  return this.master.get('lines');
 }
 }

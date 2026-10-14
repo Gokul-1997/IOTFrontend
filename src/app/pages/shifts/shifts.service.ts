@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { MasterDataService } from '../../core/services/master-data.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
@@ -6,10 +7,10 @@ import { environment } from '../../../environments/environment';
 export class ShiftsService {
   private api = environment.apiUrl + '/shifts';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private master: MasterDataService) { }
 
   getShifts() {
-    return this.http.get<any>(`${this.api}`);
+    return this.master.get('shifts');
   }
   create(data: any) {
     return this.http.post(this.api, data);

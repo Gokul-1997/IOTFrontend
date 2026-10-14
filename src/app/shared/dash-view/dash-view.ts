@@ -169,3 +169,43 @@ export function revealWhenShown(sectionId: string, headingId: string): void {
   };
   requestAnimationFrame(look);
 }
+
+/**
+ * A KPI tile opens the records behind its number — the Alarm Report's flow,
+ * on every tabbed dashboard. The details tab opens with its table narrowed to
+ * what the tile counts (the server narrows the table alone, `show=`, so the
+ * tiles and charts keep the whole picture and the table's total is the
+ * tile's number), and the table is brought into view. A tile that is not a
+ * subset — a total, a rate, an average — opens the table as it is. The same
+ * tile again shows everything.
+ *
+ * The page: `openTile(kind)` = `drill.pick(kind)`, page 1, open the details
+ * tab (or load), and `drill.revealIfAsked()` when nothing is loading; send
+ * `drill.kind` as `show` with the table and keep it in the table's partKeys;
+ * call `drill.revealIfAsked()` when the table part lands.
+ */
+export class TileDrill<K extends string> {
+  kind: K | '' = '';
+  private reveal = false;
+
+  constructor(private sectionId: string, private headingId: string) {}
+
+  /** Narrow to `kind` ('' = everything); the same tile again, everything. */
+  pick(kind: K | ''): void {
+    this.kind = kind && kind === this.kind ? '' : kind;
+    this.reveal = true;
+  }
+
+  /** Back to everything, staying where the reader is. */
+  clear(): void {
+    this.kind = '';
+    this.reveal = false;
+  }
+
+  /** After a tile: bring the table into view and its heading into focus, once. */
+  revealIfAsked(): void {
+    if (!this.reveal) return;
+    this.reveal = false;
+    revealWhenShown(this.sectionId, this.headingId);
+  }
+}

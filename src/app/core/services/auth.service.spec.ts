@@ -583,6 +583,42 @@ describe('AuthService.refreshToken — grants', () => {
     expect(localStorage.getItem('token')).not.toBe('fake-token');
   });
 
+  test('a revoked admin role updates authorization and clears the previous UI session', () => {
+    seedUser({ roles: ['COMPANY_ADMIN'], plant_id: null, is_snt_super: false });
+    const startOver = vi.spyOn(service, 'startOver').mockImplementation(() => {});
+    const grantsChanged = vi.fn();
+    service.grantsChanged$.subscribe(grantsChanged);
+    const version = service.sessionVersion;
+    refresh({ roles: ['VIEWER'], permissions: ['page:machines:view'], user_type: 'USER', is_snt_super: false });
+    expect(service.isCompanyAdmin()).toBe(false);
+    expect(service.hasAction('job', 'delete')).toBe(false);
+    expect(service.getUser().user_type).toBe('USER');
+    expect(service.sessionVersion).toBe(version + 1);
+    expect(grantsChanged).toHaveBeenCalledOnce();
+    expect(startOver).toHaveBeenCalledOnce();
+  });
+
+  test('a same-user plant or company change persists null scope and starts over', () => {
+    seedUser({ plant_id: 9, company_id: 4 });
+    const startOver = vi.spyOn(service, 'startOver').mockImplementation(() => {});
+    const sessions: string[] = [];
+    service.sessionChanged$.subscribe(event => sessions.push(event));
+    refresh({ company_id: 6, plant_id: null, roles: ['MANAGER'], auth_revision: 8 });
+    expect(service.getUser()).toMatchObject({ company_id: 6, plant_id: null, auth_revision: 8 });
+    expect(sessions).toEqual(['signed-in']);
+    expect(startOver).toHaveBeenCalledOnce();
+  });
+
+  test('reordered roles and a new revision alone do not reset the UI', () => {
+    seedUser({ roles: ['MANAGER', 'VIEWER'], plant_id: 9 });
+    const startOver = vi.spyOn(service, 'startOver').mockImplementation(() => {});
+    const changed = vi.fn();
+    service.grantsChanged$.subscribe(changed);
+    refresh({ roles: ['VIEWER', 'MANAGER'], auth_revision: 2 });
+    expect(changed).not.toHaveBeenCalled();
+    expect(startOver).not.toHaveBeenCalled();
+  });
+
   describe('grantsChanged$ — what the header listens to', () => {
     test('fires when the grants differ', () => {
       seedUser({ company_permissions: ['page:a:view', 'page:b:view'] });

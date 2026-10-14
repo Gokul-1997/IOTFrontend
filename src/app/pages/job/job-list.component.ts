@@ -1,8 +1,10 @@
-import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 
 import { MatTableDataSource } from '@angular/material/table';
-import { MatPaginator } from '@angular/material/paginator';
+import { MatPaginator, PageEvent } from '@angular/material/paginator';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
@@ -37,6 +39,15 @@ export class JobListComponent implements OnInit {
      error told the floor every machine was free. */
   activeState:  'loading' | 'ready' | 'error' = 'loading';
   historyState: 'loading' | 'ready' | 'error' = 'loading';
+  historyPage = 1;
+  historyLimit = 10;
+  historyTotal = 0;
+  historyLoaded = false;
+  private historyDirty = true;
+  private historyFetchedAt = 0;
+  private historyRequest?: Subscription;
+  private activeRequest?: Subscription;
+  private destroyRef = inject(DestroyRef);
 
   showModal     = false;
   tab: 'active' | 'history' = 'active';
@@ -63,10 +74,6 @@ export class JobListComponent implements OnInit {
     if (p) { this.activeSource.paginator = p; this.cdr.markForCheck(); }
   }
 
-  @ViewChild('historyPaginator') set historyPaginator(p: MatPaginator) {
-    if (p) { this.historySource.paginator = p; this.cdr.markForCheck(); }
-  }
-
   constructor(
     private service: JobService,
     public auth: AuthService,
@@ -75,7 +82,6 @@ export class JobListComponent implements OnInit {
 
   ngOnInit() {
     this.loadActive();
-    this.loadHistory();
   }
 
 profileTab: 'account' | 'password' | 'security' = 'account';
@@ -86,7 +92,10 @@ setProfileTab(tab: 'account' | 'password' | 'security'): void {
 
   /** Switch which list is on screen. */
   setTab(tab: 'active' | 'history') {
+    if (this.tab === tab) return;
     this.tab = tab;
+    if (tab === 'history' && (this.historyDirty || Date.now() - this.historyFetchedAt > 60_000)) this.loadHistory();
+    if (tab === 'active') this.historyRequest?.unsubscribe();
     this.cdr.markForCheck();
   }
   
@@ -97,27 +106,39 @@ setProfileTab(tab: 'account' | 'password' | 'security'): void {
    * until the user happened to click something else.
    */
   loadActive() {
+    this.activeRequest?.unsubscribe();
     this.activeState = 'loading'; this.cdr.markForCheck();
-    this.service.getJobs().subscribe({
+    this.activeRequest = this.service.getJobs().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res: any) => { this.activeSource.data = res.data || []; this.activeState = 'ready'; this.cdr.markForCheck(); },
       error: () => { this.activeSource.data = []; this.activeState = 'error'; this.cdr.markForCheck(); }
     });
   }
 
   loadHistory() {
+    if (this.tab !== 'history') return;
+    this.historyRequest?.unsubscribe();
+    this.historyDirty = true;
     this.historyState = 'loading'; this.cdr.markForCheck();
-    this.service.getJobHistory().subscribe({
-      next: (res: any) => { this.historySource.data = res.data || []; this.historyState = 'ready'; this.cdr.markForCheck(); },
+    this.historyRequest = this.service.getJobHistory(this.historyPage, this.historyLimit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (res: any) => {
+        this.historySource.data = res.data || []; this.historyTotal = res.total ?? this.historySource.data.length;
+        this.historyPage = res.page ?? this.historyPage;
+        this.historyLoaded = true; this.historyDirty = false; this.historyFetchedAt = Date.now();
+        this.historyState = 'ready'; this.cdr.markForCheck();
+      },
       error: () => { this.historySource.data = []; this.historyState = 'error'; this.cdr.markForCheck(); }
     });
   }
 
+  changeHistoryPage(event: PageEvent) {
+    this.historyPage = event.pageIndex + 1; this.historyLimit = event.pageSize; this.loadHistory();
+  }
+
   openCreate() { this.showModal = true; }
 
-  closeModal() {
+  closeModal(created = false) {
     this.showModal = false;
-    this.loadActive();
-    this.loadHistory();
+    if (created) { this.loadActive(); this.historyDirty = true; }
   }
 
   // Show confirmation dialog
@@ -133,17 +154,16 @@ setProfileTab(tab: 'account' | 'password' | 'security'): void {
   }
 
   confirmStop() {
-    if (!this.confirmRow) return;
+    if (!this.confirmRow || this.stopping) return;
     this.stopping  = true;
     this.stopError = '';
-
-    this.service.stopJob(this.confirmRow.machine_id).subscribe({
+    this.service.stopJob(this.confirmRow.machine_id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.stopping   = false;
         this.confirmRow = null;
         this.cdr.markForCheck();
         this.loadActive();
-        this.loadHistory();
+        this.historyDirty = true;
       },
       error: (err: any) => {
         this.stopping  = false;

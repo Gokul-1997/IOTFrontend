@@ -79,60 +79,64 @@
  </div>
 </div>
 
-  <!-- ══════════ KPI TILES ══════════ -->
+  <!-- ══════════ KPI TILES ══════════
+       Each tile opens the records behind its number: the PM tickets raised
+       in this period, narrowed as the tile counts them, in PM Ticket
+       Details; Total Critical Alarms in the Alarm Report. Same tile again
+       shows the whole backlog. -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi red">
+    <div class="mexa-kpi red" [class.mexa-kpi-drill]="canSeeAlarms">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Critical Alarms</span>
         <span class="mexa-kpi-icon red" aria-hidden="true">
           <mat-icon>notification_important</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.kpis.critical_alarms }}</p>
+      <p class="mexa-kpi-value"><button *ngIf="canSeeAlarms; else criticalPlain" type="button" class="mexa-kpi-open" (click)="openCriticalAlarms()" aria-labelledby="pvk1-name pvk1-value pvk1-act"><span id="pvk1-value">{{ data.kpis.critical_alarms }}</span></button><ng-template #criticalPlain>{{ data.kpis.critical_alarms }}</ng-template></p><span hidden id="pvk1-name">Total critical alarms:</span><span hidden id="pvk1-act">show them in the Alarm Report</span>
       <p class="mexa-kpi-sub">{{ data.kpis.critical_alarms_open }} still open</p>
     </div>
 
-    <div class="mexa-kpi sky">
+    <div class="mexa-kpi sky mexa-kpi-drill" [class.is-on]="drill.kind === 'open'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Open PM Tickets</span>
         <span class="mexa-kpi-icon sky"  aria-hidden="true">
           <mat-icon>notifications_active</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.kpis.pm_open }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('open')" [attr.aria-pressed]="drill.kind === 'open'" aria-labelledby="pvk2-name pvk2-value pvk2-act"><span id="pvk2-value">{{ data.kpis.pm_open }}</span></button></p><span hidden id="pvk2-name">Open PM tickets:</span><span hidden id="pvk2-act">show these tickets</span>
       <p class="mexa-kpi-sub">of {{ data.kpis.pm_generated }} raised</p>
     </div>
 
-    <div class="mexa-kpi purple">
+    <div class="mexa-kpi purple mexa-kpi-drill" [class.is-on]="drill.kind === 'completed'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Completed PM Tickets</span>
         <span class="mexa-kpi-icon purple"  aria-hidden="true">
           <mat-icon>task_alt</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.kpis.pm_completed }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('completed')" [attr.aria-pressed]="drill.kind === 'completed'" aria-labelledby="pvk3-name pvk3-value pvk3-act"><span id="pvk3-value">{{ data.kpis.pm_completed }}</span></button></p><span hidden id="pvk3-name">Completed PM tickets:</span><span hidden id="pvk3-act">show these tickets</span>
       <p class="mexa-kpi-sub">{{ data.kpis.pm_overdue }} overdue</p>
     </div>
 
-    <div class="mexa-kpi blue">
+    <div class="mexa-kpi blue mexa-kpi-drill" [class.is-on]="drill.kind === 'raised'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Compliance</span>
         <span class="mexa-kpi-icon blue"  aria-hidden="true">
           <mat-icon>fact_check</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ compliance }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('raised')" [attr.aria-pressed]="drill.kind === 'raised'" aria-labelledby="pvk4-name pvk4-value pvk4-act"><span id="pvk4-value">{{ compliance }}</span></button></p><span hidden id="pvk4-name">Compliance:</span><span hidden id="pvk4-act">show the tickets raised in this period</span>
       <p class="mexa-kpi-sub">Completed over raised</p>
     </div>
 
-    <div class="mexa-kpi navy">
+    <div class="mexa-kpi navy mexa-kpi-drill" [class.is-on]="drill.kind === 'resolved'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Avg. Resolution Time</span>
         <span class="mexa-kpi-icon navy" aria-hidden="true">
           <mat-icon>hourglass_bottom</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ hours(data.kpis.avg_resolution_hours) }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('resolved')" [attr.aria-pressed]="drill.kind === 'resolved'" aria-labelledby="pvk5-name pvk5-value pvk5-act"><span id="pvk5-value">{{ hours(data.kpis.avg_resolution_hours) }}</span></button></p><span hidden id="pvk5-name">Average resolution time:</span><span hidden id="pvk5-act">show the resolved tickets</span>
       <p class="mexa-kpi-sub">over {{ data.kpis.resolved_count }} resolved</p>
     </div>
   </div>
@@ -372,9 +376,9 @@
   </section>
   <ng-container *ngIf="views.has('table')">
   <!-- ══════════ PM TICKETS ══════════ -->
-  <section class="mexa-card">
+  <section class="mexa-card mexa-scroll-target" id="pvTickets" aria-labelledby="pvTicketsTitle">
     <div class="mexa-tablebar mb-3">
-      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Preventive maintenance tickets (raised by alarms)</h2>
+      <h2 id="pvTicketsTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left" style="margin:0">Preventive maintenance tickets (raised by alarms)</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="pvSearch">Search tickets</label>
         <span class="mexa-searchbox">
@@ -389,6 +393,12 @@
         <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()"><span class="material-icons" aria-hidden="true">restart_alt</span>Reset filters</button>
       </span>
     </div>
+
+    <!-- what a tile narrowed the list to, and the way back to the backlog -->
+    <p *ngIf="drill.kind" class="mexa-drill" role="status">
+      <span>Showing <strong>{{ drillLabels[drill.kind] }}</strong>, raised {{ fromDate | date:'d MMM' }} – {{ toDate | date:'d MMM y' }} · {{ data.tickets.total }} {{ data.tickets.total === 1 ? 'ticket' : 'tickets' }}</span>
+      <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="clearTile()">Show all</button>
+    </p>
 
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table">

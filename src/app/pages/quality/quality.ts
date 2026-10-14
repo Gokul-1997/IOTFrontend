@@ -8,7 +8,7 @@ import { ReportDateDirective, plantToday } from '../../shared/report-date.direct
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { StateComponent } from '../../shared/state/state.component';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin, catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-quality',
@@ -19,7 +19,12 @@ import { Subscription } from 'rxjs';
 })
 export class Quality implements OnInit, OnDestroy {
   private dashSub?: Subscription;
-  ngOnDestroy(): void { this.dashSub?.unsubscribe(); }
+  private initSub?: Subscription;
+  private machineSub?: Subscription;
+  private saveSub?: Subscription;
+  savingQuality = false;
+  qualitySaveError = '';
+  ngOnDestroy(): void { [this.dashSub, this.initSub, this.machineSub, this.saveSub].forEach(s => s?.unsubscribe()); }
 
 
   @ViewChild("chart") chart!: ChartComponent;
@@ -85,9 +90,17 @@ export class Quality implements OnInit, OnDestroy {
      empty; now lines fall back to none (All lines still lists every machine)
      and a failed list simply shows as empty. */
   loadInitialData() {
-    this.service.getLines().subscribe({
-      next: res => { this.lines = res?.data || []; this.loadMachinesAndContinue(); this.cdr.detectChanges(); },
-      error: () => { this.lines = []; this.loadMachinesAndContinue(); this.cdr.detectChanges(); }
+    this.initSub?.unsubscribe();
+    this.initSub = forkJoin({
+      lines: this.service.getLines().pipe(catchError(() => of({ data: [] }))),
+      machines: this.service.getAllMachines().pipe(catchError(() => of({ data: [] }))),
+      shifts: this.service.getShifts().pipe(catchError(() => of({ data: [] })))
+    }).subscribe(({ lines, machines, shifts }) => {
+      this.lines = lines.data || []; this.machines = machines.data || []; this.shifts = shifts.data || [];
+      this.machineGroups = this.groupMachines();
+      this.selectedMachine = this.machines[0]?.id;
+      this.selectedShift = this.shifts[0]?.id;
+      this.loadDashboard(); this.cdr.detectChanges();
     });
   }
 
@@ -118,40 +131,6 @@ export class Quality implements OnInit, OnDestroy {
     const known = new Set(this.lines.map(l => l.id));
     const rest = this.machines.filter(m => m.line_id == null || !known.has(m.line_id));
     return rest.length ? [...named, { label: 'No line', machines: rest }] : named;
-  }
-
-  loadMachinesAndContinue() {
-    this.machines$().subscribe({
-      next: res => {
-        this.machines = res?.data || [];
-        this.machineGroups = this.groupMachines();
-
-        if (this.machines.length > 0) {
-          this.selectedMachine = this.machines[0].id;
-
-          this.loadShiftsAndContinue();
-        }
-        this.cdr.detectChanges();
-      },
-      error: () => { this.machines = []; this.machineGroups = []; this.cdr.detectChanges(); }
-    });
-  }
-
-  loadShiftsAndContinue() {
-    this.service.getShifts().subscribe({
-      next: res => {
-        this.shifts = res?.data || [];
-
-        if (this.shifts.length > 0) {
-          this.selectedShift = this.shifts[0].id;
-
-          // Finally call dashboard
-          this.loadDashboard();
-        }
-        this.cdr.detectChanges();
-      },
-      error: () => { this.shifts = []; this.cdr.detectChanges(); }
-    });
   }
 
   ////////////////////////////////////////////////////
@@ -228,15 +207,20 @@ export class Quality implements OnInit, OnDestroy {
   }
 
   private saveQuality() {
-    this.service.saveQuality({
-      machine_id: this.selectedMachine,
-      shift_id: this.selectedShift,
-      date: this.selectedDate,
-      reject_qty: this.rejectedValue,
-      rework_qty: this.reworkValue
-    }).subscribe(res => {
-      if (res?.success) {
-        this.loadDashboard();
+    if (this.savingQuality || !this.auth.hasAction('quality', 'edit')) return;
+    const machine = this.selectedMachine, shift = this.selectedShift, date = this.selectedDate;
+    this.savingQuality = true; this.qualitySaveError = '';
+    this.saveSub = this.service.saveQuality({ machine_id: machine, shift_id: shift, date,
+      reject_qty: this.rejectedValue, rework_qty: this.reworkValue }).subscribe({
+      next: res => {
+        this.savingQuality = false;
+        if (res?.success && machine === this.selectedMachine && shift === this.selectedShift && date === this.selectedDate) this.loadDashboard();
+        this.cdr.detectChanges();
+      },
+      error: error => {
+        this.savingQuality = false;
+        this.qualitySaveError = error.error?.message || 'Could not save quality counts. Try again.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -254,10 +238,10 @@ export class Quality implements OnInit, OnDestroy {
     );
 
     this.hourPerformOptions.series = [
-      { name: "OEE", data: hourly.map(h => Number(h.oee)) },
-      { name: "Availability", data: hourly.map(h => Number(h.availability)) },
-      { name: "Performance", data: hourly.map(h => Number(h.performance)) },
-      { name: "Quality", data: hourly.map(h => Number(h.quality)) }
+      { name: "OEE", data: hourly.map(h => this.chartNumber(h.oee)) },
+      { name: "Availability", data: hourly.map(h => this.chartNumber(h.availability)) },
+      { name: "Performance", data: hourly.map(h => this.chartNumber(h.performance)) },
+      { name: "Quality", data: hourly.map(h => this.chartNumber(h.quality)) }
     ];
 
     this.hourPerformOptions.xaxis = { categories };
@@ -267,18 +251,19 @@ export class Quality implements OnInit, OnDestroy {
   // WHEN LINE CHANGED MANUALLY
   ////////////////////////////////////////////////////
 
+  percent(value: unknown): string { const number = this.chartNumber(value); return number == null ? '—' : `${number}%`; }
+  private chartNumber(value: unknown): number | null { return value == null || !Number.isFinite(Number(value)) ? null : Number(value); }
   onLineChange() {
-    this.machines$().subscribe(res => {
-      this.machines = res.data || [];
-      this.machineGroups = this.groupMachines();
-      this.selectedMachine = this.machines[0]?.id;
-
-      if (this.selectedMachine) {
-        this.loadDashboard();
-      } else {
-        this.dashboardData = null;
-      }
-      this.cdr.detectChanges();
+    this.machineSub?.unsubscribe(); this.dashSub?.unsubscribe(); this.initSub?.unsubscribe();
+    this.dashboardData = null; this.updateChart([]); this.selectedMachine = 0;
+    this.machineSub = this.machines$().subscribe({
+      next: res => {
+        this.machines = res.data || []; this.machineGroups = this.groupMachines();
+        this.selectedMachine = this.machines[0]?.id;
+        if (this.selectedMachine) this.loadDashboard();
+        this.cdr.detectChanges();
+      },
+      error: () => { this.machines = []; this.machineGroups = []; this.loadState = 'error'; this.cdr.detectChanges(); }
     });
   }
 }

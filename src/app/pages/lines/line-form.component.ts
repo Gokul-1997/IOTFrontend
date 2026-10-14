@@ -1,4 +1,5 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { DialogFormBase } from '../../shared/dialog-form.base';
 import { LinesService } from './lines.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   standalone: true,
@@ -21,6 +23,11 @@ export class LineFormComponent extends DialogFormBase implements OnInit {
 
   form!: FormGroup;
   saving = false;
+  plants: any[] = [];
+  loadingPlants = true;
+  plantsError = '';
+  private readonly destroyRef = inject(DestroyRef);
+  readonly boundPlantId = inject(AuthService).getUser()?.plant_id ?? null;
 
   constructor(
     private fb: FormBuilder,
@@ -28,26 +35,42 @@ export class LineFormComponent extends DialogFormBase implements OnInit {
     private toast: ToastService
   ) { super(); }
 
-  dismiss() { this.close.emit(); }
+  dismiss() { if (!this.saving) this.close.emit(); }
 
   ngOnInit() {
     this.form = this.fb.group({
       name: ['', Validators.required],
+      plant_id: [this.boundPlantId, Validators.required],
       is_active: [true]
     });
 
     if (this.data) {
       this.form.patchValue({
         name: this.data.name || '',
+        plant_id: this.boundPlantId ?? (this.data.plant_id != null ? Number(this.data.plant_id) : null),
         is_active: this.data.is_active !== false
       });
     }
+    this.loadPlants();
+  }
+
+  loadPlants() {
+    this.loadingPlants = true; this.plantsError = '';
+    this.service.getPlants().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: res => {
+        this.plants = res.data || []; this.loadingPlants = false;
+        if (!this.form.value.plant_id && this.plants.length === 1) this.form.patchValue({ plant_id: this.plants[0].id });
+        this.touch();
+      },
+      error: () => { this.loadingPlants = false; this.plantsError = 'Could not load plants. Retry before saving.'; this.touch(); }
+    });
   }
 
   submit() {
+    if (this.saving || this.loadingPlants || this.plantsError) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) {
-      this.focusFirstInvalid({ name: '#lineName' });
+      this.focusFirstInvalid({ name: '#lineName', plant_id: '#linePlant' });
       return;
     }
 
@@ -57,7 +80,7 @@ export class LineFormComponent extends DialogFormBase implements OnInit {
     if (this.data) {
       const changed: any = {};
       Object.keys(payload).forEach(key => {
-        if (payload[key] !== this.data[key]) changed[key] = payload[key];
+        if (key === 'plant_id' ? Number(payload[key]) !== Number(this.data[key]) : payload[key] !== this.data[key]) changed[key] = payload[key];
       });
 
       if (Object.keys(changed).length === 0) {
@@ -66,7 +89,7 @@ export class LineFormComponent extends DialogFormBase implements OnInit {
         return;
       }
 
-      this.service.updateLine(this.data.id, changed).subscribe({
+      this.service.updateLine(this.data.id, changed).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => { this.saving = false; this.touch(); this.saved.emit(); },
         error: (err: any) => {
           this.saving = false;
@@ -75,7 +98,7 @@ export class LineFormComponent extends DialogFormBase implements OnInit {
         }
       });
     } else {
-      this.service.createLine(payload).subscribe({
+      this.service.createLine(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => { this.saving = false; this.touch(); this.saved.emit(); },
         error: (err: any) => {
           this.saving = false;

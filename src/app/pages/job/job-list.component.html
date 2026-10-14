@@ -56,7 +56,7 @@
               [class.is-active]="tab === 'history'" [attr.aria-pressed]="tab === 'history'">
         <mat-icon aria-hidden="true">history</mat-icon>
         <span>Job history</span>
-        <span class="ui-segment-count">{{ historySource.data.length }}</span>
+        <span class="ui-segment-count" *ngIf="historyLoaded">{{ historyTotal }}</span>
       </button>
     </div>
 
@@ -177,14 +177,15 @@
     </table>
     </div>
 
-    <mat-paginator #historyPaginator [pageSize]="10" [pageSizeOptions]="[5,10,20]" showFirstLastButtons></mat-paginator>
+    <mat-paginator [length]="historyTotal" [pageIndex]="historyPage - 1" [pageSize]="historyLimit"
+      [pageSizeOptions]="[5,10,20]" [disabled]="historyState === 'loading'" (page)="changeHistoryPage($event)" showFirstLastButtons></mat-paginator>
   </div>
 </div>
 
   <!-- MODAL -->
   <app-job-create-modal
     *ngIf="showModal"
-    (close)="closeModal()">
+    (close)="closeModal($event)">
   </app-job-create-modal>
 
   <!-- STOP CONFIRMATION DIALOG -->

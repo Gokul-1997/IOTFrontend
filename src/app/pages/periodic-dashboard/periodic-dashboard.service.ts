@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { MasterDataService } from '../../core/services/master-data.service';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -11,17 +12,17 @@ export class PeriodicDashboardService {
 
   private api = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private master: MasterDataService) {}
 
   getMeta(): Observable<any> {
-    return this.http.get<any>(`${this.api}/charts/meta`);
+    return this.master.get('charts');
   }
 
   getPeriodic(params: {
     machine_id?: number | null;
     search?: string;
     status?: string;
-    /** 'overdue' | 'today' — a property of the due date, not a status. */
+    /** 'overdue' | 'today' (the due date) | 'completed' (done) — from a tile or an Attention row. */
     due?: string;
     page?: number;
     limit?: number;
@@ -68,12 +69,14 @@ export class PeriodicDashboardService {
    * xlsx or pdf body before it ever reached the browser's save dialog.
    */
   exportAs(format: 'xlsx' | 'csv' | 'pdf', params: {
-    machine_id?: number | null; search?: string; status?: string;
+    machine_id?: number | null; search?: string; status?: string; due?: string;
   }): Observable<Blob> {
     const query: any = {};
     if (params.machine_id) query.machine_id = params.machine_id;
     if (params.search)     query.search     = params.search;
     if (params.status)     query.status     = params.status;
+    // the file matches the list on screen, a tile's or Attention row's narrowing included
+    if (params.due)        query.due        = params.due;
     return this.http.get(`${this.api}/dashboard/periodic/export/${format}`,
       { params: query, responseType: 'blob' });
   }

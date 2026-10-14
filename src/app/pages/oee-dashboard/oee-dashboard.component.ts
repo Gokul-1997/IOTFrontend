@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, effect } from '@angula
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subscription } from 'rxjs';
 import { OeeDashboardService } from './oee-dashboard.service';
@@ -95,7 +95,8 @@ setTab(tab: 'oee' | 'charts'): void {
     private svc: OeeDashboardService,
     private theme: ThemeService,
     private auth: AuthService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {
     /* The trend's OEE line is navy, which disappears on the dark ground;
        rebuild the chart options whenever the theme flips. */
@@ -126,6 +127,16 @@ setTab(tab: 'oee' | 'charts'): void {
 
   submit(): void { this.page = 1; this.load(); }
   reset(): void { this.f = this.blankFilters(); this.page = 1; this.load(); }
+
+  /** The machine-wise table is Reports → Machine OEE, which takes OEE Reports as well. */
+  get canOpenMachineOee(): boolean { return this.auth.hasPermission('page:oee-reports'); }
+
+  /** A tile: the machines behind its figure, for these dates and shift, ranked by it. */
+  openMachineOee(sort: string): void {
+    void this.router.navigate(['/reports'], { queryParams: {
+      tab: 'machine-oee', from: this.f.from, to: this.f.to, shift_id: this.f.shift_id || null, sort
+    } });
+  }
 
   load(): void {
     this.loading = true;

@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { MasterDataService } from '../../core/services/master-data.service';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -11,10 +12,10 @@ export class PreventiveDashboardService {
 
   private api = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private master: MasterDataService) {}
 
   getMeta(): Observable<any> {
-    return this.http.get<any>(`${this.api}/charts/meta`);
+    return this.master.get('charts');
   }
 
   getPreventive(params: {
@@ -22,12 +23,15 @@ export class PreventiveDashboardService {
     to?: string;
     machine_id?: number | null;
     search?: string;
+    /** A ticket tile's narrowing of the list: 'open' | 'completed' | 'resolved' | 'raised'. */
+    show?: string | null;
     page?: number;
     limit?: number;
     /** Which parts: 'kpis', 'charts', 'table', comma-separated (Backend dashboard/parts.js). */
     part?: string;
   }): Observable<any> {
     const query: any = {};
+    if (params.show)       query.show       = params.show;
     if (params.from)       query.from       = params.from;
     if (params.to)         query.to         = params.to;
     if (params.machine_id) query.machine_id = params.machine_id;

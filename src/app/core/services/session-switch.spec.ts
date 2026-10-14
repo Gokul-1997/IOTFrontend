@@ -12,22 +12,8 @@ import { AuthService } from './auth.service';
 import { SocketService } from './socket.service';
 import { NotificationService } from './notification.service';
 
-const sockets: any[] = [];
-vi.mock('socket.io-client', () => ({
-  io: vi.fn((_url: string, opts: any) => {
-    const handlers: Record<string, Function[]> = {};
-    const s: any = {
-      opts, connected: false, auth: opts.auth,
-      on: vi.fn((ev: string, fn: Function) => { (handlers[ev] ||= []).push(fn); }),
-      once: vi.fn((ev: string, fn: Function) => { (handlers[ev] ||= []).push(fn); }),
-      off: vi.fn(), emit: vi.fn(),
-      removeAllListeners: vi.fn(), disconnect: vi.fn(() => { s.connected = false; }),
-      connect: vi.fn(() => { s.connected = true; (handlers['connect'] || []).forEach(f => f()); }),
-    };
-    sockets.push(s);
-    return s;
-  })
-}));
+import { fakeSockets as sockets, fakeSocketIo } from '../../../testing/fake-socket-io';
+vi.mock('socket.io-client', () => import('../../../testing/fake-socket-io'));
 
 const signIn = (id: number, company_id: number) => ({
   accessToken: `token-${id}`, refreshToken: `refresh-${id}`,
@@ -40,6 +26,7 @@ let http: HttpTestingController;
 beforeEach(() => {
   localStorage.clear();
   sockets.length = 0;
+  fakeSocketIo.autoConnect = true;
   TestBed.configureTestingModule({
     imports: [HttpClientTestingModule],
     providers: [{ provide: Router, useValue: { navigate: vi.fn() } }]
@@ -102,11 +89,14 @@ describe('another tab switching user', () => {
   test('starts this tab over; a token refresh by the same person does not', () => {
     login(11, 1);
     const startOver = vi.spyOn(auth, 'startOver').mockImplementation(() => {});
+    const grantsChanged = vi.fn();
+    auth.grantsChanged$.subscribe(grantsChanged);
 
     window.dispatchEvent(new StorageEvent('storage', { key: 'token' }));
-    localStorage.setItem('user', JSON.stringify({ id: 11, permissions: ['page:x'] }));
+    localStorage.setItem('user', JSON.stringify({ ...auth.getUser(), permissions: ['page:x'] }));
     window.dispatchEvent(new StorageEvent('storage', { key: 'user' }));
     expect(startOver).not.toHaveBeenCalled();
+    expect(grantsChanged).toHaveBeenCalledOnce();
 
     localStorage.setItem('user', JSON.stringify({ id: 22 }));
     window.dispatchEvent(new StorageEvent('storage', { key: 'user' }));
@@ -115,6 +105,14 @@ describe('another tab switching user', () => {
     localStorage.clear();                  // the other tab signed out
     window.dispatchEvent(new StorageEvent('storage', { key: null }));
     expect(startOver).toHaveBeenCalledTimes(2);
+  });
+
+  test('the same user moved to another plant in another tab resets the previous data', () => {
+    login(11, 1);
+    const startOver = vi.spyOn(auth, 'startOver').mockImplementation(() => {});
+    localStorage.setItem('user', JSON.stringify({ ...auth.getUser(), plant_id: 6 }));
+    window.dispatchEvent(new StorageEvent('storage', { key: 'user' }));
+    expect(startOver).toHaveBeenCalledOnce();
   });
 });
 

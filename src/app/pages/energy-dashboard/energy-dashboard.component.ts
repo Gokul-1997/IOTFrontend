@@ -18,7 +18,7 @@ import { compactQty, qty } from '../../shared/format-number';
 import { MeterPanelComponent } from '../../shared/meter-panel/meter-panel.component';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
-import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl } from '../../shared/dash-view/dash-view';
+import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 
 /** Charts | Machine Detail | Energy Meter, under the tiles all three share. The meter
@@ -127,7 +127,23 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
 
   onSearchInput(): void { this.search$.next(this.f.search); }
   submit(): void { this.page = 1; this.load(); }
-  reset(): void { this.f = this.blankFilters(); this.page = 1; this.load(); }
+  reset(): void { this.f = this.blankFilters(); this.drill.clear(); this.page = 1; this.load(); }
+
+  /* ── KPI tile → Machine Detail (shared/dash-view TileDrill): every tile adds
+     up or averages the machines' figures, so it opens them all; Overload
+     Alerts opens the overloaded ones. ── */
+  readonly drill = new TileDrill<'overload'>('enDetails', 'enDetailsTitle');
+  readonly drillLabels: Record<string, string> = { overload: 'machines over their overload limit' };
+
+  openTile(kind: '' | 'overload'): void {
+    this.drill.pick(kind);
+    this.page = 1;
+    if (this.views.tab !== 'details') this.setView('details');
+    else this.load();
+    if (!this.views.loading) this.drill.revealIfAsked();
+  }
+
+  clearTile(): void { this.drill.clear(); this.page = 1; this.load(); }
 
   changePage(delta: number): void {
     const next = this.page + delta;
@@ -147,11 +163,11 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
      machine search narrows the totals too); the table on those and its page. */
   partKeys(): Record<DashPart, string> {
     const shared = JSON.stringify(this.f);
-    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.page, this.limit]) };
+    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.drill.kind, this.page, this.limit]) };
   }
 
   fetchParts(parts: DashPart[]) {
-    const paging = parts.includes('table') ? { page: this.page, limit: this.limit } : {};
+    const paging = parts.includes('table') ? { show: this.drill.kind || null, page: this.page, limit: this.limit } : {};
     return this.svc.getEnergy({ ...this.f, ...paging, part: parts.join(',') }).pipe(takeUntil(this.destroy$));
   }
 
@@ -171,6 +187,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
     if (parts.includes('charts')) Object.assign(next, this.normalise(d));
     if (parts.includes('table')) next.machines = { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d.machines ?? {}) };
     this.data = next;
+    if (parts.includes('table')) this.drill.revealIfAsked();
     if (parts.includes('charts')) this.applyCharts(next);
     this.updatedAt = updatedLabel(d.updated_at);
     this.cdr.markForCheck();
@@ -216,7 +233,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
   export(format: 'xlsx' | 'csv' | 'pdf'): void {
     this.exporting = format;
     this.cdr.markForCheck();
-    this.svc.exportAs(format, this.f)
+    this.svc.exportAs(format, { ...this.f, show: this.drill.kind || null })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: blob => {

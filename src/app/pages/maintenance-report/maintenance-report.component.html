@@ -57,42 +57,45 @@
        minutes entered still counts as a ticket. -->
   <p *ngIf="data.kpis.downtime_note" class="mexa-note mexa-note-note">{{ data.kpis.downtime_note }}</p>
 
-  <!-- ══════════ KPI TILES ══════════ -->
+  <!-- ══════════ KPI TILES ══════════
+       Each tile opens the tickets behind its number in Ticket Details
+       (Mean Time to Repair: the repaired ones; Recorded Downtime: those with
+       minutes entered). Same tile again shows all. -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi navy">
+    <div class="mexa-kpi navy mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Tickets</span>
         <span class="mexa-kpi-icon" aria-hidden="true">
           <mat-icon>assignment</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.kpis.tickets }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('')" aria-labelledby="mrk1-name mrk1-value mrk1-act"><span id="mrk1-value">{{ data.kpis.tickets }}</span></button></p><span hidden id="mrk1-name">Total tickets:</span><span hidden id="mrk1-act">show every ticket</span>
       <p class="mexa-kpi-sub">{{ data.kpis.breakdowns }} breakdown(s)</p>
     </div>
 
-    <div class="mexa-kpi red">
+    <div class="mexa-kpi red mexa-kpi-drill" [class.is-on]="drill.kind === 'open'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Still Open</span>
         <span class="mexa-kpi-icon" aria-hidden="true">
           <mat-icon>pending_actions</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.kpis.open }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('open')" [attr.aria-pressed]="drill.kind === 'open'" aria-labelledby="mrk2-name mrk2-value mrk2-act"><span id="mrk2-value">{{ data.kpis.open }}</span></button></p><span hidden id="mrk2-name">Still open:</span><span hidden id="mrk2-act">show these tickets</span>
       <p class="mexa-kpi-sub">{{ data.kpis.critical }} critical</p>
     </div>
 
-    <div class="mexa-kpi green">
+    <div class="mexa-kpi green mexa-kpi-drill" [class.is-on]="drill.kind === 'settled'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Resolved / Closed</span>
         <span class="mexa-kpi-icon" aria-hidden="true">
           <mat-icon>task_alt</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.kpis.settled }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('settled')" [attr.aria-pressed]="drill.kind === 'settled'" aria-labelledby="mrk3-name mrk3-value mrk3-act"><span id="mrk3-value">{{ data.kpis.settled }}</span></button></p><span hidden id="mrk3-name">Resolved or closed:</span><span hidden id="mrk3-act">show these tickets</span>
       <p class="mexa-kpi-sub">of {{ data.kpis.tickets }} raised</p>
     </div>
 
-    <div class="mexa-kpi blue">
+    <div class="mexa-kpi blue mexa-kpi-drill" [class.is-on]="drill.kind === 'repaired'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Mean Time to Repair <app-metric-help topic="mttr"></app-metric-help></span>
         <span class="mexa-kpi-icon" aria-hidden="true">
@@ -100,18 +103,18 @@
         </span>
       </div>
       <!-- a dash, not 0h, when nothing has been resolved -->
-      <p class="mexa-kpi-value">{{ hours(data.kpis.mttr_hours) }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('repaired')" [attr.aria-pressed]="drill.kind === 'repaired'" aria-labelledby="mrk4-name mrk4-value mrk4-act"><span id="mrk4-value">{{ hours(data.kpis.mttr_hours) }}</span></button></p><span hidden id="mrk4-name">Mean time to repair:</span><span hidden id="mrk4-act">show the repaired tickets</span>
       <p class="mexa-kpi-sub">{{ data.kpis.mttr_basis_note }}</p>
     </div>
 
-    <div class="mexa-kpi yellow">
+    <div class="mexa-kpi yellow mexa-kpi-drill" [class.is-on]="drill.kind === 'downtime'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Recorded Downtime <app-metric-help topic="declared_downtime"></app-metric-help></span>
         <span class="mexa-kpi-icon" aria-hidden="true">
           <mat-icon>hourglass_bottom</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ minutes(data.kpis.downtime_minutes) }}</p>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('downtime')" [attr.aria-pressed]="drill.kind === 'downtime'" aria-labelledby="mrk5-name mrk5-value mrk5-act"><span id="mrk5-value">{{ minutes(data.kpis.downtime_minutes) }}</span></button></p><span hidden id="mrk5-name">Recorded downtime:</span><span hidden id="mrk5-act">show the tickets with downtime entered</span>
       <p class="mexa-kpi-sub">entered on tickets</p>
     </div>
   </div>
@@ -211,9 +214,9 @@
   </section>
 
   <!-- ══════════ TICKET DETAIL ══════════ -->
-  <section class="mexa-card mb-4">
+  <section class="mexa-card mb-4 mexa-scroll-target" id="mrTickets" aria-labelledby="mrTicketsTitle">
     <div class="mexa-tablebar">
-      <h2 class="mexa-card-title mexa-card-title-left" style="margin:0">Maintenance Tickets</h2>
+      <h2 id="mrTicketsTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left" style="margin:0">Maintenance Tickets</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="mrSearch">Search tickets</label>
         <span class="mexa-searchbox">
@@ -235,6 +238,12 @@
         <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()"><span class="material-icons" aria-hidden="true">restart_alt</span>Reset filters</button>
       </span>
     </div>
+
+    <!-- what a tile narrowed the list to, and the way back -->
+    <p *ngIf="drill.kind" class="mexa-drill" role="status">
+      <span>Showing <strong>{{ drillLabels[drill.kind] }}</strong> · {{ data.tickets.total }} {{ data.tickets.total === 1 ? 'ticket' : 'tickets' }}</span>
+      <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="clearTile()">Show all</button>
+    </p>
 
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table">

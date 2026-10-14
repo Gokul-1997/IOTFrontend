@@ -96,14 +96,6 @@
         Excel
       </button>
 
-      <!-- PDF — Machine OEE -->
-      <button *ngIf="canExportTab && activeTab === 'machine-oee'" type="button"
-        (click)="toolbarPdf()" aria-label="PDF: Machine OEE"
-        class="ui-btn ui-btn-ghost">
-        <img src="../images/icons/FilePdf.svg" alt="PDF" class="w-5 h-5"/>
-        PDF
-      </button>
-
       <!-- Email the current report, with the columns as selected — built reports -->
       <button *ngIf="isBuilt && auth.hasWidget('reports', 'export')"
         type="button" (click)="sendByEmail()"

@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { MasterDataService } from '../../core/services/master-data.service';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -9,10 +10,10 @@ export class OeeDashboardService {
 
   private api = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private master: MasterDataService) {}
 
   getMeta(): Observable<any> {
-    return this.http.get<any>(`${this.api}/charts/meta`);
+    return this.master.get('charts');
   }
 
   private toQuery(f: any): any {
@@ -28,7 +29,7 @@ export class OeeDashboardService {
     return this.http.get<any>(`${this.api}/dashboard/oee`, { params: this.toQuery(filters) });
   }
 
-  exportAs(format: 'xlsx' | 'csv' | 'pdf', filters: any): Observable<Blob> {
+  exportAs(format: 'xlsx' | 'csv', filters: any): Observable<Blob> {
     const { page, limit, ...rest } = this.toQuery(filters);
     return this.http.get(`${this.api}/dashboard/oee/export/${format}`,
       { params: rest, responseType: 'blob' });

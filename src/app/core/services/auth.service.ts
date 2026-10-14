@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject, finalize, shareReplay, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -6,7 +6,7 @@ import { jwtDecode } from 'jwt-decode';
 import { Router } from '@angular/router';
 
 @Injectable({ providedIn: 'root' })
-export class AuthService {
+export class AuthService implements OnDestroy {
 
   private api = environment.apiUrl + '/auth';
   private refreshTimer: any;
@@ -33,19 +33,31 @@ export class AuthService {
 
   /** Whose session this tab is showing; see the storage listener below. */
   private shownUserId: number | null = this.getUser()?.id ?? null;
+  private shownContext = this.contextKey(this.getUser());
+  private shownGrants = this.grantsKey(this.getUser());
+  private readonly storageListener = (event: StorageEvent) => {
+    if (event.key !== 'user' && event.key !== null) return;
+    const user = this.getUser();
+    if ((user?.id ?? null) !== this.shownUserId || this.contextKey(user) !== this.shownContext) this.startOver();
+    else if (this.grantsKey(user) !== this.shownGrants) {
+      this.shownGrants = this.grantsKey(user);
+      this.grantsChanged$.next();
+    }
+  };
 
   constructor(private http: HttpClient, private router: Router) {
     /* Every tab shares localStorage. When another tab signs out, or signs in
        as someone else, this tab's pages, socket and data belong to the
-       previous person: start this tab over rather than mix the two. A token
-       refresh or a grants update (same person) changes nothing here. */
+       previous person: start this tab over rather than mix the two. The same
+       person's changed roles or company/plant scope also require a fresh UI. */
     if (typeof window !== 'undefined') {
-      window.addEventListener('storage', e => {
-        if (e.key !== 'user' && e.key !== null) return;     // null: localStorage.clear()
-        const now = this.getUser()?.id ?? null;
-        if (now !== this.shownUserId) this.startOver();
-      });
+      window.addEventListener('storage', this.storageListener);
     }
+  }
+
+  ngOnDestroy(): void {
+    clearTimeout(this.refreshTimer);
+    if (typeof window !== 'undefined') window.removeEventListener('storage', this.storageListener);
   }
 
   /** Reload the tab: the one way to be sure nothing of the previous session's
@@ -58,6 +70,8 @@ export class AuthService {
     localStorage.setItem('refreshToken', res.refreshToken);
     localStorage.setItem('user', JSON.stringify(res.user));
     this.shownUserId = res.user?.id ?? null;
+    this.shownContext = this.contextKey(res.user);
+    this.shownGrants = this.grantsKey(res.user);
     this.scheduleRefresh(res.accessToken);
     this.sessionChanged$.next('signed-in');
   }
@@ -89,39 +103,41 @@ export class AuthService {
     return pending;
   }
 
-  /**
-   * Keep the stored grants in step with the server.
-   *
-   * hasPermission/hasAction/hasWidget all read `permissions` and
-   * `company_permissions` out of the user object saved at login, and nothing
-   * ever rewrote them: a page an admin revoked in Manage Access stayed usable
-   * in the UI until the person signed out and back in. The refresh response
-   * now carries both lists, so they are refreshed here every time the token
-   * is — roughly every 14 minutes for anyone with the app open.
-   *
-   * Only fields the server actually sent are applied. An older API that
-   * returns just a token must not blank the lists (an empty company list
-   * reads as "unrestricted").
-   */
-  private mergeGrants(res: any): void {
-    const hasPerms   = Array.isArray(res?.permissions);
-    const hasCompany = Array.isArray(res?.company_permissions);
-    if (!hasPerms && !hasCompany) return;
+  private contextKey(user: any): string {
+    return JSON.stringify([user?.id ?? null, user?.company_id ?? null, user?.plant_id ?? null,
+      [...(Array.isArray(user?.roles) ? user.roles : [])].sort(), user?.user_type ?? null, user?.is_snt_super ?? false]);
+  }
 
+  private grantsKey(user: any): string {
+    const norm = (value: any) => Array.isArray(value) ? [...value].sort() : value;
+    return JSON.stringify([norm(user?.permissions), norm(user?.company_permissions)]);
+  }
+
+  /** Apply only fields supplied by the server; older token-only responses
+   *  must preserve grants. A changed role or tenant scope starts the UI over
+   *  so previously loaded machine data and privileged pages cannot survive. */
+  private mergeGrants(res: any): void {
     const user = this.getUser();
     if (!user || !Object.keys(user).length) return;
-
-    const before = JSON.stringify([user.permissions, user.company_permissions]);
-    if (hasPerms)   user.permissions         = res.permissions;
-    if (hasCompany) user.company_permissions = res.company_permissions;
+    const before = this.grantsKey(user);
+    const contextBefore = this.contextKey(user);
+    for (const field of ['permissions', 'company_permissions', 'roles']) {
+      if (Array.isArray(res?.[field])) user[field] = res[field];
+    }
+    for (const field of ['company_id', 'plant_id', 'user_type', 'is_snt_super', 'auth_revision', 'company_name', 'plan']) {
+      if (Object.prototype.hasOwnProperty.call(res ?? {}, field)) user[field] = res[field];
+    }
     localStorage.setItem('user', JSON.stringify(user));
-
-    // Order-insensitive: the API does not promise a stable row order, and a
-    // reshuffled but identical list is not a change worth rebuilding a menu for.
-    const norm = (v: any) => JSON.stringify(Array.isArray(v) ? [...v].sort() : v);
-    if (norm(user.permissions) + norm(user.company_permissions) !==
-        norm(JSON.parse(before)[0]) + norm(JSON.parse(before)[1])) {
+    const contextChanged = contextBefore !== this.contextKey(user);
+    this.shownContext = this.contextKey(user);
+    this.shownGrants = this.grantsKey(user);
+    if (contextChanged || this.shownGrants !== before) {
       this.grantsChanged$.next();
+    }
+    if (contextChanged) {
+      this.generation++;
+      this.sessionChanged$.next('signed-in');
+      this.startOver();
     }
   }
 
@@ -137,6 +153,8 @@ export class AuthService {
     }
     localStorage.clear();
     this.shownUserId = null;
+    this.shownContext = this.contextKey({});
+    this.shownGrants = this.grantsKey({});
     this.sessionChanged$.next('signed-out');
     if (reason) {
       try { sessionStorage.setItem('signedOutReason', reason); } catch { /* shown only if storage works */ }

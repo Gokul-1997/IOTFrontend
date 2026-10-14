@@ -18,7 +18,7 @@ import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { lostCostLine, LOST_COST_HINT } from '../../shared/lost-cost';
-import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl } from '../../shared/dash-view/dash-view';
+import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 
 /** Charts | Downtime Details (the reason summary and the events), under the tiles both share. */
@@ -139,6 +139,22 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy, DashViewHo
   submit(): void { this.page = 1; this.load(); }
   reset(): void { this.f = this.blankFilters(); this.page = 1; this.load(); }
 
+  /* ── KPI tile → Downtime Details (shared/dash-view TileDrill). Every event
+     in the range is already the list, so nothing is narrowed: the declared
+     downtime tiles open the event list, the measured times the reason
+     summary that sets them against the reasons given. ── */
+  private toEvents  = new TileDrill<never>('dtEvents', 'dtEventsTitle');
+  private toReasons = new TileDrill<never>('dtReasons', 'dtReasonsTitle');
+
+  openEvents(_?: string): void { this.openDetails(this.toEvents); }
+  openReasons(_?: string): void { this.openDetails(this.toReasons); }
+
+  private openDetails(target: TileDrill<never>): void {
+    target.pick('');
+    if (this.views.tab !== 'details') this.setView('details');
+    if (!this.views.loading) target.revealIfAsked();
+  }
+
   /** From the shared pager: jump to a page, or change how many rows a page holds. */
   goTo(p: number): void { this.page = p; this.load(); }
   setLimit(n: number): void { this.limit = n || 10; this.page = 1; this.load(); }
@@ -187,6 +203,7 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy, DashViewHo
     if (parts.includes('charts')) Object.assign(next, this.normalise(d));
     if (parts.includes('table')) next.events = { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d.events ?? {}) };
     this.data = next;
+    if (parts.includes('table')) { this.toEvents.revealIfAsked(); this.toReasons.revealIfAsked(); }
     // the charts part always comes with the tiles it shares the status donut's seconds with, or after them
     if (parts.includes('charts')) this.applyCharts(next);
     this.updatedAt = updatedLabel(d.updated_at);

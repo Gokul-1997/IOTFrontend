@@ -6,7 +6,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 import { MachinesService } from './machines.service';
@@ -92,6 +92,7 @@ export class MachinesComponent implements OnInit, OnDestroy {
   deleting     = false;
   deleteError  = '';
 
+  private loadRequest?: Subscription;
   private searchSubject = new Subject<string>();
   private destroy$      = new Subject<void>();
 
@@ -122,14 +123,15 @@ export class MachinesComponent implements OnInit, OnDestroy {
   }
 
   load() {
+    this.loadRequest?.unsubscribe();
     this.loading = true;
-    this.service.getMachines({
+    this.loadRequest = this.service.getMachines({
       search:  this.search,
       page:    this.page,
       limit:   this.limit,
       sortBy:  this.sortBy,
       sortDir: this.sortDir
-    }).subscribe({
+    }).pipe(takeUntil(this.destroy$)).subscribe({
       next: res => {
         this.rows    = res.data;
         this.total   = res.total;

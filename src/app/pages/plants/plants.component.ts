@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 import { MatTableModule } from '@angular/material/table';
@@ -50,6 +50,7 @@ export class PlantsComponent implements OnInit, OnDestroy {
   deleting     = false;
   deleteError  = '';
 
+  private loadRequest?: Subscription;
   private searchSubject = new Subject<string>();
   private destroy$      = new Subject<void>();
 
@@ -78,9 +79,10 @@ export class PlantsComponent implements OnInit, OnDestroy {
   }
 
   load() {
+    this.loadRequest?.unsubscribe();
     this.loading = true;
-    this.service.getPlants({ page: this.page, limit: this.limit, search: this.search })
-      .subscribe({
+    this.loadRequest = this.service.getPlants({ page: this.page, limit: this.limit, search: this.search })
+      .pipe(takeUntil(this.destroy$)).subscribe({
         next: res => {
           this.rows    = res.data;
           this.total   = res.total;

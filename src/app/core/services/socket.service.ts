@@ -15,6 +15,7 @@ export class SocketService {
   private cancelConnect?: () => void;
   private paused = false;
   private refreshing = false;
+  private authRetryTimer?: ReturnType<typeof setTimeout>;
   private userId: number | null = null;
   private plantId?: number;
   private machineListeners = new Set<(data: any) => void>();
@@ -44,6 +45,7 @@ export class SocketService {
       });
       socket.on('connect', () => {
         if (socket !== this.socket) return;
+        clearTimeout(this.authRetryTimer);
         this.refreshing = false;
         this.sendScope();
         if (this.plantId) socket.emit('joinPlant', this.plantId);
@@ -63,27 +65,17 @@ export class SocketService {
         if (!Number.isFinite(count) || count < 0) return;
         this.zone.run(() => { for (const callback of this.unreadListeners) callback(count); });
       });
-      socket.on('disconnect', () => {
-        if (socket === this.socket) this.disconnected$.next();
+      socket.on('disconnect', reason => {
+        if (socket !== this.socket) return;
+        this.disconnected$.next();
+        // Socket.IO deliberately stops reconnection after a server disconnect.
+        // Authorization changes close the old rooms; refresh before reconnecting.
+        if (reason === 'io server disconnect') this.refreshSocket(socket);
       });
       socket.on('connect_error', err => {
         if (socket !== this.socket) return;
-        if (err.message === 'TOKEN_EXPIRED' && !this.refreshing) {
-          this.refreshing = true;
-          this.auth.refreshToken().subscribe({
-            next: res => {
-              if (socket !== this.socket) return;
-              this.refreshing = false;
-              socket.auth = { token: res.accessToken };
-              socket.connect();
-            },
-            error: err => {
-              if (socket !== this.socket) return;
-              this.refreshing = false;
-              if (err?.status === 401 || err?.status === 403) this.auth.logout();
-              else this.cancelConnect?.();
-            }
-          });
+        if (err.message === 'TOKEN_EXPIRED' || (err as Error & { data?: { code?: string } }).data?.code === 'AUTH_REVISION_CHANGED') {
+          this.refreshSocket(socket);
         } else if (err.message === 'Unauthorized') this.auth.logout();
       });
     }
@@ -108,6 +100,30 @@ export class SocketService {
     const pending = attempt.finally(() => { if (this.connecting === pending) this.connecting = null; });
     this.connecting = pending;
     return pending;
+  }
+
+  private refreshSocket(socket: Socket): void {
+    if (socket !== this.socket || this.refreshing) return;
+    const version = this.auth.sessionVersion;
+    this.refreshing = true;
+    clearTimeout(this.authRetryTimer);
+    this.auth.refreshToken().subscribe({
+      next: res => {
+        if (socket !== this.socket || version !== this.auth.sessionVersion) return;
+        this.refreshing = false;
+        socket.auth = { token: res.accessToken };
+        socket.connect();
+      },
+      error: err => {
+        if (socket !== this.socket || version !== this.auth.sessionVersion) return;
+        this.refreshing = false;
+        if (err?.status === 401 || err?.status === 403) this.auth.logout();
+        else {
+          this.cancelConnect?.();
+          this.authRetryTimer = setTimeout(() => this.refreshSocket(socket), 2000);
+        }
+      }
+    });
   }
 
   joinPlant(plantId: number): void {
@@ -144,6 +160,7 @@ export class SocketService {
   resumeUpdates(): void { this.paused = false; this.sendScope(); }
 
   disconnect(): void {
+    clearTimeout(this.authRetryTimer);
     this.cancelConnect?.();
     this.socket?.removeAllListeners();
     this.socket?.disconnect();

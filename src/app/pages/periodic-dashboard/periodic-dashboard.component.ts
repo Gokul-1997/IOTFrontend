@@ -13,7 +13,7 @@ import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
-import { DashPart, DashTab, DashViewHooks, DashViews, revealWhenShown, viewInUrl } from '../../shared/dash-view/dash-view';
+import { DashPart, DashTab, DashViewHooks, DashViews, revealWhenShown, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 
 /** Charts | Maintenance Details (upcoming, by type, the tickets and the plan), under the tiles both share. */
@@ -56,8 +56,16 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
   selectedMachine: number | null = null;
   search = '';
   statusFilter = '';
-  /** 'overdue' | 'today' | '' — set by the Attention Required panel. */
-  dueFilter = '';
+  /* ── KPI tile / Attention row → the tickets behind it (shared/dash-view TileDrill) ──
+     The narrowing is sent as `due`: overdue and due today are properties of
+     an open ticket's due date; completed is done. */
+  readonly drill = new TileDrill<'today' | 'overdue' | 'completed'>('peTickets', 'peTicketsTitle');
+  readonly drillLabels: Record<string, string> = {
+    today:     'tickets due today',
+    overdue:   'overdue tickets',
+    completed: 'completed tickets'
+  };
+  get dueFilter(): string { return this.drill.kind; }
   page = 1;
   readonly limit = 10;
 
@@ -165,10 +173,22 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
     this.selectedMachine = null;
     this.search = '';
     this.statusFilter = '';
-    this.dueFilter = '';
+    this.drill.clear();
     this.page = 1;
     this.load();
   }
+
+  /** A tile: Maintenance Details, narrowed to the tickets behind its number. */
+  openTile(kind: '' | 'today' | 'overdue' | 'completed'): void {
+    this.drill.pick(kind);
+    this.statusFilter = '';
+    this.page = 1;
+    if (this.views.tab !== 'details') this.setView('details');
+    else this.load();
+    if (!this.views.loading) this.drill.revealIfAsked();
+  }
+
+  clearTile(): void { this.drill.clear(); this.page = 1; this.load(); }
 
   changePage(delta: number): void {
     const next = this.page + delta;
@@ -228,6 +248,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
       next.tickets      = { data: [], total: 0, page: 1, limit: this.limit, totalPages: 1, ...(d.tickets ?? {}) };
     }
     this.data = next;
+    if (parts.includes('table')) this.drill.revealIfAsked();
     if (parts.includes('charts')) this.applyCharts(next);
     this.updatedAt = updatedLabel(d.updated_at);
     this.cdr.markForCheck();
@@ -376,7 +397,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
     this.cdr.markForCheck();
 
     this.svc.exportAs(format, {
-      machine_id: this.selectedMachine, search: this.search, status: this.statusFilter
+      machine_id: this.selectedMachine, search: this.search, status: this.statusFilter, due: this.dueFilter
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -403,17 +424,9 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
   /** Attention Required rows. Clicking the active one clears the filter,
    *  so a user cannot get stuck inside a filter they did not notice. */
   focusDue(kind: 'overdue' | 'today'): void {
-    this.dueFilter = this.dueFilter === kind ? '' : kind;
-    this.statusFilter = '';
-    this.page = 1;
-    // a narrowing opens the tickets, on Maintenance Details; clearing it stays where it is
-    if (this.dueFilter && this.views.tab !== 'details') {
-      this.setView('details');
-      revealWhenShown('peTickets', 'peTicketsTitle');
-    } else {
-      this.load();
-    }
+    this.openTile(kind);
   }
+
 
   /** Technicians carrying at least one overdue ticket. */
   get overloadedTechnicians(): number {

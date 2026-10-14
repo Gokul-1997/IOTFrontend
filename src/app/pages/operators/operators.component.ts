@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 import { MatTableModule } from '@angular/material/table';
@@ -50,6 +50,7 @@ export class OperatorsComponent implements OnInit, OnDestroy {
   deleting          = false;
   deleteError       = '';
 
+  private loadRequest?: Subscription;
   private searchSubject = new Subject<string>();
   private destroy$      = new Subject<void>();
 
@@ -78,12 +79,13 @@ export class OperatorsComponent implements OnInit, OnDestroy {
   }
 
   load() {
+    this.loadRequest?.unsubscribe();
     this.loading = true;
-    this.service.getAll({
+    this.loadRequest = this.service.getAll({
       page:   this.page,
       limit:  this.limit,
       search: this.search
-    }).subscribe({
+    }).pipe(takeUntil(this.destroy$)).subscribe({
       next: (res: any) => {
         this.rows    = res.data || res;
         this.total   = res.meta?.total ?? this.rows.length;

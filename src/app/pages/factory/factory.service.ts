@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { MasterDataService } from '../../core/services/master-data.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
@@ -11,10 +12,10 @@ export class FactoryService {
 
   private api = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private master: MasterDataService) {}
 
   getMeta(): Observable<any> {
-    return this.http.get<any>(`${this.api}/charts/meta`);
+    return this.master.get('charts');
   }
 
   getFactory(params: { date?: string; shift_id?: number | null; machine_id?: number | null }): Observable<any> {

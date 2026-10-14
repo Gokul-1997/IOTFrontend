@@ -2,54 +2,71 @@
   <div class="bg-top-bar">
     <div class="page-title">
       <mat-icon class="title-icon">swap_horiz</mat-icon>
-      <div><h1>Program Transfer</h1><p class="pt-intro">Upload a program. The machine downloads the current file.</p></div>
+      <div><h1>Program Transfer</h1><p class="pt-intro">Upload and send a program. Back up the program running on the machine.</p></div>
     </div>
   </div>
 
   <section class="pt-card pt-machine" aria-label="Selected machine">
     <div class="pt-machine-select">
       <label class="ui-label" for="ptMachine">CNC Machine</label>
-      <select id="ptMachine" [(ngModel)]="selectedMachineId" (ngModelChange)="onMachineChange()" class="ui-input">
+      <select id="ptMachine" [(ngModel)]="selectedMachineId" (ngModelChange)="onMachineChange()" [disabled]="uploading || requestingBackup || savingConnection" class="ui-input">
         <option *ngIf="!machines.length" [ngValue]="null">No machines</option>
         <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
       </select>
     </div>
     <div *ngIf="selectedMachine as m" class="pt-machine-state">
       <span class="pt-device" [attr.data-state]="deviceState(m)">
-        <span class="pt-dot" aria-hidden="true"></span>{{ m.device_id ? 'Device token configured' : 'Device token needed' }}
+        <span class="pt-dot" aria-hidden="true"></span>{{ !m.device_id ? 'Device token needed' : deviceState(m) === 'online' ? 'Device connected' : 'Device offline' }}
       </span>
       <span *ngIf="m.last_seen_at" class="ui-hint">Last connected {{ ago(m.last_seen_at) }}</span>
     </div>
-    <button *ngIf="canPublish" type="button" class="ui-btn ui-btn-primary pt-upload-button" (click)="openUpload()" [disabled]="!selectedMachineId || uploading">
+    <button *ngIf="canPublish" type="button" class="ui-btn ui-btn-primary pt-upload-button" (click)="openUpload()" [disabled]="!operationsAllowed">
       <span class="material-icons" aria-hidden="true">upload_file</span>Upload program
     </button>
   </section>
 
-  <p *ngIf="canUpload && !canTransfer" class="ui-hint">Your role needs transfer permission to publish a program for the machine.</p>
+  <p *ngIf="canUpload && !canTransfer" class="ui-hint">Your role needs transfer permission to upload and send a program to the machine.</p>
 
-  <section class="pt-card pt-current" aria-labelledby="currentTitle" [attr.aria-busy]="loadingCurrent">
-    <div class="pt-heading"><h2 id="currentTitle">Current program</h2><span *ngIf="currentFile && !currentError" class="pt-ready">Ready for machine download</span></div>
-    <p *ngIf="currentError" class="ui-error" role="alert">{{ currentError }} <button type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="loadCurrent()" [disabled]="loadingCurrent">Retry</button></p>
+  <p *ngIf="statusError" class="ui-alert ui-alert-error" role="alert">{{ statusError }} <button type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="loadStatus()" [disabled]="loadingStatus">Retry</button></p>
+  <section *ngIf="selectedMachine as m" class="pt-card pt-current" aria-labelledby="connectionTitle">
+    <div class="pt-heading"><h2 id="connectionTitle">Machine connection</h2><button *ngIf="canManageDevice" type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="openDevice()" [disabled]="busy">{{ m.device_id ? 'Device token' : 'Create device token' }}</button></div>
+    <p class="ui-hint">Save the machine IP address and program folder once. The device uses these settings for transfers and fresh backups.</p>
+    <form (ngSubmit)="saveConnection()" class="pt-connection-form">
+      <fieldset [disabled]="loadingStatus || savingConnection || busy">
+        <div class="ui-field"><label class="ui-label" for="ptIp">Machine IP address</label><input id="ptIp" name="ip" class="ui-input" [(ngModel)]="connection.ip_address" (ngModelChange)="connectionDirty = true" [readonly]="!canManageDevice" placeholder="192.168.1.101" autocomplete="off" maxlength="45" /></div>
+        <div class="ui-field"><label class="ui-label" for="ptPath">Program folder on machine</label><input id="ptPath" name="path" class="ui-input" [(ngModel)]="connection.program_path" (ngModelChange)="connectionDirty = true" [readonly]="!canManageDevice" placeholder="//CNC_MEM/USER/PATH1/" autocomplete="off" maxlength="255" /></div>
+        <button *ngIf="canManageDevice" type="submit" class="ui-btn ui-btn-ghost" [disabled]="!connectionDirty || !connection.ip_address.trim() || !connection.program_path.trim()">{{ savingConnection ? 'Saving…' : 'Save connection' }}</button>
+      </fieldset>
+    </form>
+    <p *ngIf="connectionError" class="ui-error" role="alert">{{ connectionError }}</p>
+    <p *ngIf="!connectionReady && !loadingStatus" class="ui-hint" role="status">{{ connectionDirty ? 'Save these changes before uploading or requesting a backup.' : !m.ip_address || !m.program_path ? 'Save the IP address and program folder before uploading.' : 'Configure the device token before uploading or requesting a backup.' }}</p>
+    <p *ngIf="connectionReady && deviceState(m) === 'offline'" class="ui-hint">The device is offline. A request waits for it to connect; connection and controller errors appear below.</p>
+  </section>
+
+  <section class="pt-card pt-current" aria-labelledby="currentTitle" [attr.aria-busy]="loadingStatus">
+    <div class="pt-heading"><h2 id="currentTitle">Latest uploaded program</h2><span *ngIf="currentFile" class="pt-ready">Saved on server</span></div>
     <ng-container *ngIf="currentFile as f; else noCurrent">
-      <div class="pt-current-file"><span class="material-icons pt-file-icon" aria-hidden="true">description</span><div><strong>{{ f.program_name }}</strong><span class="sub">{{ fileSize(f.size_bytes) }} · Uploaded {{ f.created_at | date:'d MMM y, h:mm a' }}</span></div><button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="download(f)" [attr.aria-label]="'Download current program ' + f.program_name">Download</button></div>
-      <p class="ui-hint">This is the file returned to the machine. Uploading makes it available; the machine must download and save it.</p>
+      <div class="pt-current-file"><span class="material-icons pt-file-icon" aria-hidden="true">description</span><div><strong>{{ f.program_name }}</strong><span class="sub">{{ fileSize(f.size_bytes) }} · Uploaded {{ f.created_at | date:'d MMM y, h:mm a' }}</span></div><button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="download(f)" [attr.aria-label]="'Download reference program ' + f.program_name">Download</button></div>
+      <p class="ui-hint">The reference stays on the server. A transfer is complete after the device confirms the file written to the controller.</p>
     </ng-container>
-    <ng-template #noCurrent><p *ngIf="!currentError" class="pt-empty" role="status">{{ loadingCurrent ? 'Loading current program…' : 'No current program. Upload a file to make it available to this machine.' }}</p></ng-template>
+    <p *ngIf="sendJob?.status === 'FAILED' && sendJob?.error_code === 'FILE_EXISTS'" class="ui-hint">Upload the same file again to review and confirm replacement of the existing controller program.</p>
+    <ng-template #noCurrent><p class="pt-empty" role="status">{{ loadingStatus ? 'Checking the machine…' : statusError ? 'Program status could not be checked.' : 'No program uploaded yet.' }}</p></ng-template>
+    <div *ngIf="sendJob as j" class="pt-operation" [attr.data-status]="j.status" role="status"><strong>{{ jobText(j) }}</strong><span *ngIf="j.message" class="sub">{{ j.message }}</span><code *ngIf="j.error_code">{{ j.error_code }}</code><span *ngIf="(j.status === 'QUEUED' || j.status === 'DELIVERED') && j.expires_at" class="sub">Waiting until {{ j.expires_at | date:'h:mm a' }}</span></div>
   </section>
 
   <section class="pt-card pt-backup" aria-labelledby="backupTitle">
-    <div><h2 id="backupTitle">Machine backup</h2><p class="ui-hint">Download the latest backup uploaded by this machine.</p><p *ngIf="latestBackup as f" class="pt-backup-name">{{ f.program_name }}<span class="sub">{{ f.created_at | date:'d MMM y, h:mm a' }}</span></p><p *ngIf="backupError" class="ui-error" role="alert">{{ backupError }}</p><p *ngIf="!latestBackup && !backupError" class="ui-hint">{{ loadingBackup ? 'Checking for a backup…' : 'No backup has been uploaded by the machine yet.' }}</p></div>
-    <button type="button" class="ui-btn ui-btn-ghost" [disabled]="!latestBackup" (click)="latestBackup && download(latestBackup)" aria-label="Backup"><span class="material-icons" aria-hidden="true">download</span>Backup</button>
+    <div><h2 id="backupTitle">Current running program backup</h2><p class="ui-hint">Each click asks the device to read the program running on the machine and save a fresh copy on this server.</p><p *ngIf="latestBackup as f" class="pt-backup-name">{{ f.program_name }}<span class="sub">Saved {{ f.created_at | date:'d MMM y, h:mm a' }}</span><button type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="download(f)" aria-label="Download saved backup">Download saved backup</button></p><p *ngIf="backupError" class="ui-error" role="alert">{{ backupError }}</p><p *ngIf="!latestBackup" class="ui-hint">No machine backup saved yet.</p><div *ngIf="backupJob as j" class="pt-operation" [attr.data-status]="j.status" role="status"><strong>{{ jobText(j) }}</strong><span *ngIf="j.message" class="sub">{{ j.message }}</span><code *ngIf="j.error_code">{{ j.error_code }}</code><span *ngIf="(j.status === 'QUEUED' || j.status === 'DELIVERED') && j.expires_at" class="sub">Waiting until {{ j.expires_at | date:'h:mm a' }}</span></div></div>
+    <button *ngIf="canBackup" type="button" class="ui-btn ui-btn-primary" [disabled]="!operationsAllowed" (click)="requestBackup()" aria-label="Backup"><span class="material-icons" aria-hidden="true">backup</span>{{ requestingBackup ? 'Requesting…' : 'Backup' }}</button>
   </section>
 
-  <details class="pt-details">
-    <summary>Previous files and backups</summary>
+  <details class="pt-details" (toggle)="onHistoryToggle($event)">
+    <summary>Saved files and backups</summary>
     <div class="mexa-tablewrap pt-tablewrap" tabindex="0" role="region" aria-label="Saved files and backups" [attr.aria-busy]="loadingFiles">
       <table class="mexa-table is-compact pt-responsive-table">
         <thead><tr><th scope="col">File</th><th scope="col" class="actions">Actions</th></tr></thead>
         <tbody>
           <tr *ngFor="let f of files">
-            <td class="pt-program-cell"><strong>{{ f.program_name }}</strong><span class="sub">{{ isCurrent(f) ? 'Current program' : kindLabel(f.kind) }} · {{ fileSize(f.size_bytes) }} · {{ f.created_at | date:'d MMM, h:mm a' }}</span></td>
+            <td class="pt-program-cell"><strong>{{ f.program_name }}</strong><span class="sub">{{ isCurrent(f) ? 'Latest upload' : kindLabel(f.kind) }} · {{ fileSize(f.size_bytes) }} · {{ f.created_at | date:'d MMM, h:mm a' }}</span></td>
             <td class="actions"><span class="ui-btn-row pt-row-actions"><button type="button" (click)="download(f)" class="ui-btn ui-btn-ghost ui-btn-xs" [attr.aria-label]="'Download ' + f.stored_name">Download</button><button *ngIf="canDelete && !isCurrent(f)" type="button" (click)="deleteFile(f)" class="ui-btn ui-btn-danger-ghost ui-btn-xs" [attr.aria-label]="'Delete ' + f.stored_name"><span class="material-icons" aria-hidden="true">delete_outline</span></button></span></td>
           </tr>
           <tr *ngIf="loadingFiles && !files.length"><td colspan="2" class="mexa-empty" role="status">Loading files…</td></tr>
@@ -60,29 +77,24 @@
     <div *ngIf="filesPages > 1" class="pt-card-footer mexa-pager"><button type="button" [disabled]="filesPage <= 1 || loadingFiles" (click)="changeFilesPage(-1)" class="ui-btn ui-btn-ghost ui-btn-xs" aria-label="Previous files page">Previous</button><span>Page {{ filesPage }} of {{ filesPages }}</span><button type="button" [disabled]="filesPage >= filesPages || loadingFiles" (click)="changeFilesPage(1)" class="ui-btn ui-btn-ghost ui-btn-xs" aria-label="Next files page">Next</button></div>
   </details>
 
-  <details *ngIf="selectedMachine as m" class="pt-details">
-    <summary>Machine connection</summary>
-    <div class="pt-connection"><p class="ui-hint">The machine uses its device token to download the current program and upload backups.{{ m.device_id ? '' : ' Create a token and configure it on the machine.' }}</p><button *ngIf="canManageDevice" type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="openDevice()">{{ m.device_id ? 'Device token' : 'Create device token' }}</button><p *ngIf="!canManageDevice && !m.device_id" class="ui-hint">Ask your admin to create a device token.</p></div>
-  </details>
-
   <details class="pt-details">
-    <summary>API guide</summary>
-    <p class="ui-hint">Use the machine's device token with these two requests.</p>
-    <dl class="pt-api"><dt>Download current program</dt><dd><code>GET /api/device/v1/program</code></dd><dt>Upload machine backup</dt><dd><code>POST /api/device/v1/backup</code></dd></dl>
+    <summary>Device API guide</summary>
+    <p class="ui-hint">MQTT continues to send telemetry. The device uses outbound HTTPS POST requests to collect commands, download files, and report controller errors.</p>
+    <dl class="pt-api"><dt>Collect transfer or backup</dt><dd><code>POST /api/device/v1/commands/next</code></dd><dt>Download transfer file</dt><dd><code>POST /api/device/v1/jobs/:id/file</code></dd><dt>Save requested backup</dt><dd><code>POST /api/device/v1/backup</code></dd><dt>Report completion or error</dt><dd><code>POST /api/device/v1/jobs/:id/result</code></dd></dl>
     <div class="pt-api-links"><a class="ui-btn ui-btn-ghost ui-btn-sm" href="/integrations/PROGRAM_TRANSFER_DEVICE_API.md" download>Download API guide</a></div>
   </details>
 
   <div *ngIf="showUpload" class="ui-overlay">
     <div class="ui-dialog ui-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
       <div class="ui-dialog-header"><div><h2 id="uploadTitle" class="ui-dialog-title">Upload program</h2><p class="ui-dialog-subtitle">{{ uploadMachine?.machine_serial_no }}</p></div><button type="button" class="ui-close" (click)="closeUpload()" [disabled]="uploading" aria-label="Close upload"><span class="material-icons" aria-hidden="true">close</span></button></div>
-      <div class="ui-dialog-body"><p *ngIf="uploadError" class="ui-error" role="alert">{{ uploadError }}</p><div class="ui-field"><label class="ui-label" for="upFile">G-code file<span class="ui-req" aria-hidden="true">*</span></label><input id="upFile" type="file" class="ui-input" accept=".nc,.prg,.cnc,.txt,.tap,.eia,.min,.gcode,.ptp,.mpf,.spf" (change)="onFileSelected($event)" [disabled]="uploading" aria-describedby="upFileHint" /><p id="upFileHint" class="ui-hint">Text program files, up to 20 MB. The file name is kept.</p></div><p class="ui-hint">This becomes the current program for {{ uploadMachine?.machine_serial_no }} to download. The previous file stays in saved files.</p></div>
-      <div class="ui-dialog-footer"><button type="button" class="ui-btn ui-btn-ghost" (click)="closeUpload()" [disabled]="uploading">Cancel</button><button type="button" class="ui-btn ui-btn-primary" (click)="upload()" [disabled]="uploading || !uploadFile || !uploadMachineId"><span *ngIf="uploading" class="ui-spinner" aria-hidden="true"></span>{{ uploading ? 'Uploading…' : 'Upload' }}</button></div>
+      <div class="ui-dialog-body"><p *ngIf="uploadError" class="ui-error" role="alert">{{ uploadError }}</p><div class="ui-field"><label class="ui-label" for="upFile">G-code file<span class="ui-req" aria-hidden="true">*</span></label><input id="upFile" type="file" class="ui-input" accept=".nc,.prg,.cnc,.txt,.tap,.eia,.min,.gcode,.ptp,.mpf,.spf" (change)="onFileSelected($event)" [disabled]="uploading" aria-describedby="upFileHint" /><p id="upFileHint" class="ui-hint">Text program files, up to 20 MB. The file name is kept.</p></div><p class="ui-hint">The file is saved on this server and sent to {{ uploadMachine?.machine_serial_no }}. The device verifies the controller write and reports any error.</p><label *ngIf="canReplaceUpload" class="pt-overwrite"><input type="checkbox" [(ngModel)]="overwrite" (ngModelChange)="overwriteChanged()" [disabled]="uploading" /> Replace an existing program with this name on the controller</label></div>
+      <div class="ui-dialog-footer"><button type="button" class="ui-btn ui-btn-ghost" (click)="closeUpload()" [disabled]="uploading">Cancel</button><button type="button" class="ui-btn ui-btn-primary" (click)="upload()" [disabled]="uploading || !uploadFile || !uploadMachineId"><span *ngIf="uploading" class="ui-spinner" aria-hidden="true"></span>{{ uploading ? 'Uploading…' : 'Upload and send' }}</button></div>
     </div>
   </div>
 
   <div *ngIf="deviceDialog as d" class="ui-overlay">
     <div class="ui-dialog ui-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="deviceTitle">
-      <div class="ui-dialog-header"><div><h2 id="deviceTitle" class="ui-dialog-title">Device at {{ d.machine.machine_serial_no }}</h2><p class="ui-dialog-subtitle">The machine uses this token to download programs and upload backups.</p></div><button type="button" class="ui-close" (click)="closeDevice()" [disabled]="d.working" aria-label="Close"><span class="material-icons" aria-hidden="true">close</span></button></div>
+      <div class="ui-dialog-header"><div><h2 id="deviceTitle" class="ui-dialog-title">Device at {{ d.machine.machine_serial_no }}</h2><p class="ui-dialog-subtitle">The device uses this token to collect commands and return controller results.</p></div><button type="button" class="ui-close" (click)="closeDevice()" [disabled]="d.working" aria-label="Close"><span class="material-icons" aria-hidden="true">close</span></button></div>
       <div class="ui-dialog-body">
         <ng-container *ngIf="d.token; else noToken"><p class="ui-alert ui-alert-warn">Copy this now. The token is shown only once. Keep it in the machine's private configuration.</p><pre class="pt-config" tabindex="0" aria-label="Device configuration">{{ deviceConfig(d.token) }}</pre><button type="button" class="ui-btn ui-btn-primary ui-btn-sm" (click)="copyConfig()">{{ d.copied ? 'Copied' : 'Copy' }}</button><p class="ui-hint">Save this configuration in the machine's device client.</p></ng-container>
         <ng-template #noToken>

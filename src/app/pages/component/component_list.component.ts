@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 import { ComponentApi } from './component.api';
@@ -51,6 +51,7 @@ export class ComponentList implements OnInit, OnDestroy {
   deleteTarget: any  = null;
   deleting           = false;
 
+  private loadRequest?: Subscription;
   private searchSubject = new Subject<string>();
   private destroy$      = new Subject<void>();
 
@@ -120,8 +121,9 @@ export class ComponentList implements OnInit, OnDestroy {
   }
 
   load() {
+    this.loadRequest?.unsubscribe();
     this.loading = true;
-    this.api.list(this.page, this.limit, this.search).subscribe({
+    this.loadRequest = this.api.list(this.page, this.limit, this.search).pipe(takeUntil(this.destroy$)).subscribe({
       next: res => {
         this.components = res.data;
         this.total      = res.meta.total;

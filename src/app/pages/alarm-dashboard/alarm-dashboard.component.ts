@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -67,6 +68,8 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
      both; each part of the page is asked for only while it is on screen
      and out of date (shared/dash-view). */
   private url = viewInUrl(TABS);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
   readonly views = new DashViews(this, TABS, this.url.initial);
 
   /* ── KPI card drill-down ──
@@ -163,7 +166,34 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
       .pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => { this.page = 1; this.load(); });
 
+    this.takeLinkedFilters();
     this.load();
+  }
+
+  /**
+   * Another dashboard's tile can open the alarms behind its number here —
+   * Preventive's Total Critical Alarms: ?view=details&show=critical&from=&to=
+   * &machine_id=. Taken once, then dropped from the address (it keeps only
+   * the tab), so the filters on screen are the ones in charge afterwards.
+   */
+  private takeLinkedFilters(): void {
+    const q = this.route.snapshot.queryParamMap;
+    const date = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+    const from = date(q.get('from')), to = date(q.get('to'));
+    const machine = Number(q.get('machine_id'));
+    const show = q.get('show');
+    if (!from && !to && !q.get('machine_id') && !show) return;
+
+    if (from && to && from <= to) { this.f.from = from; this.f.to = to; }
+    if (Number.isInteger(machine) && machine > 0) this.f.machine_id = machine;
+    if (show === 'critical' || show === 'normal' || show === 'open') {
+      this.drillKind = show;
+      this.scrollToTable = true;
+    }
+    void this.router.navigate([], {
+      relativeTo: this.route, replaceUrl: true, queryParamsHandling: 'merge',
+      queryParams: { show: null, from: null, to: null, machine_id: null }
+    });
   }
 
   ngOnDestroy(): void {

@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription, takeUntil, catchError, of } from 'rxjs';
@@ -110,14 +111,32 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   constructor(private svc: OeeDashboardService, private auth: AuthService,
-              private toast: ToastService, private cdr: ChangeDetectorRef) {}
+              private toast: ToastService, private cdr: ChangeDetectorRef,
+              private route: ActivatedRoute) {}
 
   get canExport(): boolean { return this.auth.hasAction('analytics-oee', 'export'); }
 
   ngOnInit(): void {
     this.svc.getMeta().pipe(takeUntil(this.destroy$), catchError(() => of(null)))
       .subscribe((res: any) => { this.shifts = res?.data?.shifts ?? []; this.cdr.markForCheck(); });
+    this.takeLinkedFilters();
     this.load();
+  }
+
+  /** An OEE Dashboard tile opens this table on its dates and shift, ranked by its figure. */
+  private takeLinkedFilters(): void {
+    const q = this.route.snapshot.queryParamMap;
+    const date = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+    const from = date(q.get('from')), to = date(q.get('to'));
+    if (from && to && from <= to) this.f = { ...this.f, from, to };
+    const shift = Number(q.get('shift_id'));
+    if (Number.isInteger(shift) && shift > 0) this.f = { ...this.f, shift_id: shift };
+    const sort = q.get('sort');
+    if (sort && this.columns.some(c => c.key === sort)) {
+      this.sort = sort;
+      // the biggest first, as each tile reads; downtime too — the worst on top
+      this.dir = sort === 'machine_serial_no' || sort === 'status' ? 'asc' : 'desc';
+    }
   }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
   private loadSub?: Subscription;
@@ -159,8 +178,8 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
   }
   aria(key: string): string { return this.sort !== key ? 'none' : this.dir === 'asc' ? 'ascending' : 'descending'; }
 
-  /** Called by the Reports toolbar. */
-  export(format: 'xlsx' | 'csv' | 'pdf'): void {
+  /** Called by the Reports toolbar: Excel or CSV (no PDF). */
+  export(format: 'xlsx' | 'csv'): void {
     this.exporting = format; this.cdr.markForCheck();
     this.svc.exportAs(format, this.f).pipe(takeUntil(this.destroy$)).subscribe({
       next: blob => {

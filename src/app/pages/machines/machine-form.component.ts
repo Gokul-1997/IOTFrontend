@@ -7,10 +7,15 @@ import {
   AfterViewInit,
   ChangeDetectorRef,
   ElementRef,
-  HostListener
+  HostListener,
+  DestroyRef,
+  inject
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AuthService } from '../../core/services/auth.service';
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -37,6 +42,15 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
   uploading = false;
   previewUrl: string | null = null;
   lines: any[] = [];
+  filteredLines: any[] = [];
+  plants: any[] = [];
+  loadingOptions = true;
+  optionsError = '';
+  saving = false;
+  private destroyRef = inject(DestroyRef);
+  private auth = inject(AuthService);
+  readonly boundPlantId = this.auth.getUser()?.plant_id ?? null;
+  private objectUrl: string | null = null;
   form!: FormGroup;
 
   /** Rendered as one row so the five axes read as a single group. */
@@ -57,6 +71,7 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
   ) {}
 
   ngOnInit() {
+    this.destroyRef.onDestroy(() => { if (this.objectUrl) URL.revokeObjectURL(this.objectUrl); });
 
     this.form = this.fb.group({
       machine_serial_no: ['', Validators.required],
@@ -73,12 +88,9 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       twin_spindle: [false],
       twin_table: [false],
       atc_tool_capacity: [''],
+      plant_id: [this.boundPlantId, Validators.required],
       line_id: [null, Validators.required],
       is_active: [true],
-      // the shop-LAN address; Program Transfer keeps this machine's files in a folder named after it
-      ip_address: ['', Validators.pattern(/^\s*(\d{1,3}(\.\d{1,3}){3}|[0-9a-fA-F:]{2,39})\s*$/)],
-      // Program Transfer: the folder on the machine where its device saves programs
-      program_path: ['', [Validators.maxLength(255), Validators.pattern(/^[A-Za-z0-9 _\-.:/\\]*$/)]],
       // what an hour of this machine costs (₹): prices its idle and alarm time
       hour_rate: [null as number | null, [Validators.min(0), Validators.max(1000000)]]
     });
@@ -88,7 +100,7 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
   ngAfterViewInit() {
     // Send focus into the dialog so a keyboard user is not left on the page
     // behind it. The line select is the first thing to fill in.
-    setTimeout(() => this.host.nativeElement.querySelector<HTMLElement>('#mfLine')?.focus());
+    setTimeout(() => this.host.nativeElement.querySelector<HTMLElement>('#mfPlant')?.focus());
   }
 
   ////////////////////////////////////////////
@@ -144,23 +156,34 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
   ////////////////////////////////////////////
 
   loadLines() {
-    this.service.getLines().subscribe(res => {
-      this.lines = res.data;
-
-      if (this.data) {
-        this.form.patchValue({
-          ...this.data,
-          line_id: Number(this.data.line_id),
-          // the API sends NUMERIC as text ("500.00"); the field holds a number
-          hour_rate: this.data.hour_rate != null ? Number(this.data.hour_rate) : null
-        });
-
-        this.previewUrl = this.data.image_url;
-      }
-
-      this.cdr.detectChanges();
-    });
+    this.loadingOptions = true; this.optionsError = '';
+    forkJoin({ lines: this.service.getLines(), plants: this.service.getPlants() })
+      .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: res => {
+          this.lines = res.lines.data || []; this.plants = res.plants.data || [];
+          if (this.data) {
+            this.form.patchValue({ ...this.data,
+              line_id: this.data.line_id != null ? Number(this.data.line_id) : null,
+              plant_id: this.boundPlantId ?? (this.data.plant_id != null ? Number(this.data.plant_id) : null),
+              hour_rate: this.data.hour_rate != null ? Number(this.data.hour_rate) : null
+            });
+            this.previewUrl = this.data.image_url;
+          }
+          const line = this.lines.find(l => Number(l.id) === Number(this.form.value.line_id));
+          if (!this.form.value.plant_id) this.form.patchValue({ plant_id: line?.plant_id ?? (this.plants.length === 1 ? this.plants[0].id : null) });
+          this.filterLines(); this.loadingOptions = false; this.cdr.markForCheck();
+        },
+        error: () => { this.loadingOptions = false; this.optionsError = 'Could not load plants and lines. Please retry.'; this.cdr.markForCheck(); }
+      });
   }
+  private filterLines() {
+    const plant = Number(this.form.value.plant_id);
+    this.filteredLines = this.lines.filter(line => Number(line.plant_id) === plant);
+    if (this.form.value.line_id && !this.filteredLines.some(line => Number(line.id) === Number(this.form.value.line_id))) {
+      this.form.patchValue({ line_id: null });
+    }
+  }
+  onPlantChange() { this.form.patchValue({ line_id: null }); this.filterLines(); }
 
   ////////////////////////////////////////////
   // IMAGE UPLOAD
@@ -168,12 +191,13 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
 
   onFileSelect(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
+    if (!file || this.uploading || this.saving) return;
 
-    this.previewUrl = URL.createObjectURL(file);
+    if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
+    this.previewUrl = this.objectUrl = URL.createObjectURL(file);
     this.uploading = true;
 
-    this.service.uploadToS3(file).subscribe({
+    this.service.uploadToS3(file).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res: any) => {
         this.form.patchValue({ image_url: res.fileUrl });
 
@@ -196,6 +220,7 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
   ////////////////////////////////////////////
 
   save() {
+    if (this.saving || this.uploading || this.loadingOptions || this.optionsError) return;
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -204,7 +229,7 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       // Move focus to the first problem rather than leaving the user to hunt
       // for red borders in a form four sections long.
       const firstInvalid = Object.keys(this.form.controls).find(k => this.form.get(k)?.invalid);
-      const map: Record<string, string> = { line_id: '#mfLine', machine_serial_no: '#mfSerial', ip_address: '#mfIp', program_path: '#mfPath', hour_rate: '#mfRate' };
+      const map: Record<string, string> = { plant_id: '#mfPlant', line_id: '#mfLine', machine_serial_no: '#mfSerial', hour_rate: '#mfRate' };
       const el = firstInvalid && map[firstInvalid]
         ? this.host.nativeElement.querySelector<HTMLElement>(map[firstInvalid])
         : null;
@@ -230,14 +255,20 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
         return;
       }
 
-      this.service.update(this.data.id, changed)
-        .subscribe(() => this.saved.emit());
+      this.saving = true;
+      this.service.update(this.data.id, changed).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: () => { this.saving = false; this.saved.emit(); },
+        error: err => { this.saving = false; this.toast.error(err.error?.message || 'Could not save the machine.'); this.cdr.markForCheck(); }
+      });
 
     } else {
 
       // Create → full form
-      this.service.create(this.form.value)
-        .subscribe(() => this.saved.emit());
+      this.saving = true;
+      this.service.create(this.form.value).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: () => { this.saving = false; this.saved.emit(); },
+        error: err => { this.saving = false; this.toast.error(err.error?.message || 'Could not create the machine.'); this.cdr.markForCheck(); }
+      });
     }
   }
 
