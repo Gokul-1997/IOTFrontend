@@ -1,3 +1,4 @@
+import { StoredImageDirective } from '../../shared/stored-image.directive';
 import {
   ChangeDetectorRef,
   Component,
@@ -41,7 +42,7 @@ import { StateComponent } from '../../shared/state/state.component';
 @Component({
   standalone: true,
   selector: 'app-machines',
-  imports: [
+  imports: [StoredImageDirective,
     CommonModule, FormsModule, MachineFormComponent,
     MatTableModule, MatPaginatorModule, MatSortModule,
     MatButtonModule, MatIconModule, MatInputModule,

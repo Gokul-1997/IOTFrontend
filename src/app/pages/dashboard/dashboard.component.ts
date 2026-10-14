@@ -1,3 +1,4 @@
+import { StoredImageDirective } from '../../shared/stored-image.directive';
 import {
   Component,
   OnInit,
@@ -47,7 +48,7 @@ const AUTO_PAGE_MS          = 10_000;
 @Component({
   standalone: true,
   selector: 'app-dashboard',
-  imports: [CommonModule, RouterLink, MetricHelpComponent],
+  imports: [StoredImageDirective, CommonModule, RouterLink, MetricHelpComponent],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

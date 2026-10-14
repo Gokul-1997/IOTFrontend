@@ -1,3 +1,4 @@
+import { StoredImageDirective } from '../../../shared/stored-image.directive';
 import {
   Component,
   OnInit,
@@ -40,7 +41,7 @@ const POLL_MS = 30_000;
 @Component({
   standalone: true,
   selector: 'app-live',
-  imports: [MetricHelpComponent, NgApexchartsModule, CommonModule, RouterModule, SpindlePanelComponent, ShiftTimelineComponent],
+  imports: [StoredImageDirective, MetricHelpComponent, NgApexchartsModule, CommonModule, RouterModule, SpindlePanelComponent, ShiftTimelineComponent],
   templateUrl: './live.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

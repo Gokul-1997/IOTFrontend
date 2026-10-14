@@ -1,3 +1,4 @@
+import { StoredImageDirective } from '../../shared/stored-image.directive';
 import {
   Component,
   Input,
@@ -29,7 +30,7 @@ import { ToastService } from '../../core/services/toast.service';
 @Component({
   standalone: true,
   selector: 'app-machine-form',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [StoredImageDirective, CommonModule, ReactiveFormsModule],
   templateUrl: './machine-form.component.html',
   styleUrls: ['./machine-form.component.scss']
 })
@@ -40,6 +41,7 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
   @Output() close = new EventEmitter<void>();
 
   uploading = false;
+  uploadError = '';
   previewUrl: string | null = null;
   lines: any[] = [];
   filteredLines: any[] = [];
@@ -51,6 +53,7 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
   private auth = inject(AuthService);
   readonly boundPlantId = this.auth.getUser()?.plant_id ?? null;
   private objectUrl: string | null = null;
+  private uploadedPlantId: number | null = null;
   form!: FormGroup;
 
   /** Rendered as one row so the five axes read as a single group. */
@@ -183,36 +186,74 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       this.form.patchValue({ line_id: null });
     }
   }
-  onPlantChange() { this.form.patchValue({ line_id: null }); this.filterLines(); }
+  onPlantChange() {
+    this.form.patchValue({ line_id: null });
+    this.filterLines();
+    if (this.uploadedPlantId && Number(this.form.value.plant_id) !== this.uploadedPlantId) {
+      this.releasePreview();
+      this.previewUrl = this.data?.image_url || null;
+      this.form.patchValue({ image_url: this.previewUrl || '' });
+      this.uploadedPlantId = null;
+      this.uploadError = 'Plant changed. Upload the photo again for this plant.';
+    }
+  }
 
   ////////////////////////////////////////////
   // IMAGE UPLOAD
   ////////////////////////////////////////////
 
   onFileSelect(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
     if (!file || this.uploading || this.saving) return;
-
-    if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
+    this.uploadError = '';
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024 || !file.size) {
+      this.uploadError = 'Choose a JPG, PNG or WebP image up to 5 MB.';
+      return;
+    }
+    const plantId = Number(this.form.value.plant_id);
+    if (!Number.isSafeInteger(plantId) || plantId <= 0) {
+      this.uploadError = 'Choose the machine plant before uploading a photo.';
+      return;
+    }
+    const previousImage = this.form.get('image_url')?.value || null;
+    this.releasePreview();
     this.previewUrl = this.objectUrl = URL.createObjectURL(file);
     this.uploading = true;
 
-    this.service.uploadToS3(file).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.service.uploadImage(file, plantId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res: any) => {
+        if (Number(this.form.value.plant_id) !== plantId) {
+          this.releasePreview();
+          this.previewUrl = previousImage;
+          this.uploadError = 'Plant changed. Upload the photo again for this plant.';
+          this.uploading = false;
+          this.cdr.markForCheck();
+          return;
+        }
         this.form.patchValue({ image_url: res.fileUrl });
-
-        // ✅ ensure change detection for update
         this.form.get('image_url')?.markAsDirty();
-
+        this.uploadedPlantId = plantId;
+        this.releasePreview();
+        this.previewUrl = res.fileUrl;
         this.uploading = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
-      error: () => {
-        this.toast.error('Image upload failed. Please try again.');
+      error: err => {
+        this.releasePreview();
+        this.previewUrl = previousImage;
+        this.uploadError = err.error?.message || err.error?.error || 'Image upload failed. Please try again.';
+        this.toast.error(this.uploadError);
         this.uploading = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
+  }
+
+  private releasePreview(): void {
+    if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
+    this.objectUrl = null;
   }
 
   ////////////////////////////////////////////

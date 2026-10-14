@@ -38,11 +38,12 @@ export class MachinesService {
   getPlants() {
     return this.master.get('plants');
   }
-    uploadToS3(file: File) {
+  uploadImage(file: File, plantId: number) {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('plant_id', String(plantId));
 
-    return this.http.post(`${environment.apiUrl}/upload`, formData);
+    return this.http.post<{ fileUrl: string }>(`${environment.apiUrl}/upload`, formData);
   }
 
   getLines() {

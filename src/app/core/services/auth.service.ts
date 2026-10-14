@@ -23,6 +23,9 @@ export class AuthService implements OnDestroy {
    *  held — so the header can rebuild its menu instead of showing a page the
    *  company no longer has until the next reload. */
   readonly grantsChanged$ = new Subject<void>();
+  /** File caches must recheck access when the server changes authorization,
+   * even when the user's visible menu grants remain the same. */
+  readonly authorizationRevisionChanged$ = new Subject<void>();
 
   /** Fires on every sign-in and sign-out, so what belongs to one session is
    *  dropped before the next: the live-data socket (it stays in the company
@@ -35,13 +38,19 @@ export class AuthService implements OnDestroy {
   private shownUserId: number | null = this.getUser()?.id ?? null;
   private shownContext = this.contextKey(this.getUser());
   private shownGrants = this.grantsKey(this.getUser());
+  private shownRevision = this.getUser()?.auth_revision;
   private readonly storageListener = (event: StorageEvent) => {
     if (event.key !== 'user' && event.key !== null) return;
     const user = this.getUser();
+    const previousRevision = this.shownRevision;
+    this.shownRevision = user?.auth_revision;
     if ((user?.id ?? null) !== this.shownUserId || this.contextKey(user) !== this.shownContext) this.startOver();
     else if (this.grantsKey(user) !== this.shownGrants) {
       this.shownGrants = this.grantsKey(user);
       this.grantsChanged$.next();
+    }
+    else if (user?.auth_revision !== previousRevision) {
+      this.authorizationRevisionChanged$.next();
     }
   };
 
@@ -72,6 +81,7 @@ export class AuthService implements OnDestroy {
     this.shownUserId = res.user?.id ?? null;
     this.shownContext = this.contextKey(res.user);
     this.shownGrants = this.grantsKey(res.user);
+    this.shownRevision = res.user?.auth_revision;
     this.scheduleRefresh(res.accessToken);
     this.sessionChanged$.next('signed-in');
   }
@@ -121,6 +131,7 @@ export class AuthService implements OnDestroy {
     if (!user || !Object.keys(user).length) return;
     const before = this.grantsKey(user);
     const contextBefore = this.contextKey(user);
+    const revisionBefore = user.auth_revision;
     for (const field of ['permissions', 'company_permissions', 'roles']) {
       if (Array.isArray(res?.[field])) user[field] = res[field];
     }
@@ -131,9 +142,11 @@ export class AuthService implements OnDestroy {
     const contextChanged = contextBefore !== this.contextKey(user);
     this.shownContext = this.contextKey(user);
     this.shownGrants = this.grantsKey(user);
+    this.shownRevision = user.auth_revision;
     if (contextChanged || this.shownGrants !== before) {
       this.grantsChanged$.next();
     }
+    else if (revisionBefore !== user.auth_revision) this.authorizationRevisionChanged$.next();
     if (contextChanged) {
       this.generation++;
       this.sessionChanged$.next('signed-in');
@@ -155,6 +168,7 @@ export class AuthService implements OnDestroy {
     this.shownUserId = null;
     this.shownContext = this.contextKey({});
     this.shownGrants = this.grantsKey({});
+    this.shownRevision = undefined;
     this.sessionChanged$.next('signed-out');
     if (reason) {
       try { sessionStorage.setItem('signedOutReason', reason); } catch { /* shown only if storage works */ }

@@ -44,11 +44,12 @@
             <div class="sm:col-span-4 lg:col-span-3">
               <span class="ui-label" id="mfImageLabel">Machine photo</span>
               <label class="mf-image" [attr.aria-labelledby]="'mfImageLabel'">
-                <input type="file" accept="image/*" (change)="onFileSelect($event)"
+                <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFileSelect($event)"
+                       [disabled]="uploading || saving || loadingOptions"
                        aria-describedby="mfImageHint" />
 
                 <ng-container *ngIf="previewUrl || form.get('image_url')?.value; else noImage">
-                  <img [src]="previewUrl || form.get('image_url')?.value" alt="" />
+                  <img [appStoredImage]="previewUrl || form.get('image_url')?.value" alt="" />
                   <span class="mf-image-overlay">Click to replace</span>
                 </ng-container>
 
@@ -62,10 +63,11 @@
                     <span>Add a photo</span>
                   </span>
                 </ng-template>
-                <p id="mfImageHint" class="ui-hint">
-                {{ uploading ? 'Uploading…' : 'PNG or JPG. Optional.' }}
-              </p>
               </label>
+              <p id="mfImageHint" class="ui-hint">
+                {{ uploading ? 'Uploading…' : (form.value.plant_id ? 'JPG, PNG or WebP, up to 5 MB. Optional.' : 'Choose a plant, then add a photo.') }}
+              </p>
+              <p *ngIf="uploadError" class="ui-error" role="alert">{{ uploadError }}</p>
               
             </div>
 
@@ -74,7 +76,7 @@
               <div>
                 <label class="ui-label" for="mfPlant">Plant<span class="ui-req" aria-hidden="true">*</span></label>
                 <select id="mfPlant" class="ui-input" formControlName="plant_id" (change)="onPlantChange()"
-                  [attr.disabled]="boundPlantId || loadingOptions || saving ? '' : null" aria-required="true"
+                  [attr.disabled]="boundPlantId || loadingOptions || saving || uploading ? '' : null" aria-required="true"
                   [class.is-invalid]="invalid('plant_id')" [attr.aria-invalid]="invalid('plant_id')">
                   <option [ngValue]="null">Select a plant</option>
                   <option *ngFor="let plant of plants" [ngValue]="plant.id">{{ plant.plant_name }}</option>
@@ -249,7 +251,7 @@
             <span class="ui-tab-icon material-icons" aria-hidden="true">close</span>
             Cancel</button>
           <button type="button" class="ui-btn small ui-btn-primary"
-                  (click)="save()" [disabled]="uploading || isUnchanged">
+                  (click)="save()" [disabled]="uploading || saving || loadingOptions || !!optionsError || isUnchanged">
                   <span class="ui-tab-icon material-icons" aria-hidden="true">add</span>
             {{ uploading ? 'Uploading…' : (data ? 'Save Changes' : 'Create Machine') }}
           </button>

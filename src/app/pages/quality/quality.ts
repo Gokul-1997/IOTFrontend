@@ -1,3 +1,4 @@
+import { StoredImageDirective } from '../../shared/stored-image.directive';
 import { Component, ViewChild, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -13,7 +14,7 @@ import { Subscription, forkJoin, catchError, of } from 'rxjs';
 @Component({
   selector: 'app-quality',
   standalone: true,
-  imports: [MetricHelpComponent, StateComponent, ReportDateDirective, AutoApplyDirective, CommonModule, FormsModule, NgApexchartsModule],
+  imports: [StoredImageDirective, MetricHelpComponent, StateComponent, ReportDateDirective, AutoApplyDirective, CommonModule, FormsModule, NgApexchartsModule],
   templateUrl: './quality.html',
   styleUrl: './quality.scss'
 })

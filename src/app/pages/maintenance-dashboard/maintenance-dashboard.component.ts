@@ -1,3 +1,4 @@
+import { StoredImageDirective } from '../../shared/stored-image.directive';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -77,7 +78,7 @@ const SIGNAL_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-maintenance-dashboard',
   standalone: true,
-  imports: [AutoApplyDirective, FilterPanelDirective, ReportDateDirective, PauseOffscreenDirective, SupplyVoltageComponent, AxisBatteriesComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, ConditionGaugeComponent],
+  imports: [StoredImageDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, PauseOffscreenDirective, SupplyVoltageComponent, AxisBatteriesComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, ConditionGaugeComponent],
   templateUrl: './maintenance-dashboard.component.html',
   styleUrl: './maintenance-dashboard.component.scss'
 })
