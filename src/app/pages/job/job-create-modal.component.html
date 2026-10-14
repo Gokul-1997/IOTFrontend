@@ -32,7 +32,7 @@
           </label>
           <select id="jobMachine" class="ui-input" aria-required="true"
                   [(ngModel)]="form.machine_id" (ngModelChange)="onMachineChange()"
-                  [disabled]="machines.length === 0"
+                  [disabled]="saving || machines.length === 0"
                   aria-describedby="jobMachineHint">
             <option value="">Select a machine</option>
             <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
@@ -45,8 +45,8 @@
             Component / part<span class="ui-req" aria-hidden="true">*</span>
           </label>
           <select id="jobComponent" class="ui-input" aria-required="true"
-                  [(ngModel)]="form.component_id" [disabled]="!form.machine_id">
-            <option value="">{{ form.machine_id ? 'Select a component' : 'Select a machine first' }}</option>
+                  [(ngModel)]="form.component_id" [disabled]="saving || loadingComponents || !form.machine_id">
+            <option value="">{{ loadingComponents ? 'Loading components…' : form.machine_id ? 'Select a component' : 'Select a machine first' }}</option>
             <option *ngFor="let c of components" [ngValue]="c.id">
               {{ c.part_name }} (target {{ c.target }})
             </option>
@@ -58,7 +58,7 @@
             Job start<span class="ui-req" aria-hidden="true">*</span>
           </label>
           <input id="jobStart" class="ui-input" type="datetime-local"
-                 [(ngModel)]="form.job_start" aria-required="true" />
+                 [(ngModel)]="form.job_start" [disabled]="saving" aria-required="true" />
         </div>
 
       </div>
@@ -71,7 +71,7 @@
           <span class="ui-tab-icon material-icons" aria-hidden="true">close</span>
           Cancel</button>
         <button type="button" class="ui-btn small ui-btn-primary" (click)="save()"
-                [disabled]="saving || machines.length === 0">
+                [disabled]="saving || loadingComponents || machines.length === 0">
           <span *ngIf="saving" class="ui-spinner" aria-hidden="true"></span>
           <span class="ui-tab-icon material-icons" aria-hidden="true">work</span>
           {{ saving ? 'Starting…' : 'Start job' }}

@@ -18,6 +18,18 @@
       <div class="ui-dialog-body">
 
         <div class="ui-field">
+          <label class="ui-label" for="linePlant">Plant<span class="ui-req" aria-hidden="true">*</span></label>
+          <select id="linePlant" class="ui-input" formControlName="plant_id" aria-required="true"
+                  [attr.disabled]="boundPlantId || loadingPlants || saving ? '' : null"
+                  [class.is-invalid]="invalid('plant_id')" [attr.aria-invalid]="invalid('plant_id')">
+            <option [ngValue]="null">Select a plant</option>
+            <option *ngFor="let plant of plants" [ngValue]="plant.id">{{ plant.plant_name }}</option>
+          </select>
+          <p *ngIf="invalid('plant_id')" class="ui-error" role="alert">Choose the plant this line belongs to.</p>
+          <p *ngIf="plantsError" class="ui-error" role="alert">{{ plantsError }} <button type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="loadPlants()">Retry</button></p>
+        </div>
+
+        <div class="ui-field">
           <label class="ui-label" for="lineName">
             Line name<span class="ui-req" aria-hidden="true">*</span>
           </label>
@@ -49,7 +61,7 @@
           <button type="button" class="ui-btn small ui-btn-ghost" (click)="close.emit()">
             <span class="ui-tab-icon material-icons" aria-hidden="true">close</span>
             Cancel</button>
-          <button type="button" class="ui-btn small ui-btn-primary" (click)="submit()" [disabled]="saving">
+          <button type="button" class="ui-btn small ui-btn-primary" (click)="submit()" [disabled]="saving || loadingPlants || !!plantsError">
             <span *ngIf="saving" class="ui-spinner" aria-hidden="true"></span>
             <span class="ui-tab-icon material-icons" aria-hidden="true">save</span>
             {{ saving ? 'Saving…' : (data ? 'Save changes' : 'Create line') }}

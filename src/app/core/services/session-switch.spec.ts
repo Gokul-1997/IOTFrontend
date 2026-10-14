@@ -102,11 +102,14 @@ describe('another tab switching user', () => {
   test('starts this tab over; a token refresh by the same person does not', () => {
     login(11, 1);
     const startOver = vi.spyOn(auth, 'startOver').mockImplementation(() => {});
+    const grantsChanged = vi.fn();
+    auth.grantsChanged$.subscribe(grantsChanged);
 
     window.dispatchEvent(new StorageEvent('storage', { key: 'token' }));
-    localStorage.setItem('user', JSON.stringify({ id: 11, permissions: ['page:x'] }));
+    localStorage.setItem('user', JSON.stringify({ ...auth.getUser(), permissions: ['page:x'] }));
     window.dispatchEvent(new StorageEvent('storage', { key: 'user' }));
     expect(startOver).not.toHaveBeenCalled();
+    expect(grantsChanged).toHaveBeenCalledOnce();
 
     localStorage.setItem('user', JSON.stringify({ id: 22 }));
     window.dispatchEvent(new StorageEvent('storage', { key: 'user' }));
@@ -115,6 +118,14 @@ describe('another tab switching user', () => {
     localStorage.clear();                  // the other tab signed out
     window.dispatchEvent(new StorageEvent('storage', { key: null }));
     expect(startOver).toHaveBeenCalledTimes(2);
+  });
+
+  test('the same user moved to another plant in another tab resets the previous data', () => {
+    login(11, 1);
+    const startOver = vi.spyOn(auth, 'startOver').mockImplementation(() => {});
+    localStorage.setItem('user', JSON.stringify({ ...auth.getUser(), plant_id: 6 }));
+    window.dispatchEvent(new StorageEvent('storage', { key: 'user' }));
+    expect(startOver).toHaveBeenCalledOnce();
   });
 });
 

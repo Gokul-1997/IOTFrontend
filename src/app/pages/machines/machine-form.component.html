@@ -16,8 +16,8 @@
         <h2 id="mfTitle" class="ui-dialog-title">{{ data ? 'Edit Machine' : 'Create Machine' }}</h2>
         <p class="ui-dialog-subtitle">
           {{ data
-             ? 'Update this machine’s specification and DNC connection.'
-             : 'Register a CNC machine, its specification and its DNC connection.' }}
+             ? 'Update this machine’s specification and production line.'
+             : 'Register a CNC machine in its plant and production line.' }}
         </p>
       </div>
       <button type="button" class="ui-close" (click)="close.emit()" aria-label="Close without saving">
@@ -72,16 +72,28 @@
             <div class="sm:col-span-8 lg:col-span-9 grid grid-cols-1 sm:grid-cols-2 gap-4 content-start">
 
               <div>
+                <label class="ui-label" for="mfPlant">Plant<span class="ui-req" aria-hidden="true">*</span></label>
+                <select id="mfPlant" class="ui-input" formControlName="plant_id" (change)="onPlantChange()"
+                  [attr.disabled]="boundPlantId || loadingOptions || saving ? '' : null" aria-required="true"
+                  [class.is-invalid]="invalid('plant_id')" [attr.aria-invalid]="invalid('plant_id')">
+                  <option [ngValue]="null">Select a plant</option>
+                  <option *ngFor="let plant of plants" [ngValue]="plant.id">{{ plant.plant_name }}</option>
+                </select>
+                <p *ngIf="invalid('plant_id')" class="ui-error" role="alert">Choose the plant this machine belongs to.</p>
+                <p *ngIf="optionsError" class="ui-error" role="alert">{{ optionsError }} <button type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="loadLines()">Retry</button></p>
+              </div>
+              <div>
                 <label class="ui-label" for="mfLine">
                   Production line<span class="ui-req" aria-hidden="true">*</span>
                 </label>
                 <select id="mfLine" class="ui-input" formControlName="line_id"
+                        [attr.disabled]="loadingOptions || saving || !form.value.plant_id ? '' : null"
                         aria-required="true"
                         [class.is-invalid]="invalid('line_id')"
                         [attr.aria-invalid]="invalid('line_id')"
                         [attr.aria-describedby]="invalid('line_id') ? 'mfLineErr' : null">
                   <option [ngValue]="null">Select a line</option>
-                  <option *ngFor="let l of lines" [ngValue]="l.id">{{ l.name }}</option>
+                  <option *ngFor="let l of filteredLines" [ngValue]="l.id">{{ l.name }}</option>
                 </select>
                 <p *ngIf="invalid('line_id')" id="mfLineErr" class="ui-error" role="alert">
                   Choose the line this machine sits on.
@@ -224,42 +236,6 @@
           </div>
         </section>
 
-        <!-- ══ 5. Network ══ -->
-        <section class="" aria-labelledby="mfSecNet">
-          <h3 id="mfSecNet" class="ui-section-title">Network</h3>
-          <!-- <p class="ui-section-hint">
-            The machine’s address on the shop LAN, and where its programs live for Program Transfer.
-          </p> -->
-
-          <div class="grid grid-cols-2 lg:grid-cols-6 gap-4 mt-4">
-            <div class="col-span-2">
-              <label class="ui-label" for="mfIp">IP address</label>
-              <input id="mfIp" class="ui-input" formControlName="ip_address"
-                     placeholder="192.168.1.101" inputmode="decimal" autocomplete="off"
-                     [class.is-invalid]="form.get('ip_address')?.invalid && form.get('ip_address')?.touched"
-                     [attr.aria-invalid]="form.get('ip_address')?.invalid && form.get('ip_address')?.touched"
-                     aria-describedby="mfIpErr" />
-              <p *ngIf="form.get('ip_address')?.invalid && form.get('ip_address')?.touched" id="mfIpErr" class="ui-error" role="alert">
-                Enter an IP address such as 192.168.1.101.
-              </p>
-            </div>
-
-            <div class="col-span-2 lg:col-span-4">
-              <label class="ui-label" for="mfPath">Program path on the machine</label>
-              <input id="mfPath" class="ui-input" formControlName="program_path" maxlength="255"
-                     placeholder="//CNC_MEM/USER/PATH1/" autocomplete="off"
-                     [class.is-invalid]="form.get('program_path')?.invalid && form.get('program_path')?.touched"
-                     [attr.aria-invalid]="form.get('program_path')?.invalid && form.get('program_path')?.touched"
-                     [attr.aria-describedby]="form.get('program_path')?.invalid && form.get('program_path')?.touched ? 'mfPathErr' : 'mfPathHint'" />
-              <p *ngIf="!(form.get('program_path')?.invalid && form.get('program_path')?.touched)" id="mfPathHint" class="ui-hint">
-                Where this machine’s device saves programs sent from Program Transfer, and reads them for backups. Needed before any transfer.
-              </p>
-              <p *ngIf="form.get('program_path')?.invalid && form.get('program_path')?.touched" id="mfPathErr" class="ui-error" role="alert">
-                Use letters, digits, spaces and _ - . : / \ only, up to 255 characters.
-              </p>
-            </div>
-          </div>
-        </section>
 </div>
       </div>
 

@@ -14,8 +14,8 @@ export class JobService {
         return this.http.get(`${this.api}/jobs/current`);
     }
 
-    getJobHistory() {
-        return this.http.get(`${this.api}/jobs/history`);
+    getJobHistory(page = 1, limit = 10) {
+        return this.http.get(`${this.api}/jobs/history`, { params: { page, limit } });
     }
 
     startJob(data: any) {

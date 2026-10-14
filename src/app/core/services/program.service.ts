@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { MasterDataService } from './master-data.service';
 
 /** A machine as Program Transfer sees it: its folder and its device. */
 export interface PtMachine {
@@ -41,26 +42,43 @@ export interface PtFile {
   is_current?: boolean;
 }
 
-/** The web publishes a current file; its device downloads it directly and uploads backups. */
+export interface PtJob {
+  id: number; machine_id: number; action: 'SEND' | 'BACKUP'; program_name: string | null;
+  status: 'QUEUED' | 'DELIVERED' | 'DONE' | 'FAILED' | 'CANCELLED';
+  message: string | null; error_code: string | null; expires_at: string | null;
+  requested_at: string; finished_at: string | null; file_id: number | null;
+}
+export interface PtStatus {
+  machine: Pick<PtMachine, 'id' | 'ip_address' | 'program_path'> & Partial<Pick<PtMachine, 'device_id' | 'last_seen_at' | 'online'>>;
+  file: PtFile | null; backup: PtFile | null; jobs: PtJob[];
+}
+
+/** Store a reference file and request a verified device transfer, or a fresh running-program backup. */
 @Injectable({ providedIn: 'root' })
 export class ProgramService {
   private api = `${environment.apiUrl}/programs`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private master: MasterDataService) {}
 
   getMachines() {
-    return this.http.get<{ data: PtMachine[] }>(`${this.api}/machines`);
+    return this.master.get('programMachines');
   }
 
-  getCurrentProgram(machineId: number) {
-    return this.http.get<{ data: { file: PtFile | null } }>(`${this.api}/machines/${machineId}/current-program`);
+  getStatus(machineId: number) {
+    return this.http.get<{ data: PtStatus }>(`${this.api}/machines/${machineId}/status`);
   }
 
-  /** Publish a device download; this does not claim a job or execute a CNC program. */
-  publishProgram(machineId: number, file: File) {
+  saveConnection(machineId: number, connection: { ip_address: string; program_path: string }) {
+    return this.http.put<{ data: { machine: PtStatus['machine'] } }>(`${this.api}/machines/${machineId}/connection`, connection);
+  }
+  transfer(machineId: number, file: File, requestKey: string, overwrite = false) {
     const form = new FormData();
     form.append('file', file);
-    return this.http.post<{ data: { file: PtFile } }>(`${this.api}/machines/${machineId}/current-program`, form);
+    if (overwrite) form.append('overwrite', 'true');
+    return this.http.post<{ data: { file: PtFile; job: PtJob } }>(`${this.api}/machines/${machineId}/transfer`, form, { headers: { 'Idempotency-Key': requestKey } });
+  }
+  backup(machineId: number, requestKey: string) {
+    return this.http.post<{ data: { job: PtJob } }>(`${this.api}/machines/${machineId}/backup`, {}, { headers: { 'Idempotency-Key': requestKey } });
   }
 
   getFiles(params: { machine_id?: number | null; kind?: string; search?: string; page?: number; limit?: number }) {

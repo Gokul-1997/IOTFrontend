@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { MasterDataService } from '../../core/services/master-data.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
@@ -7,7 +8,7 @@ export class OperatorService {
 
   private api = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private master: MasterDataService) {}
 
   // ------------------------
   // OPERATORS
@@ -24,14 +25,14 @@ export class OperatorService {
   // SHIFTS (for dropdown)
   // ------------------------
   getShifts() {
-    return this.http.get<any[]>(`${this.api}/shifts`);
+    return this.master.get('shifts');
   }
 
   // ------------------------
   // MACHINES (for assignment)
   // ------------------------
   getMachines() {
-    return this.http.get<any>(`${this.api}/master/machines`);
+    return this.master.get('machines');
   }
 
   // operator.service.ts

@@ -9,14 +9,17 @@
   <form [formGroup]="form">
     <div class="ui-field">
       <label class="ui-label" for="ms-machine">Machine</label>
-      <select id="ms-machine" class="ui-input" formControlName="machine_id" (change)="loadConfig()">
+      <select id="ms-machine" class="ui-input" formControlName="machine_id" [attr.disabled]="saving ? '' : null" (change)="loadConfig()">
         <option value="">Select machine</option>
         <option *ngFor="let m of machines" [value]="m.id">{{ m.machine_serial_no }}</option>
       </select>
     </div>
   </form>
 
-  <fieldset class="ms-shifts" *ngIf="form.value.machine_id">
+  <p *ngIf="loadingConfig" class="ui-hint" role="status">Loading this machine’s shifts…</p>
+  <p *ngIf="error" class="ui-error" role="alert">{{ error }}</p>
+  <p *ngIf="saved" class="ui-hint" role="status">Configuration saved.</p>
+  <fieldset class="ms-shifts" *ngIf="form.value.machine_id" [disabled]="loadingConfig || saving || !configReady">
     <legend class="ui-label">Shifts this machine runs</legend>
     <label *ngFor="let s of shifts" class="ms-shift">
       <input type="checkbox" [checked]="selectedShifts.includes(s.id)"
@@ -24,6 +27,6 @@
       <span>{{ s.shift_name }} <small>({{ s.start_time }} – {{ s.end_time }})</small></span>
     </label>
     <p *ngIf="!shifts.length" class="ui-hint">No shifts yet. Add them under Master → Shifts.</p>
-    <button type="button" class="ui-btn ui-btn-primary ms-save" (click)="save()">Save configuration</button>
+    <button type="button" class="ui-btn ui-btn-primary ms-save" (click)="save()">{{ saving ? 'Saving…' : 'Save configuration' }}</button>
   </fieldset>
 </div>

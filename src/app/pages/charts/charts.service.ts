@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { MasterDataService } from '../../core/services/master-data.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
@@ -6,10 +7,10 @@ import { environment } from '../../../environments/environment';
 export class ChartsService {
   private api = `${environment.apiUrl}/charts`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private master: MasterDataService) {}
 
   getMeta() {
-    return this.http.get<any>(`${this.api}/meta`);
+    return this.master.get('charts');
   }
 
   getChartData(params: { machine_id?: number; shift_id?: number; date: string }) {

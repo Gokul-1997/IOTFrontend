@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { MasterDataService } from '../../core/services/master-data.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
@@ -7,10 +8,10 @@ export class QualityService {
 
     private api = environment.apiUrl;
 
-    constructor(private http: HttpClient) { }
+    constructor(private http: HttpClient, private master: MasterDataService) { }
 
     getLines() {
-        return this.http.get<any>(`${this.api}/lines`);
+        return this.master.get('lines');
     }
 
     getMachines(line_id: number) {
@@ -23,11 +24,11 @@ export class QualityService {
 
     /** Every active machine of the company, each with its line. */
     getAllMachines() {
-        return this.http.get<any>(`${this.api}/master/machines`);
+        return this.master.get('machines');
     }
 
     getShifts() {
-        return this.http.get<any>(`${this.api}/master/shifts`);
+        return this.master.get('masterShifts');
     }
 
     getDashboard(params: any) {

@@ -2074,21 +2074,21 @@ transition: transform 0.3s ease;
 }
 
 .apexcharts-tooltip {
-  background: #ffffff !important;
-  color: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
+  background: var(--mexa-surface, #ffffff) !important;
+  color: var(--mexa-ink, #1e293b) !important;
+  border: 1px solid var(--mexa-rule, #e2e8f0) !important;
 }
 
 .apexcharts-tooltip-title {
-  background: #f8fafc !important;
-  color: #ffffff !important;
-  border-bottom: 1px solid #e2e8f0 !important;
+  background: var(--mexa-surface, #f8fafc) !important;
+  color: var(--mexa-ink, #1e293b) !important;
+  border-bottom: 1px solid var(--mexa-rule, #e2e8f0) !important;
 }
 
 .apexcharts-tooltip-text,
 .apexcharts-tooltip-text-y-value,
 .apexcharts-tooltip-text-y-label {
-  color: #ffffff !important;
+  color: var(--mexa-ink, #1e293b) !important;
 }
 
 // Needla Shake
@@ -2199,6 +2199,9 @@ transition: transform 0.3s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .mexa-kpi:hover .mexa-kpi-icon .mat-icon, .marquee span { animation: none; }
+  .mexa-kpi, .mexa-card, .mexa-lift, .sp-card, .sp-stat, .machine-child { transition: none; }
+  .mexa-kpi:hover, .mexa-card:hover, .mexa-lift:hover, .sp-card:hover, .sp-stat:hover, .machine-child:hover { transform: none; }
   .status_dot::after {
     animation: none;
   }
