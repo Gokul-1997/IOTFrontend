@@ -2203,3 +2203,61 @@ transition: transform 0.3s ease;
     animation: none;
   }
 }
+
+// Title Scroll
+
+.titlebar {
+  // width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.titlebar h1, .titlebar span {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marqueeScroll 8s linear infinite;
+}
+
+@keyframes marqueeScroll {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+// Number Animation
+
+.number {
+  height: 32px;
+  overflow: hidden;
+  line-height: 32px;
+}
+
+.number_track {
+  display: flex;
+  flex-direction: column;
+  animation: verticalLoop 5s linear infinite;
+}
+
+.number_track span {
+  display: block;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+@keyframes verticalLoop {
+  0%, 40% {
+    transform: translateY(0);
+  }
+
+  50%, 90% {
+    transform: translateY(-32px);
+  }
+
+  100% {
+    transform: translateY(-64px);
+  }
+}

@@ -53,6 +53,9 @@ const AUTO_PAGE_MS          = 10_000;
 })
 export class DashboardComponent implements OnInit, OnDestroy {
 
+  title = 'Industrial Machine Monitoring Dashboard';
+duration = 8;
+
   /* ── public state ── */
   machines: any[] = [];
   summary:  any   = {};

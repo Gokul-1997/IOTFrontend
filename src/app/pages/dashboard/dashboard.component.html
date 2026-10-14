@@ -3,12 +3,14 @@
 
   <!-- TOP BAR -->
 
-  <div class="bg-top-bar
+  <div class="bg-top-bar 
             text-white rounded-xl px-1 md:px-4 py-1 mb-3
             flex flex-col md:flex-row items-center justify-between">
 
-    <div class="flex flex-row md:flex-row sm:flex-col items-center gap-4">
+    <div class="flex flex-row md:flex-row sm:flex-col items-center gap-4 ">
+      <div class="titlebar w-fit">
       <h1 class="text-xl font-medium">Live Dashboard</h1>
+      </div>
       <div class="hidden md:flex gap-1 md:gap-5 ">
         <div><span class="status_dot running"></span>Running</div>
         <div><span class="status_dot idle"></span>Idle</div>
@@ -118,8 +120,11 @@
               <div class="flex items-center justify-center">
                 <span class="material-icons text-green-600 text-[18px]" aria-hidden="true">play_arrow</span> Run
               </div>
-              <div class="text-xl font-bold">
-                {{ (m.run_time || '00:00:00').split(':')[0] }}h
+              <div class="text-xl font-bold number">
+                <div class="number_track">
+                  <span>{{ (m.run_time || '00:00:00').split(':')[0] }}h</span>
+                  <span>{{ (m.run_time || '00:00:00').split(':')[0] }}h</span>
+                </div>
               </div>
               <div class="text-xs text-[var(--color-primary-500)] dark:text-white -mt-1">
                 {{ (m.run_time || '00:00:00').split(':')[1] }}m
@@ -132,8 +137,11 @@
               <div class="flex items-center justify-center">
                 <span class="material-icons text-yellow-700 text-[18px]" aria-hidden="true">pause</span> Idle
               </div>
-              <div class="text-xl font-bold">
-                {{ (m.idle_time || '00:00:00').split(':')[0] }}h
+              <div class="text-xl font-bold number">
+                <div class="number_track">
+                  <span>{{ (m.idle_time || '00:00:00').split(':')[0] }}h</span>
+                  <span>{{ (m.idle_time || '00:00:00').split(':')[0] }}h</span>
+                </div>
               </div>
               <div class="text-xs text-[var(--color-primary-500)] dark:text-white -mt-1">
                 {{ (m.idle_time || '00:00:00').split(':')[1] }}m
@@ -152,12 +160,16 @@
 
           <div class="min-w-0">
             <span class="text-gray-700 dark:text-[#939393] ">Operator</span><br>
-            <b class="block truncate" [title]="m.operator_name || '--'">{{ m.operator_name || '--' }}</b>
+            
+            <b class="block truncate" [title]="m.operator_name || '--'"><div class="titlebar w-fit"><span>{{ m.operator_name || '--' }}</span></div></b>
           </div>
 
           <div>
             <span class="text-gray-700 dark:text-[#939393]">Part Name</span><br>
-            <div class="max-w-[150px] overflow-hidden whitespace-nowrap text-ellipsis font-bold">{{ m.part_name || '--' }}</div>
+            
+            <div class="max-w-[150px] overflow-hidden whitespace-nowrap text-ellipsis font-bold">
+             <div class="titlebar w-auto"><span>{{ m.part_name || '--' }}</span></div>
+            </div>
           </div>
 
           <div>
