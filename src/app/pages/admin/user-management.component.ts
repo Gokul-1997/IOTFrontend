@@ -1,7 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
 import { AdminService } from './admin.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -10,7 +9,7 @@ import { AdminTabsComponent } from './admin-tabs.component';
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, AdminTabsComponent],
+  imports: [CommonModule, FormsModule, AdminTabsComponent],
   templateUrl: './user-management.component.html',
   changeDetection: ChangeDetectionStrategy.Default
 })
@@ -40,7 +39,6 @@ export class UserManagementComponent implements OnInit {
   constructor(
     private adminService: AdminService,
     private toastService: ToastService,
-    private router: Router,
     private cdr: ChangeDetectorRef,
     public auth: AuthService
   ) {}

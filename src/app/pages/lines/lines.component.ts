@@ -80,7 +80,7 @@ export class LinesComponent implements OnInit, OnDestroy {
         this.loading = false;
         this.cdr.markForCheck();
       },
-      error: (err) => {
+      error: () => {
         this.toast.error('Failed to load lines');
         this.loading = false;
       }

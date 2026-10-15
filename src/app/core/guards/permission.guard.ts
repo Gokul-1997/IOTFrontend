@@ -12,7 +12,7 @@ import { AuthService } from '../services/auth.service';
  * Usage: canActivate: [permissionGuard('page:machines')]
  */
 export function permissionGuard(requiredPermission: string): CanActivateFn {
-  return (route, state) => {
+  return () => {
     const router = inject(Router);
 
     try {

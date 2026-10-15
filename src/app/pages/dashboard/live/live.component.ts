@@ -15,9 +15,6 @@ import { SocketService } from '../../../core/services/socket.service';
 import { AuthService } from '../../../core/services/auth.service';
 import {
   Subject,
-  interval,
-  switchMap,
-  startWith,
   takeUntil
 } from 'rxjs';
 import { CommonModule } from '@angular/common';

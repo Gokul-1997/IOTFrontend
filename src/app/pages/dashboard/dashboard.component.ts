@@ -18,9 +18,6 @@ import { visibleRefresh } from '../../shared/visible-refresh';
 import {
   Subject,
   merge,
-  interval,
-  switchMap,
-  startWith,
   takeUntil
 } from 'rxjs';
 

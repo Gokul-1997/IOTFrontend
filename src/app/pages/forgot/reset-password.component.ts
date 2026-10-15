@@ -45,7 +45,7 @@ export class ResetPasswordComponent {
 
     this.auth.resetPassword(this.token, this.form.value.password!)
       .subscribe({
-        next: (res: any) => {
+        next: () => {
           this.message = 'Password reset successful. Redirecting to login...';
           this.success = true;
           /* Zoneless: without this the confirmation never appears and the

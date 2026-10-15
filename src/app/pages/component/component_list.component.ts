@@ -5,7 +5,6 @@ import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 import { ComponentApi } from './component.api';
-import { SocketService } from '../../core/services/socket.service';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
@@ -58,7 +57,6 @@ export class ComponentList implements OnInit, OnDestroy {
   constructor(
     private fb:            FormBuilder,
     private api:           ComponentApi,
-    private socketService: SocketService,
     private cdr:           ChangeDetectorRef,
     public auth:           AuthService
   ) {}

@@ -13,7 +13,7 @@ import { Router, CanActivateFn } from '@angular/router';
  * once — as a side effect of creating the company — so if that person left
  * or the invitation mail was lost, nobody could add another.
  */
-export const companyAdminGuard: CanActivateFn = (route, state) => {
+export const companyAdminGuard: CanActivateFn = () => {
   const router = inject(Router);
 
   try {
@@ -46,7 +46,7 @@ export const companyAdminGuard: CanActivateFn = (route, state) => {
  * roles. The page had nothing left for S&T to do, so S&T is sent to its own
  * landing page rather than shown an empty, read-only list.
  */
-export const companyRolesGuard: CanActivateFn = (route, state) => {
+export const companyRolesGuard: CanActivateFn = () => {
   const router = inject(Router);
 
   try {

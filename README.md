@@ -1,76 +1,41 @@
 # FrontendIOT
 
+Angular web dashboard and Electron desktop shell for CNC machine monitoring.
+Use the Node version in `.nvmrc` and install the locked dependencies with `npm ci`.
 
+## Develop and verify
 
-Think like a UI/UX Designer and Full-Stack Developer with 20+ years of industry experience. Follow current design trends, modern development practices, and established market standards.
-
-Design and develop the complete solution with:
-
-* Clear visual hierarchy and consistent spacing
-* Modern, clean, and professional UI
-* Fully responsive layouts for mobile, tablet, and desktop
-* Accessibility following WCAG guidelines
-* Excellent usability and user experience
-* Consistent typography, colors, components, and design system
-* Proper validation, error handling, loading states, empty states, and success states
-* Scalable and maintainable frontend and backend architecture
-* Production-ready code and best practices
-
-
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.3.
-
-## Development server
-
-To start a local development server, run:
-
-```bash
-ng serve
+```sh
+npm start
+npm run test:ci
+npm run build
+npm run e2e
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+The development server uses `proxy.conf.json`. Configure the API URL in
+`src/environments/environment.ts` and `environment.prod.ts` for the target host.
+Browser integration checks use mocked API fixtures; see the isolated Playwright
+configurations before running checks against a live environment.
 
-## Code scaffolding
+## Desktop packages
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```sh
+npm run electron:dev
+npm run package:win
+npm run package:mac
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+The Electron shell loads the same Angular production assets. Signed release
+packages and real-device acceptance are separate deployment steps.
 
-```bash
-ng generate --help
-```
+## Assets and guides
 
-## Building
+`public/` contains the referenced application images, icons, licensed local fonts
+and the Program Transfer API guide downloaded from the transfer screen. The
+build copies this directory, so keep source archives and operator-only documents
+out of it. Server storage and image migration instructions live in the backend
+repository at `docs/LOCAL_FILE_STORAGE.md`.
 
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Production output is generated under `dist/`; it is not source code. Uploaded
+machine images are served by the authenticated backend file API and are not
+stored in this frontend repository.

@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
 
-export const adminGuard: CanActivateFn = (route, state) => {
+export const adminGuard: CanActivateFn = () => {
   const router = inject(Router);
 
   try {

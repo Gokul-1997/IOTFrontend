@@ -63,7 +63,6 @@ export class Charts implements OnInit, OnDestroy {
 
   private buildChartOptions(): void {
     const dark = this.isDark;
-    const bg        = dark ? '#1f2937' : '#ffffff';
     const textColor = dark ? '#d1d5db' : '#374151';
     const gridColor = dark ? '#374151' : '#e9ecef';
 

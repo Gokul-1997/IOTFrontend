@@ -22,11 +22,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatBadgeModule } from '@angular/material/badge';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Sort } from '@angular/material/sort';
 
 // Maps Material sort column names → DB prefixed column names expected by backend
 const SORT_MAP: Record<string, string> = {
@@ -47,7 +44,7 @@ import { StateComponent } from '../../shared/state/state.component';
     MatTableModule, MatPaginatorModule, MatSortModule,
     MatButtonModule, MatIconModule, MatInputModule,
     MatSlideToggleModule, MatProgressSpinnerModule,
-    MatTooltipModule, MatChipsModule, MatBadgeModule, StateComponent
+    MatTooltipModule, StateComponent
   ],
   templateUrl: './machines.component.html',
   styleUrl: './machines.component.scss'

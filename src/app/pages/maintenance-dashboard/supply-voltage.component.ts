@@ -42,7 +42,7 @@ export function supplyView(s: any): SupplyView | null {
     const imb = imbalancePct(raw);
     return {
       key, title, short, nominal, imb,
-      phases: names.map(([label, k], i) => ({ label, value: fmt(raw[i], 1), out: outOf(raw[i], nominal) })),
+      phases: names.map(([label], i) => ({ label, value: fmt(raw[i], 1), out: outOf(raw[i], nominal) })),
       avg: fmt(real(s[key].avg) ? Number(s[key].avg) : null, 1),
       imbalance: imb === null ? '--' : `${fmt(imb, 1)} %`
     };

@@ -1,5 +1,5 @@
 import { StoredImageDirective } from '../../shared/stored-image.directive';
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';

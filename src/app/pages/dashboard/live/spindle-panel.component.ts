@@ -3,7 +3,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { BehaviorSubject, Subscription, catchError, interval, map, of, startWith, switchMap } from 'rxjs';
+import { BehaviorSubject, Subscription, catchError, map, of, switchMap } from 'rxjs';
 import { DashboardService } from '../dashboard.service';
 import { MetricHelpComponent } from '../../../shared/metric-help/metric-help.component';
 import { StateComponent } from '../../../shared/state/state.component';

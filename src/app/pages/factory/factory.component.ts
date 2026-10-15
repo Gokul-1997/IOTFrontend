@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, interval, startWith, switchMap, takeUntil, catchError, of } from 'rxjs';
+import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { FactoryService } from './factory.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';

@@ -9,7 +9,6 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 
 @Component({
@@ -18,7 +17,7 @@ import { ReportDateDirective } from '../../shared/report-date.directive';
   imports: [ReportDateDirective, 
     CommonModule, FormsModule,
     MatPaginatorModule, MatProgressSpinnerModule,
-    MatIconModule, MatButtonModule, MatTooltipModule
+    MatIconModule, MatButtonModule
   ],
   templateUrl: './oee-reports.html',
   styleUrl: './oee-reports.scss'

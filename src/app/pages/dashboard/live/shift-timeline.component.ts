@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, OnDestroy, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { Subscription, interval, startWith, switchMap, catchError, of } from 'rxjs';
+import { Subscription, catchError, of } from 'rxjs';
 import { DashboardService } from '../dashboard.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { visibleRefresh } from '../../../shared/visible-refresh';

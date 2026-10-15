@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
 
-export const sntSuperGuard: CanActivateFn = (route, state) => {
+export const sntSuperGuard: CanActivateFn = () => {
   const router = inject(Router);
 
   try {
