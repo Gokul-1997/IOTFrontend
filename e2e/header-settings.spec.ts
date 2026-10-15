@@ -13,19 +13,19 @@ import { test, expect, seedAuth } from './fixtures/auth';
 const ok = (data: any) => ({ status: 'success', data });
 
 async function mockCommon(page: any) {
+  await page.routeWebSocket(/.*/, (socket: any) => socket.close());
+  await page.route('**/socket.io/**', (r: any) => r.abort());
   await page.route('**/api/**', (r: any) => r.fulfill({ status: 200, contentType: 'application/json',
     body: JSON.stringify({ status: 'success', success: true, data: [] }) }));
   await page.route('**/api/notifications/unread-count', (r: any) => r.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, count: 0 }) }));
-  await page.route('**/api/notifications/preferences', (r: any) => r.fulfill({ status: 200, contentType: 'application/json',
-    body: JSON.stringify(ok({ notify_alarm: true, notify_maintenance: true, notify_ticket: true, notify_program_transfer: true, notify_system: true })) }));
 }
 
 const header = (page: any) => page.locator('header');
 
 test('the header has no light/dark button, at any width', async ({ authedPage: page }) => {
   await mockCommon(page);
-  for (const width of [1500, 390]) {
+  for (const width of [1500, 390, 360]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/settings');
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
@@ -54,7 +54,10 @@ test('a company admin finds Users and Roles in Settings, not in the header bar',
   const admin = page.getByRole('region', { name: 'Administration' });
   await expect(admin.getByRole('link', { name: /Users/ })).toHaveAttribute('href', '/admin/users');
   await expect(admin.getByRole('link', { name: /Roles & Permissions/ })).toHaveAttribute('href', '/admin/roles');
-  await expect(page.locator('.mexa-subtitle')).toHaveText('( Appearance, notifications and administration )');
+  await expect(page.getByRole('region', { name: 'Appearance' })).toBeVisible();
+  await expect(page.locator('app-settings .mexa-subtitle')).toHaveCount(0);
+  await expect(page.getByRole('switch', { name: 'Dark mode' })).toHaveCount(1);
+  await expect(page.getByRole('switch', { name: 'Receive alarm notifications' })).toHaveCount(1);
 
   await admin.getByRole('link', { name: /Users/ }).click();
   await expect(page).toHaveURL(/\/admin\/users$/);
@@ -63,12 +66,20 @@ test('a company admin finds Users and Roles in Settings, not in the header bar',
 test('on a phone the menu has no Admin entry for a company admin either; Settings is there', async ({ page }) => {
   await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
   await mockCommon(page);
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/settings');
-  await page.getByRole('button', { name: 'Open menu' }).click();
-  const menu = page.locator('#mobile-menu');
-  await expect(menu.getByRole('link', { name: /Admin/ })).toHaveCount(0);
-  await expect(menu.getByRole('link', { name: 'Settings' })).toBeVisible();
+  for (const width of [390, 360]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/settings');
+    await expect(page.getByRole('region', { name: 'Appearance' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Administration' })).toBeVisible();
+    await expect(page.getByRole('switch', { name: 'Dark mode' })).toBeInViewport();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    const menu = page.locator('#mobile-menu');
+    await expect(menu.getByRole('link', { name: /Admin/ })).toHaveCount(0);
+    await expect(menu.getByRole('link', { name: 'Settings' })).toBeVisible();
+    await menu.getByRole('link', { name: 'Settings' }).click();
+    await expect(menu).toHaveCount(0);
+  }
 });
 
 test('a person who is not an admin sees no Administration in Settings', async ({ page }) => {
@@ -88,9 +99,10 @@ test('S&T keeps Admin in its bar and opens Settings for light/dark alone', async
   await page.goto('/settings');
   await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByRole('switch', { name: 'Dark mode' })).toBeVisible();
-  await expect(page.getByRole('group', { name: 'Notification types' })).toHaveCount(0);
+  await expect(page.getByRole('switch')).toHaveCount(1);
   await expect(page.getByRole('region', { name: 'Administration' })).toHaveCount(0);
-  await expect(page.locator('.mexa-subtitle')).toHaveText('( Appearance )');
+  await expect(page.getByRole('region', { name: 'Appearance' })).toBeVisible();
+  await expect(page.locator('app-settings .mexa-subtitle')).toHaveCount(0);
   expect(prefsCalls).toBe(0);
   await expect(header(page).getByRole('link', { name: /Admin/ })).toHaveAttribute('href', '/admin/companies');
 });

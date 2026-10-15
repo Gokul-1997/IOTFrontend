@@ -9,7 +9,11 @@ import { seedAuth } from './fixtures/auth';
  */
 
 const ok = (data: any) => ({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'success', success: true, data }) });
-const mockAll = (page: any) => page.route('**/api/**', (r: any) => r.fulfill(ok([])));
+async function mockAll(page: any) {
+  await page.routeWebSocket(/.*/, (socket: any) => socket.close());
+  await page.route('**/socket.io/**', (r: any) => r.abort());
+  await page.route('**/api/**', (r: any) => r.fulfill(ok([])));
+}
 const company = ['page:programs:view', 'page:quality:view', 'page:quality:edit', 'page:analytics-oee:view',
   'page:analytics-operators:view', 'page:operators:view', 'page:analytics-energy:view', 'page:analytics-energy:settings'];
 
@@ -34,6 +38,10 @@ test.describe('the app\'s home address opens each role\'s own first page', () =>
 test('S&T has no Notifications or bell — that URL sends it home — and Settings is light/dark only', async ({ page }) => {
   await seedAuth(page, { roles: ['SNT_SUPER'], is_snt_super: true, company_id: null, user_type: 'SNT_SUPER', username: 'superadmin' });
   await mockAll(page);
+  const alarmSettingsRequests: string[] = [];
+  page.on('request', request => {
+    if (/\/(notifications\/preferences|alarms\/notification-rules)/.test(request.url())) alarmSettingsRequests.push(request.url());
+  });
   await page.goto('/admin/companies');
   await page.getByRole('button', { name: /superadmin/ }).click();
   await expect(page.getByRole('link', { name: 'My Profile' })).toBeVisible();
@@ -48,32 +56,69 @@ test('S&T has no Notifications or bell — that URL sends it home — and Settin
   await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByRole('switch', { name: 'Dark mode' })).toBeVisible();
   await expect(page.getByRole('group', { name: 'Notification types' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Alarm notifications' })).toHaveCount(0);
+  expect(alarmSettingsRequests).toEqual([]);
 });
 
-test('Settings no longer offers an email digest', async ({ page }) => {
+test('a quality role has only personal appearance settings and makes no preference requests', async ({ page }) => {
   await seedAuth(page, { roles: ['QUALITY'], permissions: ['page:quality:view'], company_permissions: company });
-  await page.route('**/api/**', (r: any) => r.fulfill(ok({ notify_alarm: true, email_digest: false })));
+  await mockAll(page);
+  const preferenceRequests: string[] = [];
+  page.on('request', request => {
+    if (/\/(notifications\/preferences|alarms\/notification-rules)/.test(request.url())) preferenceRequests.push(request.url());
+  });
   await page.goto('/settings');
-  await expect(page.getByText('System', { exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Appearance' })).toBeVisible();
+  await expect(page.getByRole('switch')).toHaveCount(1);
+  await expect(page.getByRole('switch', { name: 'Dark mode' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Administration' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Alarm notifications' })).toHaveCount(0);
   await expect(page.getByText('Email digest')).toHaveCount(0);
+  expect(preferenceRequests).toEqual([]);
 });
 
-/* Settings offers only the notifications a role is ever sent: a setter is
-   told about program transfers, not alarms or tickets. */
-test('Settings lists only the notifications the role can receive', async ({ page }) => {
+test('a setter changes appearance without unrelated notification or admin controls', async ({ page }) => {
   await seedAuth(page, { roles: ['SETTER'], permissions: ['page:programs:view'], company_permissions: company });
-  await page.route('**/api/**', (r: any) => r.fulfill(ok({ notify_alarm: true })));
+  await mockAll(page);
+  await page.addInitScript(() => localStorage.setItem('theme', 'light'));
+  const alarmSettingsRequests: string[] = [];
+  page.on('request', request => {
+    if (/\/(notifications\/preferences|alarms\/notification-rules)/.test(request.url())) alarmSettingsRequests.push(request.url());
+  });
   await page.goto('/settings');
-  const rows = page.getByRole('group', { name: 'Notification types' }).locator('.mexa-setting-label');
-  await expect(rows).toHaveText(['Program transfer', 'System']);
+  await expect(page.getByRole('switch')).toHaveCount(1);
+  const darkMode = page.getByRole('switch', { name: 'Dark mode' });
+  await expect(darkMode).toHaveAttribute('aria-checked', 'false');
+  await darkMode.click();
+  await expect(darkMode).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await expect(page.getByRole('group', { name: 'Notification types' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Administration' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Alarm notifications' })).toHaveCount(0);
+  expect(alarmSettingsRequests).toEqual([]);
 });
 
-test('Settings lists every notification for a company admin', async ({ page }) => {
+test('a company admin has useful alarm settings and working user and role administration links', async ({ page }) => {
   await seedAuth(page, { roles: ['COMPANY_ADMIN'], company_permissions: [] });
-  await page.route('**/api/**', (r: any) => r.fulfill(ok({ notify_alarm: true })));
+  await mockAll(page);
+  const alarmSettingsRequests: string[] = [];
+  page.on('request', request => {
+    if (/\/(notifications\/preferences|alarms\/notification-rules)/.test(request.url())) alarmSettingsRequests.push(request.url());
+  });
   await page.goto('/settings');
-  const rows = page.getByRole('group', { name: 'Notification types' }).locator('.mexa-setting-label');
-  await expect(rows).toHaveText(['Alarms', 'Maintenance', 'Tickets', 'Program transfer', 'System']);
+  await expect(page.getByRole('region', { name: 'Appearance' })).toBeVisible();
+  const alarms = page.getByRole('region', { name: 'Alarm notifications' });
+  await expect(alarms.getByRole('switch', { name: 'Receive alarm notifications' })).toBeVisible();
+  await expect(alarms.getByRole('heading', { name: 'Machine alert rules' })).toBeVisible();
+  await expect(alarms.getByRole('searchbox', { name: 'Search machines' })).toBeVisible();
+  await expect(alarms.getByText('No active machines yet.')).toBeVisible();
+  expect(alarmSettingsRequests.filter(url => url.includes('/notifications/preferences'))).toHaveLength(1);
+  expect(alarmSettingsRequests.filter(url => url.includes('/alarms/notification-rules'))).toHaveLength(1);
+  const admin = page.getByRole('region', { name: 'Administration' });
+  await expect(admin.getByRole('link', { name: /Users/ })).toHaveAttribute('href', '/admin/users');
+  await expect(admin.getByRole('link', { name: /Roles & Permissions/ })).toHaveAttribute('href', '/admin/roles');
+  await admin.getByRole('link', { name: /Roles & Permissions/ }).click();
+  await expect(page).toHaveURL(/\/admin\/roles$/);
 });
 
 /* The header's Master menu is configuration only; Settings is about the

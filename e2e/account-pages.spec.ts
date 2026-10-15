@@ -19,6 +19,8 @@ const meta = { success: true, data: {
   shifts: [{ id: 10, shift_code: 'S1', shift_name: 'Shift 1' }] } };
 
 async function mockCommon(page: any) {
+  await page.routeWebSocket(/.*/, (socket: any) => socket.close());
+  await page.route('**/socket.io/**', (r: any) => r.abort());
   // Broad fallback registered first, as every other spec in this session
   // does — specific routes below win because Playwright matches last-added
   // first. Without it, any unmocked call hits the real (absent) backend.
@@ -96,11 +98,19 @@ test('dark mode, switched in Settings, survives a reload and applies on other pa
   await page.evaluate(() => localStorage.setItem('theme', 'light'));
   await page.goto('/settings');
   const html = page.locator('html');
+  const appearance = page.getByRole('region', { name: 'Appearance' });
+  const darkMode = appearance.getByRole('switch', { name: 'Dark mode' });
+  const themeIcon = appearance.locator('.set-icon');
   await expect(html).not.toHaveClass(/dark/);
+  await expect(darkMode).toHaveAttribute('aria-checked', 'false');
+  await expect(themeIcon).toHaveText('light_mode');
 
   // the switch lives in Settings only since 6 Oct 2026 — the header has no theme button
-  await page.getByRole('switch', { name: 'Dark mode' }).click();
+  await darkMode.click();
   await expect(html).toHaveClass(/dark/);
+  await expect(darkMode).toHaveAttribute('aria-checked', 'true');
+  await expect(themeIcon).toHaveText('dark_mode');
+  expect(await page.evaluate(() => localStorage.getItem('theme'))).toBe('dark');
 
   await page.goto('/factory');
   await expect(page.locator('.mexa-kpi').first()).toBeVisible();
@@ -108,70 +118,77 @@ test('dark mode, switched in Settings, survives a reload and applies on other pa
   await page.reload();
   await expect(page.locator('.mexa-kpi').first()).toBeVisible();
   await expect(html).toHaveClass(/dark/);
+
+  await page.goto('/settings');
+  await expect(darkMode).toHaveAttribute('aria-checked', 'true');
+  await expect(themeIcon).toHaveText('dark_mode');
+  // The decorative icon must not create a second, unsaved theme state.
+  await themeIcon.click();
+  await expect(html).toHaveClass(/dark/);
+  await expect(darkMode).toHaveAttribute('aria-checked', 'true');
+  expect(await page.evaluate(() => localStorage.getItem('theme'))).toBe('dark');
+  await darkMode.click();
+  await expect(html).not.toHaveClass(/dark/);
+  await expect(themeIcon).toHaveText('light_mode');
 });
 
-test('Settings toggles dark mode and per-user notification preferences', async ({ authedPage: page }) => {
-  // Settings lists only what a role can be sent; a company admin is sent everything
+test('Settings keeps local appearance, useful alarm controls and administration', async ({ authedPage: page }) => {
   await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
   await mockCommon(page);
-  let putBody: any = null;
-  await page.route('**/api/notifications/preferences', route => {
-    if (route.request().method() === 'GET') {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ok({
-        notify_alarm: true, notify_maintenance: true, notify_ticket: true,
-        notify_program_transfer: true, notify_system: true, email_digest: false
-      })) });
-    }
-    putBody = JSON.parse(route.request().postData() || '{}');
-    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ok({
-      ...putBody, notify_alarm: false
-    })) });
+  await page.addInitScript(() => localStorage.setItem('theme', 'light'));
+  const preferenceRequests: string[] = [];
+  page.on('request', request => {
+    if (request.url().includes('/notifications/preferences')) preferenceRequests.push(request.url());
   });
 
   await page.setViewportSize({ width: 1400, height: 1000 });
   await page.goto('/settings');
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
-
-  await page.getByRole('switch', { name: 'Alarms' }).click();
-  // the component sends its whole current preference state, not a diff —
-  // the assertion that matters is that the toggled field made it across.
-  expect(putBody).not.toBeNull();
-  expect(putBody.notify_alarm).toBe(false);
-  await expect(page.getByText('Saved.')).toBeVisible();
+  await expect(page.getByRole('switch', { name: 'Dark mode' })).toHaveCount(1);
+  await expect(page.getByRole('switch', { name: 'Receive alarm notifications' })).toHaveCount(1);
+  await expect(page.getByRole('group', { name: 'Notification types' })).toHaveCount(0);
+  const darkMode = page.getByRole('switch', { name: 'Dark mode' });
+  await darkMode.click();
+  await expect(darkMode).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  expect(await page.evaluate(() => localStorage.getItem('theme'))).toBe('dark');
+  const admin = page.getByRole('region', { name: 'Administration' });
+  await expect(admin.getByRole('link', { name: /Users/ })).toBeVisible();
+  await expect(admin.getByRole('link', { name: /Roles & Permissions/ })).toBeVisible();
+  expect(preferenceRequests).toHaveLength(1);
 });
 
-test('visual check: profile, settings and notifications render cleanly, light and dark', async ({ authedPage: page }) => {
+test('visual check: profile, settings and notifications render cleanly, light and dark', async ({ authedPage: page }, testInfo) => {
   await mockCommon(page);
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('theme')) localStorage.setItem('theme', 'light');
+  });
   await page.route('**/api/auth/me', (r: any) => r.fulfill({ status: 200, contentType: 'application/json',
     body: JSON.stringify(ok({ id: 1, username: 'test', email: 'test@example.com', mobile: '9876543210',
       user_type: 'COMPANY_ADMIN', company_name: 'S AND T', plant_name: 'Plant 1', last_login_at: new Date().toISOString() })) }));
-  await page.route('**/api/notifications/preferences', route => route.fulfill({
-    status: 200, contentType: 'application/json', body: JSON.stringify(ok({
-      notify_alarm: true, notify_maintenance: true, notify_ticket: false,
-      notify_program_transfer: true, notify_system: true, email_digest: false
-    })) }));
-
   await page.setViewportSize({ width: 1400, height: 1000 });
 
   await page.goto('/profile');
   await expect(page.getByRole('heading', { name: 'My Profile' })).toBeVisible();
-  await page.screenshot({ path: 'mexa-account-profile-light.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('account-profile-light.png'), fullPage: true });
 
   await page.goto('/settings');
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
-  await page.waitForTimeout(300);
-  await page.screenshot({ path: 'mexa-account-settings-light.png', fullPage: true });
+  await expect(page.getByRole('region', { name: 'Appearance' })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('account-settings-light.png'), fullPage: true });
 
   await page.goto('/notifications');
   await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible();
-  await page.screenshot({ path: 'mexa-account-notifications-light.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('account-notifications-light.png'), fullPage: true });
 
-  // localStorage, not classList.add — goto() is a real navigation and
-  // would wipe an in-memory class change; ThemeService reads storage fresh
-  // on every construction, which is the actual mechanism under test.
-  await page.evaluate(() => localStorage.setItem('theme', 'dark'));
+  // Use the Settings switch so the saved choice survives a real navigation.
+  await page.goto('/settings');
+  await page.getByRole('switch', { name: 'Dark mode' }).click();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await page.setViewportSize({ width: 360, height: 844 });
+  await page.screenshot({ path: testInfo.outputPath('account-settings-dark-mobile.png'), fullPage: true });
   await page.goto('/profile');
   await expect(page.getByRole('heading', { name: 'My Profile' })).toBeVisible();
   await expect(page.locator('html')).toHaveClass(/dark/);
-  await page.screenshot({ path: 'mexa-account-profile-dark.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('account-profile-dark.png'), fullPage: true });
 });

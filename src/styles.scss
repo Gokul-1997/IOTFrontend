@@ -1258,56 +1258,12 @@ html.dark [class~="bg-blue-600"][class~="text-white"] { color: #fff; }
   }
 }
 
-/* Alarms */
-.icon-notify_alarm {
-  background: #fff0f1;
-
-  .material-icons {
-    color: #fb3748;
-  }
-}
-
-/* Maintenance */
-.icon-notify_maintenance {
-  background: #fff7df;
-
-  .material-icons {
-    color: #d99a00;
-  }
-}
-
-/* Tickets */
-.icon-notify_ticket {
-  background: #edf4ff;
-
-  .material-icons {
-    color: #4f7fd9;
-  }
-}
-
-/* Program transfer */
-.icon-notify_program_transfer {
-  background: #ecfaf7;
-
-  .material-icons {
-    color: #00a88a;
-  }
-}
-
 /* System */
 .icon-notify_system {
   background: #f1f3f5;
 
   .material-icons {
     color: #68727d;
-  }
-}
-
-.icon-theme_change {
-  background: #f1f3f5;
-
-  .material-icons {
-    color: #7b98b8;
   }
 }
 

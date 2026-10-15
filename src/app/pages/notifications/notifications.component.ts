@@ -1,7 +1,9 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, HostListener, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { NotificationService } from '../../core/services/notification.service';
+import { Subscription, auditTime, pairwise } from 'rxjs';
 
 /**
  * The full notification list.
@@ -49,26 +51,44 @@ export class NotificationsComponent implements OnInit {
   readonly limit = 20;
   total = 0;
   totalPages = 1;
+  private listRequest?: Subscription;
+  private loadedUnread: number | null = null;
+  private newCount = false;
 
   constructor(
     private notif: NotificationService,
     private router: Router,
-    private cdr: ChangeDetectorRef
-  ) {}
+    private cdr: ChangeDetectorRef,
+    private destroyRef: DestroyRef
+  ) { this.destroyRef.onDestroy(() => this.listRequest?.unsubscribe()); }
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void {
+    this.load();
+    this.notif.unreadCount$.pipe(pairwise(), auditTime(250), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.newCount = this.notif.unreadCount$.value !== this.loadedUnread;
+      this.refreshVisible();
+    });
+  }
+
+  @HostListener('document:visibilitychange')
+  refreshVisible(): void {
+    if (this.newCount && !document.hidden && this.page === 1) this.load();
+  }
 
   load(): void {
+    this.listRequest?.unsubscribe();
+    this.newCount = false;
     this.loading = true;
     this.errorMsg = '';
     this.cdr.markForCheck();
 
-    this.notif.getNotifications({
+    this.listRequest = this.notif.getNotifications({
       page: this.page, limit: this.limit,
       ...(this.unreadOnly ? { unread_only: 'true' } : {})
-    }).subscribe({
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res: any) => {
         this.notifications = res.data || [];
+        this.loadedUnread = Number.isFinite(res.unread_count) ? res.unread_count : null;
         this.total = res.pagination?.total ?? this.notifications.length;
         this.totalPages = res.pagination?.totalPages ?? 1;
         this.loading = false;

@@ -11,6 +11,7 @@ import { Router, provideRouter } from '@angular/router';
 import { AuthService } from './auth.service';
 import { NotificationService } from './notification.service';
 import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
+import { NotificationsComponent } from '../../pages/notifications/notifications.component';
 
 /* A socket that connects at once (or never), and lets a test fire what the server would send. */
 import { fakeSockets as sockets, fakeSocketIo } from '../../../testing/fake-socket-io';
@@ -18,6 +19,7 @@ vi.mock('socket.io-client', () => import('../../../testing/fake-socket-io'));
 const never = () => { fakeSocketIo.autoConnect = false; };
 
 const UNREAD = (r: any) => r.url.endsWith('/notifications/unread-count');
+const LIST = (r: any) => r.url.endsWith('/notifications');
 let hidden = false;
 let auth: AuthService;
 let http: HttpTestingController;
@@ -231,5 +233,71 @@ describe('reading changes the count at once', () => {
     http.expectOne(r => r.url.endsWith('/mark-all-read')).flush({ success: true });
     early.flush({ count: 7 });
     expect(notes.unreadCount$.value).toBe(0);
+  });
+});
+
+describe('a new sustained alarm reaches visible inboxes over the shared connection', () => {
+  const alarm = { id: 41, type: 'ALARM', title: 'CNC-01 sustained alarm', message: 'Door open for 30 seconds',
+    is_read: false, created_at: '2026-10-15T10:00:00Z', link: '/alarms' };
+  const response = (data: any[], unread_count: number) => ({ data, unread_count,
+    pagination: { page: 1, limit: 20, total: data.length, totalPages: 1 } });
+
+  test('the full inbox coalesces a burst into one bounded refresh and renders the alarm', async () => {
+    login();
+    const fixture = TestBed.createComponent(NotificationsComponent);
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(0);
+    http.expectOne(UNREAD).flush({ count: 0 });
+    http.expectOne(LIST).flush(response([], 0));
+    sockets[0].fire('unreadCount', { count: 1 });
+    sockets[0].fire('unreadCount', { count: 2 });
+    await vi.advanceTimersByTimeAsync(249);
+    http.expectNone(LIST);
+    await vi.advanceTimersByTimeAsync(1);
+    http.expectOne(LIST).flush(response([alarm], 2));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('CNC-01 sustained alarm');
+    await vi.advanceTimersByTimeAsync(1000);
+    http.expectNone(LIST);
+  });
+
+  test('a hidden inbox waits until visible, and a destroyed inbox stops listening', async () => {
+    login();
+    const fixture = TestBed.createComponent(NotificationsComponent);
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(0);
+    http.expectOne(UNREAD).flush({ count: 0 });
+    http.expectOne(LIST).flush(response([], 0));
+    setHidden(true);
+    sockets[0].fire('unreadCount', { count: 1 });
+    await vi.advanceTimersByTimeAsync(250);
+    http.expectNone(LIST);
+    setHidden(false);
+    http.expectOne(LIST).flush(response([alarm], 1));
+    fixture.destroy();
+    sockets[0].fire('unreadCount', { count: 2 });
+    await vi.advanceTimersByTimeAsync(250);
+    http.expectNone(LIST);
+  });
+
+  test('the closed bell does not preload a list; an open bell refreshes once for a burst', async () => {
+    login();
+    const fixture = TestBed.createComponent(NotificationBellComponent);
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(0);
+    http.expectOne(UNREAD).flush({ count: 0 });
+    http.expectNone(LIST);
+    fixture.componentInstance.togglePanel();
+    http.expectOne(LIST).flush(response([], 0));
+    sockets[0].fire('unreadCount', { count: 1 });
+    sockets[0].fire('unreadCount', { count: 2 });
+    await vi.advanceTimersByTimeAsync(250);
+    http.expectOne(LIST).flush(response([alarm], 2));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('CNC-01 sustained alarm');
+    fixture.componentInstance.togglePanel();
+    sockets[0].fire('unreadCount', { count: 3 });
+    await vi.advanceTimersByTimeAsync(250);
+    http.expectNone(LIST);
   });
 });

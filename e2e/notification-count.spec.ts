@@ -19,6 +19,8 @@ const list = {
 };
 
 async function stub(page: any) {
+  await page.routeWebSocket(/.*/, (socket: any) => socket.close());
+  await page.route('**/socket.io/**', (route: any) => route.abort());
   const asked: string[] = [];
   await page.route('**/api/**', (r: any) => r.fulfill(json({ status: 'success', success: true, data: [] })));
   await page.route('**/api/notifications/unread-count', (r: any) => { asked.push(r.request().url()); return r.fulfill(json({ success: true, count: 2 })); });

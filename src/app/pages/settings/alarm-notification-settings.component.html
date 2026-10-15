@@ -1,0 +1,85 @@
+<section class="mexa-card" aria-labelledby="set-alarm-notifications">
+  <h2 id="set-alarm-notifications" class="mexa-card-title mexa-card-title-left">Alarm notifications</h2>
+  <p class="alarm-hint">Get a notification when the same controller alarm stays active beyond its machine's delay.
+    An alarm that clears sooner does not notify. Each occurrence notifies once.
+    The delay applies only to notifications; machine alarm records are still recorded as they arrive.</p>
+
+  <div class="alarm-personal">
+    <div>
+      <p id="set-receive-alarms" class="mexa-setting-label">Receive alarm notifications</p>
+      <p id="set-receive-alarms-hint" class="mexa-setting-hint">Your notification inbox on the web and mobile app.</p>
+    </div>
+    <button type="button" role="switch" class="mexa-switch" aria-labelledby="set-receive-alarms"
+      aria-describedby="set-receive-alarms-hint" [attr.aria-checked]="receive"
+      [disabled]="preferenceLoading || preferenceSaving || !!preferenceError" (click)="toggleReceive()"></button>
+  </div>
+  <p *ngIf="preferenceLoading || preferenceSaving || preferenceStatus" class="alarm-status" role="status">
+    {{ preferenceLoading ? 'Loading your preference…' : preferenceSaving ? 'Saving…' : preferenceStatus }}</p>
+  <div *ngIf="preferenceError" class="alarm-error" role="alert">
+    {{ preferenceError }}
+    <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="loadPreference()">Retry preference</button>
+  </div>
+
+  <div *ngIf="companyAdmin" class="alarm-admin">
+    <h3>Machine alert rules</h3>
+    <p class="alarm-hint">Enable the machines to monitor and save a delay for each one. These rules apply to your company.
+      Enabling a rule or changing its delay starts a new waiting period.
+      After a telemetry gap, fresh readings restart the timer.</p>
+    <label for="alarm-machine-search" class="ui-label alarm-search">Search machines
+      <input id="alarm-machine-search" type="search" class="ui-input mt-1" maxlength="100"
+        [ngModel]="search" (ngModelChange)="searchChanged($event)" [disabled]="savingRule" placeholder="Machine or plant name">
+    </label>
+    <p *ngIf="loading" class="alarm-status" role="status">Loading machine rules…</p>
+    <div *ngIf="listError" class="alarm-error" role="alert">
+      {{ listError }}
+      <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="loadPage(page)">Retry machine rules</button>
+    </div>
+
+    <ul *ngIf="!loading && !listError" class="alarm-list" aria-label="Machine alarm rules">
+      <li *ngFor="let row of rows; trackBy: trackMachine" class="alarm-row" [attr.aria-label]="row.machine_serial_no">
+        <div class="alarm-machine">
+          <div class="alarm-name"><strong>{{ row.machine_serial_no }}</strong>
+            <span class="mexa-setting-hint">{{ row.plant_name || 'No plant assigned' }}</span></div>
+          <button type="button" role="switch" class="mexa-switch" [attr.aria-label]="'Alarm alerts for ' + row.machine_serial_no"
+            [attr.aria-checked]="row.enabled" [disabled]="row.saving" (click)="row.enabled = !row.enabled; edited(row)"></button>
+        </div>
+        <div class="alarm-controls">
+          <div class="alarm-field">
+            <label [for]="'alarm-delay-' + row.machine_id" class="ui-label">Notify after</label>
+            <select [id]="'alarm-delay-' + row.machine_id" class="ui-input" [(ngModel)]="row.preset" (ngModelChange)="edited(row)"
+              [disabled]="row.saving" [attr.aria-label]="'Notify after for ' + row.machine_serial_no">
+              <option [ngValue]="30">30 seconds</option>
+              <option [ngValue]="60">1 minute</option>
+              <option [ngValue]="300">5 minutes</option>
+              <option [ngValue]="600">10 minutes</option>
+              <option [ngValue]="'custom'">Custom seconds</option>
+            </select>
+          </div>
+          <div *ngIf="row.preset === 'custom'" class="alarm-field">
+            <label [for]="'alarm-seconds-' + row.machine_id" class="ui-label">Delay in seconds</label>
+            <input [id]="'alarm-seconds-' + row.machine_id" type="number" inputmode="numeric" min="1" max="86400" step="1"
+              class="ui-input" [(ngModel)]="row.customSeconds" (ngModelChange)="edited(row)" [disabled]="row.saving"
+              [attr.aria-label]="'Delay in seconds for ' + row.machine_serial_no" [attr.aria-invalid]="invalid(row) ? true : null"
+              [attr.aria-describedby]="'alarm-rule-status-' + row.machine_id">
+          </div>
+          <button type="button" class="ui-btn ui-btn-primary" [disabled]="row.saving || !changed(row)"
+            [attr.aria-label]="'Save alarm rule for ' + row.machine_serial_no" (click)="save(row)">
+            {{ row.saving ? 'Saving…' : 'Save' }}</button>
+        </div>
+        <p *ngIf="row.error || row.status || changed(row)" [id]="'alarm-rule-status-' + row.machine_id"
+          [class.alarm-error]="!!row.error" [class.alarm-status]="!row.error" [attr.role]="row.error ? 'alert' : 'status'">
+          {{ row.error || row.status || 'Changes not saved' }}</p>
+      </li>
+      <li *ngIf="!rows.length" class="alarm-hint">{{ search ? 'No machines match your search.' : 'No active machines yet.' }}</li>
+    </ul>
+    <div *ngIf="!listError" class="alarm-pager">
+      <span>{{ total }} machines · Page {{ page }} of {{ totalPages }}</span>
+      <div>
+        <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" [disabled]="loading || savingRule || page <= 1"
+          (click)="loadPage(page - 1)" aria-label="Previous machine rules page">Previous</button>
+        <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" [disabled]="loading || savingRule || page >= totalPages"
+          (click)="loadPage(page + 1)" aria-label="Next machine rules page">Next</button>
+      </div>
+    </div>
+  </div>
+</section>

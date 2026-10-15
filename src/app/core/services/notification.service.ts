@@ -79,6 +79,15 @@ export class NotificationService {
     return this.http.get<any>(this.api, { params });
   }
 
+  getAlarmPreference() {
+    return this.http.get<{ success: boolean; data: { notify_alarm: boolean } }>(`${this.api}/preferences`);
+  }
+
+  /** Update this switch alone; other notification preferences belong to their own features. */
+  updateAlarmPreference(enabled: boolean) {
+    return this.http.put<{ success: boolean; data: { notify_alarm: boolean } }>(`${this.api}/preferences`, { notify_alarm: enabled });
+  }
+
   /** Mark one read (callers ask only for unread ones): the count drops at once. */
   markRead(id: number) {
     return defer(() => {
@@ -99,14 +108,6 @@ export class NotificationService {
         catchError(err => { this.refresh(true); return throwError(() => err); })
       );
     });
-  }
-
-  getPreferences() {
-    return this.http.get<any>(`${this.api}/preferences`);
-  }
-
-  updatePreferences(patch: Record<string, boolean>) {
-    return this.http.put<any>(`${this.api}/preferences`, patch);
   }
 
   /* ── keeping the count ── */

@@ -75,8 +75,8 @@ export const companyRolesGuard: CanActivateFn = () => {
 };
 
 /**
- * Pages that belong to someone inside a company — Settings (notification
- * choices) and Notifications. S&T belongs to no company and is sent none,
+ * Pages that belong to someone inside a company, such as Notifications.
+ * S&T belongs to no company and is sent none,
  * so S&T goes to its own landing page instead of an empty screen.
  */
 export const companyUserGuard: CanActivateFn = () => {

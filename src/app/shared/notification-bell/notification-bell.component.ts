@@ -1,7 +1,9 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { NotificationService } from '../../core/services/notification.service';
+import { Subscription, auditTime, pairwise } from 'rxjs';
 
 @Component({
   selector: 'app-notification-bell',
@@ -54,7 +56,7 @@ import { NotificationService } from '../../core/services/notification.service';
           <ng-template #noNotifs>
             <div class="p-6 text-center text-gray-600 text-sm">
               <span class="material-icons block text-[28px] text-gray-400 mb-1" aria-hidden="true">notifications_none</span>
-              No notifications yet. Alarms and warnings from your machines will show here.
+              No notifications yet.
             </div>
           </ng-template>
         </div>
@@ -68,10 +70,14 @@ import { NotificationService } from '../../core/services/notification.service';
 export class NotificationBellComponent implements OnInit {
   open = false;
   notifications: any[] = [];
+  private listRequest?: Subscription;
 
   @ViewChild('bellBtn') bellBtn?: ElementRef<HTMLButtonElement>;
 
-  constructor(public notifService: NotificationService, private host: ElementRef<HTMLElement>) {}
+  constructor(public notifService: NotificationService, private host: ElementRef<HTMLElement>,
+              private cdr: ChangeDetectorRef, private destroyRef: DestroyRef) {
+    this.destroyRef.onDestroy(() => this.listRequest?.unsubscribe());
+  }
 
   /** A click anywhere else closes the panel. */
   @HostListener('document:click', ['$event'])
@@ -84,11 +90,19 @@ export class NotificationBellComponent implements OnInit {
     if (returnFocus) this.bellBtn?.nativeElement.focus();
   }
 
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    this.notifService.unreadCount$.pipe(pairwise(), auditTime(250), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      if (this.open && !document.hidden) this.load();
+    });
+  }
 
   load() {
-    this.notifService.getNotifications({ limit: 10 }).subscribe({
-      next: res => this.notifications = res.data || [],
+    this.listRequest?.unsubscribe();
+    this.listRequest = this.notifService.getNotifications({ limit: 10 }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: res => {
+        this.notifications = res.data || [];
+        this.cdr.markForCheck();
+      },
       error: () => {}
     });
   }
@@ -109,7 +123,10 @@ export class NotificationBellComponent implements OnInit {
 
   markAllRead() {
     this.notifService.markAllRead().subscribe({
-      next: () => { this.notifications.forEach(n => n.is_read = true); },
+      next: () => {
+        this.notifications.forEach(n => n.is_read = true);
+        this.cdr.markForCheck();
+      },
       error: () => {}
     });
   }
