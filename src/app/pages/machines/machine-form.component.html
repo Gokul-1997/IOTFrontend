@@ -142,10 +142,16 @@
             <div>
               <label class="ui-label" for="mfSpindle">Spindle speed</label>
               <div class="ui-unit-wrap">
-                <input id="mfSpindle" class="ui-input" type="number" inputmode="numeric" min="0"
-                       formControlName="spindle_rpm" placeholder="12000" />
+                <input id="mfSpindle" class="ui-input" type="number" inputmode="numeric" min="0" step="1"
+                       formControlName="spindle_rpm" placeholder="12000"
+                       [class.is-invalid]="invalid('spindle_rpm')"
+                       [attr.aria-invalid]="invalid('spindle_rpm')"
+                       [attr.aria-describedby]="invalid('spindle_rpm') ? 'mfSpindleErr' : null" />
                 <span class="ui-unit" aria-hidden="true">rpm</span>
               </div>
+              <p *ngIf="invalid('spindle_rpm')" id="mfSpindleErr" class="ui-error" role="alert">
+                Whole number, 0 or more.
+              </p>
             </div>
 
             <div>
@@ -187,10 +193,16 @@
             <div *ngFor="let ax of axes">
               <label class="ui-label" [attr.for]="'mf-' + ax.key">{{ ax.label }}</label>
               <div class="ui-unit-wrap">
-                <input [id]="'mf-' + ax.key" class="ui-input" type="number" inputmode="numeric"
-                       [formControlName]="ax.key" [placeholder]="ax.placeholder" />
+                <input [id]="'mf-' + ax.key" class="ui-input" type="number" inputmode="numeric" min="0" step="1"
+                       [formControlName]="ax.key" [placeholder]="ax.placeholder"
+                       [class.is-invalid]="invalid(ax.key)"
+                       [attr.aria-invalid]="invalid(ax.key)"
+                       [attr.aria-describedby]="invalid(ax.key) ? 'mf-' + ax.key + '-err' : null" />
                 <span class="ui-unit" aria-hidden="true">mm</span>
               </div>
+              <p *ngIf="invalid(ax.key)" [id]="'mf-' + ax.key + '-err'" class="ui-error" role="alert">
+                Whole number, 0 or more.
+              </p>
             </div>
           </div>
 

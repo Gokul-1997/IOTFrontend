@@ -21,11 +21,21 @@ import {
   ReactiveFormsModule,
   FormBuilder,
   Validators,
-  FormGroup
+  FormGroup,
+  ValidatorFn
 } from '@angular/forms';
 
 import { MachinesService } from './machines.service';
 import { ToastService } from '../../core/services/toast.service';
+
+/** Axis travel and spindle speed are stored as whole numbers. Empty is fine:
+ *  a 3-axis machine has no 4th axis. */
+const wholeNumber: ValidatorFn = control => {
+  const value = control.value;
+  if (value === null || value === '') return null;
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 0 && n <= 2147483647 ? null : { wholeNumber: true };
+};
 
 @Component({
   standalone: true,
@@ -82,12 +92,13 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       image_url: [''],
       controller: [''],
       mmc_no: [''],
-      spindle_rpm: [''],
-      x_axis: [''],
-      y_axis: [''],
-      z_axis: [''],
-      fourth_axis: [''],
-      fifth_axis: [''],
+      // null, not '': an untouched number box is "not set", never an empty string
+      spindle_rpm: [null as number | null, wholeNumber],
+      x_axis: [null as number | null, wholeNumber],
+      y_axis: [null as number | null, wholeNumber],
+      z_axis: [null as number | null, wholeNumber],
+      fourth_axis: [null as number | null, wholeNumber],
+      fifth_axis: [null as number | null, wholeNumber],
       twin_spindle: [false],
       twin_table: [false],
       atc_tool_capacity: [''],
@@ -270,7 +281,8 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       // Move focus to the first problem rather than leaving the user to hunt
       // for red borders in a form four sections long.
       const firstInvalid = Object.keys(this.form.controls).find(k => this.form.get(k)?.invalid);
-      const map: Record<string, string> = { plant_id: '#mfPlant', line_id: '#mfLine', machine_serial_no: '#mfSerial', hour_rate: '#mfRate' };
+      const map: Record<string, string> = { plant_id: '#mfPlant', line_id: '#mfLine', machine_serial_no: '#mfSerial',
+        spindle_rpm: '#mfSpindle', ...Object.fromEntries(this.axes.map(ax => [ax.key, '#mf-' + ax.key])), hour_rate: '#mfRate' };
       const el = firstInvalid && map[firstInvalid]
         ? this.host.nativeElement.querySelector<HTMLElement>(map[firstInvalid])
         : null;
@@ -304,9 +316,10 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
 
     } else {
 
-      // Create → full form
+      // Create → full form; a box left empty is sent as "not set"
+      const payload = Object.fromEntries(Object.entries(this.form.value).map(([key, value]) => [key, value === '' ? null : value]));
       this.saving = true;
-      this.service.create(this.form.value).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      this.service.create(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => { this.saving = false; this.saved.emit(); },
         error: err => { this.saving = false; this.toast.error(err.error?.message || 'Could not create the machine.'); this.cdr.markForCheck(); }
       });
