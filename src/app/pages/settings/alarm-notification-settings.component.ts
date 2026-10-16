@@ -1,54 +1,26 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Subject, Subscription, debounceTime, takeUntil } from 'rxjs';
-import { AlarmNotificationRule, AlarmService } from '../../core/services/alarm.service';
+import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
+import { AlarmService, CriticalAlarmPolicy } from '../../core/services/alarm.service';
 import { NotificationService } from '../../core/services/notification.service';
 
-interface RuleRow extends AlarmNotificationRule {
-  delay_seconds: number;
-  preset: number | 'custom';
-  customSeconds: number | null;
-  savedEnabled: boolean;
-  savedSeconds: number;
-  saving: boolean;
-  error: string;
-  status: string;
-}
-
-const PRESETS = [30, 60, 300, 600];
-
-/** Company machine rules run on the server; this page never polls telemetry. */
+/** Critical-only delivery: one company switch and each person's inbox preference. */
 @Component({
-  selector: 'app-alarm-notification-settings',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
+  selector: 'app-alarm-notification-settings', standalone: true, imports: [CommonModule],
   templateUrl: './alarm-notification-settings.component.html',
   styles: [`
     :host { display: block; min-width: 0; }
-    .alarm-hint { color: var(--mexa-ink-2); font-size: .85rem; line-height: 1.55; margin: .5rem 0; }
-    .alarm-personal { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; }
-    .alarm-personal > div { min-width: 0; }
-    .mexa-switch { flex: none; }
-    .alarm-admin { margin-top: 1.25rem; border-top: 1px solid var(--mexa-rule); padding-top: 1rem; }
-    .alarm-admin h3 { font-size: .95rem; font-weight: 600; margin: 0; }
-    .alarm-search { display: block; margin: 1rem 0; }
-    .alarm-list { list-style: none; margin: 0; padding: 0; }
-    .alarm-row { padding: 1rem 0; border-top: 1px solid var(--mexa-rule); }
-    .alarm-machine { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
-    .alarm-name { min-width: 0; overflow-wrap: anywhere; }
-    .alarm-name strong { display: block; font-size: .9rem; color: var(--mexa-ink); }
-    .alarm-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .65rem; margin-top: .75rem; }
-    .alarm-field { flex: 1 1 10rem; min-width: 0; }
-    .alarm-field label { display: block; margin-bottom: .3rem; }
-    .alarm-field .ui-input { width: 100%; min-width: 0; }
-    .alarm-status { margin: .5rem 0 0; font-size: .8rem; color: var(--mexa-ink-2); }
-    .alarm-error { margin: .5rem 0; color: var(--mexa-bad); font-size: .85rem; }
-    .alarm-pager { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; padding-top: .75rem; }
-    .alarm-pager span { font-size: .8rem; color: var(--mexa-ink-2); }
-    .alarm-pager > div { display: flex; gap: .5rem; }
-    @media (max-width: 420px) { .alarm-controls > button { width: 100%; } .alarm-field { flex-basis: 100%; } }
+    .alarm-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .alarm-row > div { min-width: 0; } .mexa-switch { flex: none; }
+    .alarm-status, .alarm-hint { font-size: .8rem; color: var(--mexa-ink-2); line-height: 1.55; margin: .65rem 0 0; }
+    .alarm-error { color: var(--mexa-bad); font-size: .85rem; margin: .75rem 0; }
+    .alarm-company { padding-top: 1rem; margin-top: 1rem; border-top: 1px solid var(--mexa-rule); }
+    .alarm-scope { display: inline-flex; align-items: center; gap: .4rem; background: var(--mexa-row-alt); color: var(--mexa-ink-2);
+      border-radius: 6px; font-size: .75rem; padding: .4rem .55rem; margin-bottom: .8rem; }
+    .alarm-scope .material-icons { color: #dc2626; font-size: 1rem; }
+    .alarm-actions { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; margin-top: .9rem; }
+    .alarm-actions p { margin: 0; } @media (max-width: 420px) { .alarm-actions > button { width: 100%; } }
   `]
 })
 export class AlarmNotificationSettingsComponent implements OnInit, OnDestroy {
@@ -58,36 +30,22 @@ export class AlarmNotificationSettingsComponent implements OnInit, OnDestroy {
   preferenceSaving = false;
   preferenceError = '';
   preferenceStatus = '';
-  rows: RuleRow[] = [];
-  loading = false;
-  listError = '';
-  search = '';
-  page = 1;
-  total = 0;
-  totalPages = 1;
+  policy: CriticalAlarmPolicy | null = null;
+  companyEnabled = false;
+  companyLoading = false;
+  companySaving = false;
+  companyError = '';
+  companyStatus = '';
+  companyConflict = false;
   private readonly destroyed$ = new Subject<void>();
-  private readonly searches$ = new Subject<void>();
-  private listRequest?: Subscription;
 
   constructor(private alarms: AlarmService, private notifications: NotificationService,
               auth: AuthService, private cdr: ChangeDetectorRef) {
     this.companyAdmin = auth.isCompanyAdmin() && !auth.isSntSuper();
   }
 
-  ngOnInit(): void {
-    this.loadPreference();
-    if (this.companyAdmin) {
-      this.searches$.pipe(debounceTime(300), takeUntil(this.destroyed$)).subscribe(() => this.loadPage(1));
-      this.loadPage(1);
-    }
-  }
-
-  ngOnDestroy(): void {
-    this.listRequest?.unsubscribe();
-    this.destroyed$.next();
-    this.destroyed$.complete();
-    this.searches$.complete();
-  }
+  ngOnInit(): void { this.loadPreference(); if (this.companyAdmin) this.loadCompany(); }
+  ngOnDestroy(): void { this.destroyed$.next(); this.destroyed$.complete(); }
 
   loadPreference(): void {
     this.preferenceLoading = true;
@@ -128,79 +86,59 @@ export class AlarmNotificationSettingsComponent implements OnInit, OnDestroy {
     });
   }
 
-  searchChanged(value: string): void {
-    this.search = value.slice(0, 100);
-    this.listRequest?.unsubscribe();
-    this.page = 1;
-    this.loading = true;
-    this.listError = '';
-    this.searches$.next();
+  get companyChanged(): boolean { return !!this.policy && this.companyEnabled !== this.policy.enabled; }
+  get showInboxHint(): boolean {
+    return this.companyEnabled && !this.receive && !this.preferenceLoading && !this.preferenceError;
   }
 
-  loadPage(page: number): void {
-    if (!this.companyAdmin) return;
-    this.listRequest?.unsubscribe();
-    this.page = page;
-    this.loading = true;
-    this.listError = '';
-    this.listRequest = this.alarms.getNotificationRules(page, this.search.trim()).pipe(takeUntil(this.destroyed$)).subscribe({
+  loadCompany(): void {
+    if (!this.companyAdmin || this.companySaving) return;
+    this.companyLoading = true;
+    this.companyError = '';
+    this.alarms.getNotificationPolicy().pipe(takeUntil(this.destroyed$)).subscribe({
       next: res => {
-        this.rows = (res.data || []).map(rule => this.toRow(rule));
-        this.page = res.pagination?.page || page;
-        this.total = res.pagination?.total || 0;
-        this.totalPages = Math.max(1, res.pagination?.totalPages || 1);
-        this.loading = false;
+        this.policy = res.data;
+        this.companyEnabled = res.data.enabled;
+        this.companyLoading = false;
+        this.companyConflict = false;
+        this.companyStatus = '';
         this.cdr.markForCheck();
       },
       error: err => {
-        this.loading = false;
-        this.listError = err?.error?.message || 'Could not load machine alarm rules.';
+        this.companyLoading = false;
+        this.companyError = err?.error?.message || 'Could not load company critical alarm alerts.';
         this.cdr.markForCheck();
       }
     });
   }
 
-  private toRow(rule: AlarmNotificationRule): RuleRow {
-    const seconds = rule.delay_seconds ?? 600;
-    return { ...rule, delay_seconds: seconds, preset: PRESETS.includes(seconds) ? seconds : 'custom',
-      customSeconds: seconds, savedEnabled: rule.enabled, savedSeconds: seconds, saving: false, error: '', status: '' };
+  toggleCompany(): void {
+    if (!this.policy || this.companyLoading || this.companySaving || this.companyConflict) return;
+    this.companyEnabled = !this.companyEnabled;
+    this.companyStatus = '';
+    this.companyError = '';
   }
 
-  seconds(row: RuleRow): number | null { return row.preset === 'custom' ? row.customSeconds : row.preset; }
-
-  invalid(row: RuleRow): boolean {
-    const seconds = this.seconds(row);
-    return seconds === null || !Number.isInteger(seconds) || seconds < 1 || seconds > 86400;
+  saveCompany(): void {
+    if (!this.companyAdmin || !this.policy || this.companyLoading || this.companySaving || this.companyConflict || !this.companyChanged) return;
+    this.companySaving = true;
+    this.companyError = '';
+    this.companyStatus = '';
+    this.alarms.updateNotificationPolicy(this.companyEnabled, this.policy.version).pipe(takeUntil(this.destroyed$)).subscribe({
+      next: res => {
+        this.policy = res.data;
+        this.companyEnabled = res.data.enabled;
+        this.companySaving = false;
+        this.companyStatus = res.data.enabled ? 'Critical alarm alerts enabled for all company machines.' : 'Company critical alarm alerts turned off.';
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        this.companySaving = false;
+        this.companyConflict = err?.status === 409;
+        this.companyError = this.companyConflict ? 'Another admin changed this setting. Reload before saving again.'
+          : err?.error?.message || 'Could not save this setting. Your change is ready to retry.';
+        this.cdr.markForCheck();
+      }
+    });
   }
-
-  changed(row: RuleRow): boolean { return row.enabled !== row.savedEnabled || this.seconds(row) !== row.savedSeconds; }
-
-  edited(row: RuleRow): void { row.status = ''; row.error = ''; }
-
-  save(row: RuleRow): void {
-    if (row.saving || this.loading || !this.changed(row)) return;
-    if (this.invalid(row)) {
-      row.error = 'Enter whole seconds from 1 to 86,400.';
-      return;
-    }
-    row.saving = true;
-    row.error = '';
-    row.status = '';
-    this.alarms.updateNotificationRule(row.machine_id, { enabled: row.enabled, delay_seconds: this.seconds(row)! })
-      .pipe(takeUntil(this.destroyed$)).subscribe({
-        next: res => {
-          Object.assign(row, this.toRow(res.data));
-          row.status = 'Saved';
-          this.cdr.markForCheck();
-        },
-        error: err => {
-          row.saving = false;
-          row.error = err?.error?.message || 'Could not save this machine rule. Try again.';
-          this.cdr.markForCheck();
-        }
-      });
-  }
-
-  get savingRule(): boolean { return this.rows.some(row => row.saving); }
-  trackMachine(_index: number, row: RuleRow): number { return row.machine_id; }
 }

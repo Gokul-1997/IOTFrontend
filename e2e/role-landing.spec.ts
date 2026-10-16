@@ -13,6 +13,7 @@ async function mockAll(page: any) {
   await page.routeWebSocket(/.*/, (socket: any) => socket.close());
   await page.route('**/socket.io/**', (r: any) => r.abort());
   await page.route('**/api/**', (r: any) => r.fulfill(ok([])));
+  await page.route('**/api/alarms/notification-policy', (r: any) => r.fulfill(ok({ enabled: false, version: 0, counts: { machines: 0 } })));
 }
 const company = ['page:programs:view', 'page:quality:view', 'page:quality:edit', 'page:analytics-oee:view',
   'page:analytics-operators:view', 'page:operators:view', 'page:analytics-energy:view', 'page:analytics-energy:settings'];
@@ -40,7 +41,7 @@ test('S&T has no Notifications or bell — that URL sends it home — and Settin
   await mockAll(page);
   const alarmSettingsRequests: string[] = [];
   page.on('request', request => {
-    if (/\/(notifications\/preferences|alarms\/notification-rules)/.test(request.url())) alarmSettingsRequests.push(request.url());
+    if (/\/(notifications\/preferences|alarms\/notification-policy)/.test(request.url())) alarmSettingsRequests.push(request.url());
   });
   await page.goto('/admin/companies');
   await page.getByRole('button', { name: /superadmin/ }).click();
@@ -65,7 +66,7 @@ test('a quality role has only personal appearance settings and makes no preferen
   await mockAll(page);
   const preferenceRequests: string[] = [];
   page.on('request', request => {
-    if (/\/(notifications\/preferences|alarms\/notification-rules)/.test(request.url())) preferenceRequests.push(request.url());
+    if (/\/(notifications\/preferences|alarms\/notification-policy)/.test(request.url())) preferenceRequests.push(request.url());
   });
   await page.goto('/settings');
   await expect(page.getByRole('region', { name: 'Appearance' })).toBeVisible();
@@ -83,7 +84,7 @@ test('a setter changes appearance without unrelated notification or admin contro
   await page.addInitScript(() => localStorage.setItem('theme', 'light'));
   const alarmSettingsRequests: string[] = [];
   page.on('request', request => {
-    if (/\/(notifications\/preferences|alarms\/notification-rules)/.test(request.url())) alarmSettingsRequests.push(request.url());
+    if (/\/(notifications\/preferences|alarms\/notification-policy)/.test(request.url())) alarmSettingsRequests.push(request.url());
   });
   await page.goto('/settings');
   await expect(page.getByRole('switch')).toHaveCount(1);
@@ -103,17 +104,17 @@ test('a company admin has useful alarm settings and working user and role admini
   await mockAll(page);
   const alarmSettingsRequests: string[] = [];
   page.on('request', request => {
-    if (/\/(notifications\/preferences|alarms\/notification-rules)/.test(request.url())) alarmSettingsRequests.push(request.url());
+    if (/\/(notifications\/preferences|alarms\/notification-policy)/.test(request.url())) alarmSettingsRequests.push(request.url());
   });
   await page.goto('/settings');
   await expect(page.getByRole('region', { name: 'Appearance' })).toBeVisible();
   const alarms = page.getByRole('region', { name: 'Alarm notifications' });
   await expect(alarms.getByRole('switch', { name: 'Receive alarm notifications' })).toBeVisible();
-  await expect(alarms.getByRole('heading', { name: 'Machine alert rules' })).toBeVisible();
-  await expect(alarms.getByRole('searchbox', { name: 'Search machines' })).toBeVisible();
-  await expect(alarms.getByText('No active machines yet.')).toBeVisible();
+  await expect(alarms.getByRole('switch', { name: 'Company critical alarm alerts' })).toBeVisible();
+  await expect(alarms.getByRole('searchbox')).toHaveCount(0);
+  await expect(alarms.getByText('0 active machines')).toBeVisible();
   expect(alarmSettingsRequests.filter(url => url.includes('/notifications/preferences'))).toHaveLength(1);
-  expect(alarmSettingsRequests.filter(url => url.includes('/alarms/notification-rules'))).toHaveLength(1);
+  expect(alarmSettingsRequests.filter(url => url.includes('/alarms/notification-policy'))).toHaveLength(1);
   const admin = page.getByRole('region', { name: 'Administration' });
   await expect(admin.getByRole('link', { name: /Users/ })).toHaveAttribute('href', '/admin/users');
   await expect(admin.getByRole('link', { name: /Roles & Permissions/ })).toHaveAttribute('href', '/admin/roles');

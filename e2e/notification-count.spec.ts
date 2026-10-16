@@ -23,6 +23,8 @@ async function stub(page: any) {
   await page.route('**/socket.io/**', (route: any) => route.abort());
   const asked: string[] = [];
   await page.route('**/api/**', (r: any) => r.fulfill(json({ status: 'success', success: true, data: [] })));
+  await page.route('**/api/alarms/notification-policy', (r: any) => r.fulfill(json({ success: true,
+    data: { enabled: false, version: 0, counts: { machines: 0 } } })));
   await page.route('**/api/notifications/unread-count', (r: any) => { asked.push(r.request().url()); return r.fulfill(json({ success: true, count: 2 })); });
   await page.route('**/api/notifications?**', (r: any) => r.fulfill(json(list)));
   return asked;

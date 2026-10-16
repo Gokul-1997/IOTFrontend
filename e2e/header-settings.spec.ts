@@ -17,6 +17,8 @@ async function mockCommon(page: any) {
   await page.route('**/socket.io/**', (r: any) => r.abort());
   await page.route('**/api/**', (r: any) => r.fulfill({ status: 200, contentType: 'application/json',
     body: JSON.stringify({ status: 'success', success: true, data: [] }) }));
+  await page.route('**/api/alarms/notification-policy', (r: any) => r.fulfill({ json: { success: true,
+    data: { enabled: false, version: 0, counts: { machines: 0 } } } }));
   await page.route('**/api/notifications/unread-count', (r: any) => r.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, count: 0 }) }));
 }

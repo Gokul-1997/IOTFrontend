@@ -26,6 +26,8 @@ async function mockCommon(page: any) {
   // first. Without it, any unmocked call hits the real (absent) backend.
   await page.route('**/api/**', (r: any) => r.fulfill({ status: 200, contentType: 'application/json',
     body: JSON.stringify({ status: 'success', success: true, data: [] }) }));
+  await page.route('**/api/alarms/notification-policy', (r: any) => r.fulfill({ json: { success: true,
+    data: { enabled: false, version: 0, counts: { machines: 0 } } } }));
   await page.route('**/api/charts/meta*', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(meta) }));
   await page.route('**/api/dashboard/factory*', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ok({
     filters: { date: '2026-09-20', shift_id: null }, updated_at: new Date().toISOString(),
