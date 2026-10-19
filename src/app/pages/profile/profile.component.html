@@ -5,234 +5,224 @@
   </div>
 </div>
 
-<div *ngIf="!loading && !errorMsg && profile">
+<!-- Account Details: read here; Edit and Change password open the same
+     dialog every other page uses for its forms -->
+<section *ngIf="!loading && !errorMsg && profile"
+         class="mexa-card prof-card w-full md:w-1/2 mx-auto p-8" aria-labelledby="profTitle">
+  <h2 id="profTitle" class="sr-only">Account details</h2>
 
-  <!-- Profile Tabs -->
-  <div class="ui-tabs ui-tabs-center" role="tablist" uiTabs aria-label="Profile sections">
+  <dl class="prof-dl">
 
-  <button
-    type="button"
-    role="tab"
-    class="ui-tab"
-    [class.is-active]="activeTab === 'account'"
-    [attr.aria-selected]="activeTab === 'account'"
-    (click)="activeTab = 'account'">
-    <span class="ui-tab-icon material-icons" aria-hidden="true">description</span>
-    Account Details
-  </button>
-
-  <button
-    type="button"
-    role="tab"
-    class="ui-tab"
-    [class.is-active]="activeTab === 'password'"
-    [attr.aria-selected]="activeTab === 'password'"
-    (click)="activeTab = 'password'">
-    <span class="ui-tab-icon material-icons" aria-hidden="true">pattern</span>
-    Change Password
-  </button>
-
-</div>
-
-
-  <!-- Account Details -->
-  <section
-    *ngIf="activeTab === 'account'"
-    class="mexa-card prof-card w-fill md:w-1/2 mx-auto p-8">
-<!-- ══════════ ACCOUNT DETAILS ══════════ -->
-    <section class="prof-card">
-      <div class="mexa-card-head">
-        <h2 class="mexa-card-title mexa-card-title-left"></h2>
-        
+    <!-- Username -->
+    <div class="txt-card">
+      <div class="prof-icon">
+        <i class="material-icons" aria-hidden="true">person</i>
       </div>
+      <div class="prof-info">
+        <dt>Username</dt>
+        <dd>{{ profile.username }}</dd>
+      </div>
+    </div>
 
-      <!-- view mode -->
-      <dl *ngIf="!editing" class="prof-dl">
+    <!-- Role -->
+    <div class="txt-card">
+      <div class="prof-icon">
+        <i class="material-icons" aria-hidden="true">admin_panel_settings</i>
+      </div>
+      <div class="prof-info">
+        <dt>Role</dt>
+        <dd>{{ roleLabel(profile.user_type) }}</dd>
+      </div>
+    </div>
 
-  <!-- Username -->
-  <div class="txt-card">
-    <div class="prof-icon">
-      <i class="material-icons">person</i>
+    <!-- Email -->
+    <div class="txt-card">
+      <div class="prof-icon">
+        <i class="material-icons" aria-hidden="true">mail</i>
+      </div>
+      <div class="prof-info">
+        <dt>Email</dt>
+        <dd>{{ profile.email || '--' }}</dd>
+      </div>
     </div>
-    <div class="prof-info">
-      <dt>Username</dt>
-      <dd>{{ profile.username }}</dd>
-    </div>
-  </div>
 
-  <!-- Role -->
-  <div class="txt-card">
-    <div class="prof-icon">
-      <i class="material-icons">admin_panel_settings</i>
+    <!-- Mobile -->
+    <div class="txt-card">
+      <div class="prof-icon">
+        <i class="material-icons" aria-hidden="true">phone_iphone</i>
+      </div>
+      <div class="prof-info">
+        <dt>Mobile</dt>
+        <dd>{{ profile.mobile || '--' }}</dd>
+      </div>
     </div>
-    <div class="prof-info">
-      <dt>Role</dt>
-      <dd>{{ roleLabel(profile.user_type) }}</dd>
-    </div>
-  </div>
 
-  <!-- Email -->
-  <div class="txt-card">
-    <div class="prof-icon">
-      <i class="material-icons">mail</i>
+    <!-- Company -->
+    <div class="txt-card">
+      <div class="prof-icon">
+        <i class="material-icons" aria-hidden="true">business</i>
+      </div>
+      <div class="prof-info">
+        <dt>Company</dt>
+        <dd>{{ profile.company_name || '--' }}</dd>
+      </div>
     </div>
-    <div class="prof-info">
-      <dt>Email</dt>
-      <dd>{{ profile.email || '--' }}</dd>
-    </div>
-  </div>
 
-  <!-- Mobile -->
-  <div class="txt-card">
-    <div class="prof-icon">
-      <i class="material-icons">phone_iphone</i>
+    <!-- Plant -->
+    <div class="txt-card">
+      <div class="prof-icon">
+        <i class="material-icons" aria-hidden="true">factory</i>
+      </div>
+      <div class="prof-info">
+        <dt>Plant</dt>
+        <dd>{{ profile.plant_name || '--' }}</dd>
+      </div>
     </div>
-    <div class="prof-info">
-      <dt>Mobile</dt>
-      <dd>{{ profile.mobile || '--' }}</dd>
-    </div>
-  </div>
 
-  <!-- Company -->
-  <div class="txt-card">
-    <div class="prof-icon">
-      <i class="material-icons">business</i>
+    <!-- Last Login -->
+    <div class="txt-card">
+      <div class="prof-icon">
+        <i class="material-icons" aria-hidden="true">schedule</i>
+      </div>
+      <div class="prof-info">
+        <dt>Last Login</dt>
+        <dd>
+          {{ profile.last_login_at
+            ? (profile.last_login_at | date:'d MMM y, h:mm:ss a')
+            : 'This is your first login' }}
+        </dd>
+      </div>
     </div>
-    <div class="prof-info">
-      <dt>Company</dt>
-      <dd>{{ profile.company_name || '--' }}</dd>
-    </div>
-  </div>
 
-  <!-- Plant -->
-  <div class="txt-card">
-    <div class="prof-icon">
-      <i class="material-icons">factory</i>
-    </div>
-    <div class="prof-info">
-      <dt>Plant</dt>
-      <dd>{{ profile.plant_name || '--' }}</dd>
-    </div>
-  </div>
+  </dl>
 
-  <!-- Last Login -->
-  <div class="txt-card">
-    <div class="prof-icon">
-      <i class="material-icons">schedule</i>
-    </div>
-    <div class="prof-info">
-      <dt>Last Login</dt>
-      <dd>
-        {{ profile.last_login_at
-          ? (profile.last_login_at | date:'d MMM y, h:mm:ss a')
-          : 'This is your first login' }}
-      </dd>
-    </div>
-  </div>
-
-</dl>
-
-      <!-- edit mode: only email and mobile — username, role and company are
-           admin-controlled, so this form cannot touch them -->
-      <form *ngIf="editing" (ngSubmit)="saveProfile()" class="prof-form">
-        <div>
-          <label for="profEmail" class="ui-label">Email</label>
-          <input id="profEmail" type="email" name="email" required [(ngModel)]="form.email"
-            class="ui-input"/>
-        </div>
-        <div>
-          <label for="profMobile" class="ui-label">Mobile</label>
-          <input id="profMobile" type="tel" name="mobile" [(ngModel)]="form.mobile"
-            class="ui-input"/>
-        </div>
-        <p *ngIf="saveErr" class="ui-error" role="alert">{{ saveErr }}</p>
-        <div class="ui-btn-row">
-          <button type="submit" [disabled]="saving"
-            class="ui-btn ui-btn-primary">
-            {{ saving ? 'Saving…' : 'Save changes' }}
-          </button>
-          <button type="button" (click)="cancelEdit()" [disabled]="saving" class="ui-btn ui-btn-ghost">
-            Cancel
-          </button>
-        </div>
-      </form>
-
-      <p *ngIf="saveNote && !editing" class="prof-ok" role="status">{{ saveNote }}</p>
-    </section>
-    <div class="text-right flex justify-end">
-<button type="button" *ngIf="!editing" (click)="startEdit()" class="ui-btn ui-btn-primary ui-btn-xs mt-4">
-  <span class="ui-tab-icon material-icons" aria-hidden="true">edit</span>
-  Edit</button>
+  <div class="prof-actions">
+    <button type="button" (click)="openPassword()" class="ui-btn ui-btn-ghost ui-btn-xs">
+      <span class="ui-tab-icon material-icons" aria-hidden="true">lock</span>
+      Change password
+    </button>
+    <button type="button" (click)="startEdit()" class="ui-btn ui-btn-primary ui-btn-xs">
+      <span class="ui-tab-icon material-icons" aria-hidden="true">edit</span>
+      Edit
+    </button>
   </div>
 </section>
 
-
-  <!-- Change Password -->
-  <section
-    *ngIf="activeTab === 'password'"
-    class="mexa-card prof-card w-full md:w-1/2 mx-auto">
-<!-- ══════════ CHANGE PASSWORD ══════════ -->
-    <section class="prof-card p-8">
-      <h2 class="mexa-card-title mexa-card-title-left"></h2>
-      <form (ngSubmit)="changePassword()" class="prof-form mx-auto">
-        <div>
-          <label for="pwCurrent" class="ui-label">Current password</label>
-          <input id="pwCurrent" type="password" name="current" required autocomplete="current-password"
-            [(ngModel)]="pwForm.current_password"
-            class="ui-input"/>
-        </div>
-        <div>
-          <label for="pwNew" class="ui-label">New password</label>
-          <input id="pwNew" type="password" name="new" required minlength="8" autocomplete="new-password"
-            [(ngModel)]="pwForm.new_password"
-            class="ui-input"/>
-          <p class="ui-hint">At least 8 characters.</p>
-        </div>
-        <div>
-          <label for="pwConfirm" class="ui-label">Confirm new password</label>
-          <input id="pwConfirm" type="password" name="confirm" required autocomplete="new-password"
-            [(ngModel)]="pwForm.confirm_password"
-            class="ui-input"/>
-        </div>
-        <p *ngIf="pwErr" class="ui-error" role="alert">{{ pwErr }}</p>
-        <p *ngIf="pwNote" class="prof-ok" role="status">{{ pwNote }}</p>
-        <div class="flex justify-end">
-        <button type="submit" [disabled]="changingPw"
-          class="ui-btn ui-btn-primary">
-          <span class="ui-tab-icon material-icons" aria-hidden="true">lock</span>
-          {{ changingPw ? 'Changing…' : 'Change password' }}
-        </button>
-        </div>
-      </form>
-    </section>
-
-  </section>
-
-
-
+<!-- ── loading ── -->
+<div *ngIf="loading" class="mexa-card mexa-empty" aria-busy="true" role="status">
+  <span class="ui-spinner" aria-hidden="true"></span> Loading profile…
 </div>
 
-<div>
+<!-- ── error ── -->
+<div *ngIf="!loading && errorMsg" class="mexa-card" role="alert">
+  <div class="ui-alert ui-alert-error">{{ errorMsg }}</div>
+  <button type="button" (click)="load()" class="ui-btn ui-btn-ghost ui-btn-sm prof-retry">Try again</button>
+</div>
 
-  <!-- ── loading ── -->
-  <div *ngIf="loading" class="mexa-card mexa-empty" aria-busy="true" role="status">
-    <span class="ui-spinner" aria-hidden="true"></span> Loading profile…
-  </div>
 
-  <!-- ── error ── -->
-  <div *ngIf="!loading && errorMsg" class="mexa-card" role="alert">
-    <div class="ui-alert ui-alert-error">{{ errorMsg }}</div>
-    <button type="button" (click)="load()" class="ui-btn ui-btn-ghost ui-btn-sm prof-retry">Try again</button>
-  </div>
+<!-- ── EDIT ACCOUNT DETAILS ── only email and mobile: username, role and
+     company are admin-controlled, so this form cannot touch them -->
+<div *ngIf="editing" class="ui-overlay">
+  <div class="ui-dialog ui-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="profEditTitle">
 
-  <div *ngIf="!loading && !errorMsg && profile" class="prof-grid">
-
-    
-
-    <div class="prof-stack">
-    
-
-    
+    <div class="ui-dialog-header">
+      <div>
+        <h2 id="profEditTitle" class="ui-dialog-title">Edit account details</h2>
+        <p class="ui-dialog-subtitle">Your username, role, company and plant are set by your admin.</p>
+      </div>
+      <button type="button" class="ui-close" (click)="cancelEdit()" aria-label="Close without saving">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             class="w-5 h-5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
+
+    <form (ngSubmit)="saveProfile()" class="contents" novalidate>
+      <div class="ui-dialog-body">
+        <div *ngIf="saveErr" class="ui-alert ui-alert-error mb-4" role="alert">{{ saveErr }}</div>
+
+        <div class="ui-field">
+          <label for="profEmail" class="ui-label">Email<span class="ui-req" aria-hidden="true">*</span></label>
+          <input id="profEmail" type="email" name="email" class="ui-input" [(ngModel)]="form.email"
+                 autocomplete="email" aria-required="true"
+                 [class.is-invalid]="emailError"
+                 [attr.aria-invalid]="emailError ? true : null"
+                 [attr.aria-describedby]="emailError ? 'profEmailErr' : null" />
+          <p *ngIf="emailError" id="profEmailErr" class="ui-error" role="alert">{{ emailError }}</p>
+        </div>
+
+        <div class="ui-field">
+          <label for="profMobile" class="ui-label">Mobile</label>
+          <input id="profMobile" type="tel" name="mobile" class="ui-input" [(ngModel)]="form.mobile"
+                 autocomplete="tel" />
+        </div>
+      </div>
+
+      <div class="ui-dialog-footer is-split">
+        <p class="ui-hint !mt-0"><span class="ui-req" aria-hidden="true">*</span> Required fields</p>
+        <div class="flex items-center gap-2">
+          <button type="button" class="ui-btn ui-btn-ghost" (click)="cancelEdit()" [disabled]="saving">Cancel</button>
+          <button type="submit" class="ui-btn ui-btn-primary" [disabled]="saving">
+            <span *ngIf="saving" class="ui-spinner" aria-hidden="true"></span>
+            {{ saving ? 'Saving…' : 'Save changes' }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- ── CHANGE PASSWORD ── -->
+<div *ngIf="showPassword" class="ui-overlay">
+  <div class="ui-dialog ui-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
+
+    <div class="ui-dialog-header">
+      <div>
+        <h2 id="pwTitle" class="ui-dialog-title">Change password</h2>
+        <p class="ui-dialog-subtitle">Enter your current password, then the new one twice.</p>
+      </div>
+      <button type="button" class="ui-close" (click)="closePassword()" aria-label="Close without saving">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             class="w-5 h-5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <form (ngSubmit)="changePassword()" class="contents" novalidate>
+      <div class="ui-dialog-body">
+        <div *ngIf="pwErr" class="ui-alert ui-alert-error mb-4" role="alert">{{ pwErr }}</div>
+
+        <div class="ui-field">
+          <label for="pwCurrent" class="ui-label">Current password<span class="ui-req" aria-hidden="true">*</span></label>
+          <input id="pwCurrent" type="password" name="current" class="ui-input" autocomplete="current-password"
+                 aria-required="true" [(ngModel)]="pwForm.current_password" />
+        </div>
+        <div class="ui-field">
+          <label for="pwNew" class="ui-label">New password<span class="ui-req" aria-hidden="true">*</span></label>
+          <input id="pwNew" type="password" name="new" class="ui-input" autocomplete="new-password"
+                 aria-required="true" aria-describedby="pwNewHint" [(ngModel)]="pwForm.new_password" />
+          <p id="pwNewHint" class="ui-hint">At least 8 characters.</p>
+        </div>
+        <div class="ui-field">
+          <label for="pwConfirm" class="ui-label">Confirm new password<span class="ui-req" aria-hidden="true">*</span></label>
+          <input id="pwConfirm" type="password" name="confirm" class="ui-input" autocomplete="new-password"
+                 aria-required="true" [(ngModel)]="pwForm.confirm_password" />
+        </div>
+      </div>
+
+      <div class="ui-dialog-footer is-split">
+        <p class="ui-hint !mt-0"><span class="ui-req" aria-hidden="true">*</span> Required fields</p>
+        <div class="flex items-center gap-2">
+          <button type="button" class="ui-btn ui-btn-ghost" (click)="closePassword()" [disabled]="changingPw">Cancel</button>
+          <button type="submit" class="ui-btn ui-btn-primary" [disabled]="changingPw">
+            <span *ngIf="changingPw" class="ui-spinner" aria-hidden="true"></span>
+            {{ changingPw ? 'Changing…' : 'Change password' }}
+          </button>
+        </div>
+      </div>
+    </form>
   </div>
 </div>

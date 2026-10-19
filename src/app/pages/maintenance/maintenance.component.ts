@@ -4,6 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { MaintenanceService } from '../../core/services/maintenance.service';
 import { TicketService } from '../../core/services/ticket.service';
 import { MachinesService } from '../machines/machines.service';
+import { AuthService } from '../../core/services/auth.service';
+import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { EnumLabelPipe } from '../../shared/enum-label.pipe';
 
 @Component({
@@ -12,11 +15,10 @@ import { EnumLabelPipe } from '../../shared/enum-label.pipe';
   imports: [CommonModule, FormsModule, EnumLabelPipe],
   templateUrl: './maintenance.component.html',
   styles: [`
+    /* a block, not the default inline: the page's blocks inside an inline host
+       hit-test oddly (the host answers for its own row buttons) */
+    :host { display: block; }
     .num-col { text-align: right; }
-    .mt-form { margin-bottom: 1rem; }
-    .mt-grid { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
-    .mt-wide { grid-column: 1 / -1; }
-    .mt-actions { margin-top: .9rem; }
     .mt-upcoming { margin-bottom: 1rem; }
     .mt-upcoming ul { list-style: none; margin: .5rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
     .row-link { background: none; border: 0; padding: 0; font: inherit; color: var(--mexa-ink); cursor: pointer; text-align: left; }
@@ -34,16 +36,29 @@ export class MaintenanceComponent implements OnInit {
   mttr: any[] = [];
   upcoming: any[] = [];
   loading = false;
+
+  /* The three forms (ticket, schedule, log) open in the same dialog as every
+     other form in the app; they used to open in the page above the table. */
   showForm = false;
-  form: any = { title: '', machine_id: '', maintenance_type: 'PREVENTIVE', scheduled_at: '', estimated_duration_minutes: 60, assigned_to: '', recurrence: 'NONE' };
-  logForm: any = { title: '', machine_id: '', maintenance_type: 'CORRECTIVE', started_at: '', completed_at: '', technician_name: '', work_performed: '', status: 'COMPLETED' };
+  form: any = blankSchedule();
+  scheduleMissing = { title: false, machine: false, when: false };
+  scheduleSaving = false;
+  scheduleError = '';
+
   showLogForm = false;
+  logForm: any = blankLog();
+  logMissing = { title: false, machine: false, start: false };
+  logSaving = false;
+  logError = '';
 
   // ── Tickets ──────────────────────────────────────────────
   tickets: any[] = [];
   ticketFilter: 'open' | 'all' = 'open';
   showTicketForm = false;
-  ticketForm: any = { machine_id: '', title: '', description: '', issue_type: 'BREAKDOWN', priority: 'MEDIUM', assigned_to: '' };
+  ticketForm: any = blankTicket();
+  ticketMissing = { machine: false, title: false };
+  ticketSaving = false;
+  ticketError = '';
   // The company's active users. This used the admin-only user list, which
   // refused every other role — a MAINTENANCE user saw an empty dropdown.
   assignableUsers: any[] = [];
@@ -66,6 +81,9 @@ export class MaintenanceComponent implements OnInit {
     private svc: MaintenanceService,
     private ticketSvc: TicketService,
     private machinesSvc: MachinesService,
+    public auth: AuthService,
+    private toast: ToastService,
+    private confirm: ConfirmService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -109,17 +127,40 @@ export class MaintenanceComponent implements OnInit {
 
   setTicketFilter(f: 'open' | 'all') { this.ticketFilter = f; this.loadTickets(); }
 
+  openTicketForm() {
+    this.ticketForm = blankTicket();
+    this.ticketMissing = { machine: false, title: false };
+    this.ticketError = '';
+    this.showTicketForm = true;
+  }
+
+  closeTicketForm() { this.showTicketForm = false; this.ticketError = ''; }
+
   saveTicket() {
-    const payload = { ...this.ticketForm, assigned_to: this.ticketForm.assigned_to || null };
+    if (this.ticketSaving) return;
+    const title = String(this.ticketForm.title || '').trim();
+    this.ticketMissing = { machine: !this.ticketForm.machine_id, title: !title };
+    if (this.ticketMissing.machine || this.ticketMissing.title) {
+      document.getElementById(this.ticketMissing.machine ? 'tk-machine' : 'tk-title')?.focus();
+      return;
+    }
+    const payload = { ...this.ticketForm, title, assigned_to: this.ticketForm.assigned_to || null };
+    this.ticketSaving = true;
+    this.ticketError = '';
     this.ticketSvc.createTicket(payload).subscribe({
       next: () => {
+        this.ticketSaving = false;
         this.showTicketForm = false;
-        this.ticketForm = { machine_id: '', title: '', description: '', issue_type: 'BREAKDOWN', priority: 'MEDIUM', assigned_to: '' };
+        this.toast.success('Ticket created');
         this.cdr.markForCheck();
         this.loadTickets();
       },
-      /* A failed create used to close nothing and say nothing. */
-      error: () => this.cdr.markForCheck()
+      /* A failed create used to close nothing and say nothing: say why, keep what was typed. */
+      error: err => {
+        this.ticketSaving = false;
+        this.ticketError = err?.error?.message || 'Could not create the ticket. Try again.';
+        this.cdr.markForCheck();
+      }
     });
   }
 
@@ -181,27 +222,102 @@ export class MaintenanceComponent implements OnInit {
   loadMTTR() { this.svc.getMTTR().subscribe({ next: r => { this.mttr = r.data || []; this.cdr.markForCheck(); } }); }
   loadUpcoming() { this.svc.getUpcoming(7).subscribe({ next: r => { this.upcoming = r.data || []; this.cdr.markForCheck(); } }); }
 
+  openScheduleForm() {
+    this.form = blankSchedule();
+    this.scheduleMissing = { title: false, machine: false, when: false };
+    this.scheduleError = '';
+    this.showForm = true;
+  }
+
+  closeScheduleForm() { this.showForm = false; this.scheduleError = ''; }
+
   saveSchedule() {
-    this.svc.createSchedule(this.form).subscribe({
-      next: () => { this.showForm = false; this.form = { title: '', machine_id: '', maintenance_type: 'PREVENTIVE', scheduled_at: '', estimated_duration_minutes: 60, assigned_to: '', recurrence: 'NONE' }; this.cdr.markForCheck(); this.loadSchedules(); },
-      error: () => this.cdr.markForCheck()
+    if (this.scheduleSaving) return;
+    const title = String(this.form.title || '').trim();
+    this.scheduleMissing = { title: !title, machine: !this.form.machine_id, when: !this.form.scheduled_at };
+    const first = this.scheduleMissing.title ? 'sc-title' : this.scheduleMissing.machine ? 'sc-machine' : this.scheduleMissing.when ? 'sc-when' : '';
+    if (first) { document.getElementById(first)?.focus(); return; }
+    this.scheduleSaving = true;
+    this.scheduleError = '';
+    this.svc.createSchedule({ ...this.form, title }).subscribe({
+      next: () => {
+        this.scheduleSaving = false;
+        this.showForm = false;
+        this.toast.success('Schedule saved');
+        this.cdr.markForCheck();
+        this.loadSchedules();
+        this.loadUpcoming();
+      },
+      error: err => {
+        this.scheduleSaving = false;
+        this.scheduleError = err?.error?.message || 'Could not save the schedule. Try again.';
+        this.cdr.markForCheck();
+      }
     });
   }
+
+  openLogForm() {
+    this.logForm = blankLog();
+    this.logMissing = { title: false, machine: false, start: false };
+    this.logError = '';
+    this.showLogForm = true;
+  }
+
+  closeLogForm() { this.showLogForm = false; this.logError = ''; }
 
   saveLog() {
-    this.svc.createLog(this.logForm).subscribe({
-      next: () => { this.showLogForm = false; this.logForm = { title: '', machine_id: '', maintenance_type: 'CORRECTIVE', started_at: '', completed_at: '', technician_name: '', work_performed: '', status: 'COMPLETED' }; this.cdr.markForCheck(); this.loadLogs(); },
-      error: () => this.cdr.markForCheck()
+    if (this.logSaving) return;
+    const title = String(this.logForm.title || '').trim();
+    this.logMissing = { title: !title, machine: !this.logForm.machine_id, start: !this.logForm.started_at };
+    const first = this.logMissing.title ? 'lg-title' : this.logMissing.machine ? 'lg-machine' : this.logMissing.start ? 'lg-start' : '';
+    if (first) { document.getElementById(first)?.focus(); return; }
+    this.logSaving = true;
+    this.logError = '';
+    this.svc.createLog({ ...this.logForm, title }).subscribe({
+      next: () => {
+        this.logSaving = false;
+        this.showLogForm = false;
+        this.toast.success('Maintenance work logged');
+        this.cdr.markForCheck();
+        this.loadLogs();
+      },
+      error: err => {
+        this.logSaving = false;
+        this.logError = err?.error?.message || 'Could not save the log. Try again.';
+        this.cdr.markForCheck();
+      }
     });
   }
 
-  deleteSchedule(id: number) {
-    if (!confirm('Remove this schedule?')) return;
-    this.svc.deleteSchedule(id).subscribe({ next: () => this.loadSchedules() });
+  /** Asked in the app's own dialog, not the browser's confirm() box. */
+  async deleteSchedule(s: any) {
+    const yes = await this.confirm.ask({
+      title: `Remove the schedule "${s.title}"?`,
+      message: `${s.machine_serial_no} will no longer have this maintenance planned. Work already logged is kept.`,
+      confirmText: 'Remove',
+      icon: 'delete_forever'
+    });
+    if (!yes) return;
+    this.svc.deleteSchedule(s.id).subscribe({
+      next: () => { this.toast.success('Schedule removed'); this.loadSchedules(); this.loadUpcoming(); },
+      error: err => this.toast.error(err?.error?.message || 'Could not remove the schedule')
+    });
   }
 
   statusClass(s: string) {
     const m: any = { SCHEDULED: 'mexa-badge-info', IN_PROGRESS: 'mexa-badge-warn', COMPLETED: 'mexa-badge-good', CANCELLED: 'mexa-badge-neutral', OVERDUE: 'mexa-badge-bad' };
     return m[s] || 'mexa-badge-neutral';
   }
+}
+
+function blankTicket() {
+  return { machine_id: '', title: '', description: '', issue_type: 'BREAKDOWN', priority: 'MEDIUM', assigned_to: '' };
+}
+
+function blankSchedule() {
+  return { title: '', machine_id: '', maintenance_type: 'PREVENTIVE', scheduled_at: '', estimated_duration_minutes: 60, assigned_to: '', recurrence: 'NONE' };
+}
+
+function blankLog() {
+  return { title: '', machine_id: '', maintenance_type: 'CORRECTIVE', started_at: '', completed_at: '', technician_name: '', work_performed: '', status: 'COMPLETED' };
 }

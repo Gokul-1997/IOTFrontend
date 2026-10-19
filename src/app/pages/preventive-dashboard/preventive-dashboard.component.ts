@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -18,6 +18,7 @@ import { updatedLabel } from '../../shared/updated-label';
 import { SEVERITY } from '../../shared/severity';
 import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
+import { ConfirmService } from '../../shared/confirm/confirm.service';
 
 /** Charts | PM Ticket Details (the tickets and the alarm rules), under the tiles both share. */
 const TABS: DashTab[] = [
@@ -45,6 +46,9 @@ const TABS: DashTab[] = [
   templateUrl: './preventive-dashboard.component.html'
 })
 export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
+  /** "Are you sure?" in the app's own dialog, not the browser's confirm() box. */
+  private readonly confirm = inject(ConfirmService);
+
 
   /* ── Charts | PM Ticket Details ──
      Each part of the page is asked for only while it is on screen and out
@@ -368,8 +372,14 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
       });
   }
 
-  deleteRule(r: any): void {
-    if (!confirm(`Delete the rule for "${r.alarm_type}"? Tickets it already raised are kept.`)) return;
+  async deleteRule(r: any): Promise<void> {
+    const yes = await this.confirm.ask({
+      title: `Delete the rule for "${r.alarm_type}"?`,
+      message: 'Tickets it already raised are kept.',
+      confirmText: 'Delete rule',
+      icon: 'delete_forever'
+    });
+    if (!yes) return;
     this.svc.deleteThreshold(r.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({

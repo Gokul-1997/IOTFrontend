@@ -105,7 +105,6 @@
 
   <!-- BODY -->
   <div class="space-y-4">
-    <p *ngIf="qualitySaveError" class="ui-error" role="alert">{{ qualitySaveError }}</p>
 
     <!-- MAIN DASHBOARD CARD -->
     <div class="bg-common">
@@ -236,38 +235,15 @@
               <span class="material-icons absolute top-2 right-2 q-tile-icon text-red-400" aria-hidden="true">cancel</span>
               <p class="text-sm text-red-500 dark:text-red-400 font-medium mb-1">Rejected <app-metric-help topic="rejected" basis="shift"></app-metric-help></p>
 
-              <ng-container *ngIf="!editingRejected; else rejectedInput">
-                <p class="text-4xl font-bold text-red-500 dark:text-red-400">{{ rejectedValue }}</p>
-              </ng-container>
-              <ng-template #rejectedInput>
-                <input
-                  type="number"
-                  min="0"
-                  [(ngModel)]="rejectedValue"
-                  (keydown.enter)="saveRejected()"
-                  (keydown.escape)="cancelRejected()"
-                  class="w-20 text-center text-3xl font-bold text-red-500 dark:text-red-400
-                         border-b-2 border-red-400 bg-transparent outline-none"
-                  #rejectedInputRef aria-label="Rejected value" />
-              </ng-template>
+              <p class="text-4xl font-bold text-red-500 dark:text-red-400">{{ rejectedValue }}</p>
 
-              <!-- Edit / Save icons -->
-              <!-- Quality → Edit only: a view-only role (SUPERVISOR) saw these and could change figures -->
+              <!-- Quality → Edit only: a view-only role (SUPERVISOR) saw this and could change figures.
+                   Opens the same dialog as every other form (the figure used to turn into an input in the tile). -->
               <div *ngIf="auth.hasAction('quality', 'edit')" class="absolute bottom-2 right-2">
-                <button
-                  *ngIf="!editingRejected"
-                  (click)="startEditRejected()"
+                <button type="button" (click)="openQualityEdit()" [disabled]="!dashboardData"
                   class="ux-icon-btn" aria-label="Edit rejected quantity" title="Edit rejected quantity">
-                    <span class="material-icons" aria-hidden="true">edit</span>
-                  </button>
-                <div *ngIf="editingRejected" class="flex gap-1">
-                  <button (click)="saveRejected()" class="ux-icon-btn is-ok" aria-label="Save rejected quantity" title="Save rejected quantity">
-                    <span class="material-icons" aria-hidden="true">check</span>
-                  </button>
-                  <button (click)="cancelRejected()" class="ux-icon-btn is-danger" aria-label="Cancel editing rejected quantity" title="Cancel editing rejected quantity">
-                    <span class="material-icons" aria-hidden="true">close</span>
-                  </button>
-                </div>
+                  <span class="material-icons" aria-hidden="true">edit</span>
+                </button>
               </div>
 
             </div>
@@ -277,37 +253,13 @@
               <span class="material-icons absolute top-2 right-2 q-tile-icon text-red-400" aria-hidden="true">build_circle</span>
               <p class="text-sm text-red-500 dark:text-red-400 font-medium mb-1">Rework <app-metric-help topic="rework" basis="shift"></app-metric-help></p>
 
-              <ng-container *ngIf="!editingRework; else reworkInput">
-                <p class="text-4xl font-bold text-red-500 dark:text-red-400">{{ reworkValue }}</p>
-              </ng-container>
-              <ng-template #reworkInput>
-                <input
-                  type="number"
-                  min="0"
-                  [(ngModel)]="reworkValue"
-                  (keydown.enter)="saveRework()"
-                  (keydown.escape)="cancelRework()"
-                  class="w-20 text-center text-3xl font-bold text-red-500 dark:text-red-400
-                         border-b-2 border-red-400 bg-transparent outline-none" aria-label="Rework value" />
-              </ng-template>
+              <p class="text-4xl font-bold text-red-500 dark:text-red-400">{{ reworkValue }}</p>
 
-              <!-- Edit / Save icons -->
-              <!-- Quality → Edit only: a view-only role (SUPERVISOR) saw these and could change figures -->
               <div *ngIf="auth.hasAction('quality', 'edit')" class="absolute bottom-2 right-2">
-                <button
-                  *ngIf="!editingRework"
-                  (click)="startEditRework()"
+                <button type="button" (click)="openQualityEdit()" [disabled]="!dashboardData"
                   class="ux-icon-btn" aria-label="Edit rework quantity" title="Edit rework quantity">
-                    <span class="material-icons" aria-hidden="true">edit</span>
-                  </button>
-                <div *ngIf="editingRework" class="flex gap-1">
-                  <button (click)="saveRework()" class="ux-icon-btn is-ok" aria-label="Save rework quantity" title="Save rework quantity">
-                    <span class="material-icons" aria-hidden="true">check</span>
-                  </button>
-                  <button (click)="cancelRework()" class="ux-icon-btn is-danger" aria-label="Cancel editing rework quantity" title="Cancel editing rework quantity">
-                    <span class="material-icons" aria-hidden="true">close</span>
-                  </button>
-                </div>
+                  <span class="material-icons" aria-hidden="true">edit</span>
+                </button>
               </div>
 
             </div>
@@ -340,5 +292,58 @@
 
     </div>
 
+  </div>
+</div>
+
+
+<!-- ── EDIT QUALITY COUNTS ── the same dialog as every other form -->
+<div *ngIf="editingQuality" class="ui-overlay">
+  <div class="ui-dialog ui-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="qeTitle">
+    <div class="ui-dialog-header">
+      <div>
+        <h2 id="qeTitle" class="ui-dialog-title">Edit quality counts</h2>
+        <p class="ui-dialog-subtitle">{{ qualityContext }}</p>
+      </div>
+      <button type="button" class="ui-close" (click)="closeQualityEdit()" aria-label="Close without saving">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <form (ngSubmit)="saveQualityEdit()" class="contents" novalidate>
+      <div class="ui-dialog-body">
+        <div *ngIf="qualitySaveError" class="ui-alert ui-alert-error mb-4" role="alert">{{ qualitySaveError }}</div>
+
+        <div class="ui-field">
+          <label class="ui-label" for="qe-reject">Rejected parts</label>
+          <input id="qe-reject" name="reject" type="number" min="0" step="1" inputmode="numeric" class="ui-input"
+                 [(ngModel)]="qualityForm.reject"
+                 [class.is-invalid]="qualityInvalid.reject" [attr.aria-invalid]="qualityInvalid.reject ? true : null"
+                 [attr.aria-describedby]="qualityInvalid.reject ? 'qeRejectErr' : null" />
+          <p *ngIf="qualityInvalid.reject" id="qeRejectErr" class="ui-error" role="alert">Enter a whole number, 0 or more.</p>
+        </div>
+
+        <div class="ui-field">
+          <label class="ui-label" for="qe-rework">Rework parts</label>
+          <input id="qe-rework" name="rework" type="number" min="0" step="1" inputmode="numeric" class="ui-input"
+                 [(ngModel)]="qualityForm.rework"
+                 [class.is-invalid]="qualityInvalid.rework" [attr.aria-invalid]="qualityInvalid.rework ? true : null"
+                 [attr.aria-describedby]="qualityInvalid.rework ? 'qeReworkErr' : null" />
+          <p *ngIf="qualityInvalid.rework" id="qeReworkErr" class="ui-error" role="alert">Enter a whole number, 0 or more.</p>
+        </div>
+      </div>
+
+      <div class="ui-dialog-footer is-split">
+        <p class="ui-hint !mt-0">For this machine, shift and day.</p>
+        <div class="flex items-center gap-2">
+          <button type="button" class="ui-btn ui-btn-ghost" (click)="closeQualityEdit()" [disabled]="savingQuality">Cancel</button>
+          <button type="submit" class="ui-btn ui-btn-primary" [disabled]="savingQuality">
+            <span *ngIf="savingQuality" class="ui-spinner" aria-hidden="true"></span>
+            {{ savingQuality ? 'Saving…' : 'Save counts' }}
+          </button>
+        </div>
+      </div>
+    </form>
   </div>
 </div>

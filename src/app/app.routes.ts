@@ -45,13 +45,14 @@ export const routes: Routes = [
       { path: 'component', canActivate: [permissionGuard('page:component')], loadComponent: () => import('./pages/component/component_list.component').then(m => m.ComponentList) },
 
       { path: 'machines', canActivate: [permissionGuard('page:machines')], loadComponent: () => import('./pages/machines/machines.component').then(m => m.MachinesComponent) },
-      { path: 'machines/create', canActivate: [permissionGuard('page:machines')], loadComponent: () => import('./pages/machines/machine-form.component').then(m => m.MachineFormComponent) },
+      // Add opens the dialog on the list page; this old address showed that dialog alone, with nothing to close it into
+      { path: 'machines/create', pathMatch: 'full', redirectTo: 'machines' },
 
       { path: 'shifts', canActivate: [permissionGuard('page:shifts')], loadComponent: () => import('./pages/shifts/shifts.component').then(m => m.ShiftsComponent) },
-      { path: 'shifts/create', canActivate: [permissionGuard('page:shifts')], loadComponent: () => import('./pages/shifts/shift-form.component').then(m => m.ShiftFormComponent) },
+      { path: 'shifts/create', pathMatch: 'full', redirectTo: 'shifts' },
 
       { path: 'operators', canActivate: [permissionGuard('page:operators')], loadComponent: () => import('./pages/operators/operators.component').then(m => m.OperatorsComponent) },
-      { path: 'operators/create', canActivate: [permissionGuard('page:operators')], loadComponent: () => import('./pages/operators/operator-form.component').then(m => m.OperatorFormComponent) },
+      { path: 'operators/create', pathMatch: 'full', redirectTo: 'operators' },
 
       { path: 'assignments', canActivate: [permissionGuard('page:assignments')], loadComponent: () => import('./pages/assignments/assignment.component').then(m => m.AssignmentComponent) },
       { path: 'assignments/operator-shift', canActivate: [permissionGuard('page:assignments')], loadComponent: () => import('./pages/assignments/operator-shift.component').then(m => m.OperatorShiftComponent) },
@@ -59,7 +60,7 @@ export const routes: Routes = [
       { path: 'machine-shifts', canActivate: [permissionGuard('page:machine-shifts')], loadComponent: () => import('./pages/machine-shifts/machine-shift.component').then(m => m.MachineShiftComponent) },
 
       { path: 'plants', canActivate: [permissionGuard('page:plants')], loadComponent: () => import('./pages/plants/plants.component').then(m => m.PlantsComponent) },
-      { path: 'plants/create', canActivate: [permissionGuard('page:plants')], loadComponent: () => import('./pages/plants/plant-form.component').then(m => m.PlantFormComponent) },
+      { path: 'plants/create', pathMatch: 'full', redirectTo: 'plants' },
 
       { path: 'lines', canActivate: [permissionGuard('page:lines')], loadComponent: () => import('./pages/lines/lines.component').then(m => m.LinesComponent) },
 

@@ -180,7 +180,7 @@ test('Energy: whoever can set the tariff finds it in the top bar and under Maste
   await page.locator('.nav-dropdown').getByRole('link', { name: 'Tariff & Rates' }).click();
   await expect(page).toHaveURL(/\/energy-tariff$/);
   await expect(page.getByRole('heading', { name: 'Tariff & Rates' })).toBeVisible();
-  await expect(page.getByLabel('Cost per kWh')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add tariff' })).toBeVisible();
 });
 
 test('Tariff page: saving nothing says what to enter, and sends nothing', async ({ page }) => {
@@ -189,9 +189,11 @@ test('Tariff page: saving nothing says what to enter, and sends nothing', async 
   await mockAll(page);
   page.on('request', (r: any) => { if (r.method() !== 'GET') posts.push(r.url()); });
   await page.goto('/energy-tariff');
-  await page.getByRole('button', { name: 'Save' }).click();
-  await expect(page.getByRole('alert')).toHaveText('Enter a cost per kWh, an overload limit, or both.');
-  await expect(page.getByLabel('Cost per kWh')).toHaveAttribute('aria-invalid', 'true');
+  await page.getByRole('button', { name: 'Add tariff' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Add tariff' });
+  await dialog.getByRole('button', { name: 'Save tariff' }).click();
+  await expect(dialog.getByRole('alert')).toHaveText('Enter a cost per kWh, an overload limit, or both.');
+  await expect(dialog.getByLabel('Cost per kWh')).toHaveAttribute('aria-invalid', 'true');
   expect(posts).toEqual([]);
 });
 

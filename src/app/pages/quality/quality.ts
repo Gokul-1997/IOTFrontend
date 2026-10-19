@@ -46,13 +46,12 @@ export class Quality implements OnInit, OnDestroy {
 
   dashboardData: any = null;
 
-  // Editable fields
+  // Shown on the tiles; edited in the dialog (it used to turn the tile's figure into an input)
   rejectedValue: number = 0;
   reworkValue: number = 0;
-  editingRejected = false;
-  editingRework = false;
-  private rejectedSnapshot = 0;
-  private reworkSnapshot = 0;
+  editingQuality = false;
+  qualityForm: { reject: any; rework: any } = { reject: 0, rework: 0 };
+  qualityInvalid = { reject: false, rework: false };
 
   /** The last load: an empty shift is an answer, a failed request is not. */
   loadState: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
@@ -177,45 +176,55 @@ export class Quality implements OnInit, OnDestroy {
   // REJECTED / REWORK EDITING
   ////////////////////////////////////////////////////
 
-  startEditRejected() {
-    this.rejectedSnapshot = this.rejectedValue;
-    this.editingRejected = true;
+  openQualityEdit() {
+    if (!this.auth.hasAction('quality', 'edit') || !this.dashboardData) return;
+    this.qualityForm = { reject: this.rejectedValue, rework: this.reworkValue };
+    this.qualityInvalid = { reject: false, rework: false };
+    this.qualitySaveError = '';
+    this.editingQuality = true;
   }
 
-  saveRejected() {
-    this.editingRejected = false;
-    this.saveQuality();
+  closeQualityEdit() {
+    if (this.savingQuality) return;
+    this.editingQuality = false;
+    this.qualitySaveError = '';
   }
 
-  cancelRejected() {
-    this.rejectedValue = this.rejectedSnapshot;
-    this.editingRejected = false;
+  /** "VMC - 2 - F · Shift A · 15 Oct 2026": which counts the dialog changes. */
+  get qualityContext(): string {
+    const machine = this.dashboardData?.machine?.machine_serial_no;
+    const shift = this.shifts.find(s => s.id == this.selectedShift)?.shift_name;
+    const [y, m, d] = String(this.selectedDate || '').split('-').map(Number);
+    const day = y && m && d ? new Date(y, m - 1, d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    return [machine, shift, day].filter(Boolean).join(' · ');
   }
 
-  startEditRework() {
-    this.reworkSnapshot = this.reworkValue;
-    this.editingRework = true;
+  saveQualityEdit() {
+    const whole = (v: any) => v !== null && v !== '' && Number.isInteger(Number(v)) && Number(v) >= 0;
+    this.qualityInvalid = { reject: !whole(this.qualityForm.reject), rework: !whole(this.qualityForm.rework) };
+    if (this.qualityInvalid.reject || this.qualityInvalid.rework) {
+      document.getElementById(this.qualityInvalid.reject ? 'qe-reject' : 'qe-rework')?.focus();
+      return;
+    }
+    this.saveQuality(Number(this.qualityForm.reject), Number(this.qualityForm.rework));
   }
 
-  saveRework() {
-    this.editingRework = false;
-    this.saveQuality();
-  }
-
-  cancelRework() {
-    this.reworkValue = this.reworkSnapshot;
-    this.editingRework = false;
-  }
-
-  private saveQuality() {
+  private saveQuality(reject: number, rework: number) {
     if (this.savingQuality || !this.auth.hasAction('quality', 'edit')) return;
     const machine = this.selectedMachine, shift = this.selectedShift, date = this.selectedDate;
     this.savingQuality = true; this.qualitySaveError = '';
     this.saveSub = this.service.saveQuality({ machine_id: machine, shift_id: shift, date,
-      reject_qty: this.rejectedValue, rework_qty: this.reworkValue }).subscribe({
+      reject_qty: reject, rework_qty: rework }).subscribe({
       next: res => {
         this.savingQuality = false;
-        if (res?.success && machine === this.selectedMachine && shift === this.selectedShift && date === this.selectedDate) this.loadDashboard();
+        if (res?.success) {
+          this.editingQuality = false;
+          this.rejectedValue = reject;
+          this.reworkValue = rework;
+          if (machine === this.selectedMachine && shift === this.selectedShift && date === this.selectedDate) this.loadDashboard();
+        } else {
+          this.qualitySaveError = res?.message || 'Could not save quality counts. Try again.';
+        }
         this.cdr.detectChanges();
       },
       error: error => {

@@ -9,6 +9,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { StateComponent } from '../../shared/state/state.component';
 import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
+import { qty } from '../../shared/format-number';
 
 /** One machine's row in the hour-rate table: what is saved, and what is typed. */
 interface RateRow { id: number; name: string; model: string | null; saved: number | null; value: number | null; }
@@ -38,54 +39,26 @@ const toRate = (v: any): number | null =>
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, StateComponent, SkeletonRowsComponent],
   template: `
-  <form class="mexa-titlebar" (ngSubmit)="save()">
+  <div class="mexa-titlebar">
     <h1 class="mexa-title">Tariff &amp; Rates</h1>
     <span class="mexa-titlebar-spacer"></span>
     <a routerLink="/energy-dashboard" class="mexa-submit flex items-center gap-2">Go to Energy Dashboard <span class="ui-tab-icon material-icons" aria-hidden="true">east</span></a>
-  </form>
+  </div>
 
-  <section class="mexa-card p-4" aria-labelledby="tfFormTitle">
-    <h2 id="tfFormTitle" class="mexa-card-title mexa-card-title-left mt-2">{{ editing ? 'Edit' : 'Set' }} the electricity tariff — ₹ per unit (kWh)</h2>
-    <p class="mexa-card-hint">
-      The EB rate. Leave the machine as <strong>Company default</strong> to price every machine; a row for one machine overrides it.
-      Cost appears on the Energy and Factory dashboards once a price is set.
-    </p>
-
-    <form class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 items-end mt-4" (ngSubmit)="save()" novalidate>
+  <section class="mexa-card p-4" aria-labelledby="tfListTitle">
+    <div class="tf-head">
       <div>
-        <label for="tfMachine" class="ui-label">Machine</label>
-        <select id="tfMachine" class="ui-input" [(ngModel)]="form.machine_id" name="tfMachine">
-          <option [ngValue]="null">Company default</option>
-          <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-        </select>
+        <h2 id="tfListTitle" class="mexa-card-title mexa-card-title-left">Electricity tariff — ₹ per unit (kWh)</h2>
+        <p class="mexa-card-hint">
+          The EB rate. The <strong>Company default</strong> prices every machine; a row for one machine overrides it.
+          Cost appears on the Energy and Factory dashboards once a price is set.
+        </p>
       </div>
-      <div>
-        <label for="tfCost" class="ui-label">Cost per kWh</label>
-        <input id="tfCost" type="number" min="0" step="0.01" class="ui-input" [(ngModel)]="form.cost_per_kwh" name="tfCost"
-               [attr.aria-invalid]="costError ? true : null" aria-describedby="tfError">
-      </div>
-      <div>
-        <label for="tfCurrency" class="ui-label">Currency</label>
-        <input id="tfCurrency" type="text" maxlength="8" class="ui-input" [(ngModel)]="form.currency" name="tfCurrency">
-      </div>
-      <div>
-        <label for="tfOverload" class="ui-label">Overload above (kW)</label>
-        <input id="tfOverload" type="number" min="0" step="0.1" class="ui-input" [(ngModel)]="form.overload_kw" name="tfOverload"
-               [attr.aria-invalid]="overloadError ? true : null" aria-describedby="tfError">
-      </div>
-      <div class="flex gap-2">
-        <button type="submit" class="ui-btn ui-btn-primary" [disabled]="saving">
-        <span class="ui-tab-icon material-icons" aria-hidden="true">save</span>
-        {{ saving ? 'Saving…' : 'Save' }}</button>
-        <button *ngIf="editing" type="button" class="ui-btn ui-btn-ghost" (click)="reset()">Cancel</button>
-      </div>
-    </form>
-    <p id="tfError" class="text-sm text-red-700 dark:text-red-400 mt-2" role="alert" *ngIf="error">{{ error }}</p>
-  </section>
-
-  <section class="mexa-card mt-3 p-4" aria-labelledby="tfListTitle">
-    <h2 id="tfListTitle" class="mexa-card-title mexa-card-title-left mb-2">Electricity tariffs set</h2>
-    <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Configured tariffs">
+      <button type="button" class="ui-btn ui-btn-primary" (click)="openTariff()">
+        <span class="ui-tab-icon material-icons" aria-hidden="true">add</span>Add tariff
+      </button>
+    </div>
+    <div class="mexa-tablewrap mt-2" tabindex="0" role="region" aria-label="Configured tariffs">
       <table class="mexa-table">
         <caption class="sr-only">Configured energy tariffs and limits</caption>
         <thead>
@@ -100,12 +73,12 @@ const toRate = (v: any): number | null =>
             <td class="col-md">{{ s.currency }}</td>
             <td class="num qty">{{ s.overload_kw ? s.overload_kw + ' kW' : '--' }}</td>
             <td class="actions"><button type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="edit(s)"
-                        [attr.aria-label]="'Edit ' + (s.machine_serial_no || 'company default')">
+                        [attr.aria-label]="'Edit tariff for ' + (s.machine_serial_no || 'company default')">
               <span class="material-icons" aria-hidden="true">edit</span>Edit</button></td>
           </tr>
           <tr *ngIf="!settings.length">
             <td colspan="5" class="mexa-empty">
-              <app-state title="No tariff set yet" text="Energy shows in kWh until one is."></app-state>
+              <app-state title="No tariff set yet" text="Energy shows in kWh until one is. Add one with “Add tariff”."></app-state>
             </td>
           </tr>
         </tbody>
@@ -115,11 +88,18 @@ const toRate = (v: any): number | null =>
 
   <!-- each machine's hour rate: the same value as on its machine form -->
   <section *ngIf="canViewRates" class="mexa-card mt-3 p-4" aria-labelledby="hrTitle">
-    <h2 id="hrTitle" class="mexa-card-title mexa-card-title-left">Machine hour rate — ₹ per hour</h2>
-    <p class="mexa-card-hint">
-      What an hour of each machine costs. The Downtime and OEE screens price its idle and alarm time with it.
-      Leave a machine blank if its rate is not known.
-    </p>
+    <div class="tf-head">
+      <div>
+        <h2 id="hrTitle" class="mexa-card-title mexa-card-title-left">Machine hour rate — ₹ per hour</h2>
+        <p class="mexa-card-hint">
+          What an hour of each machine costs. The Downtime and OEE screens price its idle and alarm time with it.
+        </p>
+      </div>
+      <button *ngIf="canEditRates" type="button" class="ui-btn ui-btn-primary" (click)="openRates()"
+              [disabled]="ratesLoading || !rates.length">
+        <span class="ui-tab-icon material-icons" aria-hidden="true">edit</span>Edit hour rates
+      </button>
+    </div>
     <div class="mexa-tablewrap mt-2" tabindex="0" role="region" aria-label="Machine hour rates">
       <table class="mexa-table">
         <caption class="sr-only">Hour rate of each machine, in rupees per hour</caption>
@@ -128,16 +108,10 @@ const toRate = (v: any): number | null =>
         </thead>
         <tbody *ngIf="ratesLoading" appSkeletonRows [cols]="3" [rows]="4" label="Loading hour rates…"></tbody>
         <tbody *ngIf="!ratesLoading">
-          <tr *ngFor="let r of rates; trackBy: rateKey" [class.hr-changed]="isChanged(r)">
+          <tr *ngFor="let r of rates; trackBy: rateKey">
             <th scope="row" class="strong hr-name">{{ r.name }}</th>
             <td class="col-md">{{ r.model || '--' }}</td>
-            <td class="qty">
-              <input type="number" min="0" max="1000000" step="0.01" inputmode="decimal" class="ui-input hr-input"
-                     [(ngModel)]="r.value" [ngModelOptions]="{ standalone: true }" placeholder="--"
-                     [disabled]="!canEditRates || ratesSaving"
-                     [attr.aria-label]="'Hour rate of ' + r.name + ', rupees per hour'"
-                     [attr.aria-invalid]="badRate(r.value) ? true : null">
-            </td>
+            <td class="num qty">{{ qty(r.saved, 2) }}</td>
           </tr>
           <tr *ngIf="!rates.length"><td colspan="3" class="mexa-empty">
             <app-state icon="precision_manufacturing" title="No machines yet" text="Add machines first; their hour rates are set here."></app-state>
@@ -145,17 +119,134 @@ const toRate = (v: any): number | null =>
         </tbody>
       </table>
     </div>
-    <div *ngIf="canEditRates" class="flex flex-wrap items-center gap-3 mt-3">
-      <button type="button" class="ui-btn ui-btn-primary" (click)="saveRates()" [disabled]="ratesSaving || !changedRates.length">
-        <span class="ui-tab-icon material-icons" aria-hidden="true">save</span>
-        {{ ratesSaving ? 'Saving…' : 'Save hour rates' }}
-      </button>
-      <span class="mexa-setting-hint" *ngIf="changedRates.length && !ratesSaving">{{ changedRates.length }} changed, not saved yet</span>
-    </div>
-    <p *ngIf="ratesError" class="text-sm text-red-700 dark:text-red-400 mt-2" role="alert">{{ ratesError }}</p>
+    <p *ngIf="ratesError && !showRates" class="text-sm text-red-700 dark:text-red-400 mt-2" role="alert">{{ ratesError }}</p>
   </section>
+
+
+  <!-- ══ the forms: the same dialog as every other page (they used to sit in the page) ══ -->
+
+  <!-- ── ADD / EDIT TARIFF ── -->
+  <div *ngIf="showTariff" class="ui-overlay">
+    <div class="ui-dialog" role="dialog" aria-modal="true" aria-labelledby="tfFormTitle">
+      <div class="ui-dialog-header">
+        <div>
+          <h2 id="tfFormTitle" class="ui-dialog-title">{{ editing ? 'Edit tariff' : 'Add tariff' }}</h2>
+          <p class="ui-dialog-subtitle">₹ per unit (kWh). The company default prices every machine; a machine's own tariff overrides it.</p>
+        </div>
+        <button type="button" class="ui-close" (click)="closeTariff()" aria-label="Close without saving">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form (ngSubmit)="save()" class="contents" novalidate>
+        <div class="ui-dialog-body">
+          <div id="tfError" *ngIf="error" class="ui-alert ui-alert-error mb-4" role="alert">{{ error }}</div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="sm:col-span-2">
+              <label for="tfMachine" class="ui-label">Applies to</label>
+              <select id="tfMachine" class="ui-input" [(ngModel)]="form.machine_id" name="tfMachine" [disabled]="editing"
+                      [attr.aria-describedby]="editing ? 'tfMachineHint' : null">
+                <option [ngValue]="null">Company default</option>
+                <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+              </select>
+              <p *ngIf="editing" id="tfMachineHint" class="ui-hint">To price another machine, add a tariff for it.</p>
+            </div>
+            <div>
+              <label for="tfCost" class="ui-label">Cost per kWh</label>
+              <input id="tfCost" type="number" min="0" step="0.01" class="ui-input" [(ngModel)]="form.cost_per_kwh" name="tfCost"
+                     [class.is-invalid]="costError" [attr.aria-invalid]="costError ? true : null"
+                     [attr.aria-describedby]="error ? 'tfError' : null">
+            </div>
+            <div>
+              <label for="tfCurrency" class="ui-label">Currency</label>
+              <input id="tfCurrency" type="text" maxlength="8" class="ui-input" [(ngModel)]="form.currency" name="tfCurrency">
+            </div>
+            <div>
+              <label for="tfOverload" class="ui-label">Overload above (kW)</label>
+              <input id="tfOverload" type="number" min="0" step="0.1" class="ui-input" [(ngModel)]="form.overload_kw" name="tfOverload"
+                     [class.is-invalid]="overloadError" [attr.aria-invalid]="overloadError ? true : null"
+                     [attr.aria-describedby]="error ? 'tfError' : null">
+            </div>
+          </div>
+        </div>
+
+        <div class="ui-dialog-footer is-split">
+          <p class="ui-hint !mt-0">A cost per kWh, an overload limit, or both.</p>
+          <div class="flex items-center gap-2">
+            <button type="button" class="ui-btn ui-btn-ghost" (click)="closeTariff()" [disabled]="saving">Cancel</button>
+            <button type="submit" class="ui-btn ui-btn-primary" [disabled]="saving">
+              <span *ngIf="saving" class="ui-spinner" aria-hidden="true"></span>
+              {{ saving ? 'Saving…' : 'Save tariff' }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── EDIT HOUR RATES ── every machine at once, as before, now in the dialog -->
+  <div *ngIf="showRates" class="ui-overlay">
+    <div class="ui-dialog ui-dialog-lg" role="dialog" aria-modal="true" aria-labelledby="hrFormTitle">
+      <div class="ui-dialog-header">
+        <div>
+          <h2 id="hrFormTitle" class="ui-dialog-title">Edit hour rates</h2>
+          <p class="ui-dialog-subtitle">₹ per hour for each machine. Leave a machine blank if its rate is not known.</p>
+        </div>
+        <button type="button" class="ui-close" (click)="closeRates()" aria-label="Close without saving">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form (ngSubmit)="saveRates()" class="contents" novalidate>
+        <div class="ui-dialog-body">
+          <div *ngIf="ratesError" class="ui-alert ui-alert-error mb-4" role="alert">{{ ratesError }}</div>
+          <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Hour rates to edit">
+            <table class="mexa-table is-compact">
+              <caption class="sr-only">Type each machine's hour rate in rupees per hour</caption>
+              <thead>
+                <tr><th scope="col">Machine</th><th scope="col" class="col-md">Model</th><th scope="col" class="qty">₹ per hour</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of rates; trackBy: rateKey" [class.hr-changed]="isChanged(r)">
+                  <th scope="row" class="strong hr-name">{{ r.name }}</th>
+                  <td class="col-md">{{ r.model || '--' }}</td>
+                  <td class="qty">
+                    <input type="number" min="0" max="1000000" step="0.01" inputmode="decimal" class="ui-input hr-input"
+                           [(ngModel)]="r.value" [ngModelOptions]="{ standalone: true }" placeholder="--"
+                           [disabled]="ratesSaving"
+                           [attr.aria-label]="'Hour rate of ' + r.name + ', rupees per hour'"
+                           [attr.aria-invalid]="badRate(r.value) ? true : null">
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="ui-dialog-footer is-split">
+          <p class="ui-hint !mt-0" aria-live="polite">{{ changedRates.length ? changedRates.length + ' changed, not saved yet' : 'Nothing changed yet' }}</p>
+          <div class="flex items-center gap-2">
+            <button type="button" class="ui-btn ui-btn-ghost" (click)="closeRates()" [disabled]="ratesSaving">Cancel</button>
+            <button type="submit" class="ui-btn ui-btn-primary" [disabled]="ratesSaving || !changedRates.length">
+              <span *ngIf="ratesSaving" class="ui-spinner" aria-hidden="true"></span>
+              {{ ratesSaving ? 'Saving…' : 'Save hour rates' }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
   `,
   styles: [`
+    /* a block, not the default inline: the page's blocks inside an inline host
+       hit-test oddly (the host answers for its own row buttons) */
+    :host { display: block; }
+    .tf-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+    .tf-head > div { flex: 1 1 18rem; }
     .hr-name { text-align: left; }
     .hr-input { max-width: 9rem; text-align: right; font-variant-numeric: tabular-nums; }
     .hr-input[aria-invalid="true"] { border-color: #c32b3f; }
@@ -167,6 +258,10 @@ export class EnergyTariffComponent implements OnInit, OnDestroy {
   machines: any[] = [];
   settings: any[] = [];
   form: any = this.blank();
+  /* Add / Edit tariff and Edit hour rates open in the same dialog as every
+     other form in the app; the tariff form and the rate inputs used to sit
+     in the page itself. */
+  showTariff = false;
   editing = false;
   loading = false;
   saving = false;
@@ -180,6 +275,8 @@ export class EnergyTariffComponent implements OnInit, OnDestroy {
   ratesLoading = false;
   ratesSaving = false;
   ratesError = '';
+  showRates = false;
+  readonly qty = qty;
   readonly canEditRates: boolean;
   readonly canViewRates: boolean;
 
@@ -215,6 +312,20 @@ export class EnergyTariffComponent implements OnInit, OnDestroy {
 
   rateKey(_: number, r: RateRow): number { return r.id; }
 
+  openRates(): void {
+    for (const r of this.rates) r.value = r.saved;   // start from what is saved
+    this.ratesError = '';
+    this.showRates = true;
+  }
+
+  /** Closing without saving drops what was typed. */
+  closeRates(): void {
+    if (this.ratesSaving) return;
+    for (const r of this.rates) r.value = r.saved;
+    this.ratesError = '';
+    this.showRates = false;
+  }
+
   /** A rate the API would refuse: below 0 or above 10,00,000. */
   badRate(v: number | null): boolean {
     return v !== null && v !== undefined && (Number(v) < 0 || Number(v) > 1000000);
@@ -240,17 +351,30 @@ export class EnergyTariffComponent implements OnInit, OnDestroy {
         next: () => {
           for (const r of changed) r.saved = toRate(r.value);
           this.ratesSaving = false;
+          this.showRates = false;
           this.toast.success(changed.length === 1 ? 'Hour rate saved' : `${changed.length} hour rates saved`);
           this.cdr.markForCheck();
         },
         error: err => {
           this.ratesSaving = false;
           this.ratesError = err?.error?.message || 'Could not save the hour rates. Try again.';
-          // some may have been saved: read back what is stored
-          this.loadRates();
+          // some may have been saved: read back what is stored, keeping what was typed
+          this.refreshSaved();
         }
       });
   }
+
+  /** After a failed save: what the server now holds (some may have saved), keeping what was typed. */
+  private refreshSaved(): void {
+    this.machinesSvc.getMachines({ page: 1, limit: 500, sortBy: 'm.machine_serial_no', sortDir: 'asc' })
+      .pipe(takeUntil(this.destroy$), catchError(() => of(null)))
+      .subscribe((res: any) => {
+        const stored = new Map<number, number | null>((res?.data ?? []).map((m: any) => [m.id, toRate(m.hour_rate)]));
+        for (const r of this.rates) if (stored.has(r.id)) r.saved = stored.get(r.id) ?? null;
+        this.cdr.markForCheck();
+      });
+  }
+
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
   private blank() { return { machine_id: null, cost_per_kwh: null, currency: 'INR', overload_kw: null }; }
@@ -261,11 +385,22 @@ export class EnergyTariffComponent implements OnInit, OnDestroy {
       .subscribe((res: any) => { this.loading = false; this.settings = res?.data ?? []; this.cdr.markForCheck(); });
   }
 
+  openTariff(): void {
+    this.reset();
+    this.showTariff = true;
+  }
+
   edit(s: any): void {
+    this.reset();
     this.form = { machine_id: s.machine_id ?? null, cost_per_kwh: s.cost_per_kwh, currency: s.currency || 'INR', overload_kw: s.overload_kw };
-    this.editing = true; this.error = '';
-    this.cdr.markForCheck();
-    document.getElementById('tfCost')?.focus();
+    this.editing = true;
+    this.showTariff = true;
+  }
+
+  closeTariff(): void {
+    if (this.saving) return;
+    this.showTariff = false;
+    this.reset();
   }
 
   reset(): void { this.form = this.blank(); this.editing = false; this.error = ''; this.costError = this.overloadError = false; }
@@ -291,6 +426,7 @@ export class EnergyTariffComponent implements OnInit, OnDestroy {
     this.svc.saveSettings(this.form).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.saving = false;
+        this.showTariff = false;
         this.toast.success('Tariff saved');
         this.reset();
         this.load();

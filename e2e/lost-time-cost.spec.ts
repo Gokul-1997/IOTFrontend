@@ -134,23 +134,29 @@ test('Tariff & Rates: one page for the EB tariff and every machine\'s hour rate'
   await page.setViewportSize({ width: 1500, height: 1000 });
   await page.goto('/energy-tariff');
   await expect(page.getByRole('heading', { name: 'Tariff & Rates' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: /electricity tariff — ₹ per unit/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Electricity tariff — ₹ per unit/ })).toBeVisible();
 
   const table = page.getByRole('region', { name: 'Machine hour rates' });
   // in the order the plant counts them, VMC - 2 before VMC - 10
   await expect(table.locator('tbody th')).toHaveText(['HMC - 7 - F', 'VMC - 2 - F', 'VMC - 10 - M']);
-  await expect(page.getByLabel('Hour rate of VMC - 2 - F, rupees per hour')).toHaveValue('380');
+  await expect(table.locator('tbody td.qty')).toHaveText(['--', '380', '--']);
 
-  const save = page.getByRole('button', { name: 'Save hour rates' });
+  // the rates are typed in the dialog, every machine at once, like every other form
+  await page.getByRole('button', { name: 'Edit hour rates' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Edit hour rates' });
+  await expect(dialog.getByLabel('Hour rate of VMC - 2 - F, rupees per hour')).toHaveValue('380');
+
+  const save = dialog.getByRole('button', { name: 'Save hour rates' });
   await expect(save).toBeDisabled();
-  await page.getByLabel('Hour rate of HMC - 7 - F, rupees per hour').fill('1000');
-  await page.getByLabel('Hour rate of VMC - 10 - M, rupees per hour').fill('380');
-  await expect(page.getByText('2 changed, not saved yet')).toBeVisible();
+  await dialog.getByLabel('Hour rate of HMC - 7 - F, rupees per hour').fill('1000');
+  await dialog.getByLabel('Hour rate of VMC - 10 - M, rupees per hour').fill('380');
+  await expect(dialog.getByText('2 changed, not saved yet')).toBeVisible();
   await save.click();
   await expect.poll(() => Object.keys(puts).sort()).toEqual(['25', '35']);
   expect(puts['25']).toEqual({ hour_rate: 1000 });
   expect(puts['35']).toEqual({ hour_rate: 380 });
-  await expect(save).toBeDisabled();
+  await expect(dialog).toHaveCount(0);
+  await expect(table.locator('tbody td.qty')).toHaveText(['1,000', '380', '380']);
 });
 
 test('Tariff & Rates: a rate out of range is refused before anything is sent', async ({ page }) => {
@@ -164,8 +170,16 @@ test('Tariff & Rates: a rate out of range is refused before anything is sent', a
   await page.route(/\/api\/machines\/\d+$/, (r: any) => { sent++; return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }); });
   await page.setViewportSize({ width: 1500, height: 1000 });
   await page.goto('/energy-tariff');
-  await page.getByLabel('Hour rate of HMC - 7 - F, rupees per hour').fill('-5');
-  await page.getByRole('button', { name: 'Save hour rates' }).click();
-  await expect(page.getByRole('alert')).toHaveText('An hour rate must be from 0 to 10,00,000 rupees.');
+  await page.getByRole('button', { name: 'Edit hour rates' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Edit hour rates' });
+  await dialog.getByLabel('Hour rate of HMC - 7 - F, rupees per hour').fill('-5');
+  await dialog.getByRole('button', { name: 'Save hour rates' }).click();
+  await expect(dialog.getByRole('alert')).toHaveText('An hour rate must be from 0 to 10,00,000 rupees.');
   expect(sent).toBe(0);
+
+  // closing without saving drops what was typed
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toHaveCount(0);
+  await page.getByRole('button', { name: 'Edit hour rates' }).click();
+  await expect(page.getByLabel('Hour rate of HMC - 7 - F, rupees per hour')).toHaveValue('');
 });

@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { FormsModule } from '@angular/forms';
@@ -7,6 +7,7 @@ import { CompanyService } from '../../core/services/company.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AdminTabsComponent } from './admin-tabs.component';
+import { ConfirmService } from '../../shared/confirm/confirm.service';
 
 @Component({
   selector: 'app-company-management',
@@ -15,6 +16,9 @@ import { AdminTabsComponent } from './admin-tabs.component';
   templateUrl: './company-management.component.html',
 })
 export class CompanyManagementComponent implements OnInit {
+  /** "Are you sure?" in the app's own dialog, not the browser's confirm() box. */
+  private readonly confirm = inject(ConfirmService);
+
   companies: any[] = [];
   plans: any[] = [];
   loading = false;
@@ -454,8 +458,13 @@ export class CompanyManagementComponent implements OnInit {
   }
 
   // ── Deactivate ─────────────────────────────────
-  deactivateCompany(company: any) {
-    if (!confirm(`Deactivate "${company.company_name}"?\n\nEveryone in this company — its admin and every user it created — is signed out now and can't sign in until you activate it again. Alarm emails stop too.\n\nNothing is deleted.`)) return;
+  async deactivateCompany(company: any) {
+    const yes = await this.confirm.ask({
+      title: `Deactivate "${company.company_name}"?`,
+      message: "Everyone in this company — its admin and every user it created — is signed out now and can't sign in until you activate it again. Alarm emails stop too.\n\nNothing is deleted.",
+      confirmText: 'Deactivate'
+    });
+    if (!yes) return;
     this.loading = true;
     this.cdr.detectChanges();
     this.companyService.deleteCompany(company.id).subscribe({
@@ -465,8 +474,14 @@ export class CompanyManagementComponent implements OnInit {
   }
 
   // ── Activate ───────────────────────────────────
-  activateCompany(company: any) {
-    if (!confirm(`Activate "${company.company_name}"?\n\nEveryone who could sign in before it was deactivated can sign in again.`)) return;
+  async activateCompany(company: any) {
+    const yes = await this.confirm.ask({
+      title: `Activate "${company.company_name}"?`,
+      message: 'Everyone who could sign in before it was deactivated can sign in again.',
+      confirmText: 'Activate',
+      tone: 'primary'
+    });
+    if (!yes) return;
     this.loading = true;
     this.cdr.detectChanges();
     this.companyService.updateCompany(company.id, { is_active: true }).subscribe({
@@ -476,8 +491,15 @@ export class CompanyManagementComponent implements OnInit {
   }
 
   // ── Permanent Delete ──────────────────────────
-  permanentDeleteCompany(company: any) {
-    if (!confirm(`PERMANENTLY DELETE "${company.company_name}"?\n\nThis will delete:\n- All users in this company\n- All roles & permissions\n- All machines, shifts, operators\n- All data\n\nThis CANNOT be undone!`)) return;
+  async permanentDeleteCompany(company: any) {
+    const yes = await this.confirm.ask({
+      title: `Permanently delete "${company.company_name}"?`,
+      message: 'This cannot be undone. It deletes:',
+      items: ['All users in this company', 'All roles and permissions', 'All machines, shifts and operators', 'All of its data'],
+      confirmText: 'Delete permanently',
+      icon: 'delete_forever'
+    });
+    if (!yes) return;
     this.loading = true;
     this.cdr.detectChanges();
     this.companyService.permanentDeleteCompany(company.id).subscribe({

@@ -2,6 +2,10 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
+import { ToastService } from '../../core/services/toast.service';
+
+/** The check the API makes (auth.service updateMyProfile), said before sending. */
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Every authenticated user's own account page.
@@ -10,6 +14,9 @@ import { AuthService } from '../../core/services/auth.service';
  * held a name, an email and Sign Out. A MANAGER, SUPERVISOR or OPERATOR had
  * no way to see their own profile, correct their email, or change their own
  * password — GET/PUT /api/users/:id is ADMIN-tier only.
+ *
+ * The details are read on the page; Edit and Change password open the same
+ * dialog as every other form in the app (they used to open in the page).
  */
 @Component({
   selector: 'app-profile',
@@ -17,17 +24,10 @@ import { AuthService } from '../../core/services/auth.service';
   imports: [CommonModule, FormsModule],
   templateUrl: './profile.component.html',
   styles: [`
-    .prof-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); align-items: start; }
-    .prof-stack { display: grid; gap: 1rem; }
-    .prof-grid .mexa-card + .mexa-card, .prof-stack .mexa-card + .mexa-card { margin-top: 0; }
     .prof-dl { display: grid; gap: 1rem 1.5rem; grid-template-columns: repeat(2, minmax(12rem, 1fr)); margin: 0; font-size: .9rem; }
     .prof-dl dt { color: var(--mexa-ink-3); font-size: .8rem; }
     .prof-dl dd { margin: .15rem 0 0; color: var(--mexa-ink); font-weight: 600; overflow-wrap: anywhere; }
-    .prof-form { display: grid; gap: .9rem; max-width: 26rem; }
-    .prof-form > .ui-btn, .prof-form > .ui-btn-row { justify-self: start; }
-    .prof-hint { margin: -.4rem 0 .9rem; }
-    .prof-ok { color: #15803d; font-size: .85rem; margin: .5rem 0 0; }
-    :host-context(.dark) .prof-ok { color: #6fdba0; }
+    .prof-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; margin-top: 1rem; }
     .prof-retry { margin-top: .75rem; }
   `]
 })
@@ -36,21 +36,21 @@ export class ProfileComponent implements OnInit {
   loading = true;
   errorMsg = '';
   profile: any = null;
-  activeTab: 'account' | 'password' = 'account';
-  /* ── edit profile ── */
+
+  /* ── edit account details ── */
   editing = false;
   form = { email: '', mobile: '' };
   saving = false;
-  saveNote = '';
   saveErr = '';
+  emailError = '';
 
   /* ── change password ── */
+  showPassword = false;
   pwForm = { current_password: '', new_password: '', confirm_password: '' };
   changingPw = false;
-  pwNote = '';
   pwErr = '';
 
-  constructor(private auth: AuthService, private cdr: ChangeDetectorRef) {}
+  constructor(private auth: AuthService, private toast: ToastService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void { this.load(); }
 
@@ -61,7 +61,6 @@ export class ProfileComponent implements OnInit {
     this.auth.getMyProfile().subscribe({
       next: (res: any) => {
         this.profile = res.data;
-        this.form = { email: this.profile.email || '', mobile: this.profile.mobile || '' };
         this.loading = false;
         this.cdr.markForCheck();
       },
@@ -74,30 +73,35 @@ export class ProfileComponent implements OnInit {
   }
 
   startEdit(): void {
-    this.editing = true;
-    this.saveNote = '';
-    this.saveErr = '';
     this.form = { email: this.profile.email || '', mobile: this.profile.mobile || '' };
+    this.saveErr = '';
+    this.emailError = '';
+    this.editing = true;
   }
 
   cancelEdit(): void {
     this.editing = false;
     this.saveErr = '';
+    this.emailError = '';
   }
 
   saveProfile(): void {
     if (this.saving) return;
+    const email = this.form.email.trim();
+    this.emailError = !email ? 'Enter your email address.'
+      : !EMAIL.test(email) ? 'Enter a valid email address, like name@company.com.' : '';
+    if (this.emailError) { document.getElementById('profEmail')?.focus(); return; }
+
     this.saving = true;
     this.saveErr = '';
-    this.saveNote = '';
     this.cdr.markForCheck();
 
-    this.auth.updateMyProfile({ email: this.form.email.trim(), mobile: this.form.mobile.trim() }).subscribe({
+    this.auth.updateMyProfile({ email, mobile: this.form.mobile.trim() }).subscribe({
       next: (res: any) => {
         this.saving = false;
         this.editing = false;
-        this.saveNote = 'Profile updated.';
         this.profile = { ...this.profile, ...res.data };
+        this.toast.success('Account details saved');
         this.cdr.markForCheck();
       },
       error: (err: any) => {
@@ -108,11 +112,26 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+  openPassword(): void {
+    this.pwForm = { current_password: '', new_password: '', confirm_password: '' };
+    this.pwErr = '';
+    this.showPassword = true;
+  }
+
+  closePassword(): void {
+    this.showPassword = false;
+    this.pwForm = { current_password: '', new_password: '', confirm_password: '' };
+    this.pwErr = '';
+  }
+
   changePassword(): void {
     if (this.changingPw) return;
     this.pwErr = '';
-    this.pwNote = '';
 
+    if (!this.pwForm.current_password || !this.pwForm.new_password) {
+      this.pwErr = 'Enter your current password and a new one.';
+      return;
+    }
     if (this.pwForm.new_password !== this.pwForm.confirm_password) {
       this.pwErr = 'New password and confirmation do not match.';
       return;
@@ -128,8 +147,8 @@ export class ProfileComponent implements OnInit {
     this.auth.changeMyPassword(this.pwForm.current_password, this.pwForm.new_password).subscribe({
       next: () => {
         this.changingPw = false;
-        this.pwNote = 'Password changed.';
-        this.pwForm = { current_password: '', new_password: '', confirm_password: '' };
+        this.closePassword();
+        this.toast.success('Password changed');
         this.cdr.markForCheck();
       },
       error: (err: any) => {

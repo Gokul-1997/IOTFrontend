@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from '../header/header.component';
+import { ConfirmDialogComponent } from '../../shared/confirm/confirm-dialog.component';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent],
+  imports: [RouterOutlet, HeaderComponent, ConfirmDialogComponent],
   templateUrl: './main-layout.html',
 })
 export class MainLayoutComponent {
