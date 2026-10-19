@@ -5,6 +5,7 @@ import { OperatorService } from '../operators/operator.service';
 import { ShiftsService } from '../shifts/shifts.service';
 import { AssignmentService } from './assignment.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   standalone: true,
@@ -27,6 +28,7 @@ export class OperatorShiftComponent implements OnInit {
     private shiftService: ShiftsService,
     private assignmentService: AssignmentService,
     public auth: AuthService,
+    private toast: ToastService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -59,13 +61,14 @@ export class OperatorShiftComponent implements OnInit {
     this.assignmentService.assignOperatorShift(this.form.value).subscribe({
       next: () => {
         this.saving = false;
-        alert('Operator assigned to shift');
+        this.toast.success('Operator assigned to shift');
         this.form.reset();
         this.cdr.markForCheck();
       },
-      error: () => {
+      /* the app's own message, not the browser's alert() box */
+      error: (err: any) => {
         this.saving = false;
-        alert('Assignment failed');
+        this.toast.error(err?.error?.message || 'Assignment failed');
         this.cdr.markForCheck();
       }
     });

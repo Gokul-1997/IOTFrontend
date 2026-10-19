@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,6 +15,7 @@ import { updatedLabel } from '../../shared/updated-label';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { DashPart, DashTab, DashViewHooks, DashViews, revealWhenShown, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
+import { ConfirmService } from '../../shared/confirm/confirm.service';
 
 /** Charts | Maintenance Details (upcoming, by type, the tickets and the plan), under the tiles both share. */
 const TABS: DashTab[] = [
@@ -41,6 +42,9 @@ const TABS: DashTab[] = [
   templateUrl: './periodic-dashboard.component.html'
 })
 export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
+  /** "Are you sure?" in the app's own dialog, not the browser's confirm() box. */
+  private readonly confirm = inject(ConfirmService);
+
 
   /* ── Charts | Maintenance Details ──
      Each part of the page is asked for only while it is on screen and out
@@ -360,8 +364,13 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
       });
   }
 
-  deleteSchedule(s: any): void {
-    if (!confirm(`Stop scheduling "${s.title}"? Tickets it already raised are kept.`)) return;
+  async deleteSchedule(s: any): Promise<void> {
+    const yes = await this.confirm.ask({
+      title: `Stop scheduling "${s.title}"?`,
+      message: 'No new tickets are raised for it. Tickets it already raised are kept.',
+      confirmText: 'Stop scheduling'
+    });
+    if (!yes) return;
     this.svc.deleteSchedule(s.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({

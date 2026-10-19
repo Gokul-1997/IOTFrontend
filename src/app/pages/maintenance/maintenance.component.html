@@ -4,9 +4,11 @@
     <p class="mexa-subtitle">    ( Schedule and track machine maintenance )</p>
   </div>
   <span class="mexa-titlebar-spacer"></span>
-  <button *ngIf="activeTab === 'tickets'" type="button" class="ui-btn ui-btn-primary" (click)="showTicketForm=!showTicketForm">+ Create ticket</button>
-  <button *ngIf="activeTab === 'schedules'" type="button" class="ui-btn ui-btn-primary" (click)="showForm=!showForm">+ New schedule</button>
-  <button *ngIf="activeTab === 'logs'" type="button" class="ui-btn ui-btn-primary" (click)="showLogForm=!showLogForm">+ Log maintenance</button>
+  <ng-container *ngIf="auth.hasAction('maintenance', 'create')">
+    <button *ngIf="activeTab === 'tickets'" type="button" class="ui-btn ui-btn-primary" (click)="openTicketForm()">+ Create ticket</button>
+    <button *ngIf="activeTab === 'schedules'" type="button" class="ui-btn ui-btn-primary" (click)="openScheduleForm()">+ New schedule</button>
+    <button *ngIf="activeTab === 'logs'" type="button" class="ui-btn ui-btn-primary" (click)="openLogForm()">+ Log maintenance</button>
+  </ng-container>
 </div>
 
 <!-- Upcoming (next 7 days) -->
@@ -42,7 +44,7 @@
           [attr.aria-selected]="activeTab === 'schedules'"
           [attr.tabindex]="activeTab === 'schedules' ? 0 : -1"
           (click)="setTab('schedules')">
-          <span class="ui-tab-icon material-icons" aria-hidden="true">access_time_filled';</span>
+          <span class="ui-tab-icon material-icons" aria-hidden="true">access_time_filled</span>
     Schedules
   </button>
 
@@ -72,56 +74,6 @@
 
 <!-- Tickets -->
 <div *ngIf="activeTab === 'tickets'" role="tabpanel" class="">
-  <div *ngIf="showTicketForm" class="mexa-card mt-form p-4">
-    <h2 class="mexa-card-title mexa-card-title-left">Create maintenance ticket</h2>
-    <div class="mt-grid">
-      <div class="ui-field">
-        <label class="ui-label" for="tk-machine">Machine</label>
-        <select id="tk-machine" [(ngModel)]="ticketForm.machine_id" class="ui-input">
-          <option [ngValue]="''" disabled>Select machine</option>
-          <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-        </select>
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="tk-title">Title</label>
-        <input id="tk-title" [(ngModel)]="ticketForm.title" placeholder="What needs attention" class="ui-input" />
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="tk-issue">Issue type</label>
-        <select id="tk-issue" [(ngModel)]="ticketForm.issue_type" class="ui-input">
-          <option *ngFor="let t of issueTypes" [value]="t">{{ t | enumLabel }}</option>
-        </select>
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="tk-priority">Priority</label>
-        <select id="tk-priority" [(ngModel)]="ticketForm.priority" class="ui-input">
-          <option *ngFor="let p of priorities" [value]="p">{{ p | enumLabel }}</option>
-        </select>
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="tk-assignee">Assign to</label>
-        <select id="tk-assignee" [(ngModel)]="ticketForm.assigned_to" class="ui-input">
-          <option [ngValue]="''">Unassigned</option>
-          <option *ngFor="let u of assignableUsers" [ngValue]="u.id">{{ u.username }}</option>
-        </select>
-      </div>
-      <div class="ui-field mt-wide">
-        <label class="ui-label" for="tk-desc">Description</label>
-        <textarea id="tk-desc" [(ngModel)]="ticketForm.description" rows="3" class="ui-input"></textarea>
-      </div>
-    </div>
-    <div class="mt-actions flex gap-3 justify-end">
-      <button type="button" (click)="saveTicket()" class="ui-btn small ui-btn-primary">
-        <span class="ui-tab-icon material-icons" aria-hidden="true">add</span>
-        Create
-      </button>
-      <button type="button" (click)="showTicketForm=false" class="ui-btn small ui-btn-ghost">
-        <span class="ui-tab-icon material-icons" aria-hidden="true">close</span>
-        Cancel
-      </button>
-    </div>
-  </div>
-
   <div class="mexa-card mexa-card-flush">
     <div class="mexa-cardbar justify-end">
       <div class="mexa-seg" role="group" aria-label="Which tickets">
@@ -238,56 +190,6 @@
 
   <!-- Schedules -->
 <div *ngIf="activeTab === 'schedules'" role="tabpanel">
-  <div *ngIf="showForm" class="mexa-card mt-form">
-    <h2 class="mexa-card-title mexa-card-title-left">New maintenance schedule</h2>
-    <div class="mt-grid">
-      <div class="ui-field">
-        <label class="ui-label" for="sc-title">Title</label>
-        <input id="sc-title" [(ngModel)]="form.title" class="ui-input" />
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="sc-machine">Machine</label>
-        <select id="sc-machine" [(ngModel)]="form.machine_id" class="ui-input">
-          <option [ngValue]="''" disabled>Select machine</option>
-          <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-        </select>
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="sc-type">Type</label>
-        <select id="sc-type" [(ngModel)]="form.maintenance_type" class="ui-input">
-          <option *ngFor="let t of types" [value]="t">{{ t | enumLabel }}</option>
-        </select>
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="sc-when">Scheduled for</label>
-        <input id="sc-when" [(ngModel)]="form.scheduled_at" type="datetime-local" class="ui-input" />
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="sc-dur">Duration (min)</label>
-        <input id="sc-dur" [(ngModel)]="form.estimated_duration_minutes" type="number" min="0" class="ui-input" />
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="sc-who">Assigned to</label>
-        <input id="sc-who" [(ngModel)]="form.assigned_to" class="ui-input" />
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="sc-rec">Repeats</label>
-        <select id="sc-rec" [(ngModel)]="form.recurrence" class="ui-input">
-          <option *ngFor="let r of recurrences" [value]="r">{{ r | enumLabel }}</option>
-        </select>
-      </div>
-    </div>
-    <div class="ui-btn-row mt-actions">
-      <button type="button" (click)="saveSchedule()" class="ui-btn ui-btn-primary">
-        import SaveIcon from '@mui/icons-material/Save';
-        Save
-      </button>
-      <button type="button" (click)="showForm=false" class="ui-btn ui-btn-ghost">
-        Cancel
-      </button>
-    </div>
-  </div>
-
   <div class="mexa-card mexa-card-flush">
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Schedules">
       <table class="mexa-table">
@@ -311,7 +213,8 @@
               <td class="num">{{ s.scheduled_at | date:'d MMM y, h:mm a' }}</td>
               <td class="col-md">{{ s.assigned_to || '--' }}</td>
               <td><span class="mexa-badge" [ngClass]="statusClass(s.status)">{{ s.status | enumLabel }}</span></td>
-              <td class="actions"><button type="button" (click)="deleteSchedule(s.id)" class="ui-btn ui-btn-danger-ghost ui-btn-xs">Remove</button></td>
+              <td class="actions"><button *ngIf="auth.hasAction('maintenance', 'delete')" type="button" (click)="deleteSchedule(s)"
+                  class="ui-btn ui-btn-danger-ghost ui-btn-xs" [attr.aria-label]="'Remove schedule ' + s.title">Remove</button></td>
             </tr>
           </ng-container>
           <ng-template #noSchedules>
@@ -329,49 +232,6 @@
 
 <!-- Logs -->
 <div *ngIf="activeTab === 'logs'" role="tabpanel">
-  <div *ngIf="showLogForm" class="mexa-card mt-form">
-    <h2 class="mexa-card-title mexa-card-title-left">Log maintenance work</h2>
-    <div class="mt-grid">
-      <div class="ui-field">
-        <label class="ui-label" for="lg-title">Title</label>
-        <input id="lg-title" [(ngModel)]="logForm.title" class="ui-input" />
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="lg-machine">Machine</label>
-        <select id="lg-machine" [(ngModel)]="logForm.machine_id" class="ui-input">
-          <option [ngValue]="''" disabled>Select machine</option>
-          <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-        </select>
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="lg-type">Type</label>
-        <select id="lg-type" [(ngModel)]="logForm.maintenance_type" class="ui-input">
-          <option *ngFor="let t of types" [value]="t">{{ t | enumLabel }}</option>
-        </select>
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="lg-tech">Technician</label>
-        <input id="lg-tech" [(ngModel)]="logForm.technician_name" class="ui-input" />
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="lg-start">Started</label>
-        <input id="lg-start" [(ngModel)]="logForm.started_at" type="datetime-local" class="ui-input" />
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="lg-end">Completed</label>
-        <input id="lg-end" [(ngModel)]="logForm.completed_at" type="datetime-local" class="ui-input" />
-      </div>
-      <div class="ui-field mt-wide">
-        <label class="ui-label" for="lg-work">Work performed</label>
-        <textarea id="lg-work" [(ngModel)]="logForm.work_performed" rows="3" class="ui-input"></textarea>
-      </div>
-    </div>
-    <div class="ui-btn-row mt-actions">
-      <button type="button" (click)="saveLog()" class="ui-btn ui-btn-primary">Save</button>
-      <button type="button" (click)="showLogForm=false" class="ui-btn ui-btn-ghost">Cancel</button>
-    </div>
-  </div>
-
   <div class="mexa-card mexa-card-flush">
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Maintenance logs">
       <table class="mexa-table">
@@ -439,5 +299,246 @@
         </ng-template>
       </tbody>
     </table>
+  </div>
+</div>
+
+
+<!-- ══ The forms: the same dialog as every other page (they used to open in the page) ══ -->
+
+<!-- ── CREATE TICKET ── -->
+<div *ngIf="showTicketForm" class="ui-overlay">
+  <div class="ui-dialog ui-dialog-lg" role="dialog" aria-modal="true" aria-labelledby="tkTitle">
+    <div class="ui-dialog-header">
+      <div>
+        <h2 id="tkTitle" class="ui-dialog-title">Create maintenance ticket</h2>
+        <p class="ui-dialog-subtitle">Something on a machine that needs attention. Assign it now or later.</p>
+      </div>
+      <button type="button" class="ui-close" (click)="closeTicketForm()" aria-label="Close without saving">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             class="w-5 h-5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <form (ngSubmit)="saveTicket()" class="contents" novalidate>
+      <div class="ui-dialog-body">
+        <div *ngIf="ticketError" class="ui-alert ui-alert-error mb-4" role="alert">{{ ticketError }}</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="ui-label" for="tk-machine">Machine<span class="ui-req" aria-hidden="true">*</span></label>
+            <select id="tk-machine" name="machine" [(ngModel)]="ticketForm.machine_id" class="ui-input" aria-required="true"
+                    [class.is-invalid]="ticketMissing.machine" [attr.aria-invalid]="ticketMissing.machine ? true : null"
+                   [attr.aria-describedby]="ticketMissing.machine ? 'tkMachineErr' : null">
+              <option [ngValue]="''" disabled>Select machine</option>
+              <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+            </select>
+            <p *ngIf="ticketMissing.machine" id="tkMachineErr" class="ui-error" role="alert">Choose the machine.</p>
+          </div>
+          <div>
+            <label class="ui-label" for="tk-title">Title<span class="ui-req" aria-hidden="true">*</span></label>
+            <input id="tk-title" name="title" [(ngModel)]="ticketForm.title" placeholder="What needs attention" class="ui-input"
+                   maxlength="200" autocomplete="off" aria-required="true"
+                   [class.is-invalid]="ticketMissing.title" [attr.aria-invalid]="ticketMissing.title ? true : null"
+                   [attr.aria-describedby]="ticketMissing.title ? 'tkTitleErr' : null" />
+            <p *ngIf="ticketMissing.title" id="tkTitleErr" class="ui-error" role="alert">Enter a title.</p>
+          </div>
+          <div>
+            <label class="ui-label" for="tk-issue">Issue type</label>
+            <select id="tk-issue" name="issue" [(ngModel)]="ticketForm.issue_type" class="ui-input">
+              <option *ngFor="let t of issueTypes" [value]="t">{{ t | enumLabel }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="ui-label" for="tk-priority">Priority</label>
+            <select id="tk-priority" name="priority" [(ngModel)]="ticketForm.priority" class="ui-input">
+              <option *ngFor="let p of priorities" [value]="p">{{ p | enumLabel }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="ui-label" for="tk-assignee">Assign to</label>
+            <select id="tk-assignee" name="assignee" [(ngModel)]="ticketForm.assigned_to" class="ui-input">
+              <option [ngValue]="''">Unassigned</option>
+              <option *ngFor="let u of assignableUsers" [ngValue]="u.id">{{ u.username }}</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="ui-label" for="tk-desc">Description</label>
+            <textarea id="tk-desc" name="description" [(ngModel)]="ticketForm.description" rows="3" class="ui-input"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="ui-dialog-footer is-split">
+        <p class="ui-hint !mt-0"><span class="ui-req" aria-hidden="true">*</span> Required fields</p>
+        <div class="flex items-center gap-2">
+          <button type="button" class="ui-btn ui-btn-ghost" (click)="closeTicketForm()" [disabled]="ticketSaving">Cancel</button>
+          <button type="submit" class="ui-btn ui-btn-primary" [disabled]="ticketSaving">
+            <span *ngIf="ticketSaving" class="ui-spinner" aria-hidden="true"></span>
+            {{ ticketSaving ? 'Creating…' : 'Create ticket' }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── NEW SCHEDULE ── -->
+<div *ngIf="showForm" class="ui-overlay">
+  <div class="ui-dialog ui-dialog-lg" role="dialog" aria-modal="true" aria-labelledby="scTitle">
+    <div class="ui-dialog-header">
+      <div>
+        <h2 id="scTitle" class="ui-dialog-title">New maintenance schedule</h2>
+        <p class="ui-dialog-subtitle">Planned work on a machine, once or repeating.</p>
+      </div>
+      <button type="button" class="ui-close" (click)="closeScheduleForm()" aria-label="Close without saving">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             class="w-5 h-5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <form (ngSubmit)="saveSchedule()" class="contents" novalidate>
+      <div class="ui-dialog-body">
+        <div *ngIf="scheduleError" class="ui-alert ui-alert-error mb-4" role="alert">{{ scheduleError }}</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="ui-label" for="sc-title">Title<span class="ui-req" aria-hidden="true">*</span></label>
+            <input id="sc-title" name="title" [(ngModel)]="form.title" class="ui-input" maxlength="200" autocomplete="off" aria-required="true"
+                   [class.is-invalid]="scheduleMissing.title" [attr.aria-invalid]="scheduleMissing.title ? true : null"
+                   [attr.aria-describedby]="scheduleMissing.title ? 'scTitleErr' : null" />
+            <p *ngIf="scheduleMissing.title" id="scTitleErr" class="ui-error" role="alert">Enter a title.</p>
+          </div>
+          <div>
+            <label class="ui-label" for="sc-machine">Machine<span class="ui-req" aria-hidden="true">*</span></label>
+            <select id="sc-machine" name="machine" [(ngModel)]="form.machine_id" class="ui-input" aria-required="true"
+                    [class.is-invalid]="scheduleMissing.machine" [attr.aria-invalid]="scheduleMissing.machine ? true : null"
+                   [attr.aria-describedby]="scheduleMissing.machine ? 'scMachineErr' : null">
+              <option [ngValue]="''" disabled>Select machine</option>
+              <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+            </select>
+            <p *ngIf="scheduleMissing.machine" id="scMachineErr" class="ui-error" role="alert">Choose the machine.</p>
+          </div>
+          <div>
+            <label class="ui-label" for="sc-type">Type</label>
+            <select id="sc-type" name="type" [(ngModel)]="form.maintenance_type" class="ui-input">
+              <option *ngFor="let t of types" [value]="t">{{ t | enumLabel }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="ui-label" for="sc-when">Scheduled for<span class="ui-req" aria-hidden="true">*</span></label>
+            <input id="sc-when" name="when" [(ngModel)]="form.scheduled_at" type="datetime-local" class="ui-input" aria-required="true"
+                   [class.is-invalid]="scheduleMissing.when" [attr.aria-invalid]="scheduleMissing.when ? true : null"
+                   [attr.aria-describedby]="scheduleMissing.when ? 'scWhenErr' : null" />
+            <p *ngIf="scheduleMissing.when" id="scWhenErr" class="ui-error" role="alert">Choose the date and time.</p>
+          </div>
+          <div>
+            <label class="ui-label" for="sc-dur">Duration (min)</label>
+            <input id="sc-dur" name="duration" [(ngModel)]="form.estimated_duration_minutes" type="number" min="0" step="1" class="ui-input" />
+          </div>
+          <div>
+            <label class="ui-label" for="sc-who">Assigned to</label>
+            <input id="sc-who" name="who" [(ngModel)]="form.assigned_to" class="ui-input" maxlength="200" placeholder="Technician's name" />
+          </div>
+          <div>
+            <label class="ui-label" for="sc-rec">Repeats</label>
+            <select id="sc-rec" name="repeats" [(ngModel)]="form.recurrence" class="ui-input">
+              <option *ngFor="let r of recurrences" [value]="r">{{ r | enumLabel }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="ui-dialog-footer is-split">
+        <p class="ui-hint !mt-0"><span class="ui-req" aria-hidden="true">*</span> Required fields</p>
+        <div class="flex items-center gap-2">
+          <button type="button" class="ui-btn ui-btn-ghost" (click)="closeScheduleForm()" [disabled]="scheduleSaving">Cancel</button>
+          <button type="submit" class="ui-btn ui-btn-primary" [disabled]="scheduleSaving">
+            <span *ngIf="scheduleSaving" class="ui-spinner" aria-hidden="true"></span>
+            {{ scheduleSaving ? 'Saving…' : 'Save schedule' }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── LOG MAINTENANCE ── -->
+<div *ngIf="showLogForm" class="ui-overlay">
+  <div class="ui-dialog ui-dialog-lg" role="dialog" aria-modal="true" aria-labelledby="lgTitle">
+    <div class="ui-dialog-header">
+      <div>
+        <h2 id="lgTitle" class="ui-dialog-title">Log maintenance work</h2>
+        <p class="ui-dialog-subtitle">Work already done on a machine, for its history and repair times.</p>
+      </div>
+      <button type="button" class="ui-close" (click)="closeLogForm()" aria-label="Close without saving">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             class="w-5 h-5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <form (ngSubmit)="saveLog()" class="contents" novalidate>
+      <div class="ui-dialog-body">
+        <div *ngIf="logError" class="ui-alert ui-alert-error mb-4" role="alert">{{ logError }}</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="ui-label" for="lg-title">Title<span class="ui-req" aria-hidden="true">*</span></label>
+            <input id="lg-title" name="title" [(ngModel)]="logForm.title" class="ui-input" maxlength="200" autocomplete="off" aria-required="true"
+                   [class.is-invalid]="logMissing.title" [attr.aria-invalid]="logMissing.title ? true : null"
+                   [attr.aria-describedby]="logMissing.title ? 'lgTitleErr' : null" />
+            <p *ngIf="logMissing.title" id="lgTitleErr" class="ui-error" role="alert">Enter a title.</p>
+          </div>
+          <div>
+            <label class="ui-label" for="lg-machine">Machine<span class="ui-req" aria-hidden="true">*</span></label>
+            <select id="lg-machine" name="machine" [(ngModel)]="logForm.machine_id" class="ui-input" aria-required="true"
+                    [class.is-invalid]="logMissing.machine" [attr.aria-invalid]="logMissing.machine ? true : null"
+                   [attr.aria-describedby]="logMissing.machine ? 'lgMachineErr' : null">
+              <option [ngValue]="''" disabled>Select machine</option>
+              <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+            </select>
+            <p *ngIf="logMissing.machine" id="lgMachineErr" class="ui-error" role="alert">Choose the machine.</p>
+          </div>
+          <div>
+            <label class="ui-label" for="lg-type">Type</label>
+            <select id="lg-type" name="type" [(ngModel)]="logForm.maintenance_type" class="ui-input">
+              <option *ngFor="let t of types" [value]="t">{{ t | enumLabel }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="ui-label" for="lg-tech">Technician</label>
+            <input id="lg-tech" name="tech" [(ngModel)]="logForm.technician_name" class="ui-input" maxlength="200" />
+          </div>
+          <div>
+            <label class="ui-label" for="lg-start">Started<span class="ui-req" aria-hidden="true">*</span></label>
+            <input id="lg-start" name="start" [(ngModel)]="logForm.started_at" type="datetime-local" class="ui-input" aria-required="true"
+                   [class.is-invalid]="logMissing.start" [attr.aria-invalid]="logMissing.start ? true : null"
+                   [attr.aria-describedby]="logMissing.start ? 'lgStartErr' : null" />
+            <p *ngIf="logMissing.start" id="lgStartErr" class="ui-error" role="alert">Choose when the work started.</p>
+          </div>
+          <div>
+            <label class="ui-label" for="lg-end">Completed</label>
+            <input id="lg-end" name="end" [(ngModel)]="logForm.completed_at" type="datetime-local" class="ui-input" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="ui-label" for="lg-work">Work performed</label>
+            <textarea id="lg-work" name="work" [(ngModel)]="logForm.work_performed" rows="3" class="ui-input"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="ui-dialog-footer is-split">
+        <p class="ui-hint !mt-0"><span class="ui-req" aria-hidden="true">*</span> Required fields</p>
+        <div class="flex items-center gap-2">
+          <button type="button" class="ui-btn ui-btn-ghost" (click)="closeLogForm()" [disabled]="logSaving">Cancel</button>
+          <button type="submit" class="ui-btn ui-btn-primary" [disabled]="logSaving">
+            <span *ngIf="logSaving" class="ui-spinner" aria-hidden="true"></span>
+            {{ logSaving ? 'Saving…' : 'Save log' }}
+          </button>
+        </div>
+      </div>
+    </form>
   </div>
 </div>

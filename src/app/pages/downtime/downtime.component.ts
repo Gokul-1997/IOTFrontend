@@ -2,6 +2,8 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DowntimeService } from '../../core/services/downtime.service';
+import { AuthService } from '../../core/services/auth.service';
+import { ToastService } from '../../core/services/toast.service';
 import { StateComponent } from '../../shared/state/state.component';
 import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
@@ -13,9 +15,6 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
   templateUrl: './downtime.component.html',
   styles: [`
     .num-col { text-align: right; }
-    .reason-form { padding: 1rem 1rem .25rem; border-bottom: 1px solid var(--tbl-rule); }
-    .reason-grid { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
-    .reason-actions { margin-top: .9rem; }
   `]
 })
 export class DowntimeComponent implements OnInit {
@@ -31,8 +30,12 @@ export class DowntimeComponent implements OnInit {
   reasonSearch = '';
   reasonSort: 'code' | 'name' | 'category' = 'code';
   reasonDir: 'asc' | 'desc' = 'asc';
+  /* Add reason code: a dialog, like every other form in the app (it used to open in the page) */
   showReasonForm = false;
   reasonForm: any = { code: '', name: '', category: 'UNPLANNED' };
+  reasonMissing = { code: false, name: false };
+  reasonSaving = false;
+  reasonError = '';
   filter: any = { from_date: '', to_date: '', page: 1, limit: 20 };
 
   readonly categories = ['UNPLANNED', 'PLANNED', 'QUALITY', 'CHANGEOVER'];
@@ -43,7 +46,8 @@ export class DowntimeComponent implements OnInit {
      the table still reads empty — until an unrelated click (the header
      listens on document:click) forces a change-detection pass, which is why
      the data appeared to need a second click. */
-  constructor(private svc: DowntimeService, private cdr: ChangeDetectorRef) {}
+  constructor(private svc: DowntimeService, public auth: AuthService, private toast: ToastService,
+              private cdr: ChangeDetectorRef) {}
 
   ngOnInit() { this.loadReasons(); this.loadEvents(); }
 
@@ -115,16 +119,41 @@ export class DowntimeComponent implements OnInit {
     if (tab === 'summary') this.loadSummary();
   }
 
+  openReasonForm() {
+    this.reasonForm = { code: '', name: '', category: 'UNPLANNED' };
+    this.reasonMissing = { code: false, name: false };
+    this.reasonError = '';
+    this.showReasonForm = true;
+  }
+
+  closeReasonForm() {
+    this.showReasonForm = false;
+    this.reasonError = '';
+  }
+
   saveReason() {
-    this.svc.createReason(this.reasonForm).subscribe({
+    if (this.reasonSaving) return;
+    const code = String(this.reasonForm.code || '').trim();
+    const name = String(this.reasonForm.name || '').trim();
+    this.reasonMissing = { code: !code, name: !name };
+    if (!code || !name) { document.getElementById(!code ? 'rc-code' : 'rc-name')?.focus(); return; }
+
+    this.reasonSaving = true;
+    this.reasonError = '';
+    this.svc.createReason({ ...this.reasonForm, code, name }).subscribe({
       next: () => {
+        this.reasonSaving = false;
         this.showReasonForm = false;
-        this.reasonForm = { code: '', name: '', category: 'UNPLANNED' };
+        this.toast.success(`Reason code ${code.toUpperCase()} added`);
         this.loadReasons();
       },
-      /* Leaving the form open with the typed values intact is the honest
-         outcome of a failed save; silently closing it implies success. */
-      error: () => this.cdr.markForCheck()
+      /* Leaving the dialog open with the typed values intact is the honest
+         outcome of a failed save; closing it would imply success. */
+      error: err => {
+        this.reasonSaving = false;
+        this.reasonError = err?.error?.message || 'Could not add the reason code. Try again.';
+        this.cdr.markForCheck();
+      }
     });
   }
 

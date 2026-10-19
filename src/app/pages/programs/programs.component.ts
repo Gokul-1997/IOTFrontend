@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
 import { Subject, Subscription, takeUntil } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ProgramService, PtMachine, PtFile, PtKind, PtJob, PtStatus } from '../../core/services/program.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ConfirmService } from '../../shared/confirm/confirm.service';
 
 const key = () => crypto.randomUUID();
 const open = (job: PtJob) => job.status === 'QUEUED' || job.status === 'DELIVERED';
@@ -17,6 +18,9 @@ const open = (job: PtJob) => job.status === 'QUEUED' || job.status === 'DELIVERE
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProgramsComponent implements OnInit, OnDestroy {
+  /** "Are you sure?" in the app's own dialog, not the browser's confirm() box. */
+  private readonly confirm = inject(ConfirmService);
+
   machines: PtMachine[] = [];
   selectedMachineId: number | null = null;
   currentFile: PtFile | null = null;
@@ -253,8 +257,15 @@ export class ProgramsComponent implements OnInit, OnDestroy {
       error: () => { this.toast.error('Could not download the file'); this.touch(); }
     });
   }
-  deleteFile(f: PtFile) {
-    if (!this.canDelete || this.isCurrent(f) || !confirm(`Delete saved file ${f.program_name}?`)) return;
+  async deleteFile(f: PtFile) {
+    if (!this.canDelete || this.isCurrent(f)) return;
+    const yes = await this.confirm.ask({
+      title: `Delete the saved file ${f.program_name}?`,
+      message: 'It is removed from this server. The program on the machine is not touched.',
+      confirmText: 'Delete file',
+      icon: 'delete_forever'
+    });
+    if (!yes) return;
     this.programs.delete(f.id).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => { this.toast.success('File deleted'); this.historyDirty = true; this.loadFiles(); this.loadStatus(); },
       error: err => { this.toast.error(err.error?.message || 'Could not delete the file'); this.touch(); }

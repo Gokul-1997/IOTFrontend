@@ -1,10 +1,11 @@
-import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { AdminService } from './admin.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AdminTabsComponent } from './admin-tabs.component';
+import { ConfirmService } from '../../shared/confirm/confirm.service';
 
 @Component({
   selector: 'app-role-management',
@@ -14,6 +15,9 @@ import { AdminTabsComponent } from './admin-tabs.component';
   changeDetection: ChangeDetectionStrategy.Default
 })
 export class RoleManagementComponent implements OnInit {
+  /** "Are you sure?" in the app's own dialog, not the browser's confirm() box. */
+  private readonly confirm = inject(ConfirmService);
+
   roles: any[] = [];
   permissionModules: any[] = [];  // [{module, label, group, permissions: [{id, permission_key, action}]}]
   permissionGroups: string[] = [];
@@ -256,9 +260,15 @@ export class RoleManagementComponent implements OnInit {
   }
 
   // ── Delete ──
-  deleteRole(role: any) {
+  async deleteRole(role: any) {
     if (role.is_system) return;
-    if (!confirm(`Delete role "${role.role_name}"? This cannot be undone.`)) return;
+    const yes = await this.confirm.ask({
+      title: `Delete the role "${role.role_name}"?`,
+      message: 'This cannot be undone.',
+      confirmText: 'Delete role',
+      icon: 'delete_forever'
+    });
+    if (!yes) return;
     this.loading = true;
     this.cdr.detectChanges();
     this.adminService.deleteRole(role.id).subscribe({

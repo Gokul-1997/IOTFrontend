@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -6,6 +6,7 @@ import { CompanyService } from '../../core/services/company.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AdminTabsComponent } from './admin-tabs.component';
+import { ConfirmService } from '../../shared/confirm/confirm.service';
 
 /*
  * Plans — the catalogue a company is assigned from.
@@ -26,6 +27,9 @@ import { AdminTabsComponent } from './admin-tabs.component';
   templateUrl: './plan-management.component.html'
 })
 export class PlanManagementComponent implements OnInit {
+  /** "Are you sure?" in the app's own dialog, not the browser's confirm() box. */
+  private readonly confirm = inject(ConfirmService);
+
   plans: any[] = [];
   companies: any[] = [];
   loading = false;
@@ -158,15 +162,17 @@ export class PlanManagementComponent implements OnInit {
     });
   }
 
-  toggleActive(plan: any) {
+  async toggleActive(plan: any) {
     const inUse = this.companiesOn(plan.id);
     if (plan.is_active && inUse > 0) {
       /* Retiring a plan does not move anyone off it; their existing
          assignment keeps working. It only stops new assignments. */
-      const ok = confirm(
-        `${plan.plan_name} is assigned to ${inUse} company(ies).\n\n` +
-        `Retiring it does not change them — it only stops the plan being assigned again. Continue?`
-      );
+      const ok = await this.confirm.ask({
+        title: `Retire ${plan.plan_name}?`,
+        message: `It is assigned to ${inUse} ${inUse === 1 ? 'company' : 'companies'}. Retiring it does not change them — it only stops the plan being assigned again.`,
+        confirmText: 'Retire plan',
+        tone: 'primary'
+      });
       if (!ok) return;
     }
     this.companyService.updatePlan(plan.id, { is_active: !plan.is_active }).subscribe({

@@ -1,10 +1,11 @@
-import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from './admin.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AdminTabsComponent } from './admin-tabs.component';
+import { ConfirmService } from '../../shared/confirm/confirm.service';
 
 @Component({
   selector: 'app-user-management',
@@ -14,6 +15,9 @@ import { AdminTabsComponent } from './admin-tabs.component';
   changeDetection: ChangeDetectionStrategy.Default
 })
 export class UserManagementComponent implements OnInit {
+  /** "Are you sure?" in the app's own dialog, not the browser's confirm() box. */
+  private readonly confirm = inject(ConfirmService);
+
   users: any[] = [];
   roles: any[] = [];
   loading = false;
@@ -273,8 +277,14 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
-  deleteUser(user: any) {
-    if (!confirm(`Delete user "${user.username}"? This cannot be undone.`)) return;
+  async deleteUser(user: any) {
+    const yes = await this.confirm.ask({
+      title: `Delete the user "${user.username}"?`,
+      message: 'This cannot be undone.',
+      confirmText: 'Delete user',
+      icon: 'delete_forever'
+    });
+    if (!yes) return;
     this.loading = true;
     this.cdr.detectChanges();
     this.adminService.deleteUser(user.id).subscribe({

@@ -4,7 +4,7 @@
     <p class="mexa-subtitle">( Track and classify machine downtime events )</p>
   </div>
   <span class="mexa-titlebar-spacer"></span>
-  <button *ngIf="activeTab === 'reasons'" type="button" class="ui-btn ui-btn-primary" (click)="showReasonForm = !showReasonForm">
+  <button *ngIf="activeTab === 'reasons' && auth.hasAction('downtime', 'create')" type="button" class="ui-btn ui-btn-primary" (click)="openReasonForm()">
     + Add reason code
   </button>
 </div>
@@ -40,7 +40,7 @@
           [attr.aria-selected]="activeTab === 'summary'"
           [attr.tabindex]="activeTab === 'summary' ? 0 : -1"
           (click)="setTab('summary')">
-          <span class="ui-tab-icon material-icons" aria-hidden="true">listAlt</span>
+          <span class="ui-tab-icon material-icons" aria-hidden="true">list_alt</span>
     Summary
   </button>
 
@@ -94,34 +94,6 @@
 
 <!-- Reason codes -->
 <div *ngIf="activeTab === 'reasons'" role="tabpanel" class="mexa-card mexa-card-flush">
-  <div *ngIf="showReasonForm" class="reason-form">
-    <h2 class="mexa-card-title mexa-card-title-left">New reason code</h2>
-    <div class="reason-grid">
-      <div class="ui-field">
-        <label class="ui-label" for="rc-code">Code</label>
-        <input id="rc-code" [(ngModel)]="reasonForm.code" placeholder="e.g. BRK" class="ui-input" />
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="rc-name">Name</label>
-        <input id="rc-name" [(ngModel)]="reasonForm.name" placeholder="e.g. Breakdown" class="ui-input" />
-      </div>
-      <div class="ui-field">
-        <label class="ui-label" for="rc-cat">Category</label>
-        <select id="rc-cat" [(ngModel)]="reasonForm.category" class="ui-input">
-          <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
-        </select>
-      </div>
-    </div>
-    <div class="reason-actions flex gap-2 justify-end">
-      <button type="button" (click)="saveReason()" class="ui-btn small ui-btn-primary">
-        <span class="ui-tab-icon material-icons" aria-hidden="true">save</span>
-        Save</button>
-      <button type="button" (click)="showReasonForm=false" class="ui-btn small ui-btn-ghost">
-        <span class="ui-tab-icon material-icons" aria-hidden="true">close</span>
-        Cancel</button>
-    </div>
-  </div>
-
   <div class="tbl-toolbar">
     <label class="mexa-searchbox">
       <span class="material-icons" aria-hidden="true">search</span>
@@ -222,5 +194,70 @@
         </ng-container>
       </tbody>
     </table>
+  </div>
+</div>
+
+
+<!-- ── ADD REASON CODE ── the same dialog as every other form -->
+<div *ngIf="showReasonForm" class="ui-overlay">
+  <div class="ui-dialog ui-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="rcTitle">
+
+    <div class="ui-dialog-header">
+      <div>
+        <h2 id="rcTitle" class="ui-dialog-title">Add reason code</h2>
+        <p class="ui-dialog-subtitle">A reason people pick when they record why a machine stopped.</p>
+      </div>
+      <button type="button" class="ui-close" (click)="closeReasonForm()" aria-label="Close without saving">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             class="w-5 h-5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <form (ngSubmit)="saveReason()" class="contents" novalidate>
+      <div class="ui-dialog-body">
+        <div *ngIf="reasonError" class="ui-alert ui-alert-error mb-4" role="alert">{{ reasonError }}</div>
+
+        <div class="ui-field">
+          <label class="ui-label" for="rc-code">Code<span class="ui-req" aria-hidden="true">*</span></label>
+          <input id="rc-code" name="code" [(ngModel)]="reasonForm.code" placeholder="e.g. BRK" class="ui-input"
+                 maxlength="20" autocomplete="off" aria-required="true"
+                 [class.is-invalid]="reasonMissing.code"
+                 [attr.aria-invalid]="reasonMissing.code ? true : null"
+                 [attr.aria-describedby]="reasonMissing.code ? 'rcCodeErr' : 'rcCodeHint'" />
+          <p *ngIf="!reasonMissing.code" id="rcCodeHint" class="ui-hint">Saved in capitals, up to 20 characters.</p>
+          <p *ngIf="reasonMissing.code" id="rcCodeErr" class="ui-error" role="alert">Enter a code.</p>
+        </div>
+
+        <div class="ui-field">
+          <label class="ui-label" for="rc-name">Name<span class="ui-req" aria-hidden="true">*</span></label>
+          <input id="rc-name" name="name" [(ngModel)]="reasonForm.name" placeholder="e.g. Breakdown" class="ui-input"
+                 maxlength="100" autocomplete="off" aria-required="true"
+                 [class.is-invalid]="reasonMissing.name"
+                 [attr.aria-invalid]="reasonMissing.name ? true : null"
+                 [attr.aria-describedby]="reasonMissing.name ? 'rcNameErr' : null" />
+          <p *ngIf="reasonMissing.name" id="rcNameErr" class="ui-error" role="alert">Enter a name.</p>
+        </div>
+
+        <div class="ui-field">
+          <label class="ui-label" for="rc-cat">Category</label>
+          <select id="rc-cat" name="category" [(ngModel)]="reasonForm.category" class="ui-input">
+            <option *ngFor="let cat of categories" [value]="cat">{{ categoryLabel(cat) }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="ui-dialog-footer is-split">
+        <p class="ui-hint !mt-0"><span class="ui-req" aria-hidden="true">*</span> Required fields</p>
+        <div class="flex items-center gap-2">
+          <button type="button" class="ui-btn ui-btn-ghost" (click)="closeReasonForm()" [disabled]="reasonSaving">Cancel</button>
+          <button type="submit" class="ui-btn ui-btn-primary" [disabled]="reasonSaving">
+            <span *ngIf="reasonSaving" class="ui-spinner" aria-hidden="true"></span>
+            {{ reasonSaving ? 'Saving…' : 'Add reason code' }}
+          </button>
+        </div>
+      </div>
+    </form>
   </div>
 </div>
