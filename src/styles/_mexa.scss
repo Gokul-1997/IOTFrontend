@@ -33,7 +33,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
      grey for a while; the client asked for the STM look on every page.)
      --mexa-ground is the solid fallback and the colour of the few surfaces
      that are not cards but must not be white. */
-  --stm-field:       linear-gradient(to top right, #2b3990 0%, #3f3a8c 30%, #6e3b78 62%, #b8404f 100%);
+  --stm-field:       linear-gradient(to top right, #2b3990 0%, #3f3a8c 20%, #6e3b78 50%, #b8404f 100%);
   --mexa-ground:     #eef0f5;
   --mexa-on-field:   #ffffff;
   --mexa-white:   #ffffff;
@@ -84,7 +84,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   --mexa-bar:     linear-gradient(90deg, rgba(30, 36, 100, .85) 0%, rgba(30, 30, 80, .6) 60%, rgba(40, 24, 60, .4) 100%);
   --mexa-card-shadow: 0 10px 28px rgba(0, 0, 0, .35), 0 1px 3px rgba(0, 0, 0, .3);
   --mexa-ground:  #0d0f15;
-  --mexa-card:    #161a23;
+  --mexa-card:    #0e2344;
   --mexa-ink:     #e8ebf2;
   --mexa-ink-2:   #a8b0c2;
   --mexa-ink-3:   #949eb2;   /* 5.3:1 or better on the dark surfaces */
@@ -789,6 +789,11 @@ a.mexa-pill { text-decoration: none; }
 }
 .mexa-oeecard-head {
   display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+      padding: 15px;
+    margin: -16px;
+    background: var(--band-soft);
+        border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
 }
 .mexa-oeecard-name { font-size: .98rem; font-weight: 700; color: var(--mexa-white); }
 .mexa-oeecard-grade {
@@ -799,7 +804,7 @@ a.mexa-pill { text-decoration: none; }
   content: ''; width: .5rem; height: .5rem; border-radius: 50%;
   background: var(--band, var(--mexa-navy));
 }
-.mexa-oeecard-body { display: flex; align-items: center; gap: .75rem; }
+.mexa-oeecard-body { display: flex; align-items: center; gap: .75rem; margin-top: 15px;}
 .mexa-oeecard-metrics {
   flex: 1; display: grid; gap: .25rem; font-size: .82rem; font-weight: 600;
   color: var(--mexa-ink-2);
@@ -838,8 +843,8 @@ a.mexa-pill { text-decoration: none; }
    normal ink, and Availability / Performance / Quality are bars in the
    colours the KPI row and the trend use for them. */
 .mexa-oeecard.mexa-oeecard-tint {
-  background: var(--band-soft);
-  border: 1px solid color-mix(in srgb, var(--band) 24%, transparent);
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--band) 60%, transparent);
   gap: .6rem;
 }
 .mexa-oeecard-status {
@@ -854,11 +859,11 @@ a.mexa-pill { text-decoration: none; }
   background: var(--dot, #94a3b8);
 }
 .mexa-oeecard-tint .mexa-oeering { width: 4.2rem; height: 4.2rem; }
-.mexa-oeecard-tint .mexa-oeering::after { background: var(--band-soft); }
+.mexa-oeecard-tint .mexa-oeering::after { background: #fff; }
 .mexa-oeecard-foot {
   display: flex; align-items: center; justify-content: space-between; 
   font-size: .75rem; font-weight: 700; color: var(--band-ink); border-radius: 7px;
-    padding: 10px; background: #ffffff; flex-direction: column;
+    padding: 10px; background: #e9e9e9; flex-direction: column;
 }
 .mexa-oeecard-foot small { font-weight: 600; color: var(--mexa-ink-3); }
 
@@ -867,9 +872,9 @@ a.mexa-pill { text-decoration: none; }
 .mexa-apq { flex: 1; display: grid; gap: .1rem; min-width: 0; }
 .mexa-apq-row {
   display: grid; grid-template-columns: 1fr auto; gap: .15rem .5rem;
-  font-size: .76rem; font-weight: 400; color: var(--mexa-white);
+  font-size: .76rem; font-weight: 400; color: #000;
 }
-.mexa-apq-row .num { color: var(--mexa-white); font-variant-numeric: tabular-nums; }
+.mexa-apq-row .num { color: #000; font-variant-numeric: tabular-nums; }
 .mexa-apq-bar {
   grid-column: 1 / -1; height: 5px; border-radius: 99px; overflow: hidden;
   background: color-mix(in srgb, var(--mexa-ink-3) 18%, transparent);
@@ -994,7 +999,10 @@ a.mexa-pill { text-decoration: none; }
 .mexa-oeering {
   flex: none; width: 4.6rem; height: 4.6rem; border-radius: 50%;
   display: grid; place-items: center;
-  background: conic-gradient(var(--mexa-rule) 0 var(--pct),var(--band) var(--pct) 100%);
+  background: conic-gradient(
+    var(--band) 0 var(--pct),
+    var(--mexa-rule) var(--pct) 100%
+  );
   
   position: relative;
 }
@@ -1010,11 +1018,11 @@ a.mexa-pill { text-decoration: none; }
 }
 .mexa-oeering-pct {
   display: block; font-size: .8rem; font-weight: 700;
-  color: var(--mexa-white); font-variant-numeric: tabular-nums;
+  color: var(--mexa-black); font-variant-numeric: tabular-nums;
 }
 .mexa-oeering-cap {
   display: block; font-size: .6rem; letter-spacing: .06em;
-  color: var(--mexa-white);
+  color: var(--mexa-black);
 }
 
 /* The band legend under the tile grid. */

@@ -103,10 +103,10 @@
       <p class="mexa-kpi-sub" *ngIf="data.bands.unrated">{{ data.bands.unrated }} with nothing measured</p>
     </div>
 
-    <div class="mexa-kpi green mexa-kpi-drill" [class.is-on]="drill.kind === 'excellent'">
+    <div class="mexa-kpi red mexa-kpi-drill" [class.is-on]="drill.kind === 'excellent'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Excellent Performer</span>
-        <span class="mexa-kpi-icon green"  aria-hidden="true"><mat-icon>star</mat-icon></span>
+        <span class="mexa-kpi-icon red"  aria-hidden="true"><mat-icon>star</mat-icon></span>
       </div>
       <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('excellent')" [attr.aria-pressed]="drill.kind === 'excellent'" aria-labelledby="opk2-name opk2-value opk2-act"><span id="opk2-value">{{ data.bands.excellent }}</span></button></p><span hidden id="opk2-name">Excellent performers:</span><span hidden id="opk2-act">show them</span>
       <p class="mexa-kpi-sub">Score {{ data.score_bands.excellent }}% and above</p>

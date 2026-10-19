@@ -75,21 +75,48 @@
 
 
   <!-- MACHINE GRID -->
+<!-- <div
+  class="machine-card"
+  [ngClass]="{
+    'alarm-blink': m.alarm,
+    'green-full': m.status === 'RUNNING',
+    'yellow-full': m.status === 'IDLE',
+    'gray-full': m.status === 'OFFLINE'
+  }"
+  [style.--gradient-color]="
+    m.status === 'RUNNING' ? '#399953' :
+    m.status === 'IDLE' ? '#dfb400' :
+    m.status === 'OFFLINE' ? '#808080' : '#ffffff'
+  "
+>
+
+    border-big
+</div> -->
+  
+
+
 
   <div class="machine-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 
     <div
-      *ngFor="let m of pagedMachines; trackBy: trackByMachine"
-      (click)="goToLive(m.machine_id)"
-      class="machine-child relative dark:bg-[#111111] rounded-2xl shadow-xl p-2 hover:shadow-2xl transition cursor-pointer border-big"
-      [class.alarm-blink]="true"
-      [ngClass]="{
-        'bg-white':    !m.alarm,
-        'alarm-blink': m.alarm,
-        'green-full':  m.status === 'RUNNING',
-        'yellow-full': m.status === 'IDLE',
-        'gray-full':   m.status === 'OFFLINE'
-      }">
+  *ngFor="let m of pagedMachines; trackBy: trackByMachine"
+  (click)="goToLive(m.machine_id)"
+  class="machine-child rainbow relative rounded-2xl shadow-xl p-2
+         hover:shadow-2xl transition cursor-pointer dark:bg-[#111111]"
+  [ngClass]="{
+    'green-full': m.status === 'RUNNING',
+    'yellow-full': m.status === 'IDLE',
+    'gray-full': m.status === 'OFFLINE',
+    'alarm-blink': m.alarm
+  }"
+  [style.--gradient-color]="
+    m.status === 'RUNNING' ? '#399953' :
+    m.status === 'IDLE' ? '#dfb400' :
+    m.status === 'OFFLINE' ? '#808080' : '#ffffff'
+  "
+>
+  <!-- Your existing card content -->
+
 
       <!-- HEADER -->
 
@@ -161,15 +188,31 @@
           <div class="min-w-0">
             <span class="text-gray-700 dark:text-[#939393] ">Operator</span><br>
             
-            <b class="block truncate" [title]="m.operator_name || '--'"><div class="titlebar w-fit"><span>{{ m.operator_name || '--' }}</span></div></b>
+            <div class="flex min-w-0 items-center">
+  <b
+    class="min-w-0 max-w-[150px] truncate"
+    [title]="m.operator_name || '--'"
+  >
+    {{ m.operator_name || '--' }}
+  </b>
+</div>
           </div>
 
           <div>
             <span class="text-gray-700 dark:text-[#939393]">Part Name</span><br>
             
-            <div class="max-w-[150px] overflow-hidden whitespace-nowrap text-ellipsis font-bold">
-             <div class="titlebar w-auto"><span>{{ m.part_name || '--' }}</span></div>
-            </div>
+            <!-- <div class="max-w-[150px] overflow-hidden whitespace-nowrap text-ellipsis font-bold">
+             <div class="w-auto"><span>{{ m.part_name || '--' }}</span></div>
+            </div> -->
+
+            <div class="flex min-w-0 items-center">
+  <b
+    class="min-w-0 max-w-[150px] truncate"
+    [title]="m.operator_name || '--'"
+  >
+    {{ m.part_name || '--' }}
+  </b>
+</div>
           </div>
 
           <div>
@@ -178,7 +221,7 @@
           </div>
 
           <div class="">
-            <span class="text-gray-700 dark:text-[#939393] text-xs">Status</span><br>
+            <span class="text-gray-700 dark:text-[#939393]">Status</span><br>
 
             <!--
               FIX: added 'bg-red-100 text-red-700' for OFFLINE
@@ -192,7 +235,7 @@
               }">
               {{ m.status }}
             </span> -->
-            <span class="text-white inline-block text-xs font-semibold px-2 py-1 rounded-full mt-1"
+            <span class="text-white inline-block text-xs font-semibold px-2 py-1 rounded-full mt-1 blink"
               [ngClass]="{
                 'green':  m.status === 'RUNNING',
                 'yellow': m.status === 'IDLE',

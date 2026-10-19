@@ -636,9 +636,9 @@ select.ui-input {
   padding-bottom: 0.625rem;   /* covers the panel border underneath */
 }
 
-.dark .ui-tab { background: #232323; color: #cbd5e1; }
+.dark .ui-tab { background: rgb(29 54 92); color: #cbd5e1; }
 .dark .ui-tab:hover:not(.is-active) { background: #2c2c2c; color: #f1f5f9; }
-.dark .ui-tab.is-active { background: rgb(22 26 35); border-color: #2e2e2e; color: #f1f5f9; }
+.dark .ui-tab.is-active { background: #0e2344; border-color: #2e2e2e; color: #f1f5f9; }
 
 .ui-tab-icon { font-size: 0.9375rem; line-height: 1; }
 

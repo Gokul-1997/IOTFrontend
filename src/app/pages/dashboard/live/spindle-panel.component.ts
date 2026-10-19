@@ -100,6 +100,7 @@ export function niceScale(top: number): { max: number; ticks: number } {
     .sp-card {border-radius: 12px; padding: .75rem .9rem;  min-width: 0; }
     .sp-card-label { display: flex; align-items: center; gap: .25rem; margin: 0; font-size: var(--fs-label, .8125rem); font-weight: 600; color: #232834; }
     .sp-value { margin: .2rem 0 0; font-size: 1.75rem; font-weight: 700; line-height: 1.15; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
+    .dark .sp-value{color: #000!important}
     .sp-value small { font-size: .9rem; font-weight: 600; color: var(--mexa-ink-2); margin-left: .3rem; }
     .sp-value.is-missing { color: var(--mexa-ink-3); }
     .sp-band { display: inline-flex; align-items: center; gap: .25rem; margin-left: .4rem; vertical-align: middle; }

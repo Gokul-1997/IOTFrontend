@@ -195,7 +195,7 @@ h4 {
 }
 
 .dark .nav-btn {
-  background: #111111;
+  background: #2b3990;
   color: #AEAEAE;
   // border: 1px solid #2D2D2D;
 }
@@ -210,7 +210,7 @@ h4 {
 }
 
 .dark .nav-btn:hover {
-  background: #222222;
+  background: #021C44;
 }
 
 .dark .nav-btn:hover {
@@ -332,6 +332,8 @@ h4 {
   --color-primary-300: #3A4DC2;
   --color-primary-400: #2B3990;
   --color-primary-500: #182052;
+  --bg-card-inner:#193763;
+  --bg-card-inner-inner:#1d365c;
 
 }
 
@@ -439,7 +441,7 @@ h4 {
   background-color: #EAEDFF
 }
 .dark .menu-default {
-    background-color: rgb(34 34 34);
+    background-color:var(--bg-card-inner);
 }
 /* Machine card (Live Dashboard, machine page): a white card lifted off the
    STM field, its state shown by a coloured stripe along the top — the same
@@ -2174,7 +2176,7 @@ transition: transform 0.3s ease;
 .titlebar h1, .titlebar span {
   display: inline-block;
   white-space: nowrap;
-  animation: marqueeScroll 8s linear infinite;
+  // animation: marqueeScroll 8s linear infinite;
 }
 
 @keyframes marqueeScroll {
@@ -2219,4 +2221,75 @@ transition: transform 0.3s ease;
   100% {
     transform: translateY(-64px);
   }
+}
+
+// Rotating Card
+@keyframes rotate {
+	100% {
+		transform: rotate(1turn);
+	}
+}
+
+.rainbow {
+	position: relative;
+	z-index: 0;
+	border-radius: 10px;
+	overflow: hidden;
+	padding: 1.5rem;
+	display: flex;
+	
+	&::before {
+		content: '';
+		position: absolute;
+		z-index: -2;
+		left: -50%;
+		top: -50%;
+		width: 200%;
+		height: 200%;
+		background-color:rgb(from var(--gradient-color) r g b / 40%);
+		background-repeat: no-repeat;
+		background-size: 80% 70%, 80% 80%;
+		background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+	// 	background-image: linear-gradient(
+  //   var(--gradient-color),
+  //   var(--gradient-color),
+  //   #fff
+  // );
+  background-image:  linear-gradient(var(--gradient-color));
+		animation: rotate 4s linear infinite;
+	}
+	
+	&::after {
+		content: '';
+		position: absolute;
+		z-index: -1;
+		left: 6px;
+		top: 6px;
+		width: calc(100% - 24px);
+		height: calc(100% - 24px);
+		background: white;
+		border-radius: 5px;
+    inset: 12px;
+	}
+}
+
+.dark .rainbow {
+  &::after {
+		content: '';
+		background: #021C44;
+	}
+}
+
+.dark .bg-inner{
+  background: #0e2344;
+}
+.dark .bg-inner-inner, .dark .mexa-oeecard.mexa-oeecard-tint, .dark .mexa-oeecard-tint .mexa-oeering::after {
+  background: var(--bg-card-inner-inner);
+}
+.dark .mexa-apq-row, .dark .mexa-apq-row .num {
+  color: #fff;
+}
+
+.dark .mexa-oeecard-foot {
+  background: #2d4f83;
 }
