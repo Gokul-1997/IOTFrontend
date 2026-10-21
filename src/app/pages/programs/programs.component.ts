@@ -1,345 +1,373 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
-import { Subject, Subscription, takeUntil } from 'rxjs';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatIconModule } from '@angular/material/icon';
-import { ProgramService, PtMachine, PtFile, PtKind, PtJob, PtStatus } from '../../core/services/program.service';
-import { ToastService } from '../../core/services/toast.service';
+import { HttpEventType } from '@angular/common/http';
+import { Subject, Subscription, takeUntil } from 'rxjs';
+import { ProgramService, PtFile, PtFilter, PtMachine, PtPage } from '../../core/services/program.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { StateComponent } from '../../shared/state/state.component';
+import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
+import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { environment } from '../../../environments/environment';
 
-const key = () => crypto.randomUUID();
-const open = (job: PtJob) => job.status === 'QUEUED' || job.status === 'DELIVERED';
+/** The server's limit (PROGRAM_MAX_MB); said before sending, so a big file is not uploaded for nothing. */
+const MAX_BYTES = 20 * 1024 * 1024;
+/** While the page is shown: gateway online/offline, a backup arriving. */
+const REFRESH_MS = 15_000;
 
+/*
+ * Program Transfer, kept simple (21 Oct 2026, the user: "machine select,
+ * upload and download only — no company, no plant, no FTP or FANUC"):
+ *
+ *   choose a machine → upload its program (the gateway downloads it),
+ *   download any file, delete an old one, ask the machine for a backup.
+ *
+ * The machine's gateway does the rest with its own token and three calls;
+ * an admin makes that token here (Gateway token). Forms open in the app's
+ * one dialog; "Are you sure?" is ConfirmService.
+ */
 @Component({
-  selector: 'app-programs', standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule],
-  templateUrl: './programs.component.html', styleUrl: './programs.component.scss',
+  selector: 'app-programs',
+  standalone: true,
+  imports: [CommonModule, FormsModule, StateComponent, SkeletonRowsComponent, MexaPagerComponent],
+  templateUrl: './programs.component.html',
+  styleUrl: './programs.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProgramsComponent implements OnInit, OnDestroy {
-  /** "Are you sure?" in the app's own dialog, not the browser's confirm() box. */
+  private readonly programs = inject(ProgramService);
+  private readonly auth = inject(AuthService);
+  private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  readonly maxMb = MAX_BYTES / 1048576;
+  readonly apiBase = `${environment.apiUrl}/device/v1`;
 
   machines: PtMachine[] = [];
   selectedMachineId: number | null = null;
-  currentFile: PtFile | null = null;
-  latestBackup: PtFile | null = null;
-  jobs: PtJob[] = [];
-  loadingStatus = false;
-  statusError = '';
-  connection = { ip_address: '', program_path: '' };
-  connectionDirty = false;
-  savingConnection = false;
-  connectionError = '';
-  requestingBackup = false;
-  backupError = '';
-  now = Date.now();
+  loadingMachines = true;
+  machinesError = '';
 
   files: PtFile[] = [];
-  filesTotal = 0;
-  filesPage = 1;
-  readonly filesLimit = 25;
+  filter: PtFilter = '';
+  page = 1;
+  limit = 20;
+  pagination: PtPage = { page: 1, limit: 20, total: 0, totalPages: 1 };
   loadingFiles = false;
-  historyOpen = false;
-  historyDirty = true;
+  filesError = '';
 
   showUpload = false;
   uploadFile: File | null = null;
-  uploadMachineId: number | null = null;
   uploading = false;
+  uploadProgress: number | null = null;
   uploadError = '';
-  uploadErrorCode = '';
-  overwrite = false;
-  private uploadKey = '';
-  private backupKey = key();
-  private statusLoaded = false;
-  private statusUpdatedAt = 0;
-  private clock?: ReturnType<typeof setInterval>;
+
+  requestingBackup = false;
+
+  tokenDialog: { machine: PtMachine; token: string | null; working: boolean; copied: boolean; error: string } | null = null;
+
   private readonly destroy$ = new Subject<void>();
-  private statusRequest?: Subscription;
+  private machinesRequest?: Subscription;
   private filesRequest?: Subscription;
-  private machineRequest?: Subscription;
-  private poll?: ReturnType<typeof setTimeout>;
-  private version = 0;
-  private visibilityChanged = () => {
-    if (document.hidden) { this.clearPoll(); this.statusRequest?.unsubscribe(); this.loadingStatus = false; }
-    else {
-      this.now = Date.now(); this.touch();
-      if (!this.statusLoaded || this.jobs.some(open) || this.now - this.statusUpdatedAt >= 10_000) this.loadStatus();
-    }
-  };
+  private timer?: ReturnType<typeof setInterval>;
+  private readonly onVisibility = () => { if (!document.hidden) this.loadMachines(true); };
 
-  deviceDialog: {
-    machine: PtMachine; label: string; token: string | null;
-    confirmReplace: boolean; confirmRevoke: boolean; working: boolean; copied: boolean; error: string;
-  } | null = null;
-
-  constructor(private programs: ProgramService, private toast: ToastService,
-    private cdr: ChangeDetectorRef, private auth: AuthService) {}
-
-  get canUpload() { return this.auth.hasAction('programs', 'upload'); }
-  get canTransfer() { return this.auth.hasAction('programs', 'transfer'); }
-  get canPublish() { return this.canUpload && this.canTransfer; }
+  get canUpload() { return this.auth.hasAction('programs', 'upload') && this.auth.hasAction('programs', 'transfer'); }
   get canBackup() { return this.auth.hasAction('programs', 'fetch'); }
   get canDelete() { return this.auth.hasAction('programs', 'delete'); }
-  get canManageDevice() { return this.auth.hasAction('machines', 'edit'); }
-  get selectedMachine() { return this.machines.find(m => m.id === this.selectedMachineId) || null; }
-  get uploadMachine() { return this.machines.find(m => m.id === this.uploadMachineId) || null; }
-  get filesPages() { return Math.max(1, Math.ceil(this.filesTotal / this.filesLimit)); }
-  get busy() { return this.jobs.some(open) || this.uploading || this.requestingBackup; }
-  get connectionReady() {
-    const m = this.selectedMachine;
-    return this.statusLoaded && !!m?.ip_address && !!m?.program_path && !!m?.device_id && !this.connectionDirty;
-  }
-  get operationsAllowed() { return this.connectionReady && !this.loadingStatus && !this.statusError && !this.savingConnection && !this.busy; }
-  get sendJob() { return this.jobs.find(j => j.action === 'SEND') || null; }
-  get backupJob() { return this.jobs.find(j => j.action === 'BACKUP') || null; }
-  get canReplaceUpload() {
-    return this.uploadErrorCode === 'FILE_EXISTS' ||
-      (this.sendJob?.status === 'FAILED' && this.sendJob.error_code === 'FILE_EXISTS' &&
-       this.sendJob.program_name === this.uploadFile?.name);
-  }
-  private touch() { this.cdr.markForCheck(); }
+  get canManageToken() { return this.auth.hasAction('machines', 'edit'); }
+  get selectedMachine(): PtMachine | null { return this.machines.find(m => m.id === this.selectedMachineId) || null; }
 
-  ngOnInit() {
-    this.loadMachines(true); document.addEventListener('visibilitychange', this.visibilityChanged);
-    this.clock = setInterval(() => { if (!document.hidden) { this.now = Date.now(); this.touch(); } }, 30_000);
+  ngOnInit(): void {
+    this.loadMachines();
+    document.addEventListener('visibilitychange', this.onVisibility);
+    this.timer = setInterval(() => { if (!document.hidden) this.loadMachines(true); }, REFRESH_MS);
   }
-  ngOnDestroy() {
-    this.clearPoll(); document.removeEventListener('visibilitychange', this.visibilityChanged);
-    if (this.clock) clearInterval(this.clock);
-    this.destroy$.next(); this.destroy$.complete();
+
+  ngOnDestroy(): void {
+    document.removeEventListener('visibilitychange', this.onVisibility);
+    if (this.timer) clearInterval(this.timer);
+    this.destroy$.next();
+    this.destroy$.complete();
   }
-  private clearPoll() { if (this.poll) clearTimeout(this.poll); this.poll = undefined; }
-  private schedulePoll() {
-    this.clearPoll();
-    if (!document.hidden && this.jobs.some(open)) this.poll = setTimeout(() => this.loadStatus(), this.statusError ? 10_000 : 5_000);
-  }
-  loadMachines(first: boolean) {
-    this.machineRequest?.unsubscribe();
-    this.machineRequest = this.programs.getMachines().pipe(takeUntil(this.destroy$)).subscribe({
+
+  /* ── machines ── */
+
+  /** quiet: a background refresh — no spinner, no error banner, and it notices a backup arriving. */
+  loadMachines(quiet = false): void {
+    if (quiet && (this.machinesRequest && !this.machinesRequest.closed)) return;
+    const before = this.selectedMachine;
+    if (!quiet) { this.loadingMachines = true; this.machinesError = ''; }
+    this.machinesRequest = this.programs.getMachines().pipe(takeUntil(this.destroy$)).subscribe({
       next: res => {
         this.machines = res.data || [];
-        if (!this.selectedMachineId || !this.selectedMachine) {
-          this.selectedMachineId = this.machines[0]?.id ?? null; this.onMachineChange();
+        this.loadingMachines = false;
+        if (!this.selectedMachine) {
+          this.selectedMachineId = this.machines[0]?.id ?? null;
+          this.changeMachine();
+        } else if (quiet && before) {
+          this.noticeChanges(before, this.selectedMachine!);
         }
-        this.touch();
-      },
-      error: err => { if (first) this.toast.error(err.error?.message || 'Could not load machines'); this.touch(); }
-    });
-  }
-  onMachineChange() {
-    this.version++; this.clearPoll(); this.statusRequest?.unsubscribe(); this.filesRequest?.unsubscribe();
-    this.currentFile = null; this.latestBackup = null; this.jobs = []; this.statusLoaded = false;
-    this.statusError = ''; this.backupError = ''; this.connectionError = '';
-    this.backupKey = key(); this.showUpload = false; this.uploadFile = null;
-    this.connectionDirty = false;
-    this.connection = { ip_address: this.selectedMachine?.ip_address || '', program_path: this.selectedMachine?.program_path || '' };
-    this.files = []; this.filesTotal = 0; this.filesPage = 1; this.historyDirty = true; this.loadingFiles = false;
-    this.loadStatus(); if (this.historyOpen) this.loadFiles();
-  }
-  private applyStatus(status: PtStatus) {
-    const previousCurrent = this.currentFile?.id, previousBackup = this.latestBackup?.id;
-    const m = this.selectedMachine;
-    if (m) Object.assign(m, { device_id: null, online: false, last_seen_at: null }, status.machine);
-    if (!this.connectionDirty && !this.savingConnection) {
-      this.connection = { ip_address: status.machine.ip_address || '', program_path: status.machine.program_path || '' };
-    }
-    this.currentFile = status.file; this.latestBackup = status.backup; this.jobs = status.jobs || [];
-    this.statusLoaded = true; this.statusError = '';
-    if (previousCurrent !== this.currentFile?.id || previousBackup !== this.latestBackup?.id) {
-      this.historyDirty = true; if (this.historyOpen) this.loadFiles();
-    }
-  }
-  loadStatus() {
-    const id = this.selectedMachineId;
-    if (!id || document.hidden) return;
-    this.clearPoll(); this.statusRequest?.unsubscribe();
-    const version = this.version;
-    this.loadingStatus = true;
-    this.statusRequest = this.programs.getStatus(id).pipe(takeUntil(this.destroy$)).subscribe({
-      next: res => {
-        if (version !== this.version) return;
-        this.loadingStatus = false; this.now = Date.now(); this.statusUpdatedAt = this.now; this.applyStatus(res.data); this.schedulePoll(); this.touch();
+        this.cdr.markForCheck();
       },
       error: err => {
-        if (version !== this.version) return;
-        this.loadingStatus = false; this.statusError = err.error?.message || 'Could not check this machine. Try again.';
-        this.schedulePoll(); this.touch();
+        this.loadingMachines = false;
+        if (!quiet) this.machinesError = err?.error?.message || 'Could not load the machines.';
+        this.cdr.markForCheck();
       }
     });
   }
-  saveConnection() {
-    const id = this.selectedMachineId;
-    if (!id || !this.canManageDevice || this.savingConnection || this.busy) return;
-    const connection = { ip_address: this.connection.ip_address.trim(), program_path: this.connection.program_path.trim() };
-    if (!connection.ip_address || !connection.program_path) { this.connectionError = 'Enter the machine IP address and program folder.'; return; }
-    this.savingConnection = true; this.connectionError = '';
-    this.programs.saveConnection(id, connection).pipe(takeUntil(this.destroy$)).subscribe({
-      next: res => {
-        this.savingConnection = false;
-        if (this.selectedMachineId === id && this.selectedMachine) {
-          Object.assign(this.selectedMachine, res.data.machine); this.connectionDirty = false; this.connection = connection;
+
+  /** A backup or a new program arrived since the last look: say so and show it in the list. */
+  private noticeChanges(before: PtMachine, now: PtMachine): void {
+    const backupArrived = now.last_backup && now.last_backup.id !== before.last_backup?.id;
+    if (backupArrived && before.backup_request) this.toast.success(`Backup received from ${now.machine_serial_no}`);
+    if (backupArrived || now.program?.id !== before.program?.id) this.loadFiles();
+  }
+
+  changeMachine(): void {
+    this.page = 1;
+    this.files = [];
+    this.loadFiles();
+  }
+
+  gatewayState(m: PtMachine): 'online' | 'offline' | 'none' {
+    return !m.gateway ? 'none' : m.gateway.online ? 'online' : 'offline';
+  }
+
+  gatewayLabel(m: PtMachine): string {
+    if (!m.gateway) return 'No gateway token yet';
+    if (m.gateway.online) return 'Gateway online';
+    return m.gateway.last_seen_at ? `Gateway offline · last seen ${this.ago(m.gateway.last_seen_at)}` : 'Gateway has not connected yet';
+  }
+
+  /* ── files ── */
+
+  loadFiles(): void {
+    const machine = this.selectedMachine;
+    this.filesRequest?.unsubscribe();
+    if (!machine) { this.files = []; this.loadingFiles = false; return; }
+    this.loadingFiles = true;
+    this.filesError = '';
+    this.filesRequest = this.programs.getFiles(machine.id, this.filter, this.page, this.limit)
+      .pipe(takeUntil(this.destroy$)).subscribe({
+        next: res => {
+          this.files = res.data || [];
+          this.pagination = res.pagination || { page: this.page, limit: this.limit, total: this.files.length, totalPages: 1 };
+          this.loadingFiles = false;
+          this.cdr.markForCheck();
+        },
+        error: err => {
+          this.files = [];
+          this.loadingFiles = false;
+          this.filesError = err?.error?.message || 'Could not load the files.';
+          this.cdr.markForCheck();
         }
-        this.toast.success('Machine connection saved'); this.touch();
+      });
+  }
+
+  setFilter(filter: PtFilter): void { this.filter = filter; this.page = 1; this.loadFiles(); }
+  goToPage(page: number): void { this.page = page; this.loadFiles(); }
+  setLimit(limit: number): void { this.limit = limit; this.page = 1; this.loadFiles(); }
+
+  kindLabel(f: Pick<PtFile, 'kind'>): string { return f.kind === 'NEW' ? 'Uploaded' : 'Backup'; }
+
+  download(file: { id: number; program_name: string }): void {
+    this.programs.download(file.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.program_name;
+        a.click();
+        URL.revokeObjectURL(url);
       },
-      error: err => { this.savingConnection = false; this.connectionError = err.error?.message || 'Could not save the machine connection.'; this.touch(); }
+      error: () => this.toast.error(`Could not download ${file.program_name}`)
     });
   }
-  requestBackup() {
-    const id = this.selectedMachineId;
-    if (!id || !this.canBackup || !this.operationsAllowed) return;
-    this.requestingBackup = true; this.backupError = '';
-    this.programs.backup(id, this.backupKey).pipe(takeUntil(this.destroy$)).subscribe({
-      next: res => {
-        this.requestingBackup = false; this.backupKey = key();
-        if (this.selectedMachineId === id) { this.jobs = this.jobs.filter(j => j.action !== 'BACKUP').concat(res.data.job); this.schedulePoll(); }
-        this.touch();
+
+  async deleteFile(file: PtFile): Promise<void> {
+    const yes = await this.confirm.ask({
+      title: `Delete ${file.program_name}?`,
+      message: `This ${file.kind === 'NEW' ? 'upload' : 'backup'} of ${this.selectedMachine?.machine_serial_no || 'the machine'} is removed from the server.`,
+      confirmText: 'Delete',
+      icon: 'delete_forever'
+    });
+    if (!yes) return;
+    this.programs.remove(file.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.toast.success(`${file.program_name} deleted`); this.loadFiles(); this.loadMachines(true); },
+      error: err => this.toast.error(err?.error?.message || `Could not delete ${file.program_name}`)
+    });
+  }
+
+  /* ── upload ── */
+
+  openUpload(): void {
+    this.uploadFile = null;
+    this.uploadError = '';
+    this.uploadProgress = null;
+    this.showUpload = true;
+  }
+
+  closeUpload(): void {
+    if (this.uploading) return;
+    this.showUpload = false;
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.uploadFile = input.files?.[0] || null;
+    this.uploadError = !this.uploadFile ? ''
+      : !this.uploadFile.size ? 'This file is empty.'
+      : this.uploadFile.size > MAX_BYTES ? `This file is larger than ${this.maxMb} MB.` : '';
+  }
+
+  upload(): void {
+    const machine = this.selectedMachine;
+    if (!machine || this.uploading) return;
+    if (!this.uploadFile) { this.uploadError = 'Choose the program file.'; return; }
+    if (this.uploadError) return;
+    const file = this.uploadFile;
+    this.uploading = true;
+    this.uploadProgress = 0;
+    this.programs.upload(machine.id, file).pipe(takeUntil(this.destroy$)).subscribe({
+      next: event => {
+        if (event.type === HttpEventType.UploadProgress && event.total) {
+          this.uploadProgress = Math.round((event.loaded / event.total) * 100);
+        } else if (event.type === HttpEventType.Response) {
+          this.uploading = false;
+          this.showUpload = false;
+          this.toast.success(`${event.body?.data?.program_name || file.name} is now ${machine.machine_serial_no}'s program`);
+          this.page = 1;
+          this.loadFiles();
+          this.loadMachines(true);
+        }
+        this.cdr.markForCheck();
       },
       error: err => {
-        this.requestingBackup = false; this.backupError = err.error?.message || 'Could not request a backup. Retry uses the same request reference.';
-        if (err.error?.code === 'COMMAND_PENDING') this.loadStatus();
-        this.touch();
+        this.uploading = false;
+        this.uploadProgress = null;
+        this.uploadError = err?.error?.message || 'Could not upload the file. Try again.';
+        this.cdr.markForCheck();
       }
     });
   }
-  jobText(job: PtJob) {
-    if (job.status === 'QUEUED') return 'Waiting for device';
-    if (job.status === 'DELIVERED') return job.action === 'BACKUP' ? 'Reading the running program from the machine' : 'Device is transferring the file';
-    if (job.status === 'DONE') return job.action === 'BACKUP' ? 'Fresh backup saved on server' : 'Machine transfer verified';
-    return job.status === 'FAILED' ? 'Device operation failed' : 'Operation cancelled';
-  }
-  onHistoryToggle(event: Event) {
-    this.historyOpen = (event.target as HTMLDetailsElement).open;
-    if (this.historyOpen && this.historyDirty) this.loadFiles();
-    if (!this.historyOpen) { this.filesRequest?.unsubscribe(); this.loadingFiles = false; }
-  }
-  loadFiles() {
-    const id = this.selectedMachineId;
-    if (!id || !this.historyOpen) return;
-    const version = this.version;
-    this.filesRequest?.unsubscribe(); this.loadingFiles = true; this.historyDirty = true;
-    this.filesRequest = this.programs.getFiles({ machine_id: id, page: this.filesPage, limit: this.filesLimit }).pipe(takeUntil(this.destroy$)).subscribe({
+
+  /* ── backup ── */
+
+  requestBackup(): void {
+    const machine = this.selectedMachine;
+    if (!machine || this.requestingBackup) return;
+    this.requestingBackup = true;
+    this.programs.requestBackup(machine.id).pipe(takeUntil(this.destroy$)).subscribe({
       next: res => {
-        if (version !== this.version) return;
-        this.files = res.data || []; this.filesTotal = res.total || 0; this.loadingFiles = false; this.historyDirty = false; this.touch();
+        this.requestingBackup = false;
+        machine.backup_request = { id: res.data.id, requested_at: res.data.requested_at };
+        this.toast.success(res.data.created
+          ? `Backup asked for. ${machine.machine_serial_no}'s gateway sends it on its next check.`
+          : 'A backup is already asked for — waiting for the gateway.');
+        this.cdr.markForCheck();
       },
-      error: err => { if (version !== this.version) return; this.loadingFiles = false; this.toast.error(err.error?.message || 'Could not load saved files'); this.touch(); }
+      error: err => {
+        this.requestingBackup = false;
+        this.toast.error(err?.error?.message || 'Could not ask for a backup');
+        this.cdr.markForCheck();
+      }
     });
   }
-  changeFilesPage(step: number) { this.filesPage = Math.min(this.filesPages, Math.max(1, this.filesPage + step)); this.loadFiles(); }
-  isCurrent(f: PtFile) { return f.id === this.currentFile?.id || !!f.is_current; }
-  kindLabel(k: PtKind) { return k === 'NEW' ? 'Uploaded' : 'Backup'; }
-  fileSize(bytes: number | null | undefined) {
-    if (bytes == null) return '--';
+
+  /* ── gateway token ── */
+
+  openToken(machine: PtMachine): void {
+    this.tokenDialog = { machine, token: null, working: false, copied: false, error: '' };
+  }
+
+  closeToken(): void {
+    if (this.tokenDialog?.working) return;
+    this.tokenDialog = null;
+  }
+
+  async createToken(): Promise<void> {
+    const t = this.tokenDialog;
+    if (!t || t.working) return;
+    if (t.machine.gateway) {
+      const yes = await this.confirm.ask({
+        title: `Replace the gateway token of ${t.machine.machine_serial_no}?`,
+        message: 'The current token stops working at once. Put the new one in the gateway straight away.',
+        confirmText: 'Replace token'
+      });
+      if (!yes || this.tokenDialog !== t) return;
+    }
+    t.working = true;
+    t.error = '';
+    this.programs.createToken(t.machine.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: res => {
+        t.working = false;
+        t.token = res.data.token;
+        this.loadMachines(true);
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        t.working = false;
+        t.error = err?.error?.message || 'Could not make the token. Try again.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  async revokeToken(): Promise<void> {
+    const t = this.tokenDialog;
+    if (!t || t.working) return;
+    const yes = await this.confirm.ask({
+      title: `Revoke the gateway token of ${t.machine.machine_serial_no}?`,
+      message: 'Its gateway stops at once: no downloads, no backups, until it gets a new token.',
+      confirmText: 'Revoke token'
+    });
+    if (!yes || this.tokenDialog !== t) return;
+    t.working = true;
+    this.programs.revokeToken(t.machine.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => {
+        this.tokenDialog = null;
+        this.toast.success(`Gateway token of ${t.machine.machine_serial_no} revoked`);
+        this.loadMachines(true);
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        t.working = false;
+        t.error = err?.error?.message || 'Could not revoke the token. Try again.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  copyToken(): void {
+    const t = this.tokenDialog;
+    if (!t?.token) return;
+    navigator.clipboard?.writeText(t.token).then(
+      () => { t.copied = true; this.cdr.markForCheck(); },
+      () => this.toast.error('Could not copy — select the token and copy it by hand')
+    );
+  }
+
+  /* ── formatting ── */
+
+  size(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / 1048576).toFixed(1)} MB`;
   }
-  deviceState(m: PtMachine | null): 'online' | 'offline' | 'none' {
-    return !m?.device_id ? 'none' : m.last_seen_at && this.now - new Date(m.last_seen_at).getTime() < 60_000 ? 'online' : 'offline';
-  }
-  ago(iso: string | null) {
-    if (!iso) return 'never';
-    const seconds = Math.max(0, Math.round((this.now - new Date(iso).getTime()) / 1000));
-    if (seconds < 60) return `${seconds}s ago`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)} h ago`;
-    return `${Math.floor(seconds / 86400)} d ago`;
-  }
-  download(f: PtFile) {
-    this.programs.download(f.id).pipe(takeUntil(this.destroy$)).subscribe({
-      next: blob => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = f.program_name; a.click(); URL.revokeObjectURL(url);
-      },
-      error: () => { this.toast.error('Could not download the file'); this.touch(); }
-    });
-  }
-  async deleteFile(f: PtFile) {
-    if (!this.canDelete || this.isCurrent(f)) return;
-    const yes = await this.confirm.ask({
-      title: `Delete the saved file ${f.program_name}?`,
-      message: 'It is removed from this server. The program on the machine is not touched.',
-      confirmText: 'Delete file',
-      icon: 'delete_forever'
-    });
-    if (!yes) return;
-    this.programs.delete(f.id).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.toast.success('File deleted'); this.historyDirty = true; this.loadFiles(); this.loadStatus(); },
-      error: err => { this.toast.error(err.error?.message || 'Could not delete the file'); this.touch(); }
-    });
+
+  ago(iso: string): string {
+    const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes} min ago`;
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return `${hours} h ago`;
+    return `${Math.round(hours / 24)} days ago`;
   }
 
-
-  openUpload() {
-    if (!this.canPublish || !this.operationsAllowed || !this.selectedMachine) return;
-    this.uploadMachineId = this.selectedMachineId; this.uploadFile = null; this.uploadError = ''; this.uploadErrorCode = '';
-    this.overwrite = false; this.uploadKey = key(); this.showUpload = true;
-  }
-  closeUpload() { if (!this.uploading) this.showUpload = false; }
-  onFileSelected(event: Event) {
-    if (this.uploading) return;
-    this.uploadFile = (event.target as HTMLInputElement).files?.[0] || null;
-    this.uploadError = ''; this.uploadErrorCode = ''; this.overwrite = false; this.uploadKey = key();
-  }
-  overwriteChanged() { this.uploadKey = key(); }
-  upload() {
-    const machine = this.uploadMachine, file = this.uploadFile;
-    if (!this.canPublish || !machine || !file || this.uploading || !this.operationsAllowed || this.uploadMachineId !== this.selectedMachineId) return;
-    this.uploading = true; this.uploadError = '';
-    this.programs.transfer(machine.id, file, this.uploadKey, this.canReplaceUpload && this.overwrite).pipe(takeUntil(this.destroy$)).subscribe({
-      next: res => {
-        this.uploading = false; this.showUpload = false;
-        if (this.selectedMachineId === machine.id) {
-          this.currentFile = res.data.file; this.jobs = this.jobs.filter(j => j.action !== 'SEND').concat(res.data.job);
-          this.historyDirty = true; this.filesPage = 1; if (this.historyOpen) this.loadFiles(); this.schedulePoll();
-        }
-        this.toast.success('File saved on server. Waiting for machine confirmation.'); this.touch();
-      },
-      error: err => {
-        this.uploading = false; this.uploadError = err.error?.message || 'Could not upload and transfer. Retry uses the same request reference.';
-        this.uploadErrorCode = err.error?.code || '';
-        if (this.uploadErrorCode === 'COMMAND_PENDING') this.loadStatus();
-        this.touch();
-      }
-    });
-  }
-  openDevice() {
-    const machine = this.selectedMachine;
-    if (!machine || !this.canManageDevice || this.busy) return;
-    this.deviceDialog = { machine, label: machine.device_label || '', token: null,
-      confirmReplace: false, confirmRevoke: false, working: false, copied: false, error: '' };
-  }
-  closeDevice() { if (!this.deviceDialog?.working) { this.deviceDialog = null; } }
-  createToken() {
-    const d = this.deviceDialog;
-    if (!d || d.working || !this.canManageDevice) return;
-    if (d.machine.device_id && !d.confirmReplace) { d.confirmReplace = true; return; }
-    d.working = true; d.error = '';
-    this.programs.createDeviceToken(d.machine.id, d.label.trim() || undefined).pipe(takeUntil(this.destroy$)).subscribe({
-      next: res => { d.working = false; d.confirmReplace = false; d.token = res.data.token; this.loadMachines(false); this.loadStatus(); this.touch(); },
-      error: err => { d.working = false; d.error = err.error?.message || 'Could not create token'; this.touch(); }
-    });
-  }
-  revokeToken() {
-    const d = this.deviceDialog;
-    if (!d || d.working || !this.canManageDevice) return;
-    if (!d.confirmRevoke) { d.confirmRevoke = true; return; }
-    d.working = true;
-    this.programs.revokeDeviceToken(d.machine.id).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { d.working = false; this.toast.success('Device token revoked'); this.closeDevice(); this.loadMachines(false); this.loadStatus(); this.touch(); },
-      error: err => { d.working = false; d.error = err.error?.message || 'Could not revoke token'; this.touch(); }
-    });
-  }
-  deviceConfig(token: string) { return `MEXA_URL=${this.programs.serverUrl}\nMEXA_DEVICE_TOKEN=${token}`; }
-  copyConfig() {
-    const d = this.deviceDialog;
-    if (!d?.token) return;
-    navigator.clipboard?.writeText(this.deviceConfig(d.token)).then(
-      () => { d.copied = true; this.touch(); },
-      () => this.toast.error('Select the configuration text and copy it')
-    );
-  }
+  trackFile = (_: number, f: PtFile) => f.id;
 }

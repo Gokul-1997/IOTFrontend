@@ -7,7 +7,7 @@ import { AuthService } from './auth.service';
 const TTL_MS = 5 * 60_000;
 const PATHS = {
   charts: '/charts/meta', oee: '/oee/meta', machines: '/master/machines',
-  masterShifts: '/master/shifts', shifts: '/shifts', lines: '/lines', plants: '/master/plants', programMachines: '/programs/machines'
+  masterShifts: '/master/shifts', shifts: '/shifts', lines: '/lines', plants: '/master/plants'
 } as const;
 type Key = keyof typeof PATHS;
 type Entry = { response: Observable<any>; expires: number; received: boolean };

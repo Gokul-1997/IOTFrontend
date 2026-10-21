@@ -1,111 +1,83 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { MasterDataService } from './master-data.service';
 
-/** A machine as Program Transfer sees it: its folder and its device. */
+/** A machine as Program Transfer shows it: its gateway, its program, its last backup. */
 export interface PtMachine {
   id: number;
   machine_serial_no: string;
-  ip_address: string | null;
-  /** where the machine's device saves programs on the machine, e.g. //CNC_MEM/USER/PATH1/ */
-  program_path: string | null;
-  folder: string;
-  device_id: number | null;
-  token_prefix: string | null;
-  device_label: string | null;
-  device_created_at: string | null;
-  last_seen_at: string | null;
-  last_seen_ip: string | null;
-  agent_version: string | null;
-  online: boolean;
-  open_jobs: number;
-  controller_reported_at: string | null;
+  /** null: no gateway token yet */
+  gateway: { token_prefix: string; token_created_at: string; last_seen_at: string | null; online: boolean } | null;
+  /** the machine's program: its newest upload */
+  program: { id: number; program_name: string; size_bytes: number; created_at: string } | null;
+  last_backup: { id: number; program_name: string; created_at: string } | null;
+  /** a Backup press the gateway has not answered yet */
+  backup_request: { id: number; requested_at: string } | null;
 }
 
 export type PtKind = 'NEW' | 'BACKUP' | 'FETCHED';
+export type PtFilter = '' | 'uploads' | 'backups';
 
 export interface PtFile {
   id: number;
   machine_id: number;
-  machine_serial_no: string;
-  folder: string;
-  stored_name: string;
   program_name: string;
   kind: PtKind;
   size_bytes: number;
   sha256: string;
-  note: string | null;
-  job_id: number | null;
   created_at: string;
   uploaded_by_name: string | null;
-  is_current?: boolean;
+  is_current: boolean;
 }
 
-export interface PtJob {
-  id: number; machine_id: number; action: 'SEND' | 'BACKUP'; program_name: string | null;
-  status: 'QUEUED' | 'DELIVERED' | 'DONE' | 'FAILED' | 'CANCELLED';
-  message: string | null; error_code: string | null; expires_at: string | null;
-  requested_at: string; finished_at: string | null; file_id: number | null;
-}
-export interface PtStatus {
-  machine: Pick<PtMachine, 'id' | 'ip_address' | 'program_path'> & Partial<Pick<PtMachine, 'device_id' | 'last_seen_at' | 'online'>>;
-  file: PtFile | null; backup: PtFile | null; jobs: PtJob[];
-}
+export interface PtPage { page: number; limit: number; total: number; totalPages: number }
 
-/** Store a reference file and request a verified device transfer, or a fresh running-program backup. */
+/*
+ * Program Transfer, kept simple (21 Oct 2026): upload a machine's program,
+ * download files, ask the machine for a backup. The machine's gateway does
+ * the rest with its own three calls (/api/device/v1: status, program, backup).
+ */
 @Injectable({ providedIn: 'root' })
 export class ProgramService {
   private api = `${environment.apiUrl}/programs`;
 
-  constructor(private http: HttpClient, private master: MasterDataService) {}
+  constructor(private http: HttpClient) {}
 
   getMachines() {
-    return this.master.get('programMachines');
+    return this.http.get<{ data: PtMachine[] }>(`${this.api}/machines`);
   }
 
-  getStatus(machineId: number) {
-    return this.http.get<{ data: PtStatus }>(`${this.api}/machines/${machineId}/status`);
+  getFiles(machineId: number, kind: PtFilter, page: number, limit: number) {
+    const params: Record<string, string> = { machine_id: String(machineId), page: String(page), limit: String(limit) };
+    if (kind) params['kind'] = kind;
+    return this.http.get<{ data: PtFile[]; pagination: PtPage }>(`${this.api}/files`, { params });
   }
 
-  saveConnection(machineId: number, connection: { ip_address: string; program_path: string }) {
-    return this.http.put<{ data: { machine: PtStatus['machine'] } }>(`${this.api}/machines/${machineId}/connection`, connection);
-  }
-  transfer(machineId: number, file: File, requestKey: string, overwrite = false) {
+  /** With progress events, for the upload dialog's bar. */
+  upload(machineId: number, file: File) {
     const form = new FormData();
+    form.append('machine_id', String(machineId));
     form.append('file', file);
-    if (overwrite) form.append('overwrite', 'true');
-    return this.http.post<{ data: { file: PtFile; job: PtJob } }>(`${this.api}/machines/${machineId}/transfer`, form, { headers: { 'Idempotency-Key': requestKey } });
-  }
-  backup(machineId: number, requestKey: string) {
-    return this.http.post<{ data: { job: PtJob } }>(`${this.api}/machines/${machineId}/backup`, {}, { headers: { 'Idempotency-Key': requestKey } });
+    return this.http.post<{ data: PtFile }>(`${this.api}/files`, form, { reportProgress: true, observe: 'events' });
   }
 
-  getFiles(params: { machine_id?: number | null; kind?: string; search?: string; page?: number; limit?: number }) {
-    const query: any = {};
-    for (const [k, v] of Object.entries(params)) if (v !== null && v !== undefined && v !== '') query[k] = v;
-    return this.http.get<{ data: PtFile[]; total: number }>(`${this.api}/files`, { params: query });
+  download(fileId: number) {
+    return this.http.get(`${this.api}/files/${fileId}/download`, { responseType: 'blob' });
   }
 
-  download(id: number) {
-    return this.http.get(`${this.api}/files/${id}/download`, { responseType: 'blob' });
+  remove(fileId: number) {
+    return this.http.delete(`${this.api}/files/${fileId}`);
   }
 
-  delete(id: number) {
-    return this.http.delete<any>(`${this.api}/files/${id}`);
+  requestBackup(machineId: number) {
+    return this.http.post<{ data: { id: number; requested_at: string; created: boolean } }>(`${this.api}/machines/${machineId}/backup`, {});
   }
 
-  /** A new token for the machine's device; the old one stops working. Shown once. */
-  createDeviceToken(machineId: number, label?: string) {
-    return this.http.post<{ data: { token: string; device: any } }>(`${this.api}/machines/${machineId}/device-token`, { label });
+  createToken(machineId: number) {
+    return this.http.post<{ data: { token: string; token_prefix: string; created_at: string } }>(`${this.api}/machines/${machineId}/device-token`, {});
   }
 
-  revokeDeviceToken(machineId: number) {
-    return this.http.delete<any>(`${this.api}/machines/${machineId}/device-token`);
-  }
-
-  /** The server address a device is configured with (the API address without /api). */
-  get serverUrl(): string {
-    return environment.apiUrl.replace(/\/api\/?$/, '');
+  revokeToken(machineId: number) {
+    return this.http.delete(`${this.api}/machines/${machineId}/device-token`);
   }
 }

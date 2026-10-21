@@ -19,7 +19,6 @@ export class SocketService {
   private userId: number | null = null;
   private plantId?: number;
   private machineListeners = new Set<(data: any) => void>();
-  private jobListeners = new Set<(job: any) => void>();
   /* The unread count's listener belongs to NotificationService, a root
      service that lives as long as the app: a sign-out closes the socket but
      keeps it, so the next session's socket delivers to it as well. */
@@ -55,9 +54,6 @@ export class SocketService {
         if (this.paused || document.hidden) return;
         this.zone.run(() => { for (const callback of this.machineListeners) callback(data); });
       });
-      socket.on('programJob', job => this.zone.run(() => {
-        for (const callback of this.jobListeners) callback(job);
-      }));
       // the server says when this person's unread count changes (Backend notifications announceUnread)
       socket.on('unreadCount', payload => {
         if (socket !== this.socket) return;
@@ -136,11 +132,6 @@ export class SocketService {
     return () => { this.machineListeners.delete(callback); };
   }
 
-  onProgramJob(callback: (job: any) => void): () => void {
-    this.jobListeners.add(callback);
-    return () => { this.jobListeners.delete(callback); };
-  }
-
   onUnreadCount(callback: (count: number) => void): () => void {
     this.unreadListeners.add(callback);
     return () => { this.unreadListeners.delete(callback); };
@@ -172,6 +163,5 @@ export class SocketService {
     this.paused = false;
     this.scopes.clear();
     this.machineListeners.clear();
-    this.jobListeners.clear();
   }
 }
