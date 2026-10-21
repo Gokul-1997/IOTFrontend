@@ -83,12 +83,12 @@
        be computed at all. Said plainly rather than shown as a low score —
        in one line, with why and what to do behind the (i). -->
   <div *ngIf="noCycleTime > 0" class="mexa-note mexa-note-warn">
-    <div class="marquee">
+    <marquee>
     <span>
     <strong>{{ noCycleTime }} of {{ data.coverage.machines }} machines {{ noCycleTime === 1 ? 'has' : 'have' }} no cycle time</strong> — no OEE for {{ noCycleTime === 1 ? 'it' : 'them' }}.
     <app-metric-help topic="performance"></app-metric-help>
     </span>
-    </div>
+    </marquee>
   </div>
 
   <!-- ══════════ KPI TILES ══════════

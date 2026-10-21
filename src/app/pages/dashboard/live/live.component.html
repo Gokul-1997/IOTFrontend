@@ -128,8 +128,8 @@
         >
 
           <div class="min-w-0">
-            <p class="text-sm text-gray-500 dark:text-[#939393]">
-              Operator: <span class="font-bold truncate text-black">
+            <p class="text-sm ">
+              <span class="text-gray-500">Operator:</span> <span class="font-bold truncate">
               {{ operator?.operator_name || '--' }}
             </span>
             </p>
@@ -137,7 +137,7 @@
             
 
             <div class="flex">
-              <span>ID:</span>
+              <span class="text-gray-500">ID:</span>
               <p class="font-bold ml-1 truncate">
                 {{ operator?.employee_id || '--' }}
               </p>
@@ -371,7 +371,7 @@
       
 
       <!-- Accepted / Rejected + Radial chart -->
-      <div class="mt-2 border-t pt-1">
+      <div class="mt-2 border-t pt-1 dark:border-gray-700">
 
         <!-- Left: quality metrics -->
         <div class="flex gap-1 justify-center">

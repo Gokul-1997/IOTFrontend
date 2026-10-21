@@ -23,8 +23,8 @@
           #colBtn
           (click)="toggleColBuilder()"
           class="flex items-center gap-2 rounded-lg 
-                 bg-white dark:bg-gray-800 px-3 py-2 text-sm font-medium text-gray-700
-                 dark:text-white shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                 bg-white dark:bg-[#06224c] px-3 py-2 text-sm font-medium text-gray-700 border border-[#20325b]
+                 dark:text-white shadow-sm hover:bg-gray-50 dark:hover:bg-blue-700 transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
@@ -329,6 +329,7 @@
 
     <!-- Data table -->
     <div *ngIf="!loading && rows.length > 0 && selectedCount > 0" class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Report table — scroll to see every row and column">
+     <div class="table-wrap">
       <table class="mexa-table is-dense is-striped">
         <thead>
           <tr>
@@ -360,6 +361,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <!-- Pagination: the same footer as every table -->

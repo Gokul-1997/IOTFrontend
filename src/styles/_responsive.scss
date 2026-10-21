@@ -100,7 +100,7 @@
   // .mexa-kpi {
   //   padding: 1rem 1rem;
   // }
-  .mexa-card .mat-mdc-table, .ui-tabpanel .mexa-kpi, .mexa-card .mexa-table, .mexa-card .mexa-card{
+  .mexa-card .mat-mdc-table, .ui-tabpanel .mexa-kpi, .mexa-card .mexa-table, .mexa-card .mexa-card, .mexa-card .mexa-note{
     zoom:normal;
   }
 .login-holder{
@@ -117,6 +117,9 @@
 }
 .mexa-lift {
     zoom: 1.1;
+}
+.ui-dialog{
+  zoom: 1.1;
 }
 }
 
@@ -317,4 +320,13 @@
     padding-right: 0.5rem;
   }
 
+}
+
+// Dark Mode
+.dark .last-updated-vertical {
+  background: #051C43;
+  border: 1px solid #05397A;  
+}
+.dark .updated-time{
+  color: #CDE1F8;
 }

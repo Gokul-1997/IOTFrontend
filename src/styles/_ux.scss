@@ -114,7 +114,7 @@ a.nav-btn { text-decoration: none; }
 .acct-item.is-danger, .acct-item.is-danger .material-icons, .acct-item.is-danger mat-icon { color: #b42334; }
 .acct-item.is-danger:hover { background: #fdeaec; }
 .dark .acct-item { color: #e5e7eb; }
-.dark .acct-item:hover { background: #1d2133; }
+.dark .acct-item:hover { background: #162d4e; }
 .dark .acct-item .material-icons, .dark .acct-item mat-icon { color: #9fb3ff; }
 .dark .acct-item.is-danger, .dark .acct-item.is-danger .material-icons, .dark .acct-item.is-danger mat-icon { color: #f59aa6; }
 
@@ -226,7 +226,7 @@ a.nav-btn { text-decoration: none; }
 /* 100vh on a phone includes the area under the browser's address bar, so a
    full-height sheet put its Save button off the bottom. The dynamic unit is
    the height actually visible. */
-.ui-dialog { max-height: 92vh; max-height: 92dvh; }
+.ui-dialog { max-height: 86vh;}
 @media (max-width: 640px) {
   .ui-dialog { height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh; }
   .ui-dialog-footer { padding-bottom: calc(.875rem + env(safe-area-inset-bottom, 0px)); }

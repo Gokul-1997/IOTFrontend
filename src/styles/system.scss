@@ -216,7 +216,7 @@ html, body { font-family: var(--font-ui); }
 /* Header: tinted, the navy rule under it, a hairline between columns */
 .mexa-table thead th {
   position: sticky; top: 0; z-index: 2;
-  background: var(--tbl-head-bg);
+  background: #232a48;
   color: var(--tbl-head-ink);
   font-size: var(--fs-th);
   line-height: 1.3;
@@ -338,7 +338,7 @@ html, body { font-family: var(--font-ui); }
   background: var(--mexa-row-alt); color: var(--tbl-accent);
 }
 .dark .mexa-table .downtime-empty::before { background: #1d2133; color: #9fb3ff; }
-.dark .downtime-empty { background: #1d2133; }
+.dark .downtime-empty { background: #0A1E3F; }
 .dark .downtime-empty .empty-title { color: var(--mexa-ink); }
 .dark .downtime-empty .empty-text { color: var(--mexa-ink-3); }
 .dark .mexa-table .downtime-empty { background: transparent; }
@@ -550,7 +550,9 @@ html.dark .mexa-note :is([class~="text-red-500"], [class~="text-red-600"]) { col
 
 /* The report filters' Reset (now alone where Apply was) takes the ghost
    button's dark colours instead of staying a white block */
-.dark .btn-clear { color: #e5e7eb; background: #1c1c1c; border-color: #3e3e3e; }
+.dark .btn-clear {    color: #e5e7eb;
+    background: #06224c;
+    border-color: #20325b; }
 .dark .btn-clear:hover:not(:disabled) { background: #262626; }
 
 /* A centred tab strip wider than the screen starts at its first tab.

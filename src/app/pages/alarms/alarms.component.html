@@ -25,6 +25,7 @@
   </div>
 
   <div *ngIf="!loading" class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Alarms">
+    <div class="table-wrap">
     <table class="mexa-table">
       <caption class="sr-only">Machine alarms, newest first</caption>
       <thead>
@@ -96,6 +97,7 @@
         </ng-template>
       </tbody>
     </table>
+    </div>
   </div>
 
   <app-mexa-pager *ngIf="pagination.total > filter.limit || filter.page > 1" [page]="filter.page" [totalPages]="pagination.totalPages || 1"

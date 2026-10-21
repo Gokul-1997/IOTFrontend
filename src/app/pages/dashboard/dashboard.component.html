@@ -107,7 +107,8 @@
     'green-full': m.status === 'RUNNING',
     'yellow-full': m.status === 'IDLE',
     'gray-full': m.status === 'OFFLINE',
-    'alarm-blink': m.alarm
+    'alarm-blink': m.alarm,
+    
   }"
   [style.--gradient-color]="
     m.status === 'RUNNING' ? '#399953' :
@@ -343,7 +344,7 @@
       (click)="goToPage(currentPage - 1)"
       [disabled]="currentPage === 1"
       class="px-3 py-1.5 rounded-lg text-sm font-medium transition
-             bg-white dark:bg-[#1a1a1a] 
+             bg-white dark:bg-[#131438] 
              disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]">
       ‹ Prev
     </button>
@@ -352,10 +353,10 @@
     <ng-container *ngFor="let p of pageNumbers">
       <button
         (click)="goToPage(p)"
-        class="w-8 h-8 rounded-full text-sm font-semibold transition border"
+        class="w-8 h-8 rounded-full text-sm font-semibold transition border border-[#4b5563]"
         [ngClass]="p === currentPage
-          ? 'bg-[var(--color-primary-500)] text-white border-[var(--color-primary-500)]'
-          : 'bg-white dark:bg-[#1a1a1a] hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'">
+          ? 'bg-[var(--color-primary-500)] text-white border-[#2d3b50]'
+          : 'bg-white dark:bg-[#131438] hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'">
         {{ p }}
       </button>
     </ng-container>
@@ -365,7 +366,7 @@
       (click)="goToPage(currentPage + 1)"
       [disabled]="currentPage === totalPages"
       class="px-3 py-1.5 rounded-lg text-sm font-medium transition
-             bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-gray-600
+             bg-white dark:bg-[#131438] border border-gray-300 dark:border-gray-600
              disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]">
       Next ›
     </button>
@@ -377,7 +378,7 @@
     <!-- the label says what a press does; no aria-pressed, as the label itself changes -->
     <button type="button" (click)="toggleAutoPage()"
       class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition
-             bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]">
+             bg-white dark:bg-[#131438] border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]">
       <span class="material-icons text-[18px]" aria-hidden="true">{{ autoPaused ? 'play_arrow' : 'pause' }}</span>
       {{ autoPaused ? 'Resume' : 'Pause' }} page rotation
     </button>

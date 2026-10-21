@@ -364,6 +364,7 @@
     </p>
 
     <div class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Alarms — scroll to see every row and column">
+      <div class="table-wrap">
       <table class="mexa-table">
         <caption class="sr-only">Alarms matching the current filters, newest first</caption>
         <thead>
@@ -433,6 +434,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <app-mexa-pager [page]="data.alarms.page" [totalPages]="data.alarms.totalPages" [total]="data.alarms.total"

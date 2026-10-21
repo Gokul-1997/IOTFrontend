@@ -50,6 +50,9 @@ const TABS: DashTab[] = [
   templateUrl: './energy-dashboard.component.html'
 })
 export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
+  get isDarkMode(): boolean {
+  return document.documentElement.classList.contains('dark');
+}
 
   /* ── Charts | Machine Detail | Energy Meter ──
      Each part of the page is asked for only while it is on screen and out
@@ -334,7 +337,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
       legend: { show: false },
       xaxis:  { categories: this.machineCategories, title: { text: 'kWh' } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'light' },
+      tooltip:{ theme: 'dark' },
       noData: { text: 'No machine is sending energy readings yet' }
     };
   }, this.charts.sig('machineCats') + this.charts.sig('machineSeries'));

@@ -84,13 +84,13 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   --mexa-bar:     linear-gradient(90deg, rgba(30, 36, 100, .85) 0%, rgba(30, 30, 80, .6) 60%, rgba(40, 24, 60, .4) 100%);
   --mexa-card-shadow: 0 10px 28px rgba(0, 0, 0, .35), 0 1px 3px rgba(0, 0, 0, .3);
   --mexa-ground:  #0d0f15;
-  --mexa-card:    #0e2344;
+  --mexa-card:    #031735;
   --mexa-ink:     #e8ebf2;
   --mexa-ink-2:   #a8b0c2;
   --mexa-ink-3:   #949eb2;   /* 5.3:1 or better on the dark surfaces */
   --mexa-rule:    #252b39;
   --mexa-thead:   #262a3a;
-  --mexa-row-alt: #212534;
+  --mexa-row-alt: #0a1e3f;
 }
 
 /* ── Shell ────────────────────────────────────────────────── */
@@ -334,7 +334,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   /* A rounded square rather than a disc: the discs read as six unrelated
      status lights when the colour means nothing. */
   width: 2.1rem; height: 2.1rem;
-  border-radius: 9px;
+  border-radius: 12px;
   display: grid; place-items: center;
   flex: none;
   color: #fff;
@@ -450,6 +450,9 @@ button.mexa-kpi[aria-pressed="true"] {
   /* On the STM field the card is lifted by a soft shadow, as in the design */
   box-shadow: var(--mexa-card-shadow);
   min-width: 0;
+}
+.dark .mexa-card {
+  border: 1px solid #012252;
 }
 
 .mexa-card-title {
@@ -1280,6 +1283,42 @@ a.mexa-pill { text-decoration: none; }
 .mexa-kpi.grey{
   background:#ad4972 !important;
   color: #fff;
+}
+.dark{
+
+.mexa-kpi.green{
+  background:#005871!important;
+  color: #fff;
+}
+.mexa-kpi.yellow{
+  background:#944F0B!important;
+  color: #fff;
+}
+
+.mexa-kpi.navy{
+  background: #0343A5!important;
+  color: #fff;
+}
+.mexa-kpi.sky{
+  background:#006EA7!important;
+  color: #fff;
+}
+.mexa-kpi.purple{
+  background:#3F399A!important;
+  color: #fff;
+}
+.mexa-kpi.blue{
+  background :#112F9E !important;
+  color: #fff;
+}
+.mexa-kpi.red{
+  background: #a53b33!important;
+  color: #fff;
+}
+.mexa-kpi.grey{
+  background:#ad4972 !important;
+  color: #fff;
+}
 }
 
 

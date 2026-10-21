@@ -26,18 +26,18 @@ import { Subscription, auditTime, pairwise } from 'rxjs';
       <!-- a sheet across the top on a phone, a dropdown from the bell on wider screens -->
       <div *ngIf="open" id="notif-panel" role="region" aria-label="Notifications"
         class="fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:w-80
-               bg-white rounded-xl shadow-2xl border border-gray-100 z-50">
-        <div class="flex items-center justify-between gap-2 p-4 border-b">
-          <h3 class="font-semibold text-gray-800">Notifications</h3>
+               bg-white dark:bg-[#031735] rounded-xl shadow-2xl border border-gray-100 dark:border-[#012252] z-50">
+        <div class="flex items-center justify-between gap-2 p-4 border-b border-[#22405e]">
+          <h3 class="font-semibold text-gray-800 dark:text-white">Notifications</h3>
           <button type="button" (click)="markAllRead()" class="ui-btn ui-btn-ghost ui-btn-sm">
           <span class="ui-tab-icon material-icons" aria-hidden="true">done_all</span>
           Mark all read</button>
         </div>
-        <div class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+        <div class="max-h-80 overflow-y-auto divide-y divide-[#22405e]">
           <ng-container *ngIf="notifications.length > 0; else noNotifs">
             <!-- each one is a button: Enter or a tap marks it read -->
             <button type="button" *ngFor="let n of notifications"
-              class="w-full text-left flex items-start gap-3 p-3 transition-colors hover:bg-gray-50"
+              class="w-full text-left flex items-start gap-3 p-3 transition-colors hover:bg-[#092b5c]"
               [class.bg-blue-50]="!n.is_read"
               (click)="onRead(n)">
               <span class="material-icons text-[20px] flex-shrink-0 mt-0.5" aria-hidden="true"
@@ -46,9 +46,9 @@ import { Subscription, auditTime, pairwise } from 'rxjs';
               </span>
               <span class="flex-1 min-w-0">
                 <span class="sr-only">{{ n.type === 'ALARM' ? 'Alarm' : n.type === 'WARNING' ? 'Warning' : 'Information' }}{{ n.is_read ? '' : ', unread' }}: </span>
-                <span class="block text-sm font-medium text-gray-800 truncate">{{ n.title }}</span>
-                <span class="block text-xs text-gray-600 mt-0.5">{{ n.message }}</span>
-                <span class="block text-xs text-gray-600 mt-1">{{ n.created_at | date:'d MMM, h:mm a' }}</span>
+                <span class="block text-sm font-medium text-gray-800 dark:text-white truncate">{{ n.title }}</span>
+                <span class="block text-xs text-gray-600 dark:text-gray-500 mt-0.5">{{ n.message }}</span>
+                <span class="block text-xs text-gray-600 dark:text-gray-500 mt-1">{{ n.created_at | date:'d MMM, h:mm a' }}</span>
               </span>
               <span *ngIf="!n.is_read" class="w-2 h-2 mt-2 rounded-full bg-blue-600 flex-shrink-0" aria-hidden="true"></span>
             </button>
@@ -60,7 +60,7 @@ import { Subscription, auditTime, pairwise } from 'rxjs';
             </div>
           </ng-template>
         </div>
-        <div class="p-3 border-t text-center">
+        <div class="p-3 border-t border-[#22405e] text-center">
           <a routerLink="/notifications" class="text-sm font-medium text-blue-700 hover:underline" (click)="open=false">View all notifications</a>
         </div>
       </div>

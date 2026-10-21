@@ -1,11 +1,27 @@
-<header class="sticky top-0 w-full z-50 py-0 bg-white dark:bg-[#12245C] shadow-xl">
+<header class="sticky top-0 w-full z-50 py-0 bg-white dark:bg-[#001132] shadow-xl">
 
   <div class="px-4 xl:px-9 mx-auto header_inner">
 
     <!-- LEFT: the logo goes to the first page this person may open -->
     <a routerLink="/" class="app-brand" aria-label="STM Mexa, home">
-      <img src="/images/logo/STM_Mexa_logo.svg" class="logo_top" alt="STM Mexa" />
+      <!-- <img src="/images/logo/STM_Mexa_logo.svg" class="logo_top" alt="STM Mexa" /> -->
+
+      <!-- Light theme logo -->
+  <img
+    src="/images/logo/STM_Mexa_logo.svg"
+    class="logo_top block dark:hidden"
+    alt="STM Mexa"
+  />
+
+  <!-- Dark theme logo -->
+  <img
+    src="/images/logo/STM_Mexa_logo_white.png"
+    class="logo_top hidden dark:block"
+    alt="STM Mexa"
+  />
     </a>
+
+    
 
     <!-- DESKTOP MENU (1280px and wider) -->
     <nav class="nav-scroll hidden xl:flex items-center gap-1 min-w-0 flex-1 justify-center" aria-label="Main">
@@ -66,7 +82,7 @@
         </button>
 
         <div *ngIf="showUserMenu" id="account-menu" (keydown.escape)="closeUserMenu(); acctBtn.focus()"
-          class="absolute right-0 mt-2 w-60 bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-2 z-50">
+          class="absolute right-0 mt-2 w-60 bg-white dark:bg-[#031735] border border-gray-200 dark:border-[#2e3c50] rounded-xl shadow-lg py-2 z-50">
           <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
             <p class="text-sm font-semibold text-gray-800 dark:text-white">{{ userName }}</p>
             <p class="text-xs text-gray-600 dark:text-gray-400">{{ userRole }}</p>
