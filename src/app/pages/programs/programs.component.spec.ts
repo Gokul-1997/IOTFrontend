@@ -15,8 +15,9 @@ import { environment } from '../../../environments/environment';
 const api = environment.apiUrl + '/programs';
 const machine = (o: Partial<PtMachine> = {}): PtMachine => ({
   id: 7, machine_serial_no: 'VMC-1', gateway: { token_prefix: 'mxd_abcdefgh', token_created_at: '2026-10-20T05:00:00Z', last_seen_at: new Date().toISOString(), online: true },
-  program: { id: 40, program_name: 'O1001.nc', size_bytes: 24, created_at: '2026-10-21T05:00:00Z' },
-  last_backup: null, backup_request: null, ...o
+  program: { id: 40, program_name: 'O1001.nc', size_bytes: 24, created_at: '2026-10-21T05:00:00Z',
+             delivery_status: null, delivery_message: null, delivered_at: null },
+  last_backup: null, backup_request: null, backup_failure: null, ...o
 });
 const page = { page: 1, limit: 20, total: 0, totalPages: 1 };
 
@@ -116,7 +117,8 @@ test('deleting asks first; no is no request', async () => {
   const fixture = create();
   const c = fixture.componentInstance;
   files().flush({ data: [], pagination: page });
-  const f = { id: 30, machine_id: 7, program_name: 'O0999.nc', kind: 'NEW' as const, size_bytes: 10, sha256: 'a', created_at: '', uploaded_by_name: null, is_current: false };
+  const f = { id: 30, machine_id: 7, program_name: 'O0999.nc', kind: 'NEW' as const, size_bytes: 10, sha256: 'a', created_at: '',
+              uploaded_by_name: null, is_current: false, delivery_status: null, delivery_message: null, delivered_at: null };
   ask.mockResolvedValueOnce(false);
   await c.deleteFile(f);
   http.expectNone(`${api}/files/30`);
@@ -149,5 +151,26 @@ test('gateway label says online, offline with when, or no token', () => {
   const tenMinutes = new Date(Date.now() - 10 * 60000).toISOString();
   expect(c.gatewayLabel(machine({ gateway: { token_prefix: 'mxd_a', token_created_at: '', last_seen_at: tenMinutes, online: false } })))
     .toBe('Gateway offline · last seen 10 min ago');
+  fixture.destroy();
+});
+
+test('what the gateway reports reaches the page: the program refused, a backup that could not be read', () => {
+  const fixture = create();
+  const c = fixture.componentInstance;
+  files().flush({ data: [], pagination: page });
+  c.requestBackup();
+  http.expectOne(`${api}/machines/7/backup`).flush({ data: { id: 9, requested_at: '2026-10-21T05:10:00Z', created: true } });
+
+  c.loadMachines(true);
+  const refused = machine({ program: { id: 40, program_name: 'O1001.nc', size_bytes: 24, created_at: '2026-10-21T05:00:00Z',
+                                      delivery_status: 'FAILED', delivery_message: 'CNC memory full', delivered_at: '2026-10-21T05:12:00Z' },
+                            backup_failure: { message: 'CNC not reachable', at: '2026-10-21T05:13:00Z' } });
+  http.expectOne(`${api}/machines`).flush({ data: [refused] });
+  expect(toast.error).toHaveBeenCalledWith('VMC-1 could not send a backup: CNC not reachable');
+  expect(toast.error).toHaveBeenCalledWith('VMC-1 could not use O1001.nc: CNC memory full');
+  files().flush({ data: [], pagination: page });
+  expect(c.deliveryLabel({ delivery_status: 'FAILED' })).toBe('Refused by machine');
+  expect(c.deliveryLabel({ delivery_status: null })).toBe('Waiting');
+  http.verify();
   fixture.destroy();
 });

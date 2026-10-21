@@ -121,11 +121,20 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** A backup or a new program arrived since the last look: say so and show it in the list. */
+  /** What the gateway did since the last look — a backup, the program taken or refused: say so and show it. */
   private noticeChanges(before: PtMachine, now: PtMachine): void {
     const backupArrived = now.last_backup && now.last_backup.id !== before.last_backup?.id;
     if (backupArrived && before.backup_request) this.toast.success(`Backup received from ${now.machine_serial_no}`);
-    if (backupArrived || now.program?.id !== before.program?.id) this.loadFiles();
+    if (!backupArrived && before.backup_request && now.backup_failure && !now.backup_request) {
+      this.toast.error(`${now.machine_serial_no} could not send a backup: ${now.backup_failure.message}`);
+    }
+    const reported = now.program && now.program.id === before.program?.id
+      && now.program.delivery_status && now.program.delivery_status !== before.program?.delivery_status;
+    if (reported && now.program!.delivery_status === 'DONE') this.toast.success(`${now.program!.program_name} is on ${now.machine_serial_no}`);
+    if (reported && now.program!.delivery_status === 'FAILED') {
+      this.toast.error(`${now.machine_serial_no} could not use ${now.program!.program_name}: ${now.program!.delivery_message}`);
+    }
+    if (backupArrived || reported || now.program?.id !== before.program?.id) this.loadFiles();
   }
 
   changeMachine(): void {
@@ -174,6 +183,15 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   setLimit(limit: number): void { this.limit = limit; this.page = 1; this.loadFiles(); }
 
   kindLabel(f: Pick<PtFile, 'kind'>): string { return f.kind === 'NEW' ? 'Uploaded' : 'Backup'; }
+
+  /** An upload's state at the machine, as its gateway reported it. */
+  deliveryLabel(f: Pick<PtFile, 'delivery_status'>): string {
+    return f.delivery_status === 'DONE' ? 'On the machine' : f.delivery_status === 'FAILED' ? 'Refused by machine' : 'Waiting';
+  }
+
+  deliveryClass(f: Pick<PtFile, 'delivery_status'>): string {
+    return f.delivery_status === 'DONE' ? 'mexa-badge-good' : f.delivery_status === 'FAILED' ? 'mexa-badge-bad' : 'mexa-badge-neutral';
+  }
 
   download(file: { id: number; program_name: string }): void {
     this.programs.download(file.id).pipe(takeUntil(this.destroy$)).subscribe({

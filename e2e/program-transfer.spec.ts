@@ -18,20 +18,25 @@ type Machine = {
   program: { id: number; program_name: string; size_bytes: number; created_at: string } | null;
   last_backup: { id: number; program_name: string; created_at: string } | null;
   backup_request: { id: number; requested_at: string } | null;
+  backup_failure?: { message: string; at: string } | null;
 };
-const fileRow = (id: number, machine: number, name: string, kind = 'NEW', current = false) => ({
+const fileRow = (id: number, machine: number, name: string, kind = 'NEW', current = false, delivery: any = {}) => ({
   id, machine_id: machine, program_name: name, kind, size_bytes: 2048, sha256: 'a'.repeat(64),
-  created_at: ago(id), uploaded_by_name: kind === 'NEW' ? 'Ravi' : null, is_current: current
+  created_at: ago(id), uploaded_by_name: kind === 'NEW' ? 'Ravi' : null, is_current: current,
+  delivery_status: null, delivery_message: null, delivered_at: null, ...delivery
 });
 
 async function fixtures(page: Page) {
   const state = {
     machines: [
       { id: 7, machine_serial_no: 'VMC-1', gateway: { token_prefix: 'mxd_abcdefgh', token_created_at: ago(86400), last_seen_at: ago(5), online: true },
-        program: { id: 40, program_name: 'O1234.nc', size_bytes: 2048, created_at: ago(600) }, last_backup: null, backup_request: null },
+        program: { id: 40, program_name: 'O1234.nc', size_bytes: 2048, created_at: ago(600), delivery_status: 'DONE', delivery_message: null,
+                   delivered_at: ago(500) } as any, last_backup: null, backup_request: null },
       { id: 8, machine_serial_no: 'VMC-2', gateway: null, program: null, last_backup: null, backup_request: null }
     ] as Machine[],
-    files: { 7: [fileRow(40, 7, 'O1234.nc', 'NEW', true), fileRow(39, 7, 'O1000.nc')], 8: [] } as Record<number, any[]>,
+    files: { 7: [fileRow(40, 7, 'O1234.nc', 'NEW', true, { delivery_status: 'DONE', delivered_at: ago(500) }),
+                 fileRow(39, 7, 'O1000.nc', 'NEW', false, { delivery_status: 'FAILED', delivery_message: 'Program O1000 is running', delivered_at: ago(900) })],
+             8: [] } as Record<number, any[]>,
     calls: [] as { method: string; path: string; query: string }[],
     uploads: [] as string[]
   };
@@ -52,7 +57,7 @@ async function fixtures(page: Page) {
       const m = state.machines.find(x => body.includes(`\r\n\r\n${x.id}\r\n`))!;
       const row = fileRow(41, m.id, 'O3000.nc', 'NEW', true);
       state.files[m.id] = [row, ...state.files[m.id].map(f => ({ ...f, is_current: false }))];
-      m.program = { id: 41, program_name: 'O3000.nc', size_bytes: 2048, created_at: ago(0) };
+      m.program = { id: 41, program_name: 'O3000.nc', size_bytes: 2048, created_at: ago(0), delivery_status: null, delivery_message: null, delivered_at: null } as any;
       return route.fulfill(ok(row, 201));
     }
     const backup = path.match(/^\/api\/programs\/machines\/(\d+)\/backup$/);
@@ -91,7 +96,7 @@ test('only a machine to choose: no company, no plant, no FTP or FANUC settings',
   }
   await expect(page.getByText('Gateway online')).toBeVisible();
   await expect(filesTable(page).locator('tbody tr')).toHaveCount(2);
-  await expect(filesTable(page).getByText('On the machine')).toHaveCount(1);
+  await expect(filesTable(page).getByText('Current', { exact: true })).toHaveCount(1);
 
   await page.getByLabel('Machine', { exact: true }).selectOption({ label: 'VMC-2' });
   await expect(page.getByText('No gateway token yet')).toBeVisible();
@@ -113,8 +118,24 @@ test('upload in the dialog makes it the machine\'s program', async ({ authedPage
   expect(state.uploads).toHaveLength(1);
   expect(state.uploads[0]).toContain('name="machine_id"\r\n\r\n7\r\n');
   expect(state.uploads[0]).toContain('filename="O3000.nc"');
-  await expect(page.getByRole('region', { name: 'Program for the machine' })).toContainText('O3000.nc');
-  await expect(filesTable(page).locator('tbody tr').first()).toContainText('On the machine');
+  const card = page.getByRole('region', { name: 'Program for the machine' });
+  await expect(card).toContainText('O3000.nc');
+  await expect(card).toContainText('Waiting for the machine to take it');
+  await expect(filesTable(page).locator('tbody tr').first()).toContainText('Current');
+  await expect(filesTable(page).locator('tbody tr').first()).toContainText('Waiting');
+});
+
+test('what the gateway reported: on the machine, refused with its reason, a backup that failed', async ({ authedPage: page }) => {
+  const state = await fixtures(page);
+  state.machines[0].backup_failure = { message: 'CNC not reachable', at: ago(60) };
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto('/programs');
+  await expect(page.getByRole('region', { name: 'Program for the machine' })).toContainText('On the machine since');
+  await expect(page.getByRole('region', { name: 'Backup from the machine' }).getByRole('alert')).toContainText('Backup failed: CNC not reachable');
+  const refused = filesTable(page).locator('tbody tr').filter({ hasText: 'O1000.nc' });
+  await expect(refused).toContainText('Refused by machine');
+  await expect(refused).toContainText('Program O1000 is running');
+  await expect(filesTable(page).locator('tbody tr').filter({ hasText: 'O1234.nc' })).toContainText('On the machine');
 });
 
 test('Backup now asks the gateway, and says it is waiting', async ({ authedPage: page }) => {
@@ -146,7 +167,7 @@ test('a file is downloaded; deleting asks in the app first', async ({ authedPage
   await expect(filesTable(page).locator('tbody tr')).toHaveCount(1);
 });
 
-test('gateway token: made in a dialog, shown once, with the three calls', async ({ authedPage: page }) => {
+test('gateway token: made in a dialog, shown once, with the four calls and the Postman collection', async ({ authedPage: page }) => {
   await fixtures(page);
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.goto('/programs');
@@ -154,7 +175,8 @@ test('gateway token: made in a dialog, shown once, with the three calls', async 
   await page.getByRole('button', { name: 'Gateway token' }).click();
   const dialog = page.getByRole('dialog', { name: 'Gateway token — VMC-2' });
   await expect(dialog).toContainText('This machine has no gateway token yet.');
-  for (const call of ['/device/v1/status', '/device/v1/program', '/device/v1/backup']) await expect(dialog).toContainText(call);
+  for (const call of ['/device/v1/status', '/device/v1/program', '/device/v1/backup', '/device/v1/report']) await expect(dialog).toContainText(call);
+  await expect(dialog.getByRole('link', { name: 'Postman collection' })).toHaveAttribute('href', '/integrations/MEXA_Program_Transfer.postman_collection.json');
   await dialog.getByRole('button', { name: 'Create token' }).click();
   await expect(dialog.getByLabel('Token', { exact: true })).toHaveValue('mxd_' + 'Q'.repeat(43));
   await expect(dialog).toContainText('shown only this once');
