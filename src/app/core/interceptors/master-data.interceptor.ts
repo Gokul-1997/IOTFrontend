@@ -9,8 +9,7 @@ export const MasterDataInterceptor: HttpInterceptorFn = (request, next) => {
   const prefix = environment.apiUrl + '/';
   const path = request.url.startsWith(prefix) ? request.url.slice(prefix.length).split('?')[0] : '';
   if (['GET', 'HEAD', 'OPTIONS'].includes(request.method) ||
-      !(/^(machines|shifts|lines|plants|machine-shifts|companies|users|roles)(\/|$)/.test(path) ||
-        /^programs\/machines\/\d+\/(connection|device-token)$/.test(path))) return next(request);
+      !/^(machines|shifts|lines|plants|machine-shifts|companies|users|roles)(\/|$)/.test(path)) return next(request);
   const master = inject(MasterDataService);
   return next(request).pipe(tap(event => {
     if (event.type === HttpEventType.Response) master.invalidate();
