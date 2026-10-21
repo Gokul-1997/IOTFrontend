@@ -23,6 +23,8 @@ import { AuthService } from "../../core/services/auth.service";
 })
 
 export class ForgotPasswordComponent
+
+
     implements OnInit, OnDestroy {
 
     loading = false;

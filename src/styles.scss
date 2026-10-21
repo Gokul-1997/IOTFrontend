@@ -2472,3 +2472,17 @@ transition: transform 0.3s ease;
     color: rgb(151 155 189);
 }
 }
+.stm-auth-field {
+  background:
+    radial-gradient(
+      ellipse at 20% 20%,
+      rgba(79, 127, 217, 0.20),
+      transparent 45%
+    ),
+    radial-gradient(
+      ellipse at 80% 80%,
+      rgba(0, 214, 172, 0.10),
+      transparent 40%
+    ),
+    #112b4e;
+}
