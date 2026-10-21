@@ -1,8 +1,9 @@
 import { visibleRefresh } from '../../shared/visible-refresh';
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { Router, RouterLink } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { FactoryService } from './factory.service';
@@ -15,6 +16,7 @@ import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { compactQty, qty } from '../../shared/format-number';
 import { SEVERITY } from '../../shared/severity';
+import { AuthService } from '../../core/services/auth.service';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 1 — Factory Overall Dashboard
@@ -27,11 +29,40 @@ import { SEVERITY } from '../../shared/severity';
 
 const POLL_MS = 60_000;
 
+/*
+ * Where each tile and card leads — the page with the records behind the
+ * number, opened on the Factory's own day, shift and machine (the pages take
+ * them with takeLinkedFilters). Only for the pages the person may open; for
+ * the rest the tile stays a plain figure. Live is "now", so it takes the
+ * status only; Energy and the Alarm Report have no shift filter.
+ */
+const TARGETS = {
+  live:       { path: '/dashboard',         permission: 'page:dashboard',          name: 'Live Dashboard',    day: false, shift: false, machine: false },
+  oee:        { path: '/oee-dashboard',     permission: 'page:analytics-oee',      name: 'OEE Dashboard',     day: true,  shift: true,  machine: true },
+  downtime:   { path: '/downtime-analysis', permission: 'page:analytics-downtime', name: 'Downtime Analysis', day: true,  shift: true,  machine: true },
+  energy:     { path: '/energy-dashboard',  permission: 'page:analytics-energy',   name: 'Energy Dashboard',  day: true,  shift: false, machine: true },
+  alarms:     { path: '/alarm-report',      permission: 'page:analytics-alarms',   name: 'Alarm Report',      day: true,  shift: false, machine: true },
+  production: { path: '/reports',           permission: 'page:reports',            name: 'Production report', day: true, shift: true,  machine: true }
+} as const;
+export type FactoryTarget = keyof typeof TARGETS;
+
 @Component({
   selector: 'app-factory',
   standalone: true,
-  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
-  templateUrl: './factory.component.html'
+  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, RouterLink, NgApexchartsModule, SkeletonComponent],
+  templateUrl: './factory.component.html',
+  styles: [`
+    /* a card's way to the page with its records */
+    .fx-more { margin: .6rem 0 0; text-align: right; }
+    .fx-more a, .fx-rank-link {
+      display: inline-flex; align-items: center; gap: .1rem; font-size: .8rem; font-weight: 600;
+      color: var(--mexa-submit); text-decoration: none; border-radius: 4px;
+    }
+    .fx-rank-link { font-size: inherit; font-weight: inherit; color: inherit; }
+    .fx-more a:hover, .fx-rank-link:hover { text-decoration: underline; }
+    .fx-more a:focus-visible, .fx-rank-link:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 2px; }
+    .fx-more mat-icon { width: 1rem; height: 1rem; font-size: 1rem; }
+  `]
 })
 export class FactoryComponent implements OnInit, OnDestroy {
 
@@ -74,6 +105,37 @@ export class FactoryComponent implements OnInit, OnDestroy {
     private svc: FactoryService,
     private cdr: ChangeDetectorRef
   ) {}
+
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  readonly targets = TARGETS;
+
+  /** Share of target when any machine has a job target; the piece count otherwise. */
+  get hasProductionTarget(): boolean {
+    return this.data?.production?.target_pct !== null && this.data?.production?.target_pct !== undefined;
+  }
+  get productionValue(): string {
+    return this.hasProductionTarget ? `${this.data.production.target_pct}%` : String(this.data?.production?.produced ?? '--');
+  }
+
+  /** May this person open the page a tile leads to? */
+  can(target: FactoryTarget): boolean { return this.auth.hasPermission(TARGETS[target].permission); }
+
+  /** The page's address parameters: this dashboard's day, shift and machine, as far as that page filters by them. */
+  linkParams(target: FactoryTarget, extra: Record<string, string> = {}): Record<string, string | number> {
+    const t = TARGETS[target];
+    const params: Record<string, string | number> = { ...extra };
+    if (target === 'production') params['tab'] = 'production';
+    if (t.day && this.selectedDate) { params['from'] = this.selectedDate; params['to'] = this.selectedDate; }
+    if (t.shift && this.selectedShift) params['shift_id'] = this.selectedShift;
+    if (t.machine && this.selectedMachine) params['machine_id'] = this.selectedMachine;
+    return params;
+  }
+
+  /** A tile's number: open its page. */
+  open(target: FactoryTarget, extra: Record<string, string> = {}): void {
+    void this.router.navigate([TARGETS[target].path], { queryParams: this.linkParams(target, extra) });
+  }
 
   ngOnInit(): void {
     this.svc.getMeta()

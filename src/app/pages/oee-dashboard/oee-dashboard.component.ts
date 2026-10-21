@@ -1,14 +1,15 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subscription } from 'rxjs';
 import { OeeDashboardService } from './oee-dashboard.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
+import { takeLinkedFilters } from '../../shared/linked-filters';
 import { lostCostLine, LOST_COST_HINT } from '../../shared/lost-cost';
 import { qty } from '../../shared/format-number';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
@@ -107,6 +108,8 @@ setTab(tab: 'oee' | 'charts'): void {
     });
   }
 
+  private readonly route = inject(ActivatedRoute);
+
   ngOnInit(): void {
     this.svc.getMeta()
       .pipe(takeUntil(this.destroy$), catchError(() => of(null)))
@@ -116,6 +119,11 @@ setTab(tab: 'oee' | 'charts'): void {
         this.cdr.markForCheck();
       });
 
+    // a Factory Overall tile opens this on its day, shift and machine
+    const linked = takeLinkedFilters(this.route, this.router);
+    if (linked.from) { this.f.from = linked.from; this.f.to = linked.to; }
+    if (linked.shift_id) this.f.shift_id = linked.shift_id;
+    if (linked.machine_id) this.f.machine_id = linked.machine_id;
     this.load();
   }
 

@@ -6,12 +6,13 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   ElementRef,
-  ViewChild
+  ViewChild,
+  inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule }  from '@angular/forms';
 import { ReportsService, ReportFilters, ReportType, MAX_DIRECT_DAYS, rangeDays } from './reports.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { OeeReportsComponent } from '../oee-reports/oee-reports';
 import { MachineOeeReportComponent } from './machine-oee-report.component';
 import { AuthService } from '../../core/services/auth.service';
@@ -20,6 +21,7 @@ import { ReportDateDirective } from '../../shared/report-date.directive';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
+import { takeLinkedFilters } from '../../shared/linked-filters';
 import { Subscription } from 'rxjs';
 import { StateComponent } from '../../shared/state/state.component';
 import { qty } from '../../shared/format-number';
@@ -205,13 +207,20 @@ export class Reports implements OnInit, OnDestroy {
     private route: ActivatedRoute
   ) {}
 
+  private readonly router = inject(Router);
+
   ngOnInit(): void {
     this.tabs = this.allTabs.filter(t => t.allowed());
     this.activeTab = this.tabs[0]?.id ?? 'production';
     // ?tab=… opens a given report (the old /oee-reports address lands on OEE Records)
     const wanted = this.route.snapshot.queryParamMap.get('tab') as Tab | null;
     if (wanted && this.tabs.some(t => t.id === wanted)) this.activeTab = wanted;
-    if (!this.isBuilt) return;
+    if (!this.isBuilt) return;     // Machine OEE takes its own ?from=&to=&shift_id=
+    // a Factory Overall tile opens the Production report on its day, shift and machine
+    const linked = takeLinkedFilters(this.route, this.router);
+    if (linked.from) { this.filters.date_from = linked.from; this.filters.date_to = linked.to!; }
+    if (linked.machine_id) this.filters.machine_id = String(linked.machine_id);
+    if (linked.shift_id) this.filters.shift_id = String(linked.shift_id);
     this.loadFilterLists();
     this.resetColSelection();
     this.loadReport();
