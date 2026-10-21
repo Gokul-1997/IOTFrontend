@@ -1219,6 +1219,7 @@ html:not(.dark) [class~="text-slate-500"] { color: #55607a; }
 /* 3. Status text in green / red, and the MEXA ▲▼ deltas (2.3–3.8 → 4.8–5.0). */
 html:not(.dark) :is([class~="text-green-500"], [class~="text-green-600"]) { color: #15803d; }
 html:not(.dark) [class~="text-red-500"] { color: #dc2626; }
+html:not(.dark) [class~="text-yellow-600"] { color: #a16207; }   /* the reports' "fair" figures: 2.9 → 4.9 */
 html:not(.dark) [class~="text-emerald-600"] { color: #047857; }   /* 3.8 → 5.5 */
 html:not(.dark) .mexa-delta-up   { color: #fff; }
 html:not(.dark) .mexa-delta-down { color: #fff; }

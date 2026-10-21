@@ -1,198 +1,85 @@
-<div class="page-wrapper">
+<!-- The Reports page's filter bar (reports.html): the same grid, labels,
+     fields and Reset on every tab. The filters apply themselves, as on the
+     dashboards; the Reports toolbar exports this tab. -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 items-end mb-4" appAutoApply (autoApply)="applyFilters()">
 
-  <!-- HEADER — its own search and Export CSV only as a page of its own. Inside
-       Reports (embedded) the Reports toolbar exports this tab, so a second
-       search-and-export row would repeat it. -->
-  <div *ngIf="!embedded" class="bg-top-bar flex-wrap">
-    <div class="toolbar-left">
-      <div class="page-title">
-        <!-- <mat-icon class="title-icon">assessment</mat-icon> -->
-        <div>
-          <h1 *ngIf="!embedded">OEE Reports</h1>
-        </div>
-        <span class="subtitle">{{ total }} record{{ total !== 1 ? 's' : '' }} found</span>
-      </div>
-    </div>
-    <div class="toolbar-right">
-      <!-- Search -->
-      <div class="search-box">
-        <mat-icon class="search-icon">search</mat-icon>
-        <input type="text" placeholder="Search…" [(ngModel)]="searchText"
-          (keyup.enter)="onSearch()" class="search-input" aria-label="Search text" />
-        <button *ngIf="searchText" mat-icon-button class="clear-btn" (click)="searchText=''; onSearch()" aria-label="Clear search" title="Clear search">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-      <!-- Export — controlled by widget:export -->
-      <button *ngIf="auth.hasWidget('oee-reports', 'export')" class="btn-export" (click)="exportCSV()" [disabled]="exporting || loading">
-        <mat-icon>download</mat-icon>
-        {{ exporting ? 'Exporting…' : 'Export CSV' }}
-      </button>
-    </div>
+  <div class="flex flex-col gap-1">
+    <label class="label_custom" for="orFrom">Date From</label>
+    <input type="date" id="orFrom" name="orFrom" appReportDate [rdBefore]="toDate" [(ngModel)]="fromDate" class="filter-date" />
   </div>
 
-  <!-- FILTERS BAR -->
-  <div class="filters-bar bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-700 shadow-sm rounded-xl">
-
-    <div class="filter-item">
-      <label class="filter-label">LINE</label>
-      <select [(ngModel)]="selectedLine" (change)="onLineChange()" [disabled]="loadingMeta" class="filter-select" aria-label="Line" >
-        <option [ngValue]="null">All Lines</option>
-        <option *ngFor="let l of lines" [ngValue]="l.id">{{ l.name }}</option>
-      </select>
-    </div>
-
-    <div class="filter-item">
-      <label class="filter-label">MACHINE</label>
-      <select [(ngModel)]="selectedMachine" (change)="onMachineChange()" [disabled]="loadingMeta" class="filter-select" aria-label="Machine" >
-        <option [ngValue]="null">All Machines</option>
-        <option *ngFor="let m of filteredMachines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-      </select>
-    </div>
-
-    <div class="filter-item">
-      <label class="filter-label">SHIFT</label>
-      <select [(ngModel)]="selectedShift" (change)="onShiftChange()" [disabled]="loadingMeta" class="filter-select" aria-label="Shift" >
-        <option [ngValue]="null">All Shifts</option>
-        <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_code }}</option>
-      </select>
-    </div>
-
-    <div class="filter-item">
-      <label class="filter-label">FROM DATE</label>
-      <input type="date" appReportDate [rdBefore]="toDate" [(ngModel)]="fromDate" (change)="onDateChange()" class="filter-date" aria-label="From Date" />
-    </div>
-
-    <div class="filter-item">
-      <label class="filter-label">TO DATE</label>
-      <input type="date" appReportDate [rdAfter]="fromDate" [(ngModel)]="toDate" (change)="onDateChange()" class="filter-date" aria-label="To Date" />
-    </div>
-
-    <!-- Every filter applies itself on change, as on the dashboards -->
-    <div class="filter-actions">
-      <button type="button" class="btn-clear" (click)="clearFilters()" [disabled]="loading || loadingMeta">
-        <mat-icon>close</mat-icon> Clear
-      </button>
-    </div>
-
+  <div class="flex flex-col gap-1">
+    <label class="label_custom" for="orTo">Date To</label>
+    <input type="date" id="orTo" name="orTo" appReportDate [rdAfter]="fromDate" [(ngModel)]="toDate" class="filter-date" />
   </div>
 
-  <!-- TABLE CARD -->
-  <div class="table-card mat-elevation-z2">
-
-    <!-- ERROR -->
-    <p *ngIf="error" class="mexa-note mexa-note-bad flex items-start justify-between gap-2" role="alert" style="margin:12px 16px">
-      <span>{{ error }}</span>
-      <button type="button" class="ux-icon-btn is-danger" (click)="error = ''" aria-label="Dismiss this message">
-        <span class="material-icons" aria-hidden="true">close</span>
-      </button>
-    </p>
-
-    <!-- Loading overlay -->
-    <div *ngIf="loading" class="loading-overlay">
-      <mat-spinner aria-label="Loading" diameter="40"></mat-spinner>
-    </div>
-
-    <!-- TABLE WRAPPER -->
-    <div class="table-wrapper" tabindex="0" role="region" aria-label="OEE report table — scroll sideways to see every column">
-      <table class="mexa-table is-dense is-striped">
-        <caption class="sr-only">OEE records by shift</caption>
-        <thead>
-          <tr>
-            <th scope="col" class="col-index col-lg">#</th>
-            <th scope="col" [attr.aria-sort]="ariaSort('shift_date')">
-              <button type="button" class="mexa-sort" (click)="changeSort('shift_date')" [attr.aria-current]="sortBy === 'shift_date'">
-                Date <span class="mexa-sort-arrow" aria-hidden="true">{{ getSortIcon('shift_date') }}</span>
-              </button>
-            </th>
-            <th scope="col" [attr.aria-sort]="ariaSort('machine_serial_no')">
-              <button type="button" class="mexa-sort" (click)="changeSort('machine_serial_no')" [attr.aria-current]="sortBy === 'machine_serial_no'">
-                Machine <span class="mexa-sort-arrow" aria-hidden="true">{{ getSortIcon('machine_serial_no') }}</span>
-              </button>
-            </th>
-            <th class="col-md" scope="col" [attr.aria-sort]="ariaSort('shift_code')">
-              <button type="button" class="mexa-sort" (click)="changeSort('shift_code')" [attr.aria-current]="sortBy === 'shift_code'">
-                Shift <span class="mexa-sort-arrow" aria-hidden="true">{{ getSortIcon('shift_code') }}</span>
-              </button>
-            </th>
-            <th class="col-lg" scope="col">Operator</th>
-            <th scope="col" *ngIf="auth.hasWidget('oee-reports', 'oee')" class="qty" [attr.aria-sort]="ariaSort('oee')">
-              <button type="button" class="mexa-sort" (click)="changeSort('oee')" [attr.aria-current]="sortBy === 'oee'">
-                OEE (%) <span class="mexa-sort-arrow" aria-hidden="true">{{ getSortIcon('oee') }}</span>
-              </button>
-            </th>
-            <th scope="col" *ngIf="auth.hasWidget('oee-reports', 'availability')" class="qty col-md" [attr.aria-sort]="ariaSort('availability')">
-              <button type="button" class="mexa-sort" (click)="changeSort('availability')" [attr.aria-current]="sortBy === 'availability'">
-                Availability (%) <span class="mexa-sort-arrow" aria-hidden="true">{{ getSortIcon('availability') }}</span>
-              </button>
-            </th>
-            <th scope="col" *ngIf="auth.hasWidget('oee-reports', 'performance')" class="qty col-md" [attr.aria-sort]="ariaSort('performance')">
-              <button type="button" class="mexa-sort" (click)="changeSort('performance')" [attr.aria-current]="sortBy === 'performance'">
-                Performance (%) <span class="mexa-sort-arrow" aria-hidden="true">{{ getSortIcon('performance') }}</span>
-              </button>
-            </th>
-            <th scope="col" *ngIf="auth.hasWidget('oee-reports', 'quality')" class="qty col-md" [attr.aria-sort]="ariaSort('quality')">
-              <button type="button" class="mexa-sort" (click)="changeSort('quality')" [attr.aria-current]="sortBy === 'quality'">
-                Quality (%) <span class="mexa-sort-arrow" aria-hidden="true">{{ getSortIcon('quality') }}</span>
-              </button>
-            </th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <!-- Empty state -->
-          <tr *ngIf="!loading && rows.length === 0">
-            <td colspan="9" class="mexa-empty">No OEE records for these filters. Choose another date range, machine or shift.</td>
-          </tr>
-
-          <tr *ngFor="let row of rows; let i = index">
-            <td class="col-index num col-lg">{{ rowIndex(i) }}</td>
-            <td class="num">{{ formatDate(row.shift_date) }}</td>
-            <td class="strong">{{ row.machine_serial_no }}</td>
-            <td class="col-md">{{ row.shift_code }}</td>
-            <td class="col-lg" [class.muted]="!row.operator_name">{{ row.operator_name || '--' }}</td>
-
-            <td *ngIf="auth.hasWidget('oee-reports', 'oee')" class="qty">
-              <div class="metric-cell">
-                <span class="metric-val" [ngClass]="oeeBand(row.oee)">{{ row.oee }}%</span>
-                <div class="metric-bar">
-                  <div class="metric-fill" [style.width]="getBarWidth(row.oee)"
-                       [style.backgroundColor]="getOeeColor(row.oee)"></div>
-                </div>
-              </div>
-            </td>
-            <td *ngIf="auth.hasWidget('oee-reports', 'availability')" class="qty col-md">
-              <div class="metric-cell">
-                <span class="metric-val">{{ row.availability }}%</span>
-                <div class="metric-bar"><div class="metric-fill avail-fill" [style.width]="getBarWidth(row.availability)"></div></div>
-              </div>
-            </td>
-            <td *ngIf="auth.hasWidget('oee-reports', 'performance')" class="qty col-md">
-              <div class="metric-cell">
-                <span class="metric-val">{{ row.performance }}%</span>
-                <div class="metric-bar"><div class="metric-fill perf-fill" [style.width]="getBarWidth(row.performance)"></div></div>
-              </div>
-            </td>
-            <td *ngIf="auth.hasWidget('oee-reports', 'quality')" class="qty col-md">
-              <div class="metric-cell">
-                <span class="metric-val">{{ row.quality }}%</span>
-                <div class="metric-bar"><div class="metric-fill qual-fill" [style.width]="getBarWidth(row.quality)"></div></div>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- PAGINATOR — uniform with all other pages -->
-    <mat-paginator
-      [length]="total"
-      [pageSize]="limit"
-      [pageSizeOptions]="[6, 10, 20, 50]"
-      showFirstLastButtons
-      (page)="onPage($event)">
-    </mat-paginator>
-
+  <div class="flex flex-col gap-1">
+    <label class="label_custom" for="orLine">Line</label>
+    <select id="orLine" name="orLine" [(ngModel)]="selectedLine" (change)="onLineChange()" [disabled]="loadingMeta" class="filter-select">
+      <option [ngValue]="null">All Lines</option>
+      <option *ngFor="let l of lines" [ngValue]="l.id">{{ l.name }}</option>
+    </select>
   </div>
 
+  <div class="flex flex-col gap-1">
+    <label class="label_custom" for="orMachine">Machine</label>
+    <select id="orMachine" name="orMachine" [(ngModel)]="selectedMachine" [disabled]="loadingMeta" class="filter-select">
+      <option [ngValue]="null">All Machines</option>
+      <option *ngFor="let m of filteredMachines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+    </select>
+  </div>
+
+  <div class="flex flex-col gap-1">
+    <label class="label_custom" for="orShift">Shift</label>
+    <select id="orShift" name="orShift" [(ngModel)]="selectedShift" [disabled]="loadingMeta" class="filter-select">
+      <option [ngValue]="null">All Shifts</option>
+      <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_code }}</option>
+    </select>
+  </div>
+
+  <!-- Reset: today, every line, machine and shift -->
+  <div class="flex gap-2">
+    <button type="button" (click)="reset()"
+      class="btn-clear flex-1 min-w-0 inline-flex items-center justify-center gap-1">
+      <span class="material-icons text-[18px]" aria-hidden="true">restart_alt</span> Reset
+    </button>
+  </div>
 </div>
+
+<p *ngIf="error" class="mexa-note mexa-note-bad" role="alert">{{ error }}</p>
+
+<div class="mexa-tablewrap" tabindex="0" role="region" aria-label="OEE records table — scroll sideways to see every column">
+  <div class="table-wrap">
+    <table class="mexa-table is-dense is-striped">
+      <caption class="sr-only">OEE records by machine and shift</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="col-index">#</th>
+          <th *ngFor="let c of columns" scope="col" [ngClass]="c.cls || ''" [attr.aria-sort]="c.sort ? ariaSort(c.sort) : null">
+            <button *ngIf="c.sort as key; else plainHead" type="button" class="mexa-sort"
+                    (click)="changeSort(key)" [attr.aria-current]="sortBy === key">
+              {{ c.label }}
+              <span class="mexa-sort-arrow" aria-hidden="true">{{ sortIcon(key) }}</span>
+            </button>
+            <ng-template #plainHead>{{ c.label }}</ng-template>
+          </th>
+        </tr>
+      </thead>
+      <tbody *ngIf="loading" appSkeletonRows [cols]="columns.length + 1" label="Loading the OEE records…"></tbody>
+      <tbody *ngIf="!loading">
+        <tr *ngFor="let row of rows; let i = index">
+          <td class="col-index num muted">{{ (page - 1) * limit + i + 1 }}</td>
+          <td *ngFor="let c of columns" [ngClass]="c.cls || ''"><span [ngClass]="tone(c, row)">{{ cell(c, row) }}</span></td>
+        </tr>
+        <tr *ngIf="!rows.length">
+          <td [attr.colspan]="columns.length + 1" class="mexa-empty">No OEE records for these filters. Choose another date range, machine or shift.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- The same footer as every table; the API pages it -->
+<app-mexa-pager [page]="page" [totalPages]="totalPages" [total]="total" [shown]="rows.length"
+                [limit]="limit" [sizes]="sizes"
+                (pageChange)="changePage($event)" (limitChange)="changeLimit($event)"></app-mexa-pager>

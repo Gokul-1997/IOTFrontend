@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -17,6 +17,13 @@ export function rangeDays(from: string, to: string): number {
   if (Number.isNaN(a) || Number.isNaN(b) || b < a) return 0;
   return Math.round((b - a) / 86_400_000) + 1;
 }
+
+/** Where each report's file is downloaded from. */
+const EXPORT_PATHS: Record<ReportType, string> = {
+  'production': 'production',
+  'oee-hourly': 'hourly-oee',
+  'shift-oee':  'shift-oee'
+};
 
 export interface ReportFilters {
   date_from:   string;
@@ -53,56 +60,17 @@ export class ReportsService {
     return this.http.get(`${this.api}/shift-oee-data`, { params: this.toParams(f) });
   }
 
-  /** Client-side CSV export using the already-fetched rows + active column selection */
-  exportCsv(filename: string, cols: { key: string; label: string }[], rows: any[]): void {
-    const header = cols.map(c => `"${c.label}"`).join(',');
-    const body   = rows.map(r =>
-      cols.map(c => {
-        const v = r[c.key] ?? '';
-        return `"${String(v).replace(/"/g, '""')}"`;
-      }).join(',')
-    ).join('\n');
-
-    const blob = new Blob([header + '\n' + body], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  /** Full Excel download (all columns, uses backend) */
-  downloadExcel(type: ReportType, date: string): void {
-    const pathMap: Record<ReportType, string> = {
-      'production': `${this.api}/production?date=${date}`,
-      'oee-hourly': `${this.api}/hourly-oee?date=${date}`,
-      'shift-oee':  `${this.api}/shift-oee?date=${date}`,
-    };
-    this.http.get(pathMap[type], { responseType: 'blob' }).subscribe(blob => {
-      const url  = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href  = url;
-      link.download = `${type}_${date}.xlsx`;
-      link.click();
-      URL.revokeObjectURL(url);
-    });
-  }
-
-  /** The column definitions the server will build the emailed file from. */
-  getColumns(type: ReportType): Observable<any> {
-    return this.http.get(`${this.api}/columns`, { params: { type } });
-  }
-
   /**
-   * Ask for the report to be emailed. Answers 202 immediately — the file is
-   * built after the response, so a success here means "accepted", not "sent".
+   * The report on screen as a file: its dates and filters, the columns
+   * chosen, the order sorted — CSV or Excel, built by the server so the two
+   * are the same report. A small one is the file (200); a large one is
+   * emailed instead (202 and a message): see shared/report-file.ts.
    */
-  emailReport(body: {
-    type: ReportType; columns: string[]; email?: string;
-    labels?: Record<string, string>;
-  } & ReportFilters): Observable<any> {
-    return this.http.post(`${this.api}/email`, body);
+  exportFile(type: ReportType, format: 'csv' | 'xlsx', f: ReportFilters,
+             columns: string[], sort?: string, dir?: 'asc' | 'desc'): Observable<HttpResponse<Blob>> {
+    const params: Record<string, string> = { ...this.toParams(f), format, columns: columns.join(',') };
+    if (sort) { params['sort'] = sort; params['dir'] = dir || 'asc'; }
+    return this.http.get(`${this.api}/${EXPORT_PATHS[type]}`, { params, observe: 'response', responseType: 'blob' });
   }
 
   private toParams(f: ReportFilters): Record<string, string> {

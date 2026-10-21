@@ -25,6 +25,9 @@ import { takeLinkedFilters } from '../../shared/linked-filters';
 import { Subscription } from 'rxjs';
 import { StateComponent } from '../../shared/state/state.component';
 import { qty } from '../../shared/format-number';
+import { ToastService } from '../../core/services/toast.service';
+import { downloadError, saveOrMessage } from '../../shared/report-file';
+import { pctText, pctTone } from '../../shared/report-value';
 
 type Tab = ReportType | 'oee-records' | 'machine-oee';
 
@@ -101,7 +104,9 @@ export class Reports implements OnInit, OnDestroy {
      The OEE Records and Machine OEE tabs used to draw their own search and
      export row under this toolbar, whose buttons meanwhile acted on the
      hidden Production report. The toolbar now exports whichever tab is
-     open, in the formats that tab has, under that tab's own permission. */
+     open — CSV and Excel on every tab — under that tab's own permission.
+     There is no Email button (21 Oct 2026): a report too large to download
+     is emailed by itself, and the message saying so is all that is shown. */
   @ViewChild(OeeReportsComponent) oeeRecords?: OeeReportsComponent;
   @ViewChild(MachineOeeReportComponent) machineOee?: MachineOeeReportComponent;
 
@@ -110,19 +115,35 @@ export class Reports implements OnInit, OnDestroy {
     if (this.activeTab === 'oee-records') return this.auth.hasWidget('oee-reports', 'export');
     return this.auth.hasAction('analytics-oee', 'export');
   }
-  /** Excel: the built reports and Machine OEE; OEE Records exports CSV only. */
-  get tabHasExcel(): boolean { return this.activeTab !== 'oee-records'; }
   get tabLabel(): string { return this.tabs.find(t => t.id === this.activeTab)?.label || 'report'; }
 
-  toolbarCsv(): void {
-    if (this.isBuilt) this.exportCsv();
-    else if (this.activeTab === 'oee-records') this.oeeRecords?.exportCSV();
-    else this.machineOee?.export('csv');
+  /** OEE Records' record count (it pages on the server): nothing to export at 0. */
+  oeeRecordsTotal = 0;
+  /** A built report's file on its way. */
+  exporting: '' | 'csv' | 'xlsx' = '';
+
+  /** Nothing to export yet: no rows (or no columns) for these filters, or a file already coming. */
+  get exportDisabled(): boolean {
+    if (this.isBuilt) {
+      return !!this.exporting || this.loading || this.selectedCount === 0 || (!this.rangeTooLong && this.rows.length === 0);
+    }
+    if (this.activeTab === 'oee-records') return this.oeeRecordsTotal === 0;
+    return false;
   }
-  toolbarExcel(): void {
-    if (this.isBuilt) this.downloadFullExcel();
-    else if (this.activeTab === 'machine-oee') this.machineOee?.export('xlsx');
+
+  toolbarCsv(): void { this.exportTab('csv'); }
+  toolbarExcel(): void { this.exportTab('xlsx'); }
+
+  private exportTab(format: 'csv' | 'xlsx'): void {
+    if (this.isBuilt) this.exportBuilt(format);
+    else if (this.activeTab === 'oee-records') this.oeeRecords?.export(format);
+    else this.machineOee?.export(format);
   }
+
+  /* ── A large report is emailed: this message is what the screen shows ── */
+  notice = '';
+  showNotice(message: string): void { this.notice = message; this.cdr.markForCheck(); }
+  onOeeRecordsTotal(total: number): void { this.oeeRecordsTotal = total; this.cdr.markForCheck(); }
 
   /* ── tabs ── */
   /* Every report lives here — the OEE Reports page and the OEE Dashboard's
@@ -184,14 +205,11 @@ export class Reports implements OnInit, OnDestroy {
 
   /* ── delivery ──
      A range up to three months is answered in the page; beyond that the
-     server refuses it (413 RANGE_TOO_LARGE) and the report is emailed
-     instead. The rule is enforced on the server — this mirrors it so the UI
-     can explain the position before the user presses anything. */
+     server refuses it (413 RANGE_TOO_LARGE) — the Excel / CSV of it is then
+     emailed. The rule is enforced on the server — this mirrors it so the UI
+     can explain the position before anything is pressed. */
   maxDirectDays = MAX_DIRECT_DAYS;
-  emailing  = false;
-  emailNote = '';
-  emailErr  = '';
-  recipient = '';
+  loadErr = '';
 
   get rangeDays(): number { return rangeDays(this.filters.date_from, this.filters.date_to); }
   get rangeTooLong(): boolean { return this.rangeDays > this.maxDirectDays; }
@@ -204,7 +222,8 @@ export class Reports implements OnInit, OnDestroy {
     private svc: ReportsService,
     private cdr: ChangeDetectorRef,
     public  auth: AuthService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private toast: ToastService
   ) {}
 
   private readonly router = inject(Router);
@@ -311,11 +330,10 @@ export class Reports implements OnInit, OnDestroy {
 
   /* ── load data ── */
   loadReport(): void {
-    this.emailNote = '';
-    this.emailErr  = '';
+    this.loadErr = '';
 
     /* Asking anyway would cost a round trip to be told no. The banner in the
-       template explains the choice and offers the email route. */
+       template says so, and that Excel or CSV will email the whole range. */
     if (this.rangeTooLong) {
       this.loading = false;
       this.rows    = [];
@@ -351,41 +369,8 @@ export class Reports implements OnInit, OnDestroy {
         /* The server is the authority on the limit; if it refuses a range the
            client thought was fine, say what it said. */
         if (err?.error?.code === 'RANGE_TOO_LARGE') {
-          this.emailErr = err.error.message || 'That range is too long to download. Email it instead.';
+          this.loadErr = err.error.message || 'That range is too long to show on screen. Press Excel or CSV to have it emailed.';
         }
-        this.cdr.markForCheck();
-      }
-    });
-  }
-
-  /** Send the current report, with its current columns, by email. */
-  sendByEmail(): void {
-    if (this.emailing) return;
-    this.emailing  = true;
-    this.emailNote = '';
-    this.emailErr  = '';
-    this.cdr.markForCheck();
-
-    this.svc.emailReport({
-      ...this.filters,
-      type:    this.rt,
-      columns: this.activeColumns.map(c => c.key),
-      email:   this.recipient.trim() || undefined,
-      /* Names, so the covering note reads "Machine: CNC-01" rather than an id. */
-      labels: {
-        machine:  this.filters.machine_id  ? this.labelOf(this.machines,  this.filters.machine_id)  : '',
-        shift:    this.filters.shift_id    ? this.labelOf(this.shifts,    this.filters.shift_id)    : '',
-        operator: this.filters.operator_id ? this.labelOf(this.operators, this.filters.operator_id) : ''
-      }
-    }).subscribe({
-      next: (res: any) => {
-        this.emailing  = false;
-        this.emailNote = res?.data?.message || 'The report is on its way.';
-        this.cdr.markForCheck();
-      },
-      error: (err: any) => {
-        this.emailing = false;
-        this.emailErr = err?.error?.message || 'The report could not be sent. Try again.';
         this.cdr.markForCheck();
       }
     });
@@ -427,25 +412,37 @@ export class Reports implements OnInit, OnDestroy {
     return [1, -1, this.page - 1, this.page, this.page + 1, -1, t];
   }
 
-  /* ── OEE colour ── */
+  /* ── OEE figures: written and coloured as on every Reports tab (shared/report-value) ── */
   isOeeCol(key: string): boolean {
     return ['availability', 'performance', 'quality', 'oee'].includes(key);
   }
+  readonly pctText = pctText;
+  readonly pctTone = pctTone;
 
-  oeeColor(val: number): string {
-    if (val >= 85) return 'text-green-600 ';
-    if (val >= 60) return 'text-yellow-600 ';
-    return 'text-red-500 ';
-  }
-
-  /* ── export ── */
-  exportCsv(): void {
-    const filename = `${this.activeTab}_${this.filters.date_from}_to_${this.filters.date_to}.csv`;
-    this.svc.exportCsv(filename, this.activeColumns, this.sortedRows);
-  }
-
-  downloadFullExcel(): void {
-    this.svc.downloadExcel(this.rt, this.filters.date_from);
+  /* ── export ──
+     CSV and Excel are both built by the server from the screen's filters,
+     columns and order — so the two files are the same report, and the whole
+     range, not one day (the Excel was the first day only). A large one is
+     emailed instead; the message says so. */
+  private exportBuilt(format: 'csv' | 'xlsx'): void {
+    if (this.exporting) return;
+    this.exporting = format;
+    this.cdr.markForCheck();
+    const f = this.filters;
+    this.svc.exportFile(this.rt, format, f, this.activeColumns.map(c => c.key), this.sortCol || undefined, this.sortDir)
+      .subscribe({
+        next: async res => {
+          const message = await saveOrMessage(res, `${this.activeTab}_${f.date_from}_to_${f.date_to}.${format}`);
+          this.exporting = '';
+          if (message) this.showNotice(message);
+          this.cdr.markForCheck();
+        },
+        error: async err => {
+          this.exporting = '';
+          this.toast.error(await downloadError(err, 'The report could not be downloaded. Try again.'));
+          this.cdr.markForCheck();
+        }
+      });
   }
 
   /* ── KPI cards ── */

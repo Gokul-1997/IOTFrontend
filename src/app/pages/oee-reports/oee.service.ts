@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { MasterDataService } from '../../core/services/master-data.service';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -24,40 +24,28 @@ export class OeeReportsService {
    * Get OEE reports with filters and pagination
    */
   getReports(filters: any): Observable<any> {
-    let params = new HttpParams();
-
-    // Add all filter parameters
-    Object.keys(filters).forEach(key => {
-      if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
-        params = params.set(key, filters[key]);
-      }
-    });
-
-    return this.http.get(`${this.baseUrl}/reports`, { params });
+    return this.http.get(`${this.baseUrl}/reports`, { params: this.params(filters) });
   }
 
   /**
-   * GET /oee/export
-   * Export OEE data to CSV
+   * GET /oee/export?format=csv|xlsx — every record for the filters. A small
+   * export is the file (200); a large one is emailed (202 and a message):
+   * see shared/report-file.ts.
    */
-  exportCSV(filters: any): void {
-    let params = new HttpParams();
+  export(format: 'csv' | 'xlsx', filters: any): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.baseUrl}/export`, {
+      params: this.params({ ...filters, format }), observe: 'response', responseType: 'blob'
+    });
+  }
 
+  private params(filters: any): HttpParams {
+    let params = new HttpParams();
     Object.keys(filters).forEach(key => {
       if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
         params = params.set(key, filters[key]);
       }
     });
-
-    this.http.get(`${this.baseUrl}/export`, { params, responseType: 'blob' }).subscribe(blob => {
-      const url  = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href  = url;
-      const from = filters['from_date'] || filters['date'] || 'export';
-      link.download = `oee_${from}.csv`;
-      link.click();
-      URL.revokeObjectURL(url);
-    });
+    return params;
   }
 
 }

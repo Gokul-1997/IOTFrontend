@@ -15,6 +15,20 @@ async function asAdmin(page: any) {
   await page.route('**/api/**', (r: any) => r.fulfill(ok([])));
 }
 
+/** How the open tab's filter bar is drawn: its first date field, dropdown and label, and its Reset — size, type, frame. */
+const filterBarLook = (page: any) => page.evaluate(() => {
+  const panel = document.querySelector('.ui-tabpanel')!;
+  const reset = [...panel.querySelectorAll('button')].find(b => /Reset/.test(b.textContent || ''));
+  const pick = (el: Element | null | undefined) => {
+    if (!el) return null;
+    const s = getComputedStyle(el), r = el.getBoundingClientRect();
+    return { w: Math.round(r.width), h: Math.round(r.height), font: s.fontSize, weight: s.fontWeight,
+             color: s.color, bg: s.backgroundColor, border: s.borderTopColor, radius: s.borderTopLeftRadius, pad: s.paddingLeft };
+  };
+  return { date: pick(panel.querySelector('input[type=date]')), select: pick(panel.querySelector('select')),
+           label: pick(panel.querySelector('label')), reset: pick(reset) };
+});
+
 const noApply = async (page: any) => {
   await expect(page.getByRole('button', { name: /^\s*(check\s*)?apply\s*$/i })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^\s*submit\s*$/i })).toHaveCount(0);
@@ -63,7 +77,7 @@ test.describe('Reports: the filters apply themselves', () => {
     await expect(page.locator('table')).not.toContainText('OLD-ANSWER');
   });
 
-  test('OEE Records: no Apply; a machine choice loads, Clear stays', async ({ page }) => {
+  test('OEE Records: no Apply; a machine choice loads, Reset stays', async ({ page }) => {
     await asAdmin(page);
     const calls: string[] = [];
     await page.route('**/api/oee/meta*', (r: any) => r.fulfill(json({ success: true, data: {
@@ -77,7 +91,7 @@ test.describe('Reports: the filters apply themselves', () => {
     await page.goto('/reports?tab=oee-records');
     await expect.poll(() => calls.length).toBeGreaterThan(0);
     await noApply(page);
-    await expect(page.getByRole('button', { name: /Clear/ }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /Reset/ })).toBeVisible();
 
     const machine = page.getByLabel('Machine', { exact: true });
     await expect(machine.locator('option', { hasText: 'CNC-02' })).toHaveCount(1);
@@ -121,19 +135,7 @@ test.describe('Reports: the filters apply themselves', () => {
       return r.fulfill(ok({ machines: { data: [], total: 0 } }));
     });
 
-    // the first date field, dropdown, label and the Reset button: size, type, frame
-    const look = () => page.evaluate(() => {
-      const panel = document.querySelector('.ui-tabpanel')!;
-      const reset = [...panel.querySelectorAll('button')].find(b => /Reset/.test(b.textContent || ''));
-      const pick = (el: Element | null | undefined) => {
-        if (!el) return null;
-        const s = getComputedStyle(el), r = el.getBoundingClientRect();
-        return { w: Math.round(r.width), h: Math.round(r.height), font: s.fontSize, weight: s.fontWeight,
-                 color: s.color, bg: s.backgroundColor, border: s.borderTopColor, radius: s.borderTopLeftRadius, pad: s.paddingLeft };
-      };
-      return { date: pick(panel.querySelector('input[type=date]')), select: pick(panel.querySelector('select')),
-               label: pick(panel.querySelector('label')), reset: pick(reset) };
-    });
+    const look = () => filterBarLook(page);
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/reports?tab=production');
@@ -159,6 +161,57 @@ test.describe('Reports: the filters apply themselves', () => {
     await expect.poll(() => calls.length).toBeGreaterThan(before);
     expect(calls.at(-1)).toContain(`from=${from0}`);
     expect(calls.at(-1)).not.toContain('shift_id=');
+  });
+
+  /* 21 Oct 2026 — "OEE Records tab different why?": its own filter box with
+     capital labels, a Clear, a Material pager and bars under the figures. */
+  test('OEE Records: the same filter bar, table and pager as the other tabs; Reset; Shift sorts by shift', async ({ page }) => {
+    await asAdmin(page);
+    await page.route('**/api/reports/machines*', (r: any) => r.fulfill(ok([{ id: 1, name: 'CNC-01' }])));
+    await page.route('**/api/reports/shifts*', (r: any) => r.fulfill(ok([{ id: 10, name: 'A' }])));
+    await page.route('**/api/oee/meta*', (r: any) => r.fulfill(json({ success: true, data: {
+      lines: [{ id: 3, name: 'Bay 1' }], machines: [{ id: 1, machine_serial_no: 'CNC-01', line_id: 3 }],
+      shifts: [{ id: 10, shift_code: 'A', shift_name: 'Morning' }] } })));
+    const calls: URL[] = [];
+    await page.route('**/api/oee/reports*', (r: any) => {
+      calls.push(new URL(r.request().url()));
+      return r.fulfill(json({ status: 'success', data: [
+        { shift_date: '2026-10-21', machine_serial_no: 'CNC-01', shift_code: 'A', operator_name: null,
+          oee: '82.35', availability: '90.00', performance: null, quality: '99.00' }],
+        pagination: { page: 1, limit: 15, total: 1, totalPages: 1 } }));
+    });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/reports?tab=production');
+    await expect(page.getByRole('button', { name: /Reset/ })).toBeVisible();
+    const production = await filterBarLook(page);
+    await page.getByRole('tab', { name: /OEE Records/ }).click();
+    await expect.poll(() => calls.length).toBeGreaterThan(0);
+    expect(await filterBarLook(page)).toEqual(production);
+    await expect(page.locator('app-oee-reports .label_custom')).toHaveText(['Date From', 'Date To', 'Line', 'Machine', 'Shift']);
+
+    // figures as on the other tabs: 82.35%, "--" for unknown (no bars), the day as 21-Oct-2026
+    const row = page.locator('app-oee-reports tbody tr').first();
+    await expect(row).toContainText('21-Oct-2026');
+    await expect(row).toContainText('82.35%');
+    await expect(row.locator('td').nth(7)).toHaveText('--');              // performance not known
+    await expect(page.locator('app-oee-reports .metric-bar')).toHaveCount(0);
+    // the table's own pager, not Angular Material's
+    await expect(page.locator('app-oee-reports .mexa-pager')).toContainText('Showing 1–1 of 1');
+    await expect(page.locator('app-oee-reports mat-paginator')).toHaveCount(0);
+
+    // Shift sorts by shift
+    await page.getByRole('button', { name: /^Shift/ }).click();
+    await expect.poll(() => calls.at(-1)?.searchParams.get('sort_by')).toBe('shift_code');
+
+    // Reset: today and everything, loaded at once
+    await page.locator('#orLine').selectOption({ label: 'Bay 1' });
+    await expect.poll(() => calls.at(-1)?.searchParams.get('line_id')).toBe('3');
+    const before = calls.length;
+    await page.getByRole('button', { name: /Reset/ }).click();
+    await expect.poll(() => calls.length).toBeGreaterThan(before);
+    expect(calls.at(-1)!.searchParams.get('line_id')).toBeNull();
+    await expect(page.locator('#orLine option:checked')).toHaveText('All Lines');
   });
 });
 

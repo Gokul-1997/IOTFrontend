@@ -78,31 +78,23 @@
         </div>
       </div>
 
-      <!-- Export CSV — whichever tab is open, under that tab's permission -->
+      <!-- Export CSV / Excel — whichever tab is open, under that tab's
+           permission. No Email button: a report too large to download is
+           emailed by itself, and the message below says so. -->
       <button *ngIf="canExportTab" type="button"
         (click)="toolbarCsv()" [attr.aria-label]="'Export CSV: ' + tabLabel"
-        [disabled]="isBuilt && (rows.length === 0 || selectedCount === 0 || rangeTooLong)"
+        [disabled]="exportDisabled"
         class="ui-btn ui-btn-ghost">
         <img src="../images/icons/FileCsv.svg" alt="CSV" class="w-5 h-5"/>
         Export CSV
       </button>
 
-      <!-- Excel — the built reports and Machine OEE -->
-      <button *ngIf="canExportTab && tabHasExcel" type="button"
+      <button *ngIf="canExportTab" type="button"
         (click)="toolbarExcel()" [attr.aria-label]="'Excel: ' + tabLabel"
-        [disabled]="isBuilt && rangeTooLong"
+        [disabled]="exportDisabled"
         class="ui-btn ui-btn-ghost">
         <img src="../images/icons/FileXls.svg" alt="Excel" class="w-5 h-5"/>
         Excel
-      </button>
-
-      <!-- Email the current report, with the columns as selected — built reports -->
-      <button *ngIf="isBuilt && auth.hasWidget('reports', 'export')"
-        type="button" (click)="sendByEmail()"
-        [disabled]="emailing || selectedCount === 0"
-        class="ui-btn ui-btn-ghost">
-        <img src="../images/icons/EnvelopeSimple.svg" alt="EnvelopeSimple" class="w-5 h-5"/>
-        {{ emailing ? 'Sending…' : 'Email' }}
       </button>
 
     </div>
@@ -115,6 +107,12 @@
        TABS
   ══════════════════════════════════════════════ -->
   <!-- <p class="mexa-on-field rep-step">Step 1 — choose a report</p> -->
+  <!-- A report too large to download is emailed: this message is all the
+       screen says about it. Above the tabs, so the open tab stays joined to its report. -->
+  <div *ngIf="notice" class="mexa-note mexa-note-note rep-notice flex flex-wrap items-start justify-between gap-2" role="status">
+    <span>{{ notice }}</span>
+    <button type="button" (click)="notice = ''">Dismiss</button>
+  </div>
   <div class="ui-tabs ui-tabs-center" role="tablist" uiTabs aria-label="Report type">
     <button *ngFor="let tab of tabs"
             type="button" role="tab" class="ui-tab"
@@ -130,7 +128,7 @@
   </div>
 <div *ngIf="activeTab === 'oee-records'" class="ui-tabpanel shadow-xl" role="tabpanel"
      id="panel-oee-records" aria-labelledby="tab-oee-records">
-  <app-oee-reports [embedded]="true"></app-oee-reports>
+  <app-oee-reports (totalChange)="onOeeRecordsTotal($event)" (notice)="showNotice($event)"></app-oee-reports>
 </div>
 <div *ngIf="activeTab === 'machine-oee'" class="ui-tabpanel shadow-xl" role="tabpanel"
      id="panel-machine-oee" aria-labelledby="tab-machine-oee">
@@ -201,58 +199,16 @@
     </div>
 
     <!-- ══════════════════════════════════════════════
-         DELIVERY — up to three months is shown here; a longer range is
-         built on the server and emailed, because a year of hourly rows is
-         six figures of data and neither the response nor the browser
-         should be asked to carry it.
+         DELIVERY — up to three months is shown here. A longer range is not
+         read into the page: its Excel / CSV is built on the server and
+         emailed, because neither the response nor the browser should be
+         asked to carry six figures of hourly rows.
     ══════════════════════════════════════════════ -->
-    <div *ngIf="rangeTooLong"
-         class="mt-3 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 p-4"
-         role="status">
-      <div class="flex items-start gap-3">
-        <span aria-hidden="true" class="material-icons text-amber-800 dark:text-amber-200">mail</span>
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-semibold text-amber-900 dark:text-amber-200">
-            This range covers {{ rangeDays }} days — too long to show on screen.
-          </p>
-          <p class="mt-0.5 text-xs text-amber-800 dark:text-amber-300">
-            Up to {{ maxDirectDays }} days can be downloaded directly. Longer reports are
-            built in the background and emailed as a spreadsheet, using the columns
-            you have selected ({{ selectedCount }}).
-          </p>
-
-          <div class="mt-3 flex flex-wrap items-center gap-2">
-            <label class="sr-only" for="reportEmail">Send the report to</label>
-            <input id="reportEmail" type="email" [(ngModel)]="recipient"
-                   [attr.aria-describedby]="emailErr ? 'reportEmailErr' : null"
-                   placeholder="Leave blank to use your account email"
-                   class="flex-1 min-w-[16rem] rounded-lg border border-amber-300 bg-white
-                          dark:bg-gray-800 px-3 py-2 text-sm"/>
-            <button type="button" (click)="sendByEmail()"
-                    [disabled]="emailing || selectedCount === 0"
-                    class="ui-btn ui-btn-primary">
-              {{ emailing ? 'Sending…' : 'Email this report' }}
-            </button>
-          </div>
-
-          <p *ngIf="selectedCount === 0" class="mt-2 text-xs text-amber-800">
-            Choose at least one column first.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Outcome of an email request, wherever it was started from. -->
-    <p *ngIf="emailNote" role="status"
-       class="mt-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200
-              px-3 py-2 text-sm text-emerald-800 dark:text-emerald-300">
-      {{ emailNote }}
+    <p *ngIf="rangeTooLong" class="mexa-note mexa-note-warn mt-3" role="status">
+      This range covers {{ rangeDays }} days — more than the {{ maxDirectDays }} shown on screen.
+      Press Excel or Export CSV and the report will be emailed to you.
     </p>
-    <p *ngIf="emailErr" id="reportEmailErr" role="alert"
-       class="mt-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200
-              px-3 py-2 text-sm text-red-800 dark:text-red-300">
-      {{ emailErr }}
-    </p>
+    <p *ngIf="loadErr" class="mexa-note mexa-note-bad mt-3" role="alert">{{ loadErr }}</p>
 
     <!-- Active filter chips -->
     <div *ngIf="filters.machine_id || filters.operator_id || filters.shift_id || filters.date_to !== filters.date_from"
@@ -353,7 +309,7 @@
                 [class.muted]="row[col.key] === null || row[col.key] === undefined">
 
               <ng-container *ngIf="isOeeCol(col.key); else plain">
-                <span [class]="oeeColor(+row[col.key])">{{ row[col.key] ?? '--' }}%</span>
+                <span [class]="pctTone(row[col.key])">{{ pctText(row[col.key]) }}</span>
               </ng-container>
               <ng-template #plain>{{ row[col.key] ?? '--' }}</ng-template>
 
