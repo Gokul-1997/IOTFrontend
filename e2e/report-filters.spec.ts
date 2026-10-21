@@ -170,7 +170,7 @@ test.describe('Reports: the filters apply themselves', () => {
     await page.route('**/api/reports/machines*', (r: any) => r.fulfill(ok([{ id: 1, name: 'CNC-01' }])));
     await page.route('**/api/reports/shifts*', (r: any) => r.fulfill(ok([{ id: 10, name: 'A' }])));
     await page.route('**/api/oee/meta*', (r: any) => r.fulfill(json({ success: true, data: {
-      lines: [{ id: 3, name: 'Bay 1' }], machines: [{ id: 1, machine_serial_no: 'CNC-01', line_id: 3 }],
+      lines: [{ id: 3, name: 'Bay 1' }], machines: [{ id: 1, machine_serial_no: 'CNC-01', line_id: 3 }, { id: 2, machine_serial_no: 'CNC-02', line_id: null }],
       shifts: [{ id: 10, shift_code: 'A', shift_name: 'Morning' }] } })));
     const calls: URL[] = [];
     await page.route('**/api/oee/reports*', (r: any) => {
@@ -188,7 +188,9 @@ test.describe('Reports: the filters apply themselves', () => {
     await page.getByRole('tab', { name: /OEE Records/ }).click();
     await expect.poll(() => calls.length).toBeGreaterThan(0);
     expect(await filterBarLook(page)).toEqual(production);
-    await expect(page.locator('app-oee-reports .label_custom')).toHaveText(['Date From', 'Date To', 'Line', 'Machine', 'Shift']);
+    // machine, not line, as on every page (21 Oct 2026); the machines in one list
+    await expect(page.locator('app-oee-reports .label_custom')).toHaveText(['Date From', 'Date To', 'Machine', 'Shift']);
+    await expect(page.locator('#orMachine option')).toHaveText(['All Machines', 'CNC-01', 'CNC-02']);
 
     // figures as on the other tabs: 82.35%, "--" for unknown (no bars), the day as 21-Oct-2026
     const row = page.locator('app-oee-reports tbody tr').first();
@@ -205,13 +207,14 @@ test.describe('Reports: the filters apply themselves', () => {
     await expect.poll(() => calls.at(-1)?.searchParams.get('sort_by')).toBe('shift_code');
 
     // Reset: today and everything, loaded at once
-    await page.locator('#orLine').selectOption({ label: 'Bay 1' });
-    await expect.poll(() => calls.at(-1)?.searchParams.get('line_id')).toBe('3');
+    await page.locator('#orMachine').selectOption({ label: 'CNC-02' });
+    await expect.poll(() => calls.at(-1)?.searchParams.get('machine_id')).toBe('2');
     const before = calls.length;
     await page.getByRole('button', { name: /Reset/ }).click();
     await expect.poll(() => calls.length).toBeGreaterThan(before);
-    expect(calls.at(-1)!.searchParams.get('line_id')).toBeNull();
-    await expect(page.locator('#orLine option:checked')).toHaveText('All Lines');
+    expect(calls.at(-1)!.searchParams.get('machine_id')).toBeNull();
+    expect(calls.every(u => !u.searchParams.has('line_id'))).toBe(true);
+    await expect(page.locator('#orMachine option:checked')).toHaveText('All Machines');
   });
 });
 

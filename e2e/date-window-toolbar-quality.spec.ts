@@ -10,8 +10,9 @@ import { test, expect, seedAuth } from './fixtures/auth';
  *     since 21 Oct 2026 every tab offers CSV and Excel of the whole report,
  *     there is no Email button, and a report too large to download is
  *     emailed — the message saying so is all the screen shows;
- *  3. Quality opens on All lines, so every machine is in the list (it opened
- *     on the first line, Bay 5, and its 4 machines).
+ *  3. Quality lists every machine (it opened on the first line, Bay 5, and its
+ *     4 machines) — since 21 Oct 2026 in one list by name, with no Line filter
+ *     and no "Bay 1 / Bay 2" groups, as on every other page.
  */
 
 const ok = (data: any) => ({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'success', success: true, data }) });
@@ -189,24 +190,20 @@ test.describe('Quality: every machine', () => {
     { id: 4, machine_serial_no: 'NEW MACHINE', line_id: null }
   ];
 
-  test('opens on All lines, grouped by line; a line narrows it', async ({ page }) => {
+  test('one list of every machine by name: no Line filter, no line groups', async ({ page }) => {
+    const asked: string[] = [];
     await asAdmin(page);
+    page.on('request', (r: any) => asked.push(new URL(r.url()).pathname));
     await page.route('**/api/lines*', (r: any) => r.fulfill(ok(lines)));
     await page.route('**/api/master/machines', (r: any) => r.fulfill(ok(all)));
-    await page.route('**/api/master/machines-by-line*', (r: any) => r.fulfill(ok(all.filter(m => m.line_id === 15))));
     await page.route('**/api/master/shifts', (r: any) => r.fulfill(ok([{ id: 5, shift_code: 'S1', shift_name: 'Shift 1' }])));
     await page.goto('/quality');
 
-    const lineSel = page.getByLabel('Line Name');
     const machineSel = page.getByLabel('Machine Name');
-    await expect(lineSel.locator('option:checked')).toHaveText('All lines');
-    await expect(machineSel.locator('option')).toHaveCount(4);
-    await expect(machineSel.locator('optgroup')).toHaveCount(3);
-    expect(await machineSel.locator('optgroup').evaluateAll(g => g.map(x => (x as HTMLOptGroupElement).label)))
-      .toEqual(['Bay 1', 'Bay 5', 'No line']);
-
-    await lineSel.selectOption({ label: 'Bay 5' });
-    await expect(machineSel.locator('option')).toHaveText(['HMC - 7 - F']);
+    await expect(machineSel.locator('option')).toHaveText(['VMC - 12 - F', 'VMC - 13 - M', 'HMC - 7 - F', 'NEW MACHINE']);
     await expect(machineSel.locator('optgroup')).toHaveCount(0);
+    await expect(page.getByLabel('Line Name')).toHaveCount(0);
+    await expect(page.getByText(/Bay 1|Bay 5|No line/)).toHaveCount(0);
+    expect(asked.filter(p => p.endsWith('/api/lines') || p.includes('machines-by-line'))).toEqual([]);
   });
 });

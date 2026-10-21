@@ -1,6 +1,7 @@
 <!-- The Reports page's filter bar (reports.html): the same grid, labels,
-     fields and Reset on every tab. The filters apply themselves, as on the
-     dashboards; the Reports toolbar exports this tab. -->
+     fields and Reset on every tab — machine, not line, as on every page.
+     The filters apply themselves, as on the dashboards; the Reports toolbar
+     exports this tab. -->
 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 items-end mb-4" appAutoApply (autoApply)="applyFilters()">
 
   <div class="flex flex-col gap-1">
@@ -14,18 +15,10 @@
   </div>
 
   <div class="flex flex-col gap-1">
-    <label class="label_custom" for="orLine">Line</label>
-    <select id="orLine" name="orLine" [(ngModel)]="selectedLine" (change)="onLineChange()" [disabled]="loadingMeta" class="filter-select">
-      <option [ngValue]="null">All Lines</option>
-      <option *ngFor="let l of lines" [ngValue]="l.id">{{ l.name }}</option>
-    </select>
-  </div>
-
-  <div class="flex flex-col gap-1">
     <label class="label_custom" for="orMachine">Machine</label>
     <select id="orMachine" name="orMachine" [(ngModel)]="selectedMachine" [disabled]="loadingMeta" class="filter-select">
       <option [ngValue]="null">All Machines</option>
-      <option *ngFor="let m of filteredMachines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+      <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
     </select>
   </div>
 
@@ -37,7 +30,7 @@
     </select>
   </div>
 
-  <!-- Reset: today, every line, machine and shift -->
+  <!-- Reset: today, every machine and shift -->
   <div class="flex gap-2">
     <button type="button" (click)="reset()"
       class="btn-clear flex-1 min-w-0 inline-flex items-center justify-center gap-1">

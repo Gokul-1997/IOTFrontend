@@ -10,19 +10,7 @@ export class QualityService {
 
     constructor(private http: HttpClient, private master: MasterDataService) { }
 
-    getLines() {
-        return this.master.get('lines');
-    }
-
-    getMachines(line_id: number) {
-        // FIX: was calling /master/machines (wrong endpoint, doesn't filter by line)
-        // Corrected to /master/machines-by-line which is the proper endpoint
-        return this.http.get<any>(`${this.api}/master/machines-by-line`, {
-            params: { line_id }
-        });
-    }
-
-    /** Every active machine of the company, each with its line. */
+    /** Every active machine of the company, by name. */
     getAllMachines() {
         return this.master.get('machines');
     }
@@ -36,12 +24,6 @@ export class QualityService {
             params
         });
     }
-    getMachinesByLine(line_id: number) {
-        return this.http.get<any>(`${this.api}/master/machines-by-line`, {
-            params: { line_id }
-        });
-    }
-
     saveQuality(payload: { machine_id: number; shift_id: number; date: string; reject_qty: number; rework_qty: number }) {
         return this.http.post<any>(`${this.api}/quality/entry`, payload);
     }

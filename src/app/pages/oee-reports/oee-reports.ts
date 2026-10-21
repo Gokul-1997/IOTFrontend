@@ -61,13 +61,10 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
   private reportSub?: Subscription;
 
   columns: RecordColumn[] = [];
-  lines: any[] = [];
   machines: any[] = [];
-  filteredMachines: any[] = [];
   shifts: any[] = [];
   rows: any[] = [];
 
-  selectedLine: number | null = null;
   selectedMachine: number | null = null;
   selectedShift: number | null = null;
   fromDate = plantToday();
@@ -105,16 +102,14 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
     this.loadingMeta = true;
     this.service.getMeta().pipe(takeUntil(this.destroy$)).subscribe({
       next: (res: any) => {
-        this.lines = res?.data?.lines || [];
         this.machines = res?.data?.machines || [];
         this.shifts = res?.data?.shifts || [];
-        this.filteredMachines = [...this.machines];
         this.loadingMeta = false;
         this.loadReports();
       },
       error: () => {
         // the lists only fill the dropdowns: the records still load, unfiltered
-        this.error = 'The line, machine and shift lists could not be loaded.';
+        this.error = 'The machine and shift lists could not be loaded.';
         this.loadingMeta = false;
         this.loadReports();
       }
@@ -124,7 +119,7 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
   /** The filters as the API reads them — the page and the export ask for the same records. */
   private filterParams(): Record<string, unknown> {
     return {
-      line_id: this.selectedLine, machine_id: this.selectedMachine, shift_id: this.selectedShift,
+      machine_id: this.selectedMachine, shift_id: this.selectedShift,
       from_date: this.fromDate, to_date: this.toDate, sort_by: this.sortBy, sort_order: this.sortOrder
     };
   }
@@ -160,22 +155,12 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
   /** A filter changed (appAutoApply): the first page of the new records. */
   applyFilters(): void { this.page = 1; this.loadReports(); }
 
-  /** A line narrows the machine list; the choice itself loads through appAutoApply. */
-  onLineChange(): void {
-    this.selectedMachine = null;
-    this.filteredMachines = this.selectedLine
-      ? this.machines.filter(m => m.line_id == this.selectedLine)
-      : [...this.machines];
-  }
-
-  /** Reset: today, every line, machine and shift — what the tab opens on. The order stays. */
+  /** Reset: today, every machine and shift — what the tab opens on. The order stays. */
   reset(): void {
-    this.selectedLine = null;
     this.selectedMachine = null;
     this.selectedShift = null;
     this.fromDate = plantToday();
     this.toDate = plantToday();
-    this.filteredMachines = [...this.machines];
     this.applyFilters();
   }
 

@@ -37,8 +37,9 @@ test('an admin explicitly enables critical-only alerts for every current and fut
   const state = await mockSettings(page); await page.goto('/settings');
   const card = page.getByRole('region', { name: 'Alarm notifications' });
   await expect(companySwitch(page)).toHaveAttribute('aria-checked', 'false');
-  await expect(card.getByText('250 active machines', { exact: true })).toBeVisible();
-  await expect(card.getByText('Covers every current and future machine in your company.', { exact: false })).toBeVisible();
+  // no machine count and no coverage paragraph (21 Oct 2026: the user asked for both to go)
+  await expect(card.getByText(/active machines/)).toHaveCount(0);
+  await expect(card.getByText(/Covers every current and future machine/)).toHaveCount(0);
   await expect(card.getByRole('combobox')).toHaveCount(0); await expect(card.getByRole('searchbox')).toHaveCount(0);
   await companySwitch(page).click(); expect(state.companyWrites).toEqual([]);
   await expect(page.getByText('Your inbox is off. Turn on Receive alarm notifications to receive these alerts.')).toBeVisible();
@@ -56,7 +57,7 @@ test('a company can disable alerts while every alarm remains in history', async 
   await expect(page.getByRole('status')).toContainText('Company critical alarm alerts turned off');
   expect(state.companyWrites).toEqual([{ enabled: false, expected_version: 2 }]);
   expect(state.preferenceWrites).toEqual([]);
-  await expect(page.getByText('Normal and information alarms stay in history without notifications.', { exact: false })).toBeVisible();
+  await expect(page.getByText('Normal and information alarms stay in history without notifications.', { exact: false })).toHaveCount(0);
 });
 
 test('a failed company save keeps the selected value ready to retry', async ({ authedPage: page }) => {

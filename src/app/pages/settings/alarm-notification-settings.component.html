@@ -20,13 +20,12 @@
       <button type="button" role="switch" class="mexa-switch" aria-labelledby="company-critical-label" aria-describedby="company-critical-hint"
         [attr.aria-checked]="companyEnabled" [disabled]="companyLoading || companySaving || companyConflict || !policy" (click)="toggleCompany()"></button>
     </div>
-    <p class="alarm-hint">Covers every current and future machine in your company. Normal and information alarms stay in history without notifications.</p>
     <p *ngIf="showInboxHint" class="alarm-hint">Your inbox is off. Turn on Receive alarm notifications to receive these alerts.</p>
     <p *ngIf="companyLoading" class="alarm-status" role="status">Loading company setting…</p>
     <div *ngIf="companyError" class="alarm-error" role="alert">{{ companyError }}
       <button *ngIf="companyConflict || !policy" type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="loadCompany()">Reload company setting</button></div>
-    <div *ngIf="policy" class="alarm-actions"><p class="alarm-status">{{ companyChanged ? 'Change not saved' : policy.counts.machines + ' active machines' }}</p>
-      <button *ngIf="companyChanged || companySaving" type="button" class="ui-btn ui-btn-primary ui-btn-sm" [disabled]="companySaving || companyConflict" (click)="saveCompany()">{{ companySaving ? 'Saving…' : 'Save company setting' }}</button></div>
+    <div *ngIf="policy && (companyChanged || companySaving)" class="alarm-actions"><p class="alarm-status">Change not saved</p>
+      <button type="button" class="ui-btn ui-btn-primary ui-btn-sm" [disabled]="companySaving || companyConflict" (click)="saveCompany()">{{ companySaving ? 'Saving…' : 'Save company setting' }}</button></div>
     <p *ngIf="companyStatus" class="alarm-status" role="status">{{ companyStatus }}</p>
   </div>
 </section>
