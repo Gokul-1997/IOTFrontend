@@ -106,6 +106,60 @@ test.describe('Reports: the filters apply themselves', () => {
     await shift.selectOption({ label: 'Shift 2' });
     await expect.poll(() => calls.slice(before).some(u => u.includes('shift_id=11'))).toBe(true);
   });
+
+  /* 21 Oct 2026 — "report page dropdowns all look the same but Machine OEE
+     looks different: From, To and Shift". It had its own small fields; now
+     it is the other tabs' filter bar, so compare what is drawn, not classes. */
+  test('Machine OEE: the same filter bar as the other tabs, and Reset', async ({ page }) => {
+    await asAdmin(page);
+    await page.route('**/api/charts/meta*', (r: any) => r.fulfill(json({ success: true, data: {
+      machines: [{ id: 1, machine_serial_no: 'CNC-01' }],
+      shifts: [{ id: 10, shift_code: 'S1', shift_name: 'Shift 1' }, { id: 11, shift_code: 'S2', shift_name: 'Shift 2' }] } })));
+    const calls: string[] = [];
+    await page.route('**/api/dashboard/oee?*', (r: any) => {
+      calls.push(decodeURIComponent(r.request().url()));
+      return r.fulfill(ok({ machines: { data: [], total: 0 } }));
+    });
+
+    // the first date field, dropdown, label and the Reset button: size, type, frame
+    const look = () => page.evaluate(() => {
+      const panel = document.querySelector('.ui-tabpanel')!;
+      const reset = [...panel.querySelectorAll('button')].find(b => /Reset/.test(b.textContent || ''));
+      const pick = (el: Element | null | undefined) => {
+        if (!el) return null;
+        const s = getComputedStyle(el), r = el.getBoundingClientRect();
+        return { w: Math.round(r.width), h: Math.round(r.height), font: s.fontSize, weight: s.fontWeight,
+                 color: s.color, bg: s.backgroundColor, border: s.borderTopColor, radius: s.borderTopLeftRadius, pad: s.paddingLeft };
+      };
+      return { date: pick(panel.querySelector('input[type=date]')), select: pick(panel.querySelector('select')),
+               label: pick(panel.querySelector('label')), reset: pick(reset) };
+    });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/reports?tab=production');
+    await expect(page.getByRole('button', { name: /Reset/ })).toBeVisible();
+    const production = await look();
+    await page.getByRole('tab', { name: /Machine OEE/ }).click();
+    await expect.poll(() => calls.length).toBeGreaterThan(0);
+    expect(await look()).toEqual(production);
+    await expect(page.locator('#moShift option').first()).toHaveText('All Shifts');
+
+    // Reset: back to the last seven days and every shift, and loaded at once
+    const from = page.getByLabel('Date From', { exact: true }), to = page.getByLabel('Date To', { exact: true });
+    const [from0, to0] = [await from.inputValue(), await to.inputValue()];
+    await page.getByLabel('Shift', { exact: true }).selectOption({ label: 'Shift 2' });
+    await expect.poll(() => calls.at(-1)).toContain('shift_id=11');
+    await from.fill(to0);
+    await expect.poll(() => calls.at(-1)).toContain(`from=${to0}`);
+    const before = calls.length;
+    await page.getByRole('button', { name: /Reset/ }).click();
+    await expect(from).toHaveValue(from0);
+    await expect(to).toHaveValue(to0);
+    await expect(page.locator('#moShift option:checked')).toHaveText('All Shifts');
+    await expect.poll(() => calls.length).toBeGreaterThan(before);
+    expect(calls.at(-1)).toContain(`from=${from0}`);
+    expect(calls.at(-1)).not.toContain('shift_id=');
+  });
 });
 
 test('Charts: no Submit; a shift choice reloads both charts', async ({ page }) => {

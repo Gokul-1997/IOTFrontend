@@ -325,7 +325,7 @@
     <!-- Empty state -->
     <app-state *ngIf="!loading && rows.length === 0 && !rangeTooLong" kind="empty" icon="summarize"
       title="No records for these filters"
-      text="Nothing was recorded for this date range, machine, operator or shift. Choose other filters and press Apply."></app-state>
+      text="Nothing was recorded for this date range, machine, operator or shift. Choose other filters."></app-state>
 
     <!-- Data table -->
     <div *ngIf="!loading && rows.length > 0 && selectedCount > 0" class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Report table — scroll to see every row and column">
