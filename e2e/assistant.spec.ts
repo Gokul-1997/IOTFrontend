@@ -78,6 +78,32 @@ test('a suggestion is asked; while it is answered the chat says so; the answer c
   await expect(page).toHaveURL(/\/reports\?tab=production$/);            // opened on that day; the filters taken
 });
 
+/* The server signs each reply for the person who got it and believes no
+   assistant turn without its signature (22 Oct 2026 security review): the
+   chat sends every reply back exactly as it came, signature included. */
+test('a follow-up question sends the earlier reply back unchanged, with the server\'s signature', async ({ authedPage: page }) => {
+  await stub(page);
+  const asked: any[] = [];
+  await page.route('**/api/assistant/chat', (r: any) => {
+    asked.push(r.request().postDataJSON());
+    return r.fulfill(json({ status: 'success', data: { ...answer, sig: `sig-${asked.length}` } }));
+  });
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto('/profile');
+  await launcher(page).click();
+  await page.getByLabel('Your question for STM Mexa AI').fill('Production today');
+  await page.getByLabel('Your question for STM Mexa AI').press('Enter');
+  await expect(panel(page).getByRole('log', { name: 'Conversation' })).toContainText('Today 65 parts were made on 2 machines.');
+  await page.getByLabel('Your question for STM Mexa AI').fill('And by shift?');
+  await page.getByLabel('Your question for STM Mexa AI').press('Enter');
+  await expect.poll(() => asked.length).toBe(2);
+  expect(asked[1].messages).toEqual([
+    { role: 'user', content: 'Production today' },
+    { role: 'assistant', content: answer.text, sig: 'sig-1' },
+    { role: 'user', content: 'And by shift?' }
+  ]);
+});
+
 test('on a report page the page\'s filters go with the question, and the chat shows them', async ({ authedPage: page }) => {
   await stub(page);
   await page.route('**/api/reports/machines*', (r: any) => r.fulfill(json({ status: 'success', data: [{ id: 1, name: 'VMC - 12 - F' }] })));

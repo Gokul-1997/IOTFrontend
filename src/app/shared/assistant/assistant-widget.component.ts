@@ -145,7 +145,8 @@ export class AssistantWidgetComponent implements OnInit {
       next: reply => {
         this.sending = false;
         if (reply.allowance && this.status) this.svc.status$.next({ ...this.status, allowance: reply.allowance });
-        this.svc.messages$.next([...this.svc.messages$.value, { role: 'assistant', text: reply.text, kind: reply.kind, sources: reply.sources }]);
+        this.svc.messages$.next([...this.svc.messages$.value,
+          { role: 'assistant', text: reply.text, kind: reply.kind, sources: reply.sources, sig: reply.sig }]);
         this.afterRender(() => this.scrollToEnd());
       },
       error: err => {

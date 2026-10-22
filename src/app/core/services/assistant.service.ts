@@ -31,7 +31,8 @@ export interface AssistantSource {
   download: { path: string; params: Record<string, string | number | undefined>; filename: string } | null;
 }
 export type AssistantKind = 'answer' | 'clarify' | 'out_of_scope' | 'restricted' | 'not_found' | 'limit';
-export interface AssistantReply { kind: AssistantKind; text: string; sources: AssistantSource[]; allowance?: AssistantAllowance; }
+/** sig: the server's signature for this person — sent back with the reply, or the server will not believe it was its own. */
+export interface AssistantReply { kind: AssistantKind; text: string; sources: AssistantSource[]; allowance?: AssistantAllowance; sig?: string; }
 
 /** What a report page shows: the report and its filters, as words. */
 export interface AssistantContext {
@@ -49,6 +50,8 @@ export interface AssistantMessage {
   sources?: AssistantSource[];
   /** The question an error was about, to ask again. */
   retry?: string;
+  /** A reply's signature from the server, kept to send it back unchanged. */
+  sig?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -78,19 +81,23 @@ export class AssistantService {
     }));
   }
 
-  /** The conversation so far plus the question; the reply comes back with today's allowance. */
+  /**
+   * The conversation so far plus the question; the reply comes back with
+   * today's allowance. Each reply goes back exactly as it came, with its
+   * signature: the server believes no assistant turn it did not sign for
+   * this person (22 Oct 2026 security review).
+   */
   ask(messages: AssistantMessage[]): Observable<AssistantReply> {
-    // the conversation as turns: errors and the app's notes left out; a question
-    // that failed gives way to the one asked after it, so the turns alternate
-    const turns: { role: 'user' | 'assistant'; content: string }[] = [];
+    // the conversation as turns: errors and the app's notes left out; of two
+    // turns in a row from the same side the newer stands (a question that
+    // failed gives way to the one asked after it), so the turns alternate
+    const turns: ({ role: 'user'; content: string } | { role: 'assistant'; content: string; sig?: string })[] = [];
     for (const m of messages) {
       if (m.kind === 'error' || m.kind === 'note' || !m.text) continue;
-      const last = turns[turns.length - 1];
-      if (last && last.role === m.role) {
-        if (m.role === 'user') last.content = m.text; else last.content += `\n${m.text}`;
-      } else {
-        turns.push({ role: m.role, content: m.text });
-      }
+      const turn = m.role === 'assistant' ? { role: 'assistant' as const, content: m.text, ...(m.sig ? { sig: m.sig } : {}) }
+                                          : { role: 'user' as const, content: m.text };
+      if (turns.length && turns[turns.length - 1].role === m.role) turns[turns.length - 1] = turn;
+      else turns.push(turn);
     }
     const ctx = this.context$.value;
     const context = ctx ? { report: ctx.report, from: ctx.from, to: ctx.to, machine: ctx.machine, shift: ctx.shift } : undefined;
