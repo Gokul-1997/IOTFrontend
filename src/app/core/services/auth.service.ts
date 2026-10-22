@@ -372,26 +372,11 @@ export class AuthService implements OnDestroy {
     }
   }
 
-  /* ── Self-service profile ──────────────────────────────────
-     Every authenticated user reaches their own account through these — the
-     admin-only GET/PUT /api/users/:id routes cannot answer "what is my own
-     profile", so a MANAGER/SUPERVISOR/OPERATOR had no route to it at all. */
+  /* Every authenticated user can view their profile and change their
+     password. Profile details are updated through administration. */
 
   getMyProfile() {
     return this.http.get<any>(`${this.api}/me`);
-  }
-
-  updateMyProfile(patch: { email?: string; mobile?: string }) {
-    return this.http.patch<any>(`${this.api}/me`, patch).pipe(
-      tap(res => {
-        // Keep the cached user in sync so the header reflects the new email
-        // immediately, without asking the user to log in again to see it.
-        if (res?.data) {
-          const user = this.getUser();
-          localStorage.setItem('user', JSON.stringify({ ...user, ...res.data }));
-        }
-      })
-    );
   }
 
   changeMyPassword(current_password: string, new_password: string) {

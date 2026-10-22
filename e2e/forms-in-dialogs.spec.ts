@@ -188,7 +188,7 @@ test('Tariff & Rates: Add tariff and Edit open the dialog; the page holds no for
   await expect(edit).toHaveCount(0);
 });
 
-test('My Profile: the details on the page; Edit and Change password open the dialog', async ({ authedPage: page }) => {
+test('My Profile: details are read-only and Change password opens the dialog', async ({ authedPage: page }) => {
   await stubApi(page);
   let patched: any = null, password: any = null;
   const me = { id: 1, username: 'test', email: 'test@example.com', mobile: null, user_type: 'company_user',
@@ -196,27 +196,17 @@ test('My Profile: the details on the page; Edit and Change password open the dia
   await page.route('**/api/auth/me', (r: any) => {
     if (r.request().method() !== 'PATCH') return json({ success: true, data: me })(r);
     patched = r.request().postDataJSON();
-    return json({ success: true, data: { id: 1, username: 'test', ...patched } })(r);
+    return json({ success: false, message: 'Profile details are read-only.' }, 403)(r);
   });
   await page.route('**/api/auth/change-password', (r: any) => { password = r.request().postDataJSON(); return json({ success: true })(r); });
   await page.goto('/profile');
   await expect(page.getByText('Acme Gears')).toBeVisible();
   await expect(page.getByRole('tab')).toHaveCount(0);
   await expect(page.locator('#profEmail')).toHaveCount(0);
-
-  await page.getByRole('button', { name: 'Edit', exact: true }).click();
-  const edit = dialog(page, 'Edit account details');
-  await expect(edit.getByLabel('Email')).toHaveValue('test@example.com');
-  await edit.getByLabel('Email').fill('not-an-email');
-  await edit.getByRole('button', { name: 'Save changes' }).click();
-  await expect(edit.getByText('Enter a valid email address, like name@company.com.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Edit', exact: true })).toHaveCount(0);
+  await expect(page.getByText('To update your profile details, contact your Company Admin or Super Admin.')).toBeVisible();
+  await expect(page.getByText('test@example.com')).toBeVisible();
   expect(patched).toBeNull();
-  await edit.getByLabel('Email').fill('ravi@acme.in');
-  await edit.getByLabel('Mobile').fill('98400 12345');
-  await edit.getByRole('button', { name: 'Save changes' }).click();
-  await expect(edit).toHaveCount(0);
-  expect(patched).toEqual({ email: 'ravi@acme.in', mobile: '98400 12345' });
-  await expect(page.getByText('ravi@acme.in')).toBeVisible();
 
   await page.getByRole('button', { name: 'Change password' }).click();
   const pw = dialog(page, 'Change password');
@@ -229,6 +219,7 @@ test('My Profile: the details on the page; Edit and Change password open the dia
   await pw.getByRole('button', { name: 'Change password' }).click();
   await expect(pw).toHaveCount(0);
   expect(password).toEqual({ current_password: 'old-pass-1', new_password: 'new-pass-12' });
+  expect(patched).toBeNull();
 });
 
 test('Quality: rejected and rework parts are edited in the dialog, not in the tile', async ({ authedPage: page }) => {
