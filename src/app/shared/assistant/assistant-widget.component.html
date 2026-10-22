@@ -1,0 +1,76 @@
+<ng-container *ngIf="status?.enabled">
+  <!-- the launcher, bottom right on every signed-in page -->
+  <button #launcher type="button" class="as-launcher" [class.is-greeting]="greet" [class.is-open]="open"
+          (click)="open ? close() : openPanel()" [attr.aria-expanded]="open" aria-controls="as-panel"
+          [attr.aria-label]="open ? 'Close ' + name : 'Ask ' + name + ' about your reports'">
+    <span class="material-icons" aria-hidden="true">{{ open ? 'close' : 'auto_awesome' }}</span>
+  </button>
+
+  <!-- the chat, over the page: the page stays where it was -->
+  <section *ngIf="open" id="as-panel" class="as-panel" role="dialog" aria-modal="false" aria-labelledby="as-title">
+    <header class="as-head">
+      <span class="as-avatar" aria-hidden="true"><span class="material-icons">auto_awesome</span></span>
+      <div class="as-titles">
+        <h2 id="as-title" class="as-title">{{ name }}</h2>
+        <p class="as-sub">Your company’s report assistant</p>
+      </div>
+      <span *ngIf="allowance as a" class="as-allowance" [class.is-low]="a.remaining <= 5"
+            [attr.title]="'Resets at ' + a.resets_text">{{ a.remaining }} of {{ a.limit }} left today</span>
+      <button *ngIf="asked" type="button" class="as-iconbtn" (click)="newChat()" aria-label="Start a new chat" title="New chat">
+        <span class="material-icons" aria-hidden="true">restart_alt</span>
+      </button>
+      <button type="button" class="as-iconbtn" (click)="close()" [attr.aria-label]="'Close ' + name" title="Close">
+        <span class="material-icons" aria-hidden="true">close</span>
+      </button>
+    </header>
+
+    <div #log class="as-log" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation" tabindex="0">
+      <div class="as-msg is-bot"><p>{{ status?.welcome }}</p></div>
+
+      <p *ngIf="context as c" class="as-context">
+        <span class="material-icons" aria-hidden="true">filter_alt</span>
+        <span>Using this page’s filters: <strong>{{ sourceLine(c) }}</strong></span>
+      </p>
+
+      <div *ngIf="!asked && suggestions.length" class="as-suggest" role="group" aria-label="Suggested questions">
+        <button *ngFor="let s of suggestions" type="button" class="as-chip" (click)="send(s)" [disabled]="sending || limitReached">{{ s }}</button>
+      </div>
+
+      <div *ngFor="let m of messages" class="as-msg" [ngClass]="m.role === 'user' ? 'is-me' : 'is-bot'"
+           [class.is-error]="m.kind === 'error'" [class.is-quiet]="m.kind === 'out_of_scope' || m.kind === 'restricted' || m.kind === 'not_found' || m.kind === 'limit' || m.kind === 'note'">
+        <span class="sr-only">{{ m.role === 'user' ? 'You' : name }}: </span>
+        <p>{{ m.text }}</p>
+        <div *ngFor="let s of m.sources" class="as-source">
+          <p class="as-source-line"><span class="material-icons" aria-hidden="true">description</span><span>Source: {{ sourceLine(s) }}</span></p>
+          <span *ngIf="s.view || s.download" class="as-source-actions">
+            <button *ngIf="s.view" type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="view(s)">
+              <span class="material-icons" aria-hidden="true">open_in_new</span>View report
+            </button>
+            <button *ngIf="s.download" type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="download(s)" [disabled]="!!downloading">
+              <span class="material-icons" aria-hidden="true">download</span>{{ downloading === s ? 'Downloading…' : 'Download report' }}
+            </button>
+          </span>
+        </div>
+        <button *ngIf="m.kind === 'error' && m.retry" type="button" class="ui-btn ui-btn-ghost ui-btn-xs as-retry" (click)="retry(m)" [disabled]="sending">
+          <span class="material-icons" aria-hidden="true">refresh</span>Try again
+        </button>
+      </div>
+
+      <div *ngIf="sending" class="as-msg is-bot as-thinking" role="status">
+        <span class="as-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>{{ name }} is reading your reports…</span>
+      </div>
+    </div>
+
+    <p *ngIf="limitReached" class="as-limit" role="status">{{ limitText() }}</p>
+
+    <form class="as-form" (ngSubmit)="send()">
+      <label class="sr-only" for="as-input">Your question for {{ name }}</label>
+      <textarea #input id="as-input" name="question" rows="2" maxlength="500" [(ngModel)]="draft" (keydown)="onKeydown($event)"
+                [disabled]="limitReached" placeholder="Ask about your reports…"></textarea>
+      <button type="submit" class="as-send" [disabled]="!draft.trim() || sending || limitReached" aria-label="Send">
+        <span class="material-icons" aria-hidden="true">send</span>
+      </button>
+    </form>
+  </section>
+</ng-container>

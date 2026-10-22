@@ -28,6 +28,7 @@ import { qty } from '../../shared/format-number';
 import { ToastService } from '../../core/services/toast.service';
 import { downloadError, saveOrMessage } from '../../shared/report-file';
 import { pctText, pctTone } from '../../shared/report-value';
+import { AssistantService } from '../../core/services/assistant.service';
 
 type Tab = ReportType | 'oee-records' | 'machine-oee';
 
@@ -94,7 +95,19 @@ const COL_DEFS: Record<ReportType, ColDef[]> = {
 })
 export class Reports implements OnInit, OnDestroy {
   private reportSub?: Subscription;
-  ngOnDestroy(): void { this.reportSub?.unsubscribe(); }
+  private readonly assistant = inject(AssistantService);
+  ngOnDestroy(): void { this.reportSub?.unsubscribe(); this.assistant.setContext(null); }
+
+  /** The report assistant answers about what is on screen when a question does not say. */
+  private shareContext(): void {
+    if (!this.isBuilt) return;                           // the OEE tabs share their own
+    const f = this.filters;
+    this.assistant.setContext({
+      report: this.rt, title: this.tabLabel + ' report', from: f.date_from, to: f.date_to,
+      machine: f.machine_id ? this.labelOf(this.machines, f.machine_id) : null,
+      shift: f.shift_id ? this.labelOf(this.shifts, f.shift_id) : null
+    });
+  }
 
 
   @ViewChild('colPanel') colPanelRef?: ElementRef;
@@ -331,6 +344,7 @@ export class Reports implements OnInit, OnDestroy {
   /* ── load data ── */
   loadReport(): void {
     this.loadErr = '';
+    this.shareContext();
 
     /* Asking anyway would cost a round trip to be told no. The banner in the
        template says so, and that Excel or CSV will email the whole range. */

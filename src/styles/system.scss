@@ -613,3 +613,7 @@ html.dark .mexa-note :is([class~="text-red-500"], [class~="text-red-600"]) { col
 .ui-btn.small {
     padding: 0.3rem .5rem;
 }
+
+/* The report assistant's launcher sits bottom right on every signed-in page
+   (shared/assistant): the footer's last words stay clear of it. */
+body:has(app-assistant .as-launcher) .mexa-footer { padding-right: 84px; }

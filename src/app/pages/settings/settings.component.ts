@@ -4,12 +4,13 @@ import { RouterLink } from '@angular/router';
 import { ThemeService } from '../../core/services/theme.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AlarmNotificationSettingsComponent } from './alarm-notification-settings.component';
+import { AssistantSettingsComponent } from './assistant-settings.component';
 
 /** Personal display and alarm preferences, plus company administration. */
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, RouterLink, AlarmNotificationSettingsComponent],
+  imports: [CommonModule, RouterLink, AlarmNotificationSettingsComponent, AssistantSettingsComponent],
   templateUrl: './settings.component.html',
   styles: [`
     .set-grid { display: grid; gap: 1rem; width: 100%; max-width: 48rem; margin: 0 auto; }

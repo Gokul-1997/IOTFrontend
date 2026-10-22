@@ -11,6 +11,7 @@ import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { dayText, pctText, pctTone } from '../../shared/report-value';
 import { downloadError, saveOrMessage } from '../../shared/report-file';
+import { AssistantService } from '../../core/services/assistant.service';
 
 interface RecordColumn {
   key: string;
@@ -84,7 +85,7 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
   error = '';
 
   constructor(private service: OeeReportsService, private cdr: ChangeDetectorRef,
-              public auth: AuthService, private toast: ToastService) {}
+              public auth: AuthService, private toast: ToastService, private assistant: AssistantService) {}
 
   get totalPages(): number { return Math.max(1, Math.ceil(this.total / this.limit)); }
 
@@ -125,6 +126,12 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
   }
 
   loadReports(): void {
+    // the report assistant answers about what is on screen when a question does not say
+    this.assistant.setContext({
+      report: 'oee-records', title: 'OEE Records', from: this.fromDate, to: this.toDate,
+      machine: this.machines.find(m => m.id === this.selectedMachine)?.machine_serial_no ?? null,
+      shift: this.shifts.find(s => s.id === this.selectedShift)?.shift_code ?? null
+    });
     this.loading = true;
     this.cdr.markForCheck();
     /* Filters apply on change, so a newer request can overtake an older one:

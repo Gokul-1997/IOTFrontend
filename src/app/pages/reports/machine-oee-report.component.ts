@@ -10,6 +10,7 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
+import { AssistantService } from '../../core/services/assistant.service';
 
 /**
  * Machine Wise OEE Summary — one row per machine over a date range.
@@ -126,7 +127,7 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
 
   constructor(private svc: OeeDashboardService, private auth: AuthService,
               private toast: ToastService, private cdr: ChangeDetectorRef,
-              private route: ActivatedRoute) {}
+              private route: ActivatedRoute, private assistant: AssistantService) {}
 
   get canExport(): boolean { return this.auth.hasAction('analytics-oee', 'export'); }
 
@@ -157,6 +158,10 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
 
   load(): void {
     this.loading = true; this.errorMsg = ''; this.cdr.markForCheck();
+    // the report assistant answers about what is on screen when a question does not say
+    const shift = this.shifts.find(s => s.id === this.f.shift_id);
+    this.assistant.setContext({ report: 'machine-oee', title: 'Machine OEE', from: this.f.from, to: this.f.to,
+                                machine: null, shift: shift ? (shift.shift_name || shift.name) : null });
     // a newer choice of filters drops the request still on its way
     this.loadSub?.unsubscribe();
     this.loadSub = this.svc.getOee({ ...this.f, page: 1, limit: 200 })

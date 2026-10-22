@@ -1,0 +1,91 @@
+/* The report assistant: a launcher bottom right, the chat above it (a sheet
+   on a phone). Under the app's header and dialogs (z 50), over the page —
+   except the phone sheet, which covers the header too. MEXA tokens, so the
+   dark theme follows. */
+:host { position: fixed; right: 20px; bottom: 20px; z-index: 45; }
+
+.as-launcher {
+  width: 56px; height: 56px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer;
+  color: #fff; background: var(--mexa-submit); box-shadow: 0 8px 22px rgba(43, 57, 144, .35);
+  .material-icons { font-size: 26px; }
+  &:hover { background: var(--mexa-submit-h); }
+  &:focus-visible { outline: 3px solid var(--tbl-accent); outline-offset: 3px; }
+}
+/* once per session: the launcher arrives with one soft glow, then is still */
+.as-launcher.is-greeting { animation: as-arrive .5s ease-out 1, as-glow 1.6s ease-out .5s 1; }
+@keyframes as-arrive { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes as-glow { 0% { box-shadow: 0 0 0 0 rgba(221, 64, 62, .45); } 100% { box-shadow: 0 0 0 16px rgba(221, 64, 62, 0); } }
+
+.as-panel {
+  position: absolute; right: 0; bottom: 68px; width: 380px; height: min(600px, calc(100vh - 172px));   /* clear of the header */
+  display: flex; flex-direction: column; border-radius: 16px; overflow: hidden;
+  background: var(--mexa-card); color: var(--mexa-ink); box-shadow: var(--mexa-card-shadow); border: 1px solid var(--mexa-rule);
+  animation: as-open .18s ease-out;
+}
+@keyframes as-open { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.as-head {
+  display: flex; align-items: center; gap: .5rem; padding: .7rem .75rem; color: #fff; background: var(--mexa-bar-solid);
+}
+.as-avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .16); flex: none;
+  .material-icons { font-size: 20px; } }
+.as-titles { flex: 1; min-width: 0; }
+.as-title { font-size: .95rem; font-weight: 700; margin: 0; line-height: 1.2; }
+.as-sub { font-size: var(--fs-small); margin: 0; opacity: .85; }
+.as-allowance { font-size: var(--fs-small); padding: .15rem .5rem; border-radius: 999px; background: rgba(255, 255, 255, .16); white-space: nowrap;
+  &.is-low { background: #b45309; } }
+.as-iconbtn { border: 0; background: transparent; color: inherit; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; cursor: pointer;
+  &:hover { background: rgba(255, 255, 255, .14); }
+  &:focus-visible { outline: 2px solid #fff; outline-offset: 1px; } }
+
+.as-log { flex: 1; overflow-y: auto; padding: .85rem; display: flex; flex-direction: column; gap: .6rem; background: var(--mexa-row-alt);
+  &:focus-visible { outline: 2px solid var(--tbl-accent); outline-offset: -2px; } }
+.as-msg { max-width: 88%; padding: .55rem .7rem; border-radius: 12px; font-size: var(--fs-body); line-height: 1.5;
+  p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+  &.is-bot { align-self: flex-start; background: var(--mexa-card); border: 1px solid var(--mexa-rule); border-bottom-left-radius: 4px; }
+  &.is-me { align-self: flex-end; background: var(--mexa-navy); color: #fff; border-bottom-right-radius: 4px; }
+  &.is-quiet { color: var(--mexa-ink-2); }
+  &.is-error { border-color: #f1b5bd; background: #fdecec; color: #5c1414; }
+}
+:host-context(.dark) .as-msg.is-error { background: #3a1620; color: #f8c4cb; border-color: #6b2a35; }
+.as-context { display: flex; gap: .35rem; align-items: flex-start; margin: 0; font-size: var(--fs-small); color: var(--mexa-ink-2);
+  .material-icons { font-size: 16px; color: var(--tbl-accent); } }
+.as-suggest { display: flex; flex-wrap: wrap; gap: .4rem; }
+.as-chip { border: 1px solid var(--tbl-accent); color: var(--tbl-accent); background: var(--mexa-card); border-radius: 999px;
+  padding: .3rem .7rem; font-size: var(--fs-label); cursor: pointer; text-align: left;
+  &:hover:not(:disabled) { background: var(--tbl-row-selected); }
+  &:disabled { opacity: .55; cursor: default; }
+  &:focus-visible { outline: 2px solid var(--tbl-accent); outline-offset: 2px; } }
+.as-source { margin-top: .5rem; padding-top: .45rem; border-top: 1px solid var(--mexa-rule); }
+.as-source-line { display: flex; gap: .3rem; font-size: var(--fs-small); color: var(--mexa-ink-2);
+  .material-icons { font-size: 15px; margin-top: 1px; } }
+.as-source-actions { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .35rem; }
+.as-retry { margin-top: .4rem; }
+.as-thinking { display: flex; align-items: center; gap: .5rem; color: var(--mexa-ink-2); }
+.as-dots { display: inline-flex; gap: 3px;
+  i { width: 6px; height: 6px; border-radius: 50%; background: var(--tbl-accent); animation: as-dot 1.2s ease-in-out infinite; }
+  i:nth-child(2) { animation-delay: .15s; } i:nth-child(3) { animation-delay: .3s; } }
+@keyframes as-dot { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+
+.as-limit { margin: 0; padding: .55rem .85rem; font-size: var(--fs-small); color: var(--mexa-ink-2); border-top: 1px solid var(--mexa-rule); }
+.as-form { display: flex; gap: .5rem; align-items: flex-end; padding: .6rem; border-top: 1px solid var(--mexa-rule); background: var(--mexa-card);
+  textarea { flex: 1; resize: none; max-height: 7.5rem; min-height: 2.6rem; border: 1px solid var(--mexa-rule); border-radius: 10px;
+    padding: .5rem .6rem; font: inherit; font-size: var(--fs-body); color: var(--mexa-ink); background: var(--mexa-card);
+    &:focus-visible { outline: 2px solid var(--tbl-accent); outline-offset: 0; }
+    &:disabled { opacity: .6; } } }
+.as-send { width: 40px; height: 40px; border: 0; border-radius: 10px; color: #fff; background: var(--mexa-navy); display: grid; place-items: center; cursor: pointer;
+  &:disabled { opacity: .45; cursor: default; }
+  &:focus-visible { outline: 2px solid var(--tbl-accent); outline-offset: 2px; } }
+
+/* a phone: the chat is a sheet over the whole screen */
+@media (max-width: 520px) {
+  :host { right: 14px; bottom: 14px; }
+  :host(.is-open) { z-index: 60; }
+  .as-panel { position: fixed; inset: 0; width: auto; height: auto; border-radius: 0; border: 0; }
+  .as-launcher.is-open { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .as-launcher.is-greeting, .as-panel { animation: none; }
+  .as-dots i { animation: none; opacity: .7; }
+}
