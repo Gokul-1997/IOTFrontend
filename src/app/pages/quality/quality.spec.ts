@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Subject, of } from 'rxjs';
+import { of } from 'rxjs';
 import { Quality } from './quality';
 const cdr = { detectChanges: vi.fn() };
 const auth = { hasAction: () => true };
@@ -11,19 +11,19 @@ it('keeps unavailable OEE values as gaps and displays unknown separately from me
   expect(page.percent(null)).toBe('—');
   expect(page.percent(0)).toBe('0%');
 });
-it('switching line cancels the old machine-list response before it can select the wrong machine', () => {
-  const first = new Subject<any>(), second = new Subject<any>();
-  const service = { getMachinesByLine: vi.fn().mockReturnValueOnce(first).mockReturnValueOnce(second),
-    getDashboard: vi.fn().mockReturnValue(of({ success: true, data: { production: {}, hourly: [] } })) };
+it('lists every machine in one list, with no line filter or line groups, and opens on the first', () => {
+  const machines = [{ id: 3, machine_serial_no: 'HMC - 7 - F', line_id: 15 }, { id: 4, machine_serial_no: 'NEW MACHINE', line_id: null }];
+  const service = {
+    getAllMachines: vi.fn().mockReturnValue(of({ data: machines })),
+    getShifts: vi.fn().mockReturnValue(of({ data: [{ id: 5, shift_name: 'Morning' }] })),
+    getDashboard: vi.fn().mockReturnValue(of({ success: true, data: { production: {}, hourly: [] } }))
+  };
   const page = new Quality(service as any, cdr as any, auth as any);
-  page.selectedShift = 1; page.selectedDate = '2026-10-13';
-  page.selectedLine = 1; page.onLineChange();
-  page.selectedLine = 2; page.onLineChange();
-  first.next({ data: [{ id: 10 }] });
-  expect(page.selectedMachine).toBe(0);
-  second.next({ data: [{ id: 20 }] });
-  expect(page.selectedMachine).toBe(20);
-  expect(service.getDashboard).toHaveBeenCalledTimes(1);
-  expect(service.getDashboard).toHaveBeenCalledWith({ machine_id: 20, shift_id: 1, date: '2026-10-13' });
+  page.selectedDate = '2026-10-21';
+  page.loadInitialData();
+  expect(page.machines).toEqual(machines);
+  expect('lines' in page).toBe(false);
+  expect(page.selectedMachine).toBe(3);
+  expect(service.getDashboard).toHaveBeenCalledWith({ machine_id: 3, shift_id: 5, date: '2026-10-21' });
   page.ngOnDestroy();
 });

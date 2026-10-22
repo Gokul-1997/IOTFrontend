@@ -5,12 +5,14 @@ import {
   OnDestroy,
   NgZone,
   ChangeDetectorRef,
-  ChangeDetectionStrategy
+  ChangeDetectionStrategy,
+  inject
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DashboardService } from './dashboard.service';
+import { takeLinkedFilters } from '../../shared/linked-filters';
 import { SocketService } from '../../core/services/socket.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
@@ -107,7 +109,13 @@ duration = 8;
   /* ════════════════════════════════════════
      INIT
   ════════════════════════════════════════ */
+  private readonly route = inject(ActivatedRoute);
+
   async ngOnInit(): Promise<void> {
+
+    // the Factory Overall's Running / Idle tiles open this list on that status
+    const { status } = takeLinkedFilters(this.route, this.router);
+    if (status === 'running' || status === 'idle' || status === 'alarm') this.statusFilter = status;
 
     const user    = JSON.parse(localStorage.getItem('user') || '{}');
     const plantId = user?.plant_id;

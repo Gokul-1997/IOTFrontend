@@ -1,11 +1,12 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { DowntimeDashboardService } from './downtime-dashboard.service';
+import { takeLinkedFilters } from '../../shared/linked-filters';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
@@ -107,8 +108,16 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy, DashViewHo
       .pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => { this.page = 1; this.load(); });
 
+    // a Factory Overall tile opens this on its day, shift and machine
+    const linked = takeLinkedFilters(this.route, this.router);
+    if (linked.from) { this.f.from = linked.from; this.f.to = linked.to; }
+    if (linked.shift_id) this.f.shift_id = linked.shift_id;
+    if (linked.machine_id) this.f.machine_id = linked.machine_id;
     this.load();
   }
+
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   ngOnDestroy(): void {
     this.views.cancel();

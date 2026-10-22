@@ -46,10 +46,25 @@
         </button>
       </div>
       <ng-template #noProgram><p class="pt-meta">No program uploaded yet.</p></ng-template>
+      <ng-container *ngIf="m.program as p">
+        <p *ngIf="p.delivery_status === 'DONE'" class="pt-state is-good">
+          <span class="material-icons" aria-hidden="true">check_circle</span>
+          On the machine since {{ p.delivered_at | date:'d MMM y, h:mm a' }}
+        </p>
+        <p *ngIf="p.delivery_status === 'FAILED'" class="pt-state is-bad" role="alert">
+          <span class="material-icons" aria-hidden="true">error</span>
+          <span>The machine could not use it: {{ p.delivery_message }}<br><small>Upload a corrected file.</small></span>
+        </p>
+        <p *ngIf="!p.delivery_status" class="pt-state">
+          <span class="material-icons" aria-hidden="true">hourglass_top</span>
+          {{ m.gateway ? 'Waiting for the machine to take it' : 'Waiting — the machine needs a gateway token' }}
+        </p>
+      </ng-container>
       <p class="ui-hint">The newest upload is the machine's program. Its gateway downloads it on its next check.</p>
-      <button *ngIf="canUpload" type="button" class="ui-btn ui-btn-primary pt-action" (click)="openUpload()">
+      <button *ngIf="canUpload; else noUpload" type="button" class="ui-btn ui-btn-primary pt-action" (click)="openUpload()">
         <span class="material-icons" aria-hidden="true">upload_file</span>Upload program
       </button>
+      <ng-template #noUpload><p class="mexa-note mexa-note-note pt-noupload">{{ uploadBlockedReason }}</p></ng-template>
     </section>
 
     <!-- backups the gateway sends -->
@@ -69,6 +84,10 @@
       <p *ngIf="m.backup_request as r" class="pt-waiting" role="status">
         <span class="ui-spinner" aria-hidden="true"></span>
         Backup asked for at {{ r.requested_at | date:'h:mm a' }} — waiting for the gateway
+      </p>
+      <p *ngIf="m.backup_failure as f" class="pt-state is-bad" role="alert">
+        <span class="material-icons" aria-hidden="true">error</span>
+        <span>Backup failed: {{ f.message }}<br><small>{{ f.at | date:'d MMM y, h:mm a' }}</small></span>
       </p>
       <p *ngIf="!m.gateway" class="ui-hint">The machine needs a gateway token before it can send backups.</p>
       <button *ngIf="canBackup" type="button" class="ui-btn ui-btn-primary pt-action" (click)="requestBackup()"
@@ -95,26 +114,37 @@
           <tr>
             <th scope="col">Program</th>
             <th scope="col">Type</th>
+            <th scope="col">At the machine</th>
             <th scope="col" class="qty col-md">Size</th>
             <th scope="col">Saved</th>
             <th scope="col" class="col-lg">By</th>
             <th scope="col" class="actions"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
-        <tbody *ngIf="loadingFiles" appSkeletonRows [cols]="6" [rows]="4" label="Loading files…"></tbody>
+        <tbody *ngIf="loadingFiles" appSkeletonRows [cols]="7" [rows]="4" label="Loading files…"></tbody>
         <tbody *ngIf="!loadingFiles">
           <tr *ngIf="filesError">
-            <td colspan="6" class="mexa-empty">
+            <td colspan="7" class="mexa-empty">
               <app-state kind="error" title="Could not load the files" [text]="filesError" action="Try again" (act)="loadFiles()"></app-state>
             </td>
           </tr>
           <ng-container *ngIf="!filesError">
-            <tr *ngFor="let f of files; trackBy: trackFile">
+            <!-- the file a notification opened is marked (shared/linked-record.ts) -->
+            <tr *ngFor="let f of files; trackBy: trackFile" [id]="'pt-file-' + f.id"
+                [class.is-linked]="f.id === linkedFileId" [attr.tabindex]="f.id === linkedFileId ? -1 : null">
               <td class="strong">
+                <span *ngIf="f.id === linkedFileId" class="sr-only">From your notification: </span>
                 {{ f.program_name }}
-                <span *ngIf="f.is_current" class="mexa-badge mexa-badge-good pt-current">On the machine</span>
+                <span *ngIf="f.is_current" class="mexa-badge mexa-badge-info pt-current">Current</span>
               </td>
               <td><span class="mexa-badge" [ngClass]="f.kind === 'NEW' ? 'mexa-badge-info' : 'mexa-badge-neutral'">{{ kindLabel(f) }}</span></td>
+              <td class="wrap">
+                <ng-container *ngIf="f.kind === 'NEW'; else fromMachine">
+                  <span class="mexa-badge" [ngClass]="deliveryClass(f)">{{ deliveryLabel(f) }}</span>
+                  <span *ngIf="f.delivery_status === 'FAILED'" class="sub">{{ f.delivery_message }}</span>
+                </ng-container>
+                <ng-template #fromMachine>--</ng-template>
+              </td>
               <td class="num qty col-md">{{ size(f.size_bytes) }}</td>
               <td class="num">{{ f.created_at | date:'d MMM y, h:mm a' }}</td>
               <td class="col-lg">{{ f.uploaded_by_name || (f.kind === 'NEW' ? '--' : 'Gateway') }}</td>
@@ -131,7 +161,7 @@
               </td>
             </tr>
             <tr *ngIf="!files.length">
-              <td colspan="6" class="mexa-empty">
+              <td colspan="7" class="mexa-empty">
                 <app-state [title]="filter === 'backups' ? 'No backups yet' : filter === 'uploads' ? 'No uploads yet' : 'No files yet'"
                            [text]="filter === 'backups' ? 'Backups appear here when the gateway sends them.' : 'Upload a program for this machine to start.'"></app-state>
               </td>
@@ -222,15 +252,25 @@
       </ng-template>
 
       <div class="pt-api">
-        <strong>The gateway's three calls</strong>
+        <strong>The gateway's four calls</strong>
         <dl>
           <dt><code>GET {{ apiBase }}/status</code></dt><dd>A new program? A backup asked for?</dd>
           <dt><code>GET {{ apiBase }}/program</code></dt><dd>Download the machine's program</dd>
           <dt><code>POST {{ apiBase }}/backup</code></dt><dd>Upload a backup (form field <code>file</code>)</dd>
+          <dt><code>POST {{ apiBase }}/report</code></dt><dd>Program written or refused; backup could not be read</dd>
         </dl>
-        <a class="ui-btn ui-btn-ghost ui-btn-xs" href="/integrations/PROGRAM_TRANSFER_API.md" download>
-          <span class="material-icons" aria-hidden="true">description</span>API guide for the gateway team
-        </a>
+        <span class="ui-btn-row">
+          <a class="ui-btn ui-btn-ghost ui-btn-xs" href="/integrations/PROGRAM_TRANSFER_API.md" download>
+            <span class="material-icons" aria-hidden="true">description</span>API guide
+          </a>
+          <a class="ui-btn ui-btn-ghost ui-btn-xs" href="/integrations/MEXA_Program_Transfer.postman_collection.json" download>
+            <span class="material-icons" aria-hidden="true">integration_instructions</span>Postman collection
+          </a>
+          <!-- the program that runs at the machine and moves the file into it (Node.js 20) -->
+          <a class="ui-btn ui-btn-ghost ui-btn-xs" href="/integrations/mexa-gateway.js" download>
+            <span class="material-icons" aria-hidden="true">developer_board</span>Ready-made gateway
+          </a>
+        </span>
       </div>
     </div>
     <div class="ui-dialog-footer is-split">

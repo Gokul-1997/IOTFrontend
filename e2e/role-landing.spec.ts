@@ -112,7 +112,7 @@ test('a company admin has useful alarm settings and working user and role admini
   await expect(alarms.getByRole('switch', { name: 'Receive alarm notifications' })).toBeVisible();
   await expect(alarms.getByRole('switch', { name: 'Company critical alarm alerts' })).toBeVisible();
   await expect(alarms.getByRole('searchbox')).toHaveCount(0);
-  await expect(alarms.getByText('0 active machines')).toBeVisible();
+  await expect(alarms.getByText(/active machines/)).toHaveCount(0);       // no machine count since 21 Oct 2026
   expect(alarmSettingsRequests.filter(url => url.includes('/notifications/preferences'))).toHaveLength(1);
   expect(alarmSettingsRequests.filter(url => url.includes('/alarms/notification-policy'))).toHaveLength(1);
   const admin = page.getByRole('region', { name: 'Administration' });

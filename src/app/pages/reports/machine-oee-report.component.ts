@@ -24,22 +24,33 @@ import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
   standalone: true,
   imports: [ReportDateDirective, AutoApplyDirective, SkeletonRowsComponent, CommonModule, FormsModule, MexaPagerComponent],
   template: `
-  <!-- The filters apply themselves, as on the dashboards -->
-  <div class="flex flex-wrap items-end gap-3 mb-4" appAutoApply (autoApply)="load()">
-    <label class="flex flex-col text-xs font-semibold text-[--mexa-ink-2] gap-1">From
-      <input type="date" appReportDate [rdBefore]="f.to" class="ui-input" [(ngModel)]="f.from" name="moFrom">
-    </label>
-    <label class="flex flex-col text-xs font-semibold text-[--mexa-ink-2] gap-1">To
-      <input type="date" appReportDate [rdAfter]="f.from" class="ui-input" [(ngModel)]="f.to" name="moTo">
-    </label>
-    <label class="flex flex-col text-xs font-semibold text-[--mexa-ink-2] gap-1">Shift
-      <select class="ui-input" [(ngModel)]="f.shift_id" name="moShift">
-        <option [ngValue]="null">All</option>
+  <!-- The filters apply themselves, as on the dashboards. The same filter bar
+       as the Reports page's other tabs (reports.html) — grid, labels, fields
+       and Reset — so switching tabs does not change how the filters look.
+       No search or export row here: the Reports toolbar exports this tab. -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 items-end mb-4" appAutoApply (autoApply)="load()">
+    <div class="flex flex-col gap-1">
+      <label class="label_custom" for="moFrom">Date From</label>
+      <input type="date" id="moFrom" name="moFrom" appReportDate [rdBefore]="f.to" [(ngModel)]="f.from" class="filter-date" />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="label_custom" for="moTo">Date To</label>
+      <input type="date" id="moTo" name="moTo" appReportDate [rdAfter]="f.from" [(ngModel)]="f.to" class="filter-date" />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="label_custom" for="moShift">Shift</label>
+      <select id="moShift" name="moShift" [(ngModel)]="f.shift_id" class="filter-select">
+        <option [ngValue]="null">All Shifts</option>
         <option *ngFor="let s of shifts" [ngValue]="s.id">{{ s.shift_name || s.name }}</option>
       </select>
-    </label>
-    <span *ngIf="loading" class="text-xs text-[--mexa-ink-3] self-center" role="status">Updating…</span>
-    <!-- no search or export row here: the Reports toolbar exports this tab -->
+    </div>
+    <!-- Reset: the last seven days, every shift — what the tab opens on -->
+    <div class="flex gap-2">
+      <button type="button" (click)="reset()"
+        class="btn-clear flex-1 min-w-0 inline-flex items-center justify-center gap-1">
+        <span class="material-icons text-[18px]" aria-hidden="true">restart_alt</span> Reset
+      </button>
+    </div>
   </div>
 
   <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
@@ -59,8 +70,9 @@ import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
           </th>
         </tr>
       </thead>
-      <tbody *ngIf="loading && !rows.length" appSkeletonRows [cols]="columns.length + 1" label="Loading the machine OEE report…"></tbody>
-      <tbody *ngIf="!(loading && !rows.length)">
+      <!-- every load, as the other tabs: the old rows never stand in for the new filters -->
+      <tbody *ngIf="loading" appSkeletonRows [cols]="columns.length + 1" label="Loading the machine OEE report…"></tbody>
+      <tbody *ngIf="!loading">
         <tr *ngFor="let m of pageRows; let i = index">
           <td class="num col-index">{{ (page - 1) * limit + i + 1 }}</td>
           <td class="strong">{{ m.machine_serial_no }}</td>
@@ -89,7 +101,7 @@ import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
   `
 })
 export class MachineOeeReportComponent implements OnInit, OnDestroy {
-  f: any = { from: this.daysAgo(6), to: this.daysAgo(0), shift_id: null };
+  f: any = this.defaults();
   shifts: any[] = [];
   rows: any[] = [];
   loading = false;
@@ -159,6 +171,14 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       });
   }
+
+  /** Reset: back to the filters the tab opens on. The ranking is the table's, not a filter: it stays. */
+  reset(): void {
+    this.f = this.defaults();
+    this.load();
+  }
+  /** The last seven days, every shift. */
+  private defaults() { return { from: this.daysAgo(6), to: this.daysAgo(0), shift_id: null }; }
 
   get filtered(): any[] {
     const k = this.sort, sign = this.dir === 'asc' ? 1 : -1;

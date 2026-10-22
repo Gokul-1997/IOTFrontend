@@ -8,12 +8,20 @@ export interface PtMachine {
   machine_serial_no: string;
   /** null: no gateway token yet */
   gateway: { token_prefix: string; token_created_at: string; last_seen_at: string | null; online: boolean } | null;
-  /** the machine's program: its newest upload */
-  program: { id: number; program_name: string; size_bytes: number; created_at: string } | null;
+  /** the machine's program: its newest upload, and what the gateway reported about it (null: not yet) */
+  program: {
+    id: number; program_name: string; size_bytes: number; created_at: string;
+    delivery_status: PtDelivery | null; delivery_message: string | null; delivered_at: string | null;
+  } | null;
   last_backup: { id: number; program_name: string; created_at: string } | null;
   /** a Backup press the gateway has not answered yet */
   backup_request: { id: number; requested_at: string } | null;
+  /** the last backup the gateway could not read, while none has arrived since */
+  backup_failure: { message: string; at: string } | null;
 }
+
+/** What the gateway reported: written to the machine, or refused by it. */
+export type PtDelivery = 'DONE' | 'FAILED';
 
 export type PtKind = 'NEW' | 'BACKUP' | 'FETCHED';
 export type PtFilter = '' | 'uploads' | 'backups';
@@ -28,6 +36,9 @@ export interface PtFile {
   created_at: string;
   uploaded_by_name: string | null;
   is_current: boolean;
+  delivery_status: PtDelivery | null;
+  delivery_message: string | null;
+  delivered_at: string | null;
 }
 
 export interface PtPage { page: number; limit: number; total: number; totalPages: number }
@@ -35,7 +46,8 @@ export interface PtPage { page: number; limit: number; total: number; totalPages
 /*
  * Program Transfer, kept simple (21 Oct 2026): upload a machine's program,
  * download files, ask the machine for a backup. The machine's gateway does
- * the rest with its own three calls (/api/device/v1: status, program, backup).
+ * the rest with its own four calls (/api/device/v1: status, program, backup,
+ * report) — the report is how the page learns the machine took or refused it.
  */
 @Injectable({ providedIn: 'root' })
 export class ProgramService {

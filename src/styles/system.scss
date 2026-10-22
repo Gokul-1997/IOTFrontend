@@ -245,6 +245,18 @@ html, body { font-family: var(--font-ui); }
 .mexa-table tbody tr:hover { background: var(--tbl-row-hover); }
 .mexa-table tbody tr.is-selected,
 .mexa-table tbody tr[aria-selected="true"] { background: var(--tbl-row-selected); box-shadow: inset 3px 0 0 var(--tbl-accent); }
+/* The record a notification opened (shared/linked-record.ts): marked like a
+   selected row, with one brief glow so the eye finds it — none for anyone
+   who asked for less motion. It stays marked while the page is open. */
+.mexa-table tbody tr.is-linked,
+.mexa-table.is-striped tbody tr.is-linked:nth-child(even) { background: var(--tbl-row-selected); box-shadow: inset 4px 0 0 var(--tbl-accent); }
+.mexa-table tbody tr.is-linked > td { animation: mexa-linked-glow 1.8s ease-out 1; }
+.mexa-table tbody tr.is-linked:focus { outline: 2px solid var(--tbl-accent); outline-offset: -2px; }
+@keyframes mexa-linked-glow {
+  0%, 35% { background-color: color-mix(in srgb, var(--tbl-accent) 22%, transparent); }
+  100%    { background-color: transparent; }
+}
+@media (prefers-reduced-motion: reduce) { .mexa-table tbody tr.is-linked > td { animation: none; } }
 .mexa-table tbody td {
   padding: 3px var(--tbl-pad-x);
   line-height: 1.45;

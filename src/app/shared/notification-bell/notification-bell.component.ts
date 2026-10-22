@@ -1,8 +1,9 @@
 import { ChangeDetectorRef, Component, DestroyRef, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NotificationService } from '../../core/services/notification.service';
+import { notificationTarget } from '../linked-record';
 import { Subscription, auditTime, pairwise } from 'rxjs';
 
 @Component({
@@ -35,7 +36,7 @@ import { Subscription, auditTime, pairwise } from 'rxjs';
         </div>
         <div class="max-h-80 overflow-y-auto divide-y divide-[#22405e]">
           <ng-container *ngIf="notifications.length > 0; else noNotifs">
-            <!-- each one is a button: Enter or a tap marks it read -->
+            <!-- each one is a button: Enter or a tap marks it read and opens what it is about -->
             <button type="button" *ngFor="let n of notifications"
               class="w-full text-left flex items-start gap-3 p-3 transition-colors hover:bg-[#092b5c]"
               [class.bg-blue-50]="!n.is_read"
@@ -75,7 +76,7 @@ export class NotificationBellComponent implements OnInit {
   @ViewChild('bellBtn') bellBtn?: ElementRef<HTMLButtonElement>;
 
   constructor(public notifService: NotificationService, private host: ElementRef<HTMLElement>,
-              private cdr: ChangeDetectorRef, private destroyRef: DestroyRef) {
+              private cdr: ChangeDetectorRef, private destroyRef: DestroyRef, private router: Router) {
     this.destroyRef.onDestroy(() => this.listRequest?.unsubscribe());
   }
 
@@ -113,11 +114,21 @@ export class NotificationBellComponent implements OnInit {
   }
 
   /* The count on the badge changes at once in the service (and, from the
-     server, on every other tab and device of this person). */
+     server, on every other tab and device of this person).
+
+     It then opens what the notification is about, on that very record — the
+     alarm, the program file — marked on its page, as the Notifications page
+     does. The bell only marked it read, so a click went nowhere (22 Oct
+     2026). The link is an app path (navigateByUrl, never location.href). */
   onRead(n: any) {
     if (!n.is_read) {
       this.notifService.markRead(n.id).subscribe({ error: () => {} });
       n.is_read = true;
+    }
+    const target = notificationTarget(n);
+    if (target) {
+      this.open = false;
+      this.router.navigateByUrl(target);
     }
   }
 

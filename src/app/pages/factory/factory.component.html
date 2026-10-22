@@ -85,40 +85,42 @@
 
   <!-- ══════════ KPI TILES ══════════ -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi green">
+    <!-- Each tile's number opens the page with the records behind it, on this
+         day, shift and machine (only pages this person may open). -->
+    <div class="mexa-kpi green" [class.mexa-kpi-drill]="can('live')">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Machines<br>Running <app-metric-help topic="machine_status"></app-metric-help></span>
         <span class="mexa-kpi-icon green" aria-hidden="true">
           <mat-icon>play_arrow</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.machines.running }}</p>
+      <p class="mexa-kpi-value"><button *ngIf="can('live'); else runPlain" type="button" class="mexa-kpi-open" (click)="open('live', { status: 'running' })" aria-labelledby="fk1-name fk1-value fk1-act"><span id="fk1-value">{{ data.machines.running }}</span></button><ng-template #runPlain>{{ data.machines.running }}</ng-template></p><span hidden id="fk1-name">Machines running:</span><span hidden id="fk1-act">show them on the Live Dashboard</span>
       <!-- the denominator travels with the count: 8 running means one
            thing out of 12 and quite another out of 100 -->
       <p class="mexa-kpi-sub">of {{ data.machines.total }} machines</p>
     </div>
 
-    <div class="mexa-kpi yellow">
+    <div class="mexa-kpi yellow" [class.mexa-kpi-drill]="can('live')">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Machines<br>Idle</span>
         <span class="mexa-kpi-icon yellow" style="background:#f5a623" aria-hidden="true">
           <mat-icon>pause</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ data.machines.idle }}</p>
+      <p class="mexa-kpi-value"><button *ngIf="can('live'); else idlePlain" type="button" class="mexa-kpi-open" (click)="open('live', { status: 'idle' })" aria-labelledby="fk2-name fk2-value fk2-act"><span id="fk2-value">{{ data.machines.idle }}</span></button><ng-template #idlePlain>{{ data.machines.idle }}</ng-template></p><span hidden id="fk2-name">Machines idle:</span><span hidden id="fk2-act">show them on the Live Dashboard</span>
       <p class="mexa-kpi-sub">
         {{ data.machines.breakdown }} in breakdown · {{ data.machines.offline }} offline
       </p>
     </div>
 
-    <div class="mexa-kpi navy">
+    <div class="mexa-kpi navy" [class.mexa-kpi-drill]="can('oee')">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overall<br>OEE <app-metric-help topic="oee"></app-metric-help></span>
         <span class="mexa-kpi-icon navy" style="background:#2b3a8f" aria-hidden="true">
           <mat-icon>settings</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">{{ pctText(data.oee.oee) }}</p>
+      <p class="mexa-kpi-value"><button *ngIf="can('oee'); else oeePlain" type="button" class="mexa-kpi-open" (click)="open('oee')" aria-labelledby="fk3-name fk3-value fk3-act"><span id="fk3-value">{{ pctText(data.oee.oee) }}</span></button><ng-template #oeePlain>{{ pctText(data.oee.oee) }}</ng-template></p><span hidden id="fk3-name">Overall OEE:</span><span hidden id="fk3-act">open the OEE Dashboard for this day</span>
       <!-- 61% on its own says nothing; the target is what makes it a
            judgement, so it travels with the figure. -->
       <p class="mexa-kpi-sub" *ngIf="data.oee.target != null">
@@ -130,7 +132,7 @@
       </p>
     </div>
 
-    <div class="mexa-kpi sky">
+    <div class="mexa-kpi sky" [class.mexa-kpi-drill]="can('downtime')">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overall<br>Utilisation <app-metric-help topic="running_share"></app-metric-help></span>
         <span class="mexa-kpi-icon sky" style="background:#3b9ae1" aria-hidden="true">
@@ -138,10 +140,10 @@
         </span>
       </div>
       <!-- a dash, not 0%, when nothing was reported -->
-      <p class="mexa-kpi-value">{{ utilisation === null ? '--' : utilisation + '%' }}</p>
+      <p class="mexa-kpi-value"><button *ngIf="can('downtime'); else utilPlain" type="button" class="mexa-kpi-open" (click)="open('downtime')" aria-labelledby="fk4-name fk4-value fk4-act"><span id="fk4-value">{{ utilisation === null ? '--' : utilisation + '%' }}</span></button><ng-template #utilPlain>{{ utilisation === null ? '--' : utilisation + '%' }}</ng-template></p><span hidden id="fk4-name">Overall utilisation:</span><span hidden id="fk4-act">see run and idle time in Downtime Analysis</span>
     </div>
 
-    <div class="mexa-kpi purple">
+    <div class="mexa-kpi purple" [class.mexa-kpi-drill]="can('production')">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overall<br>Production <app-metric-help topic="production_vs_target"></app-metric-help></span>
         <span class="mexa-kpi-icon purple" style="background:#9b7ec8" aria-hidden="true">
@@ -149,26 +151,19 @@
         </span>
       </div>
       <!-- share of target when any machine has a job target; the count otherwise -->
-      <ng-container *ngIf="data.production.target_pct !== null && data.production.target_pct !== undefined; else rawCount">
-        <p class="mexa-kpi-value">{{ data.production.target_pct }}%</p>
-        <p class="mexa-kpi-sub">{{ data.production.actual }} of {{ data.production.target }} target · {{ data.production.produced }} pieces</p>
-      </ng-container>
-      <ng-template #rawCount>
-        <p class="mexa-kpi-value">{{ data.production.produced }}</p>
-        <p class="mexa-kpi-sub">pieces · no job target set</p>
-      </ng-template>
+      <p class="mexa-kpi-value"><button *ngIf="can('production'); else prodPlain" type="button" class="mexa-kpi-open" (click)="open('production')" aria-labelledby="fk5-name fk5-value fk5-act"><span id="fk5-value">{{ productionValue }}</span></button><ng-template #prodPlain>{{ productionValue }}</ng-template></p><span hidden id="fk5-name">Overall production:</span><span hidden id="fk5-act">open the Production report for this day</span>
+      <p class="mexa-kpi-sub" *ngIf="hasProductionTarget; else rawCount">{{ data.production.actual }} of {{ data.production.target }} target · {{ data.production.produced }} pieces</p>
+      <ng-template #rawCount><p class="mexa-kpi-sub">pieces · no job target set</p></ng-template>
     </div>
 
-    <div class="mexa-kpi blue">
+    <div class="mexa-kpi blue" [class.mexa-kpi-drill]="can('energy')">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Power<br>Consumption</span>
         <span class="mexa-kpi-icon blue" style="background:#3b63b0" aria-hidden="true">
           <mat-icon>bolt</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value">
-        {{ qty(data.energy.kwh, 2) }}<small *ngIf="data.energy.kwh !== null">kWh</small>
-      </p>
+      <p class="mexa-kpi-value"><button *ngIf="can('energy'); else powerPlain" type="button" class="mexa-kpi-open" (click)="open('energy')" aria-labelledby="fk6-name fk6-value fk6-act"><span id="fk6-value">{{ qty(data.energy.kwh, 2) }}<small *ngIf="data.energy.kwh !== null">kWh</small></span></button><ng-template #powerPlain>{{ qty(data.energy.kwh, 2) }}<small *ngIf="data.energy.kwh !== null">kWh</small></ng-template></p><span hidden id="fk6-name">Power consumption:</span><span hidden id="fk6-act">open the Energy Dashboard for this day</span>
     </div>
   </div>
 
@@ -207,6 +202,7 @@
         </div>
       </div>
       </div>
+      <p class="fx-more" *ngIf="can('oee')"><a [routerLink]="targets.oee.path" [queryParams]="linkParams('oee')">OEE Dashboard<mat-icon aria-hidden="true">chevron_right</mat-icon></a></p>
     </section>
 
     <section class="mexa-card">
@@ -263,6 +259,7 @@
           <p class="font-bold text-[--mexa-ink]">{{ hm(data.time.idle_seconds) }}</p>
         </div>
       </div>
+      <p class="fx-more" *ngIf="can('downtime')"><a [routerLink]="targets.downtime.path" [queryParams]="linkParams('downtime')">Downtime Analysis<mat-icon aria-hidden="true">chevron_right</mat-icon></a></p>
     </section>
 
     <section class="mexa-card">
@@ -293,6 +290,7 @@
           </div>
         </div>
       </div>
+      <p class="fx-more" *ngIf="can('production')"><a [routerLink]="targets.production.path" [queryParams]="linkParams('production')">Production report<mat-icon aria-hidden="true">chevron_right</mat-icon></a></p>
     </section>
 
     <section class="mexa-card">
@@ -365,6 +363,7 @@
         </div>
 </div>
       </div>
+      <p class="fx-more" *ngIf="can('energy')"><a [routerLink]="targets.energy.path" [queryParams]="linkParams('energy')">Energy Dashboard<mat-icon aria-hidden="true">chevron_right</mat-icon></a></p>
     </section>
   </div>
 
@@ -408,6 +407,7 @@
           <p class="empty-text">No downtime reasons were reported during this period.</p>
         </div>
 </div>
+      <p class="fx-more" *ngIf="can('downtime')"><a [routerLink]="targets.downtime.path" [queryParams]="linkParams('downtime')">Downtime Analysis<mat-icon aria-hidden="true">chevron_right</mat-icon></a></p>
     </section>
 
     <section class="mexa-card xl:col-span-2 lg:col-span-1">
@@ -446,6 +446,7 @@
         </div>
         
       </div>
+      <p class="fx-more" *ngIf="can('production')"><a [routerLink]="targets.production.path" [queryParams]="linkParams('production')">Production report<mat-icon aria-hidden="true">chevron_right</mat-icon></a></p>
     </section>
 
     <section class="mexa-card ">
@@ -461,14 +462,16 @@
         <li>
           <span class="mexa-rank-name">
             <span class="mexa-legend-dot inline-block" [style.background]="SEV.critical.color" aria-hidden="true"></span>
-            Critical alarms
+            <a *ngIf="can('alarms'); else critPlain" class="fx-rank-link" [routerLink]="targets.alarms.path" [queryParams]="linkParams('alarms', { show: 'critical', view: 'details' })">Critical alarms</a>
+            <ng-template #critPlain>Critical alarms</ng-template>
           </span>
           <span class="mexa-rank-value">{{ data.alarms.critical }}</span>
         </li>
         <li>
           <span class="mexa-rank-name">
             <span class="mexa-legend-dot inline-block" [style.background]="SEV.noncritical.color" aria-hidden="true"></span>
-            Non-critical alarms
+            <a *ngIf="can('alarms'); else nonCritPlain" class="fx-rank-link" [routerLink]="targets.alarms.path" [queryParams]="linkParams('alarms', { show: 'normal', view: 'details' })">Non-critical alarms</a>
+            <ng-template #nonCritPlain>Non-critical alarms</ng-template>
           </span>
           <span class="mexa-rank-value">{{ data.alarms.non_critical }}</span>
         </li>
@@ -512,8 +515,7 @@
           <p class="empty-text">Machines are not reporting alarm states yet.</p>
         </div>
       </div>
-
-      
+      <p class="fx-more" *ngIf="can('alarms')"><a [routerLink]="targets.alarms.path" [queryParams]="linkParams('alarms')">Alarm Report<mat-icon aria-hidden="true">chevron_right</mat-icon></a></p>
     </section>
   </div>
 </ng-container>

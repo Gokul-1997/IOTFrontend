@@ -14,31 +14,12 @@
     <div class="toolbar-right">
       <div class="flex items-center gap-3 w-full">
       <!-- The filters apply themselves, as on the dashboards: machine and shift
-           load at once, the date when it settles. The line reloads its
-           machines first (onLineChange) and loads from there. -->
+           load at once, the date when it settles. Machine, not line: every
+           machine by name in one list, as on every other page. -->
       <div class="w-full mt-4 md:mt-0 
        sm:grid sm:grid-cols-2 
        md:flex 
        items-end gap-4" appAutoApply (autoApply)="loadDashboard()">
-
-        <!-- LINE -->
-        <div class="flex flex-col md:flex-row gap-2 items-left md:items-center">
-          <label class="text-sm font-medium text-white whitespace-nowrap">
-            Line Name
-          </label>
-
-          <select
-            [(ngModel)]="selectedLine"
-            (change)="onLineChange(); $event.stopPropagation()"
-            class="filter-select" aria-label="Line Name" >
-
-            <option [ngValue]="null">All lines</option>
-            <option *ngFor="let l of lines" [ngValue]="l.id">
-              {{ l.name }}
-            </option>
-
-          </select>
-        </div>
 
         <!-- MACHINE -->
         <div class="flex flex-col md:flex-row gap-2 items-left md:items-center">
@@ -50,17 +31,9 @@
             [(ngModel)]="selectedMachine"
             class="filter-select" aria-label="Machine Name" >
 
-            <!-- All lines: grouped by line; one line: that line's machines -->
-            <ng-container *ngIf="selectedLine === null; else oneLine">
-              <optgroup *ngFor="let g of machineGroups" [label]="g.label">
-                <option *ngFor="let m of g.machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
-              </optgroup>
-            </ng-container>
-            <ng-template #oneLine>
-              <option *ngFor="let m of machines" [ngValue]="m.id">
-                {{ m.machine_serial_no }}
-              </option>
-            </ng-template>
+            <option *ngFor="let m of machines" [ngValue]="m.id">
+              {{ m.machine_serial_no }}
+            </option>
 
           </select>
         </div>

@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Injector, OnDestroy, OnInit, afterNextRender, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpEventType } from '@angular/common/http';
@@ -11,6 +12,7 @@ import { StateComponent } from '../../shared/state/state.component';
 import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { environment } from '../../../environments/environment';
+import { takeLinkedRecord } from '../../shared/linked-record';
 
 /** The server's limit (PROGRAM_MAX_MB); said before sending, so a big file is not uploaded for nothing. */
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -42,6 +44,13 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
+
+  /** What a notification opened (?machine_id=&file_id=): that machine, its file marked. */
+  private linkedMachineId: number | null = null;
+  linkedFileId: number | null = null;
 
   readonly maxMb = MAX_BYTES / 1048576;
   readonly apiBase = `${environment.apiUrl}/device/v1`;
@@ -76,12 +85,35 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   private readonly onVisibility = () => { if (!document.hidden) this.loadMachines(true); };
 
   get canUpload() { return this.auth.hasAction('programs', 'upload') && this.auth.hasAction('programs', 'transfer'); }
+
+  /**
+   * Why there is no Upload button, said where it would be — it simply was not
+   * there, and nobody could tell why (22 Oct 2026). Uploading needs Program
+   * Transfer's "Upload to library" and "Send to machine": the role must hold
+   * both and the company must have been given both (as the API checks).
+   */
+  get uploadBlockedReason(): string {
+    if (this.canUpload) return '';
+    const keys = ['page:programs:upload', 'page:programs:transfer'];
+    const granted = this.auth.getCompanyPermissions();
+    const companyLacks = granted.length > 0 && keys.some(k => !granted.includes(k));
+    /* A company's access is set from the platform's own login, the S&T Super
+       Admin — not from the company's admin, whatever the company is called
+       (one is "S AND T"): name both, so it is clear which login to use. */
+    const company = this.auth.getUser()?.company_name || 'this company';
+    return companyLacks || this.auth.isCompanyAdmin()
+      ? `Uploading is not switched on for ${company}. Sign in as the S&T Super Admin → Companies → Manage Access → ${company} → Program Transfer, and tick "Upload to library" and "Send to machine".`
+      : 'Your role cannot upload programs. Your company admin can tick Program Transfer → "Upload to library" and "Send to machine" for your role under Roles & Permissions.';
+  }
   get canBackup() { return this.auth.hasAction('programs', 'fetch'); }
   get canDelete() { return this.auth.hasAction('programs', 'delete'); }
   get canManageToken() { return this.auth.hasAction('machines', 'edit'); }
   get selectedMachine(): PtMachine | null { return this.machines.find(m => m.id === this.selectedMachineId) || null; }
 
   ngOnInit(): void {
+    const linked = takeLinkedRecord(this.route, this.router, ['machine_id', 'file_id']);
+    this.linkedMachineId = linked.machine_id ?? null;
+    this.linkedFileId = linked.file_id ?? null;
     this.loadMachines();
     document.addEventListener('visibilitychange', this.onVisibility);
     this.timer = setInterval(() => { if (!document.hidden) this.loadMachines(true); }, REFRESH_MS);
@@ -106,7 +138,9 @@ export class ProgramsComponent implements OnInit, OnDestroy {
         this.machines = res.data || [];
         this.loadingMachines = false;
         if (!this.selectedMachine) {
-          this.selectedMachineId = this.machines[0]?.id ?? null;
+          // the machine a notification is about, else the first
+          const linked = this.machines.find(m => m.id === this.linkedMachineId);
+          this.selectedMachineId = linked?.id ?? this.machines[0]?.id ?? null;
           this.changeMachine();
         } else if (quiet && before) {
           this.noticeChanges(before, this.selectedMachine!);
@@ -121,11 +155,20 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** A backup or a new program arrived since the last look: say so and show it in the list. */
+  /** What the gateway did since the last look — a backup, the program taken or refused: say so and show it. */
   private noticeChanges(before: PtMachine, now: PtMachine): void {
     const backupArrived = now.last_backup && now.last_backup.id !== before.last_backup?.id;
     if (backupArrived && before.backup_request) this.toast.success(`Backup received from ${now.machine_serial_no}`);
-    if (backupArrived || now.program?.id !== before.program?.id) this.loadFiles();
+    if (!backupArrived && before.backup_request && now.backup_failure && !now.backup_request) {
+      this.toast.error(`${now.machine_serial_no} could not send a backup: ${now.backup_failure.message}`);
+    }
+    const reported = now.program && now.program.id === before.program?.id
+      && now.program.delivery_status && now.program.delivery_status !== before.program?.delivery_status;
+    if (reported && now.program!.delivery_status === 'DONE') this.toast.success(`${now.program!.program_name} is on ${now.machine_serial_no}`);
+    if (reported && now.program!.delivery_status === 'FAILED') {
+      this.toast.error(`${now.machine_serial_no} could not use ${now.program!.program_name}: ${now.program!.delivery_message}`);
+    }
+    if (backupArrived || reported || now.program?.id !== before.program?.id) this.loadFiles();
   }
 
   changeMachine(): void {
@@ -159,6 +202,7 @@ export class ProgramsComponent implements OnInit, OnDestroy {
           this.pagination = res.pagination || { page: this.page, limit: this.limit, total: this.files.length, totalPages: 1 };
           this.loadingFiles = false;
           this.cdr.markForCheck();
+          this.showLinkedFile();
         },
         error: err => {
           this.files = [];
@@ -169,11 +213,31 @@ export class ProgramsComponent implements OnInit, OnDestroy {
       });
   }
 
+  /** The file a notification opened, on screen: scrolled to and focused (it is marked in the table). */
+  private showLinkedFile(): void {
+    const id = this.linkedFileId;
+    if (!id || !this.files.some(f => f.id === id)) return;
+    afterNextRender(() => {
+      const row = document.getElementById(`pt-file-${id}`);
+      row?.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      row?.focus({ preventScroll: true });
+    }, { injector: this.injector });
+  }
+
   setFilter(filter: PtFilter): void { this.filter = filter; this.page = 1; this.loadFiles(); }
   goToPage(page: number): void { this.page = page; this.loadFiles(); }
   setLimit(limit: number): void { this.limit = limit; this.page = 1; this.loadFiles(); }
 
   kindLabel(f: Pick<PtFile, 'kind'>): string { return f.kind === 'NEW' ? 'Uploaded' : 'Backup'; }
+
+  /** An upload's state at the machine, as its gateway reported it. */
+  deliveryLabel(f: Pick<PtFile, 'delivery_status'>): string {
+    return f.delivery_status === 'DONE' ? 'On the machine' : f.delivery_status === 'FAILED' ? 'Refused by machine' : 'Waiting';
+  }
+
+  deliveryClass(f: Pick<PtFile, 'delivery_status'>): string {
+    return f.delivery_status === 'DONE' ? 'mexa-badge-good' : f.delivery_status === 'FAILED' ? 'mexa-badge-bad' : 'mexa-badge-neutral';
+  }
 
   download(file: { id: number; program_name: string }): void {
     this.programs.download(file.id).pipe(takeUntil(this.destroy$)).subscribe({
