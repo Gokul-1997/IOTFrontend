@@ -97,9 +97,13 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     const keys = ['page:programs:upload', 'page:programs:transfer'];
     const granted = this.auth.getCompanyPermissions();
     const companyLacks = granted.length > 0 && keys.some(k => !granted.includes(k));
+    /* A company's access is set from the platform's own login, the S&T Super
+       Admin — not from the company's admin, whatever the company is called
+       (one is "S AND T"): name both, so it is clear which login to use. */
+    const company = this.auth.getUser()?.company_name || 'this company';
     return companyLacks || this.auth.isCompanyAdmin()
-      ? 'Uploading is not switched on for your company. S&T can allow Program Transfer → "Upload to library" and "Send to machine" under Companies → Manage Access.'
-      : 'Your role cannot upload programs. Your company admin can give it Program Transfer → "Upload to library" and "Send to machine" under Roles & Permissions.';
+      ? `Uploading is not switched on for ${company}. Sign in as the S&T Super Admin → Companies → Manage Access → ${company} → Program Transfer, and tick "Upload to library" and "Send to machine".`
+      : 'Your role cannot upload programs. Your company admin can tick Program Transfer → "Upload to library" and "Send to machine" for your role under Roles & Permissions.';
   }
   get canBackup() { return this.auth.hasAction('programs', 'fetch'); }
   get canDelete() { return this.auth.hasAction('programs', 'delete'); }

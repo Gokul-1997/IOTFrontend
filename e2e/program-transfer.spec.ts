@@ -199,16 +199,17 @@ test('a view-only role can look and download, nothing more', async ({ page }) =>
     await expect(page.getByRole('button', { name })).toHaveCount(0);
   }
   // where the button would be, the page says why it is not (22 Oct 2026)
-  await expect(page.getByText('Your role cannot upload programs. Your company admin can give it Program Transfer → "Upload to library" and "Send to machine" under Roles & Permissions.')).toBeVisible();
+  await expect(page.getByText('Your role cannot upload programs. Your company admin can tick Program Transfer → "Upload to library" and "Send to machine" for your role under Roles & Permissions.')).toBeVisible();
 });
 
 test('no Upload button for a company admin whose company was not given it: the page says who can switch it on', async ({ page }) => {
-  await seedAuth(page, { roles: ['COMPANY_ADMIN'], company_permissions: ['page:programs:view', 'page:programs:fetch'] });
+  await seedAuth(page, { roles: ['COMPANY_ADMIN'], company_name: 'S AND T', company_permissions: ['page:programs:view', 'page:programs:fetch'] });
   await fixtures(page);
   await page.goto('/programs');
   await expect(page.getByRole('heading', { name: 'Program for the machine' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Upload program' })).toHaveCount(0);
-  await expect(page.getByText(/Uploading is not switched on for your company\. S&T can allow Program Transfer → "Upload to library" and "Send to machine" under Companies → Manage Access\./)).toBeVisible();
+  // the company's own name, and the other login that sets a company's access
+  await expect(page.getByText('Uploading is not switched on for S AND T. Sign in as the S&T Super Admin → Companies → Manage Access → S AND T → Program Transfer, and tick "Upload to library" and "Send to machine".')).toBeVisible();
 });
 
 test('a notification about a file opens that machine with the file marked', async ({ authedPage: page }) => {
