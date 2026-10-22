@@ -77,3 +77,29 @@ test('reading one drops the badge at once; marking all read empties it at once',
   await expect(bell(page)).toHaveAttribute('aria-label', 'Notifications');
   releaseAll();
 });
+
+/* 22 Oct 2026 — "notification click, no redirect": the bell only marked it
+   read. A notification now opens what it is about, as the Notifications page
+   does; one with no link stays where it is. */
+test('a notification in the bell opens its page, and is read', async ({ authedPage: page }) => {
+  await stub(page);
+  const read: string[] = [];
+  await page.route('**/api/notifications/*/read', (r: any) => { read.push(r.request().url()); return r.fulfill(json({ success: true })); });
+  await page.route('**/api/notifications?**', (r: any) => r.fulfill(json({ ...list, data: [
+    { id: 7, type: 'INFO', title: 'O1001.nc is on VMC-1', message: 'The gateway wrote it to the machine.', is_read: false,
+      created_at: new Date().toISOString(), link: '/programs' },
+    ...list.data
+  ] })));
+  await page.setViewportSize({ width: 1400, height: 1000 });
+  await page.goto('/profile');
+
+  await bell(page).click();
+  await page.getByRole('button', { name: /CNC-01 in alarm/ }).click();          // no link: stays here
+  await expect(page).toHaveURL(/\/profile$/);
+  await expect(page.getByRole('region', { name: 'Notifications' })).toBeVisible();
+
+  await page.getByRole('button', { name: /O1001\.nc is on VMC-1/ }).click();
+  await expect(page).toHaveURL(/\/programs$/);
+  await expect(page.getByRole('region', { name: 'Notifications' })).toHaveCount(0);   // the panel closed
+  await expect.poll(() => read.some(u => u.includes('/notifications/7/read'))).toBe(true);
+});

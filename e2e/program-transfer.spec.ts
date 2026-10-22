@@ -177,6 +177,11 @@ test('gateway token: made in a dialog, shown once, with the four calls and the P
   await expect(dialog).toContainText('This machine has no gateway token yet.');
   for (const call of ['/device/v1/status', '/device/v1/program', '/device/v1/backup', '/device/v1/report']) await expect(dialog).toContainText(call);
   await expect(dialog.getByRole('link', { name: 'Postman collection' })).toHaveAttribute('href', '/integrations/MEXA_Program_Transfer.postman_collection.json');
+  // the program that runs at the machine and moves an uploaded file into it
+  await expect(dialog.getByRole('link', { name: 'Ready-made gateway' })).toHaveAttribute('href', '/integrations/mexa-gateway.js');
+  const script = await page.request.get('/integrations/mexa-gateway.js');
+  expect(script.ok()).toBe(true);
+  expect(await script.text()).toContain('function createGateway(');
   await dialog.getByRole('button', { name: 'Create token' }).click();
   await expect(dialog.getByLabel('Token', { exact: true })).toHaveValue('mxd_' + 'Q'.repeat(43));
   await expect(dialog).toContainText('shown only this once');
