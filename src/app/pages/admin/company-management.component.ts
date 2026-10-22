@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ElementRef, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { FormsModule } from '@angular/forms';
@@ -19,10 +19,85 @@ import { environment } from '../../../environments/environment';
 export class CompanyManagementComponent implements OnInit {
   /** "Are you sure?" in the app's own dialog, not the browser's confirm() box. */
   private readonly confirm = inject(ConfirmService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   companies: any[] = [];
   plans: any[] = [];
   loading = false;
+  companiesReady = false;
+  companiesError = '';
+  searchTerm = '';
+  statusFilter = 'all';
+  planFilter = 'all';
+
+  get activeCompanyCount(): number { return this.companies.filter(c => c.is_active).length; }
+  get inactiveCompanyCount(): number { return this.companies.filter(c => !c.is_active).length; }
+  get unassignedCompanyCount(): number { return this.companies.filter(c => !c.plan_id).length; }
+  get hasCompanyFilters(): boolean { return !!this.searchTerm.trim() || this.statusFilter !== 'all' || this.planFilter !== 'all'; }
+
+  get filteredCompanies(): any[] {
+    const query = this.searchTerm.trim().toLocaleLowerCase();
+    return this.companies.filter(company => {
+      const matchesQuery = !query || [company.company_name, company.company_code, company.contact_email]
+        .some(value => String(value || '').toLocaleLowerCase().includes(query));
+      const matchesStatus = this.statusFilter === 'all' || (this.statusFilter === 'active' ? !!company.is_active : !company.is_active);
+      const matchesPlan = this.planFilter === 'all' || (this.planFilter === 'none' ? !company.plan_id : String(company.plan_id) === this.planFilter);
+      return matchesQuery && matchesStatus && matchesPlan;
+    });
+  }
+
+  clearCompanyFilters(): void {
+    this.searchTerm = '';
+    this.statusFilter = 'all';
+    this.planFilter = 'all';
+  }
+
+  companyInitials(company: any): string {
+    return String(company.company_name || company.company_code || '?').trim().split(/\s+/).slice(0, 2)
+      .map(part => part.charAt(0)).join('').toUpperCase();
+  }
+
+  trackCompany(_index: number, company: any): number { return company.id; }
+
+  /** Native disclosure buttons stay keyboard-accessible; fixed placement
+   *  keeps their actions visible outside a scrolling table. */
+  positionCompanyMenu(event: Event): void {
+    const menu = event.target as HTMLDetailsElement;
+    if (!menu.open) return;
+    const panel = menu.querySelector<HTMLElement>('.admin-actions-popover');
+    const summary = menu.querySelector('summary');
+    if (!panel || !summary) return;
+    const bounds = summary.getBoundingClientRect();
+    const width = 216;
+    const padding = 12;
+    panel.style.width = `${Math.min(width, window.innerWidth - padding * 2)}px`;
+    panel.style.left = `${Math.max(padding, Math.min(bounds.right - width, window.innerWidth - width - padding))}px`;
+    const panelHeight = Math.min(panel.scrollHeight, window.innerHeight - padding * 2);
+    const below = bounds.bottom + 6;
+    panel.style.top = `${below + panelHeight <= window.innerHeight - padding ? below : Math.max(padding, bounds.top - panelHeight - 6)}px`;
+    panel.style.maxHeight = `${window.innerHeight - padding * 2}px`;
+  }
+
+  closeCompanyMenus(): void {
+    this.host.nativeElement.querySelectorAll<HTMLDetailsElement>('.admin-actions-menu[open]').forEach(menu => { menu.open = false; });
+  }
+
+  @HostListener('document:click', ['$event'])
+  onCompanyOutsideClick(event: MouseEvent): void {
+    this.host.nativeElement.querySelectorAll<HTMLDetailsElement>('.admin-actions-menu[open]').forEach(menu => {
+      if (!menu.contains(event.target as Node)) menu.open = false;
+    });
+  }
+
+  @HostListener('document:keydown.escape')
+  onCompanyMenuEscape(): void {
+    const menu = this.host.nativeElement.querySelector<HTMLDetailsElement>('.admin-actions-menu[open]');
+    if (menu) { menu.open = false; menu.querySelector('summary')?.focus(); }
+  }
+
+  @HostListener('window:resize')
+  @HostListener('window:scroll')
+  onCompanyViewportChange(): void { this.closeCompanyMenus(); }
 
   // Create/Edit modal
   showModal = false;
@@ -107,15 +182,35 @@ export class CompanyManagementComponent implements OnInit {
 
   loadCompanies() {
     this.loading = true;
+    this.companiesError = '';
     this.companyService.getCompanies().subscribe({
-      next: res => { this.companies = res; this.loading = false; this.cdr.detectChanges(); },
-      error: () => { this.toast.error('Failed to load companies'); this.loading = false; this.cdr.detectChanges(); }
+      next: res => {
+        if (!Array.isArray(res)) {
+          this.companiesError = 'Could not load companies. Please try again.';
+          this.loading = false;
+          this.cdr.detectChanges();
+          return;
+        }
+        this.companies = res;
+        this.companiesReady = true;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        this.companiesError = err?.error?.message || 'Could not load companies. Please try again.';
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
     });
   }
 
   loadPlans() {
     this.companyService.getPlans().subscribe({
-      next: res => { this.plans = res; this.cdr.detectChanges(); },
+      next: res => {
+        this.plans = Array.isArray(res) ? res : [];
+        this.cdr.detectChanges();
+        if (!Array.isArray(res)) this.toast.error('Failed to load plans');
+      },
       error: () => this.toast.error('Failed to load plans')
     });
   }

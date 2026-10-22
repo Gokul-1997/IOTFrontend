@@ -15,7 +15,7 @@ import { AuthService } from '../../core/services/auth.service';
   imports: [CommonModule, RouterLink, RouterLinkActive],
   template: `
     <!-- page links, not tabs: each opens its own page, the current one has aria-current -->
-    <nav class="ui-tabs ui-tabs-center" aria-label="Admin sections">
+    <nav class="ui-tabs ui-tabs-center" [class.super-admin-nav]="auth.isSntSuper()" aria-label="Admin sections">
 
   <a *ngIf="auth.isSntSuper()"
      class="ui-tab"
@@ -23,6 +23,7 @@ import { AuthService } from '../../core/services/auth.service';
      routerLinkActive="is-active"
      #companies="routerLinkActive"
      [attr.aria-current]="companies.isActive ? 'page' : null">
+    <span class="ui-tab-icon material-icons" aria-hidden="true">business</span>
     Companies
   </a>
 
@@ -32,6 +33,7 @@ import { AuthService } from '../../core/services/auth.service';
      routerLinkActive="is-active"
      #plans="routerLinkActive"
      [attr.aria-current]="plans.isActive ? 'page' : null">
+    <span class="ui-tab-icon material-icons" aria-hidden="true">workspace_premium</span>
     Plans
   </a>
 

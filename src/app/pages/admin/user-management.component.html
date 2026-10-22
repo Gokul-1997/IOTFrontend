@@ -1,3 +1,139 @@
+<div class="admin-workspace" [class.super-admin]="auth.isSntSuper()">
+  <ng-container *ngIf="auth.isSntSuper(); else companyUsers">
+    <header class="admin-heading">
+      <div>
+        <p class="admin-eyebrow"><span class="material-icons" aria-hidden="true">admin_panel_settings</span> Super administration</p>
+        <h1 class="mexa-title">Company Admins</h1>
+        <p class="admin-description">One admin per company, created with the company. Each admin manages their company’s users and roles.</p>
+      </div>
+    </header>
+
+    <app-admin-tabs></app-admin-tabs>
+
+    <section class="admin-stats" aria-label="Company admin overview">
+      <article class="admin-stat">
+        <span class="admin-stat-icon material-icons" aria-hidden="true">manage_accounts</span>
+        <div><span>Total company admins</span><strong>{{ usersLoaded ? users.length : '—' }}</strong></div>
+      </article>
+      <article class="admin-stat">
+        <span class="admin-stat-icon is-green material-icons" aria-hidden="true">verified_user</span>
+        <div><span>Active accounts</span><strong>{{ usersLoaded ? activeAdmins : '—' }}</strong></div>
+      </article>
+      <article class="admin-stat">
+        <span class="admin-stat-icon is-slate material-icons" aria-hidden="true">person_off</span>
+        <div><span>Inactive accounts</span><strong>{{ usersLoaded ? inactiveAdmins : '—' }}</strong></div>
+      </article>
+      <article class="admin-stat">
+        <span class="admin-stat-icon is-amber material-icons" aria-hidden="true">domain_disabled</span>
+        <div><span>Company access disabled</span><strong>{{ usersLoaded ? companyDisabledAdmins : '—' }}</strong></div>
+      </article>
+    </section>
+
+    <section class="admin-panel">
+      <div class="admin-panel-heading">
+        <div>
+          <h2>Administrator directory</h2>
+          <p>Update account details and manage sign-in access for each company’s administrator.</p>
+        </div>
+        <span class="admin-cell-muted">{{ usersLoaded ? users.length : '—' }} accounts</span>
+      </div>
+
+      <div class="admin-toolbar">
+        <label class="admin-search">
+          <span class="material-icons" aria-hidden="true">search</span>
+          <input class="ui-input" type="search" [(ngModel)]="searchQuery" aria-label="Search company admins"
+            placeholder="Search by name, email or company">
+        </label>
+        <select class="ui-input admin-filter" [(ngModel)]="statusFilter" aria-label="Company admin status">
+          <option value="all">All statuses</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="company-disabled">Company disabled</option>
+        </select>
+      </div>
+
+      <div *ngIf="loadError" class="admin-empty" role="alert">
+        <span class="material-icons" aria-hidden="true">cloud_off</span>
+        <h3>Unable to load company admins</h3>
+        <p>{{ loadError }}</p>
+        <button type="button" (click)="loadUsers()" class="ui-btn ui-btn-ghost">Try again</button>
+      </div>
+
+      <div *ngIf="loading && !usersLoaded" class="admin-empty">
+        <span class="ui-spinner admin-spin" role="status" aria-label="Loading company admins"></span>
+        <p>Loading company administrators…</p>
+      </div>
+
+      <div *ngIf="!loading && !loadError && users.length === 0" class="admin-empty">
+        <span class="material-icons" aria-hidden="true">manage_accounts</span>
+        <h3>No company admins yet</h3>
+        <p>A company’s admin is created with the company, on the Companies page.</p>
+      </div>
+
+      <div *ngIf="!loading && !loadError && users.length > 0 && filteredUsers.length === 0" class="admin-empty">
+        <span class="material-icons" aria-hidden="true">search_off</span>
+        <h3>No matching company admins</h3>
+        <p>Try another search or choose a different status.</p>
+        <button type="button" (click)="clearFilters()" class="ui-btn ui-btn-ghost">Clear filters</button>
+      </div>
+
+      <div *ngIf="filteredUsers.length > 0" class="admin-tablewrap" tabindex="0" role="region" aria-label="Company Admins" [attr.aria-busy]="loading">
+        <table class="admin-table admin-user-directory">
+          <thead>
+            <tr>
+              <th scope="col">Administrator</th>
+              <th scope="col">Company</th>
+              <th scope="col">Role</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of filteredUsers">
+              <td>
+                <div class="admin-record">
+                  <span class="admin-record-avatar" aria-hidden="true">{{ user.username.charAt(0).toUpperCase() }}</span>
+                  <div class="admin-record-copy">
+                    <strong>{{ user.username }}</strong>
+                    <small>{{ user.email }}</small>
+                  </div>
+                </div>
+              </td>
+              <td data-label="Company"><span [class.admin-cell-muted]="!user.company_name">{{ user.company_name || 'No company' }}</span></td>
+              <td>
+                <span class="admin-plan-badge">{{ roleNames(user) }}</span>
+              </td>
+              <td>
+                <span *ngIf="user.company_active === false" class="mexa-badge mexa-badge-bad"
+                  title="Nobody in this company can sign in until it is turned back on, on the Companies page">Company disabled</span>
+                <span *ngIf="user.company_active !== false" class="mexa-badge" [ngClass]="user.is_active ? 'mexa-badge-good' : 'mexa-badge-neutral'">
+                  {{ user.is_active ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td class="actions">
+                <div class="admin-row-actions">
+                  <button type="button" (click)="openEditModal(user)" class="ui-btn ui-btn-ghost ui-btn-xs">
+                    <span class="material-icons" aria-hidden="true">edit</span> Edit
+                  </button>
+                  <button type="button" (click)="toggleUserActive(user)" class="ui-btn ui-btn-ghost ui-btn-xs" [disabled]="loading">
+                    <span class="material-icons" aria-hidden="true">{{ user.is_active ? 'block' : 'check_circle' }}</span>
+                    {{ user.is_active ? 'Disable' : 'Enable' }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="admin-panel-footer">
+        <span>{{ usersLoaded ? 'Showing ' + filteredUsers.length + ' of ' + users.length + ' accounts' : 'Company administrators' }}</span>
+        <span>Company access and account status both control sign-in.</span>
+      </div>
+    </section>
+  </ng-container>
+
+  <ng-template #companyUsers>
 <div>
   <div class="mexa-titlebar">
     <div class="flex gap-2 items-center">
@@ -115,6 +251,9 @@
       </table>
     </div>
   </div>
+</div>
+
+  </ng-template>
 </div>
 
 <!-- ──────────────── CREATE MODAL ──────────────── -->

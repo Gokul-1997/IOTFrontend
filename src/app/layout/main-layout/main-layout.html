@@ -5,7 +5,7 @@
   on each page means a screen cannot be added and quietly miss it, and the
   footer is written once instead of nine times.
 -->
-<div class="mexa-shell">
+<div class="mexa-shell" [class.super-admin-shell]="auth.isSntSuper()">
   <div class="mexa-page">
     <router-outlet></router-outlet>
   </div>

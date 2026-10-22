@@ -29,6 +29,15 @@ const companies = [
     max_users: 10, max_plants: 2, max_machines: 20 }
 ];
 
+// A third record exercises the directory's inactive and unassigned states
+// without changing the original fixtures used by the existing admin flows.
+const directoryCompanies = [
+  ...companies,
+  { id: 6, company_code: 'NOVA', company_name: 'Nova Manufacturing', contact_email: 'admin@nova.example',
+    is_active: false, plan_id: null, plan_name: null, tier: null,
+    max_users: null, max_plants: null, max_machines: null }
+];
+
 const plans = [
   { id: 1, plan_name: 'Gold', tier: 3, max_users: 50, max_plants: 5, max_machines: 100, is_active: true },
   { id: 2, plan_name: 'Silver', tier: 2, max_users: 10, max_plants: 2, max_machines: 20, is_active: true }
@@ -67,37 +76,210 @@ const planHistory = [
     changed_by_name: 'super', note: 'Upgraded after onboarding call' }
 ];
 
-async function mockAdminApi(page: any) {
+async function mockAdminApi(page: any, opts: { companyRecords?: any[] } = {}) {
   await page.route('**/api/**', (r: any) => r.fulfill({ status: 200, contentType: 'application/json',
     body: JSON.stringify({ status: 'success', success: true, data: [] }) }));
   await page.route('**/api/companies/*/usage', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(usage) }));
   await page.route('**/api/companies/*/plan/history*', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ok(planHistory)) }));
-  await page.route('**/api/companies', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(companies) }));
+  await page.route('**/api/companies', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(opts.companyRecords ?? companies) }));
   await page.route('**/api/plans', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(plans) }));
   await page.route('**/api/users', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(users) }));
   await page.route('**/api/roles', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(roles) }));
   await page.route('**/api/roles/pages/list', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(permissionModules) }));
 }
 
-test('Companies: landing page, usage & plan history, assign plan', async ({ sntSuperPage: page }) => {
+test('Companies: search and combined filters keep overview totals independent of the directory', async ({ sntSuperPage: page }) => {
+  await mockAdminApi(page, { companyRecords: directoryCompanies });
+  await page.goto('/admin/companies');
+
+  const directory = page.getByRole('region', { name: 'Companies', exact: true });
+  const rows = directory.locator('tbody tr');
+  const overview = page.getByRole('region', { name: 'Company overview', exact: true });
+  const search = page.getByRole('searchbox', { name: 'Search companies', exact: true });
+  const status = page.getByRole('combobox', { name: 'Company status', exact: true });
+  const plan = page.getByRole('combobox', { name: 'Company plan', exact: true });
+  await expect(rows).toHaveCount(3);
+  for (const [label, count] of [
+    ['Total companies', '3'], ['Active companies', '2'],
+    ['Inactive companies', '1'], ['Without a plan', '1']
+  ]) {
+    const metric = overview.locator('.admin-stat').filter({ has: page.getByText(label, { exact: true }) });
+    await expect(metric).toHaveCount(1);
+    await expect(metric).toContainText(count);
+  }
+  const totals = await overview.textContent();
+
+  // The same search handles a company code, contact email, and name.
+  await search.fill('  pAcPl  ');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('Precision Auto Components');
+  await search.fill('OPS@SANDT.COM');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('S AND T');
+  await search.fill('Nova Manufacturing');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('Nova Manufacturing');
+
+  await search.fill('');
+  await status.selectOption('active');
+  await expect(rows).toHaveCount(2);
+  await plan.selectOption('1');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('S AND T');
+  await plan.selectOption('2');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('Precision Auto Components');
+
+  await status.selectOption('inactive');
+  await plan.selectOption('none');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('Nova Manufacturing');
+  await expect(overview).toHaveText(totals!);
+
+  await page.getByRole('button', { name: 'Clear filters', exact: true }).click();
+  await expect(search).toHaveValue('');
+  await expect(status).toHaveValue('all');
+  await expect(plan).toHaveValue('all');
+  await expect(rows).toHaveCount(3);
+  await expect(overview).toHaveText(totals!);
+});
+
+test('Companies: a search with no matches explains the result and can clear every filter', async ({ sntSuperPage: page }) => {
+  await mockAdminApi(page, { companyRecords: directoryCompanies });
+  await page.goto('/admin/companies');
+  await page.getByRole('searchbox', { name: 'Search companies', exact: true }).fill('unknown-company');
+  await page.getByRole('combobox', { name: 'Company status', exact: true }).selectOption('active');
+  await page.getByRole('combobox', { name: 'Company plan', exact: true }).selectOption('1');
+
+  await expect(page.getByText('No companies match your filters', { exact: true })).toBeVisible();
+  await expect(page.getByText('No companies yet', { exact: true })).toHaveCount(0);
+  await expect(page.locator('tbody tr')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Clear filters', exact: true }).click();
+  await expect(page.getByText('No companies match your filters', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('searchbox', { name: 'Search companies', exact: true })).toHaveValue('');
+  await expect(page.getByRole('combobox', { name: 'Company status', exact: true })).toHaveValue('all');
+  await expect(page.getByRole('combobox', { name: 'Company plan', exact: true })).toHaveValue('all');
+  await expect(page.getByRole('region', { name: 'Companies', exact: true }).locator('tbody tr')).toHaveCount(3);
+});
+
+test('Companies: an initial load failure offers retry instead of an empty directory', async ({ sntSuperPage: page }) => {
+  await mockAdminApi(page);
+  let shouldFail = true;
+  let requests = 0;
+  await page.route('**/api/companies', (route: any) => {
+    requests++;
+    return route.fulfill({ status: shouldFail ? 500 : 200, contentType: 'application/json',
+      body: JSON.stringify(shouldFail ? { message: 'Company service unavailable' } : companies) });
+  });
+  await page.goto('/admin/companies');
+
+  const error = page.getByRole('alert').filter({ has: page.getByRole('button', { name: 'Try again', exact: true }) });
+  await expect(error).toBeVisible();
+  await expect(page.getByText('No companies yet', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('No companies match your filters', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Companies', exact: true })).toHaveCount(0);
+  await expect(page.locator('[role="status"][aria-label^="Loading"]')).toHaveCount(0);
+
+  shouldFail = false;
+  await error.getByRole('button', { name: 'Try again', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Companies', exact: true }).locator('tbody tr')).toHaveCount(2);
+  await expect(error).toHaveCount(0);
+  expect(requests).toBe(2);
+});
+
+test('Companies: secondary actions disclose by keyboard and close on Escape or an outside click', async ({ sntSuperPage: page }) => {
+  await mockAdminApi(page, { companyRecords: directoryCompanies });
+  await page.route('**/api/companies/4', (route: any) => route.fulfill({ status: 200,
+    contentType: 'application/json', body: JSON.stringify({ ...companies[0],
+      current_users: 12, current_plants: 2, current_machines: 20 }) }));
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/admin/companies');
+  const row = page.getByRole('row', { name: /S AND T/ });
+  await expect(row.getByRole('button', { name: 'Access', exact: true })).toBeVisible();
+  await expect(row.getByRole('button', { name: 'Usage for S AND T', exact: true })).toBeVisible();
+  await expect(row.getByRole('button', { name: 'Program Transfer gateway of S AND T', exact: true })).toBeVisible();
+
+  const summary = row.locator('summary[aria-label="More actions for S AND T"]');
+  const details = row.locator('details');
+  await expect(row.getByRole('button', { name: 'Delete', exact: true })).toBeHidden();
+  await summary.focus();
+  await expect(summary).toBeFocused();
+  await summary.press('Enter');
+  await expect(details).toHaveJSProperty('open', true);
+  for (const action of ['Plants', 'Plan', 'View', 'Edit', 'Deactivate', 'Delete']) {
+    await expect(row.getByRole('button', { name: action, exact: true })).toBeVisible();
+  }
+  await summary.press('Escape');
+  await expect(details).toHaveJSProperty('open', false);
+  await expect(row.getByRole('button', { name: 'Delete', exact: true })).toBeHidden();
+
+  await summary.click();
+  await expect(details).toHaveJSProperty('open', true);
+  await page.getByRole('searchbox', { name: 'Search companies', exact: true }).click();
+  await expect(details).toHaveJSProperty('open', false);
+
+  await summary.click();
+  await row.getByRole('button', { name: 'View', exact: true }).click();
+  const detail = page.locator('.ui-dialog');
+  await expect(detail.getByRole('heading', { name: 'S AND T', exact: true })).toBeVisible();
+  await expect(detail).toContainText('ops@sandt.com');
+  await expect(detail.getByRole('heading', { name: 'Usage vs Limits', exact: true })).toBeVisible();
+  await detail.getByRole('button', { name: 'Close', exact: true }).first().click();
+  await expect(detail).toHaveCount(0);
+
+  const inactive = page.getByRole('row', { name: /Nova Manufacturing/ });
+  await inactive.locator('summary[aria-label="More actions for Nova Manufacturing"]').click();
+  await expect(inactive.getByRole('button', { name: 'Activate', exact: true })).toBeVisible();
+  await expect(inactive.getByRole('button', { name: 'Deactivate', exact: true })).toHaveCount(0);
+});
+
+for (const theme of ['light', 'dark'] as const) {
+  for (const width of [390, 1440]) {
+    test(`Super Admin: ${theme} layout at ${width}px fits the viewport and marks the current page`, async ({ sntSuperPage: page }, testInfo) => {
+      await mockAdminApi(page, { companyRecords: directoryCompanies });
+      await page.setViewportSize({ width, height: 1000 });
+      await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+      await page.addInitScript(value => localStorage.setItem('theme', value), theme);
+
+      for (const [path, label] of [
+        ['/admin/companies', 'Companies'], ['/admin/plans', 'Plans'], ['/admin/users', 'Company Admins']
+      ]) {
+        await page.goto(path);
+        const current = page.getByRole('link', { name: label, exact: true });
+        await expect(current).toHaveAttribute('aria-current', 'page');
+        await expect(page.locator('html')).toHaveClass(theme === 'dark' ? /\bdark\b/ : /^(?!.*\bdark\b)/);
+        // Horizontal scrolling belongs to a table region, never the document.
+        await expect.poll(() => page.evaluate(() =>
+          document.documentElement.scrollWidth <= window.innerWidth
+        )).toBe(true);
+        await page.screenshot({
+          path: testInfo.outputPath(`${path.split('/').pop()}-${theme}-${width}.png`),
+          fullPage: true, animations: 'disabled'
+        });
+      }
+    });
+  }
+}
+
+test('Companies: landing page, usage & plan history, assign plan', async ({ sntSuperPage: page }, testInfo) => {
   await mockAdminApi(page);
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/admin/companies');
 
-  await expect(page.getByText('S AND T')).toBeVisible();
+  await expect(page.getByText('S AND T', { exact: true })).toBeVisible();
   await expect(page.getByText('Precision Auto Components')).toBeVisible();
-  await page.screenshot({ path: 'mexa-admin-companies.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('mexa-admin-companies.png'), fullPage: true });
 
   // Usage & Plan History
   await page.getByRole('row', { name: /S AND T/ }).getByRole('button', { name: /usage|history/i }).click();
   await expect(page.getByText(/12 of 50/)).toBeVisible();
   await expect(page.getByText('Upgraded after onboarding call')).toBeVisible();
-  await page.screenshot({ path: 'mexa-admin-company-history.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('mexa-admin-company-history.png'), fullPage: true });
 });
 
 /* Program Transfer: a company's one gateway token — for all its machines — is
    made here by S&T (22 Oct 2026: "super admin side, don't company side"). */
-test('Companies → Gateway: S&T makes the company\'s Program Transfer token, shown once; replacing and stopping ask first', async ({ sntSuperPage: page }) => {
+test('Companies → Gateway: S&T makes the company\'s Program Transfer token, shown once; replacing and stopping ask first', async ({ sntSuperPage: page }, testInfo) => {
   await mockAdminApi(page);
   let gateway: any = null;
   const calls: string[] = [];
@@ -129,7 +311,7 @@ test('Companies → Gateway: S&T makes the company\'s Program Transfer token, sh
   await dialog.getByRole('button', { name: 'Make token' }).click();
   await expect(dialog.getByLabel('Token', { exact: true })).toHaveValue('mxg_' + 'Q'.repeat(43));
   await expect(dialog).toContainText('shown only this once');
-  await page.screenshot({ path: 'mexa-admin-company-gateway.png' });
+  await page.screenshot({ path: testInfo.outputPath('mexa-admin-company-gateway.png') });
   await dialog.getByRole('button', { name: 'Close', exact: true }).click();
   await expect(dialog).toHaveCount(0);
 
@@ -148,7 +330,7 @@ test('Companies → Gateway: S&T makes the company\'s Program Transfer token, sh
   expect(calls).toEqual(['POST', 'DELETE']);
 });
 
-test('Plans: the plan catalogue lists both plans with their limits', async ({ sntSuperPage: page }) => {
+test('Plans: the plan catalogue lists both plans with their limits', async ({ sntSuperPage: page }, testInfo) => {
   await mockAdminApi(page);
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/admin/plans');
@@ -156,13 +338,13 @@ test('Plans: the plan catalogue lists both plans with their limits', async ({ sn
   await expect(page.getByRole('heading', { name: 'Plans' }).or(page.getByText('Plan Management'))).toBeVisible();
   await expect(page.getByText('Gold')).toBeVisible();
   await expect(page.getByText('Silver')).toBeVisible();
-  await page.screenshot({ path: 'mexa-admin-plans.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('mexa-admin-plans.png'), fullPage: true });
 });
 
 /* One admin per company, made with the company on the Companies page. The
    company admin adds everyone else — a second full-access admin included —
    so S&T's page lists each company's admin and adds or deletes no one. */
-test('Company Admins: one per company — no Add, no Delete', async ({ sntSuperPage: page }) => {
+test('Company Admins: one per company — no Add, no Delete', async ({ sntSuperPage: page }, testInfo) => {
   await mockAdminApi(page);
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/admin/users');
@@ -175,10 +357,10 @@ test('Company Admins: one per company — no Add, no Delete', async ({ sntSuperP
   await expect(row.getByRole('button', { name: 'Edit' })).toBeVisible();
   await expect(row.getByRole('button', { name: 'Disable' })).toBeVisible();
   await expect(row.getByRole('button', { name: 'Delete' })).toHaveCount(0);
-  await page.screenshot({ path: 'mexa-admin-company-admins.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('mexa-admin-company-admins.png'), fullPage: true });
 });
 
-test('Company Admins: editing changes the admin\'s own details — never the company', async ({ sntSuperPage: page }) => {
+test('Company Admins: editing changes the admin\'s own details — never the company', async ({ sntSuperPage: page }, testInfo) => {
   await mockAdminApi(page);
   const puts: any[] = [];
   await page.route('**/api/users/1', (r: any) => {
@@ -200,7 +382,7 @@ test('Company Admins: editing changes the admin\'s own details — never the com
   await expect(dialog.getByText('A company admin always stays with their company.')).toBeVisible();
   // and no machines to tick
   await expect(dialog.getByText('Machines this user supervises')).toHaveCount(0);
-  await page.screenshot({ path: 'mexa-admin-company-admin-edit.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('mexa-admin-company-admin-edit.png'), fullPage: true });
 
   await dialog.locator('input[type=email]').fill('new-admin@sandt.com');
   await dialog.getByRole('button', { name: 'Save Changes' }).click();
@@ -304,7 +486,7 @@ const openAccess = async (page: any) => {
   await page.getByRole('row', { name: /S AND T/ }).getByRole('button', { name: 'Access' }).click();
 };
 
-test('Manage Access: opens with the company\'s current grants ticked, Save waits for a change', async ({ sntSuperPage: page }) => {
+test('Manage Access: opens with the company\'s current grants ticked, Save waits for a change', async ({ sntSuperPage: page }, testInfo) => {
   await mockAccessApi(page);
   await page.setViewportSize({ width: 1400, height: 1000 });
   await openAccess(page);
@@ -313,10 +495,10 @@ test('Manage Access: opens with the company\'s current grants ticked, Save waits
   // 3 page grants — the legacy machine.view the modal cannot show is not counted
   await expect(page.getByText('3 permission(s) selected')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Save Access' })).toBeDisabled();
-  await page.screenshot({ path: 'mexa-admin-access.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('mexa-admin-access.png'), fullPage: true });
 });
 
-test('Manage Access: a revoke says what it will do, then sends only what remains', async ({ sntSuperPage: page }) => {
+test('Manage Access: a revoke says what it will do, then sends only what remains', async ({ sntSuperPage: page }, testInfo) => {
   const state = await mockAccessApi(page);
   await page.setViewportSize({ width: 1400, height: 1000 });
   await openAccess(page);
@@ -327,7 +509,7 @@ test('Manage Access: a revoke says what it will do, then sends only what remains
 
   await expect(page.getByText(/Removing 1/)).toBeVisible();
   await expect(page.getByText(/roles in this company that hold them lose them too/)).toBeVisible();
-  await page.screenshot({ path: 'mexa-admin-access-revoke.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('mexa-admin-access-revoke.png'), fullPage: true });
 
   await page.getByRole('button', { name: 'Save Access' }).click();
 
@@ -353,7 +535,7 @@ test('Manage Access: saving nothing is blocked, because empty means unrestricted
   expect(state.puts).toHaveLength(0);
 });
 
-test('Manage Access: if the current grants cannot be loaded, nothing is editable and Save cannot wipe them', async ({ sntSuperPage: page }) => {
+test('Manage Access: if the current grants cannot be loaded, nothing is editable and Save cannot wipe them', async ({ sntSuperPage: page }, testInfo) => {
   const state = await mockAccessApi(page, { failCurrent: true });
   await page.setViewportSize({ width: 1400, height: 1000 });
   await openAccess(page);
@@ -363,7 +545,7 @@ test('Manage Access: if the current grants cannot be loaded, nothing is editable
   await expect(page.locator('.ui-dialog-lg input[type=checkbox]')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Save Access' })).toBeDisabled();
   expect(state.puts).toHaveLength(0);
-  await page.screenshot({ path: 'mexa-admin-access-failed.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('mexa-admin-access-failed.png'), fullPage: true });
 
   // and it recovers once the request works
   state.failCurrent = false;
@@ -399,7 +581,7 @@ const analyticsModules = analytics.map(([key, label, actions]) => ({
 }));
 const idOf = (key: string) => analyticsModules.flatMap(m => m.permissions).find(p => p.permission_key === key)!.id;
 
-test('Manage Access: the nine dashboards are separate modules under Analytics, each with its own actions', async ({ sntSuperPage: page }) => {
+test('Manage Access: the nine dashboards are separate modules under Analytics, each with its own actions', async ({ sntSuperPage: page }, testInfo) => {
   const state = await mockAccessApi(page);
   // company holds the classic dashboard plus OEE and all three Energy boxes
   const held = [
@@ -435,7 +617,7 @@ test('Manage Access: the nine dashboards are separate modules under Analytics, e
   await expect(factory.getByText('Export', { exact: true })).toHaveCount(0);
 
   await expect(page.getByText('5 permission(s) selected')).toBeVisible();
-  await page.screenshot({ path: 'mexa-admin-access-analytics.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('mexa-admin-access-analytics.png'), fullPage: true });
 
   // take away only the Tariff Settings box: everything else stays granted
   await energy.getByText('Tariff Settings', { exact: true }).click();

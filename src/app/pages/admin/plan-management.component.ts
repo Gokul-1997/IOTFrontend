@@ -33,6 +33,31 @@ export class PlanManagementComponent implements OnInit {
   plans: any[] = [];
   companies: any[] = [];
   loading = false;
+  plansLoaded = false;
+  loadError = '';
+  companiesLoaded = false;
+  searchQuery = '';
+  statusFilter = 'all';
+
+  get filteredPlans(): any[] {
+    const query = this.searchQuery.trim().toLowerCase();
+    return this.plans.filter(plan => {
+      const matchesSearch = !query || [plan.plan_name, plan.plan_code, plan.description]
+        .some(value => String(value || '').toLowerCase().includes(query));
+      const matchesStatus = this.statusFilter === 'all'
+        || (this.statusFilter === 'available' ? !!plan.is_active : !plan.is_active);
+      return matchesSearch && matchesStatus;
+    });
+  }
+
+  get availablePlans(): number { return this.plans.filter(plan => plan.is_active).length; }
+  get retiredPlans(): number { return this.plans.filter(plan => !plan.is_active).length; }
+  get assignedCompanies(): number { return this.companies.filter(company => company.plan_id != null).length; }
+
+  clearFilters() {
+    this.searchQuery = '';
+    this.statusFilter = 'all';
+  }
 
   showModal = false;
   editId: number | null = null;
@@ -59,10 +84,16 @@ export class PlanManagementComponent implements OnInit {
 
   loadPlans() {
     this.loading = true;
+    this.loadError = '';
     this.cdr.detectChanges();
     this.companyService.getPlans().subscribe({
-      next: res => { this.plans = res || []; this.loading = false; this.cdr.detectChanges(); },
-      error: () => { this.loading = false; this.cdr.detectChanges(); this.toast.error('Failed to load plans'); }
+      next: res => { this.plans = res || []; this.plansLoaded = true; this.loading = false; this.cdr.detectChanges(); },
+      error: () => {
+        this.loadError = 'Plans could not be loaded. Please try again.';
+        this.loading = false;
+        this.cdr.detectChanges();
+        this.toast.error('Failed to load plans');
+      }
     });
   }
 
@@ -70,7 +101,7 @@ export class PlanManagementComponent implements OnInit {
      not be retired without the admin knowing who it affects. */
   loadCompanies() {
     this.companyService.getCompanies().subscribe({
-      next: res => { this.companies = res || []; this.cdr.detectChanges(); },
+      next: res => { this.companies = res || []; this.companiesLoaded = true; this.cdr.detectChanges(); },
       error: () => { /* the count is decoration; the screen works without it */ }
     });
   }

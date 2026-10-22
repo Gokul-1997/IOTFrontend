@@ -1,78 +1,122 @@
-<div>
-  <div class="mexa-titlebar">
+<div class="super-admin admin-workspace">
+  <header class="admin-heading">
     <div>
-        <h1 class="mexa-title">Plans</h1>
-        <p class="mexa-subtitle">The catalogue companies are assigned from — limits for users, plants and machines</p>
+      <p class="admin-eyebrow"><span class="material-icons" aria-hidden="true">admin_panel_settings</span> Super administration</p>
+      <h1 class="mexa-title">Plans</h1>
+      <p class="admin-description">Manage the resource limits available to your companies.</p>
     </div>
-    <span class="mexa-titlebar-spacer"></span>
-    <button type="button" (click)="openCreate()"
-        class="ui-btn ui-btn-primary">
-        + New Plan
-      </button>
-  </div>
+    <button type="button" (click)="openCreate()" class="ui-btn ui-btn-primary">
+      <span class="material-icons" aria-hidden="true">add</span>
+      New Plan
+    </button>
+  </header>
 
   <app-admin-tabs></app-admin-tabs>
 
-  <div class="mexa-card">
+  <section class="admin-stats" aria-label="Plan overview">
+    <article class="admin-stat">
+      <span class="admin-stat-icon material-icons" aria-hidden="true">layers</span>
+      <div><span>Total plans</span><strong>{{ plansLoaded ? plans.length : '—' }}</strong></div>
+    </article>
+    <article class="admin-stat">
+      <span class="admin-stat-icon is-green material-icons" aria-hidden="true">check_circle</span>
+      <div><span>Available plans</span><strong>{{ plansLoaded ? availablePlans : '—' }}</strong></div>
+    </article>
+    <article class="admin-stat">
+      <span class="admin-stat-icon is-slate material-icons" aria-hidden="true">inventory_2</span>
+      <div><span>Retired plans</span><strong>{{ plansLoaded ? retiredPlans : '—' }}</strong></div>
+    </article>
+    <article class="admin-stat">
+      <span class="admin-stat-icon material-icons" aria-hidden="true">business</span>
+      <div><span>Companies with a plan</span><strong>{{ companiesLoaded ? assignedCompanies : '—' }}</strong></div>
+    </article>
+  </section>
 
-    <div class="ui-alert ui-alert-info admin-info">
-      <p class="admin-info-text">
-        A plan's limits are the ceiling. On the Companies screen you can set a lower custom limit per company,
-        but never higher than the plan allows. Retiring a plan leaves existing companies untouched — it only
-        stops the plan being assigned again.
-      </p>
+  <section class="admin-panel">
+    <div class="admin-panel-heading">
+      <div>
+        <h2>Plan catalogue</h2>
+        <p>Review limits, edit a plan, or manage its availability for new assignments.</p>
+      </div>
+      <span class="admin-cell-muted">{{ plansLoaded ? plans.length : '—' }} plans</span>
     </div>
 
-    <div *ngIf="loading && plans.length === 0" class="flex justify-center py-12">
-      <span class="ui-spinner admin-spin" role="status" aria-label="Loading"></span>
+    <div class="admin-toolbar">
+      <label class="admin-search">
+        <span class="material-icons" aria-hidden="true">search</span>
+        <input class="ui-input" type="search" [(ngModel)]="searchQuery" aria-label="Search plans"
+          placeholder="Search plans by name or code">
+      </label>
+      <select class="ui-input admin-filter" [(ngModel)]="statusFilter" aria-label="Plan status">
+        <option value="all">All statuses</option>
+        <option value="available">Available</option>
+        <option value="retired">Retired</option>
+      </select>
     </div>
 
-    <div *ngIf="!loading && plans.length === 0" class="text-center py-12 text-gray-500">
-      <p class="font-medium">No plans yet</p>
-      <p class="text-sm mt-1">Create a plan before assigning one to a company</p>
+    <div *ngIf="loadError" class="admin-empty" role="alert">
+      <span class="material-icons" aria-hidden="true">cloud_off</span>
+      <h3>Unable to load plans</h3>
+      <p>{{ loadError }}</p>
+      <button type="button" (click)="loadPlans()" class="ui-btn ui-btn-ghost">Try again</button>
     </div>
 
-    <div *ngIf="plans.length > 0" class="mexa-tablewrap" tabindex="0" role="region" aria-label="Plans">
-      <table class="mexa-table">
+    <div *ngIf="loading && !plansLoaded" class="admin-empty">
+      <span class="ui-spinner admin-spin" role="status" aria-label="Loading plans"></span>
+      <p>Loading your plan catalogue…</p>
+    </div>
+
+    <div *ngIf="!loading && !loadError && plans.length === 0" class="admin-empty">
+      <span class="material-icons" aria-hidden="true">layers</span>
+      <h3>No plans yet</h3>
+      <p>Create a plan before assigning one to a company.</p>
+    </div>
+
+    <div *ngIf="!loading && !loadError && plans.length > 0 && filteredPlans.length === 0" class="admin-empty">
+      <span class="material-icons" aria-hidden="true">search_off</span>
+      <h3>No matching plans</h3>
+      <p>Try another search or choose a different status.</p>
+      <button type="button" (click)="clearFilters()" class="ui-btn ui-btn-ghost">Clear filters</button>
+    </div>
+
+    <div *ngIf="filteredPlans.length > 0" class="admin-tablewrap" tabindex="0" role="region" aria-label="Plans" [attr.aria-busy]="loading">
+      <table class="admin-table plan-directory">
         <thead>
           <tr>
             <th scope="col">Plan</th>
-            <th class="col-md" scope="col">Limits</th>
+            <th scope="col">Users</th>
+            <th scope="col">Plants</th>
+            <th scope="col">Machines</th>
             <th scope="col">Companies</th>
             <th scope="col">Status</th>
             <th scope="col" class="actions">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let plan of plans">
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                      [ngClass]="tierBadgeClass(plan.tier)">{{ plan.plan_name }}</span>
-                <span class="text-xs text-gray-400">{{ plan.plan_code }}</span>
+          <tr *ngFor="let plan of filteredPlans">
+            <td>
+              <div class="admin-record">
+                <span class="admin-record-avatar material-icons" aria-hidden="true">layers</span>
+                <div class="admin-record-copy">
+                  <strong>{{ plan.plan_name }}</strong>
+                  <small>{{ plan.plan_code || 'Tier ' + plan.tier }}</small>
+                  <small *ngIf="plan.description">{{ plan.description }}</small>
+                </div>
               </div>
-              <p *ngIf="plan.description" class="text-xs text-gray-500 mt-1">{{ plan.description }}</p>
             </td>
-            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 col-md">
-              <div>Users: <strong>{{ plan.max_users }}</strong></div>
-              <div>Plants: <strong>{{ plan.max_plants }}</strong></div>
-              <div>Machines: <strong>{{ plan.max_machines }}</strong></div>
-            </td>
-            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-              {{ companiesOn(plan.id) }}
-            </td>
-            <td class="px-4 py-3">
+            <td data-label="Users"><strong>{{ plan.max_users }}</strong></td>
+            <td data-label="Plants"><strong>{{ plan.max_plants }}</strong></td>
+            <td data-label="Machines"><strong>{{ plan.max_machines }}</strong></td>
+            <td class="admin-cell-muted" data-label="Companies">{{ companiesLoaded ? companiesOn(plan.id) : '—' }}</td>
+            <td>
               <span class="mexa-badge" [ngClass]="plan.is_active ? 'mexa-badge-good' : 'mexa-badge-neutral'">
                 {{ plan.is_active ? 'Available' : 'Retired' }}
               </span>
             </td>
             <td class="actions">
-              <div class="flex items-center gap-2">
-                <button (click)="openEdit(plan)"
-                  class="ui-btn ui-btn-ghost ui-btn-xs">
-                  Edit
-                </button>
-                <button (click)="toggleActive(plan)" class="ui-btn ui-btn-ghost ui-btn-xs">
+              <div class="admin-row-actions">
+                <button type="button" (click)="openEdit(plan)" class="ui-btn ui-btn-ghost ui-btn-xs">Edit</button>
+                <button type="button" (click)="toggleActive(plan)" class="ui-btn ui-btn-ghost ui-btn-xs">
                   {{ plan.is_active ? 'Retire' : 'Make available' }}
                 </button>
               </div>
@@ -81,7 +125,14 @@
         </tbody>
       </table>
     </div>
-  </div>
+
+    <div class="admin-panel-footer">
+      <span>{{ plansLoaded ? 'Showing ' + filteredPlans.length + ' of ' + plans.length + ' plans' : 'Plan catalogue' }}</span>
+      <span>Retiring a plan stops new assignments. Existing companies keep their plan.</span>
+    </div>
+  </section>
+
+  <p class="admin-cell-muted">Company limits can be set below their plan’s limits on the Companies page.</p>
 </div>
 
 <!-- ──────────────── CREATE / EDIT MODAL ──────────────── -->

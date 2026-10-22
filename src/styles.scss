@@ -18,6 +18,7 @@
 // Shared UX layer: header, phone menu, filters on phones,
 // touch targets, focus, dialogs and empty/error states.
 @use './styles/ux';
+@use './styles/admin';
 // Ubuntu is the STM MEXA face (the design PDF uses it throughout). It is
 // served with the app (public/fonts, declared in styles/system.scss), not
 // from Google, so a plant PC with no internet shows the same type.

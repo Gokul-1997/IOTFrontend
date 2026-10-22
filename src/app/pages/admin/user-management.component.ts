@@ -21,9 +21,42 @@ export class UserManagementComponent implements OnInit {
   users: any[] = [];
   roles: any[] = [];
   loading = false;
+  usersLoaded = false;
+  loadError = '';
+  searchQuery = '';
+  statusFilter = 'all';
   showCreateModal = false;
   showEditModal = false;
   selectedUser: any = null;
+
+  get filteredUsers(): any[] {
+    if (!this.auth.isSntSuper()) return this.users;
+    const query = this.searchQuery.trim().toLowerCase();
+    return this.users.filter(user => {
+      const matchesSearch = !query || [user.username, user.email, user.company_name]
+        .some(value => String(value || '').toLowerCase().includes(query));
+      const matchesStatus = this.statusFilter === 'all'
+        || (this.statusFilter === 'company-disabled' && user.company_active === false)
+        || (this.statusFilter === 'active' && user.company_active !== false && !!user.is_active)
+        || (this.statusFilter === 'inactive' && user.company_active !== false && !user.is_active);
+      return matchesSearch && matchesStatus;
+    });
+  }
+
+  get activeAdmins(): number {
+    return this.users.filter(user => user.company_active !== false && user.is_active).length;
+  }
+  get inactiveAdmins(): number {
+    return this.users.filter(user => user.company_active !== false && !user.is_active).length;
+  }
+  get companyDisabledAdmins(): number {
+    return this.users.filter(user => user.company_active === false).length;
+  }
+
+  clearFilters() {
+    this.searchQuery = '';
+    this.statusFilter = 'all';
+  }
 
   createForm = {
     username: '',
@@ -57,14 +90,17 @@ export class UserManagementComponent implements OnInit {
 
   loadUsers() {
     this.loading = true;
+    this.loadError = '';
     this.cdr.detectChanges();
     this.adminService.getUsers().subscribe({
       next: res => {
         this.users = [...res];
+        this.usersLoaded = true;
         this.loading = false;
         this.cdr.detectChanges();
       },
       error: () => {
+        this.loadError = 'Company admins could not be loaded. Please try again.';
         this.toastService.error('Failed to load users');
         this.loading = false;
         this.cdr.detectChanges();
