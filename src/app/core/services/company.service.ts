@@ -3,6 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+/** A company's Program Transfer gateway as S&T sees it (the token itself is only ever in the answer that makes it). */
+export interface ProgramGatewayInfo {
+  token_prefix: string; token_created_at: string; last_seen_at: string | null; online: boolean;
+  last_seen_ip: string | null; agent_version: string | null;
+}
+export interface ProgramGatewayState { company_id: number; company_name: string; gateway: ProgramGatewayInfo | null; poll_seconds: number }
+
 @Injectable({ providedIn: 'root' })
 export class CompanyService {
   private api = environment.apiUrl;
@@ -102,5 +109,20 @@ export class CompanyService {
 
   assignCompanyPermissions(companyId: number, permissionIds: number[]): Observable<any> {
     return this.http.put<any>(`${this.api}/companies/${companyId}/permissions`, { permission_ids: permissionIds });
+  }
+
+  // ── Program Transfer gateway: one token per company, for all its machines (SNT_SUPER) ─
+  getProgramGateway(companyId: number): Observable<ProgramGatewayState> {
+    return this.http.get<ProgramGatewayState>(`${this.api}/companies/${companyId}/program-gateway`);
+  }
+
+  /** A new token (the old one stops at once). Shown in this answer only. */
+  createProgramGatewayToken(companyId: number): Observable<{ token: string; token_prefix: string; created_at: string; company_name: string }> {
+    return this.http.post<{ token: string; token_prefix: string; created_at: string; company_name: string }>(
+      `${this.api}/companies/${companyId}/program-gateway/token`, {});
+  }
+
+  revokeProgramGatewayToken(companyId: number): Observable<{ revoked: boolean }> {
+    return this.http.delete<{ revoked: boolean }>(`${this.api}/companies/${companyId}/program-gateway/token`);
   }
 }

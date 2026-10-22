@@ -1,4 +1,4 @@
-// Program Transfer: a machine, its program, its backup, its files.
+// Program Transfer: a machine, its line of programs, its backup, its files.
 :host { display: block; }
 
 .pt-machine {
@@ -6,7 +6,7 @@
   margin-bottom: 1rem;
 }
 .pt-select { flex: 0 1 22rem; min-width: 14rem; }
-.pt-gateway { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; font-size: .85rem; color: var(--mexa-ink-2); }
+.pt-gateway { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0; font-size: .85rem; color: var(--mexa-ink-2); }
 .pt-dot {
   width: .6rem; height: .6rem; border-radius: 50%; background: #94a3b8; flex: 0 0 auto;
   &[data-state='online'] { background: #16a34a; }
@@ -39,16 +39,6 @@
 :host-context(.dark) .pt-state.is-bad { color: #fca5a5; }
 
 .pt-filesbar { justify-content: space-between; }
-.pt-current { margin-left: .4rem; }
 .pt-row-actions { justify-content: flex-end; flex-wrap: nowrap; }
 .pt-progress { width: 100%; }
 
-.pt-token-body { display: grid; gap: .75rem; }
-.pt-token { display: flex; gap: .5rem; input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; } }
-.pt-api {
-  display: grid; gap: .5rem; padding: .75rem; border-radius: 10px; background: var(--mexa-row-alt); font-size: .8rem;
-  dl { display: grid; gap: .35rem; margin: 0; }
-  dt code { overflow-wrap: anywhere; }
-  dd { margin: 0 0 .25rem; color: var(--mexa-ink-3); }
-  a { justify-self: start; }
-}

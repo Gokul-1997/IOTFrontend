@@ -22,6 +22,7 @@
         <strong>Flow:</strong> 1) Create a company. 2) Assign a plan for resource limits (users, plants, machines).
         3) Click <strong>"Manage Access"</strong> to select which pages &amp; actions the company can use.
         4) Company admin creates roles within the allowed access.
+        5) Program Transfer: <strong>"Gateway"</strong> makes the company's one gateway token, for all its machines.
       </p>
     </div>
 
@@ -88,6 +89,11 @@
                 <button (click)="openAccessModal(c)"
                   class="ui-btn ui-btn-ghost ui-btn-xs">
                   Access
+                </button>
+                <!-- Program Transfer: the company's one gateway token -->
+                <button type="button" (click)="openGatewayModal(c)" class="ui-btn ui-btn-ghost ui-btn-xs"
+                  [attr.aria-label]="'Program Transfer gateway of ' + c.company_name">
+                  Gateway
                 </button>
                 <button (click)="openHistoryModal(c)"
                   class="ui-btn ui-btn-ghost ui-btn-xs">
@@ -712,6 +718,98 @@
 
     <div class="ui-dialog-footer">
       <button (click)="closeHistoryModal()" class="ui-btn ui-btn-ghost">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ──────────────── PROGRAM TRANSFER GATEWAY ──────────────── -->
+<!-- One token per company, for all its machines (22 Oct 2026: S&T makes it,
+     not the company). Shown once; the old one stops when it is replaced. -->
+<div *ngIf="gatewayCompany as gc" class="ui-overlay">
+  <div class="ui-dialog" role="dialog" aria-modal="true" aria-labelledby="gwTitle">
+    <div class="ui-dialog-header">
+      <div>
+        <h2 id="gwTitle" class="ui-dialog-title">Program Transfer gateway</h2>
+        <p class="ui-dialog-subtitle">{{ gc.company_name }} — one token for all its machines. Its gateway sends it on every call.</p>
+      </div>
+      <button type="button" (click)="closeGatewayModal()" class="ui-close" aria-label="Close gateway" [disabled]="gatewayWorking">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="ui-dialog-body space-y-4">
+      <div *ngIf="gatewayError" class="ui-alert ui-alert-error" role="alert">{{ gatewayError }}</div>
+
+      <ng-container *ngIf="gatewayToken; else gatewayNow">
+        <p class="ui-alert ui-alert-warn">Copy it now and give it to {{ gc.company_name }}'s gateway team — it is shown only this once.</p>
+        <div>
+          <label class="ui-label" for="gwToken">Token</label>
+          <div class="flex gap-2">
+            <input id="gwToken" class="ui-input font-mono text-xs" readonly [value]="gatewayToken" (focus)="$any($event.target).select()">
+            <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="copyGatewayToken()">{{ gatewayCopied ? 'Copied' : 'Copy' }}</button>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #gatewayNow>
+        <p *ngIf="gatewayLoading" class="text-sm text-gray-500" role="status">Loading…</p>
+        <ng-container *ngIf="!gatewayLoading && gatewayState">
+          <div *ngIf="gatewayState.gateway as g; else noGatewayToken" class="text-sm space-y-1">
+            <p class="flex items-center gap-2">
+              <span class="inline-block w-2.5 h-2.5 rounded-full" aria-hidden="true"
+                    [ngClass]="g.online ? 'bg-green-600' : g.last_seen_at ? 'bg-red-600' : 'bg-gray-400'"></span>
+              <strong>{{ g.online ? 'Gateway online' : g.last_seen_at ? 'Gateway offline' : 'Gateway has not connected yet' }}</strong>
+            </p>
+            <p class="text-gray-600 dark:text-gray-300">
+              Token <code>{{ g.token_prefix }}…</code> made {{ g.token_created_at | date:'d MMM y' }} ·
+              {{ g.last_seen_at ? 'last call ' + ago(g.last_seen_at) : 'not used yet' }}<ng-container
+                *ngIf="g.last_seen_ip"> · from {{ g.last_seen_ip }}</ng-container><ng-container
+                *ngIf="g.agent_version"> · {{ g.agent_version }}</ng-container>
+            </p>
+          </div>
+          <ng-template #noGatewayToken>
+            <p class="text-sm">{{ gc.company_name }} has no gateway token yet. Make one and give it to the company's gateway team.</p>
+          </ng-template>
+        </ng-container>
+      </ng-template>
+
+      <div class="rounded-lg p-3 text-xs space-y-2 bg-gray-50 dark:bg-gray-800/60">
+        <strong class="text-sm">The gateway's four calls</strong>
+        <dl class="space-y-1">
+          <dt><code class="break-words">GET {{ deviceApi }}/status</code></dt><dd class="text-gray-500 mb-1">Every machine at once: a program waiting? a backup asked for?</dd>
+          <dt><code class="break-words">GET {{ deviceApi }}/program<wbr>?machine=NAME</code></dt><dd class="text-gray-500 mb-1">Download the program waiting for that machine</dd>
+          <dt><code class="break-words">POST {{ deviceApi }}/backup</code></dt><dd class="text-gray-500 mb-1">Upload a backup (form fields <code>machine</code>, <code>file</code>)</dd>
+          <dt><code class="break-words">POST {{ deviceApi }}/report</code></dt><dd class="text-gray-500 mb-1">Program written or refused — the next one in line follows; backup could not be read</dd>
+        </dl>
+        <span class="flex flex-wrap gap-2">
+          <a class="ui-btn ui-btn-ghost ui-btn-xs" href="/integrations/PROGRAM_TRANSFER_API.md" download>
+            <span class="material-icons" aria-hidden="true">description</span>API guide
+          </a>
+          <a class="ui-btn ui-btn-ghost ui-btn-xs" href="/integrations/MEXA_Program_Transfer.postman_collection.json" download>
+            <span class="material-icons" aria-hidden="true">integration_instructions</span>Postman collection
+          </a>
+          <!-- the program that runs on the factory network and moves the files into the machines (Node.js 20) -->
+          <a class="ui-btn ui-btn-ghost ui-btn-xs" href="/integrations/mexa-gateway.js" download>
+            <span class="material-icons" aria-hidden="true">developer_board</span>Ready-made gateway
+          </a>
+        </span>
+      </div>
+    </div>
+
+    <div class="ui-dialog-footer is-split">
+      <button *ngIf="gatewayState?.gateway && !gatewayToken" type="button" class="ui-btn ui-btn-danger-ghost"
+              (click)="stopGatewayToken()" [disabled]="gatewayWorking">Stop token</button>
+      <span *ngIf="!gatewayState?.gateway || gatewayToken"></span>
+      <div class="flex items-center gap-2">
+        <button type="button" class="ui-btn ui-btn-ghost" (click)="closeGatewayModal()" [disabled]="gatewayWorking">Close</button>
+        <button *ngIf="!gatewayToken && !gatewayLoading && gatewayState" type="button" class="ui-btn ui-btn-primary"
+                (click)="makeGatewayToken()" [disabled]="gatewayWorking">
+          <span *ngIf="gatewayWorking" class="ui-spinner" aria-hidden="true"></span>
+          {{ gatewayState.gateway ? 'Replace token' : 'Make token' }}
+        </button>
+      </div>
     </div>
   </div>
 </div>

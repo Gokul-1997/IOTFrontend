@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { CompanyService } from '../../core/services/company.service';
+import { CompanyService, ProgramGatewayState } from '../../core/services/company.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AdminTabsComponent } from './admin-tabs.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-company-management',
@@ -78,6 +79,19 @@ export class CompanyManagementComponent implements OnInit {
      leave Save live: pressing it replaced the company's real access with
      nothing. */
   accessLoadFailed = false;
+
+  /* ── Program Transfer gateway ──
+     One token per company, for all its machines (22 Oct 2026: S&T makes it,
+     not the company). Shown once, in the answer that makes it: kept here
+     only while the dialog is open, so it can be copied. */
+  gatewayCompany: any = null;
+  gatewayState: ProgramGatewayState | null = null;
+  gatewayLoading = false;
+  gatewayError = '';
+  gatewayWorking = false;
+  gatewayToken: string | null = null;
+  gatewayCopied = false;
+  readonly deviceApi = `${environment.apiUrl}/device/v1`;
 
   constructor(
     private companyService: CompanyService,
@@ -598,6 +612,121 @@ export class CompanyManagementComponent implements OnInit {
       next: () => { plant.is_active = !plant.is_active; this.cdr.detectChanges(); },
       error: () => this.toast.error('Failed to update status')
     });
+  }
+
+  // ── Program Transfer gateway ───────────────────
+  openGatewayModal(company: any) {
+    this.gatewayCompany = company;
+    this.gatewayToken = null;
+    this.gatewayCopied = false;
+    this.loadGateway();
+  }
+
+  private loadGateway() {
+    const company = this.gatewayCompany;
+    if (!company) return;
+    this.gatewayLoading = true;
+    this.gatewayError = '';
+    this.cdr.detectChanges();
+    this.companyService.getProgramGateway(company.id).subscribe({
+      next: state => {
+        if (this.gatewayCompany !== company) return;
+        this.gatewayState = state;
+        this.gatewayLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        if (this.gatewayCompany !== company) return;
+        this.gatewayState = null;
+        this.gatewayLoading = false;
+        this.gatewayError = err?.error?.message || 'Could not load the gateway. Try again.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  closeGatewayModal() {
+    if (this.gatewayWorking) return;
+    this.gatewayCompany = null;
+    this.gatewayState = null;
+    this.gatewayToken = null;      // never kept once the dialog is closed
+    this.cdr.detectChanges();
+  }
+
+  async makeGatewayToken() {
+    const company = this.gatewayCompany;
+    if (!company || this.gatewayWorking) return;
+    if (this.gatewayState?.gateway) {
+      const yes = await this.confirm.ask({
+        title: `Replace the gateway token of "${company.company_name}"?`,
+        message: 'The current token stops working at once: no program reaches any of its machines until the gateway has the new one.',
+        confirmText: 'Replace token'
+      });
+      if (!yes || this.gatewayCompany !== company) return;
+    }
+    this.gatewayWorking = true;
+    this.gatewayError = '';
+    this.cdr.detectChanges();
+    this.companyService.createProgramGatewayToken(company.id).subscribe({
+      next: res => {
+        this.gatewayWorking = false;
+        if (this.gatewayCompany !== company) return;
+        this.gatewayToken = res.token;
+        this.gatewayCopied = false;
+        this.loadGateway();
+      },
+      error: err => {
+        this.gatewayWorking = false;
+        this.gatewayError = err?.error?.message || 'Could not make the token. Try again.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  async stopGatewayToken() {
+    const company = this.gatewayCompany;
+    if (!company || this.gatewayWorking) return;
+    const yes = await this.confirm.ask({
+      title: `Stop the gateway token of "${company.company_name}"?`,
+      message: 'Its gateway stops at once — no programs to the machines, no backups — until it gets a new token.',
+      confirmText: 'Stop token',
+      icon: 'key_off'
+    });
+    if (!yes || this.gatewayCompany !== company) return;
+    this.gatewayWorking = true;
+    this.cdr.detectChanges();
+    this.companyService.revokeProgramGatewayToken(company.id).subscribe({
+      next: () => {
+        this.gatewayWorking = false;
+        this.gatewayToken = null;
+        this.toast.success(`Gateway token of ${company.company_name} stopped`);
+        this.loadGateway();
+      },
+      error: err => {
+        this.gatewayWorking = false;
+        this.gatewayError = err?.error?.message || 'Could not stop the token. Try again.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  copyGatewayToken() {
+    const token = this.gatewayToken;
+    if (!token) return;
+    navigator.clipboard?.writeText(token).then(
+      () => { this.gatewayCopied = true; this.cdr.detectChanges(); },
+      () => this.toast.error('Could not copy — select the token and copy it by hand')
+    );
+  }
+
+  /** "just now", "4 min ago", "3 h ago", "2 days ago" */
+  ago(iso: string): string {
+    const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes} min ago`;
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return `${hours} h ago`;
+    return `${Math.round(hours / 24)} days ago`;
   }
 
   // ── Helpers ────────────────────────────────────

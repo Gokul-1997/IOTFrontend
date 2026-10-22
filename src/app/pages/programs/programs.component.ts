@@ -4,31 +4,35 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpEventType } from '@angular/common/http';
 import { Subject, Subscription, takeUntil } from 'rxjs';
-import { ProgramService, PtFile, PtFilter, PtMachine, PtPage } from '../../core/services/program.service';
+import { ProgramService, PtFile, PtFilter, PtGateway, PtMachine, PtPage } from '../../core/services/program.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { StateComponent } from '../../shared/state/state.component';
 import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
-import { environment } from '../../../environments/environment';
 import { takeLinkedRecord } from '../../shared/linked-record';
 
 /** The server's limit (PROGRAM_MAX_MB); said before sending, so a big file is not uploaded for nothing. */
 const MAX_BYTES = 20 * 1024 * 1024;
-/** While the page is shown: gateway online/offline, a backup arriving. */
+/** While the page is shown: gateway online/offline, programs moving along the line, a backup arriving. */
 const REFRESH_MS = 15_000;
+
+/** 1st, 2nd, 3rd, 4th … 11th, 12th, 13th, 21st */
+const ordinal = (n: number) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
 
 /*
  * Program Transfer, kept simple (21 Oct 2026, the user: "machine select,
  * upload and download only — no company, no plant, no FTP or FANUC"):
  *
- *   choose a machine → upload its program (the gateway downloads it),
- *   download any file, delete an old one, ask the machine for a backup.
+ *   choose a machine → upload programs (they wait in line; the gateway
+ *   sends them one at a time, oldest first), download any file, delete
+ *   one, ask the machine for a backup.
  *
- * The machine's gateway does the rest with its own token and three calls;
- * an admin makes that token here (Gateway token). Forms open in the app's
- * one dialog; "Are you sure?" is ConfirmService.
+ * The company has one gateway for all its machines, and S&T makes its token
+ * (22 Oct 2026: "super admin side … don't company side"); this page only
+ * says whether it is online. Forms open in the app's one dialog; "Are you
+ * sure?" is ConfirmService.
  */
 @Component({
   selector: 'app-programs',
@@ -53,8 +57,9 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   linkedFileId: number | null = null;
 
   readonly maxMb = MAX_BYTES / 1048576;
-  readonly apiBase = `${environment.apiUrl}/device/v1`;
 
+  /** The company's gateway (null: S&T has not made its token yet). */
+  gateway: PtGateway | null = null;
   machines: PtMachine[] = [];
   selectedMachineId: number | null = null;
   loadingMachines = true;
@@ -75,8 +80,6 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   uploadError = '';
 
   requestingBackup = false;
-
-  tokenDialog: { machine: PtMachine; token: string | null; working: boolean; copied: boolean; error: string } | null = null;
 
   private readonly destroy$ = new Subject<void>();
   private machinesRequest?: Subscription;
@@ -107,7 +110,6 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   }
   get canBackup() { return this.auth.hasAction('programs', 'fetch'); }
   get canDelete() { return this.auth.hasAction('programs', 'delete'); }
-  get canManageToken() { return this.auth.hasAction('machines', 'edit'); }
   get selectedMachine(): PtMachine | null { return this.machines.find(m => m.id === this.selectedMachineId) || null; }
 
   ngOnInit(): void {
@@ -136,6 +138,7 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     this.machinesRequest = this.programs.getMachines().pipe(takeUntil(this.destroy$)).subscribe({
       next: res => {
         this.machines = res.data || [];
+        this.gateway = res.gateway ?? null;
         this.loadingMachines = false;
         if (!this.selectedMachine) {
           // the machine a notification is about, else the first
@@ -155,20 +158,20 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** What the gateway did since the last look — a backup, the program taken or refused: say so and show it. */
+  /** What the gateway did since the last look — a backup, a program taken or refused, the line moving: say so and show it. */
   private noticeChanges(before: PtMachine, now: PtMachine): void {
     const backupArrived = now.last_backup && now.last_backup.id !== before.last_backup?.id;
     if (backupArrived && before.backup_request) this.toast.success(`Backup received from ${now.machine_serial_no}`);
     if (!backupArrived && before.backup_request && now.backup_failure && !now.backup_request) {
       this.toast.error(`${now.machine_serial_no} could not send a backup: ${now.backup_failure.message}`);
     }
-    const reported = now.program && now.program.id === before.program?.id
-      && now.program.delivery_status && now.program.delivery_status !== before.program?.delivery_status;
-    if (reported && now.program!.delivery_status === 'DONE') this.toast.success(`${now.program!.program_name} is on ${now.machine_serial_no}`);
-    if (reported && now.program!.delivery_status === 'FAILED') {
-      this.toast.error(`${now.machine_serial_no} could not use ${now.program!.program_name}: ${now.program!.delivery_message}`);
+    const report = now.last_report;
+    const reported = !!report && (report.id !== before.last_report?.id || report.delivery_status !== before.last_report?.delivery_status);
+    if (reported && report!.delivery_status === 'DONE') this.toast.success(`${report!.program_name} is on ${now.machine_serial_no}`);
+    if (reported && report!.delivery_status === 'FAILED') {
+      this.toast.error(`${now.machine_serial_no} could not use ${report!.program_name}: ${report!.delivery_message}`);
     }
-    if (backupArrived || reported || now.program?.id !== before.program?.id) this.loadFiles();
+    if (backupArrived || reported || now.next?.id !== before.next?.id || now.waiting !== before.waiting) this.loadFiles();
   }
 
   changeMachine(): void {
@@ -177,14 +180,15 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     this.loadFiles();
   }
 
-  gatewayState(m: PtMachine): 'online' | 'offline' | 'none' {
-    return !m.gateway ? 'none' : m.gateway.online ? 'online' : 'offline';
+  /** The company's one gateway, for every machine. */
+  gatewayState(g = this.gateway): 'online' | 'offline' | 'none' {
+    return !g ? 'none' : g.online ? 'online' : 'offline';
   }
 
-  gatewayLabel(m: PtMachine): string {
-    if (!m.gateway) return 'No gateway token yet';
-    if (m.gateway.online) return 'Gateway online';
-    return m.gateway.last_seen_at ? `Gateway offline · last seen ${this.ago(m.gateway.last_seen_at)}` : 'Gateway has not connected yet';
+  gatewayLabel(g = this.gateway): string {
+    if (!g) return 'No gateway yet — S&T sets it up';
+    if (g.online) return 'Gateway online';
+    return g.last_seen_at ? `Gateway offline · last seen ${this.ago(g.last_seen_at)}` : 'Gateway has not connected yet';
   }
 
   /* ── files ── */
@@ -230,13 +234,18 @@ export class ProgramsComponent implements OnInit, OnDestroy {
 
   kindLabel(f: Pick<PtFile, 'kind'>): string { return f.kind === 'NEW' ? 'Uploaded' : 'Backup'; }
 
-  /** An upload's state at the machine, as its gateway reported it. */
-  deliveryLabel(f: Pick<PtFile, 'delivery_status'>): string {
-    return f.delivery_status === 'DONE' ? 'On the machine' : f.delivery_status === 'FAILED' ? 'Refused by machine' : 'Waiting';
+  /** An upload's state: its place in the machine's line, or what the gateway reported. */
+  deliveryLabel(f: Pick<PtFile, 'delivery_status' | 'queue_position'>): string {
+    if (f.delivery_status === 'DONE') return 'On the machine';
+    if (f.delivery_status === 'FAILED') return 'Refused by machine';
+    if (f.delivery_status === 'SKIPPED') return 'Not sent';
+    if (f.queue_position === 1) return 'Next to send';
+    return f.queue_position ? `Waiting · ${ordinal(f.queue_position)} in line` : 'Waiting';
   }
 
-  deliveryClass(f: Pick<PtFile, 'delivery_status'>): string {
-    return f.delivery_status === 'DONE' ? 'mexa-badge-good' : f.delivery_status === 'FAILED' ? 'mexa-badge-bad' : 'mexa-badge-neutral';
+  deliveryClass(f: Pick<PtFile, 'delivery_status' | 'queue_position'>): string {
+    return f.delivery_status === 'DONE' ? 'mexa-badge-good' : f.delivery_status === 'FAILED' ? 'mexa-badge-bad'
+      : !f.delivery_status && f.queue_position === 1 ? 'mexa-badge-info' : 'mexa-badge-neutral';
   }
 
   download(file: { id: number; program_name: string }): void {
@@ -254,9 +263,13 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   }
 
   async deleteFile(file: PtFile): Promise<void> {
+    const machine = this.selectedMachine?.machine_serial_no || 'the machine';
+    const waiting = file.kind === 'NEW' && !file.delivery_status;
     const yes = await this.confirm.ask({
       title: `Delete ${file.program_name}?`,
-      message: `This ${file.kind === 'NEW' ? 'upload' : 'backup'} of ${this.selectedMachine?.machine_serial_no || 'the machine'} is removed from the server.`,
+      message: waiting
+        ? `It is taken out of ${machine}'s line and never sent to the machine.`
+        : `This ${file.kind === 'NEW' ? 'upload' : 'backup'} of ${machine} is removed from the server.`,
       confirmText: 'Delete',
       icon: 'delete_forever'
     });
@@ -304,7 +317,10 @@ export class ProgramsComponent implements OnInit, OnDestroy {
         } else if (event.type === HttpEventType.Response) {
           this.uploading = false;
           this.showUpload = false;
-          this.toast.success(`${event.body?.data?.program_name || file.name} is now ${machine.machine_serial_no}'s program`);
+          const name = event.body?.data?.program_name || file.name;
+          const place = event.body?.data?.queue_position;
+          this.toast.success(place === 1 ? `${name} is next to send to ${machine.machine_serial_no}`
+            : place ? `${name} is ${ordinal(place)} in line for ${machine.machine_serial_no}` : `${name} uploaded for ${machine.machine_serial_no}`);
           this.page = 1;
           this.loadFiles();
           this.loadMachines(true);
@@ -341,79 +357,6 @@ export class ProgramsComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       }
     });
-  }
-
-  /* ── gateway token ── */
-
-  openToken(machine: PtMachine): void {
-    this.tokenDialog = { machine, token: null, working: false, copied: false, error: '' };
-  }
-
-  closeToken(): void {
-    if (this.tokenDialog?.working) return;
-    this.tokenDialog = null;
-  }
-
-  async createToken(): Promise<void> {
-    const t = this.tokenDialog;
-    if (!t || t.working) return;
-    if (t.machine.gateway) {
-      const yes = await this.confirm.ask({
-        title: `Replace the gateway token of ${t.machine.machine_serial_no}?`,
-        message: 'The current token stops working at once. Put the new one in the gateway straight away.',
-        confirmText: 'Replace token'
-      });
-      if (!yes || this.tokenDialog !== t) return;
-    }
-    t.working = true;
-    t.error = '';
-    this.programs.createToken(t.machine.id).pipe(takeUntil(this.destroy$)).subscribe({
-      next: res => {
-        t.working = false;
-        t.token = res.data.token;
-        this.loadMachines(true);
-        this.cdr.markForCheck();
-      },
-      error: err => {
-        t.working = false;
-        t.error = err?.error?.message || 'Could not make the token. Try again.';
-        this.cdr.markForCheck();
-      }
-    });
-  }
-
-  async revokeToken(): Promise<void> {
-    const t = this.tokenDialog;
-    if (!t || t.working) return;
-    const yes = await this.confirm.ask({
-      title: `Revoke the gateway token of ${t.machine.machine_serial_no}?`,
-      message: 'Its gateway stops at once: no downloads, no backups, until it gets a new token.',
-      confirmText: 'Revoke token'
-    });
-    if (!yes || this.tokenDialog !== t) return;
-    t.working = true;
-    this.programs.revokeToken(t.machine.id).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => {
-        this.tokenDialog = null;
-        this.toast.success(`Gateway token of ${t.machine.machine_serial_no} revoked`);
-        this.loadMachines(true);
-        this.cdr.markForCheck();
-      },
-      error: err => {
-        t.working = false;
-        t.error = err?.error?.message || 'Could not revoke the token. Try again.';
-        this.cdr.markForCheck();
-      }
-    });
-  }
-
-  copyToken(): void {
-    const t = this.tokenDialog;
-    if (!t?.token) return;
-    navigator.clipboard?.writeText(t.token).then(
-      () => { t.copied = true; this.cdr.markForCheck(); },
-      () => this.toast.error('Could not copy — select the token and copy it by hand')
-    );
   }
 
   /* ── formatting ── */

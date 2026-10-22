@@ -2,7 +2,7 @@
   <div class="titlebar w-fit flex items-center gap-2 text-white">
         <span class="material-icons" aria-hidden="true">swap_horiz</span>
     <h1 class="mexa-title">Program Transfer</h1>
-    <p class="mexa-subtitle">( Upload a machine's program — its gateway downloads it and sends backups )</p>
+    <p class="mexa-subtitle">( Upload a machine's programs — the gateway sends them one at a time, and sends backups )</p>
   </div>
 </div>
 
@@ -15,13 +15,11 @@
       <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
     </select>
   </div>
-  <div *ngIf="selectedMachine as m" class="pt-gateway">
-    <span class="pt-dot" [attr.data-state]="gatewayState(m)" aria-hidden="true"></span>
-    <span>{{ gatewayLabel(m) }}</span>
-    <button *ngIf="canManageToken" type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="openToken(m)">
-      <span class="material-icons" aria-hidden="true">key</span>Gateway token
-    </button>
-  </div>
+  <!-- the company's one gateway, for every machine; S&T makes its token -->
+  <p *ngIf="!loadingMachines && machines.length" class="pt-gateway" role="status">
+    <span class="pt-dot" [attr.data-state]="gatewayState()" aria-hidden="true"></span>
+    <span>{{ gatewayLabel() }}</span>
+  </p>
 </section>
 
 <div *ngIf="machinesError" class="mexa-card" role="alert">
@@ -33,10 +31,10 @@
 
 <ng-container *ngIf="selectedMachine as m">
   <div class="pt-grid">
-    <!-- the program the gateway downloads -->
+    <!-- the line of programs the gateway sends, one at a time -->
     <section class="mexa-card pt-card" aria-labelledby="ptProgramTitle">
-      <h2 id="ptProgramTitle" class="mexa-card-title mexa-card-title-left">Program for the machine</h2>
-      <div *ngIf="m.program as p; else noProgram" class="pt-file">
+      <h2 id="ptProgramTitle" class="mexa-card-title mexa-card-title-left">Programs for the machine</h2>
+      <div *ngIf="m.next as p; else nothingWaiting" class="pt-file">
         <span class="material-icons pt-file-icon" aria-hidden="true">description</span>
         <div>
           <strong>{{ p.program_name }}</strong>
@@ -46,22 +44,23 @@
           <span class="material-icons" aria-hidden="true">download</span>
         </button>
       </div>
-      <ng-template #noProgram><p class="pt-meta">No program uploaded yet.</p></ng-template>
-      <ng-container *ngIf="m.program as p">
-        <p *ngIf="p.delivery_status === 'DONE'" class="pt-state is-good">
+      <ng-template #nothingWaiting><p class="pt-meta">Nothing waiting to be sent.</p></ng-template>
+      <p *ngIf="m.next" class="pt-state">
+        <span class="material-icons" aria-hidden="true">hourglass_top</span>
+        <span>Next to send — {{ gateway ? 'waiting for the gateway' : 'the company has no gateway yet' }}<ng-container
+              *ngIf="m.waiting > 1"> · {{ m.waiting - 1 }} more after it</ng-container></span>
+      </p>
+      <ng-container *ngIf="m.last_report as r">
+        <p *ngIf="r.delivery_status === 'DONE'" class="pt-state is-good">
           <span class="material-icons" aria-hidden="true">check_circle</span>
-          On the machine since {{ p.delivered_at | date:'d MMM y, h:mm a' }}
+          <span>{{ r.program_name }} on the machine since {{ r.delivered_at | date:'d MMM y, h:mm a' }}</span>
         </p>
-        <p *ngIf="p.delivery_status === 'FAILED'" class="pt-state is-bad" role="alert">
+        <p *ngIf="r.delivery_status === 'FAILED'" class="pt-state is-bad" role="alert">
           <span class="material-icons" aria-hidden="true">error</span>
-          <span>The machine could not use it: {{ p.delivery_message }}<br><small>Upload a corrected file.</small></span>
-        </p>
-        <p *ngIf="!p.delivery_status" class="pt-state">
-          <span class="material-icons" aria-hidden="true">hourglass_top</span>
-          {{ m.gateway ? 'Waiting for the machine to take it' : 'Waiting — the machine needs a gateway token' }}
+          <span>The machine could not use {{ r.program_name }}: {{ r.delivery_message }}<br><small>Upload a corrected file.</small></span>
         </p>
       </ng-container>
-      <p class="ui-hint">The newest upload is the machine's program. Its gateway downloads it on its next check.</p>
+      <p class="ui-hint">Programs go to the machine one at a time, oldest first: the gateway sends the next when the last is done.</p>
       <button *ngIf="canUpload; else noUpload" type="button" class="ui-btn ui-btn-primary pt-action" (click)="openUpload()">
         <span class="material-icons" aria-hidden="true">upload_file</span>Upload program
       </button>
@@ -90,7 +89,7 @@
         <span class="material-icons" aria-hidden="true">error</span>
         <span>Backup failed: {{ f.message }}<br><small>{{ f.at | date:'d MMM y, h:mm a' }}</small></span>
       </p>
-      <p *ngIf="!m.gateway" class="ui-hint">The machine needs a gateway token before it can send backups.</p>
+      <p *ngIf="!gateway" class="ui-hint">Backups come through the company's gateway, which S&T sets up.</p>
       <button *ngIf="canBackup" type="button" class="ui-btn ui-btn-primary pt-action" (click)="requestBackup()"
               [disabled]="requestingBackup || !!m.backup_request">
         <span class="material-icons" aria-hidden="true">cloud_download</span>{{ requestingBackup ? 'Asking…' : 'Backup now' }}
@@ -136,12 +135,12 @@
               <td class="strong">
                 <span *ngIf="f.id === linkedFileId" class="sr-only">From your notification: </span>
                 {{ f.program_name }}
-                <span *ngIf="f.is_current" class="mexa-badge mexa-badge-info pt-current">Current</span>
               </td>
               <td><span class="mexa-badge" [ngClass]="f.kind === 'NEW' ? 'mexa-badge-info' : 'mexa-badge-neutral'">{{ kindLabel(f) }}</span></td>
               <td class="wrap">
                 <ng-container *ngIf="f.kind === 'NEW'; else fromMachine">
-                  <span class="mexa-badge" [ngClass]="deliveryClass(f)">{{ deliveryLabel(f) }}</span>
+                  <span class="mexa-badge" [ngClass]="deliveryClass(f)"
+                        [attr.title]="f.delivery_status === 'SKIPPED' ? 'Uploaded before programs waited in line; a newer upload replaced it, so it was never sent.' : null">{{ deliveryLabel(f) }}</span>
                   <span *ngIf="f.delivery_status === 'FAILED'" class="sub">{{ f.delivery_message }}</span>
                 </ng-container>
                 <ng-template #fromMachine>--</ng-template>
@@ -154,7 +153,7 @@
                   <button type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="download(f)" [attr.aria-label]="'Download ' + f.program_name">
                     <span class="material-icons" aria-hidden="true">download</span>
                   </button>
-                  <button *ngIf="canDelete && !f.is_current" type="button" class="ui-btn ui-btn-danger-ghost ui-btn-xs" (click)="deleteFile(f)"
+                  <button *ngIf="canDelete" type="button" class="ui-btn ui-btn-danger-ghost ui-btn-xs" (click)="deleteFile(f)"
                           [attr.aria-label]="'Delete ' + f.program_name">
                     <span class="material-icons" aria-hidden="true">delete_outline</span>
                   </button>
@@ -184,7 +183,7 @@
     <div class="ui-dialog-header">
       <div>
         <h2 id="ptUploadTitle" class="ui-dialog-title">Upload program</h2>
-        <p class="ui-dialog-subtitle">For {{ selectedMachine?.machine_serial_no }}. It becomes the machine's program; its gateway downloads it.</p>
+        <p class="ui-dialog-subtitle">For {{ selectedMachine?.machine_serial_no }}. It joins the machine's line; the gateway sends it once the ones before it are done.</p>
       </div>
       <button type="button" class="ui-close" (click)="closeUpload()" aria-label="Close without uploading">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5" aria-hidden="true">
@@ -218,72 +217,3 @@
   </div>
 </div>
 
-
-<!-- ── GATEWAY TOKEN ── -->
-<div *ngIf="tokenDialog as t" class="ui-overlay">
-  <div class="ui-dialog" role="dialog" aria-modal="true" aria-labelledby="ptTokenTitle">
-    <div class="ui-dialog-header">
-      <div>
-        <h2 id="ptTokenTitle" class="ui-dialog-title">Gateway token — {{ t.machine.machine_serial_no }}</h2>
-        <p class="ui-dialog-subtitle">The gateway at this machine sends it on every call. One token per machine.</p>
-      </div>
-      <button type="button" class="ui-close" (click)="closeToken()" aria-label="Close gateway token">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-    <div class="ui-dialog-body pt-token-body">
-      <div *ngIf="t.error" class="ui-alert ui-alert-error" role="alert">{{ t.error }}</div>
-
-      <ng-container *ngIf="t.token; else tokenState">
-        <p class="ui-alert ui-alert-warn">Copy it now and put it in the gateway's settings — it is shown only this once.</p>
-        <label class="ui-label" for="ptTokenValue">Token</label>
-        <div class="pt-token">
-          <input id="ptTokenValue" class="ui-input" readonly [value]="t.token" (focus)="$any($event.target).select()">
-          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="copyToken()">{{ t.copied ? 'Copied' : 'Copy' }}</button>
-        </div>
-      </ng-container>
-      <ng-template #tokenState>
-        <p *ngIf="t.machine.gateway as g">
-          Token <code>{{ g.token_prefix }}…</code> made {{ g.token_created_at | date:'d MMM y' }} ·
-          {{ g.last_seen_at ? 'last used ' + ago(g.last_seen_at) : 'not used yet' }}
-        </p>
-        <p *ngIf="!t.machine.gateway">This machine has no gateway token yet.</p>
-      </ng-template>
-
-      <div class="pt-api">
-        <strong>The gateway's four calls</strong>
-        <dl>
-          <dt><code>GET {{ apiBase }}/status</code></dt><dd>A new program? A backup asked for?</dd>
-          <dt><code>GET {{ apiBase }}/program</code></dt><dd>Download the machine's program</dd>
-          <dt><code>POST {{ apiBase }}/backup</code></dt><dd>Upload a backup (form field <code>file</code>)</dd>
-          <dt><code>POST {{ apiBase }}/report</code></dt><dd>Program written or refused; backup could not be read</dd>
-        </dl>
-        <span class="ui-btn-row">
-          <a class="ui-btn ui-btn-ghost ui-btn-xs" href="/integrations/PROGRAM_TRANSFER_API.md" download>
-            <span class="material-icons" aria-hidden="true">description</span>API guide
-          </a>
-          <a class="ui-btn ui-btn-ghost ui-btn-xs" href="/integrations/MEXA_Program_Transfer.postman_collection.json" download>
-            <span class="material-icons" aria-hidden="true">integration_instructions</span>Postman collection
-          </a>
-          <!-- the program that runs at the machine and moves the file into it (Node.js 20) -->
-          <a class="ui-btn ui-btn-ghost ui-btn-xs" href="/integrations/mexa-gateway.js" download>
-            <span class="material-icons" aria-hidden="true">developer_board</span>Ready-made gateway
-          </a>
-        </span>
-      </div>
-    </div>
-    <div class="ui-dialog-footer is-split">
-      <button *ngIf="t.machine.gateway && !t.token" type="button" class="ui-btn ui-btn-danger-ghost" (click)="revokeToken()" [disabled]="t.working">Revoke token</button>
-      <span *ngIf="!t.machine.gateway || t.token"></span>
-      <div class="flex items-center gap-2">
-        <button type="button" class="ui-btn ui-btn-ghost" (click)="closeToken()" [disabled]="t.working">Close</button>
-        <button *ngIf="!t.token" type="button" class="ui-btn ui-btn-primary" (click)="createToken()" [disabled]="t.working">
-          <span *ngIf="t.working" class="ui-spinner" aria-hidden="true"></span>
-          {{ t.machine.gateway ? 'Replace token' : 'Create token' }}
-        </button>
-      </div>
-    </div>
-  </div>
-</div>

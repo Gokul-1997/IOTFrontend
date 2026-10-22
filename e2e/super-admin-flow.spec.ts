@@ -95,6 +95,59 @@ test('Companies: landing page, usage & plan history, assign plan', async ({ sntS
   await page.screenshot({ path: 'mexa-admin-company-history.png', fullPage: true });
 });
 
+/* Program Transfer: a company's one gateway token — for all its machines — is
+   made here by S&T (22 Oct 2026: "super admin side, don't company side"). */
+test('Companies → Gateway: S&T makes the company\'s Program Transfer token, shown once; replacing and stopping ask first', async ({ sntSuperPage: page }) => {
+  await mockAdminApi(page);
+  let gateway: any = null;
+  const calls: string[] = [];
+  await page.route('**/api/companies/5/program-gateway', (r: any) => r.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify({ company_id: 5, company_name: 'Precision Auto Components Pvt Ltd', gateway, poll_seconds: 15 }) }));
+  await page.route('**/api/companies/5/program-gateway/token', (r: any) => {
+    calls.push(r.request().method());
+    if (r.request().method() === 'POST') {
+      gateway = { token_prefix: 'mxg_newtoken', token_created_at: new Date().toISOString(), last_seen_at: null, online: false,
+                  last_seen_ip: null, agent_version: null };
+      return r.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ token: 'mxg_' + 'Q'.repeat(43),
+        token_prefix: 'mxg_newtoken', created_at: '', company_name: 'Precision Auto Components Pvt Ltd' }) });
+    }
+    gateway = null;
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ revoked: true }) });
+  });
+  await page.setViewportSize({ width: 1500, height: 1100 });
+  await page.goto('/admin/companies');
+  const open = () => page.getByRole('row', { name: /Precision Auto/ }).getByRole('button', { name: 'Program Transfer gateway of Precision Auto Components Pvt Ltd' }).click();
+
+  await open();
+  const dialog = page.getByRole('dialog', { name: 'Program Transfer gateway' });
+  await expect(dialog).toContainText('one token for all its machines');
+  await expect(dialog).toContainText('Precision Auto Components Pvt Ltd has no gateway token yet');
+  for (const call of ['/device/v1/status', '/device/v1/program?machine=NAME', '/device/v1/backup', '/device/v1/report']) await expect(dialog).toContainText(call);
+  await expect(dialog.getByRole('link', { name: 'API guide' })).toHaveAttribute('href', '/integrations/PROGRAM_TRANSFER_API.md');
+  await expect(dialog.getByRole('link', { name: 'Postman collection' })).toHaveAttribute('href', '/integrations/MEXA_Program_Transfer.postman_collection.json');
+  await expect(dialog.getByRole('link', { name: 'Ready-made gateway' })).toHaveAttribute('href', '/integrations/mexa-gateway.js');
+  await dialog.getByRole('button', { name: 'Make token' }).click();
+  await expect(dialog.getByLabel('Token', { exact: true })).toHaveValue('mxg_' + 'Q'.repeat(43));
+  await expect(dialog).toContainText('shown only this once');
+  await page.screenshot({ path: 'mexa-admin-company-gateway.png' });
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+
+  // opened again: the token is never shown twice, only its first characters; replacing asks first
+  await open();
+  await expect(dialog).toContainText('mxg_newtoken…');
+  await expect(dialog).toContainText('Gateway has not connected yet');
+  await expect(dialog.getByLabel('Token', { exact: true })).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Replace token' }).click();
+  await page.getByRole('alertdialog', { name: /Replace the gateway token/ }).getByRole('button', { name: 'Cancel' }).click();
+  expect(calls).toEqual(['POST']);
+
+  await dialog.getByRole('button', { name: 'Stop token' }).click();
+  await page.getByRole('alertdialog', { name: /Stop the gateway token/ }).getByRole('button', { name: 'Stop token' }).click();
+  await expect(dialog).toContainText('has no gateway token yet');
+  expect(calls).toEqual(['POST', 'DELETE']);
+});
+
 test('Plans: the plan catalogue lists both plans with their limits', async ({ sntSuperPage: page }) => {
   await mockAdminApi(page);
   await page.setViewportSize({ width: 1500, height: 1100 });
