@@ -793,12 +793,13 @@ a.mexa-pill { text-decoration: none; }
 .mexa-oeecard-head {
   display: flex; align-items: center; justify-content: space-between; gap: .5rem;
       padding: 15px;
-    margin: -16px;
-    background: var(--band-soft);
+    margin: -13px -15px;
+    background: #fff;
         border-top-left-radius: 16px;
     border-top-right-radius: 16px;
+    border-bottom: 1px solid #ccc;
 }
-.mexa-oeecard-name { font-size: .98rem; font-weight: 700; color: var(--mexa-white); }
+.mexa-oeecard-name { font-size: .98rem; font-weight: 700; color: #000; }
 .mexa-oeecard-grade {
   display: inline-flex; align-items: center; gap: .35rem;
   font-size: .72rem; font-weight: 600; color: var(--mexa-ink-3);
@@ -821,7 +822,7 @@ a.mexa-pill { text-decoration: none; }
    and the tiles agree. */
 .mexa-grade-excellent { --band: #15803d; --band-ink: #11652f; }
 .mexa-grade-good      { --band: #2f2d8f; --band-ink: #2f2d8f; }
-.mexa-grade-avg       { --band: #d68903; --band-ink: #8a3f06; }
+.mexa-grade-avg       { --band: #d68903; --band-ink: #d68903; }
 .mexa-grade-poor      { --band: #af3647; --band-ink: #a11f31; }
 .mexa-grade-unknown   { --band: #626d7c; --band-ink: #475467; }
 .mexa-grade-excellent, .mexa-grade-good, .mexa-grade-avg, .mexa-grade-poor, .mexa-grade-unknown {
@@ -865,10 +866,10 @@ a.mexa-pill { text-decoration: none; }
 .mexa-oeecard-tint .mexa-oeering::after { background: #fff; }
 .mexa-oeecard-foot {
   display: flex; align-items: center; justify-content: space-between; 
-  font-size: .75rem; font-weight: 700; color: var(--band-ink); border-radius: 7px;
-    padding: 10px; background: #e9e9e9; flex-direction: column;
+  font-size: .75rem; font-weight: 700; color: #fff; border-radius: 7px;
+    padding: 10px; background: var(--band-ink); flex-direction: column;
 }
-.mexa-oeecard-foot small { font-weight: 600; color: var(--mexa-ink-3); }
+.mexa-oeecard-foot small { font-weight: 400; color: #ffffff; }
 
 /* Availability / Performance / Quality as bars: a label and value over a
    thin track. The value is printed, so the bar only reinforces it. */

@@ -835,14 +835,14 @@ $radius: 10px;
 .alarm-blink {
   position: relative;
   isolation: isolate;
-  // border: 10px solid #fff!important;
-  padding:2rem 2.2rem!important;
+  border: 10px solid #fff!important;
+  // padding:2rem 2.2rem!important;
 }
 
 .alarm-blink::after {
   content: "";
   position: absolute;
-  // inset: -10px;
+  inset: -10px;
   border: 10px solid #ff2538;
   border-radius: inherit;
   box-sizing: border-box;
@@ -876,13 +876,13 @@ $radius: 10px;
 // }
 
 
-.dark .alarm-blink .menu-default {
-   background-color: transparent;
-  border: 1px solid #121212;
+// .dark .alarm-blink .menu-default {
+//    background-color: transparent;
+//   border: 1px solid #121212;
 
-}
+// }
 .alarm-blink .menu-default {
-  background-color: #ffe5e5;
+  background-color: var(--bg-card-inner);
   // border: 1px solid #f37171;
 }
 .apexcharts-tooltip-series-group, .apexcharts-tooltip-title {

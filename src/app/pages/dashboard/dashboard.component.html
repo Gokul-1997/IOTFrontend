@@ -101,22 +101,16 @@
 
     <div
   *ngFor="let m of pagedMachines; trackBy: trackByMachine"
-  (click)="goToLive(m.machine_id)"
-  class="machine-child rainbow relative rounded-2xl shadow-xl p-2
-         hover:shadow-2xl transition cursor-pointer dark:bg-[#111111]"
-  [ngClass]="{
-    'green-full': m.status === 'RUNNING',
-    'yellow-full': m.status === 'IDLE',
-    'gray-full': m.status === 'OFFLINE',
-    'alarm-blink': m.alarm,
-    
-  }"
-  [style.--gradient-color]="
-    m.status === 'RUNNING' ? '#399953' :
-    m.status === 'IDLE' ? '#dfb400' :
-    m.status === 'OFFLINE' ? '#808080' : '#ffffff'
-  "
->
+      (click)="goToLive(m.machine_id)"
+      class="machine-child relative dark:bg-[#111111] rounded-2xl shadow-xl p-2 hover:shadow-2xl transition cursor-pointer border-big"
+      [class.alarm-blink]="true"
+      [ngClass]="{
+        'bg-white':    !m.alarm,
+        'alarm-blink': m.alarm,
+        'green-full':  m.status === 'RUNNING',
+        'yellow-full': m.status === 'IDLE',
+        'gray-full':   m.status === 'OFFLINE'
+      }">
   <!-- Your existing card content -->
 
 

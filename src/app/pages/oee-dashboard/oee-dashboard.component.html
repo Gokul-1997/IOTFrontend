@@ -258,12 +258,12 @@
         </div>
         <div class="mexa-oeecard-foot">
           <div class="flex gap-3">
-          <div class="notification-icon icon-notify_system">
+          <!-- <div class="notification-icon icon-notify_system">
   <span class="material-icons" aria-hidden="true">
     dark_mode
-  </span>
-</div>    <div class="flex flex-col">
-          <span>{{ gradeWord(grade(m)) }}</span>
+  </span></div> -->
+  <div class="flex flex-col text-center">
+          <span class="text-center">{{ gradeWord(grade(m)) }}</span>
           <small>{{ m.produced | number }} pcs<ng-container *ngIf="m.idle_cost != null"> · <span [title]="costHint">{{ rupees(m.idle_cost) }} idle</span></ng-container></small>
         </div></div></div>
       </article>
@@ -277,7 +277,7 @@
       <span class="mexa-bandlegend">
         <span><i style="--dot:#15803d"></i>&gt;85% (Excellent)</span>
         <span><i style="--dot:#2f2d8f"></i>75% &lt; 85% (Good)</span>
-        <span><i style="--dot:#b45309"></i>60% &lt; 75% (Avg)</span>
+        <span><i style="--dot:#d68903"></i>60% &lt; 75% (Avg)</span>
         <span><i style="--dot:#c32b3f"></i>&lt; 60% (Needs Improvement)</span>
       </span>
       <nav *ngIf="machineView === 'all' && cardTotalPages > 1" class="inline-flex items-center gap-1" aria-label="Machine pages">
