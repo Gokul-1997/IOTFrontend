@@ -41,8 +41,10 @@
       </thead>
       <tbody>
         <ng-container *ngIf="alarms.length > 0; else noAlarms">
-          <tr *ngFor="let alarm of alarms">
-            <td class="strong">{{ alarm.machine_serial_no }}</td>
+          <!-- the alarm a notification opened is marked (shared/linked-record.ts) -->
+          <tr *ngFor="let alarm of alarms" [id]="'alarm-' + alarm.id"
+              [class.is-linked]="alarm.id === linkedAlarmId" [attr.tabindex]="alarm.id === linkedAlarmId ? -1 : null">
+            <td class="strong"><span *ngIf="alarm.id === linkedAlarmId" class="sr-only">From your notification: </span>{{ alarm.machine_serial_no }}</td>
             <!-- the alarm in words; its code and type underneath when they add something -->
             <td class="wrap">
               <span class="block text-[var(--mexa-ink)]">{{ alarm.message || alarm.alarm_type || '--' }}</span>

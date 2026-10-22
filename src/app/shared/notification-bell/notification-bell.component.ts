@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { NotificationService } from '../../core/services/notification.service';
+import { notificationTarget } from '../linked-record';
 import { Subscription, auditTime, pairwise } from 'rxjs';
 
 @Component({
@@ -115,18 +116,19 @@ export class NotificationBellComponent implements OnInit {
   /* The count on the badge changes at once in the service (and, from the
      server, on every other tab and device of this person).
 
-     It then opens what the notification is about — the Alarms page, Program
-     Transfer, Reports — as the Notifications page does. The bell only marked
-     it read, so a click went nowhere (22 Oct 2026). The link is the server's
-     app-relative path: navigateByUrl, never location.href. */
+     It then opens what the notification is about, on that very record — the
+     alarm, the program file — marked on its page, as the Notifications page
+     does. The bell only marked it read, so a click went nowhere (22 Oct
+     2026). The link is an app path (navigateByUrl, never location.href). */
   onRead(n: any) {
     if (!n.is_read) {
       this.notifService.markRead(n.id).subscribe({ error: () => {} });
       n.is_read = true;
     }
-    if (typeof n.link === 'string' && n.link.startsWith('/') && !n.link.startsWith('//')) {
+    const target = notificationTarget(n);
+    if (target) {
       this.open = false;
-      this.router.navigateByUrl(n.link);
+      this.router.navigateByUrl(target);
     }
   }
 

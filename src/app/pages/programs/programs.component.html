@@ -61,9 +61,10 @@
         </p>
       </ng-container>
       <p class="ui-hint">The newest upload is the machine's program. Its gateway downloads it on its next check.</p>
-      <button *ngIf="canUpload" type="button" class="ui-btn ui-btn-primary pt-action" (click)="openUpload()">
+      <button *ngIf="canUpload; else noUpload" type="button" class="ui-btn ui-btn-primary pt-action" (click)="openUpload()">
         <span class="material-icons" aria-hidden="true">upload_file</span>Upload program
       </button>
+      <ng-template #noUpload><p class="mexa-note mexa-note-note pt-noupload">{{ uploadBlockedReason }}</p></ng-template>
     </section>
 
     <!-- backups the gateway sends -->
@@ -128,8 +129,11 @@
             </td>
           </tr>
           <ng-container *ngIf="!filesError">
-            <tr *ngFor="let f of files; trackBy: trackFile">
+            <!-- the file a notification opened is marked (shared/linked-record.ts) -->
+            <tr *ngFor="let f of files; trackBy: trackFile" [id]="'pt-file-' + f.id"
+                [class.is-linked]="f.id === linkedFileId" [attr.tabindex]="f.id === linkedFileId ? -1 : null">
               <td class="strong">
+                <span *ngIf="f.id === linkedFileId" class="sr-only">From your notification: </span>
                 {{ f.program_name }}
                 <span *ngIf="f.is_current" class="mexa-badge mexa-badge-info pt-current">Current</span>
               </td>

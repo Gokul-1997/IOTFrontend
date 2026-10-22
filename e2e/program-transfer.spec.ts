@@ -198,6 +198,30 @@ test('a view-only role can look and download, nothing more', async ({ page }) =>
   for (const name of ['Upload program', 'Backup now', 'Gateway token', 'Delete O1000.nc']) {
     await expect(page.getByRole('button', { name })).toHaveCount(0);
   }
+  // where the button would be, the page says why it is not (22 Oct 2026)
+  await expect(page.getByText('Your role cannot upload programs. Your company admin can give it Program Transfer → "Upload to library" and "Send to machine" under Roles & Permissions.')).toBeVisible();
+});
+
+test('no Upload button for a company admin whose company was not given it: the page says who can switch it on', async ({ page }) => {
+  await seedAuth(page, { roles: ['COMPANY_ADMIN'], company_permissions: ['page:programs:view', 'page:programs:fetch'] });
+  await fixtures(page);
+  await page.goto('/programs');
+  await expect(page.getByRole('heading', { name: 'Program for the machine' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Upload program' })).toHaveCount(0);
+  await expect(page.getByText(/Uploading is not switched on for your company\. S&T can allow Program Transfer → "Upload to library" and "Send to machine" under Companies → Manage Access\./)).toBeVisible();
+});
+
+test('a notification about a file opens that machine with the file marked', async ({ authedPage: page }) => {
+  const state = await fixtures(page);
+  state.files[8] = [fileRow(52, 8, 'O5200.nc', 'BACKUP'), fileRow(51, 8, 'O5100.nc', 'NEW', true)];
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto('/programs?machine_id=8&file_id=51');
+  await expect(page.getByLabel('Machine', { exact: true })).toHaveValue(/8/);           // not the first machine
+  const row = filesTable(page).locator('tr.is-linked');
+  await expect(row).toHaveCount(1);
+  await expect(row).toContainText('O5100.nc');
+  await expect(row).toBeFocused();
+  await expect(page).toHaveURL(/\/programs$/);                                       // taken once, dropped from the address
 });
 
 test('fits a phone without sideways scrolling', async ({ authedPage: page }) => {

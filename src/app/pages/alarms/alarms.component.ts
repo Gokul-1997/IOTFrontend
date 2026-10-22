@@ -1,4 +1,5 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Injector, OnInit, afterNextRender, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AlarmService } from '../../core/services/alarm.service';
@@ -8,6 +9,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { SEVERITY, severityOf } from '../../shared/severity';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { takeLinkedRecord } from '../../shared/linked-record';
 
 @Component({
   selector: 'app-alarms',
@@ -27,6 +29,13 @@ export class AlarmsComponent implements OnInit {
   resolvingId: number | null = null;
   ticketedAlarmIds = new Set<number>();
   creatingTicketId: number | null = null;
+
+  /** The alarm a notification opened (?alarm_id=): its row is marked and brought into view. */
+  linkedAlarmId: number | null = null;
+  private lookedInAll = false;
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
 
   /* The app is zoneless: an HTTP response resolving does not schedule a
      render on its own, so every callback that changes what is on screen has
@@ -60,7 +69,30 @@ export class AlarmsComponent implements OnInit {
   /** Resolving is its own grant, as the API checks it. */
   get canResolve(): boolean { return this.auth.hasAction('alarms', 'resolve'); }
 
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    this.linkedAlarmId = takeLinkedRecord(this.route, this.router, ['alarm_id']).alarm_id ?? null;
+    this.load();
+  }
+
+  /** The linked alarm on screen: marked, scrolled to and focused. Resolved since the
+   *  notification? It is not among the active ones — look once in All. */
+  private showLinked(): void {
+    const id = this.linkedAlarmId;
+    if (!id) return;
+    if (!this.alarms.some(a => a.id === id)) {
+      if (!this.lookedInAll && this.filter.is_resolved !== '') {
+        this.lookedInAll = true;
+        this.filter = { ...this.filter, is_resolved: '', page: 1 };
+        this.load();
+      }
+      return;
+    }
+    afterNextRender(() => {
+      const row = document.getElementById(`alarm-${id}`);
+      row?.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      row?.focus({ preventScroll: true });
+    }, { injector: this.injector });
+  }
 
   load() {
     this.loading = true;
@@ -74,6 +106,7 @@ export class AlarmsComponent implements OnInit {
         this.pagination = res.pagination || {};
         this.loading = false;
         this.cdr.markForCheck();
+        this.showLinked();
       },
       error: () => { this.loading = false; this.cdr.markForCheck(); }
     });

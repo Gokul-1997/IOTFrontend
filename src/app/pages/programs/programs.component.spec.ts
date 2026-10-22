@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ProgramsComponent } from './programs.component';
 import { PtMachine } from '../../core/services/program.service';
@@ -28,7 +29,7 @@ let ask: ReturnType<typeof vi.fn>;
 function create(machines: PtMachine[] = [machine(), machine({ id: 8, machine_serial_no: 'VMC-2' })]) {
   toast = { success: vi.fn(), error: vi.fn() };
   ask = vi.fn(() => Promise.resolve(true));
-  TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(),
+  TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]),
     { provide: AuthService, useValue: { hasAction: () => true } },
     { provide: ToastService, useValue: toast },
     { provide: ConfirmService, useValue: { ask } }

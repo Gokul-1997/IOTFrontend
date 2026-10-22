@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Injector, OnDestroy, OnInit, afterNextRender, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpEventType } from '@angular/common/http';
@@ -11,6 +12,7 @@ import { StateComponent } from '../../shared/state/state.component';
 import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { environment } from '../../../environments/environment';
+import { takeLinkedRecord } from '../../shared/linked-record';
 
 /** The server's limit (PROGRAM_MAX_MB); said before sending, so a big file is not uploaded for nothing. */
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -42,6 +44,13 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
+
+  /** What a notification opened (?machine_id=&file_id=): that machine, its file marked. */
+  private linkedMachineId: number | null = null;
+  linkedFileId: number | null = null;
 
   readonly maxMb = MAX_BYTES / 1048576;
   readonly apiBase = `${environment.apiUrl}/device/v1`;
@@ -76,12 +85,31 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   private readonly onVisibility = () => { if (!document.hidden) this.loadMachines(true); };
 
   get canUpload() { return this.auth.hasAction('programs', 'upload') && this.auth.hasAction('programs', 'transfer'); }
+
+  /**
+   * Why there is no Upload button, said where it would be — it simply was not
+   * there, and nobody could tell why (22 Oct 2026). Uploading needs Program
+   * Transfer's "Upload to library" and "Send to machine": the role must hold
+   * both and the company must have been given both (as the API checks).
+   */
+  get uploadBlockedReason(): string {
+    if (this.canUpload) return '';
+    const keys = ['page:programs:upload', 'page:programs:transfer'];
+    const granted = this.auth.getCompanyPermissions();
+    const companyLacks = granted.length > 0 && keys.some(k => !granted.includes(k));
+    return companyLacks || this.auth.isCompanyAdmin()
+      ? 'Uploading is not switched on for your company. S&T can allow Program Transfer → "Upload to library" and "Send to machine" under Companies → Manage Access.'
+      : 'Your role cannot upload programs. Your company admin can give it Program Transfer → "Upload to library" and "Send to machine" under Roles & Permissions.';
+  }
   get canBackup() { return this.auth.hasAction('programs', 'fetch'); }
   get canDelete() { return this.auth.hasAction('programs', 'delete'); }
   get canManageToken() { return this.auth.hasAction('machines', 'edit'); }
   get selectedMachine(): PtMachine | null { return this.machines.find(m => m.id === this.selectedMachineId) || null; }
 
   ngOnInit(): void {
+    const linked = takeLinkedRecord(this.route, this.router, ['machine_id', 'file_id']);
+    this.linkedMachineId = linked.machine_id ?? null;
+    this.linkedFileId = linked.file_id ?? null;
     this.loadMachines();
     document.addEventListener('visibilitychange', this.onVisibility);
     this.timer = setInterval(() => { if (!document.hidden) this.loadMachines(true); }, REFRESH_MS);
@@ -106,7 +134,9 @@ export class ProgramsComponent implements OnInit, OnDestroy {
         this.machines = res.data || [];
         this.loadingMachines = false;
         if (!this.selectedMachine) {
-          this.selectedMachineId = this.machines[0]?.id ?? null;
+          // the machine a notification is about, else the first
+          const linked = this.machines.find(m => m.id === this.linkedMachineId);
+          this.selectedMachineId = linked?.id ?? this.machines[0]?.id ?? null;
           this.changeMachine();
         } else if (quiet && before) {
           this.noticeChanges(before, this.selectedMachine!);
@@ -168,6 +198,7 @@ export class ProgramsComponent implements OnInit, OnDestroy {
           this.pagination = res.pagination || { page: this.page, limit: this.limit, total: this.files.length, totalPages: 1 };
           this.loadingFiles = false;
           this.cdr.markForCheck();
+          this.showLinkedFile();
         },
         error: err => {
           this.files = [];
@@ -176,6 +207,17 @@ export class ProgramsComponent implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         }
       });
+  }
+
+  /** The file a notification opened, on screen: scrolled to and focused (it is marked in the table). */
+  private showLinkedFile(): void {
+    const id = this.linkedFileId;
+    if (!id || !this.files.some(f => f.id === id)) return;
+    afterNextRender(() => {
+      const row = document.getElementById(`pt-file-${id}`);
+      row?.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      row?.focus({ preventScroll: true });
+    }, { injector: this.injector });
   }
 
   setFilter(filter: PtFilter): void { this.filter = filter; this.page = 1; this.loadFiles(); }

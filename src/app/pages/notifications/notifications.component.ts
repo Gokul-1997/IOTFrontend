@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, DestroyRef, HostListener, OnInit } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { notificationTarget } from '../../shared/linked-record';
 import { NotificationService } from '../../core/services/notification.service';
 import { Subscription, auditTime, pairwise } from 'rxjs';
 
@@ -129,9 +130,11 @@ export class NotificationsComponent implements OnInit {
       });
     }
     // A notification's link is server-supplied application-relative data
-    // (e.g. "/maintenance?ticket=42"), so Router.navigateByUrl is the right
+    // (e.g. "/alarms?alarm_id=12"), so Router.navigateByUrl is the right
     // tool — never a raw location.href, which would treat it as a full URL.
-    if (n.link) this.router.navigateByUrl(n.link);
+    // The page it opens marks the record (shared/linked-record.ts).
+    const target = notificationTarget(n);
+    if (target) this.router.navigateByUrl(target);
   }
 
   markAllRead(): void {
