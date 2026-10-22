@@ -40,7 +40,10 @@ const toRate = (v: any): number | null =>
   imports: [CommonModule, FormsModule, RouterModule, StateComponent, SkeletonRowsComponent],
   template: `
   <div class="mexa-titlebar">
+  <div class="titlebar w-fit flex items-center gap-2 text-white">
+  <span class="material-icons" aria-hidden="true">payments</span>
     <h1 class="mexa-title">Tariff &amp; Rates</h1>
+    </div>
     <span class="mexa-titlebar-spacer"></span>
     <a routerLink="/energy-dashboard" class="mexa-submit flex items-center gap-2">Go to Energy Dashboard <span class="ui-tab-icon material-icons" aria-hidden="true">east</span></a>
   </div>

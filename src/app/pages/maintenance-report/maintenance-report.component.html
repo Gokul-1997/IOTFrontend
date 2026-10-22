@@ -2,11 +2,14 @@
 
 <!-- ══════════ TITLE BAR ══════════ -->
 <form class="mexa-titlebar" (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
+  <div class="titlebar w-fit flex items-center gap-2 text-white">
+        <span class="material-icons" aria-hidden="true">assignment</span>
   <h1 class="mexa-title">Maintenance Report</h1>
   <p class="mexa-updated" *ngIf="updatedAt || loading">
     <mat-icon class="!w-4 !h-4 !text-base" [class.mexa-spin]="loading" aria-hidden="true">refresh</mat-icon>
     {{ loading ? 'Updating…' : 'Updated ' + updatedAt }}
   </p>
+  </div>
   <span class="mexa-titlebar-spacer"></span>
 
   <div class="mexa-filters" appFilterPanel>

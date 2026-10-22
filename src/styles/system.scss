@@ -216,7 +216,7 @@ html, body { font-family: var(--font-ui); }
 /* Header: tinted, the navy rule under it, a hairline between columns */
 .mexa-table thead th {
   position: sticky; top: 0; z-index: 2;
-  background: #232a48;
+  background: #daddf1;
   color: var(--tbl-head-ink);
   font-size: var(--fs-th);
   line-height: 1.3;

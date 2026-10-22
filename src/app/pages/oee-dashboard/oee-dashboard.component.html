@@ -4,7 +4,8 @@
 
 <!-- ══════════ TITLE BAR ══════════ -->
 <form class="mexa-titlebar" (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
-  <div class="titlebar w-fit">
+  <div class="titlebar w-fit flex items-center gap-2 text-white">
+        <span class="material-icons" aria-hidden="true">speed</span>
   <h1 class="mexa-title">OEE Dashboard</h1></div>
   <div class="flex flex-col">
     <!-- <p class="mexa-updated" *ngIf="updatedAt || loading">

@@ -5,7 +5,8 @@
 <!-- ══════════ TITLE BAR ══════════ -->
 <form class="mexa-titlebar" (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
   <div class="flex gap-2">
-    <div class="titlebar w-fit">
+    <div class="titlebar w-fit flex items-center gap-2 text-white">
+        <span class="material-icons" aria-hidden="true">event_available</span>
   <h1 class="mexa-title">Preventive Maintenance Dashboard</h1></div>
   <!-- <p class="mexa-updated" *ngIf="updatedAt || loading">
   <mat-icon class="!w-4 !h-4 !text-base" [class.mexa-spin]="loading" aria-hidden="true">refresh</mat-icon>
