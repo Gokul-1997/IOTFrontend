@@ -54,10 +54,19 @@ export class AssistantWidgetComponent implements OnInit {
   downloading: AssistantSource | null = null;
   /** The launcher's one greeting this session. */
   greet = false;
+  /**
+   * The server has no assistant yet (no AI key, or not deployed): the
+   * launcher still shows for report users, and the chat says it is not on
+   * yet instead of the button being missing with no reason (22 Oct 2026).
+   */
+  unavailable = false;
 
   get name(): string { return this.status?.name || 'STM Mexa AI'; }
+  /** For report users: on, or not set up yet. Hidden when the company admin switched it off, or for S&T. */
+  get visible(): boolean { return !!this.status?.enabled || this.unavailable; }
   get allowance() { return this.status?.allowance; }
   get limitReached(): boolean { return !!this.allowance && this.allowance.remaining <= 0; }
+  get closed(): boolean { return this.unavailable || this.limitReached; }
   get asked(): boolean { return this.messages.some(m => m.role === 'user'); }
   get suggestions(): string[] { return this.status?.suggestions || []; }
 
@@ -71,16 +80,20 @@ export class AssistantWidgetComponent implements OnInit {
 
   /** Only for people with report access, and only when the server says it is on. */
   private load(): void {
-    const mayUse = this.auth.isLoggedIn() && (this.auth.hasPermission('page:reports') || this.auth.hasPermission('page:oee-reports'));
+    this.unavailable = false;
+    const mayUse = this.auth.isLoggedIn() && !this.auth.isSntSuper()
+      && (this.auth.hasPermission('page:reports') || this.auth.hasPermission('page:oee-reports'));
     if (!mayUse) return;
     this.svc.loadStatus().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: s => {
+        this.unavailable = !s.enabled && s.reason === 'NOT_CONFIGURED';
         if (s.enabled) {
           try { this.greet = !sessionStorage.getItem(WELCOMED); sessionStorage.setItem(WELCOMED, '1'); } catch { this.greet = false; }
         }
         this.cdr.markForCheck();
       },
-      error: () => {}                 // no assistant is better than a broken one
+      // the server does not have the assistant yet (an older API): say so in the chat
+      error: err => { this.unavailable = err?.status === 404 || err?.status === 0 || err?.status >= 500; this.cdr.markForCheck(); }
     });
   }
 
@@ -108,7 +121,7 @@ export class AssistantWidgetComponent implements OnInit {
 
   send(text: string = this.draft): void {
     const question = text.trim().slice(0, 500);
-    if (!question || this.sending || this.limitReached) return;
+    if (!question || this.sending || this.closed) return;
     this.draft = '';
     const history: AssistantMessage[] = [...this.messages, { role: 'user', text: question }];
     this.svc.messages$.next(history);

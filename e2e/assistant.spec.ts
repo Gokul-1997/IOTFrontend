@@ -130,7 +130,7 @@ test('a failed question can be asked again, and only the question goes back', as
   expect(asked[1]).toEqual({ messages: [{ role: 'user', content: 'Production today' }] });
 });
 
-test('no launcher for a role without reports, or when the server has it off', async ({ page }) => {
+test('no launcher for a role without reports, or when the company admin switched it off', async ({ page }) => {
   await seedAuth(page, { roles: ['SUPERVISOR'], user_type: 'company_user', permissions: ['page:dashboard:view'] });
   await stub(page);
   await page.goto('/profile');
@@ -138,11 +138,30 @@ test('no launcher for a role without reports, or when the server has it off', as
   await expect(launcher(page)).toHaveCount(0);
 
   await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
-  await page.route('**/api/assistant/status', (r: any) => r.fulfill(json({ status: 'success', data: { name: 'STM Mexa AI', enabled: false, reason: 'NOT_CONFIGURED' } })));
+  await page.route('**/api/assistant/status', (r: any) => r.fulfill(json({ status: 'success', data: { name: 'STM Mexa AI', enabled: false, reason: 'SWITCHED_OFF' } })));
   await page.goto('/profile');
   await expect(page.getByRole('heading', { name: /Profile|My Profile/ }).first()).toBeVisible();
   await expect(launcher(page)).toHaveCount(0);
 });
+
+/* 22 Oct 2026 — "nothing shows, where is the button?": before the server has
+   the assistant (no AI key, or an older API), the button still shows for
+   report users and the chat says it is not on yet. */
+for (const [why, answer] of [
+  ['no AI key on the server', (r: any) => r.fulfill(json({ status: 'success', data: { name: 'STM Mexa AI', enabled: false, reason: 'NOT_CONFIGURED' } }))],
+  ['an older server without it', (r: any) => r.fulfill(json({ message: 'Not found' }, 404))]
+] as const) {
+  test(`${why}: the button is there, and the chat says it is not on yet`, async ({ authedPage: page }) => {
+    await stub(page);
+    await page.route('**/api/assistant/status', answer);
+    await page.setViewportSize({ width: 1400, height: 900 });
+    await page.goto('/profile');
+    await launcher(page).click();
+    await expect(panel(page)).toContainText('STM Mexa AI isn’t switched on yet. Your reports work as usual; once it is set up, you can ask about them here.');
+    await expect(page.getByLabel('Your question for STM Mexa AI')).toBeDisabled();
+    await expect(panel(page).getByRole('group', { name: 'Suggested questions' })).toHaveCount(0);
+  });
+}
 
 test('Escape closes it and gives focus back; one greeting a session; none for anyone who asked for less motion', async ({ authedPage: page }) => {
   await stub(page);

@@ -1,4 +1,4 @@
-<ng-container *ngIf="status?.enabled">
+<ng-container *ngIf="visible">
   <!-- the launcher, bottom right on every signed-in page -->
   <button #launcher type="button" class="as-launcher" [class.is-greeting]="greet" [class.is-open]="open"
           (click)="open ? close() : openPanel()" [attr.aria-expanded]="open" aria-controls="as-panel"
@@ -25,14 +25,17 @@
     </header>
 
     <div #log class="as-log" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation" tabindex="0">
-      <div class="as-msg is-bot"><p>{{ status?.welcome }}</p></div>
+      <div *ngIf="!unavailable" class="as-msg is-bot"><p>{{ status?.welcome }}</p></div>
+      <div *ngIf="unavailable" class="as-msg is-bot is-quiet" role="status">
+        <p>{{ name }} isn’t switched on yet. Your reports work as usual; once it is set up, you can ask about them here.</p>
+      </div>
 
       <p *ngIf="context as c" class="as-context">
         <span class="material-icons" aria-hidden="true">filter_alt</span>
         <span>Using this page’s filters: <strong>{{ sourceLine(c) }}</strong></span>
       </p>
 
-      <div *ngIf="!asked && suggestions.length" class="as-suggest" role="group" aria-label="Suggested questions">
+      <div *ngIf="!asked && !unavailable && suggestions.length" class="as-suggest" role="group" aria-label="Suggested questions">
         <button *ngFor="let s of suggestions" type="button" class="as-chip" (click)="send(s)" [disabled]="sending || limitReached">{{ s }}</button>
       </div>
 
@@ -67,8 +70,8 @@
     <form class="as-form" (ngSubmit)="send()">
       <label class="sr-only" for="as-input">Your question for {{ name }}</label>
       <textarea #input id="as-input" name="question" rows="2" maxlength="500" [(ngModel)]="draft" (keydown)="onKeydown($event)"
-                [disabled]="limitReached" placeholder="Ask about your reports…"></textarea>
-      <button type="submit" class="as-send" [disabled]="!draft.trim() || sending || limitReached" aria-label="Send">
+                [disabled]="closed" placeholder="Ask about your reports…"></textarea>
+      <button type="submit" class="as-send" [disabled]="!draft.trim() || sending || closed" aria-label="Send">
         <span class="material-icons" aria-hidden="true">send</span>
       </button>
     </form>
