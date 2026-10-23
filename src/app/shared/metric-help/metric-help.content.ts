@@ -285,6 +285,19 @@ export function metricHelp(topic: string, basis: HelpBasis = 'period'): MetricHe
         example: 'A limit of 12 kW and a peak of 15.2 kW: 3.2 kW over.',
         why: 'Repeated overloads strain the motor and the supply. No limit set means no alert.'
       };
+    case 'bill_forecast':
+      return {
+        title: 'This bill\'s forecast',
+        what: 'Where this electricity bill is heading: what the meters counted since the bill\'s first day, and the rest of the bill at your usual use.',
+        formula: [
+          'Forecast = used so far + the usual use of every hour still to come',
+          'Usual use = the median of the same hour of the week over the last 4 weeks (Monday 09:00 is not Sunday 09:00)',
+          'Likely range = the rest of the bill as each of those weeks really was',
+          'Cost = kWh × ₹ per kWh — each machine\'s own rate, else the company default'
+        ],
+        example: '₹18,382 used in the first 11.4 days, and 19.6 days to go at a usual ₹1,540 a day: ₹18,382 + ₹30,184 = ₹48,566.',
+        why: 'Only machines with an energy meter are in it — the EB bill also has lights, compressors and fixed or demand charges — and it cannot know a holiday ahead. Set the bill dates on Tariff & Rates; the next bills follow on by themselves.'
+      };
     case 'energy_cost_trend':
       return {
         title: 'Energy cost trend',

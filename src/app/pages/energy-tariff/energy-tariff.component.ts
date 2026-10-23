@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { Subject, takeUntil, catchError, of, forkJoin } from 'rxjs';
-import { EnergyDashboardService } from '../energy-dashboard/energy-dashboard.service';
+import { BillDates, EnergyDashboardService } from '../energy-dashboard/energy-dashboard.service';
+import { billDatesProblem, billLength, billPeriod } from '../energy-dashboard/energy-bill';
+import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { MachinesService } from '../machines/machines.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -23,7 +25,10 @@ const toRate = (v: any): number | null =>
  *   - the electricity tariff: ₹ per unit (kWh), company-wide or per machine,
  *     and the overload threshold;
  *   - each machine's hour rate: ₹ per hour, which prices idle and alarm time
- *     on the Downtime and OEE screens (machines.hour_rate).
+ *     on the Downtime and OEE screens (machines.hour_rate);
+ *   - the electricity bill's dates, from the EB bill: the Energy Dashboard
+ *     forecasts what this bill will cost (23 Oct 2026); the next bills follow
+ *     on by themselves.
  *
  * One page because two ("Energy Tariff" here, the hour rate on each machine's
  * form) left people unsure where a rate goes (6 Oct 2026). The machine form
@@ -87,6 +92,36 @@ const toRate = (v: any): number | null =>
         </tbody>
       </table>
     </div>
+  </section>
+
+  <!-- the electricity bill's dates: what the Energy Dashboard's bill forecast runs on -->
+  <section class="mexa-card mt-3 p-4" aria-labelledby="billTitle">
+    <div class="tf-head">
+      <div>
+        <h2 id="billTitle" class="mexa-card-title mexa-card-title-left">Electricity bill dates</h2>
+        <p class="mexa-card-hint">
+          The reading dates printed on your EB bill. The Energy Dashboard forecasts what this bill will cost; the
+          next bills follow on by themselves.
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button *ngIf="billDates?.configured" type="button" class="ui-btn ui-btn-ghost" (click)="removeBillDates()" [disabled]="billSaving">
+          <span class="ui-tab-icon material-icons" aria-hidden="true">event_busy</span>Remove
+        </button>
+        <button type="button" class="ui-btn ui-btn-primary" (click)="openBillDates()" [disabled]="billLoading || billSaving">
+          <span class="ui-tab-icon material-icons" aria-hidden="true">event</span>{{ billDates?.configured ? 'Change dates' : 'Set bill dates' }}
+        </button>
+      </div>
+    </div>
+    <p *ngIf="billLoading" class="mexa-card-hint mt-2">Loading the bill dates…</p>
+    <dl *ngIf="!billLoading && billDates?.configured" class="bill-dl mt-2">
+      <div><dt>This bill</dt><dd>{{ billPeriod(billDates!.current!.start, billDates!.current!.end) }} · {{ billDates!.current!.days }} days</dd></div>
+      <div><dt>Next bill</dt><dd>{{ billPeriod(billDates!.next!.start, billDates!.next!.end) }}</dd></div>
+      <div><dt>Repeats</dt><dd>{{ billDates!.repeats }}</dd></div>
+    </dl>
+    <app-state *ngIf="!billLoading && billDates && !billDates.configured" icon="event" title="No bill dates yet"
+               text="Set them from your latest EB bill to see this bill's forecast on the Energy Dashboard."></app-state>
+    <p *ngIf="billLoadError" class="text-sm text-red-700 dark:text-red-400 mt-2" role="alert">{{ billLoadError }}</p>
   </section>
 
   <!-- each machine's hour rate: the same value as on its machine form -->
@@ -243,8 +278,58 @@ const toRate = (v: any): number | null =>
       </form>
     </div>
   </div>
+  <!-- ── BILL DATES ── -->
+  <div *ngIf="showBill" class="ui-overlay">
+    <div class="ui-dialog" role="dialog" aria-modal="true" aria-labelledby="billFormTitle">
+      <div class="ui-dialog-header">
+        <div>
+          <h2 id="billFormTitle" class="ui-dialog-title">{{ billDates?.configured ? 'Change bill dates' : 'Set bill dates' }}</h2>
+          <p class="ui-dialog-subtitle">From your latest EB bill: the first and the last day of its reading period.</p>
+        </div>
+        <button type="button" class="ui-close" (click)="closeBillDates()" aria-label="Close without saving">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form (ngSubmit)="saveBillDates()" class="contents" novalidate>
+        <div class="ui-dialog-body">
+          <div id="billError" *ngIf="billError" class="ui-alert ui-alert-error mb-4" role="alert">{{ billError }}</div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="billStart" class="ui-label">First day</label>
+              <input id="billStart" type="date" class="ui-input" [(ngModel)]="billForm.start" name="billStart" required
+                     [attr.aria-invalid]="billError ? true : null" aria-describedby="billLength">
+            </div>
+            <div>
+              <label for="billEnd" class="ui-label">Last day</label>
+              <input id="billEnd" type="date" class="ui-input" [(ngModel)]="billForm.end" name="billEnd" required
+                     [min]="billForm.start" [attr.aria-invalid]="billError ? true : null" aria-describedby="billLength">
+            </div>
+          </div>
+          <p id="billLength" class="ui-hint" aria-live="polite">{{ billLengthText }}</p>
+        </div>
+
+        <div class="ui-dialog-footer is-split">
+          <p class="ui-hint !mt-0">A monthly bill repeats on the same day every month.</p>
+          <div class="flex items-center gap-2">
+            <button type="button" class="ui-btn ui-btn-ghost" (click)="closeBillDates()" [disabled]="billSaving">Cancel</button>
+            <button type="submit" class="ui-btn ui-btn-primary" [disabled]="billSaving">
+              <span *ngIf="billSaving" class="ui-spinner" aria-hidden="true"></span>
+              {{ billSaving ? 'Saving…' : 'Save bill dates' }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
   `,
   styles: [`
+    /* the bill dates as saved: three label / value pairs */
+    .bill-dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .5rem 1rem; margin-bottom: 0; }
+    .bill-dl dt { font-size: .72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--mexa-ink-3); }
+    .bill-dl dd { margin: .1rem 0 0; font-weight: 600; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
     /* a block, not the default inline: the page's blocks inside an inline host
        hit-test oddly (the host answers for its own row buttons) */
     :host { display: block; }
@@ -283,8 +368,18 @@ export class EnergyTariffComponent implements OnInit, OnDestroy {
   readonly canEditRates: boolean;
   readonly canViewRates: boolean;
 
+  /* ── the electricity bill's dates ── */
+  billDates: BillDates | null = null;
+  billLoading = false;
+  billLoadError = '';
+  showBill = false;
+  billSaving = false;
+  billError = '';
+  billForm = { start: '', end: '' };
+  readonly billPeriod = billPeriod;
+
   constructor(private svc: EnergyDashboardService, private machinesSvc: MachinesService, auth: AuthService,
-              private toast: ToastService, private cdr: ChangeDetectorRef) {
+              private toast: ToastService, private cdr: ChangeDetectorRef, private confirm: ConfirmService) {
     this.canEditRates = auth.hasAction('machines', 'edit');
     this.canViewRates = this.canEditRates || auth.hasAction('machines', 'view');
   }
@@ -293,7 +388,87 @@ export class EnergyTariffComponent implements OnInit, OnDestroy {
     this.svc.getMeta().pipe(takeUntil(this.destroy$), catchError(() => of(null)))
       .subscribe((res: any) => { this.machines = res?.data?.machines ?? []; this.cdr.markForCheck(); });
     this.load();
+    this.loadBillDates();
     if (this.canViewRates) this.loadRates();
+  }
+
+  /* ── the electricity bill's dates ── */
+
+  loadBillDates(): void {
+    this.billLoading = true; this.billLoadError = ''; this.cdr.markForCheck();
+    this.svc.getBillDates().pipe(takeUntil(this.destroy$)).subscribe({
+      next: res => { this.billLoading = false; this.billDates = res?.data ?? null; this.cdr.markForCheck(); },
+      error: () => {
+        this.billLoading = false;
+        this.billLoadError = 'Could not load the bill dates. Reload the page to try again.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  /** "31 days" as the dates are typed — or what is wrong with them. */
+  get billLengthText(): string {
+    const { start, end } = this.billForm;
+    if (!start || !end) return 'Both days count: 12 Oct to 11 Nov is 31 days.';
+    return billDatesProblem(start, end) || `${billLength(start, end)} days`;
+  }
+
+  /** Opens on this bill's dates when they are set, so the next one is a small change. */
+  openBillDates(): void {
+    const cur = this.billDates?.current;
+    this.billForm = { start: cur?.start ?? '', end: cur?.end ?? '' };
+    this.billError = '';
+    this.showBill = true;
+  }
+
+  closeBillDates(): void {
+    if (this.billSaving) return;
+    this.showBill = false;
+    this.billError = '';
+  }
+
+  saveBillDates(): void {
+    const { start, end } = this.billForm;
+    const problem = billDatesProblem(start, end);
+    if (problem) { this.billError = problem; this.cdr.markForCheck(); return; }
+    this.billSaving = true; this.billError = ''; this.cdr.markForCheck();
+    this.svc.saveBillDates(start, end).pipe(takeUntil(this.destroy$)).subscribe({
+      next: res => {
+        this.billSaving = false;
+        this.billDates = res?.data ?? this.billDates;
+        this.showBill = false;
+        this.toast.success('Bill dates saved');
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        this.billSaving = false;
+        this.billError = err?.error?.message || 'Could not save the bill dates. Try again.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  async removeBillDates(): Promise<void> {
+    const yes = await this.confirm.ask({
+      title: 'Remove the bill dates?',
+      message: 'The Energy Dashboard stops forecasting the electricity bill until they are set again.',
+      confirmText: 'Remove', icon: 'event_busy'
+    });
+    if (!yes) return;
+    this.billSaving = true; this.cdr.markForCheck();
+    this.svc.clearBillDates().pipe(takeUntil(this.destroy$)).subscribe({
+      next: res => {
+        this.billSaving = false;
+        this.billDates = res?.data ?? null;
+        this.toast.success('Bill dates removed');
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        this.billSaving = false;
+        this.toast.error(err?.error?.message || 'Could not remove the bill dates. Try again.');
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   /** Every machine with its rate, in the order the plant counts them (VMC - 2 before VMC - 10). */

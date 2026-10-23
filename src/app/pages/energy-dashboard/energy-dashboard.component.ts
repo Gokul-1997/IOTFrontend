@@ -5,7 +5,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
-import { EnergyDashboardService } from './energy-dashboard.service';
+import { BillForecast, EnergyDashboardService } from './energy-dashboard.service';
+import { accuracyText, billChart, billDay, billPeriod, changeText } from './energy-bill';
 import { takeLinkedFilters } from '../../shared/linked-filters';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -19,7 +20,7 @@ import { compactQty, qty } from '../../shared/format-number';
 import { MeterPanelComponent } from '../../shared/meter-panel/meter-panel.component';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
-import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
+import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill, revealWhenShown } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 
 /** Charts | Machine Detail | Energy Meter, under the tiles all three share. The meter
@@ -48,7 +49,27 @@ const TABS: DashTab[] = [
   selector: 'app-energy-dashboard',
   standalone: true,
   imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MeterPanelComponent],
-  templateUrl: './energy-dashboard.component.html'
+  templateUrl: './energy-dashboard.component.html',
+  styles: [`
+    /* This bill: a tile in the row, and its card on Charts (the figures above the chart) */
+    @media (max-width: 1023px) { .mexa-kpi.is-bill { grid-column: 1 / -1; } }
+    .bill-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem .75rem; }
+    .bill-when { margin: 0; font-size: var(--fs-small, .8rem); color: var(--mexa-ink-2); }
+    .bill-figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: .5rem; margin: .75rem 0 .25rem; }
+    .bill-fig { margin: 0; padding: .6rem .75rem; border-radius: 12px; background: var(--mexa-row-alt); min-width: 0; }
+    .bill-fig dt { font-size: .72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--mexa-ink-3); }
+    .bill-fig dd { margin: .15rem 0 0; }
+    .bill-value { display: block; font-size: 1.35rem; font-weight: 700; color: var(--mexa-ink); font-variant-numeric: tabular-nums; line-height: 1.2; }
+    .bill-sub { display: block; font-size: .78rem; color: var(--mexa-ink-2); font-variant-numeric: tabular-nums; }
+    @media (max-width: 640px) {
+      .bill-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .bill-value { font-size: 1.1rem; }
+    }
+    .bill-notes { display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin: .35rem 0 0; padding: 0; list-style: none;
+                  font-size: .78rem; color: var(--mexa-ink-2); }
+    .bill-notes .is-warn { color: #b45309; font-weight: 600; }
+    .bill-state { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: .75rem 0 0; color: var(--mexa-ink-2); }
+  `]
 })
 export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
   get isDarkMode(): boolean {
@@ -89,6 +110,21 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
   private destroy$ = new Subject<void>();
   private search$ = new RxSubject<string>();
 
+  /* ── This bill ── the electricity bill's forecast. Its own request: it
+     follows the machine filter, never the dates (a bill has its own). */
+  bill: BillForecast | null = null;
+  billLoading = false;
+  billError = '';
+  /** The machine filter the forecast on screen is for (undefined: none asked yet). */
+  private billFor: number | null | undefined = undefined;
+  private billRetry: ReturnType<typeof setTimeout> | null = null;
+  private billTries = 0;
+  readonly qty = qty;
+  readonly billDay = billDay;
+  readonly billPeriod = billPeriod;
+  readonly changeText = changeText;
+  readonly accuracyText = accuracyText;
+
   constructor(
     private svc: EnergyDashboardService,
     private toast: ToastService,
@@ -128,7 +164,10 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  ngOnDestroy(): void { this.views.cancel(); this.destroy$.next(); this.destroy$.complete(); }
+  ngOnDestroy(): void {
+    if (this.billRetry) clearTimeout(this.billRetry);
+    this.views.cancel(); this.destroy$.next(); this.destroy$.complete();
+  }
 
   blankFilters() {
     const today = this.todayStr();
@@ -167,7 +206,105 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
   load(): void {
     this.errorMsg = '';
     this.views.load();
+    if (this.f.machine_id !== this.billFor) this.loadBill();
     this.cdr.markForCheck();
+  }
+
+  /**
+   * This bill's forecast for the machine filter. While the server is still
+   * working out the bill's first days (the first look after an update) it
+   * says so, and this asks again every 30 s for a while.
+   */
+  loadBill(): void {
+    if (this.billRetry) { clearTimeout(this.billRetry); this.billRetry = null; }
+    if (this.f.machine_id !== this.billFor) this.billTries = 0;
+    const machine = this.f.machine_id ?? null;
+    this.billFor = machine;
+    this.billLoading = true;
+    this.billError = '';
+    this.cdr.markForCheck();
+    this.svc.getBill(machine).pipe(takeUntil(this.destroy$)).subscribe({
+      next: res => {
+        if (machine !== (this.f.machine_id ?? null)) return;      // the filter moved on meanwhile
+        this.billLoading = false;
+        this.bill = res?.data ?? null;
+        if (this.bill?.preparing && this.billTries++ < 10) this.billRetry = setTimeout(() => this.loadBill(), 30_000);
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        if (machine !== (this.f.machine_id ?? null)) return;
+        this.billLoading = false;
+        this.bill = null;
+        this.billError = err?.status === 403 ? '' : (err?.error?.message || 'Could not load this bill\'s forecast.');
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  /** The This bill tile: the Charts tab, at its card. */
+  openBill(): void {
+    if (this.views.tab !== 'charts') this.setView('charts');
+    revealWhenShown('enBill', 'enBillTitle');
+  }
+
+  /** What the bill tile and card show: the forecast, or why there is none yet. */
+  get billState(): 'loading' | 'error' | 'unset' | 'preparing' | 'nometer' | 'early' | 'ready' {
+    const b = this.bill;
+    if (!b) return this.billError ? 'error' : 'loading';
+    if (!b.configured) return 'unset';
+    if (b.preparing) return 'preparing';
+    if (!b.machines?.metered) return 'nometer';
+    return b.forecast ? 'ready' : 'early';
+  }
+
+  /** Money where there is a tariff; else what the meters count. */
+  get billMoney(): boolean { return this.bill?.so_far?.cost != null; }
+
+  /** "₹48,551" or "1,811 kWh". */
+  billValue(cost: number | null | undefined, kwh: number | null | undefined): string {
+    return this.billMoney ? this.money(cost) : kwh == null ? '--' : `${qty(kwh, 0)} kWh`;
+  }
+
+  /** How far the forecast is off the last 7 days: worth a warning over 15 %. */
+  get billUnsteady(): boolean { return Math.abs(this.bill?.accuracy?.error_pct ?? 0) > 15; }
+
+  /** The running total chart. Drawn again only when the bill's figures change. */
+  get billChart(): any {
+    const days = this.bill?.per_day ?? [];
+    const money = this.billMoney;
+    // the used line is the page's navy, which a dark card would swallow
+    const dark = this.isDarkMode;
+    // a phone: three dates along the bottom (first, middle, last), and the axis title's room given to the plot
+    const narrow = typeof window !== 'undefined' && window.innerWidth < 640;
+    return this.charts.memo('billChart', () => {
+      const c = billChart(days, money);
+      const today = days.find(d => d.kind === 'today');
+      const label = (v: number) => (money ? this.money(v) : `${qty(v, 0)} kWh`);
+      return {
+        series: [
+          { name: 'Likely range', type: 'rangeArea', data: c.range },
+          { name: 'Used so far', type: 'line', data: c.used.map((y, i) => ({ x: c.categories[i], y })) },
+          { name: 'Forecast', type: 'line', data: c.forecast.map((y, i) => ({ x: c.categories[i], y })) }
+        ],
+        chart: { type: 'rangeArea', height: narrow ? 230 : 260, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false },
+                 zoom: { enabled: false } },
+        colors: ['#f59e0b', dark ? '#a5b4fc' : '#151458', dark ? '#fb923c' : '#b45309'],
+        fill: { opacity: [0.18, 1, 1] },
+        stroke: { width: [0, 3, 3], curve: 'straight', dashArray: [0, 0, 6] },
+        markers: { size: 0, hover: { size: 4 } },
+        dataLabels: { enabled: false },
+        legend: { show: true, position: 'top', horizontalAlign: 'right', fontSize: '12px' },
+        xaxis: { type: 'category', tickAmount: Math.min(narrow ? 2 : 10, c.categories.length), labels: { rotate: 0, hideOverlappingLabels: true } },
+        yaxis: { labels: { formatter: (v: number) => (money ? '₹' + compactQty(v) : compactQty(v)) },
+                 title: { text: narrow ? undefined : money ? `Running total (${this.data?.currency || this.bill?.currency || 'INR'})` : 'Running total (kWh)' } },
+        annotations: today ? { xaxis: [{ x: billDay(today.day), borderColor: '#64748b', strokeDashArray: 3,
+                       label: { text: 'Today', orientation: 'horizontal', style: { background: '#64748b', color: '#fff' } } }] } : {},
+        grid: { borderColor: 'rgba(148,163,184,.25)' },
+        tooltip: { shared: true, intersect: false, theme: dark ? 'dark' : 'light',
+                   y: { formatter: (v: number) => (v == null || Number.isNaN(v) ? '--' : label(v)) } },
+        noData: { text: 'No meter readings in this bill yet' }
+      };
+    }, JSON.stringify([days, money, dark, narrow]));
   }
 
   /* What each part depends on: the tiles and charts on the filters (the
