@@ -8,6 +8,7 @@ Use the Node version in `.nvmrc` and install the locked dependencies with `npm c
 ```sh
 npm start
 npm run test:ci
+npm run test:desktop
 npm run build
 npm run e2e
 ```
@@ -27,6 +28,8 @@ npm run package:mac
 
 The Electron shell loads the same Angular production assets. Signed release
 packages and real-device acceptance are separate deployment steps.
+The API server's `CORS_ORIGINS` must include `app://localhost` for desktop
+requests, alongside the configured web origin. The desktop scheme enforces CORS.
 
 ## Assets and guides
 

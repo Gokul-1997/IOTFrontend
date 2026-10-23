@@ -11,6 +11,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:ci": "ng test --watch=false",
+    "test:desktop": "node --test electron/*.test.cjs",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:install": "playwright install --with-deps chromium",
@@ -28,6 +29,7 @@
     },
     "files": [
       "electron/**/*",
+      "!electron/**/*.test.cjs",
       "dist/FrontendIOT/browser/**/*"
     ],
     "win": {
@@ -89,6 +91,14 @@
     ]
   },
   "private": true,
+  "overrides": {
+    "tailwindcss": {
+      "postcss-selector-parser": "^7.1.6",
+      "postcss-nested": {
+        "postcss-selector-parser": "^7.1.6"
+      }
+    }
+  },
   "packageManager": "npm@10.8.2",
   "dependencies": {
     "@angular/cdk": "~21.2.14",
@@ -112,8 +122,8 @@
     "@angular/compiler-cli": "^21.2.25",
     "@playwright/test": "^1.59.1",
     "autoprefixer": "^10.4.24",
-    "electron": "^33.4.11",
-    "electron-builder": "^25.1.8",
+    "electron": "^43.8.3",
+    "electron-builder": "^26.15.3",
     "jsdom": "^27.1.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19",

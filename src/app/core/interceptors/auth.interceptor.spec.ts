@@ -99,6 +99,23 @@ test('an old data response is rejected after the account changes', () => {
   expect(failures[0]?.code).toBe('SESSION_CHANGED');
 });
 
+test('another tab changing account rejects old responses before the reload finishes', () => {
+  const results: any[] = [], failures: any[] = [];
+  vi.spyOn(auth, 'startOver').mockImplementation(() => {});
+  http.get(`${api}/dashboard`).subscribe({ next: value => results.push(value), error: error => failures.push(error) });
+  const pending = requests.expectOne(`${api}/dashboard`);
+
+  localStorage.setItem('token', 'new-company-token');
+  localStorage.setItem('refreshToken', 'new-refresh');
+  localStorage.setItem('user', JSON.stringify({ id: 2, company_id: 2 }));
+  window.dispatchEvent(new StorageEvent('storage', { key: 'user' }));
+  pending.flush({ machines: ['previous company'] });
+
+  expect(results).toEqual([]);
+  expect(failures[0]?.code).toBe('SESSION_CHANGED');
+  expect(localStorage.getItem('token')).toBe('new-company-token');
+});
+
 test('requests outside the API do not carry a company token', () => {
   http.get('https://example.invalid/asset').subscribe();
   const request = requests.expectOne('https://example.invalid/asset');

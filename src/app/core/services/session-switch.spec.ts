@@ -86,6 +86,27 @@ describe('the live-data socket belongs to one session', () => {
 });
 
 describe('another tab switching user', () => {
+  test('closes the old socket and clears its count while the reload is pending', async () => {
+    login(11, 1);
+    const notes = TestBed.inject(NotificationService);
+    http.expectOne(r => r.url.endsWith('/unread-count')).flush({ count: 4 });
+    await TestBed.inject(SocketService).connect();
+    const startOver = vi.spyOn(auth, 'startOver').mockImplementation(() => {});
+    const version = auth.sessionVersion;
+
+    localStorage.setItem('token', 'token-22');
+    localStorage.setItem('refreshToken', 'refresh-22');
+    localStorage.setItem('user', JSON.stringify(signIn(22, 2).user));
+    window.dispatchEvent(new StorageEvent('storage', { key: 'user' }));
+
+    expect(auth.sessionVersion).toBe(version + 1);
+    expect(sockets[0].disconnect).toHaveBeenCalled();
+    expect(notes.unreadCount$.value).toBe(0);
+    expect(startOver).toHaveBeenCalledOnce();
+    expect(localStorage.getItem('token')).toBe('token-22');
+    http.expectNone(r => r.url.endsWith('/auth/logout'));
+  });
+
   test('starts this tab over; a token refresh by the same person does not', () => {
     login(11, 1);
     const startOver = vi.spyOn(auth, 'startOver').mockImplementation(() => {});

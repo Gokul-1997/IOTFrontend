@@ -44,7 +44,16 @@ export class AuthService implements OnDestroy {
     const user = this.getUser();
     const previousRevision = this.shownRevision;
     this.shownRevision = user?.auth_revision;
-    if ((user?.id ?? null) !== this.shownUserId || this.contextKey(user) !== this.shownContext) this.startOver();
+    if ((user?.id ?? null) !== this.shownUserId || this.contextKey(user) !== this.shownContext) {
+      // Reloading is asynchronous: retire this tab's requests, sockets and
+      // cached data now, before the next account's page replaces this one.
+      // The shared credentials already belong to the other tab's session.
+      this.generation++;
+      this.refreshInFlight = null;
+      clearTimeout(this.refreshTimer);
+      this.sessionChanged$.next('signed-out');
+      this.startOver();
+    }
     else if (this.grantsKey(user) !== this.shownGrants) {
       this.shownGrants = this.grantsKey(user);
       this.grantsChanged$.next();

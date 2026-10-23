@@ -1,9 +1,10 @@
 const { app, BrowserWindow, protocol, net, shell } = require('electron');
 const path = require('path');
 const { pathToFileURL } = require('url');
+const { appUrl, externalUrl, appFile } = require('./security');
 
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'app', privileges: { secure: true, standard: true, supportFetchAPI: true } }
+  { scheme: 'app', privileges: { secure: true, standard: true, supportFetchAPI: true, corsEnabled: true } }
 ]);
 
 function createWindow() {
@@ -16,6 +17,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       webSecurity: true,
+      sandbox: true,
     },
     autoHideMenuBar: true,
     title: 'IOT Dashboard',
@@ -26,11 +28,12 @@ function createWindow() {
 
   // Open external links in the system browser, not in Electron
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('http')) {
-      shell.openExternal(url);
-      return { action: 'deny' };
-    }
-    return { action: 'allow' };
+    const external = externalUrl(url);
+    if (external) shell.openExternal(external).catch(() => {});
+    return { action: 'deny' };
+  });
+  win.webContents.on('will-navigate', (event, url) => {
+    if (!appUrl(url)) event.preventDefault();
   });
 
   win.loadURL('app://localhost/');
@@ -40,12 +43,8 @@ app.whenReady().then(() => {
   const distPath = path.join(app.getAppPath(), 'dist', 'FrontendIOT', 'browser');
 
   protocol.handle('app', (request) => {
-    const url = new URL(request.url);
-    let filePath = url.pathname;
-
-    if (filePath === '/') filePath = '/index.html';
-
-    const fullPath = path.join(distPath, filePath);
+    const fullPath = appFile(distPath, request.url);
+    if (!fullPath) return new Response('Not found', { status: 404 });
 
     return net.fetch(pathToFileURL(fullPath).toString()).catch(() =>
       // Fall back to index.html so Angular's router handles the path
