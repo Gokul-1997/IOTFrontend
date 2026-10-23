@@ -450,7 +450,9 @@ const catalogue = [
       { id: 3, permission_key: 'page:reports:view', action: 'view', actionLabel: 'View' } ] },
   { module: 'programs', label: 'Program Transfer', group: 'Setup', permissions: [
       { id: 4, permission_key: 'page:programs:view', action: 'view', actionLabel: 'View' },
-      { id: 5, permission_key: 'page:programs:transfer', action: 'transfer', actionLabel: 'Transfer' } ] }
+      { id: 5, permission_key: 'page:programs:transfer', action: 'transfer', actionLabel: 'Transfer' } ] },
+  { module: 'assistant', label: 'STM Mexa AI', group: 'AI', permissions: [
+      { id: 6, permission_key: 'page:assistant:view', action: 'view', actionLabel: 'Use the AI assistant' } ] }
 ];
 
 /** The company holds 1, 2, 3 — and one legacy key the modal cannot show. */
@@ -461,7 +463,7 @@ const heldByCompany = [
   { id: 901, permission_key: 'machine.view' }
 ];
 
-async function mockAccessApi(page: any, opts: { failCurrent?: boolean } = {}) {
+async function mockAccessApi(page: any, opts: { failCurrent?: boolean; current?: any[] } = {}) {
   await mockAdminApi(page);
   await page.route('**/api/plans/permissions', (r: any) => r.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify(catalogue) }));
@@ -476,7 +478,7 @@ async function mockAccessApi(page: any, opts: { failCurrent?: boolean } = {}) {
     if (state.failCurrent) {
       return route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ message: 'boom' }) });
     }
-    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(heldByCompany) });
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(opts.current ?? heldByCompany) });
   });
   return state;
 }
@@ -496,6 +498,27 @@ test('Manage Access: opens with the company\'s current grants ticked, Save waits
   await expect(page.getByText('3 permission(s) selected')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Save Access' })).toBeDisabled();
   await page.screenshot({ path: testInfo.outputPath('mexa-admin-access.png'), fullPage: true });
+});
+
+/* 23 Oct 2026, the user: "super admin decides for each company whether it gets
+   the AI". It is its own module under AI, and opt-in: a company with no limits
+   (every other page open) does not have it until S&T ticks it — and ticking it
+   must not take that company's other pages away. */
+test('Manage Access: the AI is S&T\'s tick — a company with no limits shows every page ticked but the AI, and keeps them', async ({ sntSuperPage: page }, testInfo) => {
+  const state = await mockAccessApi(page, { current: [] });
+  await page.setViewportSize({ width: 1400, height: 1000 });
+  await openAccess(page);
+  await expect(page.getByText('No limits have been set for this company, so it can use every page')).toBeVisible();
+  await expect(page.getByText('5 permission(s) selected')).toBeVisible();
+  const ai = page.locator('label', { hasText: 'Use the AI assistant' }).locator('input');
+  await expect(ai).not.toBeChecked();
+  await expect(page.getByRole('button', { name: 'Save Access' })).toBeDisabled();        // nothing changed yet
+  await ai.check();
+  await expect(page.getByText(/Granting 1/)).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('mexa-admin-access-ai.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Save Access' }).click();
+  await expect.poll(() => state.puts.length).toBe(1);
+  expect(state.puts[0].permission_ids.sort()).toEqual([1, 2, 3, 4, 5, 6]);
 });
 
 test('Manage Access: a revoke says what it will do, then sends only what remains', async ({ sntSuperPage: page }, testInfo) => {

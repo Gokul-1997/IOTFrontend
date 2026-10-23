@@ -154,6 +154,10 @@ export class CompanyManagementComponent implements OnInit {
      leave Save live: pressing it replaced the company's real access with
      nothing. */
   accessLoadFailed = false;
+  /* The company has no grants at all: every page is open to it (all but the
+     AI). The modal shows that truthfully — those boxes ticked — so ticking
+     the AI alone and saving cannot take every other page away. */
+  accessUnrestricted = false;
 
   /* ── Program Transfer gateway ──
      One token per company, for all its machines (22 Oct 2026: S&T makes it,
@@ -409,7 +413,13 @@ export class CompanyManagementComponent implements OnInit {
         // legacy grants a company carries. Only what the modal can show and
         // edit belongs in the working set.
         const offered = new Set(all.flatMap((m: any) => m.permissions.map((p: any) => p.id)));
-        const held = current.map((p: any) => p.id).filter((id: number) => offered.has(id));
+        let held = current.map((p: any) => p.id).filter((id: number) => offered.has(id));
+        this.accessUnrestricted = held.length === 0;
+        if (this.accessUnrestricted) {
+          // what it has in effect: every page but the opt-in AI, which only a tick here gives
+          held = all.flatMap((m: any) => m.permissions)
+            .filter((p: any) => !String(p.permission_key || '').startsWith('page:assistant:')).map((p: any) => p.id);
+        }
         this.companyPermIds = new Set(held);
         this.accessOriginalIds = new Set(held);
         this.accessLoading = false;
@@ -446,6 +456,7 @@ export class CompanyManagementComponent implements OnInit {
     this.showAccessModal = false;
     this.accessCompany = null;
     this.accessLoadFailed = false;
+    this.accessUnrestricted = false;
     this.accessOriginalIds = new Set();
     this.cdr.detectChanges();
   }

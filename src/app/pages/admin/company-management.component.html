@@ -138,7 +138,7 @@
       <div><span>02</span><h3>Assign a plan</h3><p>Choose the capacity for users, plants and machines.</p></div>
       <div><span>03</span><h3>Set company access</h3><p>Enable the pages and actions the company can use.</p></div>
     </div>
-    <p class="admin-guide-note">The company admin manages their users and roles. Use Gateway to set up Program Transfer for the company.</p>
+    <p class="admin-guide-note">The company admin manages their users and roles. Use Gateway to set up Program Transfer for the company. A company has the STM Mexa AI assistant only when you tick it under AI in its access.</p>
   </details>
 </div>
 
@@ -346,6 +346,10 @@
 
     <!-- Scrollable body -->
     <div *ngIf="!accessLoading && !accessLoadFailed && allPermissions.length > 0" class="overflow-y-auto flex-1 p-6">
+      <p *ngIf="accessUnrestricted" class="ui-alert ui-alert-info mb-4 text-sm">
+        No limits have been set for this company, so it can use every page — all ticked below — except STM Mexa AI.
+        Tick STM Mexa AI under AI to give it the assistant, and untick anything it should not have.
+      </p>
       <div *ngFor="let group of getAccessGroups()" class="mb-6">
         <!-- Group Header -->
         <div class="flex items-center gap-2 mb-3 pb-2 border-b-2 border-gray-200 dark:border-gray-600">

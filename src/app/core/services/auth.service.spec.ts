@@ -645,3 +645,27 @@ describe('AuthService.refreshToken — grants', () => {
     });
   });
 });
+
+/* The AI assistant is opt-in (23 Oct 2026, "super admin decides for that
+   company"): a company has it only when S&T ticked it — a company with no
+   grants, open to every other page, does not — and inside the company only
+   the roles its admin gave it, as the API (access.middleware.js). */
+describe('an opt-in page: the AI assistant', () => {
+  test('a fresh company with no grants does not have it, though it has everything else', () => {
+    seedUser({ roles: ['COMPANY_ADMIN'], permissions: [], company_permissions: [] });
+    expect(service.hasPermission('page:assistant')).toBe(false);
+    expect(service.hasAction('assistant', 'view')).toBe(false);
+    expect(service.hasPermission('page:analytics-oee')).toBe(true);
+  });
+
+  test('granted by S&T: the company admin has it, a role only when its admin gave it', () => {
+    seedUser({ roles: ['COMPANY_ADMIN'], permissions: [], company_permissions: ['page:reports:view', 'page:assistant:view'] });
+    expect(service.hasPermission('page:assistant')).toBe(true);
+    seedUser({ roles: ['MANAGER'], permissions: ['page:reports:view'], company_permissions: ['page:reports:view', 'page:assistant:view'] });
+    expect(service.hasPermission('page:assistant')).toBe(false);
+    seedUser({ roles: ['MANAGER'], permissions: ['page:assistant:view'], company_permissions: ['page:assistant:view'] });
+    expect(service.hasPermission('page:assistant')).toBe(true);
+    seedUser({ roles: ['MANAGER'], permissions: ['page:assistant:view'], company_permissions: [] });
+    expect(service.hasWidget('assistant', 'view')).toBe(false);
+  });
+});

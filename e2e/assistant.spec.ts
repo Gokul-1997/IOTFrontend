@@ -21,7 +21,12 @@ const answer = {
   allowance: { limit: 50, used: 13, remaining: 37, resets_at: '2026-10-22T18:30:00.000Z', resets_text: '12:00 am (Asia/Kolkata)', timezone: 'Asia/Kolkata' }
 };
 
+/* S&T gave the company the AI (23 Oct 2026: it is opt-in — a company with no
+   grants does not have it), with the pages these tests open. */
+const WITH_AI = ['page:reports:view', 'page:oee-reports:view', 'page:dashboard:view', 'page:assistant:view'];
+
 async function stub(page: any, st: any = status()) {
+  await seedAuth(page, { company_permissions: WITH_AI });
   await page.route('**/socket.io/**', (r: any) => r.abort());
   await page.route('**/api/**', (r: any) => r.fulfill(json({ status: 'success', success: true, data: [] })));
   await page.route('**/api/assistant/status', (r: any) => r.fulfill(json(st)));
@@ -162,18 +167,39 @@ test('a failed question can be asked again, and only the question goes back', as
   expect(asked[1]).toEqual({ messages: [{ role: 'user', content: 'Production today' }] });
 });
 
-test('everyone in a company gets it, reports or not; no launcher when the company admin switched it off', async ({ page }) => {
-  await seedAuth(page, { roles: ['SUPERVISOR'], user_type: 'company_user', permissions: ['page:dashboard:view'] });
+test('a role its company admin gave the AI gets it, reports or not; no launcher when the company admin switched it off', async ({ page }) => {
   await stub(page);
+  await seedAuth(page, { roles: ['SUPERVISOR'], user_type: 'company_user', permissions: ['page:dashboard:view', 'page:assistant:view'], company_permissions: WITH_AI });
   await page.goto('/profile');
   await expect(page.getByRole('heading', { name: /Profile|My Profile/ }).first()).toBeVisible();
   await expect(launcher(page)).toBeVisible();
 
-  await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
+  await seedAuth(page, { roles: ['COMPANY_ADMIN'], company_permissions: WITH_AI });
   await page.route('**/api/assistant/status', (r: any) => r.fulfill(json({ status: 'success', data: { name: 'STM Mexa AI', enabled: false, reason: 'SWITCHED_OFF' } })));
   await page.goto('/profile');
   await expect(page.getByRole('heading', { name: /Profile|My Profile/ }).first()).toBeVisible();
   await expect(launcher(page)).toHaveCount(0);
+});
+
+/* 23 Oct 2026, the user: "super admin decides for that company — not all users".
+   Without the S&T grant there is no launcher and nothing is asked of the server —
+   not for a company with no grants (every other page open), not for its admin;
+   and with it, not for a role the company admin did not give it. */
+test('only a company S&T gave the AI to — and only the roles its admin gave it', async ({ page }) => {
+  await stub(page);
+  const asked: string[] = [];
+  page.on('request', (r: any) => { if (r.url().includes('/api/assistant/')) asked.push(r.url()); });
+  for (const user of [
+    { roles: ['COMPANY_ADMIN'], company_permissions: [] },                                            // no grants at all
+    { roles: ['COMPANY_ADMIN'], company_permissions: ['page:reports:view'] },                          // reports, not the AI
+    { roles: ['SUPERVISOR'], user_type: 'company_user', permissions: ['page:reports:view'], company_permissions: WITH_AI }   // role not given it
+  ]) {
+    await seedAuth(page, user);
+    await page.goto('/profile');
+    await expect(page.getByRole('heading', { name: /Profile|My Profile/ }).first()).toBeVisible();
+    await expect(launcher(page)).toHaveCount(0);
+  }
+  expect(asked).toEqual([]);
 });
 
 /* 22 Oct 2026 — "nothing shows, where is the button?": before the server has
@@ -241,7 +267,7 @@ test('the company admin sets the daily allowance and the timezone in Settings', 
     if (r.request().method() === 'PUT') { saved.push(r.request().postDataJSON()); return r.fulfill(json({ status: 'success', data: { daily_limit: 20, timezone: 'Asia/Dubai' } })); }
     return r.fulfill(json({ status: 'success', data: { daily_limit: 50, timezone: 'Asia/Kolkata', default_limit: 50, max_limit: 1000 } }));
   });
-  await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
+  await seedAuth(page, { roles: ['COMPANY_ADMIN'], company_permissions: WITH_AI });
   await page.goto('/settings');
   const card = page.locator('section', { has: page.getByRole('heading', { name: 'STM Mexa AI' }) });
   await card.getByLabel('Answers per person per day').fill('20');

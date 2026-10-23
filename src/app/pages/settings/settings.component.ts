@@ -32,10 +32,13 @@ import { AssistantSettingsComponent } from './assistant-settings.component';
 })
 export class SettingsComponent {
   readonly companyAdmin: boolean;
+  /** The AI's daily allowance card: a company admin of a company S&T gave the AI to. */
+  readonly assistant: boolean;
   readonly alarmNotifications: boolean;
 
   constructor(public theme: ThemeService, auth: AuthService) {
     this.companyAdmin = auth.isAdmin() && !auth.isSntSuper();
+    this.assistant = this.companyAdmin && auth.hasPermission('page:assistant');
     this.alarmNotifications = !auth.isSntSuper() && ['page:alarms:view', 'page:analytics-alarms:view', 'page:dashboard:view']
       .some(permission => auth.hasPermission(permission));
   }

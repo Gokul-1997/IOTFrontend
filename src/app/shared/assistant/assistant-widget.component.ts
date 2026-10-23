@@ -41,8 +41,8 @@ const ICONS: [RegExp, string][] = [
 
 /*
  * The company assistant in the corner of every signed-in page ("STM Mexa
- * AI" — the server names it): for everyone in a company since 22 Oct 2026
- * (the user: "all company support"); what it can answer follows the
+ * AI" — the server names it): for a company S&T gave it to, and the roles
+ * its admin gave it to (23 Oct 2026); what it can answer follows the
  * person's role. A click opens the chat over the page without leaving it.
  * The launcher greets once per session with one soft glow — no bouncing, no
  * chat opening by itself, and no motion at all for anyone who asked for less.
@@ -108,10 +108,15 @@ export class AssistantWidgetComponent implements OnInit {
     this.load();
   }
 
-  /** For everyone in a company (not S&T), and only when the server says it is on. */
+  /**
+   * Only where S&T gave the company the AI in Manage Access and the company
+   * admin gave it to this person's role (the company admin has it with the
+   * company) — never S&T itself — and only when the server says it is on.
+   */
   private load(): void {
     this.unavailable = false;
-    const mayUse = this.auth.isLoggedIn() && !this.auth.isSntSuper() && !!this.auth.getUser()?.company_id;
+    const mayUse = this.auth.isLoggedIn() && !this.auth.isSntSuper() && !!this.auth.getUser()?.company_id
+      && this.auth.hasPermission('page:assistant');
     if (!mayUse) return;
     this.svc.loadStatus().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: s => {

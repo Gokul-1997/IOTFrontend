@@ -265,11 +265,20 @@ export class AuthService implements OnDestroy {
     return roleAllows && this.companyAllows(permission);
   }
 
+  /** Pages a company has only when S&T grants them — the AI assistant (23 Oct
+   *  2026: "super admin decides for that company"). "No grants means
+   *  unrestricted" never covers them. Mirrors the API (plan.service optIn). */
+  private static readonly OPT_IN = ['page:assistant'];
+  private isOptIn(permission: string): boolean {
+    return AuthService.OPT_IN.some(p => permission === p || permission.startsWith(p + ':'));
+  }
+
   /** Has the company been granted this page? A company with no grants at all
-   *  is fresh and unrestricted — the reading everything else here takes. */
+   *  is fresh and unrestricted — the reading everything else here takes —
+   *  except for an opt-in page. */
   private companyAllows(permission: string): boolean {
     const companyPerms = this.getCompanyPermissions();
-    if (companyPerms.length === 0) return true;
+    if (companyPerms.length === 0) return !this.isOptIn(permission);
     return companyPerms.includes(permission) || companyPerms.some(p => p.startsWith(permission + ':'));
   }
 
@@ -283,16 +292,12 @@ export class AuthService implements OnDestroy {
     const key = `page:${module}:${action}`;
 
     // Company admin: check company_permissions (what super user allowed)
-    if (this.isCompanyAdmin()) {
-      const companyPerms = this.getCompanyPermissions();
-      return companyPerms.length === 0 || companyPerms.includes(key);
-    }
+    if (this.isCompanyAdmin()) return this.companyAllows(key);
 
     // Regular user: the role must hold it AND the company must have been
     // granted it (an empty grant list is a fresh, unrestricted company) — the
     // same rule as hasWidget, and as the API for the analytics dashboards.
-    const companyPerms = this.getCompanyPermissions();
-    if (companyPerms.length > 0 && !companyPerms.includes(key)) return false;
+    if (!this.companyAllows(key)) return false;
     return this.getPermissions().includes(key);
   }
 
@@ -305,13 +310,10 @@ export class AuthService implements OnDestroy {
   hasWidget(module: string, widget: string): boolean {
     if (this.isSntSuper()) return true;
     const key = `page:${module}:${widget}`;
-    const companyPerms = this.getCompanyPermissions();
     // Company admin sees everything their company has access to
-    if (this.isCompanyAdmin()) {
-      return companyPerms.length === 0 || companyPerms.includes(key);
-    }
+    if (this.isCompanyAdmin()) return this.companyAllows(key);
     // Regular users: check company-level access first, then role permissions
-    if (companyPerms.length > 0 && !companyPerms.includes(key)) return false;
+    if (!this.companyAllows(key)) return false;
     return this.getPermissions().includes(key);
   }
 
