@@ -37,10 +37,17 @@ import { Subscription, auditTime, pairwise } from 'rxjs';
         <div class="max-h-80 overflow-y-auto divide-y border-gray-100 dark:divide-[#22405e] ">
           <ng-container *ngIf="notifications.length > 0; else noNotifs">
             <!-- each one is a button: Enter or a tap marks it read and opens what it is about -->
-            <button type="button" *ngFor="let n of notifications"
-              class="w-full text-left flex items-start gap-3 p-3 transition-colors hover:bg-[#e1e7ed] dark:hover:bg-[#092b5c]"
-              [class.bg-blue-50]="!n.is_read"
-              (click)="onRead(n)">
+           <button
+  type="button"
+  *ngFor="let n of notifications"
+  class="w-full text-left flex items-start gap-3 p-3 transition-colors
+         hover:bg-[#e1e7ed] dark:hover:bg-[#092b5c]"
+  [ngClass]="{
+    'bg-blue-50 dark:bg-[#102f55]': !n.is_read,
+    'bg-white dark:bg-[#071d38]': n.is_read
+  }"
+  (click)="onRead(n)"
+>
               <span class="material-icons text-[20px] flex-shrink-0 mt-0.5" aria-hidden="true"
                 [ngClass]="n.type === 'ALARM' ? 'text-red-600' : n.type === 'WARNING' ? 'text-amber-700' : 'text-blue-700'">
                 {{ n.type === 'ALARM' ? 'error' : n.type === 'WARNING' ? 'warning_amber' : 'info' }}
