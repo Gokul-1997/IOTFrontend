@@ -34,9 +34,11 @@
   small { color: var(--mexa-ink-3); }
   &.is-good { color: #157347; }
   &.is-bad { color: #b42334; }
+  &.is-warn { color: #a35c00; }
 }
 :host-context(.dark) .pt-state.is-good { color: #6fdba0; }
 :host-context(.dark) .pt-state.is-bad { color: #fca5a5; }
+:host-context(.dark) .pt-state.is-warn { color: #fbbf24; }
 
 .pt-filesbar { justify-content: space-between; }
 .pt-row-actions { justify-content: flex-end; flex-wrap: nowrap; }

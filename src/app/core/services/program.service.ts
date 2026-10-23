@@ -9,17 +9,22 @@ export interface PtGateway { token_prefix: string; token_created_at: string; las
 export interface PtMachine {
   id: number;
   machine_serial_no: string;
-  /** the program in front of the machine's line: the gateway's next to send (null: nothing waiting) */
-  next: { id: number; program_name: string; size_bytes: number; created_at: string } | null;
+  /**
+   * the program in front of the machine's line: the gateway's next to send (null: nothing waiting).
+   * sent_to_gateway_at: the gateway downloaded it and has not reported yet; report_late: for 10 minutes or more
+   * (both absent from an older server: the page then says "next to send", as before)
+   */
+  next: { id: number; program_name: string; size_bytes: number; created_at: string;
+          sent_to_gateway_at?: string | null; report_late?: boolean } | null;
   /** uploads waiting for the machine, the one in front included */
   waiting: number;
   /** the last program the gateway reported on: on the machine (DONE) or refused (FAILED) */
   last_report: { id: number; program_name: string; delivery_status: 'DONE' | 'FAILED'; delivery_message: string | null; delivered_at: string | null } | null;
   last_backup: { id: number; program_name: string; created_at: string } | null;
-  /** a Backup press the gateway has not answered yet */
+  /** a Backup press the gateway has not answered yet (offered to it for 30 minutes) */
   backup_request: { id: number; requested_at: string } | null;
-  /** the last backup the gateway could not read, while none has arrived since */
-  backup_failure: { message: string; at: string } | null;
+  /** the last backup asked for came to nothing — the gateway could not read it, or never answered (unanswered) */
+  backup_failure: { message: string; at: string; unanswered?: boolean } | null;
 }
 
 /** What became of an upload: written to the machine, refused by it, or never sent (an upload from before the line, 22 Oct 2026). */
@@ -42,6 +47,8 @@ export interface PtFile {
   delivery_status: PtDelivery | null;
   delivery_message: string | null;
   delivered_at: string | null;
+  /** when the gateway last downloaded it (an upload still in line: it has it, no report yet) */
+  sent_to_gateway_at?: string | null;
 }
 
 export interface PtPage { page: number; limit: number; total: number; totalPages: number }

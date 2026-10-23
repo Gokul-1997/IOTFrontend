@@ -199,6 +199,9 @@ test("each upload's state: its place in line, or what the gateway reported", () 
   const c = fixture.componentInstance;
   files().flush({ data: [], pagination: page });
   expect(c.deliveryLabel({ delivery_status: null, queue_position: 1 })).toBe('Next to send');
+  // the gateway downloaded it and has not reported yet
+  expect(c.deliveryLabel({ delivery_status: null, queue_position: 1, sent_to_gateway_at: '2026-10-23T10:42:00Z' })).toBe('With the gateway');
+  expect(c.deliveryLabel({ delivery_status: 'DONE', queue_position: null, sent_to_gateway_at: '2026-10-23T10:42:00Z' })).toBe('On the machine');
   expect(c.deliveryLabel({ delivery_status: null, queue_position: 2 })).toBe('Waiting · 2nd in line');
   expect(c.deliveryLabel({ delivery_status: null, queue_position: 3 })).toBe('Waiting · 3rd in line');
   expect(c.deliveryLabel({ delivery_status: null, queue_position: 11 })).toBe('Waiting · 11th in line');

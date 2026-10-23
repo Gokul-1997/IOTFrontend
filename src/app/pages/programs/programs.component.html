@@ -45,11 +45,21 @@
         </button>
       </div>
       <ng-template #nothingWaiting><p class="pt-meta">Nothing waiting to be sent.</p></ng-template>
-      <p *ngIf="m.next" class="pt-state">
-        <span class="material-icons" aria-hidden="true">hourglass_top</span>
-        <span>Next to send — {{ gateway ? 'waiting for the gateway' : 'the company has no gateway yet' }}<ng-container
-              *ngIf="m.waiting > 1"> · {{ m.waiting - 1 }} more after it</ng-container></span>
-      </p>
+      <ng-container *ngIf="m.next as p">
+        <!-- the gateway downloaded it: on its way, until the gateway reports -->
+        <p *ngIf="p.sent_to_gateway_at; else notTaken" class="pt-state" [class.is-warn]="p.report_late" [attr.role]="p.report_late ? 'alert' : null">
+          <span class="material-icons" aria-hidden="true">{{ p.report_late ? 'warning' : 'sync' }}</span>
+          <span>Sent to the gateway at {{ p.sent_to_gateway_at | date:'h:mm a' }} — waiting for its report<ng-container
+                *ngIf="m.waiting > 1"> · {{ m.waiting - 1 }} more after it</ng-container><ng-container *ngIf="p.report_late"><br><small>No report since then: the programs after it wait until the gateway reports DONE or FAILED.</small></ng-container></span>
+        </p>
+        <ng-template #notTaken>
+          <p class="pt-state">
+            <span class="material-icons" aria-hidden="true">hourglass_top</span>
+            <span>Next to send — {{ gateway ? 'waiting for the gateway' : 'the company has no gateway yet' }}<ng-container
+                  *ngIf="m.waiting > 1"> · {{ m.waiting - 1 }} more after it</ng-container></span>
+          </p>
+        </ng-template>
+      </ng-container>
       <ng-container *ngIf="m.last_report as r">
         <p *ngIf="r.delivery_status === 'DONE'" class="pt-state is-good">
           <span class="material-icons" aria-hidden="true">check_circle</span>
@@ -87,7 +97,7 @@
       </p>
       <p *ngIf="m.backup_failure as f" class="pt-state is-bad" role="alert">
         <span class="material-icons" aria-hidden="true">error</span>
-        <span>Backup failed: {{ f.message }}<br><small>{{ f.at | date:'d MMM y, h:mm a' }}</small></span>
+        <span>{{ f.unanswered ? 'Backup not received' : 'Backup failed' }}: {{ f.message }}<br><small>{{ f.unanswered ? 'Asked for' : 'At' }} {{ f.at | date:'d MMM y, h:mm a' }}</small></span>
       </p>
       <p *ngIf="!gateway" class="ui-hint">Backups come through the company's gateway, which S&T sets up.</p>
       <button *ngIf="canBackup" type="button" class="ui-btn ui-btn-primary pt-action" (click)="requestBackup()"

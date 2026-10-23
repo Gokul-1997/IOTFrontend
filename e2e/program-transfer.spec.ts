@@ -154,6 +154,34 @@ test('what the gateway reported: on the machine, refused with its reason, a back
   await expect(programCard(page).getByRole('alert')).toContainText('The machine could not use O5200.nc: CNC memory full');
 });
 
+/* 23 Oct 2026, the user: "upload and backup — are both statuses updated correctly?" Two states the page
+   did not show: a program the gateway took but never reported (the line waits behind it), and a backup
+   request nobody answered (it just disappeared after 30 minutes). */
+test('a program the gateway took says so, flagged when no report comes; a backup nobody answered says so too', async ({ authedPage: page }) => {
+  const state = await fixtures(page);
+  const m = state.machines[0] as any;
+  m.next = { id: 45, program_name: 'O4500.nc', size_bytes: 2048, created_at: ago(900), sent_to_gateway_at: ago(120), report_late: false };
+  m.waiting = 2;
+  state.files[7] = [fileRow(46, 7, 'O4600.nc', 'NEW', { queue_position: 2 }),
+                    fileRow(45, 7, 'O4500.nc', 'NEW', { queue_position: 1, sent_to_gateway_at: ago(120) }), ...state.files[7]];
+  m.backup_failure = { message: 'No answer from the gateway within 30 minutes. Check that it is running, then ask again.', at: ago(2400), unanswered: true };
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto('/programs');
+  await expect(programCard(page)).toContainText(/Sent to the gateway at \d{1,2}:\d{2} [AP]M — waiting for its report · 1 more after it/);
+  await expect(programCard(page).getByRole('alert')).toHaveCount(0);                 // not late yet
+  await expect(filesTable(page).locator('tbody tr').filter({ hasText: 'O4500.nc' })).toContainText('With the gateway');
+  await expect(filesTable(page).locator('tbody tr').filter({ hasText: 'O4600.nc' })).toContainText('Waiting · 2nd in line');
+  const backup = page.getByRole('region', { name: 'Backup from the machine' });
+  await expect(backup.getByRole('alert')).toContainText('Backup not received: No answer from the gateway within 30 minutes. Check that it is running, then ask again.');
+  await expect(backup.getByRole('alert')).toContainText('Asked for');
+  await expect(backup.getByRole('button', { name: 'Backup now' })).toBeEnabled();
+
+  // ten minutes on and still no report: flagged — the program after it waits
+  m.next = { ...m.next, sent_to_gateway_at: ago(900), report_late: true };
+  await page.reload();
+  await expect(programCard(page).getByRole('alert')).toContainText('No report since then: the programs after it wait until the gateway reports DONE or FAILED.');
+});
+
 test('Backup now asks the gateway, and says it is waiting', async ({ authedPage: page }) => {
   const state = await fixtures(page);
   await page.setViewportSize({ width: 1400, height: 900 });

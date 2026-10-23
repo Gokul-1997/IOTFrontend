@@ -235,10 +235,12 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   kindLabel(f: Pick<PtFile, 'kind'>): string { return f.kind === 'NEW' ? 'Uploaded' : 'Backup'; }
 
   /** An upload's state: its place in the machine's line, or what the gateway reported. */
-  deliveryLabel(f: Pick<PtFile, 'delivery_status' | 'queue_position'>): string {
+  deliveryLabel(f: Pick<PtFile, 'delivery_status' | 'queue_position' | 'sent_to_gateway_at'>): string {
     if (f.delivery_status === 'DONE') return 'On the machine';
     if (f.delivery_status === 'FAILED') return 'Refused by machine';
     if (f.delivery_status === 'SKIPPED') return 'Not sent';
+    // downloaded by the gateway, which has not reported yet
+    if (f.queue_position === 1 && f.sent_to_gateway_at) return 'With the gateway';
     if (f.queue_position === 1) return 'Next to send';
     return f.queue_position ? `Waiting · ${ordinal(f.queue_position)} in line` : 'Waiting';
   }
