@@ -107,7 +107,8 @@ export class AssistantService {
   /** A report page says what it shows; null when it goes. */
   setContext(ctx: AssistantContext | null): void { this.context$.next(ctx); }
 
-  getSettings(): Observable<{ daily_limit: number; timezone: string; default_limit: number; max_limit: number }> {
+  /** The company admin's settings; company_daily_max is the platform's daily total for the whole company (seen, not set). */
+  getSettings(): Observable<{ daily_limit: number; timezone: string; default_limit: number; max_limit: number; company_daily_max?: number }> {
     return this.http.get<any>(`${this.api}/settings`).pipe(map(r => r.data));
   }
 

@@ -7,9 +7,12 @@ import { AssistantService } from '../../core/services/assistant.service';
 const COMMON_ZONES = ['Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'Europe/London', 'Europe/Berlin', 'America/New_York', 'UTC'];
 
 /*
- * The company admin's say over the report assistant: how many answers each
+ * The company admin's say over the company assistant: how many answers each
  * person gets a day (0 switches it off for the company) and the company's
- * timezone, whose midnight resets the allowance.
+ * timezone, whose midnight resets the allowance. The platform's daily total
+ * for the whole company is shown, not set: the admin may lower what people
+ * get, never raise it past the platform's ceiling (23 Oct 2026, the user:
+ * "decrease is fine, never increase").
  */
 @Component({
   selector: 'app-assistant-settings',
@@ -19,7 +22,7 @@ const COMMON_ZONES = ['Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'Europe/Lo
   template: `
     <section *ngIf="shown" class="mexa-card" aria-labelledby="set-assistant">
       <h2 id="set-assistant" class="mexa-card-title mexa-card-title-left">{{ name }}</h2>
-      <p class="mexa-setting-hint as-set-intro">The report assistant in the corner of every page, for people who can open Reports.</p>
+      <p class="mexa-setting-hint as-set-intro">The company assistant in the corner of every page, for the roles you give it. It only reads your company's MEXA data and answers nothing else.</p>
       <p *ngIf="loading" class="mexa-setting-hint" role="status">Loading…</p>
       <p *ngIf="loadError" class="mexa-note mexa-note-bad" role="alert">{{ loadError }}</p>
       <form *ngIf="!loading && !loadError" class="as-set-form" (ngSubmit)="save()" novalidate>
@@ -27,7 +30,8 @@ const COMMON_ZONES = ['Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'Europe/Lo
           <label class="ui-label" for="asLimit">Answers per person per day</label>
           <input id="asLimit" name="asLimit" class="ui-input" type="number" min="0" [max]="max" step="1" inputmode="numeric"
                  [(ngModel)]="limit" [attr.aria-invalid]="limitInvalid" aria-describedby="asLimitHint">
-          <p id="asLimitHint" class="ui-hint">0 switches {{ name }} off for your company. Questions it asks back, refusals and failures are not counted.</p>
+          <p id="asLimitHint" class="ui-hint">From 0 to {{ max }}: lower it as you like (0 switches {{ name }} off for your company); it cannot go above {{ max }}.
+            Questions it asks back, refusals and failures are not counted.<ng-container *ngIf="companyMax"> Your whole company has up to {{ companyMax }} questions a day.</ng-container></p>
           <p *ngIf="limitInvalid" class="ui-error" role="alert">Enter a whole number from 0 to {{ max }}.</p>
         </div>
         <div class="ui-field">
@@ -60,7 +64,9 @@ export class AssistantSettingsComponent implements OnInit {
   loadError = '';
   saving = false;
   saved = '';
-  max = 1000;
+  max = 50;
+  /** The platform's daily total for the whole company (seen here, set by S&T). */
+  companyMax: number | null = null;
   limit: number | null = 50;
   timezone = 'Asia/Kolkata';
   private stored = { limit: 50, timezone: 'Asia/Kolkata' };
@@ -87,7 +93,7 @@ export class AssistantSettingsComponent implements OnInit {
   private loadSettings(): void {
     this.svc.getSettings().subscribe({
       next: s => {
-        this.limit = s.daily_limit; this.timezone = s.timezone; this.max = s.max_limit;
+        this.limit = s.daily_limit; this.timezone = s.timezone; this.max = s.max_limit; this.companyMax = s.company_daily_max ?? null;
         this.stored = { limit: s.daily_limit, timezone: s.timezone };
         if (!this.zones.includes(s.timezone)) this.zones = [s.timezone, ...this.zones];
         this.loading = false; this.cdr.markForCheck();

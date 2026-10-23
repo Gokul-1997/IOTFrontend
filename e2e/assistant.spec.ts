@@ -322,11 +322,18 @@ test('the company admin sets the daily allowance and the timezone in Settings', 
   const saved: any[] = [];
   await page.route('**/api/assistant/settings', (r: any) => {
     if (r.request().method() === 'PUT') { saved.push(r.request().postDataJSON()); return r.fulfill(json({ status: 'success', data: { daily_limit: 20, timezone: 'Asia/Dubai' } })); }
-    return r.fulfill(json({ status: 'success', data: { daily_limit: 50, timezone: 'Asia/Kolkata', default_limit: 50, max_limit: 1000 } }));
+    return r.fulfill(json({ status: 'success', data: { daily_limit: 50, timezone: 'Asia/Kolkata', default_limit: 50, max_limit: 50, company_daily_max: 50 } }));
   });
   await seedAuth(page, { roles: ['COMPANY_ADMIN'], company_permissions: WITH_AI });
   await page.goto('/settings');
   const card = page.locator('section', { has: page.getByRole('heading', { name: 'STM Mexa AI' }) });
+  // 23 Oct 2026: lower, never higher — and the whole company's daily total, seen not set
+  await expect(card).toContainText('it cannot go above 50');
+  await expect(card).toContainText('Your whole company has up to 50 questions a day.');
+  await card.getByLabel('Answers per person per day').fill('51');
+  await expect(card).toContainText('Enter a whole number from 0 to 50.');
+  await card.getByRole('button', { name: 'Save' }).click();
+  expect(saved).toEqual([]);                                           // more than 50 is never sent
   await card.getByLabel('Answers per person per day').fill('20');
   await card.getByLabel('Company timezone').selectOption('Asia/Dubai');
   await card.getByRole('button', { name: 'Save' }).click();
