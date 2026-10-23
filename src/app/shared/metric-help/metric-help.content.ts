@@ -288,15 +288,15 @@ export function metricHelp(topic: string, basis: HelpBasis = 'period'): MetricHe
     case 'bill_forecast':
       return {
         title: 'This bill\'s forecast',
-        what: 'Where this electricity bill is heading: what the meters counted since the bill\'s first day, and the rest of the bill at your usual use.',
+        what: 'The EB bill of each service connection for its current billing period, worked out line by line the way the EB bill is.',
         formula: [
-          'Forecast = used so far + the usual use of every hour still to come',
-          'Usual use = the median of the same hour of the week over the last 4 weeks (Monday 09:00 is not Sunday 09:00)',
-          'Likely range = the rest of the bill as each of those weeks really was',
-          'Cost = kWh × ₹ per kWh — each machine\'s own rate, else the company default'
+          'Units: from EB meter readings when they are entered (exact so far); else the last bills\' units per day (an estimate)',
+          'Electricity charges = units × the rate the last bill really charged',
+          'Peak hour, ED/LPF penalty, welding surcharge, E tax & TCS = the same share of the electricity charges as on the last bill',
+          'Fixed charges as on the last bill · Net = all of them added'
         ],
-        example: '₹18,382 used in the first 11.4 days, and 19.6 days to go at a usual ₹1,540 a day: ₹18,382 + ₹30,184 = ₹48,566.',
-        why: 'Only machines with an energy meter are in it — the EB bill also has lights, compressors and fixed or demand charges — and it cannot know a holiday ahead. Set the bill dates on Tariff & Rates; the next bills follow on by themselves.'
+        example: 'SC 1212, 26 Sep – 26 Oct: 1,805 units a day × 30 days = 54,147 units; × ₹8.1336 = ₹4,40,413; with ₹91,200 fixed, 15% welding, ED/LPF and E tax as last time: ₹6,42,079.',
+        why: 'Enter each new bill on Tariff & Rates when it comes. The penalty follows your power factor and demand, so it may differ; a holiday ahead lowers the bill.'
       };
     case 'energy_cost_trend':
       return {
