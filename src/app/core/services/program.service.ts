@@ -9,6 +9,10 @@ export interface PtGateway { token_prefix: string; token_created_at: string; las
 export interface PtMachine {
   id: number;
   machine_serial_no: string;
+  /** where the gateway sends its programs, as set on the Machines page (absent from an older server) */
+  program_path?: string | null;
+  machine_ip?: string | null;
+  controller_type?: string | null;
   /**
    * the program in front of the machine's line: the gateway's next to send (null: nothing waiting).
    * sent_to_gateway_at: the gateway downloaded it and has not reported yet; report_late: for 10 minutes or more

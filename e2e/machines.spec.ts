@@ -81,6 +81,18 @@ test.describe('Machines page', () => {
     await expect(page.getByRole('row', { name: /VMC-2-F/ }).getByText('Mitsubishi M80', { exact: true })).toBeVisible();
   });
 
+  // Program Transfer's "Change on the Machines page" opens the list on that machine
+  test('TC-M-05c opened for one machine: the list starts filtered to it', async ({ authedPage: page }) => {
+    const searched: string[] = [];
+    await page.route('**/api/machines**', (r: any) => {
+      searched.push(new URL(r.request().url()).searchParams.get('search') ?? '');
+      return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(machineList) });
+    });
+    await page.goto('/machines?search=VMC-1-F');
+    await expect(page.getByPlaceholder('Search serial, model, line…')).toHaveValue('VMC-1-F');
+    await expect.poll(() => searched[0]).toBe('VMC-1-F');
+  });
+
   // 23 Oct 2026, the user: "machine page — where is the machine IP?"
   test('TC-M-05b the IP the gateway gets: the machine\'s own report first, else the one typed on the form', async ({ authedPage: page }) => {
     await page.setViewportSize({ width: 1600, height: 900 });

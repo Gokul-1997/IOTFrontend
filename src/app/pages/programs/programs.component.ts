@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Injector, OnDestroy, OnInit, afterNextRender, inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpEventType } from '@angular/common/http';
@@ -12,6 +12,7 @@ import { StateComponent } from '../../shared/state/state.component';
 import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { takeLinkedRecord } from '../../shared/linked-record';
+import { controllerTypeLabel } from '../machines/controller-types';
 
 /** The server's limit (PROGRAM_MAX_MB); said before sending, so a big file is not uploaded for nothing. */
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -37,7 +38,7 @@ const ordinal = (n: number) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th
 @Component({
   selector: 'app-programs',
   standalone: true,
-  imports: [CommonModule, FormsModule, StateComponent, SkeletonRowsComponent, MexaPagerComponent],
+  imports: [CommonModule, FormsModule, RouterLink, StateComponent, SkeletonRowsComponent, MexaPagerComponent],
   templateUrl: './programs.component.html',
   styleUrl: './programs.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -109,6 +110,10 @@ export class ProgramsComponent implements OnInit, OnDestroy {
       : 'Your role cannot upload programs. Your company admin can tick Program Transfer → "Upload to library" and "Send to machine" for your role under Roles & Permissions.';
   }
   get canBackup() { return this.auth.hasAction('programs', 'fetch'); }
+  /** Who may open the Machines page, where a wrong program path, IP or controller is put right. */
+  get canOpenMachines() { return this.auth.hasPermission('page:machines'); }
+  /** "Fanuc", "Mitsubishi" — or '' when not set. */
+  typeLabel(value: string | null | undefined): string { return controllerTypeLabel(value); }
   get canDelete() { return this.auth.hasAction('programs', 'delete'); }
   get selectedMachine(): PtMachine | null { return this.machines.find(m => m.id === this.selectedMachineId) || null; }
 

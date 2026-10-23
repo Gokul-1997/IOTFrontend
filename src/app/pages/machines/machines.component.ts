@@ -6,6 +6,7 @@ import {
   OnDestroy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
@@ -100,10 +101,14 @@ export class MachinesComponent implements OnInit, OnDestroy {
     private service: MachinesService,
     private cdr:     ChangeDetectorRef,
     private toast:   ToastService,
-    public  auth:    AuthService
+    public  auth:    AuthService,
+    private route:   ActivatedRoute
   ) {}
 
   ngOnInit() {
+    // opened for one machine (Program Transfer → "Change on the Machines page"): the list starts filtered to it
+    this.search = (this.route.snapshot.queryParamMap.get('search') || '').slice(0, 100);
+
     // Debounce search so backend is only hit 400ms after user stops typing
     this.searchSubject.pipe(
       debounceTime(400),

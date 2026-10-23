@@ -12,6 +12,26 @@
   &[data-state='online'] { background: #16a34a; }
   &[data-state='offline'] { background: #dc2626; }
 }
+// where the gateway sends the machine's programs (its Machines page settings): a wrong one is seen here
+.pt-target-wrap {
+  flex: 1 1 100%; order: 3; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.25rem;
+  padding-top: .65rem; border-top: 1px solid var(--mexa-rule);
+}
+.pt-target {
+  display: flex; flex-wrap: wrap; gap: .5rem 1.75rem; margin: 0;
+  > div { display: grid; gap: .1rem; min-width: 0; }
+  dt { font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--mexa-ink-3); }
+  dd { margin: 0; font-size: .875rem; color: var(--mexa-ink); overflow-wrap: anywhere; }
+  code { font-size: .85rem; }
+  .is-missing { color: #a35c00; font-weight: 600; }
+}
+:host-context(.dark) .pt-target .is-missing { color: #fbbf24; }
+.pt-fix {
+  display: inline-flex; align-items: center; gap: .3rem; margin-left: auto; font-size: .85rem; font-weight: 600; color: var(--tbl-accent);
+  .material-icons { font-size: 1rem; }
+  &:hover { text-decoration: underline; }
+  &:focus-visible { outline: 2px solid var(--tbl-accent); outline-offset: 2px; border-radius: 4px; }
+}
 
 .pt-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); margin-bottom: 1rem; }
 .pt-grid .mexa-card + .mexa-card { margin-top: 0; }

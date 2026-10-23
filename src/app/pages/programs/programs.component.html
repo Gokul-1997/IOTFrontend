@@ -15,6 +15,27 @@
       <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
     </select>
   </div>
+  <!-- where the gateway sends this machine's programs, as set on the Machines page: seen here, so a wrong one is caught (23 Oct 2026) -->
+  <div *ngIf="selectedMachine as sm" class="pt-target-wrap">
+    <dl class="pt-target" [attr.aria-label]="'Where programs for ' + sm.machine_serial_no + ' go'">
+      <div>
+        <dt>Program path</dt>
+        <dd [class.is-missing]="!sm.program_path"><code *ngIf="sm.program_path; else pathNotSet">{{ sm.program_path }}</code><ng-template #pathNotSet>Not set</ng-template></dd>
+      </div>
+      <div>
+        <dt>IP address</dt>
+        <dd [class.is-missing]="!sm.machine_ip">{{ sm.machine_ip || 'Not set' }}</dd>
+      </div>
+      <div>
+        <dt>Controller</dt>
+        <dd [class.is-missing]="!sm.controller_type">{{ typeLabel(sm.controller_type) || 'Not set' }}</dd>
+      </div>
+    </dl>
+    <a *ngIf="canOpenMachines" class="pt-fix" routerLink="/machines" [queryParams]="{ search: sm.machine_serial_no }">
+      <span class="material-icons" aria-hidden="true">edit</span>Change on the Machines page
+    </a>
+  </div>
+
   <!-- the company's one gateway, for every machine; S&T makes its token -->
   <p *ngIf="!loadingMachines && machines.length" class="pt-gateway" role="status">
     <span class="pt-dot" [attr.data-state]="gatewayState()" aria-hidden="true"></span>

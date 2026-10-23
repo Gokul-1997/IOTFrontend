@@ -182,6 +182,25 @@ test('a program the gateway took says so, flagged when no report comes; a backup
   await expect(programCard(page).getByRole('alert')).toContainText('No report since then: the programs after it wait until the gateway reports DONE or FAILED.');
 });
 
+/* 23 Oct 2026, the user: "show the file path on Program Transfer — and the IP address — to see when one is wrong" */
+test('where the gateway sends a machine\'s programs is shown — program path, IP, controller — with the way to put it right', async ({ authedPage: page }) => {
+  const state = await fixtures(page);
+  Object.assign(state.machines[0], { program_path: '//CNC_MEM/USER/PATH1/', machine_ip: '192.168.1.10', controller_type: 'FANUC' });
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto('/programs');
+  const vmc1 = page.getByLabel('Where programs for VMC-1 go');
+  await expect(vmc1.getByText('//CNC_MEM/USER/PATH1/', { exact: true })).toBeVisible();
+  await expect(vmc1.getByText('192.168.1.10', { exact: true })).toBeVisible();
+  await expect(vmc1.getByText('Fanuc', { exact: true })).toBeVisible();
+  await expect(vmc1.getByText('Not set')).toHaveCount(0);
+
+  // nothing set for VMC-2: each says so, and the Machines page opens filtered to it
+  await page.getByLabel('Machine', { exact: true }).selectOption({ label: 'VMC-2' });
+  await expect(page.getByLabel('Where programs for VMC-2 go').getByText('Not set', { exact: true })).toHaveCount(3);
+  const fix = page.getByRole('link', { name: 'Change on the Machines page' });
+  await expect(fix).toHaveAttribute('href', '/machines?search=VMC-2');
+});
+
 test('Backup now asks the gateway, and says it is waiting', async ({ authedPage: page }) => {
   const state = await fixtures(page);
   await page.setViewportSize({ width: 1400, height: 900 });
