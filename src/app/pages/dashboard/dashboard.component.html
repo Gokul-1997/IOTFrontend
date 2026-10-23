@@ -41,7 +41,7 @@
           <button
             (click)="setFilter('idle')"
             class="flex border_status px-2 py-0 rounded-md transition-all"
-            [ngClass]="statusFilter === 'idle' ? 'bg-yellow-800 ring-2 ring-white' : 'bg-[#a16207] hover:bg-yellow-800'">
+            [ngClass]="statusFilter === 'idle' ? 'bg-[#F5A623] ring-2 ring-white' : 'bg-[#F5A623] hover:bg-yellow-800'">
             Idle : <span class="font-medium ml-1">{{ idleCount }}</span>
           </button>
           <!-- Alarm filter button -->
@@ -272,7 +272,7 @@
                 fill="none"
                 [ngClass]="{
   'stroke-[#15803d]': m.status === 'RUNNING' && !m.alarm,
-  'stroke-[#dfb400]': m.status === 'IDLE' && !m.alarm,
+  'stroke-[#F5A623]': m.status === 'IDLE' && !m.alarm,
   'stroke-[#6e6e6e]': m.status === 'OFFLINE' && !m.alarm,
 
 }"
