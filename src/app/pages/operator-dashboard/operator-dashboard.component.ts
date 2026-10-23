@@ -388,7 +388,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
         fontFamily: 'inherit', animations: { enabled: false } 
       },
         plotOptions: { bar: { borderRadius: 2, columnWidth: '50%' } },
-        colors: ['#098447', '#0b7caf', '#8452f5'],
+        colors: ['#F37362', '#FEBC3B', '#26A0FC'],
         dataLabels: { enabled: false },
         legend: { position: 'bottom', markers: { shape: 'circle' } },
         xaxis: { categories: rows.map((r: any) => r.operator_name), 

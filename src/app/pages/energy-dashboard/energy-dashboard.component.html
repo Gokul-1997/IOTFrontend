@@ -163,8 +163,8 @@
       </div>
       <!-- the machine furthest over its limit, as the design names it -->
       <ng-container *ngIf="data.kpis.overload_top as o; else noOverload">
-        <p class="mexa-kpi-value mexa-kpi-alert"><button type="button" class="mexa-kpi-open" (click)="openTile('overload')" [attr.aria-pressed]="drill.kind === 'overload'" aria-labelledby="enk6-name enk6-value enk6-act"><span id="enk6-value">{{ o.machine_serial_no }}</span></button></p><span hidden id="enk6-name">Overload alerts, worst:</span><span hidden id="enk6-act">show the overloaded machines</span>
-        <p class="mexa-kpi-sub"><strong class="text-red-600">+{{ o.exceeded_kw }} kW</strong> over the limit<span
+        <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('overload')" [attr.aria-pressed]="drill.kind === 'overload'" aria-labelledby="enk6-name enk6-value enk6-act"><span id="enk6-value">{{ o.machine_serial_no }}</span></button></p><span hidden id="enk6-name">Overload alerts, worst:</span><span hidden id="enk6-act">show the overloaded machines</span>
+        <p class="mexa-kpi-sub"><strong class="text-orange-300">+{{ o.exceeded_kw }} kW</strong> over the limit<span
           *ngIf="data.kpis.overload_alerts > 1"> · {{ data.kpis.overload_alerts }} machines</span></p>
       </ng-container>
       <ng-template #noOverload>
@@ -214,7 +214,7 @@
        EB prints it, with the last bill under it. The server works it out:
        this bill's units (EB meter readings, a meter on the supply, else the
        last bills — and says which) at the charges of the last bill. -->
-  <section id="enBill" class="mexa-card mexa-scroll-target" aria-labelledby="enBillTitle">
+  <section id="enBill" class="mexa-card mexa-scroll-target mb-4" aria-labelledby="enBillTitle">
     <div class="bill-head">
       <h2 id="enBillTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left">
         This Bill — EB forecast <app-metric-help topic="bill_forecast"></app-metric-help>
