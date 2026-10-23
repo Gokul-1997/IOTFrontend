@@ -6,10 +6,10 @@ const machineList = {
     // the shape GET /api/machines returns: the line's name comes back as `name`
     {
       id: 1, machine_serial_no: 'VMC-1-F', model: 'VMC 850', controller: 'FANUC 0i-MF', controller_type: 'FANUC',
-      line_id: 2, name: 'Line 1', is_active: true
+      controller_ip: '192.168.1.10', ip_address: '192.168.1.99', line_id: 2, name: 'Line 1', is_active: true
     },
     {
-      id: 2, machine_serial_no: 'VMC-2-F', model: 'VMC 1050', controller: 'Mitsubishi M80',
+      id: 2, machine_serial_no: 'VMC-2-F', model: 'VMC 1050', controller: 'Mitsubishi M80', ip_address: '192.168.1.20',
       line_id: 2, name: 'Line 1', is_active: false
     }
   ],
@@ -79,6 +79,18 @@ test.describe('Machines page', () => {
     await expect(row.getByText('Fanuc · FANUC 0i-MF')).toBeVisible();    // the controller type chosen, then the Controller text
     // a machine with no type chosen shows its Controller text alone
     await expect(page.getByRole('row', { name: /VMC-2-F/ }).getByText('Mitsubishi M80', { exact: true })).toBeVisible();
+  });
+
+  // 23 Oct 2026, the user: "machine page — where is the machine IP?"
+  test('TC-M-05b the IP the gateway gets: the machine\'s own report first, else the one typed on the form', async ({ authedPage: page }) => {
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await stubMachines(page);
+    await page.goto('/machines');
+    const reported = page.getByRole('row', { name: /VMC-1-F/ }).getByText('192.168.1.10', { exact: true });
+    await expect(reported).toBeVisible({ timeout: 10_000 });
+    await expect(reported).toHaveAttribute('title', 'Reported by the machine');
+    const typed = page.getByRole('row', { name: /VMC-2-F/ }).getByText('192.168.1.20', { exact: true });
+    await expect(typed).toHaveAttribute('title', 'Typed on the machine form');
   });
 
   test('TC-M-06 active switch reflects each machine', async ({ authedPage: page }) => {

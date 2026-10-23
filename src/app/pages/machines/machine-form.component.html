@@ -264,6 +264,21 @@
         <section class="" aria-labelledby="mfSecTransfer">
           <h3 id="mfSecTransfer" class="ui-section-title">Program Transfer</h3>
           <div class="grid gap-4 mt-4">
+            <!-- the machine's address for the gateway: the machine's own report wins; this one is used while it reports none -->
+            <div>
+              <label class="ui-label" for="mfIp">Machine IP</label>
+              <input id="mfIp" class="ui-input" formControlName="ip_address" inputmode="decimal" autocomplete="off" spellcheck="false"
+                     [placeholder]="reportedIp ? reportedIp + ' (reported by the machine)' : 'e.g. 192.168.1.101'"
+                     [class.is-invalid]="form.get('ip_address')?.invalid && form.get('ip_address')?.touched"
+                     [attr.aria-invalid]="form.get('ip_address')?.invalid && form.get('ip_address')?.touched"
+                     [attr.aria-describedby]="form.get('ip_address')?.invalid && form.get('ip_address')?.touched ? 'mfIpErr' : ipOverridden ? 'mfIpNote' : null" />
+              <p *ngIf="ipOverridden && !(form.get('ip_address')?.invalid && form.get('ip_address')?.touched)" id="mfIpNote" class="ui-hint">
+                The machine reports {{ reportedIp }}: the gateway uses that one.
+              </p>
+              <p *ngIf="form.get('ip_address')?.invalid && form.get('ip_address')?.touched" id="mfIpErr" class="ui-error" role="alert">
+                Enter an IP address such as 192.168.1.101.
+              </p>
+            </div>
             <div>
               <label class="ui-label" for="mfProgramPath">Program path</label>
               <input id="mfProgramPath" class="ui-input" formControlName="program_path" maxlength="255"

@@ -38,6 +38,13 @@ const wholeNumber: ValidatorFn = control => {
   return Number.isInteger(n) && n >= 0 && n <= 2147483647 ? null : { wholeNumber: true };
 };
 
+/** Where the gateway reaches the machine: an IPv4 address such as 192.168.1.101, as the server checks it. */
+const ipv4Address: ValidatorFn = control => {
+  const value = String(control.value ?? '').trim();
+  if (!value) return null;
+  return /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/.test(value) ? null : { ipv4: true };
+};
+
 /** Program Transfer: the folder on the machine its gateway writes programs to — as the
  *  server checks it: what a path needs only, at most 255 characters, never "..". */
 const programPath: ValidatorFn = control => {
@@ -59,6 +66,14 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
   @Input() data: any;
   /** Fanuc or Mitsubishi, for the Controller type dropdown. */
   readonly controllerTypes = CONTROLLER_TYPES;
+
+  /** The IP the machine's own telemetry reports — the gateway's address for it, before any typed here. */
+  get reportedIp(): string { return String(this.data?.controller_ip ?? '').trim(); }
+  /** A typed IP that the machine's report overrides: said, so nobody expects the gateway to use it. */
+  get ipOverridden(): boolean {
+    const typed = String(this.form?.get('ip_address')?.value ?? '').trim();
+    return !!typed && !!this.reportedIp && typed !== this.reportedIp && !this.form.get('ip_address')?.invalid;
+  }
   @Output() saved = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
 
@@ -106,6 +121,7 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       controller: [''],
       mmc_no: [''],
       program_path: ['', programPath],
+      ip_address: ['', ipv4Address],
       // null, not '': an untouched number box is "not set", never an empty string
       spindle_rpm: [null as number | null, wholeNumber],
       x_axis: [null as number | null, wholeNumber],
@@ -297,7 +313,7 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       const firstInvalid = Object.keys(this.form.controls).find(k => this.form.get(k)?.invalid);
       const map: Record<string, string> = { plant_id: '#mfPlant', line_id: '#mfLine', machine_serial_no: '#mfSerial',
         spindle_rpm: '#mfSpindle', ...Object.fromEntries(this.axes.map(ax => [ax.key, '#mf-' + ax.key])), hour_rate: '#mfRate',
-        program_path: '#mfProgramPath' };
+        program_path: '#mfProgramPath', ip_address: '#mfIp' };
       const el = firstInvalid && map[firstInvalid]
         ? this.host.nativeElement.querySelector<HTMLElement>(map[firstInvalid])
         : null;

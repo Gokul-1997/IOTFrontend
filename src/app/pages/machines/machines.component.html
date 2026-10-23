@@ -96,6 +96,13 @@
           <td mat-cell *matCellDef="let r" class="col-md">{{ controllerText(r) }}</td>
         </ng-container>
 
+        <!-- IP: the machine's own report, else the one typed on the form -->
+        <ng-container matColumnDef="ip">
+          <th mat-header-cell *matHeaderCellDef class="thead-custm col-lg">IP</th>
+          <td mat-cell *matCellDef="let r" class="col-lg num"
+              [attr.title]="r.controller_ip ? 'Reported by the machine' : r.ip_address ? 'Typed on the machine form' : null">{{ ipOf(r) }}</td>
+        </ng-container>
+
         <!-- Spindle RPM -->
         <ng-container matColumnDef="spindle_rpm">
           <th mat-header-cell *matHeaderCellDef mat-sort-header class="thead-custm qty col-md">RPM</th>

@@ -113,6 +113,23 @@ describe('a new machine', () => {
     expect(Object.values(sent)).not.toContain('');
   });
 
+  // 23 Oct 2026, the user: "machine page — where is the machine IP?"
+  test('the machine IP goes with the machine; one that is not an IP address is caught on the form', () => {
+    fresh.form.patchValue({ ip_address: ' 192.168.1.101 ' });
+    fresh.save();
+    expect(service.create.mock.calls[0][0]).toMatchObject({ ip_address: ' 192.168.1.101 ' });   // the server trims it
+    service.create.mockClear();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, writable: true, value: vi.fn() });
+    for (const bad of ['192.168.1', '192.168.1.256', 'cnc01.local', '192.168.01.1']) {
+      fresh.form.patchValue({ ip_address: bad });
+      fresh.save();
+      expect(service.create).not.toHaveBeenCalled();
+      expect(document.activeElement?.id).toBe('mfIp');
+    }
+    created.detectChanges();
+    expect(created.nativeElement.querySelector('#mfIpErr')?.textContent).toContain('Enter an IP address such as 192.168.1.101.');
+  });
+
   // 23 Oct 2026, the user: "the controller — one more dropdown, Fanuc or Mitsubishi — and in the status API"
   test('the controller type: Fanuc or Mitsubishi from its dropdown goes with the machine; not set goes as null', () => {
     const select: HTMLSelectElement = created.nativeElement.querySelector('#mfControllerType');
@@ -159,4 +176,22 @@ describe('a new machine', () => {
     expect(created.nativeElement.querySelector('#mf-fourth_axis-err')?.textContent).toContain('Whole number');
     expect(created.nativeElement.querySelector('#mf-fourth_axis').getAttribute('aria-describedby')).toBe('mf-fourth_axis-err');
   });
+});
+
+/* The machine's own telemetry reports its IP: that is the gateway's address for it, and a typed one is
+   used only while it reports none — the form shows the reported one, and says so when another is typed. */
+test('the machine reports its own IP: shown in the empty box; a different one typed is said to be unused', () => {
+  const opened = TestBed.createComponent(MachineFormComponent);
+  opened.componentInstance.data = { id: 9, machine_serial_no: 'CNC-9', plant_id: 2, line_id: 3, controller_ip: '192.168.1.10' };
+  opened.detectChanges();
+  const input: HTMLInputElement = opened.nativeElement.querySelector('#mfIp');
+  expect(input.placeholder).toBe('192.168.1.10 (reported by the machine)');
+  expect(opened.nativeElement.querySelector('#mfIpNote')).toBeNull();
+  const type = (value: string) => { input.value = value; input.dispatchEvent(new Event('input')); opened.detectChanges(); };
+  type('192.168.1.99');
+  expect(opened.nativeElement.querySelector('#mfIpNote')?.textContent).toContain('The machine reports 192.168.1.10: the gateway uses that one.');
+  expect(input.getAttribute('aria-describedby')).toBe('mfIpNote');
+  type('192.168.1.10');                                             // the same address: nothing to say
+  expect(opened.nativeElement.querySelector('#mfIpNote')).toBeNull();
+  opened.destroy();
 });

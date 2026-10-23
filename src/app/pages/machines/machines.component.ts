@@ -59,6 +59,7 @@ export class MachinesComponent implements OnInit, OnDestroy {
     'machine_serial_no',
     'model',
     'controller',
+    'ip',
     'spindle_rpm',
     'x_axis',
     'y_axis',
@@ -228,6 +229,11 @@ export class MachinesComponent implements OnInit, OnDestroy {
 
   rowIndex(i: number): number {
     return (this.page - 1) * this.limit + i + 1;
+  }
+
+  /** The machine's IP as the gateway gets it: its own report, else the one typed on the form. */
+  ipOf(r: { controller_ip?: string | null; ip_address?: string | null }): string {
+    return r.controller_ip?.trim() || r.ip_address?.trim() || '—';
   }
 
   /** "Fanuc · FANUC 0i-MF": the controller type chosen, then the Controller text. */
