@@ -113,6 +113,26 @@ describe('a new machine', () => {
     expect(Object.values(sent)).not.toContain('');
   });
 
+  // 23 Oct 2026, the user: "the machine's program path, from the Machines page, in the gateway's status"
+  test('the program path goes with the machine; one the gateway must not be given is caught on the form', () => {
+    fresh.form.patchValue({ program_path: '//CNC_MEM/USER/PATH1/' });
+    fresh.save();
+    expect(service.create.mock.calls[0][0]).toMatchObject({ program_path: '//CNC_MEM/USER/PATH1/' });
+
+    service.create.mockClear();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, writable: true, value: vi.fn() });
+    for (const bad of ['//CNC_MEM/../../etc', 'C:\\DNC\\..\\Windows', '/p; rm -rf /', '$(id)', 'p'.repeat(256)]) {
+      fresh.form.patchValue({ program_path: bad });
+      fresh.save();
+      expect(service.create).not.toHaveBeenCalled();
+      expect(document.activeElement?.id).toBe('mfProgramPath');
+    }
+    created.detectChanges();
+    expect(created.nativeElement.querySelector('#mfProgramPathErr')?.textContent).toContain('without ".."');
+    fresh.form.patchValue({ program_path: 'M01:\\PRG\\USER\\' });            // a Mitsubishi folder is a path too
+    expect(fresh.form.get('program_path')?.valid).toBe(true);
+  });
+
   test('a part-millimetre or negative travel is caught on the form, not by the server', () => {
     const scrolled = vi.fn();
     Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, writable: true, value: scrolled });

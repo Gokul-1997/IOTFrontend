@@ -250,6 +250,26 @@
           </div>
         </section>
 
+        <!-- ══ 5. Program Transfer ══ -->
+        <!-- the folder on the machine its programs go to: the company's gateway gets it with each machine (GET /status) -->
+        <section class="" aria-labelledby="mfSecTransfer">
+          <h3 id="mfSecTransfer" class="ui-section-title">Program Transfer</h3>
+          <div class="grid gap-4 mt-4">
+            <div>
+              <label class="ui-label" for="mfProgramPath">Program path</label>
+              <input id="mfProgramPath" class="ui-input" formControlName="program_path" maxlength="255"
+                     placeholder="e.g. //CNC_MEM/USER/PATH1/" autocomplete="off" spellcheck="false"
+                     [class.is-invalid]="form.get('program_path')?.invalid && form.get('program_path')?.touched"
+                     [attr.aria-invalid]="form.get('program_path')?.invalid && form.get('program_path')?.touched"
+                     [attr.aria-describedby]="form.get('program_path')?.invalid && form.get('program_path')?.touched ? 'mfProgramPathErr' : 'mfProgramPathHint'" />
+              <p *ngIf="!(form.get('program_path')?.invalid && form.get('program_path')?.touched)" id="mfProgramPathHint" class="ui-hint">The folder on the machine where its programs go. The company's gateway gets it for this machine.</p>
+              <p *ngIf="form.get('program_path')?.invalid && form.get('program_path')?.touched" id="mfProgramPathErr" class="ui-error" role="alert">
+                Use letters, digits, spaces and _ - . : / \ only, without "..", at most 255 characters.
+              </p>
+            </div>
+          </div>
+        </section>
+
 </div>
       </div>
 

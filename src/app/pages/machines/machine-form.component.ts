@@ -37,6 +37,15 @@ const wholeNumber: ValidatorFn = control => {
   return Number.isInteger(n) && n >= 0 && n <= 2147483647 ? null : { wholeNumber: true };
 };
 
+/** Program Transfer: the folder on the machine its gateway writes programs to — as the
+ *  server checks it: what a path needs only, at most 255 characters, never "..". */
+const programPath: ValidatorFn = control => {
+  const value = String(control.value ?? '').trim();
+  if (!value) return null;
+  return value.length <= 255 && /^[A-Za-z0-9 _\-.:/\\]+$/.test(value) && !value.split(/[\\/]+/).includes('..')
+    ? null : { programPath: true };
+};
+
 @Component({
   standalone: true,
   selector: 'app-machine-form',
@@ -92,6 +101,7 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       image_url: [''],
       controller: [''],
       mmc_no: [''],
+      program_path: ['', programPath],
       // null, not '': an untouched number box is "not set", never an empty string
       spindle_rpm: [null as number | null, wholeNumber],
       x_axis: [null as number | null, wholeNumber],
@@ -282,7 +292,8 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       // for red borders in a form four sections long.
       const firstInvalid = Object.keys(this.form.controls).find(k => this.form.get(k)?.invalid);
       const map: Record<string, string> = { plant_id: '#mfPlant', line_id: '#mfLine', machine_serial_no: '#mfSerial',
-        spindle_rpm: '#mfSpindle', ...Object.fromEntries(this.axes.map(ax => [ax.key, '#mf-' + ax.key])), hour_rate: '#mfRate' };
+        spindle_rpm: '#mfSpindle', ...Object.fromEntries(this.axes.map(ax => [ax.key, '#mf-' + ax.key])), hour_rate: '#mfRate',
+        program_path: '#mfProgramPath' };
       const el = firstInvalid && map[firstInvalid]
         ? this.host.nativeElement.querySelector<HTMLElement>(map[firstInvalid])
         : null;
