@@ -5,8 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, takeUntil, catchError, of, Subject as RxSubject, debounceTime, distinctUntilChanged } from 'rxjs';
-import { BillForecast, EnergyDashboardService } from './energy-dashboard.service';
-import { billDay, billPeriod, changeText, unitsText } from './energy-bill';
+import { EnergyDashboardService } from './energy-dashboard.service';
 import { takeLinkedFilters } from '../../shared/linked-filters';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -20,7 +19,7 @@ import { compactQty, qty } from '../../shared/format-number';
 import { MeterPanelComponent } from '../../shared/meter-panel/meter-panel.component';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
-import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill, revealWhenShown } from '../../shared/dash-view/dash-view';
+import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 
 /** Charts | Machine Detail | Energy Meter, under the tiles all three share. The meter
@@ -49,21 +48,7 @@ const TABS: DashTab[] = [
   selector: 'app-energy-dashboard',
   standalone: true,
   imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MeterPanelComponent],
-  templateUrl: './energy-dashboard.component.html',
-  styles: [`
-    /* This bill: a tile in the row, and its card on Charts — the bill laid out as the EB prints it */
-    @media (max-width: 1023px) { .mexa-kpi.is-bill { grid-column: 1 / -1; } }
-    .bill-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem .75rem; }
-    .bill-when { margin: 0; font-size: var(--fs-small, .8rem); color: var(--mexa-ink-2); }
-    .bill-table td, .bill-table th { white-space: nowrap; }
-    .bill-table tr.bill-last td, .bill-table tr.bill-last th { color: var(--mexa-ink-2); font-weight: 400; }
-    .bill-table tfoot td, .bill-table tfoot th { font-weight: 700; }
-    .bill-est { display: inline-block; margin-left: .35rem; padding: 0 .4rem; border-radius: 999px; font-size: .68rem; font-weight: 700;
-                letter-spacing: .03em; text-transform: uppercase; background: var(--mexa-row-alt); color: #b45309; }
-    .bill-notes { display: grid; gap: .3rem; margin: .6rem 0 0; padding: 0; list-style: none; font-size: .8rem; color: var(--mexa-ink-2); }
-    .bill-notes strong { color: var(--mexa-ink); }
-    .bill-state { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: .75rem 0 0; color: var(--mexa-ink-2); }
-  `]
+  templateUrl: './energy-dashboard.component.html'
 })
 export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
   get isDarkMode(): boolean {
@@ -104,18 +89,6 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
   private destroy$ = new Subject<void>();
   private search$ = new RxSubject<string>();
 
-  /* ── This bill ── the EB bill of every service connection, forecast. Its
-     own request, once: a bill has its own dates and is the whole company's,
-     so neither the dates nor the machine filter above change it. */
-  bill: BillForecast | null = null;
-  billLoading = false;
-  billError = '';
-  readonly qty = qty;
-  readonly billDay = billDay;
-  readonly billPeriod = billPeriod;
-  readonly changeText = changeText;
-  readonly unitsText = unitsText;
-
   constructor(
     private svc: EnergyDashboardService,
     private toast: ToastService,
@@ -150,7 +123,6 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
     if (linked.from) { this.f.from = linked.from; this.f.to = linked.to; }
     if (linked.machine_id) this.f.machine_id = linked.machine_id;
     this.load();
-    this.loadBill();
   }
 
   private readonly route = inject(ActivatedRoute);
@@ -197,45 +169,6 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
     this.views.load();
     this.cdr.markForCheck();
   }
-
-  /** This bill, for every service connection. */
-  loadBill(): void {
-    this.billLoading = true;
-    this.billError = '';
-    this.cdr.markForCheck();
-    this.svc.getBill().pipe(takeUntil(this.destroy$)).subscribe({
-      next: res => { this.billLoading = false; this.bill = res?.data ?? null; this.cdr.markForCheck(); },
-      error: err => {
-        this.billLoading = false;
-        this.bill = null;
-        this.billError = err?.error?.message || 'Could not load this bill\'s forecast.';
-        this.cdr.markForCheck();
-      }
-    });
-  }
-
-  /** The This bill tile: the Charts tab, at its card. */
-  openBill(): void {
-    if (this.views.tab !== 'charts') this.setView('charts');
-    revealWhenShown('enBill', 'enBillTitle');
-  }
-
-  /** What the bill tile and card show: the forecast, or why there is none. */
-  get billState(): 'loading' | 'error' | 'restricted' | 'none' | 'ready' {
-    const b = this.bill;
-    if (!b) return this.billError ? 'error' : 'loading';
-    if (b.restricted) return 'restricted';
-    return b.configured ? 'ready' : 'none';
-  }
-
-  /** The supplies with a bill to forecast. */
-  get billRows() { return (this.bill?.connections ?? []).filter(c => c.status === 'ok'); }
-
-  /** Supplies added on Tariff & Rates with no bill entered yet. */
-  get billMissing() { return (this.bill?.connections ?? []).filter(c => c.status === 'no_bill'); }
-
-  /** "₹6,42,079" — EB bills are in rupees, whole. */
-  rupees(v: number | null | undefined): string { return v == null ? '--' : `₹${qty(v, 0)}`; }
 
   /* What each part depends on: the tiles and charts on the filters (the
      machine search narrows the totals too); the table on those and its page. */

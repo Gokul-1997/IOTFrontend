@@ -167,8 +167,7 @@ async function openEnergy(page: any, body: any, asked: string[] = []) {
   page.on('request', (r: any) => { if (/\/api\/dashboard\/energy(\?|$)/.test(r.url())) asked.push(r.url()); });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/energy-dashboard');
-  // six for the dates chosen, and This Bill (23 Oct 2026, e2e/energy-bill.spec.ts)
-  await expect(page.locator('.mexa-kpi')).toHaveCount(7);
+  await expect(page.locator('.mexa-kpi')).toHaveCount(6);
 }
 
 test.describe('Energy: read at a glance', () => {
@@ -182,7 +181,7 @@ test.describe('Energy: read at a glance', () => {
     await expect(tile(/Overload/)).toContainText('No limit set');
     // more energy than yesterday is the bad direction
     await expect(tile(/Consumed/).locator('.mexa-delta')).toHaveClass(/mexa-delta-bad/);
-    await expect(page.locator('.mexa-kpi').getByRole('button', { name: /^What is/ })).toHaveCount(7);
+    await expect(page.locator('.mexa-kpi').getByRole('button', { name: /^What is/ })).toHaveCount(6);
 
     await expect(page.getByRole('heading', { name: 'Highest Consumers' })).toHaveCount(0);
     await expect(page.getByText('Not reported by the devices')).toHaveCount(0);

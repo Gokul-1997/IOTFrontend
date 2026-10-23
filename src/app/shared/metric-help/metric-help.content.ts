@@ -285,19 +285,6 @@ export function metricHelp(topic: string, basis: HelpBasis = 'period'): MetricHe
         example: 'A limit of 12 kW and a peak of 15.2 kW: 3.2 kW over.',
         why: 'Repeated overloads strain the motor and the supply. No limit set means no alert.'
       };
-    case 'bill_forecast':
-      return {
-        title: 'This bill\'s forecast',
-        what: 'The EB bill of each service connection for its current billing period, worked out line by line the way the EB bill is.',
-        formula: [
-          'Units: from EB meter readings when they are entered (exact so far); else the last bills\' units per day (an estimate)',
-          'Electricity charges = units × the rate the last bill really charged',
-          'Peak hour, ED/LPF penalty, welding surcharge, E tax & TCS = the same share of the electricity charges as on the last bill',
-          'Fixed charges as on the last bill · Net = all of them added'
-        ],
-        example: 'SC 1212, 26 Sep – 26 Oct: 1,805 units a day × 30 days = 54,147 units; × ₹8.1336 = ₹4,40,413; with ₹91,200 fixed, 15% welding, ED/LPF and E tax as last time: ₹6,42,079.',
-        why: 'Enter each new bill on Tariff & Rates when it comes. The penalty follows your power factor and demand, so it may differ; a holiday ahead lowers the bill.'
-      };
     case 'energy_cost_trend':
       return {
         title: 'Energy cost trend',
