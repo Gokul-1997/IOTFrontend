@@ -23,10 +23,6 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
       // The service shares this request with sockets, timers and other 401s.
       // Every waiter receives the failure too; none can hang waiting for a token.
       return auth.refreshToken().pipe(
-        switchMap(res => {
-          current();
-          return next(req.clone({ setHeaders: { Authorization: `Bearer ${res.accessToken}` } })).pipe(tap(current));
-        }),
         catchError(refreshError => {
           current();
           if (refreshError.status === 401 || refreshError.status === 403) {
@@ -34,6 +30,16 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
             auth.logout(disabled ? refreshError.error.message : undefined);
           }
           return throwError(() => refreshError);
+        }),
+        // Only a refused refresh ends the session. The request sent again
+        // answers for itself: a 403 there (S&T took that page, or the AI,
+        // away a moment ago) used to sign the person out (23 Oct 2026).
+        switchMap(res => {
+          current();
+          return next(req.clone({ setHeaders: { Authorization: `Bearer ${res.accessToken}` } })).pipe(
+            tap(current),
+            catchError(retryError => { current(); return throwError(() => retryError); })
+          );
         })
       );
     })

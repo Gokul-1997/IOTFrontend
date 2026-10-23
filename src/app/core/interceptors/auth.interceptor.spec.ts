@@ -59,6 +59,22 @@ test('revoked refresh credentials settle all waiters and clear the session', () 
   expect(localStorage.getItem('token')).toBeNull();
 });
 
+/* S&T takes a page (or the AI) away from a company: everyone in it is refused
+   once with "your access changed", the app refreshes, and the request goes
+   again — refused now, as the company no longer has that page. That is the
+   request's answer, not a broken session. */
+test('a request refused after a good refresh fails on its own and signs nobody out', () => {
+  const failures: any[] = [];
+  const logout = vi.spyOn(auth, 'logout');
+  http.post(`${api}/assistant/chat`, {}).subscribe({ error: error => failures.push(error) });
+  requests.expectOne(`${api}/assistant/chat`).flush({ code: 'AUTH_REVISION_CHANGED' }, { status: 401, statusText: 'Access changed' });
+  requests.expectOne(`${api}/auth/refresh`).flush({ accessToken: 'fresh-token', company_permissions: ['page:reports:view'] });
+  requests.expectOne(`${api}/assistant/chat`).flush({ message: 'Your company does not have access to this page.' }, { status: 403, statusText: 'Forbidden' });
+  expect(failures.map(f => f.status)).toEqual([403]);
+  expect(logout).not.toHaveBeenCalled();
+  expect(localStorage.getItem('token')).toBe('fresh-token');
+});
+
 test('a late refresh cannot overwrite or log out a newly signed-in company', () => {
   const failures: any[] = [];
   http.get(`${api}/dashboard`).subscribe({ error: error => failures.push(error) });

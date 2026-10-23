@@ -105,19 +105,26 @@ export class AssistantWidgetComponent implements OnInit {
     this.svc.context$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(c => { this.context = c; this.cdr.markForCheck(); });
     this.svc.status$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(s => { this.status = s; this.cdr.markForCheck(); });
     this.auth.sessionChanged$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => { this.open = false; this.load(); });
+    // S&T gave or took the AI, or the company admin changed this person's role,
+    // while they are signed in: the button follows without signing in again
+    this.auth.grantsChanged$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.recheck());
     this.load();
   }
 
   /**
    * Only where S&T gave the company the AI in Manage Access and the company
    * admin gave it to this person's role (the company admin has it with the
-   * company) — never S&T itself — and only when the server says it is on.
+   * company) — never S&T itself.
    */
+  private mayUse(): boolean {
+    return this.auth.isLoggedIn() && !this.auth.isSntSuper() && !!this.auth.getUser()?.company_id
+      && this.auth.hasPermission('page:assistant');
+  }
+
+  /** For someone who may use it: whether the server has it on. */
   private load(): void {
     this.unavailable = false;
-    const mayUse = this.auth.isLoggedIn() && !this.auth.isSntSuper() && !!this.auth.getUser()?.company_id
-      && this.auth.hasPermission('page:assistant');
-    if (!mayUse) return;
+    if (!this.mayUse()) return;
     this.svc.loadStatus().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: s => {
         this.unavailable = !s.enabled && s.reason === 'NOT_CONFIGURED';
@@ -129,6 +136,19 @@ export class AssistantWidgetComponent implements OnInit {
       // the server does not have the assistant yet (an older API): say so in the chat
       error: err => { this.unavailable = err?.status === 404 || err?.status === 0 || err?.status >= 500; this.cdr.markForCheck(); }
     });
+  }
+
+  /** Given now: the button comes. Taken away: the button, the chat and its conversation go. */
+  private recheck(): void {
+    if (this.mayUse()) {
+      if (!this.status && !this.unavailable) this.load();
+      return;
+    }
+    this.open = false;
+    this.unavailable = false;
+    this.svc.messages$.next([]);
+    this.svc.status$.next(null);
+    this.cdr.markForCheck();
   }
 
   openPanel(): void {
@@ -187,6 +207,7 @@ export class AssistantWidgetComponent implements OnInit {
     this.svc.ask(history).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: reply => {
         this.sending = false;
+        if (this.droppedMeanwhile()) return;
         if (reply.allowance && this.status) this.svc.status$.next({ ...this.status, allowance: reply.allowance });
         this.svc.messages$.next([...this.svc.messages$.value,
           { role: 'assistant', text: reply.text, kind: reply.kind, sources: reply.sources, sig: reply.sig }]);
@@ -194,11 +215,22 @@ export class AssistantWidgetComponent implements OnInit {
       },
       error: err => {
         this.sending = false;
+        if (this.droppedMeanwhile()) return;
         const text = err?.error?.message || `${this.name} is not available right now. Please try again in a few minutes.`;
         this.svc.messages$.next([...this.svc.messages$.value, { role: 'assistant', text, kind: 'error', retry: question }]);
         this.afterRender(() => this.scrollToEnd());
       }
     });
+  }
+
+  /**
+   * The AI was taken away, or the person signed out, while a question was
+   * being answered: the late reply (or the refusal) joins no conversation.
+   */
+  private droppedMeanwhile(): boolean {
+    if (this.status) return false;
+    this.cdr.markForCheck();
+    return true;
   }
 
   /** A reply's paragraphs and lists, worked out once per message. */

@@ -1,4 +1,4 @@
-import { test, expect, seedAuth } from './fixtures/auth';
+import { test, expect, seedAuth, stubJwt } from './fixtures/auth';
 
 /*
  * The company assistant ("STM Mexa AI", 22 Oct 2026): a launcher bottom
@@ -200,6 +200,63 @@ test('only a company S&T gave the AI to — and only the roles its admin gave it
     await expect(launcher(page)).toHaveCount(0);
   }
   expect(asked).toEqual([]);
+});
+
+/* S&T ticks or unticks the AI while people are signed in. Manage Access
+   changes their access, so the server refuses their next request once with
+   "your access changed" (401 AUTH_REVISION_CHANGED); the app refreshes the
+   session and the button comes or goes — nobody signs in again. */
+const WITHOUT_AI = WITH_AI.filter(p => p !== 'page:assistant:view');
+const accessChanged = json({ message: 'Your access changed. Refresh your session to continue.', code: 'AUTH_REVISION_CHANGED' }, 401);
+const refreshTo = (company_permissions: string[]) => (r: any) => r.fulfill(json({ accessToken: stubJwt(), company_permissions }));
+/** The next request (not the refresh itself) is refused once, as the server does after a change. */
+async function changeAccess(page: any, company_permissions: string[]) {
+  await page.route('**/api/auth/refresh', refreshTo(company_permissions));
+  let pending = true;
+  await page.route('**/api/**', (r: any) => {
+    if (!pending || r.request().url().includes('/api/auth/')) return r.fallback();
+    pending = false;
+    return r.fulfill(accessChanged);
+  });
+}
+/** A page change inside the app (Angular follows the address bar), not a reload. */
+const goInApp = (page: any, url: string) =>
+  page.evaluate((u: string) => { history.pushState({}, '', u); dispatchEvent(new PopStateEvent('popstate', { state: {} })); }, url);
+
+test('S&T gives the company the AI while its admin is signed in: the button comes without signing in again', async ({ page }) => {
+  await stub(page);
+  await seedAuth(page, { company_permissions: WITHOUT_AI });
+  await page.goto('/profile');
+  await expect(page.getByRole('heading', { name: /Profile|My Profile/ }).first()).toBeVisible();
+  await expect(launcher(page)).toHaveCount(0);
+
+  await changeAccess(page, WITH_AI);
+  await goInApp(page, '/reports');
+  await expect(launcher(page)).toBeVisible();
+});
+
+test('S&T takes the AI away while a question is out: the chat goes, the late refusal joins nothing, and given back it starts fresh', async ({ authedPage: page }) => {
+  await stub(page);
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto('/profile');
+  await launcher(page).click();
+
+  await page.route('**/api/auth/refresh', refreshTo(WITHOUT_AI));
+  let chats = 0;
+  await page.route('**/api/assistant/chat', (r: any) => r.fulfill(++chats === 1 ? accessChanged
+    : json({ message: 'Your company does not have access to this page.' }, 403)));
+  await page.getByLabel('Your question for STM Mexa AI').fill('How many parts did VMC - 12 - F make today?');
+  await page.getByLabel('Your question for STM Mexa AI').press('Enter');
+  await expect(panel(page)).toHaveCount(0);
+  await expect(launcher(page)).toHaveCount(0);
+  await expect.poll(() => chats).toBe(2);                                    // the question went again after the refresh: refused
+
+  await changeAccess(page, WITH_AI);
+  await goInApp(page, '/reports');
+  await launcher(page).click();
+  await expect(panel(page).getByRole('group', { name: 'Suggested questions' })).toBeVisible();
+  await expect(panel(page)).not.toContainText('How many parts did VMC - 12 - F make today?');
+  await expect(panel(page)).not.toContainText('does not have access');
 });
 
 /* 22 Oct 2026 — "nothing shows, where is the button?": before the server has
