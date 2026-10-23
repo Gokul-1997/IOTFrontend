@@ -1,16 +1,17 @@
 import { test, expect, seedAuth } from './fixtures/auth';
 
 /*
- * The report assistant ("STM Mexa AI", 22 Oct 2026): a launcher bottom
- * right on signed-in pages for people with report access; the chat opens
- * over the page; answers cite their report with View / Download; the daily
- * allowance shows, and when it is used up the reports stay open.
+ * The company assistant ("STM Mexa AI", 22 Oct 2026): a launcher bottom
+ * right on signed-in pages for everyone in a company (what it answers
+ * follows the role); the chat opens over the page; answers cite their
+ * report with View / Download; the daily allowance shows, and when it is
+ * used up the reports stay open.
  */
 const json = (body: any, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) });
-const WELCOME = 'Hi, I’m STM Mexa AI, your company’s report assistant. I can help you understand your reports, compare results, and find company details available to your account. What would you like to know?';
+const WELCOME = 'Hi, I’m STM Mexa AI, your company assistant. Ask me about production, OEE, machines, alarms, downtime, maintenance or energy — or how to do something in MEXA.';
 const status = (o: any = {}) => ({ status: 'success', data: {
   name: 'STM Mexa AI', enabled: true, welcome: WELCOME,
-  suggestions: ['Summarize today’s production report.', 'Compare this week’s OEE with last week.', 'Show production by shift.', 'Show my company’s registered details.'],
+  suggestions: ['Summarize today’s production report.', 'Which machines are running right now?', 'Compare this week’s OEE with last week.', 'How do I download a report?'],
   allowance: { limit: 50, used: 12, remaining: 38, resets_at: '2026-10-22T18:30:00.000Z', resets_text: '12:00 am (Asia/Kolkata)', timezone: 'Asia/Kolkata' }, ...o } });
 const answer = {
   kind: 'answer', text: 'Today 65 parts were made on 2 machines.\n- VMC - 12 - F: 40 pcs\n- VMC - 13 - M: 25 pcs',
@@ -27,7 +28,7 @@ async function stub(page: any, st: any = status()) {
   const asked: any[] = [];
   return asked;
 }
-const launcher = (page: any) => page.getByRole('button', { name: 'Ask STM Mexa AI about your reports' });
+const launcher = (page: any) => page.getByRole('button', { name: 'Ask STM Mexa AI' });
 const panel = (page: any) => page.getByRole('dialog', { name: 'STM Mexa AI' });
 
 test('report users get the launcher; it opens the chat over the page with the welcome, suggestions and today\'s allowance', async ({ authedPage: page }) => {
@@ -37,10 +38,15 @@ test('report users get the launcher; it opens the chat over the page with the we
   await launcher(page).click();
   await expect(panel(page)).toBeVisible();
   await expect(page).toHaveURL(/\/profile$/);                            // the page stays
+  await expect(panel(page)).toContainText('How can I help, test?');           // the person's own name
   await expect(panel(page)).toContainText(WELCOME);
   await expect(panel(page)).toContainText('38 of 50 left today');
-  await expect(panel(page).getByRole('group', { name: 'Suggested questions' }).getByRole('button'))
-    .toHaveText(['Summarize today’s production report.', 'Compare this week’s OEE with last week.', 'Show production by shift.', 'Show my company’s registered details.']);
+  const chips = panel(page).getByRole('group', { name: 'Suggested questions' }).getByRole('button');
+  await expect(chips).toHaveCount(4);
+  for (const [i, q] of ['Summarize today’s production report.', 'Which machines are running right now?',
+                        'Compare this week’s OEE with last week.', 'How do I download a report?'].entries()) {
+    await expect(chips.nth(i)).toHaveAccessibleName(q);                    // the icons are not read out
+  }
   await expect(page.getByLabel('Your question for STM Mexa AI')).toBeFocused();
 });
 
@@ -60,7 +66,7 @@ test('a suggestion is asked; while it is answered the chat says so; the answer c
   await launcher(page).click();
   await panel(page).getByRole('button', { name: 'Summarize today’s production report.' }).click();
 
-  await expect(panel(page).getByRole('status').filter({ hasText: 'STM Mexa AI is reading your reports…' })).toBeVisible();
+  await expect(panel(page).getByRole('status').filter({ hasText: 'STM Mexa AI is looking into it…' })).toBeVisible();
   expect(asked[0]).toEqual({ messages: [{ role: 'user', content: 'Summarize today’s production report.' }] });
   release();
 
@@ -130,7 +136,7 @@ test('the allowance used up: the question box closes with when it comes back; th
   await launcher(page).click();
   await expect(panel(page)).toContainText('You’ve reached today’s STM Mexa AI allowance. Your allowance resets at 12:00 am (Asia/Kolkata). You can still access your reports.');
   await expect(page.getByLabel('Your question for STM Mexa AI')).toBeDisabled();
-  await expect(panel(page).getByRole('button', { name: 'Show production by shift.' })).toBeDisabled();
+  await expect(panel(page).getByRole('button', { name: 'Which machines are running right now?' })).toBeDisabled();
 });
 
 test('a failed question can be asked again, and only the question goes back', async ({ authedPage: page }) => {
@@ -156,12 +162,12 @@ test('a failed question can be asked again, and only the question goes back', as
   expect(asked[1]).toEqual({ messages: [{ role: 'user', content: 'Production today' }] });
 });
 
-test('no launcher for a role without reports, or when the company admin switched it off', async ({ page }) => {
+test('everyone in a company gets it, reports or not; no launcher when the company admin switched it off', async ({ page }) => {
   await seedAuth(page, { roles: ['SUPERVISOR'], user_type: 'company_user', permissions: ['page:dashboard:view'] });
   await stub(page);
   await page.goto('/profile');
   await expect(page.getByRole('heading', { name: /Profile|My Profile/ }).first()).toBeVisible();
-  await expect(launcher(page)).toHaveCount(0);
+  await expect(launcher(page)).toBeVisible();
 
   await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
   await page.route('**/api/assistant/status', (r: any) => r.fulfill(json({ status: 'success', data: { name: 'STM Mexa AI', enabled: false, reason: 'SWITCHED_OFF' } })));

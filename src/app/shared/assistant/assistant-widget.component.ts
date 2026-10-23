@@ -15,12 +15,37 @@ import { dayText } from '../report-value';
 const DOWNLOADS = /^\/(reports\/(production|hourly-oee|shift-oee)|dashboard\/oee\/export\/xlsx)$/;
 const WELCOMED = 'mexa-assistant-welcomed';
 
+/** A reply as the chat lays it out: paragraphs, and lines starting "- " or "1." as lists. Text only — never HTML. */
+export type AssistantBlock = { p: string } | { ul: string[] } | { ol: string[] };
+export function toBlocks(text: string): AssistantBlock[] {
+  const out: AssistantBlock[] = [];
+  for (const raw of String(text || '').replace(/\*\*/g, '').split('\n')) {
+    const line = raw.trim();
+    if (!line) continue;
+    const bullet = /^[-•*]\s+(.+)$/.exec(line);
+    const step = /^\d{1,2}[.)]\s+(.+)$/.exec(line);
+    const last = out[out.length - 1];
+    if (bullet) { if (last && 'ul' in last) last.ul.push(bullet[1]); else out.push({ ul: [bullet[1]] }); }
+    else if (step) { if (last && 'ol' in last) last.ol.push(step[1]); else out.push({ ol: [step[1]] }); }
+    else out.push({ p: line });
+  }
+  return out;
+}
+
+/** An icon for a suggested question, from what it is about. */
+const ICONS: [RegExp, string][] = [
+  [/running|right now/i, 'sensors'], [/oee/i, 'speed'], [/alarm/i, 'notifications_active'],
+  [/maintenance|ticket/i, 'handyman'], [/downtime/i, 'timer_off'], [/program/i, 'swap_horiz'], [/energy/i, 'bolt'],
+  [/how do i|where/i, 'help_outline'], [/production|shift/i, 'precision_manufacturing'], [/company/i, 'apartment']
+];
+
 /*
- * The report assistant in the corner of every signed-in page, for people
- * with report access ("STM Mexa AI" — the server names it). A click opens
- * the chat over the page without leaving it. The launcher greets once per
- * session with one soft glow — no bouncing, no chat opening by itself, and
- * no motion at all for anyone who asked for less.
+ * The company assistant in the corner of every signed-in page ("STM Mexa
+ * AI" — the server names it): for everyone in a company since 22 Oct 2026
+ * (the user: "all company support"); what it can answer follows the
+ * person's role. A click opens the chat over the page without leaving it.
+ * The launcher greets once per session with one soft glow — no bouncing, no
+ * chat opening by itself, and no motion at all for anyone who asked for less.
  */
 @Component({
   selector: 'app-assistant',
@@ -56,13 +81,18 @@ export class AssistantWidgetComponent implements OnInit {
   greet = false;
   /**
    * The server has no assistant yet (no AI key, or not deployed): the
-   * launcher still shows for report users, and the chat says it is not on
-   * yet instead of the button being missing with no reason (22 Oct 2026).
+   * launcher still shows, and the chat says it is not on yet instead of the
+   * button being missing with no reason (22 Oct 2026).
    */
   unavailable = false;
 
   get name(): string { return this.status?.name || 'STM Mexa AI'; }
-  /** For report users: on, or not set up yet. Hidden when the company admin switched it off, or for S&T. */
+  /** "How can I help, Ravi?" */
+  get greeting(): string {
+    const who = String(this.auth.getUser()?.username || '').trim().split(/\s+/)[0];
+    return who ? `How can I help, ${who}?` : 'How can I help?';
+  }
+  /** For everyone in a company: on, or not set up yet. Hidden when the company admin switched it off, or for S&T. */
   get visible(): boolean { return !!this.status?.enabled || this.unavailable; }
   get allowance() { return this.status?.allowance; }
   get limitReached(): boolean { return !!this.allowance && this.allowance.remaining <= 0; }
@@ -78,11 +108,10 @@ export class AssistantWidgetComponent implements OnInit {
     this.load();
   }
 
-  /** Only for people with report access, and only when the server says it is on. */
+  /** For everyone in a company (not S&T), and only when the server says it is on. */
   private load(): void {
     this.unavailable = false;
-    const mayUse = this.auth.isLoggedIn() && !this.auth.isSntSuper()
-      && (this.auth.hasPermission('page:reports') || this.auth.hasPermission('page:oee-reports'));
+    const mayUse = this.auth.isLoggedIn() && !this.auth.isSntSuper() && !!this.auth.getUser()?.company_id;
     if (!mayUse) return;
     this.svc.loadStatus().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: s => {
@@ -119,10 +148,19 @@ export class AssistantWidgetComponent implements OnInit {
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); this.send(); }
   }
 
+  /** The question box grows with what is typed, up to five lines. */
+  grow(): void {
+    const el = this.input?.nativeElement;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }
+
   send(text: string = this.draft): void {
     const question = text.trim().slice(0, 500);
     if (!question || this.sending || this.closed) return;
     this.draft = '';
+    this.afterRender(() => this.grow());
     const history: AssistantMessage[] = [...this.messages, { role: 'user', text: question }];
     this.svc.messages$.next(history);
     this.ask(history, question);
@@ -157,6 +195,24 @@ export class AssistantWidgetComponent implements OnInit {
       }
     });
   }
+
+  /** A reply's paragraphs and lists, worked out once per message. */
+  private readonly laidOut = new WeakMap<AssistantMessage, AssistantBlock[]>();
+  blocksOf(m: AssistantMessage): AssistantBlock[] {
+    let b = this.laidOut.get(m);
+    if (!b) { b = m.role === 'user' ? [{ p: m.text }] : toBlocks(m.text); this.laidOut.set(m, b); }
+    return b;
+  }
+
+  /** Quiet replies — a refusal, no records, a limit, the app's own note — are set apart from answers. */
+  isQuiet(m: AssistantMessage): boolean {
+    return ['out_of_scope', 'restricted', 'not_found', 'limit', 'note'].includes(m.kind || '');
+  }
+
+  iconFor(question: string): string { return ICONS.find(([re]) => re.test(question))?.[1] || 'chat_bubble_outline'; }
+
+  /** "38 of 50 left today" */
+  allowanceText(): string { const a = this.allowance; return a ? `${a.remaining} of ${a.limit} left today` : ''; }
 
   /** The report the answer came from, on its own page, with the same filters. */
   view(s: AssistantSource): void {
@@ -195,7 +251,9 @@ export class AssistantWidgetComponent implements OnInit {
     const machine = s.filters ? s.filters.machine : s.machine, shift = s.filters ? s.filters.shift : s.shift;
     const parts = [s.title || s.report];
     if (from && to) parts.push(from === to ? dayText(from) : `${dayText(from)} – ${dayText(to)}`);
-    if (s.report !== 'Company details') parts.push(machine || 'All machines', shift || 'All shifts');
+    // undated pages (company details, machines now, maintenance, Program Transfer) name a machine only when one was asked about
+    if (from && to) parts.push(machine || 'All machines', shift || 'All shifts');
+    else if (machine) parts.push(machine);
     return parts.filter(Boolean).join(' · ');
   }
 

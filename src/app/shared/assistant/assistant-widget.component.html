@@ -2,32 +2,35 @@
   <!-- the launcher, bottom right on every signed-in page -->
   <button #launcher type="button" class="as-launcher" [class.is-greeting]="greet" [class.is-open]="open"
           (click)="open ? close() : openPanel()" [attr.aria-expanded]="open" aria-controls="as-panel"
-          [attr.aria-label]="open ? 'Close ' + name : 'Ask ' + name + ' about your reports'">
+          [attr.aria-label]="open ? 'Close ' + name : 'Ask ' + name">
     <span class="material-icons" aria-hidden="true">{{ open ? 'close' : 'auto_awesome' }}</span>
   </button>
 
   <!-- the chat, over the page: the page stays where it was -->
   <section *ngIf="open" id="as-panel" class="as-panel" role="dialog" aria-modal="false" aria-labelledby="as-title">
     <header class="as-head">
-      <span class="as-avatar" aria-hidden="true"><span class="material-icons">auto_awesome</span></span>
+      <span class="as-mark" aria-hidden="true"><span class="material-icons">auto_awesome</span></span>
       <div class="as-titles">
         <h2 id="as-title" class="as-title">{{ name }}</h2>
-        <p class="as-sub">Your company’s report assistant</p>
+        <p class="as-sub">
+          <span class="as-dot" [class.is-off]="unavailable" aria-hidden="true"></span>{{ unavailable ? 'Not switched on yet' : 'Company assistant' }}
+        </p>
       </div>
-      <span *ngIf="allowance as a" class="as-allowance" [class.is-low]="a.remaining <= 5"
-            [attr.title]="'Resets at ' + a.resets_text">{{ a.remaining }} of {{ a.limit }} left today</span>
-      <button *ngIf="asked" type="button" class="as-iconbtn" (click)="newChat()" aria-label="Start a new chat" title="New chat">
-        <span class="material-icons" aria-hidden="true">restart_alt</span>
+      <button *ngIf="asked" type="button" class="as-icon" (click)="newChat()" aria-label="Start a new chat" title="New chat">
+        <span class="material-icons" aria-hidden="true">add_comment</span>
       </button>
-      <button type="button" class="as-iconbtn" (click)="close()" [attr.aria-label]="'Close ' + name" title="Close">
+      <button type="button" class="as-icon" (click)="close()" [attr.aria-label]="'Close ' + name" title="Close">
         <span class="material-icons" aria-hidden="true">close</span>
       </button>
     </header>
 
     <div #log class="as-log" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation" tabindex="0">
-      <div *ngIf="!unavailable" class="as-msg is-bot"><p>{{ status?.welcome }}</p></div>
-      <div *ngIf="unavailable" class="as-msg is-bot is-quiet" role="status">
-        <p>{{ name }} isn’t switched on yet. Your reports work as usual; once it is set up, you can ask about them here.</p>
+      <!-- before the first question: who it is and what to ask -->
+      <div *ngIf="!asked" class="as-hello">
+        <span class="as-mark is-big" aria-hidden="true"><span class="material-icons">auto_awesome</span></span>
+        <p class="as-hello-title">{{ unavailable ? name : greeting }}</p>
+        <p *ngIf="!unavailable" class="as-hello-text">{{ status?.welcome }}</p>
+        <p *ngIf="unavailable" class="as-hello-text" role="status">{{ name }} isn’t switched on yet. Your reports work as usual; once it is set up, you can ask about them here.</p>
       </div>
 
       <p *ngIf="context as c" class="as-context">
@@ -36,44 +39,64 @@
       </p>
 
       <div *ngIf="!asked && !unavailable && suggestions.length" class="as-suggest" role="group" aria-label="Suggested questions">
-        <button *ngFor="let s of suggestions" type="button" class="as-chip" (click)="send(s)" [disabled]="sending || limitReached">{{ s }}</button>
-      </div>
-
-      <div *ngFor="let m of messages" class="as-msg" [ngClass]="m.role === 'user' ? 'is-me' : 'is-bot'"
-           [class.is-error]="m.kind === 'error'" [class.is-quiet]="m.kind === 'out_of_scope' || m.kind === 'restricted' || m.kind === 'not_found' || m.kind === 'limit' || m.kind === 'note'">
-        <span class="sr-only">{{ m.role === 'user' ? 'You' : name }}: </span>
-        <p>{{ m.text }}</p>
-        <div *ngFor="let s of m.sources" class="as-source">
-          <p class="as-source-line"><span class="material-icons" aria-hidden="true">description</span><span>Source: {{ sourceLine(s) }}</span></p>
-          <span *ngIf="s.view || s.download" class="as-source-actions">
-            <button *ngIf="s.view" type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="view(s)">
-              <span class="material-icons" aria-hidden="true">open_in_new</span>View report
-            </button>
-            <button *ngIf="s.download" type="button" class="ui-btn ui-btn-ghost ui-btn-xs" (click)="download(s)" [disabled]="!!downloading">
-              <span class="material-icons" aria-hidden="true">download</span>{{ downloading === s ? 'Downloading…' : 'Download report' }}
-            </button>
-          </span>
-        </div>
-        <button *ngIf="m.kind === 'error' && m.retry" type="button" class="ui-btn ui-btn-ghost ui-btn-xs as-retry" (click)="retry(m)" [disabled]="sending">
-          <span class="material-icons" aria-hidden="true">refresh</span>Try again
+        <p class="as-label" aria-hidden="true">Try asking</p>
+        <button *ngFor="let s of suggestions" type="button" class="as-chip" (click)="send(s)" [disabled]="sending || limitReached">
+          <span class="material-icons as-chip-icon" aria-hidden="true">{{ iconFor(s) }}</span>
+          <span class="as-chip-text">{{ s }}</span>
+          <span class="material-icons as-chip-go" aria-hidden="true">arrow_forward</span>
         </button>
       </div>
 
-      <div *ngIf="sending" class="as-msg is-bot as-thinking" role="status">
-        <span class="as-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-        <span>{{ name }} is reading your reports…</span>
+      <div *ngFor="let m of messages" class="as-row" [class.is-me]="m.role === 'user'">
+        <span *ngIf="m.role !== 'user'" class="as-mark is-small" aria-hidden="true"><span class="material-icons">auto_awesome</span></span>
+        <div class="as-msg" [class.is-error]="m.kind === 'error'" [class.is-quiet]="isQuiet(m)">
+          <span class="sr-only">{{ m.role === 'user' ? 'You' : name }}: </span>
+          <ng-container *ngFor="let b of blocksOf(m)">
+            <p *ngIf="$any(b).p as p">{{ p }}</p>
+            <ul *ngIf="$any(b).ul as items"><li *ngFor="let li of items">{{ li }}</li></ul>
+            <ol *ngIf="$any(b).ol as steps"><li *ngFor="let li of steps">{{ li }}</li></ol>
+          </ng-container>
+          <div *ngFor="let s of m.sources" class="as-source">
+            <p class="as-source-line"><span class="material-icons" aria-hidden="true">description</span><span>Source: {{ sourceLine(s) }}</span></p>
+            <span *ngIf="s.view || s.download" class="as-source-actions">
+              <button *ngIf="s.view" type="button" class="as-link" (click)="view(s)">
+                <span class="material-icons" aria-hidden="true">open_in_new</span>View report
+              </button>
+              <button *ngIf="s.download" type="button" class="as-link" (click)="download(s)" [disabled]="!!downloading">
+                <span class="material-icons" aria-hidden="true">download</span>{{ downloading === s ? 'Downloading…' : 'Download report' }}
+              </button>
+            </span>
+          </div>
+          <button *ngIf="m.kind === 'error' && m.retry" type="button" class="as-link as-retry" (click)="retry(m)" [disabled]="sending">
+            <span class="material-icons" aria-hidden="true">refresh</span>Try again
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="sending" class="as-row" role="status">
+        <span class="as-mark is-small" aria-hidden="true"><span class="material-icons">auto_awesome</span></span>
+        <div class="as-msg as-thinking">
+          <span class="as-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>{{ name }} is looking into it…</span>
+        </div>
       </div>
     </div>
 
     <p *ngIf="limitReached" class="as-limit" role="status">{{ limitText() }}</p>
 
     <form class="as-form" (ngSubmit)="send()">
-      <label class="sr-only" for="as-input">Your question for {{ name }}</label>
-      <textarea #input id="as-input" name="question" rows="2" maxlength="500" [(ngModel)]="draft" (keydown)="onKeydown($event)"
-                [disabled]="closed" placeholder="Ask about your reports…"></textarea>
-      <button type="submit" class="as-send" [disabled]="!draft.trim() || sending || closed" aria-label="Send">
-        <span class="material-icons" aria-hidden="true">send</span>
-      </button>
+      <div class="as-field">
+        <label class="sr-only" for="as-input">Your question for {{ name }}</label>
+        <textarea #input id="as-input" name="question" rows="1" maxlength="500" [(ngModel)]="draft" (keydown)="onKeydown($event)"
+                  (input)="grow()" [disabled]="closed" placeholder="Ask about your factory…"></textarea>
+        <button type="submit" class="as-send" [disabled]="!draft.trim() || sending || closed" aria-label="Send">
+          <span class="material-icons" aria-hidden="true">arrow_upward</span>
+        </button>
+      </div>
+      <p class="as-foot">
+        <span *ngIf="allowance" [class.is-low]="allowance.remaining <= 5" [attr.title]="'Resets at ' + allowance.resets_text">{{ allowanceText() }}</span>
+        <span>Answers can be wrong — check key figures.</span>
+      </p>
     </form>
   </section>
 </ng-container>
