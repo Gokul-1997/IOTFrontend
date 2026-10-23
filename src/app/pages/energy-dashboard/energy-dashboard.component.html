@@ -174,22 +174,19 @@
       </ng-template>
     </div>
 
-    <!-- This bill: the electricity bill's forecast. Its own period (the bill
-         dates on Tariff & Rates), not the dates above; it opens its card on Charts. -->
+    <!-- This bill: the EB bill of every service connection (entered on Tariff &
+         Rates) — its own dates, not the dates above. Opens its card on Charts. -->
     <div class="mexa-kpi yellow mexa-kpi-drill is-bill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">This Bill<br>Forecast <app-metric-help topic="bill_forecast"></app-metric-help></span>
         <span class="mexa-kpi-icon yellow" aria-hidden="true"><mat-icon>receipt_long</mat-icon></span>
       </div>
       <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openBill()" aria-labelledby="enk8-name enk8-value enk8-act"><span id="enk8-value">{{
-        billState === 'ready' ? billValue(bill?.forecast?.cost, bill?.forecast?.kwh)
-        : billState === 'early' ? billValue(bill?.so_far?.cost, bill?.so_far?.kwh) : '--' }}</span></button></p><span hidden id="enk8-name">This bill's forecast:</span><span hidden id="enk8-act">show the bill forecast</span>
+        billState === 'ready' ? rupees(bill?.total?.net_amount) : '--' }}</span></button></p><span hidden id="enk8-name">This bill's forecast:</span><span hidden id="enk8-act">show the bill line by line</span>
       <p class="mexa-kpi-sub" [ngSwitch]="billState">
-        <ng-container *ngSwitchCase="'ready'">{{ billValue(bill?.so_far?.cost, bill?.so_far?.kwh) }} so far · {{ bill?.period?.days_left }} days left</ng-container>
-        <ng-container *ngSwitchCase="'early'">Used so far · forecast after a day of readings</ng-container>
-        <ng-container *ngSwitchCase="'unset'">No bill dates<ng-container *ngIf="canEditSettings"> · <a routerLink="/energy-tariff" class="mexa-kpi-link">Set bill dates</a></ng-container></ng-container>
-        <ng-container *ngSwitchCase="'preparing'">Getting the readings ready…</ng-container>
-        <ng-container *ngSwitchCase="'nometer'">No meter readings this bill</ng-container>
+        <ng-container *ngSwitchCase="'ready'">{{ billRows.length === 1 ? 'SC ' + billRows[0].sc_number : billRows.length + ' supplies' }} · to {{ billDay(bill?.total?.ends ?? '') }}<ng-container *ngIf="!bill?.total?.measured"> · estimate</ng-container></ng-container>
+        <ng-container *ngSwitchCase="'none'">No EB bill entered<ng-container *ngIf="canEditSettings"> · <a routerLink="/energy-tariff" class="mexa-kpi-link">Add EB bill</a></ng-container></ng-container>
+        <ng-container *ngSwitchCase="'restricted'">For company administration</ng-container>
         <ng-container *ngSwitchCase="'error'">Could not load</ng-container>
         <ng-container *ngSwitchDefault>Loading…</ng-container>
       </p>
@@ -213,81 +210,108 @@
   <!-- Charts -->
   <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="mexa-card">
   <!-- ══════════ THIS BILL ══════════
-       The electricity bill so far and where it is heading: what the meters
-       counted since the bill's first day, the rest at the usual use of each
-       hour of the week, and the range the last weeks give. Its own request
-       (the machine filter only); the server does every sum. -->
+       The EB bill of each service connection, forecast and laid out as the
+       EB prints it, with the last bill under it. The server works it out:
+       this bill's units (EB meter readings, a meter on the supply, else the
+       last bills — and says which) at the charges of the last bill. -->
   <section id="enBill" class="mexa-card mexa-scroll-target" aria-labelledby="enBillTitle">
     <div class="bill-head">
       <h2 id="enBillTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left">
-        This Bill<ng-container *ngIf="bill?.period as p"> · {{ billPeriod(p.start, p.end) }}</ng-container>
-        <app-metric-help topic="bill_forecast"></app-metric-help>
+        This Bill — EB forecast <app-metric-help topic="bill_forecast"></app-metric-help>
       </h2>
-      <p class="bill-when" *ngIf="bill?.period as p">Day {{ p.day }} of {{ p.days }}<ng-container *ngIf="bill?.scope?.machine"> · {{ bill?.scope?.machine }} only</ng-container></p>
+      <p class="bill-when" *ngIf="billState === 'ready'">{{ rupees(bill?.total?.net_amount) }} in all<ng-container
+        *ngIf="bill?.total?.low != null"> · likely {{ rupees(bill?.total?.low) }} – {{ rupees(bill?.total?.high) }}</ng-container></p>
     </div>
 
     <ng-container [ngSwitch]="billState">
       <ng-container *ngSwitchCase="'ready'">
-        <dl class="bill-figs" *ngIf="bill?.forecast as fc">
-          <div class="bill-fig">
-            <dt>Forecast</dt>
-            <dd><span class="bill-value">{{ billValue(fc.cost, fc.kwh) }}</span>
-                <span class="bill-sub">likely {{ billValue(fc.low_cost, fc.low_kwh) }} – {{ billValue(fc.high_cost, fc.high_kwh) }}</span></dd>
-          </div>
-          <div class="bill-fig">
-            <dt>Used so far</dt>
-            <dd><span class="bill-value">{{ billValue(bill?.so_far?.cost, bill?.so_far?.kwh) }}</span>
-                <span class="bill-sub">{{ qty(bill?.so_far?.kwh ?? 0, 0) }} kWh since {{ billDay(bill?.period?.start ?? '') }}</span></dd>
-          </div>
-          <div class="bill-fig">
-            <dt>Still to come</dt>
-            <dd><span class="bill-value">{{ billValue(bill?.rest?.cost, bill?.rest?.kwh) }}</span>
-                <span class="bill-sub">{{ bill?.period?.days_left }} days left · ends {{ billDay(bill?.period?.end ?? '') }}</span></dd>
-          </div>
-          <div class="bill-fig" *ngIf="bill?.previous as prev">
-            <dt>Last bill</dt>
-            <dd><span class="bill-value">{{ billValue(prev.cost, prev.kwh) }}</span>
-                <span class="bill-sub">{{ billPeriod(prev.start, prev.end) }}<ng-container *ngIf="changeText(billMoney ? fc.cost : fc.kwh, billMoney ? prev.cost : prev.kwh) as ch"> · this bill {{ ch }}</ng-container></span></dd>
-          </div>
-        </dl>
-        <apx-chart *ngIf="bill?.per_day?.length"
-          [series]="billChart.series" [chart]="billChart.chart" [colors]="billChart.colors" [fill]="billChart.fill"
-          [stroke]="billChart.stroke" [markers]="billChart.markers" [dataLabels]="billChart.dataLabels" [legend]="billChart.legend"
-          [xaxis]="billChart.xaxis" [yaxis]="billChart.yaxis" [annotations]="billChart.annotations" [grid]="billChart.grid"
-          [tooltip]="billChart.tooltip" [noData]="billChart.noData"></apx-chart>
+        <div class="mexa-tablewrap mt-2" tabindex="0" role="region" aria-label="This bill, line by line">
+          <table class="mexa-table bill-table">
+            <caption class="sr-only">This bill's forecast for each EB service connection, line by line as on the bill, with the last bill under it</caption>
+            <thead>
+              <tr>
+                <th scope="col">Service connection</th>
+                <th scope="col">Billing period</th>
+                <th scope="col" class="qty">Units</th>
+                <th scope="col" class="qty col-md">Rate</th>
+                <th scope="col" class="qty col-md">Electricity charges</th>
+                <th scope="col" class="qty col-lg">Peak hour</th>
+                <th scope="col" class="qty col-md">Fixed charges</th>
+                <th scope="col" class="qty col-lg">ED/LPF penalty</th>
+                <th scope="col" class="qty col-lg">Welding surcharge</th>
+                <th scope="col" class="qty col-lg">E Tax &amp; TCS</th>
+                <th scope="col" class="qty">Net bill</th>
+                <th scope="col" class="qty col-md">vs last bill</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let c of billRows">
+                <tr>
+                  <th scope="row" class="strong">SC {{ c.sc_number }}<span *ngIf="c.name" class="mexa-rank-sub"> · {{ c.name }}</span></th>
+                  <td>{{ billPeriod(c.period!.start, c.period!.end) }}<span class="mexa-rank-sub"> · day {{ c.period!.day }} of {{ c.period!.days }}</span></td>
+                  <td class="num qty">{{ qty(c.forecast!.units, 0) }}<span *ngIf="!c.units?.measured" class="bill-est" title="Estimated from the last bills">est.</span></td>
+                  <td class="num qty col-md">{{ c.tariff?.printed_rate ?? qty(c.tariff?.rate, 2) }}</td>
+                  <td class="num qty col-md">{{ qty(c.forecast!.electricity_charges, 0) }}</td>
+                  <td class="num qty col-lg">{{ qty(c.forecast!.peak_charges, 0) }}</td>
+                  <td class="num qty col-md">{{ qty(c.forecast!.fixed_charges, 0) }}</td>
+                  <td class="num qty col-lg">{{ qty(c.forecast!.penalty_charges, 0) }}</td>
+                  <td class="num qty col-lg">{{ qty(c.forecast!.welding_charges, 0) }}</td>
+                  <td class="num qty col-lg">{{ qty(c.forecast!.tax_charges, 0) }}</td>
+                  <td class="num qty strong">{{ rupees(c.forecast!.net_amount) }}</td>
+                  <td class="num qty col-md">{{ changeText(c.forecast!.net_amount, c.last_bill?.net_amount) || '--' }}</td>
+                </tr>
+                <tr *ngIf="c.last_bill as l" class="bill-last">
+                  <th scope="row">Last bill</th>
+                  <td>{{ billPeriod(l.from, l.to) }}</td>
+                  <td class="num qty">{{ qty(l.units, 0) }}</td>
+                  <td class="num qty col-md">{{ l.rate ?? '--' }}</td>
+                  <td class="num qty col-md">{{ qty(l.electricity_charges, 0) }}</td>
+                  <td class="num qty col-lg">{{ qty(l.peak_charges, 0) }}</td>
+                  <td class="num qty col-md">{{ qty(l.fixed_charges, 0) }}</td>
+                  <td class="num qty col-lg">{{ qty(l.penalty_charges, 0) }}</td>
+                  <td class="num qty col-lg">{{ qty(l.welding_charges, 0) }}</td>
+                  <td class="num qty col-lg">{{ qty(l.tax_charges, 0) }}</td>
+                  <td class="num qty">{{ rupees(l.net_amount) }}</td>
+                  <td class="col-md"></td>
+                </tr>
+              </ng-container>
+            </tbody>
+            <tfoot *ngIf="billRows.length > 1">
+              <tr>
+                <th scope="row">Total</th>
+                <td></td>
+                <td class="num qty">{{ qty(bill?.total?.units, 0) }}</td>
+                <td class="col-md"></td><td class="col-md"></td><td class="col-lg"></td><td class="col-md"></td>
+                <td class="col-lg"></td><td class="col-lg"></td><td class="col-lg"></td>
+                <td class="num qty">{{ rupees(bill?.total?.net_amount) }}</td>
+                <td class="num qty col-md">{{ changeText(bill?.total?.net_amount, bill?.total?.last_net) || '--' }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
         <ul class="bill-notes">
-          <li *ngIf="bill?.accuracy as a" [class.is-warn]="billUnsteady">{{ accuracyText(a.error_pct) }}<ng-container *ngIf="billUnsteady"> — use has been changing; read it as a rough guide</ng-container></li>
-          <li *ngIf="bill?.history as h">Usual use from {{ h.weeks >= 1 ? h.weeks + (h.weeks === 1 ? ' week' : ' weeks') : 'a few days' }} of readings</li>
-          <li *ngIf="(bill?.machines?.metered ?? 0) < (bill?.machines?.in_scope ?? 0)">{{ bill?.machines?.metered }} of {{ bill?.machines?.in_scope }} machines have an energy meter; the others are not in it</li>
-          <li *ngIf="bill?.machines?.too_new">{{ bill?.machines?.too_new }} new {{ bill?.machines?.too_new === 1 ? 'meter' : 'meters' }}: only what {{ bill?.machines?.too_new === 1 ? 'it' : 'they' }} counted so far is in</li>
-          <li *ngIf="bill?.machines?.unpriced">{{ bill?.machines?.unpriced }} {{ bill?.machines?.unpriced === 1 ? 'machine has' : 'machines have' }} no tariff: in kWh only<ng-container *ngIf="canEditSettings"> · <a routerLink="/energy-tariff">Set tariff</a></ng-container></li>
+          <li *ngFor="let c of billRows"><strong>SC {{ c.sc_number }}:</strong> {{ unitsText(c) }}<ng-container
+            *ngIf="c.range"> Likely {{ rupees(c.range.low) }} – {{ rupees(c.range.high) }}.</ng-container></li>
+          <ng-container *ngFor="let c of billRows">
+            <li *ngIf="c.last_bill && c.last_bill.welding_charges > 0"><strong>SC {{ c.sc_number }}:</strong> welding surcharge
+              {{ rupees(c.last_bill.welding_charges) }} on the last bill ({{ c.tariff?.welding_pct }}% of the electricity charges) — it is charged for
+              welding sets without capacitors; ask your electrician.</li>
+            <li *ngIf="c.last_bill && c.last_bill.penalty_charges > 0"><strong>SC {{ c.sc_number }}:</strong> ED/LPF penalty
+              {{ rupees(c.last_bill.penalty_charges) }} on the last bill — a power factor below 0.9 or demand above the sanctioned load brings it.</li>
+          </ng-container>
+          <li *ngFor="let c of billMissing"><strong>SC {{ c.sc_number }}:</strong> no bill entered yet<ng-container
+            *ngIf="canEditSettings"> · <a routerLink="/energy-tariff">Add its bill</a></ng-container></li>
         </ul>
       </ng-container>
 
-      <ng-container *ngSwitchCase="'early'">
-        <dl class="bill-figs">
-          <div class="bill-fig">
-            <dt>Used so far</dt>
-            <dd><span class="bill-value">{{ billValue(bill?.so_far?.cost, bill?.so_far?.kwh) }}</span>
-                <span class="bill-sub">{{ qty(bill?.so_far?.kwh ?? 0, 0) }} kWh since {{ billDay(bill?.period?.start ?? '') }}</span></dd>
-          </div>
-        </dl>
-        <p class="bill-state">The forecast starts once the meters have a day of readings.</p>
-      </ng-container>
-
-      <div *ngSwitchCase="'unset'" class="bill-state">
-        <span>Enter the dates of your electricity bill to see what this bill will cost.</span>
+      <div *ngSwitchCase="'none'" class="bill-state">
+        <span>Enter your EB bills — every service connection, as printed — to see what this bill will cost.</span>
         <a *ngIf="canEditSettings" routerLink="/energy-tariff" class="ui-btn ui-btn-primary ui-btn-sm">
-          <span class="material-icons" aria-hidden="true">event</span>Set bill dates</a>
-        <span *ngIf="!canEditSettings">Your company admin sets them on Tariff &amp; Rates.</span>
+          <span class="material-icons" aria-hidden="true">receipt_long</span>Add EB bill</a>
+        <span *ngIf="!canEditSettings">Your company admin enters them on Tariff &amp; Rates.</span>
       </div>
 
-      <p *ngSwitchCase="'preparing'" class="bill-state" role="status">
-        <span class="ui-spinner" aria-hidden="true"></span>
-        Getting this bill's readings ready — the first time takes a few minutes. This updates by itself.
-      </p>
-
-      <p *ngSwitchCase="'nometer'" class="bill-state">No machine with an energy meter has sent readings in this bill yet.</p>
+      <p *ngSwitchCase="'restricted'" class="bill-state">The electricity bill is the whole company's: it shows to company administration.</p>
 
       <div *ngSwitchCase="'error'" class="bill-state" role="alert">
         <span>{{ billError }}</span>
@@ -295,7 +319,7 @@
           <span class="material-icons" aria-hidden="true">refresh</span>Try again</button>
       </div>
 
-      <app-skeleton *ngSwitchDefault kind="chart" label="Loading this bill's forecast"></app-skeleton>
+      <app-skeleton *ngSwitchDefault kind="table" [count]="3" label="Loading this bill's forecast"></app-skeleton>
     </ng-container>
   </section>
 

@@ -4,43 +4,60 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-/** The bill dates as Tariff & Rates and the forecast show them (GET/PUT /dashboard/energy/bill-period). */
-export interface BillDates {
-  configured: boolean;
-  /** As typed in, from the EB bill. */
-  entered: { start: string; end: string } | null;
-  /** The bill today falls in, and the one after it (they follow on by themselves). */
+/** An EB bill, every figure as printed. From → To are the reading dates: To starts the next bill. */
+export interface EbBill {
+  id: number; connection_id: number;
+  from: string; to: string; days: number;
+  units: number; rate: number | null;
+  electricity_charges: number; peak_charges: number; fixed_charges: number; penalty_charges: number;
+  welding_charges: number; tax_charges: number; other_charges: number; net_amount: number;
+}
+
+/** The EB meter's kWh register on a day. */
+export interface EbReading { id: number; read_on: string; kwh: number; }
+
+/** A service connection on Tariff & Rates: its bills (newest first), recent readings, and the bill it is on now. */
+export interface EbConnection {
+  id: number; sc_number: string; name: string | null;
+  meter: { machine_id: number; machine: string | null } | null;
+  bills: EbBill[];
+  readings: EbReading[];
   current: { start: string; end: string; days: number } | null;
-  next: { start: string; end: string; days: number } | null;
-  /** "Every month", "Every 2 months", "Every 30 days". */
-  repeats: string | null;
+  cycle: string | null;
 }
 
-/** One day of the bill, for the running-total chart. Money is null with no tariff. */
-export interface BillDay {
-  day: string;
-  kind: 'past' | 'today' | 'coming';
-  to_date_kwh: number | null; to_date_cost: number | null;
-  forecast_kwh: number | null; forecast_cost: number | null;
-  low_kwh: number | null; high_kwh: number | null;
-  low_cost: number | null; high_cost: number | null;
+/** A forecast bill, line by line as the EB prints it (whole rupees). */
+export interface EbLines {
+  units: number; electricity_charges: number; peak_charges: number; fixed_charges: number;
+  penalty_charges: number; welding_charges: number; tax_charges: number; net_amount: number;
 }
 
-/** GET /dashboard/energy/bill — this electricity bill, forecast. */
-export interface BillForecast extends BillDates {
-  currency: string;
-  scope: { machine_id: number | null; machine: string | null };
-  /** The bill's own days are still being worked out (first look after an update): no figures yet. */
-  preparing?: boolean;
+/** One supply's bill now: where its units come from, and its forecast. */
+export interface EbForecast {
+  id: number; sc_number: string; name: string | null;
+  meter: { machine_id: number; machine: string | null } | null;
+  status: 'ok' | 'no_bill';
   period?: { start: string; end: string; days: number; day: number; days_left: number };
-  so_far?: { kwh: number; cost: number | null } | null;
-  rest?: { kwh: number; cost: number | null } | null;
-  forecast?: { kwh: number; cost: number | null; low_kwh: number; high_kwh: number; low_cost: number | null; high_cost: number | null } | null;
-  per_day?: BillDay[];
-  machines?: { in_scope: number; metered: number; forecast: number; too_new: number; unpriced: number };
-  history?: { from: string; weeks: number };
-  accuracy?: { from: string; to: string; forecast_kwh: number; actual_kwh: number; error_pct: number } | null;
-  previous?: { start: string; end: string; kwh: number; cost: number | null } | null;
+  cycle?: string;
+  /** readings: EB meter readings · meter: a meter on the supply · bills: the last bills' units per day (an estimate). */
+  source?: 'readings' | 'meter' | 'bills';
+  units?: { so_far: number; as_of: string | null; rest: number; total: number; per_day: number | null; measured: boolean; bills: number | null };
+  forecast?: EbLines;
+  range?: { low: number; high: number } | null;
+  tariff?: { rate: number; printed_rate: number | null; fixed_charges: number; peak_pct: number; penalty_pct: number; welding_pct: number; tax_pct: number };
+  last_bill?: EbBill;
+  change_pct?: number | null;
+}
+
+/** GET /dashboard/energy/bill — this bill for every supply, and their total. */
+export interface BillForecast {
+  configured: boolean;
+  /** Someone who sees one plant: the bill is the whole company's. */
+  restricted: boolean;
+  currency: string;
+  connections: EbForecast[];
+  total: { units: number; net_amount: number; low: number | null; high: number | null; last_net: number; ends: string; measured: boolean } | null;
+  updated_at?: string;
 }
 
 /* Phase 2 · Screen 9 — Energy Monitoring. */
@@ -75,23 +92,39 @@ export class EnergyDashboardService {
     return this.http.post<any>(`${this.api}/dashboard/energy/settings`, s);
   }
 
-  /** This electricity bill's forecast, for one machine or all of them. */
-  getBill(machineId: number | null): Observable<{ status: string; data: BillForecast }> {
-    const params: any = machineId ? { machine_id: machineId } : {};
-    return this.http.get<{ status: string; data: BillForecast }>(`${this.api}/dashboard/energy/bill`, { params });
+  /** This electricity bill, for every service connection. */
+  getBill(): Observable<{ status: string; data: BillForecast }> {
+    return this.http.get<{ status: string; data: BillForecast }>(`${this.api}/dashboard/energy/bill`);
   }
 
-  getBillDates(): Observable<{ status: string; data: BillDates }> {
-    return this.http.get<{ status: string; data: BillDates }>(`${this.api}/dashboard/energy/bill-period`);
+  getConnections(): Observable<{ status: string; data: EbConnection[] }> {
+    return this.http.get<{ status: string; data: EbConnection[] }>(`${this.api}/dashboard/energy/connections`);
   }
 
-  saveBillDates(start: string, end: string): Observable<{ status: string; data: BillDates }> {
-    return this.http.put<{ status: string; data: BillDates }>(`${this.api}/dashboard/energy/bill-period`,
-      { period_start: start, period_end: end });
+  saveConnection(body: { sc_number: string; name: string | null; meter_machine_id: number | null }, id?: number): Observable<any> {
+    const url = `${this.api}/dashboard/energy/connections`;
+    return id ? this.http.put(`${url}/${id}`, body) : this.http.post(url, body);
   }
 
-  clearBillDates(): Observable<{ status: string; data: BillDates }> {
-    return this.http.delete<{ status: string; data: BillDates }>(`${this.api}/dashboard/energy/bill-period`);
+  deleteConnection(id: number): Observable<any> {
+    return this.http.delete(`${this.api}/dashboard/energy/connections/${id}`);
+  }
+
+  saveEbBill(connectionId: number, body: any, billId?: number): Observable<any> {
+    const url = `${this.api}/dashboard/energy/connections/${connectionId}/bills`;
+    return billId ? this.http.put(`${url}/${billId}`, body) : this.http.post(url, body);
+  }
+
+  deleteEbBill(connectionId: number, billId: number): Observable<any> {
+    return this.http.delete(`${this.api}/dashboard/energy/connections/${connectionId}/bills/${billId}`);
+  }
+
+  saveReading(connectionId: number, body: { read_on: string; kwh: number }): Observable<any> {
+    return this.http.post(`${this.api}/dashboard/energy/connections/${connectionId}/readings`, body);
+  }
+
+  deleteReading(connectionId: number, readingId: number): Observable<any> {
+    return this.http.delete(`${this.api}/dashboard/energy/connections/${connectionId}/readings/${readingId}`);
   }
 
   exportAs(format: 'xlsx' | 'csv', filters: any): Observable<Blob> {
