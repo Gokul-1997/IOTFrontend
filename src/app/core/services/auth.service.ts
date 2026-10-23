@@ -282,7 +282,7 @@ export class AuthService implements OnDestroy {
     return AuthService.OPT_IN.some(p => permission === p || permission.startsWith(p + ':'));
   }
 
-  /** STM Mexa AI — its corner button and its full page: only where S&T gave
+  /** Mexa AI — its corner button and its full page: only where S&T gave
    *  the company the AI and the company admin gave it to this person's role
    *  (the company admin has it with the company) — never S&T itself. */
   mayUseAssistant(): boolean {

@@ -1,5 +1,5 @@
 /**
- * assistantGuard — STM Mexa AI's full page (/assistant) opens on the same
+ * assistantGuard — Mexa AI's full page (/assistant) opens on the same
  * rule as its corner button: never for S&T; only where the AI was given.
  */
 

@@ -102,7 +102,7 @@
                   <button type="button" (click)="openGatewayModal(c)" class="ui-btn ui-btn-ghost" [attr.aria-label]="'Program Transfer gateway of ' + c.company_name" title="Program Transfer gateway">
                     <span class="material-icons" aria-hidden="true">hub</span><span class="admin-action-label">Gateway</span>
                   </button>
-                  <button type="button" (click)="openAiModal(c)" class="ui-btn ui-btn-ghost" [attr.aria-label]="'STM Mexa AI of ' + c.company_name" title="STM Mexa AI: its use, and how much it may be used">
+                  <button type="button" (click)="openAiModal(c)" class="ui-btn ui-btn-ghost" [attr.aria-label]="'Mexa AI of ' + c.company_name" title="Mexa AI: its use, and how much it may be used">
                     <span class="material-icons" aria-hidden="true">auto_awesome</span><span class="admin-action-label">AI</span>
                   </button>
                   <details class="admin-actions-menu" name="company-actions" #companyMenu (toggle)="positionCompanyMenu($event)">
@@ -141,7 +141,7 @@
       <div><span>02</span><h3>Assign a plan</h3><p>Choose the capacity for users, plants and machines.</p></div>
       <div><span>03</span><h3>Set company access</h3><p>Enable the pages and actions the company can use.</p></div>
     </div>
-    <p class="admin-guide-note">The company admin manages their users and roles. Use Gateway to set up Program Transfer for the company. A company has the STM Mexa AI assistant only when you tick it under AI in its access; use AI to see how much it is used and to set how much it may be — the company cannot.</p>
+    <p class="admin-guide-note">The company admin manages their users and roles. Use Gateway to set up Program Transfer for the company. A company has the Mexa AI assistant only when you tick it under AI in its access; use AI to see how much it is used and to set how much it may be — the company cannot.</p>
   </details>
 </div>
 
@@ -350,8 +350,8 @@
     <!-- Scrollable body -->
     <div *ngIf="!accessLoading && !accessLoadFailed && allPermissions.length > 0" class="overflow-y-auto flex-1 p-6">
       <p *ngIf="accessUnrestricted" class="ui-alert ui-alert-info mb-4 text-sm">
-        No limits have been set for this company, so it can use every page — all ticked below — except STM Mexa AI.
-        Tick STM Mexa AI under AI to give it the assistant, and untick anything it should not have.
+        No limits have been set for this company, so it can use every page — all ticked below — except Mexa AI.
+        Tick Mexa AI under AI to give it the assistant, and untick anything it should not have.
       </p>
       <div *ngFor="let group of getAccessGroups()" class="mb-6">
         <!-- Group Header -->
@@ -740,17 +740,17 @@
 </div>
 
 
-<!-- ──────────────── STM MEXA AI ──────────────── -->
+<!-- ──────────────── MEXA AI ──────────────── -->
 <!-- How much the company may use the AI — S&T's alone (23 Oct 2026, the user:
      "only the super admin decides how much — up or down — not the company side"). -->
 <div *ngIf="aiCompany as ac" class="ui-overlay">
   <div class="ui-dialog" role="dialog" aria-modal="true" aria-labelledby="aiTitle">
     <div class="ui-dialog-header">
       <div>
-        <h2 id="aiTitle" class="ui-dialog-title">STM Mexa AI</h2>
+        <h2 id="aiTitle" class="ui-dialog-title">Mexa AI</h2>
         <p class="ui-dialog-subtitle">{{ ac.company_name }} — how much it may be used. Only S&amp;T sets this; the company cannot.</p>
       </div>
-      <button type="button" (click)="closeAiModal()" class="ui-close" aria-label="Close STM Mexa AI" [disabled]="aiSaving">
+      <button type="button" (click)="closeAiModal()" class="ui-close" aria-label="Close Mexa AI" [disabled]="aiSaving">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
         </svg>
@@ -761,7 +761,7 @@
       <div *ngIf="aiError" class="ui-alert ui-alert-error" role="alert">{{ aiError }}</div>
       <p *ngIf="aiLoading" class="text-sm text-gray-500" role="status">Loading…</p>
       <ng-container *ngIf="!aiLoading && aiLimits as a">
-        <p *ngIf="!a.granted" class="ui-alert ui-alert-warn">{{ ac.company_name }} does not have STM Mexa AI yet — tick it under AI in its Access. These figures apply from then.</p>
+        <p *ngIf="!a.granted" class="ui-alert ui-alert-warn">{{ ac.company_name }} does not have Mexa AI yet — tick it under AI in its Access. These figures apply from then.</p>
 
         <!-- its use so far: what S&T decides from -->
         <div class="grid grid-cols-2 gap-3 text-sm">
@@ -808,7 +808,7 @@
           </div>
         </form>
 
-        <p class="ui-hint">0 in any of the three switches STM Mexa AI off for {{ ac.company_name }}.<ng-container *ngIf="aiMonthEstimate() as e">
+        <p class="ui-hint">0 in any of the three switches Mexa AI off for {{ ac.company_name }}.<ng-container *ngIf="aiMonthEstimate() as e">
           Used fully, {{ aiForm.company_daily }} questions a day cost about {{ usd(e.low) }}–{{ usd(e.high) }} a month.</ng-container></p>
         <p *ngIf="aiMonthTight" class="ui-alert ui-alert-warn">At that rate the {{ usd(aiForm.monthly_usd) }} monthly limit may stop it before the month ends.</p>
       </ng-container>

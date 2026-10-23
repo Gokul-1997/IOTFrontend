@@ -48,7 +48,7 @@ test('signing out leaves nothing of the conversation behind', () => {
 
 /* Asking: the corner chat and the full page (/assistant) share one conversation — the service asks, so a reply
    joins it whichever of them is open when it comes (23 Oct 2026). */
-const READY = { name: 'STM Mexa AI', enabled: true,
+const READY = { name: 'Mexa AI', enabled: true,
   allowance: { limit: 50, used: 12, remaining: 38, resets_at: '', resets_text: '12:00 am', timezone: 'Asia/Kolkata' } };
 const chat = `${environment.apiUrl}/assistant/chat`;
 
@@ -70,7 +70,7 @@ test('a question: one at a time; the reply joins the conversation with today\'s 
 test('nothing goes before the chat is ready, when it is off, or when today\'s allowance is used up', () => {
   const { svc, http } = setup();
   expect(svc.send('Production today?')).toBe(false);              // status not loaded yet (the full page opened directly)
-  svc.status$.next({ name: 'STM Mexa AI', enabled: false, reason: 'SWITCHED_OFF' });
+  svc.status$.next({ name: 'Mexa AI', enabled: false, reason: 'SWITCHED_OFF' });
   expect(svc.send('Production today?')).toBe(false);
   svc.status$.next({ ...READY, allowance: { ...READY.allowance, used: 50, remaining: 0 } });
   expect(svc.send('Production today?')).toBe(false);
@@ -86,9 +86,9 @@ test('a failure says so and can be asked again: the error goes, the question sta
   const { svc, http } = setup();
   svc.status$.next(READY);
   svc.send('Production today?');
-  http.expectOne(chat).flush({ message: 'STM Mexa AI is busy.' }, { status: 503, statusText: 'Service Unavailable' });
+  http.expectOne(chat).flush({ message: 'Mexa AI is busy.' }, { status: 503, statusText: 'Service Unavailable' });
   const failed = svc.messages$.value[1];
-  expect(failed).toEqual({ role: 'assistant', text: 'STM Mexa AI is busy.', kind: 'error', retry: 'Production today?' });
+  expect(failed).toEqual({ role: 'assistant', text: 'Mexa AI is busy.', kind: 'error', retry: 'Production today?' });
   svc.retry(failed);
   expect(svc.messages$.value).toEqual([{ role: 'user', text: 'Production today?' }]);
   expect(http.expectOne(chat).request.body.messages).toEqual([{ role: 'user', content: 'Production today?' }]);

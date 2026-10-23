@@ -7,7 +7,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { AssistantChatComponent } from '../../shared/assistant/assistant-chat.component';
 
 /*
- * STM Mexa AI on a page of its own (/assistant — 23 Oct 2026, the user: "a
+ * Mexa AI on a page of its own (/assistant — 23 Oct 2026, the user: "a
  * full-page chatbot; one icon for full view"). The same conversation as the
  * corner chat, with room to read. Opened from the corner's full-view button
  * it remembers that page, and the report filters it showed still go with
@@ -28,7 +28,7 @@ export class AssistantPageComponent implements OnInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
 
-  name = 'STM Mexa AI';
+  name = 'Mexa AI';
   asked = false;
   /** The page the full view was opened from. */
   private from: string | null = null;
@@ -40,7 +40,7 @@ export class AssistantPageComponent implements OnInit, OnDestroy {
       this.from = opened.url;
       if (opened.context) this.svc.setContext(opened.context);
     }
-    this.svc.status$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(s => { this.name = s?.name || 'STM Mexa AI'; this.cdr.markForCheck(); });
+    this.svc.status$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(s => { this.name = s?.name || 'Mexa AI'; this.cdr.markForCheck(); });
     this.svc.messages$.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(m => { this.asked = m.some(x => x.role === 'user'); this.cdr.markForCheck(); });
     // S&T or the company admin took the AI away while this page is open: off it

@@ -1,16 +1,16 @@
 import { test, expect, seedAuth, stubJwt } from './fixtures/auth';
 
 /*
- * The company assistant ("STM Mexa AI", 22 Oct 2026): a launcher bottom
+ * The company assistant ("Mexa AI", 22 Oct 2026): a launcher bottom
  * right on signed-in pages for everyone in a company (what it answers
  * follows the role); the chat opens over the page; answers cite their
  * report with View / Download; the daily allowance shows, and when it is
  * used up the reports stay open.
  */
 const json = (body: any, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) });
-const WELCOME = 'Hi, I’m STM Mexa AI, your company assistant. Ask me about production, OEE, machines, alarms, downtime, maintenance or energy — or how to do something in MEXA.';
+const WELCOME = 'Hi, I’m Mexa AI, your company assistant. Ask me about production, OEE, machines, alarms, downtime, maintenance or energy — or how to do something in MEXA.';
 const status = (o: any = {}) => ({ status: 'success', data: {
-  name: 'STM Mexa AI', enabled: true, welcome: WELCOME,
+  name: 'Mexa AI', enabled: true, welcome: WELCOME,
   suggestions: ['Summarize today’s production report.', 'Which machines are running right now?', 'Compare this week’s OEE with last week.', 'How do I download a report?'],
   allowance: { limit: 50, used: 12, remaining: 38, resets_at: '2026-10-22T18:30:00.000Z', resets_text: '12:00 am (Asia/Kolkata)', timezone: 'Asia/Kolkata' }, ...o } });
 const answer = {
@@ -33,8 +33,8 @@ async function stub(page: any, st: any = status()) {
   const asked: any[] = [];
   return asked;
 }
-const launcher = (page: any) => page.getByRole('button', { name: 'Ask STM Mexa AI' });
-const panel = (page: any) => page.getByRole('dialog', { name: 'STM Mexa AI' });
+const launcher = (page: any) => page.getByRole('button', { name: 'Ask Mexa AI' });
+const panel = (page: any) => page.getByRole('dialog', { name: 'Mexa AI' });
 
 test('report users get the launcher; it opens the chat over the page with the welcome, suggestions and today\'s allowance', async ({ authedPage: page }) => {
   await stub(page);
@@ -52,7 +52,7 @@ test('report users get the launcher; it opens the chat over the page with the we
                         'Compare this week’s OEE with last week.', 'How do I download a report?'].entries()) {
     await expect(chips.nth(i)).toHaveAccessibleName(q);                    // the icons are not read out
   }
-  await expect(page.getByLabel('Your question for STM Mexa AI')).toBeFocused();
+  await expect(page.getByLabel('Your question for Mexa AI')).toBeFocused();
 });
 
 test('a suggestion is asked; while it is answered the chat says so; the answer cites its report, with View and Download', async ({ authedPage: page }) => {
@@ -71,7 +71,7 @@ test('a suggestion is asked; while it is answered the chat says so; the answer c
   await launcher(page).click();
   await panel(page).getByRole('button', { name: 'Summarize today’s production report.' }).click();
 
-  await expect(panel(page).getByRole('status').filter({ hasText: 'STM Mexa AI is looking into it…' })).toBeVisible();
+  await expect(panel(page).getByRole('status').filter({ hasText: 'Mexa AI is looking into it…' })).toBeVisible();
   expect(asked[0]).toEqual({ messages: [{ role: 'user', content: 'Summarize today’s production report.' }] });
   release();
 
@@ -102,11 +102,11 @@ test('a follow-up question sends the earlier reply back unchanged, with the serv
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.goto('/profile');
   await launcher(page).click();
-  await page.getByLabel('Your question for STM Mexa AI').fill('Production today');
-  await page.getByLabel('Your question for STM Mexa AI').press('Enter');
+  await page.getByLabel('Your question for Mexa AI').fill('Production today');
+  await page.getByLabel('Your question for Mexa AI').press('Enter');
   await expect(panel(page).getByRole('log', { name: 'Conversation' })).toContainText('Today 65 parts were made on 2 machines.');
-  await page.getByLabel('Your question for STM Mexa AI').fill('And by shift?');
-  await page.getByLabel('Your question for STM Mexa AI').press('Enter');
+  await page.getByLabel('Your question for Mexa AI').fill('And by shift?');
+  await page.getByLabel('Your question for Mexa AI').press('Enter');
   await expect.poll(() => asked.length).toBe(2);
   expect(asked[1].messages).toEqual([
     { role: 'user', content: 'Production today' },
@@ -127,8 +127,8 @@ test('on a report page the page\'s filters go with the question, and the chat sh
   await page.getByLabel('Machine', { exact: true }).selectOption({ label: 'VMC - 12 - F' });
   await launcher(page).click();
   await expect(panel(page)).toContainText(/Using this page’s filters: Production report · \d{2}-\w{3}-\d{4} · VMC - 12 - F · All shifts/);
-  await page.getByLabel('Your question for STM Mexa AI').fill('How did this machine do?');
-  await page.getByLabel('Your question for STM Mexa AI').press('Enter');
+  await page.getByLabel('Your question for Mexa AI').fill('How did this machine do?');
+  await page.getByLabel('Your question for Mexa AI').press('Enter');
   await expect.poll(() => asked.length).toBe(1);
   expect(asked[0].context).toMatchObject({ report: 'production', machine: 'VMC - 12 - F', shift: null });
   expect(asked[0].context.from).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -139,8 +139,8 @@ test('the allowance used up: the question box closes with when it comes back; th
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.goto('/profile');
   await launcher(page).click();
-  await expect(panel(page)).toContainText('You’ve reached today’s STM Mexa AI allowance. Your allowance resets at 12:00 am (Asia/Kolkata). You can still access your reports.');
-  await expect(page.getByLabel('Your question for STM Mexa AI')).toBeDisabled();
+  await expect(panel(page)).toContainText('You’ve reached today’s Mexa AI allowance. Your allowance resets at 12:00 am (Asia/Kolkata). You can still access your reports.');
+  await expect(page.getByLabel('Your question for Mexa AI')).toBeDisabled();
   await expect(panel(page).getByRole('button', { name: 'Which machines are running right now?' })).toBeDisabled();
 });
 
@@ -152,16 +152,16 @@ test('a failed question can be asked again, and only the question goes back', as
     asked.push(r.request().postDataJSON());
     calls += 1;
     return calls === 1
-      ? r.fulfill(json({ status: 'error', message: 'STM Mexa AI is busy right now. Please try again in a moment.' }, 503))
+      ? r.fulfill(json({ status: 'error', message: 'Mexa AI is busy right now. Please try again in a moment.' }, 503))
       : r.fulfill(json({ status: 'success', data: answer }));
   });
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.goto('/profile');
   await launcher(page).click();
-  await page.getByLabel('Your question for STM Mexa AI').fill('Production today');
+  await page.getByLabel('Your question for Mexa AI').fill('Production today');
   await panel(page).getByRole('button', { name: 'Send' }).click();
   const log = panel(page).getByRole('log', { name: 'Conversation' });
-  await expect(log).toContainText('STM Mexa AI is busy right now. Please try again in a moment.');
+  await expect(log).toContainText('Mexa AI is busy right now. Please try again in a moment.');
   await log.getByRole('button', { name: 'Try again' }).click();
   await expect(log).toContainText('Today 65 parts were made on 2 machines.');
   expect(asked[1]).toEqual({ messages: [{ role: 'user', content: 'Production today' }] });
@@ -175,7 +175,7 @@ test('a role its company admin gave the AI gets it, reports or not; no launcher 
   await expect(launcher(page)).toBeVisible();
 
   await seedAuth(page, { roles: ['COMPANY_ADMIN'], company_permissions: WITH_AI });
-  await page.route('**/api/assistant/status', (r: any) => r.fulfill(json({ status: 'success', data: { name: 'STM Mexa AI', enabled: false, reason: 'SWITCHED_OFF' } })));
+  await page.route('**/api/assistant/status', (r: any) => r.fulfill(json({ status: 'success', data: { name: 'Mexa AI', enabled: false, reason: 'SWITCHED_OFF' } })));
   await page.goto('/profile');
   await expect(page.getByRole('heading', { name: /Profile|My Profile/ }).first()).toBeVisible();
   await expect(launcher(page)).toHaveCount(0);
@@ -245,8 +245,8 @@ test('S&T takes the AI away while a question is out: the chat goes, the late ref
   let chats = 0;
   await page.route('**/api/assistant/chat', (r: any) => r.fulfill(++chats === 1 ? accessChanged
     : json({ message: 'Your company does not have access to this page.' }, 403)));
-  await page.getByLabel('Your question for STM Mexa AI').fill('How many parts did VMC - 12 - F make today?');
-  await page.getByLabel('Your question for STM Mexa AI').press('Enter');
+  await page.getByLabel('Your question for Mexa AI').fill('How many parts did VMC - 12 - F make today?');
+  await page.getByLabel('Your question for Mexa AI').press('Enter');
   await expect(panel(page)).toHaveCount(0);
   await expect(launcher(page)).toHaveCount(0);
   await expect.poll(() => chats).toBe(2);                                    // the question went again after the refresh: refused
@@ -263,7 +263,7 @@ test('S&T takes the AI away while a question is out: the chat goes, the late ref
    the assistant (no AI key, or an older API), the button still shows for
    report users and the chat says it is not on yet. */
 for (const [why, answer] of [
-  ['no AI key on the server', (r: any) => r.fulfill(json({ status: 'success', data: { name: 'STM Mexa AI', enabled: false, reason: 'NOT_CONFIGURED' } }))],
+  ['no AI key on the server', (r: any) => r.fulfill(json({ status: 'success', data: { name: 'Mexa AI', enabled: false, reason: 'NOT_CONFIGURED' } }))],
   ['an older server without it', (r: any) => r.fulfill(json({ message: 'Not found' }, 404))]
 ] as const) {
   test(`${why}: the button is there, and the chat says it is not on yet`, async ({ authedPage: page }) => {
@@ -272,8 +272,8 @@ for (const [why, answer] of [
     await page.setViewportSize({ width: 1400, height: 900 });
     await page.goto('/profile');
     await launcher(page).click();
-    await expect(panel(page)).toContainText('STM Mexa AI isn’t switched on yet. Your reports work as usual; once it is set up, you can ask about them here.');
-    await expect(page.getByLabel('Your question for STM Mexa AI')).toBeDisabled();
+    await expect(panel(page)).toContainText('Mexa AI isn’t switched on yet. Your reports work as usual; once it is set up, you can ask about them here.');
+    await expect(page.getByLabel('Your question for Mexa AI')).toBeDisabled();
     await expect(panel(page).getByRole('group', { name: 'Suggested questions' })).toHaveCount(0);
   });
 }
@@ -284,7 +284,7 @@ test('Escape closes it and gives focus back; one greeting a session; none for an
   await page.goto('/profile');
   await expect(launcher(page)).toHaveClass(/is-greeting/);
   await launcher(page).click();
-  await expect(page.getByLabel('Your question for STM Mexa AI')).toBeFocused();
+  await expect(page.getByLabel('Your question for Mexa AI')).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(panel(page)).toHaveCount(0);
   await expect(launcher(page)).toBeFocused();
@@ -312,7 +312,7 @@ test('on a phone the chat is a full-screen sheet with nothing off the side', asy
   }).toEqual([0, 0, 390, 844]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(before);   // the chat adds nothing off the side
   expect(before).toBeLessThanOrEqual(390);
-  await panel(page).getByRole('button', { name: 'Close STM Mexa AI' }).click();
+  await panel(page).getByRole('button', { name: 'Close Mexa AI' }).click();
   await expect(panel(page)).toHaveCount(0);
 });
 
@@ -320,10 +320,10 @@ test('on a phone the chat is a full-screen sheet with nothing off the side', asy
    corner chat's full-view button opens the same conversation on a page of
    its own (/assistant); Small view there goes back to the page it came from
    with the corner chat open. */
-const fullPage = (page: any) => page.getByRole('heading', { level: 1, name: 'STM Mexa AI' });
+const fullPage = (page: any) => page.getByRole('heading', { level: 1, name: 'Mexa AI' });
 const ask = async (page: any, q: string) => {
-  await page.getByLabel('Your question for STM Mexa AI').fill(q);
-  await page.getByLabel('Your question for STM Mexa AI').press('Enter');
+  await page.getByLabel('Your question for Mexa AI').fill(q);
+  await page.getByLabel('Your question for Mexa AI').press('Enter');
 };
 
 test('full view: the conversation on a page of its own; Small view brings it back over the page it came from', async ({ authedPage: page }) => {
@@ -347,7 +347,7 @@ test('full view: the conversation on a page of its own; Small view brings it bac
   await expect(log).toContainText('Production today');
   await expect(log).toContainText('Today 65 parts were made on 2 machines.');
   await expect(page.getByText('37 of 50 left today')).toBeVisible();
-  await expect(page.getByLabel('Your question for STM Mexa AI')).toBeFocused();
+  await expect(page.getByLabel('Your question for Mexa AI')).toBeFocused();
 
   await ask(page, 'And by shift?');                                         // it goes on here, signatures and all
   await expect.poll(() => asked.length).toBe(2);
@@ -362,7 +362,7 @@ test('full view: the conversation on a page of its own; Small view brings it bac
   await expect(page).toHaveURL(/\/notifications$/);
   await expect(panel(page)).toBeVisible();
   await expect(panel(page).getByRole('log', { name: 'Conversation' })).toContainText('And by shift?');
-  await expect(page.getByLabel('Your question for STM Mexa AI')).toBeFocused();
+  await expect(page.getByLabel('Your question for Mexa AI')).toBeFocused();
 });
 
 test('a question still being answered when full view opens is answered on the full page', async ({ authedPage: page }) => {
@@ -376,11 +376,11 @@ test('a question still being answered when full view opens is answered on the fu
   await page.goto('/notifications');
   await launcher(page).click();
   await panel(page).getByRole('button', { name: 'Summarize today’s production report.' }).click();
-  await expect(panel(page).getByRole('status').filter({ hasText: 'STM Mexa AI is looking into it…' })).toBeVisible();
+  await expect(panel(page).getByRole('status').filter({ hasText: 'Mexa AI is looking into it…' })).toBeVisible();
 
   await panel(page).getByRole('button', { name: 'Open full view' }).click();
   await expect(fullPage(page)).toBeVisible();
-  await expect(page.getByRole('status').filter({ hasText: 'STM Mexa AI is looking into it…' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'Mexa AI is looking into it…' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled();
   release();
   await expect(page.getByRole('log', { name: 'Conversation' })).toContainText('Today 65 parts were made on 2 machines.');
@@ -451,15 +451,15 @@ test('on a phone: the corner sheet is already the whole screen (no full view the
   await expect(panel(page).getByRole('button', { name: 'Open full view' })).toBeHidden();
 
   await page.goto('/assistant');
-  await expect(page.getByLabel('Your question for STM Mexa AI')).toBeVisible();
+  await expect(page.getByLabel('Your question for Mexa AI')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-  const box = await page.getByLabel('Your question for STM Mexa AI').boundingBox();
+  const box = await page.getByLabel('Your question for Mexa AI').boundingBox();
   expect(box!.y + box!.height).toBeLessThanOrEqual(844);                     // the question box is on screen without scrolling
 });
 
 /* 23 Oct 2026, the user: "only the super admin decides how much — up or down — not the company side".
    S&T sets it in Company Management → AI (super-admin-flow.spec.ts). */
-test('the company side sets nothing about the AI: no STM Mexa AI card in Settings, even for the company admin', async ({ authedPage: page }) => {
+test('the company side sets nothing about the AI: no Mexa AI card in Settings, even for the company admin', async ({ authedPage: page }) => {
   await stub(page);
   await page.route('**/api/alarms/notification-policy', (r: any) => r.fulfill(json({ success: true, data: { enabled: false, version: 0, counts: { machines: 0 } } })));
   const settingsCalls: string[] = [];
@@ -468,18 +468,18 @@ test('the company side sets nothing about the AI: no STM Mexa AI card in Setting
   await page.goto('/settings');
   await expect(page.getByRole('heading', { name: 'Appearance' })).toBeVisible();
   await expect(launcher(page)).toBeVisible();                                // the AI itself is there
-  await expect(page.getByRole('heading', { name: 'STM Mexa AI' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Mexa AI' })).toHaveCount(0);
   await expect(page.getByLabel('Answers per person per day')).toHaveCount(0);
   expect(settingsCalls).toEqual([]);
 });
 
 test('switched off by S&T, the full page says so and asks nothing', async ({ authedPage: page }) => {
-  await stub(page, { status: 'success', data: { name: 'STM Mexa AI', enabled: false, reason: 'SWITCHED_OFF' } });
+  await stub(page, { status: 'success', data: { name: 'Mexa AI', enabled: false, reason: 'SWITCHED_OFF' } });
   const chats: any[] = [];
   await page.route('**/api/assistant/chat', (r: any) => { chats.push(1); return r.fulfill(json({ status: 'success', data: answer })); });
   await page.goto('/assistant');
-  await expect(page.getByRole('log', { name: 'Conversation' })).toContainText('STM Mexa AI is switched off for your company. S&T decides how much it may be used.');
-  await expect(page.getByLabel('Your question for STM Mexa AI')).toBeDisabled();
+  await expect(page.getByRole('log', { name: 'Conversation' })).toContainText('Mexa AI is switched off for your company. S&T decides how much it may be used.');
+  await expect(page.getByLabel('Your question for Mexa AI')).toBeDisabled();
   await expect(page.getByRole('group', { name: 'Suggested questions' })).toHaveCount(0);
   expect(chats).toEqual([]);
 });

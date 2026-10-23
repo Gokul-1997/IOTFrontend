@@ -39,7 +39,7 @@ const ICONS: [RegExp, string][] = [
 ];
 
 /*
- * The conversation with the company assistant ("STM Mexa AI"), as one card
+ * The conversation with the company assistant ("Mexa AI"), as one card
  * in two places (23 Oct 2026, the user: "a full-page chatbot — one icon for
  * full view"): "panel", over the page from the corner button, with its own
  * header (new chat, full view, close); and "page", the full page
@@ -81,7 +81,7 @@ export class AssistantChatComponent implements OnInit {
   draft = '';
   downloading: AssistantSource | null = null;
 
-  get name(): string { return this.status?.name || 'STM Mexa AI'; }
+  get name(): string { return this.status?.name || 'Mexa AI'; }
   /** "How can I help, Ravi?" */
   get greeting(): string {
     const who = String(this.auth.getUser()?.username || '').trim().split(/\s+/)[0];

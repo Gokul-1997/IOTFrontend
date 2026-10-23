@@ -5,7 +5,7 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
 
 /*
- * The report assistant ("STM Mexa AI" — the name comes from the server).
+ * The report assistant ("Mexa AI" — the name comes from the server).
  *
  * The conversation lives here for the session, so it survives moving
  * between pages, and goes the moment the person signs out — on a shared
@@ -138,7 +138,7 @@ export class AssistantService {
         this.sending$.next(false);
         const st = this.status$.value;
         if (!st) return;
-        const text = err?.error?.message || `${st.name || 'STM Mexa AI'} is not available right now. Please try again in a few minutes.`;
+        const text = err?.error?.message || `${st.name || 'Mexa AI'} is not available right now. Please try again in a few minutes.`;
         this.messages$.next([...this.messages$.value, { role: 'assistant', text, kind: 'error', retry: question }]);
       }
     });

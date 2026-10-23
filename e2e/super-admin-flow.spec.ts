@@ -347,9 +347,9 @@ test('Companies → AI: S&T sees the company\'s use and raises or lowers how muc
   });
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/admin/companies');
-  await page.getByRole('row', { name: /Precision Auto/ }).getByRole('button', { name: 'STM Mexa AI of Precision Auto Components Pvt Ltd' }).click();
+  await page.getByRole('row', { name: /Precision Auto/ }).getByRole('button', { name: 'Mexa AI of Precision Auto Components Pvt Ltd' }).click();
 
-  const dialog = page.getByRole('dialog', { name: 'STM Mexa AI' });
+  const dialog = page.getByRole('dialog', { name: 'Mexa AI' });
   await expect(dialog).toContainText('Only S&T sets this; the company cannot.');
   await expect(dialog).toContainText('12 of 50 questions');
   await expect(dialog).toContainText('9 answers · 3 people');
@@ -373,12 +373,12 @@ test('Companies → AI: S&T sees the company\'s use and raises or lowers how muc
 
   // more money asks first; cancelled, nothing is sent
   await dialog.getByRole('button', { name: 'Save' }).click();
-  const raise = page.getByRole('alertdialog', { name: /Raise what STM Mexa AI may cost/ });
+  const raise = page.getByRole('alertdialog', { name: /Raise what Mexa AI may cost/ });
   await expect(raise).toContainText('from US$5.00 to US$10.00');
   await raise.getByRole('button', { name: 'Cancel' }).click();
   expect(saved).toEqual([]);
   await dialog.getByRole('button', { name: 'Save' }).click();
-  await page.getByRole('alertdialog', { name: /Raise what STM Mexa AI may cost/ }).getByRole('button', { name: 'Raise the limit' }).click();
+  await page.getByRole('alertdialog', { name: /Raise what Mexa AI may cost/ }).getByRole('button', { name: 'Raise the limit' }).click();
   await expect(dialog).toContainText('Saved.');
   expect(saved).toEqual([{ person_daily: 50, company_daily: 120, monthly_usd: 10, timezone: 'Asia/Kolkata' }]);
   await page.screenshot({ path: testInfo.outputPath('mexa-admin-company-ai.png') });
@@ -386,7 +386,7 @@ test('Companies → AI: S&T sees the company\'s use and raises or lowers how muc
   // lowered to 0 for each person: off for the company — lowering asks nothing
   await dialog.getByLabel('Answers a day — each person').fill('0');
   await dialog.getByRole('button', { name: 'Save' }).click();
-  await expect(dialog).toContainText('STM Mexa AI is off for Precision Auto Components Pvt Ltd.');
+  await expect(dialog).toContainText('Mexa AI is off for Precision Auto Components Pvt Ltd.');
   expect(saved[1]).toEqual({ person_daily: 0, company_daily: 120, monthly_usd: 10, timezone: 'Asia/Kolkata' });
 });
 
@@ -396,9 +396,9 @@ test('Companies → AI: a company S&T has not given the AI is told so; the figur
     body: JSON.stringify(ok(aiLimits({ granted: false, usage: { today: { questions: 0, answers: 0, people: 0 }, month: { questions: 0, answers: 0, spent_usd: 0 } } }))) }));
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/admin/companies');
-  await page.getByRole('row', { name: /Precision Auto/ }).getByRole('button', { name: 'STM Mexa AI of Precision Auto Components Pvt Ltd' }).click();
-  const dialog = page.getByRole('dialog', { name: 'STM Mexa AI' });
-  await expect(dialog).toContainText('does not have STM Mexa AI yet — tick it under AI in its Access');
+  await page.getByRole('row', { name: /Precision Auto/ }).getByRole('button', { name: 'Mexa AI of Precision Auto Components Pvt Ltd' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Mexa AI' });
+  await expect(dialog).toContainText('does not have Mexa AI yet — tick it under AI in its Access');
   await expect(dialog).toContainText('US$0.00 of US$5.00');
   await dialog.getByRole('button', { name: 'Close', exact: true }).click();
   await expect(dialog).toHaveCount(0);
@@ -525,7 +525,7 @@ const catalogue = [
   { module: 'programs', label: 'Program Transfer', group: 'Setup', permissions: [
       { id: 4, permission_key: 'page:programs:view', action: 'view', actionLabel: 'View' },
       { id: 5, permission_key: 'page:programs:transfer', action: 'transfer', actionLabel: 'Transfer' } ] },
-  { module: 'assistant', label: 'STM Mexa AI', group: 'AI', permissions: [
+  { module: 'assistant', label: 'Mexa AI', group: 'AI', permissions: [
       { id: 6, permission_key: 'page:assistant:view', action: 'view', actionLabel: 'Use the AI assistant' } ] }
 ];
 

@@ -13,8 +13,8 @@ const WELCOMED = 'mexa-assistant-welcomed';
 const FULL_PAGE = /^\/assistant(?:[?#]|$)/;
 
 /*
- * The company assistant in the corner of every signed-in page ("STM Mexa
- * AI" — the server names it): for a company S&T gave it to, and the roles
+ * The company assistant in the corner of every signed-in page ("Mexa AI" —
+ * the server names it): for a company S&T gave it to, and the roles
  * its admin gave it to (23 Oct 2026); what it can answer follows the
  * person's role. A click opens the chat over the page without leaving it;
  * its full-view button opens the same conversation on a page of its own
@@ -55,7 +55,7 @@ export class AssistantWidgetComponent implements OnInit {
   /** On the full page: the conversation is the page itself. */
   onFullPage = false;
 
-  get name(): string { return this.status?.name || 'STM Mexa AI'; }
+  get name(): string { return this.status?.name || 'Mexa AI'; }
   /** For everyone in a company: on, or not set up yet. Hidden when S&T switched it off for the company, or for S&T. */
   get visible(): boolean { return !this.onFullPage && (!!this.status?.enabled || this.unavailable); }
 

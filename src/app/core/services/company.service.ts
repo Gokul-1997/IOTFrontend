@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-/** How much a company may use STM Mexa AI — S&T's alone (23 Oct 2026). 0 in any switches it off for the company. */
+/** How much a company may use Mexa AI — S&T's alone (23 Oct 2026). 0 in any switches it off for the company. */
 export interface AssistantFigures { person_daily: number; company_daily: number; monthly_usd: number }
 export interface CompanyAssistantLimits extends AssistantFigures {
   company_id: number; company_name: string; timezone: string;
@@ -139,7 +139,7 @@ export class CompanyService {
     return this.http.delete<{ revoked: boolean }>(`${this.api}/companies/${companyId}/program-gateway/token`);
   }
 
-  // ── STM Mexa AI: how much the company may use it, and its use (SNT_SUPER) ─
+  // ── Mexa AI: how much the company may use it, and its use (SNT_SUPER) ─
   getAssistantLimits(companyId: number): Observable<CompanyAssistantLimits> {
     return this.http.get<{ data: CompanyAssistantLimits }>(`${this.api}/companies/${companyId}/assistant`).pipe(map(r => r.data));
   }

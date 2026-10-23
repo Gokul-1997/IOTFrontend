@@ -180,7 +180,7 @@ export class CompanyManagementComponent implements OnInit {
   gatewayCopied = false;
   readonly deviceApi = `${environment.apiUrl}/device/v1`;
 
-  /* ── STM Mexa AI: how much the company may use it ──
+  /* ── Mexa AI: how much the company may use it ──
      S&T's alone (23 Oct 2026, the user: "only the super admin decides how
      much — up or down — not the company side"): questions a day for the
      whole company, answers a day for each person, a monthly cost limit, and
@@ -743,7 +743,7 @@ export class CompanyManagementComponent implements OnInit {
     });
   }
 
-  // ── STM Mexa AI ───────────────────
+  // ── Mexa AI ───────────────────
   openAiModal(company: any) {
     this.aiCompany = company;
     this.aiLimits = null;
@@ -820,7 +820,7 @@ export class CompanyManagementComponent implements OnInit {
     // more money is a decision: said in so many words before it is made
     if ((f.monthly_usd as number) > before.monthly_usd) {
       const yes = await this.confirm.ask({
-        title: `Raise what STM Mexa AI may cost "${company.company_name}"?`,
+        title: `Raise what Mexa AI may cost "${company.company_name}"?`,
         message: `Its monthly limit goes from ${this.usd(before.monthly_usd)} to ${this.usd(f.monthly_usd)}. The platform pays for every question.`,
         confirmText: 'Raise the limit',
         tone: 'primary',
@@ -840,7 +840,7 @@ export class CompanyManagementComponent implements OnInit {
           if (this.aiCompany !== company) return;
           this.showAi(limits);
           const off = limits.person_daily === 0 || limits.company_daily === 0 || limits.monthly_usd === 0;
-          this.aiSaved = off ? `STM Mexa AI is off for ${company.company_name}.` : 'Saved.';
+          this.aiSaved = off ? `Mexa AI is off for ${company.company_name}.` : 'Saved.';
           this.cdr.detectChanges();
         },
         error: err => {

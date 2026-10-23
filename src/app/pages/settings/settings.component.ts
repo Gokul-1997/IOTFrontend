@@ -7,7 +7,7 @@ import { AlarmNotificationSettingsComponent } from './alarm-notification-setting
 
 /**
  * Personal display and alarm preferences, plus company administration. How
- * much STM Mexa AI may be used is not here: S&T alone sets it (23 Oct 2026).
+ * much Mexa AI may be used is not here: S&T alone sets it (23 Oct 2026).
  */
 @Component({
   selector: 'app-settings',
