@@ -1,17 +1,16 @@
 <p *ngIf="refreshError" role="status" class="p-3 text-sm">{{ refreshError }}</p>
 <div class="page-wrapper">
 
-  <!-- HEADER -->
-  <div class="bg-top-bar
+  <!-- HEADER — relative: the machine list hangs from it -->
+  <div class="bg-top-bar relative
             text-white rounded-xl px-4 py-2 mb-3
             flex flex-wrap items-center justify-between">
 
-    <!-- Left: machine serial + status dot + status word -->
+    <!-- Left: machine serial (a dropdown of the other machines) + status dot + status word -->
     <div class="flex items-center gap-3">
         <span class="material-icons" aria-hidden="true">sensors</span>
-      <h1 class="text-xl font-medium text-white">
-        {{ machine?.machine_serial_no || machine?.name || 'Machine' }}
-      </h1>
+      <app-machine-switcher [machineId]="machineId" [name]="machine?.machine_serial_no || machine?.name || ''"
+                            [status]="liveStatus" [alarm]="liveAlarm"></app-machine-switcher>
       <span class="flex items-center gap-1.5">
         <span class="w-2.5 h-2.5 rounded-full animate-pulse motion-reduce:animate-none"
               [ngClass]="{
@@ -426,8 +425,11 @@
   </div>
 
 
-  <!-- SHIFT TIMELINE — running / idle / alarm / off across the shift, breaks marked -->
-  <app-shift-timeline [machineId]="machineId"></app-shift-timeline>
+  <!-- SHIFT TIMELINE — running / idle / alarm / off across the shift, breaks marked.
+       This panel and the spindle one start again for each machine the name at the top opens. -->
+  @for (id of [machineId]; track id) {
+  <app-shift-timeline [machineId]="id"></app-shift-timeline>
+  }
 
   <!-- BOTTOM GRID — OEE, and spindle and feed -->
   <div class="grid grid-cols-1 gap-4 mt-2 chart_med items-start">
@@ -438,11 +440,13 @@
     <!-- ══════════════ SPINDLE AND FEED ══════════════
          Current load, speed and feed with their units and when they were
          read, and how they moved over a chosen range (spindle-panel). -->
+    @for (id of [machineId]; track id) {
     <app-spindle-panel *ngIf="auth.hasWidget('dashboard:live', 'spindle-speed-chart') || auth.hasWidget('dashboard:live', 'feed-override-chart')"
-      class="lg:col-span-2" [machineId]="machineId"
+      class="lg:col-span-2" [machineId]="id"
       [liveLoad]="liveSpindleLoad" [liveFeed]="liveFeed" [liveAt]="liveAt"
       [showLoad]="auth.hasWidget('dashboard:live', 'spindle-speed-chart')"
       [showFeed]="auth.hasWidget('dashboard:live', 'feed-override-chart')"></app-spindle-panel>
+    }
 
   </div>
 

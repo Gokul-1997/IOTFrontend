@@ -16,6 +16,11 @@ export class DashboardService {
     );
   }
 
+  /** Every machine by name with its status now, in the Live Dashboard's order — the machine page's switcher. */
+  getLiveMachines(): Observable<any> {
+    return this.http.get(`${this.api}/live`);
+  }
+
   getMachineDetail(machineId: number): Observable<any> {
     return this.http.get(`${this.api}/live/${machineId}`);
   }

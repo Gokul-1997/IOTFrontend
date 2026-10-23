@@ -15,6 +15,9 @@ import { SocketService } from '../../../core/services/socket.service';
 import { AuthService } from '../../../core/services/auth.service';
 import {
   Subject,
+  distinctUntilChanged,
+  map,
+  switchMap,
   takeUntil
 } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -22,6 +25,7 @@ import { visibleRefresh } from '../../../shared/visible-refresh';
 import { SpindlePanelComponent } from './spindle-panel.component';
 import { ShiftTimelineComponent } from './shift-timeline.component';
 import { MetricHelpComponent } from '../../../shared/metric-help/metric-help.component';
+import { MachineSwitcherComponent } from './machine-switcher.component';
 
 /* ─────────────────────────────────────────
    SOCKET  → machine_status, rpm, feed_rate ONLY
@@ -38,7 +42,7 @@ const POLL_MS = 30_000;
 @Component({
   standalone: true,
   selector: 'app-live',
-  imports: [StoredImageDirective, MetricHelpComponent, NgApexchartsModule, CommonModule, RouterModule, SpindlePanelComponent, ShiftTimelineComponent],
+  imports: [StoredImageDirective, MetricHelpComponent, NgApexchartsModule, CommonModule, RouterModule, SpindlePanelComponent, ShiftTimelineComponent, MachineSwitcherComponent],
   templateUrl: './live.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -121,9 +125,6 @@ export class LiveComponent implements OnInit, OnDestroy {
 
   async ngOnInit(): Promise<void> {
 
-    const id      = this.route.snapshot.paramMap.get('id');
-    this.machineId = Number(id);
-
     this.initCharts();
 
     /* ── Socket: connect, then join the plant room ──
@@ -142,17 +143,25 @@ export class LiveComponent implements OnInit, OnDestroy {
 
     // console.log(`[SOCKET] listening for machine_id: ${this.machineId}`);
 
-    /* ── 30s API poll ── */
-    visibleRefresh(() => this.dashboardService.getMachineDetail(this.machineId), POLL_MS, this.socketService.connected$,
-      () => { this.refreshError = 'Connection interrupted. Retrying automatically.'; this.cdr.markForCheck(); })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((res: any) => { this.refreshError = ''; this.applyApiData(res); });
-
     /* ── Socket → status + rpm + feed ONLY ── */
-    this.socketService.setMachineScope('detail', [this.machineId]);
     this.unsubscribeLive = this.socketService.onMachineUpdate((data: any) => {
       this.handleSocket(data);
     });
+
+    /* ── The machine, and its 30s API poll ──
+       The name at the top opens another machine on this page: the route's
+       :id changes and this component stays. Each machine starts clean, and
+       the last one's poll stops — nothing of it can land under the new name. */
+    this.route.paramMap.pipe(
+      map(params => Number(params.get('id'))),
+      distinctUntilChanged(),
+      switchMap(id => {
+        this.showMachine(id);
+        return visibleRefresh(() => this.dashboardService.getMachineDetail(id), POLL_MS, this.socketService.connected$,
+          () => { this.refreshError = 'Connection interrupted. Retrying automatically.'; this.cdr.markForCheck(); });
+      }),
+      takeUntil(this.destroy$))
+      .subscribe((res: any) => { this.refreshError = ''; this.applyApiData(res); });
 
     /* ── Live clock (IST) ── */
     const tick = () => {
@@ -178,6 +187,20 @@ export class LiveComponent implements OnInit, OnDestroy {
     this.unsubscribeLive?.();
     this.socketService.clearMachineScope('detail');
     clearInterval(this.clockInterval);
+  }
+
+  /** A machine starts with nothing of the one shown before it. */
+  private showMachine(id: number): void {
+    this.machineId = id;
+    this.socketService.setMachineScope('detail', [id]);
+    this.machine = {}; this.operator = {}; this.job = {}; this.oee = {};
+    this.shift = {}; this.quality = {}; this.power = {}; this.production = {};
+    this.runTime = '00:00:00'; this.idleTime = '00:00:00'; this.utilization = 0;
+    this.liveStatus = 'UNKNOWN'; this.liveMode = ''; this.liveAlarm = false; this.activeAlarms = [];
+    this.lastSocketMs = 0; this.liveSpindleLoad = 0; this.liveFeed = 0; this.liveAt = 0; this.livePartCount = 0;
+    this.utilSeries = [0]; this.oeeSeries = [0]; this.timePieSeries = [0, 0];
+    this.refreshError = '';
+    this.cdr.markForCheck();
   }
 
   /* ════════════════════════════════════════
