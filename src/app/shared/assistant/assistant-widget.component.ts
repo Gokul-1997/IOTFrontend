@@ -56,7 +56,7 @@ export class AssistantWidgetComponent implements OnInit {
   onFullPage = false;
 
   get name(): string { return this.status?.name || 'STM Mexa AI'; }
-  /** For everyone in a company: on, or not set up yet. Hidden when the company admin switched it off, or for S&T. */
+  /** For everyone in a company: on, or not set up yet. Hidden when S&T switched it off for the company, or for S&T. */
   get visible(): boolean { return !this.onFullPage && (!!this.status?.enabled || this.unavailable); }
 
   ngOnInit(): void {

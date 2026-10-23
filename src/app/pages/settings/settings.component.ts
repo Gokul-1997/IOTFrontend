@@ -4,13 +4,15 @@ import { RouterLink } from '@angular/router';
 import { ThemeService } from '../../core/services/theme.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AlarmNotificationSettingsComponent } from './alarm-notification-settings.component';
-import { AssistantSettingsComponent } from './assistant-settings.component';
 
-/** Personal display and alarm preferences, plus company administration. */
+/**
+ * Personal display and alarm preferences, plus company administration. How
+ * much STM Mexa AI may be used is not here: S&T alone sets it (23 Oct 2026).
+ */
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, RouterLink, AlarmNotificationSettingsComponent, AssistantSettingsComponent],
+  imports: [CommonModule, RouterLink, AlarmNotificationSettingsComponent],
   templateUrl: './settings.component.html',
   styles: [`
     .set-grid { display: grid; gap: 1rem; width: 100%; max-width: 48rem; margin: 0 auto; }
@@ -32,13 +34,10 @@ import { AssistantSettingsComponent } from './assistant-settings.component';
 })
 export class SettingsComponent {
   readonly companyAdmin: boolean;
-  /** The AI's daily allowance card: a company admin of a company S&T gave the AI to. */
-  readonly assistant: boolean;
   readonly alarmNotifications: boolean;
 
   constructor(public theme: ThemeService, auth: AuthService) {
     this.companyAdmin = auth.isAdmin() && !auth.isSntSuper();
-    this.assistant = this.companyAdmin && auth.hasPermission('page:assistant');
     this.alarmNotifications = !auth.isSntSuper() && ['page:alarms:view', 'page:analytics-alarms:view', 'page:dashboard:view']
       .some(permission => auth.hasPermission(permission));
   }

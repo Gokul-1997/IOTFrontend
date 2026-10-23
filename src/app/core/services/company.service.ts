@@ -1,7 +1,20 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
+
+/** How much a company may use STM Mexa AI — S&T's alone (23 Oct 2026). 0 in any switches it off for the company. */
+export interface AssistantFigures { person_daily: number; company_daily: number; monthly_usd: number }
+export interface CompanyAssistantLimits extends AssistantFigures {
+  company_id: number; company_name: string; timezone: string;
+  /** S&T ticked the AI in the company's access. */
+  granted: boolean;
+  defaults: AssistantFigures;
+  /** The server's ceilings: no figure passes them. */
+  max: AssistantFigures;
+  usage: { today: { questions: number; answers: number; people: number }; month: { questions: number; answers: number; spent_usd: number } };
+  updated_at: string | null;
+}
 
 /** A company's Program Transfer gateway as S&T sees it (the token itself is only ever in the answer that makes it). */
 export interface ProgramGatewayInfo {
@@ -124,5 +137,15 @@ export class CompanyService {
 
   revokeProgramGatewayToken(companyId: number): Observable<{ revoked: boolean }> {
     return this.http.delete<{ revoked: boolean }>(`${this.api}/companies/${companyId}/program-gateway/token`);
+  }
+
+  // ── STM Mexa AI: how much the company may use it, and its use (SNT_SUPER) ─
+  getAssistantLimits(companyId: number): Observable<CompanyAssistantLimits> {
+    return this.http.get<{ data: CompanyAssistantLimits }>(`${this.api}/companies/${companyId}/assistant`).pipe(map(r => r.data));
+  }
+
+  /** S&T raises or lowers the company's figures, and sets its timezone (its midnight brings the day back). */
+  saveAssistantLimits(companyId: number, body: AssistantFigures & { timezone: string }): Observable<CompanyAssistantLimits> {
+    return this.http.put<{ data: CompanyAssistantLimits }>(`${this.api}/companies/${companyId}/assistant`, body).pipe(map(r => r.data));
   }
 }

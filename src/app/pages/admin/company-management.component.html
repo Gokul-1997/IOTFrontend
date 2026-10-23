@@ -102,6 +102,9 @@
                   <button type="button" (click)="openGatewayModal(c)" class="ui-btn ui-btn-ghost" [attr.aria-label]="'Program Transfer gateway of ' + c.company_name" title="Program Transfer gateway">
                     <span class="material-icons" aria-hidden="true">hub</span><span class="admin-action-label">Gateway</span>
                   </button>
+                  <button type="button" (click)="openAiModal(c)" class="ui-btn ui-btn-ghost" [attr.aria-label]="'STM Mexa AI of ' + c.company_name" title="STM Mexa AI: its use, and how much it may be used">
+                    <span class="material-icons" aria-hidden="true">auto_awesome</span><span class="admin-action-label">AI</span>
+                  </button>
                   <details class="admin-actions-menu" name="company-actions" #companyMenu (toggle)="positionCompanyMenu($event)">
                     <summary class="ui-btn ui-btn-ghost admin-more" [attr.aria-label]="'More actions for ' + c.company_name" title="More company actions"><span class="material-icons" aria-hidden="true">more_horiz</span></summary>
                     <div class="admin-actions-popover">
@@ -138,7 +141,7 @@
       <div><span>02</span><h3>Assign a plan</h3><p>Choose the capacity for users, plants and machines.</p></div>
       <div><span>03</span><h3>Set company access</h3><p>Enable the pages and actions the company can use.</p></div>
     </div>
-    <p class="admin-guide-note">The company admin manages their users and roles. Use Gateway to set up Program Transfer for the company. A company has the STM Mexa AI assistant only when you tick it under AI in its access.</p>
+    <p class="admin-guide-note">The company admin manages their users and roles. Use Gateway to set up Program Transfer for the company. A company has the STM Mexa AI assistant only when you tick it under AI in its access; use AI to see how much it is used and to set how much it may be — the company cannot.</p>
   </details>
 </div>
 
@@ -732,6 +735,94 @@
 
     <div class="ui-dialog-footer">
       <button (click)="closeHistoryModal()" class="ui-btn ui-btn-ghost">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ──────────────── STM MEXA AI ──────────────── -->
+<!-- How much the company may use the AI — S&T's alone (23 Oct 2026, the user:
+     "only the super admin decides how much — up or down — not the company side"). -->
+<div *ngIf="aiCompany as ac" class="ui-overlay">
+  <div class="ui-dialog" role="dialog" aria-modal="true" aria-labelledby="aiTitle">
+    <div class="ui-dialog-header">
+      <div>
+        <h2 id="aiTitle" class="ui-dialog-title">STM Mexa AI</h2>
+        <p class="ui-dialog-subtitle">{{ ac.company_name }} — how much it may be used. Only S&amp;T sets this; the company cannot.</p>
+      </div>
+      <button type="button" (click)="closeAiModal()" class="ui-close" aria-label="Close STM Mexa AI" [disabled]="aiSaving">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="ui-dialog-body space-y-4">
+      <div *ngIf="aiError" class="ui-alert ui-alert-error" role="alert">{{ aiError }}</div>
+      <p *ngIf="aiLoading" class="text-sm text-gray-500" role="status">Loading…</p>
+      <ng-container *ngIf="!aiLoading && aiLimits as a">
+        <p *ngIf="!a.granted" class="ui-alert ui-alert-warn">{{ ac.company_name }} does not have STM Mexa AI yet — tick it under AI in its Access. These figures apply from then.</p>
+
+        <!-- its use so far: what S&T decides from -->
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <section class="rounded-lg p-3 bg-gray-50 dark:bg-gray-800/60" aria-labelledby="aiToday">
+            <h3 id="aiToday" class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Today</h3>
+            <p><strong class="text-lg">{{ a.usage.today.questions }}</strong> of {{ a.company_daily }} questions</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ a.usage.today.answers }} answers · {{ a.usage.today.people }} {{ a.usage.today.people === 1 ? 'person' : 'people' }}</p>
+          </section>
+          <section class="rounded-lg p-3 bg-gray-50 dark:bg-gray-800/60" aria-labelledby="aiMonth">
+            <h3 id="aiMonth" class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">This month</h3>
+            <p><strong class="text-lg">{{ usd(a.usage.month.spent_usd) }}</strong> of {{ usd(a.monthly_usd) }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ a.usage.month.questions }} questions · {{ a.usage.month.answers }} answers</p>
+          </section>
+        </div>
+
+        <form id="aiForm" class="grid gap-3 sm:grid-cols-2" (ngSubmit)="saveAi()" novalidate>
+          <div>
+            <label class="ui-label" for="aiCompanyDaily">Questions a day — whole company</label>
+            <input id="aiCompanyDaily" name="aiCompanyDaily" class="ui-input" type="number" min="0" [max]="a.max.company_daily" step="1"
+                   inputmode="numeric" [(ngModel)]="aiForm.company_daily" [attr.aria-invalid]="aiBad('company_daily')" aria-describedby="aiCompanyDailyHint">
+            <p id="aiCompanyDailyHint" class="ui-hint">Everyone together, answered or not. Default {{ a.defaults.company_daily }}.</p>
+            <p *ngIf="aiBad('company_daily')" class="ui-error" role="alert">A whole number from 0 to {{ a.max.company_daily }}.</p>
+          </div>
+          <div>
+            <label class="ui-label" for="aiPersonDaily">Answers a day — each person</label>
+            <input id="aiPersonDaily" name="aiPersonDaily" class="ui-input" type="number" min="0" [max]="a.max.person_daily" step="1"
+                   inputmode="numeric" [(ngModel)]="aiForm.person_daily" [attr.aria-invalid]="aiBad('person_daily')" aria-describedby="aiPersonDailyHint">
+            <p id="aiPersonDailyHint" class="ui-hint">What each person sees as "left today". Default {{ a.defaults.person_daily }}.</p>
+            <p *ngIf="aiBad('person_daily')" class="ui-error" role="alert">A whole number from 0 to {{ a.max.person_daily }}.</p>
+          </div>
+          <div>
+            <label class="ui-label" for="aiMonthly">Monthly limit (US$)</label>
+            <input id="aiMonthly" name="aiMonthly" class="ui-input" type="number" min="0" [max]="a.max.monthly_usd" step="0.01"
+                   inputmode="decimal" [(ngModel)]="aiForm.monthly_usd" [attr.aria-invalid]="aiBad('monthly_usd')" aria-describedby="aiMonthlyHint">
+            <p id="aiMonthlyHint" class="ui-hint">What its questions may cost in a month; reached, it stops until the month turns. Default {{ usd(a.defaults.monthly_usd) }}.</p>
+            <p *ngIf="aiBad('monthly_usd')" class="ui-error" role="alert">An amount from 0 to {{ a.max.monthly_usd }}, to the cent.</p>
+          </div>
+          <div>
+            <label class="ui-label" for="aiZone">Company timezone</label>
+            <select id="aiZone" name="aiZone" class="ui-input" [(ngModel)]="aiForm.timezone" aria-describedby="aiZoneHint">
+              <option *ngFor="let z of aiZones" [ngValue]="z">{{ z }}</option>
+            </select>
+            <p id="aiZoneHint" class="ui-hint">The day's figures come back at midnight here.</p>
+          </div>
+        </form>
+
+        <p class="ui-hint">0 in any of the three switches STM Mexa AI off for {{ ac.company_name }}.<ng-container *ngIf="aiMonthEstimate() as e">
+          Used fully, {{ aiForm.company_daily }} questions a day cost about {{ usd(e.low) }}–{{ usd(e.high) }} a month.</ng-container></p>
+        <p *ngIf="aiMonthTight" class="ui-alert ui-alert-warn">At that rate the {{ usd(aiForm.monthly_usd) }} monthly limit may stop it before the month ends.</p>
+      </ng-container>
+    </div>
+
+    <div class="ui-dialog-footer is-split">
+      <span class="text-sm" role="status">{{ aiSaved }}</span>
+      <div class="flex items-center gap-2">
+        <button type="button" class="ui-btn ui-btn-ghost" (click)="closeAiModal()" [disabled]="aiSaving">Close</button>
+        <button *ngIf="aiLimits" type="submit" form="aiForm" class="ui-btn ui-btn-primary" [disabled]="aiSaving || aiInvalid || !aiChanged">
+          <span *ngIf="aiSaving" class="ui-spinner" aria-hidden="true"></span>
+          Save
+        </button>
+      </div>
     </div>
   </div>
 </div>

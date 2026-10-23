@@ -25,7 +25,7 @@
     <p class="as-hello-title">{{ unavailable || switchedOff ? name : greeting }}</p>
     <p *ngIf="!unavailable && !switchedOff" class="as-hello-text">{{ status?.welcome }}</p>
     <p *ngIf="unavailable" class="as-hello-text" role="status">{{ name }} isn’t switched on yet. Your reports work as usual; once it is set up, you can ask about them here.</p>
-    <p *ngIf="switchedOff" class="as-hello-text" role="status">{{ name }} is switched off for your company. Your company admin can switch it on in Settings.</p>
+    <p *ngIf="switchedOff" class="as-hello-text" role="status">{{ name }} is switched off for your company. S&amp;T decides how much it may be used.</p>
   </div>
 
   <p *ngIf="context as c" class="as-context">

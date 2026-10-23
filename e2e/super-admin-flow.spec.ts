@@ -330,6 +330,79 @@ test('Companies → Gateway: S&T makes the company\'s Program Transfer token, sh
   expect(calls).toEqual(['POST', 'DELETE']);
 });
 
+/* 23 Oct 2026, the user: "only the super admin decides how much the AI is used — up or down — not the company side". */
+const aiLimits = (o: any = {}) => ({ company_id: 5, company_name: 'Precision Auto Components Pvt Ltd', timezone: 'Asia/Kolkata', granted: true,
+  person_daily: 50, company_daily: 50, monthly_usd: 5,
+  defaults: { person_daily: 50, company_daily: 50, monthly_usd: 5 }, max: { person_daily: 1000, company_daily: 10000, monthly_usd: 1000 },
+  usage: { today: { questions: 12, answers: 9, people: 3 }, month: { questions: 140, answers: 120, spent_usd: 0.49 } }, updated_at: null, ...o });
+
+test('Companies → AI: S&T sees the company\'s use and raises or lowers how much it may be used; more money asks first', async ({ sntSuperPage: page }, testInfo) => {
+  await mockAdminApi(page);
+  let limits = aiLimits();
+  const saved: any[] = [];
+  await page.route('**/api/companies/5/assistant', (r: any) => {
+    if (r.request().method() === 'PUT') { const body = r.request().postDataJSON(); saved.push(body); limits = { ...limits, ...body }; }
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ok(limits)) });
+  });
+  await page.setViewportSize({ width: 1500, height: 1100 });
+  await page.goto('/admin/companies');
+  await page.getByRole('row', { name: /Precision Auto/ }).getByRole('button', { name: 'STM Mexa AI of Precision Auto Components Pvt Ltd' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'STM Mexa AI' });
+  await expect(dialog).toContainText('Only S&T sets this; the company cannot.');
+  await expect(dialog).toContainText('12 of 50 questions');
+  await expect(dialog).toContainText('9 answers · 3 people');
+  await expect(dialog).toContainText('US$0.49 of US$5.00');
+  await expect(dialog.getByLabel('Questions a day — whole company')).toHaveValue('50');
+  await expect(dialog.getByLabel('Answers a day — each person')).toHaveValue('50');
+  await expect(dialog.getByLabel('Monthly limit (US$)')).toHaveValue('5');
+  await expect(dialog.getByRole('button', { name: 'Save' })).toBeDisabled();            // nothing changed yet
+
+  // above the server's ceiling: said, and nothing can be sent
+  await dialog.getByLabel('Questions a day — whole company').fill('10001');
+  await expect(dialog).toContainText('A whole number from 0 to 10000.');
+  await expect(dialog.getByRole('button', { name: 'Save' })).toBeDisabled();
+
+  // raised to 120 a day: what that may cost is shown, and the US$5 limit flagged as too low for it
+  await dialog.getByLabel('Questions a day — whole company').fill('120');
+  await expect(dialog).toContainText('Used fully, 120 questions a day cost about US$2.60–US$6.70 a month.');
+  await expect(dialog).toContainText('At that rate the US$5.00 monthly limit may stop it before the month ends.');
+  await dialog.getByLabel('Monthly limit (US$)').fill('10');
+  await expect(dialog).not.toContainText('may stop it before the month ends');
+
+  // more money asks first; cancelled, nothing is sent
+  await dialog.getByRole('button', { name: 'Save' }).click();
+  const raise = page.getByRole('alertdialog', { name: /Raise what STM Mexa AI may cost/ });
+  await expect(raise).toContainText('from US$5.00 to US$10.00');
+  await raise.getByRole('button', { name: 'Cancel' }).click();
+  expect(saved).toEqual([]);
+  await dialog.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('alertdialog', { name: /Raise what STM Mexa AI may cost/ }).getByRole('button', { name: 'Raise the limit' }).click();
+  await expect(dialog).toContainText('Saved.');
+  expect(saved).toEqual([{ person_daily: 50, company_daily: 120, monthly_usd: 10, timezone: 'Asia/Kolkata' }]);
+  await page.screenshot({ path: testInfo.outputPath('mexa-admin-company-ai.png') });
+
+  // lowered to 0 for each person: off for the company — lowering asks nothing
+  await dialog.getByLabel('Answers a day — each person').fill('0');
+  await dialog.getByRole('button', { name: 'Save' }).click();
+  await expect(dialog).toContainText('STM Mexa AI is off for Precision Auto Components Pvt Ltd.');
+  expect(saved[1]).toEqual({ person_daily: 0, company_daily: 120, monthly_usd: 10, timezone: 'Asia/Kolkata' });
+});
+
+test('Companies → AI: a company S&T has not given the AI is told so; the figures apply from then', async ({ sntSuperPage: page }) => {
+  await mockAdminApi(page);
+  await page.route('**/api/companies/5/assistant', (r: any) => r.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify(ok(aiLimits({ granted: false, usage: { today: { questions: 0, answers: 0, people: 0 }, month: { questions: 0, answers: 0, spent_usd: 0 } } }))) }));
+  await page.setViewportSize({ width: 1500, height: 1100 });
+  await page.goto('/admin/companies');
+  await page.getByRole('row', { name: /Precision Auto/ }).getByRole('button', { name: 'STM Mexa AI of Precision Auto Components Pvt Ltd' }).click();
+  const dialog = page.getByRole('dialog', { name: 'STM Mexa AI' });
+  await expect(dialog).toContainText('does not have STM Mexa AI yet — tick it under AI in its Access');
+  await expect(dialog).toContainText('US$0.00 of US$5.00');
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+});
+
 test('Plans: the plan catalogue lists both plans with their limits', async ({ sntSuperPage: page }, testInfo) => {
   await mockAdminApi(page);
   await page.setViewportSize({ width: 1500, height: 1100 });

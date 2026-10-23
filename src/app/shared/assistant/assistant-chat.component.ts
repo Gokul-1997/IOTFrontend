@@ -89,7 +89,7 @@ export class AssistantChatComponent implements OnInit {
   }
   get allowance() { return this.status?.allowance; }
   get limitReached(): boolean { return !!this.allowance && this.allowance.remaining <= 0; }
-  /** The company admin switched it off: the corner button goes, and the full page says why. */
+  /** S&T switched it off for the company: the corner button goes, and the full page says why. */
   get switchedOff(): boolean { return !!this.status && !this.status.enabled && !this.unavailable; }
   get closed(): boolean { return this.svc.closed; }
   get asked(): boolean { return this.messages.some(m => m.role === 'user'); }

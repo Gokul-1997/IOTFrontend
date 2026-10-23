@@ -167,7 +167,7 @@ test('a failed question can be asked again, and only the question goes back', as
   expect(asked[1]).toEqual({ messages: [{ role: 'user', content: 'Production today' }] });
 });
 
-test('a role its company admin gave the AI gets it, reports or not; no launcher when the company admin switched it off', async ({ page }) => {
+test('a role its company admin gave the AI gets it, reports or not; no launcher when S&T switched it off for the company', async ({ page }) => {
   await stub(page);
   await seedAuth(page, { roles: ['SUPERVISOR'], user_type: 'company_user', permissions: ['page:dashboard:view', 'page:assistant:view'], company_permissions: WITH_AI });
   await page.goto('/profile');
@@ -457,27 +457,29 @@ test('on a phone: the corner sheet is already the whole screen (no full view the
   expect(box!.y + box!.height).toBeLessThanOrEqual(844);                     // the question box is on screen without scrolling
 });
 
-test('the company admin sets the daily allowance and the timezone in Settings', async ({ authedPage: page }) => {
+/* 23 Oct 2026, the user: "only the super admin decides how much — up or down — not the company side".
+   S&T sets it in Company Management → AI (super-admin-flow.spec.ts). */
+test('the company side sets nothing about the AI: no STM Mexa AI card in Settings, even for the company admin', async ({ authedPage: page }) => {
   await stub(page);
   await page.route('**/api/alarms/notification-policy', (r: any) => r.fulfill(json({ success: true, data: { enabled: false, version: 0, counts: { machines: 0 } } })));
-  const saved: any[] = [];
-  await page.route('**/api/assistant/settings', (r: any) => {
-    if (r.request().method() === 'PUT') { saved.push(r.request().postDataJSON()); return r.fulfill(json({ status: 'success', data: { daily_limit: 20, timezone: 'Asia/Dubai' } })); }
-    return r.fulfill(json({ status: 'success', data: { daily_limit: 50, timezone: 'Asia/Kolkata', default_limit: 50, max_limit: 50, company_daily_max: 50 } }));
-  });
+  const settingsCalls: string[] = [];
+  await page.route('**/api/assistant/settings', (r: any) => { settingsCalls.push(r.request().method()); return r.fulfill(json({ message: 'Not found' }, 404)); });
   await seedAuth(page, { roles: ['COMPANY_ADMIN'], company_permissions: WITH_AI });
   await page.goto('/settings');
-  const card = page.locator('section', { has: page.getByRole('heading', { name: 'STM Mexa AI' }) });
-  // 23 Oct 2026: lower, never higher — and the whole company's daily total, seen not set
-  await expect(card).toContainText('it cannot go above 50');
-  await expect(card).toContainText('Your whole company has up to 50 questions a day.');
-  await card.getByLabel('Answers per person per day').fill('51');
-  await expect(card).toContainText('Enter a whole number from 0 to 50.');
-  await card.getByRole('button', { name: 'Save' }).click();
-  expect(saved).toEqual([]);                                           // more than 50 is never sent
-  await card.getByLabel('Answers per person per day').fill('20');
-  await card.getByLabel('Company timezone').selectOption('Asia/Dubai');
-  await card.getByRole('button', { name: 'Save' }).click();
-  await expect(card).toContainText('Saved: 20 answers per person a day.');
-  expect(saved).toEqual([{ daily_limit: 20, timezone: 'Asia/Dubai' }]);
+  await expect(page.getByRole('heading', { name: 'Appearance' })).toBeVisible();
+  await expect(launcher(page)).toBeVisible();                                // the AI itself is there
+  await expect(page.getByRole('heading', { name: 'STM Mexa AI' })).toHaveCount(0);
+  await expect(page.getByLabel('Answers per person per day')).toHaveCount(0);
+  expect(settingsCalls).toEqual([]);
+});
+
+test('switched off by S&T, the full page says so and asks nothing', async ({ authedPage: page }) => {
+  await stub(page, { status: 'success', data: { name: 'STM Mexa AI', enabled: false, reason: 'SWITCHED_OFF' } });
+  const chats: any[] = [];
+  await page.route('**/api/assistant/chat', (r: any) => { chats.push(1); return r.fulfill(json({ status: 'success', data: answer })); });
+  await page.goto('/assistant');
+  await expect(page.getByRole('log', { name: 'Conversation' })).toContainText('STM Mexa AI is switched off for your company. S&T decides how much it may be used.');
+  await expect(page.getByLabel('Your question for STM Mexa AI')).toBeDisabled();
+  await expect(page.getByRole('group', { name: 'Suggested questions' })).toHaveCount(0);
+  expect(chats).toEqual([]);
 });

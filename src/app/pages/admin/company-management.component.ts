@@ -3,12 +3,20 @@ import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { CompanyService, ProgramGatewayState } from '../../core/services/company.service';
+import { CompanyAssistantLimits, CompanyService, ProgramGatewayState } from '../../core/services/company.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AdminTabsComponent } from './admin-tabs.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { environment } from '../../../environments/environment';
+
+/** Timezones for a company's day: a short list first, then every one the browser knows. */
+const COMMON_ZONES = ['Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'Europe/London', 'Europe/Berlin', 'America/New_York', 'UTC'];
+function allZones(): string[] {
+  const all: string[] = (Intl as any).supportedValuesOf?.('timeZone') ?? [];
+  return [...COMMON_ZONES, ...all.filter(z => !COMMON_ZONES.includes(z))];
+}
+type AiFigure = 'person_daily' | 'company_daily' | 'monthly_usd';
 
 @Component({
   selector: 'app-company-management',
@@ -171,6 +179,21 @@ export class CompanyManagementComponent implements OnInit {
   gatewayToken: string | null = null;
   gatewayCopied = false;
   readonly deviceApi = `${environment.apiUrl}/device/v1`;
+
+  /* ── STM Mexa AI: how much the company may use it ──
+     S&T's alone (23 Oct 2026, the user: "only the super admin decides how
+     much — up or down — not the company side"): questions a day for the
+     whole company, answers a day for each person, a monthly cost limit, and
+     the timezone whose midnight brings the day back — with the use so far. */
+  aiCompany: any = null;
+  aiLimits: CompanyAssistantLimits | null = null;
+  aiLoading = false;
+  aiSaving = false;
+  aiError = '';
+  aiSaved = '';
+  aiForm: { person_daily: number | null; company_daily: number | null; monthly_usd: number | null; timezone: string } =
+    { person_daily: null, company_daily: null, monthly_usd: null, timezone: 'Asia/Kolkata' };
+  aiZones: string[] = allZones();
 
   constructor(
     private companyService: CompanyService,
@@ -718,6 +741,114 @@ export class CompanyManagementComponent implements OnInit {
       next: () => { plant.is_active = !plant.is_active; this.cdr.detectChanges(); },
       error: () => this.toast.error('Failed to update status')
     });
+  }
+
+  // ── STM Mexa AI ───────────────────
+  openAiModal(company: any) {
+    this.aiCompany = company;
+    this.aiLimits = null;
+    this.aiSaved = '';
+    this.loadAi();
+  }
+
+  private loadAi() {
+    const company = this.aiCompany;
+    if (!company) return;
+    this.aiLoading = true;
+    this.aiError = '';
+    this.cdr.detectChanges();
+    this.companyService.getAssistantLimits(company.id).subscribe({
+      next: limits => {
+        if (this.aiCompany !== company) return;
+        this.showAi(limits);
+        this.aiLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        if (this.aiCompany !== company) return;
+        this.aiLoading = false;
+        this.aiError = err?.error?.message
+          || (err?.status === 404 ? 'This server does not have it yet: update the API, then try again.' : 'Could not load. Try again.');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private showAi(limits: CompanyAssistantLimits) {
+    this.aiLimits = limits;
+    this.aiForm = { person_daily: limits.person_daily, company_daily: limits.company_daily, monthly_usd: limits.monthly_usd, timezone: limits.timezone };
+    if (!this.aiZones.includes(limits.timezone)) this.aiZones = [limits.timezone, ...this.aiZones];
+  }
+
+  closeAiModal() {
+    if (this.aiSaving) return;
+    this.aiCompany = null;
+    this.aiLimits = null;
+    this.cdr.detectChanges();
+  }
+
+  /** Each figure from 0 (off for the company) to the server's ceiling; money to the cent. */
+  aiBad(field: AiFigure): boolean {
+    const v = this.aiForm[field], max = this.aiLimits?.max[field] ?? 0;
+    if (typeof v !== 'number' || !Number.isFinite(v) || v < 0 || v > max) return true;
+    return field === 'monthly_usd' ? Math.abs(Math.round(v * 100) - v * 100) > 1e-6 : !Number.isInteger(v);
+  }
+  get aiInvalid(): boolean { return (['person_daily', 'company_daily', 'monthly_usd'] as AiFigure[]).some(f => this.aiBad(f)); }
+  get aiChanged(): boolean {
+    const a = this.aiLimits, f = this.aiForm;
+    return !!a && (f.person_daily !== a.person_daily || f.company_daily !== a.company_daily
+      || f.monthly_usd !== a.monthly_usd || f.timezone !== a.timezone);
+  }
+  /** The company's daily total used in full for a month, at about US$0.0007–0.0018 a question. */
+  aiMonthEstimate(): { low: number; high: number } | null {
+    const d = this.aiForm.company_daily;
+    return typeof d === 'number' && d > 0 ? { low: d * 31 * 0.0007, high: d * 31 * 0.0018 } : null;
+  }
+  /** At that daily total the monthly limit may stop the AI before the month ends. */
+  get aiMonthTight(): boolean {
+    const e = this.aiMonthEstimate(), m = this.aiForm.monthly_usd;
+    return !!e && typeof m === 'number' && m > 0 && !this.aiBad('monthly_usd') && m < e.high;
+  }
+  usd(v: number | null | undefined): string {
+    if (typeof v !== 'number' || !Number.isFinite(v)) return '—';
+    return v > 0 && v < 0.01 ? 'under US$0.01' : `US$${v.toFixed(2)}`;
+  }
+
+  async saveAi() {
+    const company = this.aiCompany, before = this.aiLimits, f = this.aiForm;
+    if (!company || !before || this.aiSaving || this.aiInvalid || !this.aiChanged) return;
+    // more money is a decision: said in so many words before it is made
+    if ((f.monthly_usd as number) > before.monthly_usd) {
+      const yes = await this.confirm.ask({
+        title: `Raise what STM Mexa AI may cost "${company.company_name}"?`,
+        message: `Its monthly limit goes from ${this.usd(before.monthly_usd)} to ${this.usd(f.monthly_usd)}. The platform pays for every question.`,
+        confirmText: 'Raise the limit',
+        tone: 'primary',
+        icon: 'payments'
+      });
+      if (!yes || this.aiCompany !== company) return;
+    }
+    this.aiSaving = true;
+    this.aiError = '';
+    this.aiSaved = '';
+    this.cdr.detectChanges();
+    this.companyService.saveAssistantLimits(company.id,
+      { person_daily: f.person_daily!, company_daily: f.company_daily!, monthly_usd: f.monthly_usd!, timezone: f.timezone })
+      .subscribe({
+        next: limits => {
+          this.aiSaving = false;
+          if (this.aiCompany !== company) return;
+          this.showAi(limits);
+          const off = limits.person_daily === 0 || limits.company_daily === 0 || limits.monthly_usd === 0;
+          this.aiSaved = off ? `STM Mexa AI is off for ${company.company_name}.` : 'Saved.';
+          this.cdr.detectChanges();
+        },
+        error: err => {
+          this.aiSaving = false;
+          this.aiError = err?.error?.message || 'Could not save. Try again.';
+          this.cdr.detectChanges();
+        }
+      });
   }
 
   // ── Program Transfer gateway ───────────────────
