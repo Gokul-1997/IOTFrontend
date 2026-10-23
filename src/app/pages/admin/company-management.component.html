@@ -883,7 +883,7 @@
       <div class="rounded-lg p-3 text-xs space-y-2 bg-gray-50 dark:bg-gray-800/60">
         <strong class="text-sm">The gateway's four calls</strong>
         <dl class="space-y-1">
-          <dt><code class="break-words">GET {{ deviceApi }}/status</code></dt><dd class="text-gray-500 mb-1">Every machine at once — its machine_id, controller, api_key and program path: a program waiting? a backup asked for?</dd>
+          <dt><code class="break-words">GET {{ deviceApi }}/status</code></dt><dd class="text-gray-500 mb-1">Every machine at once — its machine_id, controller and controller type, api_key and program path: a program waiting? a backup asked for?</dd>
           <dt><code class="break-words">GET {{ deviceApi }}/program<wbr>?machine_id=ID</code></dt><dd class="text-gray-500 mb-1">Download the program waiting for that machine</dd>
           <dt><code class="break-words">POST {{ deviceApi }}/backup</code></dt><dd class="text-gray-500 mb-1">Upload a backup (form fields <code>machine_id</code>, <code>file</code>)</dd>
           <dt><code class="break-words">POST {{ deviceApi }}/report</code></dt><dd class="text-gray-500 mb-1">Program written or refused — the next one in line follows; backup could not be read</dd>

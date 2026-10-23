@@ -12,6 +12,7 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 import { MachinesService } from './machines.service';
 import { MachineFormComponent } from './machine-form.component';
+import { controllerTypeLabel } from './controller-types';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
@@ -227,6 +228,11 @@ export class MachinesComponent implements OnInit, OnDestroy {
 
   rowIndex(i: number): number {
     return (this.page - 1) * this.limit + i + 1;
+  }
+
+  /** "Fanuc · FANUC 0i-MF": the controller type chosen, then the Controller text. */
+  controllerText(r: { controller?: string | null; controller_type?: string | null }): string {
+    return [controllerTypeLabel(r.controller_type), r.controller?.trim()].filter(Boolean).join(' · ') || '—';
   }
 
   copyApiKey(apiKey: string) {

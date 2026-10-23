@@ -129,6 +129,16 @@
                        placeholder="e.g. Fanuc 0i-MF" autocomplete="off" />
               </div>
 
+              <!-- the controller's make: the company's gateway gets it for this machine (Program Transfer) -->
+              <div>
+                <label class="ui-label" for="mfControllerType">Controller type</label>
+                <select id="mfControllerType" class="ui-input" formControlName="controller_type" aria-describedby="mfControllerTypeHint">
+                  <option [ngValue]="null">Not set</option>
+                  <option *ngFor="let t of controllerTypes" [ngValue]="t.value">{{ t.label }}</option>
+                </select>
+                <p id="mfControllerTypeHint" class="ui-hint">Tells the gateway how to talk to this machine.</p>
+              </div>
+
             </div>
           </div>
         </section>

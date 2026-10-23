@@ -26,6 +26,7 @@ import {
 } from '@angular/forms';
 
 import { MachinesService } from './machines.service';
+import { CONTROLLER_TYPES } from './controller-types';
 import { ToastService } from '../../core/services/toast.service';
 
 /** Axis travel and spindle speed are stored as whole numbers. Empty is fine:
@@ -56,6 +57,8 @@ const programPath: ValidatorFn = control => {
 export class MachineFormComponent implements OnInit, AfterViewInit {
 
   @Input() data: any;
+  /** Fanuc or Mitsubishi, for the Controller type dropdown. */
+  readonly controllerTypes = CONTROLLER_TYPES;
   @Output() saved = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
 
@@ -100,6 +103,7 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       model: [''],
       image_url: [''],
       controller: [''],
+      controller_type: [null as string | null],
       mmc_no: [''],
       program_path: ['', programPath],
       // null, not '': an untouched number box is "not set", never an empty string

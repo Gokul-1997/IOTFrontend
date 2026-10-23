@@ -113,6 +113,18 @@ describe('a new machine', () => {
     expect(Object.values(sent)).not.toContain('');
   });
 
+  // 23 Oct 2026, the user: "the controller — one more dropdown, Fanuc or Mitsubishi — and in the status API"
+  test('the controller type: Fanuc or Mitsubishi from its dropdown goes with the machine; not set goes as null', () => {
+    const select: HTMLSelectElement = created.nativeElement.querySelector('#mfControllerType');
+    expect([...select.options].map(o => o.textContent?.trim())).toEqual(['Not set', 'Fanuc', 'Mitsubishi']);
+    fresh.save();
+    expect(service.create.mock.calls[0][0]).toMatchObject({ controller_type: null });
+    service.create.mockClear();
+    fresh.form.patchValue({ controller_type: 'MITSUBISHI' });
+    fresh.save();
+    expect(service.create.mock.calls[0][0]).toMatchObject({ controller_type: 'MITSUBISHI' });
+  });
+
   // 23 Oct 2026, the user: "the machine's program path, from the Machines page, in the gateway's status"
   test('the program path goes with the machine; one the gateway must not be given is caught on the form', () => {
     fresh.form.patchValue({ program_path: '//CNC_MEM/USER/PATH1/' });

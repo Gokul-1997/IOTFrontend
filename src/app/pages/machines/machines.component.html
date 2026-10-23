@@ -93,7 +93,7 @@
         <!-- Controller -->
         <ng-container matColumnDef="controller">
           <th mat-header-cell *matHeaderCellDef mat-sort-header class="thead-custm col-md">Controller</th>
-          <td mat-cell *matCellDef="let r" class="col-md">{{ r.controller || '—' }}</td>
+          <td mat-cell *matCellDef="let r" class="col-md">{{ controllerText(r) }}</td>
         </ng-container>
 
         <!-- Spindle RPM -->

@@ -5,7 +5,7 @@ const machineList = {
   data: [
     // the shape GET /api/machines returns: the line's name comes back as `name`
     {
-      id: 1, machine_serial_no: 'VMC-1-F', model: 'VMC 850', controller: 'FANUC 0i-MF',
+      id: 1, machine_serial_no: 'VMC-1-F', model: 'VMC 850', controller: 'FANUC 0i-MF', controller_type: 'FANUC',
       line_id: 2, name: 'Line 1', is_active: true
     },
     {
@@ -76,7 +76,9 @@ test.describe('Machines page', () => {
     await expect(row).toBeVisible({ timeout: 10_000 });
     await expect(row.getByText('Line 1')).toBeVisible();
     await expect(row.getByText('VMC 850')).toBeVisible();
-    await expect(row.getByText('FANUC 0i-MF')).toBeVisible();
+    await expect(row.getByText('Fanuc · FANUC 0i-MF')).toBeVisible();    // the controller type chosen, then the Controller text
+    // a machine with no type chosen shows its Controller text alone
+    await expect(page.getByRole('row', { name: /VMC-2-F/ }).getByText('Mitsubishi M80', { exact: true })).toBeVisible();
   });
 
   test('TC-M-06 active switch reflects each machine', async ({ authedPage: page }) => {

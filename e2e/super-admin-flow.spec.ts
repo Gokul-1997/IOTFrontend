@@ -305,7 +305,7 @@ test('Companies → Gateway: S&T makes the company\'s Program Transfer token, sh
   await expect(dialog).toContainText('one token for all its machines');
   await expect(dialog).toContainText('Precision Auto Components Pvt Ltd has no gateway token yet');
   for (const call of ['/device/v1/status', '/device/v1/program?machine_id=ID', '/device/v1/backup', '/device/v1/report']) await expect(dialog).toContainText(call);
-  await expect(dialog).toContainText('its machine_id, controller, api_key and program path');
+  await expect(dialog).toContainText('its machine_id, controller and controller type, api_key and program path');
   await expect(dialog.getByRole('link', { name: 'API guide' })).toHaveAttribute('href', '/integrations/PROGRAM_TRANSFER_API.md');
   await expect(dialog.getByRole('link', { name: 'Postman collection' })).toHaveAttribute('href', '/integrations/MEXA_Program_Transfer.postman_collection.json');
   await expect(dialog.getByRole('link', { name: 'Ready-made gateway' })).toHaveAttribute('href', '/integrations/mexa-gateway.js');
