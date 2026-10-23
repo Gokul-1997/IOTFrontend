@@ -123,19 +123,19 @@
                        placeholder="e.g. Mazak VCN-530C" autocomplete="off" />
               </div>
 
-              <div>
-                <label class="ui-label" for="mfController">Controller</label>
-                <input id="mfController" class="ui-input" formControlName="controller"
-                       placeholder="e.g. Fanuc 0i-MF" autocomplete="off" />
-              </div>
-
-              <!-- the controller's make: the company's gateway gets it for this machine (Program Transfer) -->
+              <!-- the controller's make, then its model: the company's gateway gets the make for this machine (Program Transfer) -->
               <div>
                 <label class="ui-label" for="mfControllerType">Controller type</label>
                 <select id="mfControllerType" class="ui-input" formControlName="controller_type">
                   <option [ngValue]="null">Not set</option>
                   <option *ngFor="let t of controllerTypes" [ngValue]="t.value">{{ t.label }}</option>
                 </select>
+              </div>
+
+              <div>
+                <label class="ui-label" for="mfController">Controller</label>
+                <input id="mfController" class="ui-input" formControlName="controller"
+                       placeholder="e.g. Fanuc 0i-MF" autocomplete="off" />
               </div>
 
             </div>

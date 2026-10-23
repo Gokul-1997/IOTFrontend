@@ -102,8 +102,8 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
       machine_serial_no: ['', Validators.required],
       model: [''],
       image_url: [''],
-      controller: [''],
       controller_type: [null as string | null],
+      controller: [''],
       mmc_no: [''],
       program_path: ['', programPath],
       // null, not '': an untouched number box is "not set", never an empty string
