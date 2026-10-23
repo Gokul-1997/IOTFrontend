@@ -1,4 +1,4 @@
-import { toBlocks } from './assistant-widget.component';
+import { toBlocks } from './assistant-chat.component';
 
 /* How a reply is laid out in the chat: paragraphs and lists, as text — never HTML. */
 test('a lead sentence, then "- " lines as a list and "1." lines as steps', () => {

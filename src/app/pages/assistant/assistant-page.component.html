@@ -1,0 +1,18 @@
+<div class="mexa-titlebar">
+  <div class="titlebar w-fit flex items-center gap-2 text-white">
+    <span class="material-icons" aria-hidden="true">auto_awesome</span>
+    <h1 class="mexa-title">{{ name }}</h1>
+    <p class="mexa-subtitle">( Company assistant )</p>
+  </div>
+  <span class="mexa-titlebar-spacer"></span>
+  <div class="ap-actions">
+    <button *ngIf="asked" type="button" class="ui-btn ui-btn-ghost" (click)="newChat()">
+      <span class="material-icons" aria-hidden="true">add_comment</span>New chat
+    </button>
+    <button type="button" class="ui-btn ui-btn-ghost" (click)="smallView()">
+      <span class="material-icons" aria-hidden="true">close_fullscreen</span>Small view
+    </button>
+  </div>
+</div>
+
+<app-assistant-chat class="ap-chat" variant="page"></app-assistant-chat>

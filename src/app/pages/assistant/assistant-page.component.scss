@@ -1,0 +1,6 @@
+/* The conversation fills the screen under the title bar — the app bar (4rem),
+   the field's top padding and the bar itself; the footer is a scroll away. */
+:host { display: block; }
+.ap-actions { display: flex; flex-wrap: wrap; gap: .5rem; .material-icons { font-size: 18px; } }
+.ap-chat { height: calc(100vh - 10.5rem); height: calc(100dvh - 10.5rem); min-height: 420px; }
+@media (max-width: 640px) { .ap-chat { height: calc(100dvh - 13.5rem); min-height: 360px; } }

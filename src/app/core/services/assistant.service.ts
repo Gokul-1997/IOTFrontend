@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, map } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, Subscription, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
 
@@ -10,6 +10,9 @@ import { AuthService } from './auth.service';
  * The conversation lives here for the session, so it survives moving
  * between pages, and goes the moment the person signs out — on a shared
  * computer the next person must not see it. The server stores none of it.
+ * The question being answered lives here too: the corner chat and the full
+ * page (/assistant) show the same conversation, and a reply joins it
+ * whichever of them is open when it comes (23 Oct 2026).
  *
  * Report pages say what they show (setContext): the assistant uses those
  * filters when a question does not name its own, and the chat says so.
@@ -57,21 +60,88 @@ export interface AssistantMessage {
 @Injectable({ providedIn: 'root' })
 export class AssistantService {
   private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
   private readonly api = `${environment.apiUrl}/assistant`;
 
   readonly messages$ = new BehaviorSubject<AssistantMessage[]>([]);
   readonly context$ = new BehaviorSubject<AssistantContext | null>(null);
   readonly status$ = new BehaviorSubject<AssistantStatus | null>(null);
+  /** A question is being answered — one at a time (the server refuses a second). */
+  readonly sending$ = new BehaviorSubject<boolean>(false);
+  /** The server has no assistant yet (no AI key, or an older API): the chat says so instead of being missing. */
+  readonly unavailable$ = new BehaviorSubject<boolean>(false);
+  /** The corner chat should open: back from the full page, or a report opened from it. */
+  readonly panelRequests$ = new Subject<void>();
+  /** The page the full view was opened from, and the report filters it showed (that page clears them as it goes). */
+  openedFrom: { url: string; context: AssistantContext | null } | null = null;
+
+  private question?: Subscription;
 
   constructor() {
     // signing out (or in as someone else) leaves nothing of this conversation behind
-    inject(AuthService).sessionChanged$.subscribe(() => this.reset());
+    this.auth.sessionChanged$.subscribe(() => this.reset());
   }
 
   reset(): void {
+    this.question?.unsubscribe();        // a reply still on its way joins nothing
+    this.sending$.next(false);
     this.messages$.next([]);
     this.context$.next(null);
     this.status$.next(null);
+    this.unavailable$.next(false);
+    this.openedFrom = null;
+  }
+
+  /** May this person use the AI at all (AuthService holds the rule; the full page's guard asks it too). */
+  mayUse(): boolean { return this.auth.mayUseAssistant(); }
+
+  /** No questions now: not ready or not on, or today's allowance used up. */
+  get closed(): boolean {
+    const st = this.status$.value;
+    return this.unavailable$.value || !st?.enabled || (!!st.allowance && st.allowance.remaining <= 0);
+  }
+
+  /** Ask; false when nothing was sent (empty, one already out, or closed). */
+  send(text: string): boolean {
+    const question = String(text || '').trim().slice(0, 500);
+    if (!question || this.sending$.value || this.closed) return false;
+    const history: AssistantMessage[] = [...this.messages$.value, { role: 'user', text: question }];
+    this.messages$.next(history);
+    this.put(history, question);
+    return true;
+  }
+
+  /** The same question again, after a failure: the question stays, the error goes. */
+  retry(failed: AssistantMessage): void {
+    const at = this.messages$.value.indexOf(failed);
+    if (this.sending$.value || !failed.retry || at < 0) return;
+    const history = this.messages$.value.slice(0, at);
+    this.messages$.next(history);
+    this.put(history, failed.retry);
+  }
+
+  newChat(): void { this.messages$.next([]); }
+
+  private put(history: AssistantMessage[], question: string): void {
+    this.sending$.next(true);
+    this.question = this.ask(history).subscribe({
+      next: reply => {
+        this.sending$.next(false);
+        // the AI was taken away, or the person signed out, meanwhile: the late reply joins nothing
+        const st = this.status$.value;
+        if (!st) return;
+        if (reply.allowance) this.status$.next({ ...st, allowance: reply.allowance });
+        this.messages$.next([...this.messages$.value,
+          { role: 'assistant', text: reply.text, kind: reply.kind, sources: reply.sources, sig: reply.sig }]);
+      },
+      error: err => {
+        this.sending$.next(false);
+        const st = this.status$.value;
+        if (!st) return;
+        const text = err?.error?.message || `${st.name || 'STM Mexa AI'} is not available right now. Please try again in a few minutes.`;
+        this.messages$.next([...this.messages$.value, { role: 'assistant', text, kind: 'error', retry: question }]);
+      }
+    });
   }
 
   loadStatus(): Observable<AssistantStatus> {

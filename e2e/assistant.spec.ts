@@ -316,6 +316,147 @@ test('on a phone the chat is a full-screen sheet with nothing off the side', asy
   await expect(panel(page)).toHaveCount(0);
 });
 
+/* 23 Oct 2026, the user: "a full-page chatbot — one icon, full view". The
+   corner chat's full-view button opens the same conversation on a page of
+   its own (/assistant); Small view there goes back to the page it came from
+   with the corner chat open. */
+const fullPage = (page: any) => page.getByRole('heading', { level: 1, name: 'STM Mexa AI' });
+const ask = async (page: any, q: string) => {
+  await page.getByLabel('Your question for STM Mexa AI').fill(q);
+  await page.getByLabel('Your question for STM Mexa AI').press('Enter');
+};
+
+test('full view: the conversation on a page of its own; Small view brings it back over the page it came from', async ({ authedPage: page }) => {
+  await stub(page);
+  const asked: any[] = [];
+  await page.route('**/api/assistant/chat', (r: any) => {
+    asked.push(r.request().postDataJSON());
+    return r.fulfill(json({ status: 'success', data: { ...answer, sig: `sig-${asked.length}` } }));
+  });
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto('/notifications');
+  await launcher(page).click();
+  await ask(page, 'Production today');
+  await expect(panel(page).getByRole('log', { name: 'Conversation' })).toContainText('Today 65 parts were made on 2 machines.');
+
+  await panel(page).getByRole('button', { name: 'Open full view' }).click();
+  await expect(page).toHaveURL(/\/assistant$/);
+  await expect(fullPage(page)).toBeVisible();
+  await expect(launcher(page)).toHaveCount(0);                             // the page is the chat: no corner button
+  const log = page.getByRole('log', { name: 'Conversation' });
+  await expect(log).toContainText('Production today');
+  await expect(log).toContainText('Today 65 parts were made on 2 machines.');
+  await expect(page.getByText('37 of 50 left today')).toBeVisible();
+  await expect(page.getByLabel('Your question for STM Mexa AI')).toBeFocused();
+
+  await ask(page, 'And by shift?');                                         // it goes on here, signatures and all
+  await expect.poll(() => asked.length).toBe(2);
+  expect(asked[1].messages).toEqual([
+    { role: 'user', content: 'Production today' },
+    { role: 'assistant', content: answer.text, sig: 'sig-1' },
+    { role: 'user', content: 'And by shift?' }
+  ]);
+  await expect(log.getByText('Today 65 parts were made on 2 machines.')).toHaveCount(2);
+
+  await page.getByRole('button', { name: 'Small view' }).click();
+  await expect(page).toHaveURL(/\/notifications$/);
+  await expect(panel(page)).toBeVisible();
+  await expect(panel(page).getByRole('log', { name: 'Conversation' })).toContainText('And by shift?');
+  await expect(page.getByLabel('Your question for STM Mexa AI')).toBeFocused();
+});
+
+test('a question still being answered when full view opens is answered on the full page', async ({ authedPage: page }) => {
+  await stub(page);
+  let release: () => void = () => {};
+  await page.route('**/api/assistant/chat', async (r: any) => {
+    await new Promise<void>(res => (release = res));
+    return r.fulfill(json({ status: 'success', data: answer })).catch(() => {});
+  });
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto('/notifications');
+  await launcher(page).click();
+  await panel(page).getByRole('button', { name: 'Summarize today’s production report.' }).click();
+  await expect(panel(page).getByRole('status').filter({ hasText: 'STM Mexa AI is looking into it…' })).toBeVisible();
+
+  await panel(page).getByRole('button', { name: 'Open full view' }).click();
+  await expect(fullPage(page)).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'STM Mexa AI is looking into it…' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled();
+  release();
+  await expect(page.getByRole('log', { name: 'Conversation' })).toContainText('Today 65 parts were made on 2 machines.');
+  await expect(page.getByText('37 of 50 left today')).toBeVisible();
+});
+
+test('from a report, full view keeps its filters and says so; Small view goes back to the report', async ({ authedPage: page }) => {
+  await stub(page);
+  await page.route('**/api/reports/machines*', (r: any) => r.fulfill(json({ status: 'success', data: [{ id: 1, name: 'VMC - 12 - F' }] })));
+  await page.route('**/api/reports/shifts*', (r: any) => r.fulfill(json({ status: 'success', data: [{ id: 10, name: 'A' }] })));
+  await page.route('**/api/reports/production-data*', (r: any) => r.fulfill(json({ status: 'success', data: { rows: [], summary: {} } })));
+  const asked: any[] = [];
+  await page.route('**/api/assistant/chat', (r: any) => { asked.push(r.request().postDataJSON()); return r.fulfill(json({ status: 'success', data: answer })); });
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto('/reports?tab=production');
+  await page.getByLabel('Machine', { exact: true }).selectOption({ label: 'VMC - 12 - F' });
+  await launcher(page).click();
+  await panel(page).getByRole('button', { name: 'Open full view' }).click();
+
+  await expect(page.getByText(/Using the report you had open: Production report · \d{2}-\w{3}-\d{4} · VMC - 12 - F · All shifts/)).toBeVisible();
+  await ask(page, 'How did this machine do?');
+  await expect.poll(() => asked.length).toBe(1);
+  expect(asked[0].context).toMatchObject({ report: 'production', machine: 'VMC - 12 - F', shift: null });
+
+  await page.getByRole('button', { name: 'Small view' }).click();
+  await expect(page).toHaveURL(/\/reports\?tab=production/);
+  await expect(panel(page)).toContainText('How did this machine do?');
+});
+
+test('opened directly; View report from the full page opens the report with the conversation in the corner', async ({ authedPage: page }) => {
+  await stub(page);
+  await page.route('**/api/assistant/chat', (r: any) => r.fulfill(json({ status: 'success', data: answer })));
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto('/assistant');
+  await expect(fullPage(page)).toBeVisible();
+  await expect(page.getByRole('log', { name: 'Conversation' })).toContainText('How can I help, test?');
+  await expect(page.getByRole('group', { name: 'Suggested questions' }).getByRole('button')).toHaveCount(4);
+  await expect(page.getByRole('button', { name: 'New chat' })).toHaveCount(0);   // nothing to start over yet
+
+  await ask(page, 'Production today');
+  const log = page.getByRole('log', { name: 'Conversation' });
+  await expect(log).toContainText('Today 65 parts were made on 2 machines.');
+  await page.getByRole('button', { name: 'New chat' }).click();
+  await expect(log).not.toContainText('Production today');
+  await ask(page, 'Production today');
+  await log.getByRole('button', { name: 'View report' }).click();
+  await expect(page).toHaveURL(/\/reports\?tab=production$/);              // opened on that day; the filters taken
+  await expect(panel(page)).toContainText('Today 65 parts were made on 2 machines.');
+});
+
+test('the full page opens only where the AI was given; S&T goes to its own pages', async ({ page }) => {
+  await stub(page);
+  await seedAuth(page, { company_permissions: WITHOUT_AI });
+  await page.goto('/assistant');
+  await expect(page).toHaveURL(/\/no-access$/);
+
+  await seedAuth(page, { roles: ['SNT_SUPER'], is_snt_super: true, company_id: null, user_type: 'SNT_SUPER' });
+  await page.goto('/assistant');
+  await expect(page).toHaveURL(/\/admin\/companies$/);
+});
+
+test('on a phone: the corner sheet is already the whole screen (no full view there); the full page fits', async ({ authedPage: page }) => {
+  await stub(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/notifications');
+  await launcher(page).click();
+  await expect(panel(page)).toBeVisible();
+  await expect(panel(page).getByRole('button', { name: 'Open full view' })).toBeHidden();
+
+  await page.goto('/assistant');
+  await expect(page.getByLabel('Your question for STM Mexa AI')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  const box = await page.getByLabel('Your question for STM Mexa AI').boundingBox();
+  expect(box!.y + box!.height).toBeLessThanOrEqual(844);                     // the question box is on screen without scrolling
+});
+
 test('the company admin sets the daily allowance and the timezone in Settings', async ({ authedPage: page }) => {
   await stub(page);
   await page.route('**/api/alarms/notification-policy', (r: any) => r.fulfill(json({ success: true, data: { enabled: false, version: 0, counts: { machines: 0 } } })));

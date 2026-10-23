@@ -6,6 +6,7 @@ import { adminGuard } from './core/guards/admin.guard';
 import { sntSuperGuard } from './core/guards/snt-super.guard';
 import { companyAdminGuard, companyRolesGuard, companyUserGuard } from './core/guards/company-admin.guard';
 import { permissionGuard, anyPermissionGuard } from './core/guards/permission.guard';
+import { assistantGuard } from './core/guards/assistant.guard';
 
 export const routes: Routes = [
 
@@ -84,6 +85,8 @@ export const routes: Routes = [
       // everyone: light or dark lives here; S&T sees only that (no company, no notifications)
       { path: 'settings',      loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
       { path: 'notifications', canActivate: [companyUserGuard], loadComponent: () => import('./pages/notifications/notifications.component').then(m => m.NotificationsComponent) },
+      // STM Mexa AI on a page of its own: the corner chat's full view (opt-in, as its button)
+      { path: 'assistant', canActivate: [assistantGuard], loadComponent: () => import('./pages/assistant/assistant-page.component').then(m => m.AssistantPageComponent) },
 
       // ADMIN ROUTES (SNT_SUPER / COMPANY_ADMIN / ADMIN)
       {
