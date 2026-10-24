@@ -13,10 +13,12 @@ npm run build
 npm run e2e
 ```
 
-The development server uses `proxy.conf.json`. Configure the API URL in
-`src/environments/environment.ts` and `environment.prod.ts` for the target host.
+The development server proxies `/api` and `/socket.io` to `http://localhost:8000`
+using `proxy.conf.json`. Development does not contact the deployed API.
+Configure `environment.prod.ts` for the deployment host.
 Browser integration checks use mocked API fixtures; see the isolated Playwright
-configurations before running checks against a live environment.
+configurations before running checks against a live environment. Auth fixture
+tokens never open live WebSocket connections.
 
 ## Desktop packages
 

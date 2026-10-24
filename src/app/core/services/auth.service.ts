@@ -201,9 +201,16 @@ export class AuthService implements OnDestroy {
       const refreshTime = decoded.exp * 1000 - Date.now() - 60_000;
       if (refreshTime <= 0) return;
       const version = this.generation;
-      this.refreshTimer = setTimeout(() => this.refreshToken().subscribe({ error: err => {
-        if (version === this.generation && (err?.status === 401 || err?.status === 403)) this.logout();
-      } }), refreshTime);
+      // Browsers clamp delays beyond signed INT32 to a near-immediate timer.
+      // Re-evaluate distant expiries instead of starting a refresh loop.
+      const maximumDelay = 2_147_483_647;
+      this.refreshTimer = setTimeout(() => {
+        if (version !== this.generation) return;
+        if (refreshTime > maximumDelay) { this.scheduleRefresh(token); return; }
+        this.refreshToken().subscribe({ error: err => {
+          if (version === this.generation && (err?.status === 401 || err?.status === 403)) this.logout();
+        } });
+      }, Math.min(refreshTime, maximumDelay));
     } catch { this.logout(); }
   }
 

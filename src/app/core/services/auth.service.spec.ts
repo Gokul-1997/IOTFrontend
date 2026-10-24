@@ -58,6 +58,21 @@ afterEach(() => {
 
 // ── isLoggedIn ────────────────────────────────────────────────────────────────
 
+test('a distant JWT expiry never overflows the browser timer into an immediate refresh', () => {
+  vi.useFakeTimers();
+  const refresh = vi.spyOn(service, 'refreshToken');
+  try {
+    const exp = Math.floor(Date.now() / 1000) + 365 * 86400;
+    const token = `e30.${btoa(JSON.stringify({ exp }))}.signature`;
+    service.scheduleRefresh(token);
+    vi.advanceTimersByTime(60_000);
+    expect(refresh).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(2_147_483_647);
+    expect(refresh).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(1);
+  } finally { vi.clearAllTimers(); vi.useRealTimers(); }
+});
+
 describe('AuthService.isLoggedIn', () => {
   test('returns false when no token in localStorage', () => {
     expect(service.isLoggedIn()).toBe(false);

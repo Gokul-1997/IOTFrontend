@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { test, expect, seedAuth } from './fixtures/auth';
+import { test, expect, seedAuth, localFixtureOrigin } from './fixtures/auth';
 
 /*
  * Program Transfer, kept simple (21 Oct 2026): choose a machine, upload its
@@ -10,7 +10,6 @@ import { test, expect, seedAuth } from './fixtures/auth';
  *
  * Run with its own config: npx playwright test -c playwright.program-transfer.config.ts
  */
-const localOrigin = 'http://127.0.0.1:4495';
 const ago = (seconds: number) => new Date(Date.now() - seconds * 1000).toISOString();
 const ok = (data: unknown, status = 200) => ({ status, json: { status: 'success', data } });
 
@@ -31,6 +30,7 @@ const fileRow = (id: number, machine: number, name: string, kind = 'NEW', delive
 });
 
 async function fixtures(page: Page) {
+  const localOrigin = localFixtureOrigin();
   const state = {
     gateway: { token_prefix: 'mxg_abcdefgh', token_created_at: ago(86400), last_seen_at: ago(5), online: true } as any,
     machines: [

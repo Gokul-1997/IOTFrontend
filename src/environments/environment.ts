@@ -1,9 +1,8 @@
 export const environment = {
   production: false,
-  // apiUrl: 'http://localhost:8000/api',
-  // frontendUrl: 'http://localhost:4200',
-  // socketUrl: 'http://localhost:8000'
-  apiUrl: 'https://stmapi.stmcnc.com/api',
-  frontendUrl: 'https://stmmexa.stmcnc.com',
-  socketUrl: 'https://stmapi.stmcnc.com'
+  // The development proxy keeps local sessions away from deployed services.
+  // Production builds use environment.prod.ts.
+  apiUrl: '/api',
+  frontendUrl: 'http://localhost:4200',
+  socketUrl: ''
 };

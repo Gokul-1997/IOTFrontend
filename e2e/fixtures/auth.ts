@@ -32,6 +32,9 @@ export function stubJwt(): string {
 }
 
 export async function seedAuth(page: Page, overrides: Record<string, unknown> = {}) {
+  // These sessions use unsigned fixture tokens and mocked HTTP APIs. HTTP
+  // routing does not intercept WebSockets; never send them to a live API.
+  await page.routeWebSocket(/.*/, socket => socket.close());
   const token = stubJwt();
   await page.addInitScript(([jwt, extra]: [string, Record<string, unknown>]) => {
     const stubUser = {
@@ -79,3 +82,12 @@ export const test = base.extend<AuthFixtures>({
 });
 
 export { expect } from '@playwright/test';
+
+/** Origin for fixtures which refuse external document/asset requests. */
+export function localFixtureOrigin(): string {
+  const origin = new URL(test.info().project.use.baseURL || 'http://localhost:4200');
+  if (!['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname)) {
+    throw new Error('Mocked browser fixtures require a loopback baseURL');
+  }
+  return origin.origin;
+}

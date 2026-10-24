@@ -13,8 +13,14 @@
  * autoConnect: socket.connect() fires 'connect' at once (true), or waits for
  * the test to trigger it (false). trigger / fire: what the server would send.
  */
-export const fakeSockets: any[] = [];
-export const fakeSocketIo = { autoConnect: true };
+// Angular can emit this helper into both a spec bundle and a dynamic mock
+// chunk. Share one registry inside the test environment in either case.
+const registryKey = Symbol.for('mexa.test.socket-io');
+const registry = ((globalThis as any)[registryKey] ??= {
+  sockets: [] as any[], config: { autoConnect: true }
+});
+export const fakeSockets: any[] = registry.sockets;
+export const fakeSocketIo: { autoConnect: boolean } = registry.config;
 
 export function io(_url: string, opts: any = {}): any {
   const handlers = new Map<string, Set<(...args: any[]) => void>>();

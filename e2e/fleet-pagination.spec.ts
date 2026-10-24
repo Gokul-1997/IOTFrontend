@@ -1,6 +1,7 @@
-import { test, expect, seedAuth } from './fixtures/auth';
+import { test, expect, seedAuth, localFixtureOrigin } from './fixtures/auth';
 
 test('a large fleet uses bounded pages, server totals and recovers a failed page request', async ({ page }) => {
+  const localOrigin = localFixtureOrigin();
   await seedAuth(page, { roles: ['COMPANY_ADMIN'], plant_id: null });
   // No production traffic: all API requests are fixtures, all sockets are closed,
   // and every other nonlocal request is refused.
@@ -8,7 +9,7 @@ test('a large fleet uses bounded pages, server totals and recovers a failed page
   await page.route('**/*', route => {
     const url = new URL(route.request().url());
     if (url.pathname.startsWith('/api/')) return route.fulfill({ json: { status: 'success', data: [], unread: 0 } });
-    if (url.origin !== 'http://127.0.0.1:4493') return route.abort();
+    if (url.origin !== localOrigin) return route.abort();
     return route.continue();
   });
   const requests: URL[] = [];
