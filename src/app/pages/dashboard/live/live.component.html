@@ -171,15 +171,16 @@
         </div>
 
         <div class="bg-white bg-inner-inner rounded-lg p-2 flex flex-1 min-w-0 flex-col">
+          <!-- Part No, as on the Live Dashboard card -->
           <span class="text-gray-700 dark:text-[#939393]">
-            Component ID
+            Part No
           </span>
 
           <span
             class="font-bold break-words"
-            [title]="job?.component_id || '--'"
+            [title]="job?.part_number || '--'"
           >
-            {{ job?.component_id || '--' }}
+            {{ job?.part_number || '--' }}
           </span>
         </div>
 

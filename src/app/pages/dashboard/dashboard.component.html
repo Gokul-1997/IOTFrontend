@@ -204,7 +204,7 @@
             <div class="flex min-w-0 items-center">
   <b
     class="min-w-0 max-w-[150px] truncate"
-    [title]="m.operator_name || '--'"
+    [title]="m.part_name || '--'"
   >
     {{ m.part_name || '--' }}
   </b>
@@ -212,8 +212,9 @@
           </div>
 
           <div>
-            <span class="text-gray-700 dark:text-[#939393]"><abbr title="Component ID" class="no-underline">Comp. ID</abbr></span><br>
-            <b class="whitespace-nowrap overflow-ellipsis">{{ m.component_id || '--' }}</b>
+            <!-- Part No, as on the machine page (the user, 25 Oct 2026); a long one is cut short, whole on hover -->
+            <span class="text-gray-700 dark:text-[#939393]">Part No</span><br>
+            <b class="block min-w-0 max-w-[150px] truncate" [title]="m.part_number || '--'">{{ m.part_number || '--' }}</b>
           </div>
 
           <div class="">

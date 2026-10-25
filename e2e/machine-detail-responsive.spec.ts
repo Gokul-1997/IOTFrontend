@@ -24,7 +24,7 @@ async function openMachine(page: Page, dark = false) {
     status: 'success', data: {
       machine: { id: 25, machine_serial_no: machineName },
       operator: { operator_name: operatorName, employee_id: 'OPERATOR-MFG-TEAM-A-00001234' },
-      job: { part_name: partName, component_id: componentId, target_qty: 240, achieved_qty: 150 },
+      job: { part_name: partName, component_id: componentId, part_number: componentId, target_qty: 240, achieved_qty: 150 },
       oee: { oee: 61.5, availability: 82, performance: 76, quality: 98.7 },
       shift: { shift_code: 'DAY SHIFT — PRODUCTION' },
       quality: { accepted: 148, rejected: 2 },
