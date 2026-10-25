@@ -16,9 +16,10 @@ const FULL_PAGE = /^\/assistant(?:[?#]|$)/;
  * The company assistant in the corner of every signed-in page ("Mexa AI" —
  * the server names it): for a company S&T gave it to, and the roles
  * its admin gave it to (23 Oct 2026); what it can answer follows the
- * person's role. A click opens the chat over the page without leaving it;
- * its full-view button opens the same conversation on a page of its own
- * (/assistant), and Small view there comes back here.
+ * person's role. A click turns the sparkle and grows the chat out of the
+ * button, over the page without leaving it (25 Oct 2026, the user: "the
+ * icon does nothing"); its full-view button opens the same conversation on a
+ * page of its own (/assistant), and Small view there comes back here.
  * The launcher greets once per session with one soft glow — no bouncing, no
  * chat opening by itself, and no motion at all for anyone who asked for less.
  */
@@ -54,6 +55,9 @@ export class AssistantWidgetComponent implements OnInit {
   unavailable = false;
   /** On the full page: the conversation is the page itself. */
   onFullPage = false;
+  /** The sparkle's turn as the chat opens (CSS; none for anyone who asked for less motion). */
+  pop = false;
+  private popTimer?: ReturnType<typeof setTimeout>;
 
   get name(): string { return this.status?.name || 'Mexa AI'; }
   /** For everyone in a company: on, or not set up yet. Hidden when S&T switched it off for the company, or for S&T. */
@@ -75,6 +79,7 @@ export class AssistantWidgetComponent implements OnInit {
       });
     // back from the full page, or a report opened from it: the conversation goes on here
     this.svc.panelRequests$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => { if (this.visible) this.openPanel(); });
+    this.destroyRef.onDestroy(() => clearTimeout(this.popTimer));
     this.load();
   }
 
@@ -111,6 +116,9 @@ export class AssistantWidgetComponent implements OnInit {
   openPanel(): void {
     this.open = true;
     this.greet = false;
+    this.pop = true;
+    clearTimeout(this.popTimer);
+    this.popTimer = setTimeout(() => { this.pop = false; this.cdr.markForCheck(); }, 650);
     this.cdr.markForCheck();
   }
 

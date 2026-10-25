@@ -37,6 +37,14 @@ const ICONS: [RegExp, string][] = [
   [/maintenance|ticket/i, 'handyman'], [/downtime/i, 'timer_off'], [/program/i, 'swap_horiz'], [/energy/i, 'bolt'],
   [/how do i|where/i, 'help_outline'], [/production|shift/i, 'precision_manufacturing'], [/company/i, 'apartment']
 ];
+/** The hour at the plant, for the greeting. */
+const PLANT_HOUR = new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: 'Asia/Kolkata' });
+
+/** "Good evening" by the plant's clock; "Hello" through the small hours. */
+export function timeGreeting(at: Date = new Date()): string {
+  const h = Number(PLANT_HOUR.format(at));
+  return h < 5 ? 'Hello' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+}
 
 /*
  * The conversation with the company assistant ("Mexa AI"), as one card
@@ -82,10 +90,10 @@ export class AssistantChatComponent implements OnInit {
   downloading: AssistantSource | null = null;
 
   get name(): string { return this.status?.name || 'Mexa AI'; }
-  /** "How can I help, Ravi?" */
+  /** "Good evening, Ravi" */
   get greeting(): string {
     const who = String(this.auth.getUser()?.username || '').trim().split(/\s+/)[0];
-    return who ? `How can I help, ${who}?` : 'How can I help?';
+    return who ? `${timeGreeting()}, ${who}` : timeGreeting();
   }
   get allowance() { return this.status?.allowance; }
   get limitReached(): boolean { return !!this.allowance && this.allowance.remaining <= 0; }
@@ -150,6 +158,9 @@ export class AssistantChatComponent implements OnInit {
   }
 
   iconFor(question: string): string { return ICONS.find(([re]) => re.test(question))?.[1] || 'chat_bubble_outline'; }
+
+  /** How much of today's allowance is left, for its bar. */
+  meterPct(): number { const a = this.allowance; return a && a.limit > 0 ? Math.max(0, Math.min(100, (a.remaining / a.limit) * 100)) : 0; }
 
   /** "38 of 50 left today" */
   allowanceText(): string { const a = this.allowance; return a ? `${a.remaining} of ${a.limit} left today` : ''; }

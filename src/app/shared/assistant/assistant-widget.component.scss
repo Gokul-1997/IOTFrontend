@@ -1,35 +1,45 @@
 /* The company assistant's corner: a launcher bottom right, the chat card
-   (assistant-chat) above it — a sheet on a phone. Under the app's header and
-   dialogs (z 50), over the page — except the phone sheet, which covers the
-   header too. */
+   (assistant-chat) growing out of it — a sheet on a phone. Under the app's
+   header and dialogs (z 50), over the page — except the phone sheet, which
+   covers the header too. */
 :host { position: fixed; right: 20px; bottom: 20px; z-index: 45; --as-brand: linear-gradient(135deg, #2b3a8f, #6e3b71 60%, #dd403e); }
 
 .as-launcher {
-  width: 56px; height: 56px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer;
+  position: relative; width: 56px; height: 56px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer;
   color: #fff; background: var(--as-brand); box-shadow: 0 10px 24px rgba(43, 57, 144, .35);
-  .material-icons { font-size: 26px; }
+  .material-icons { font-size: 26px; transition: transform .3s ease; }
   &:hover { filter: brightness(1.08); }
+  &:not(.is-open):hover .material-icons { transform: rotate(-15deg) scale(1.1); }
   &:focus-visible { outline: 3px solid var(--tbl-accent); outline-offset: 3px; }
 }
+/* the click (25 Oct 2026, the user: "the icon does nothing"): the sparkle turns and a ring goes out as the chat grows */
+.as-launcher.is-pop .material-icons { animation: as-spin .55s cubic-bezier(.3, 1.4, .5, 1); }
+.as-launcher.is-pop::after { content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; animation: as-ring .6s ease-out; }
+@keyframes as-spin { 0% { transform: none; } 35% { transform: scale(.7) rotate(-70deg); } 100% { transform: rotate(180deg); } }
+@keyframes as-ring { from { box-shadow: 0 0 0 0 rgba(110, 59, 113, .55); } to { box-shadow: 0 0 0 18px rgba(110, 59, 113, 0); } }
+
+/* once a session, a soft hello */
 .as-launcher.is-greeting { animation: as-arrive .5s ease-out 1, as-glow 1.6s ease-out .5s 1; }
 @keyframes as-arrive { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes as-glow { 0% { box-shadow: 0 0 0 0 rgba(221, 64, 62, .45); } 100% { box-shadow: 0 0 0 16px rgba(221, 64, 62, 0); } }
 
 .as-panel {
-  position: absolute; right: 0; bottom: 70px; width: 400px; height: min(640px, calc(100vh - 150px));
-  box-shadow: 0 24px 60px rgba(17, 22, 64, .28), 0 2px 6px rgba(17, 22, 64, .08);
-  animation: as-open .18s ease-out;
+  position: absolute; right: 0; bottom: 72px; width: 410px; height: min(660px, calc(100vh - 150px));
+  box-shadow: 0 28px 64px rgba(17, 22, 64, .3), 0 2px 6px rgba(17, 22, 64, .08);
+  transform-origin: calc(100% - 28px) calc(100% + 44px);
+  animation: as-grow .32s cubic-bezier(.2, .9, .25, 1.05);
 }
-@keyframes as-open { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes as-grow { from { transform: scale(.85) translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
 
 /* a phone: the chat is a sheet over the whole screen */
 @media (max-width: 520px) {
   :host { right: 14px; bottom: 14px; }
   :host(.is-open) { z-index: 60; }
-  .as-panel { position: fixed; inset: 0; width: auto; height: auto; border-radius: 0; border: 0; }
+  .as-panel { position: fixed; inset: 0; width: auto; height: auto; border-radius: 0; border: 0; transform-origin: 50% 100%; }
   .as-launcher.is-open { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .as-launcher.is-greeting, .as-panel { animation: none; }
+  .as-launcher.is-greeting, .as-launcher.is-pop .material-icons, .as-launcher.is-pop::after, .as-panel { animation: none; }
+  .as-launcher .material-icons { transition: none; }
 }

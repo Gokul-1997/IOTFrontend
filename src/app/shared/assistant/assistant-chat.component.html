@@ -1,10 +1,10 @@
 <!-- the corner chat's own header; on the full page its title bar has these -->
 <header *ngIf="variant === 'panel'" class="as-head">
-  <span class="as-mark" aria-hidden="true"><span class="material-icons">auto_awesome</span></span>
+  <span class="as-orb" aria-hidden="true"><span class="material-icons">auto_awesome</span></span>
   <div class="as-titles">
     <h2 id="as-title" class="as-title">{{ name }}</h2>
     <p class="as-sub">
-      <span class="as-dot" [class.is-off]="unavailable" aria-hidden="true"></span>{{ unavailable ? 'Not switched on yet' : 'Company assistant' }}
+      <span class="as-dot" [class.is-off]="unavailable || switchedOff" aria-hidden="true"></span>{{ unavailable ? 'Not switched on yet' : 'Reads your factory’s data' }}
     </p>
   </div>
   <button *ngIf="asked" type="button" class="as-icon" (click)="newChat()" aria-label="Start a new chat" title="New chat">
@@ -19,13 +19,20 @@
 </header>
 
 <div #log class="as-log" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation" tabindex="0">
-  <!-- before the first question: who it is and what to ask -->
+  <!-- before the first question: a greeting, then questions to start with -->
   <div *ngIf="!asked" class="as-hello">
-    <span class="as-mark is-big" aria-hidden="true"><span class="material-icons">auto_awesome</span></span>
-    <p class="as-hello-title">{{ unavailable || switchedOff ? name : greeting }}</p>
+    <p *ngIf="!unavailable && !switchedOff" class="as-eyebrow">{{ greeting }}</p>
+    <p class="as-hello-title">{{ unavailable || switchedOff ? name : 'How can I help you today?' }}</p>
     <p *ngIf="!unavailable && !switchedOff" class="as-hello-text">{{ status?.welcome }}</p>
     <p *ngIf="unavailable" class="as-hello-text" role="status">{{ name }} isn’t switched on yet. Your reports work as usual; once it is set up, you can ask about them here.</p>
     <p *ngIf="switchedOff" class="as-hello-text" role="status">{{ name }} is switched off for your company. S&amp;T decides how much it may be used.</p>
+
+    <div *ngIf="!unavailable && !switchedOff && suggestions.length" class="as-tiles" role="group" aria-label="Suggested questions">
+      <button *ngFor="let s of suggestions" type="button" class="as-tile" (click)="send(s)" [disabled]="sending || closed">
+        <span class="material-icons as-tile-icon" aria-hidden="true">{{ iconFor(s) }}</span>
+        <span class="as-tile-text">{{ s }}</span>
+      </button>
+    </div>
   </div>
 
   <p *ngIf="context as c" class="as-context">
@@ -33,17 +40,8 @@
     <span>{{ variant === 'page' ? 'Using the report you had open:' : 'Using this page’s filters:' }} <strong>{{ sourceLine(c) }}</strong></span>
   </p>
 
-  <div *ngIf="!asked && !unavailable && !switchedOff && suggestions.length" class="as-suggest" role="group" aria-label="Suggested questions">
-    <p class="as-label" aria-hidden="true">Try asking</p>
-    <button *ngFor="let s of suggestions" type="button" class="as-chip" (click)="send(s)" [disabled]="sending || closed">
-      <span class="material-icons as-chip-icon" aria-hidden="true">{{ iconFor(s) }}</span>
-      <span class="as-chip-text">{{ s }}</span>
-      <span class="material-icons as-chip-go" aria-hidden="true">arrow_forward</span>
-    </button>
-  </div>
-
   <div *ngFor="let m of messages" class="as-row" [class.is-me]="m.role === 'user'">
-    <span *ngIf="m.role !== 'user'" class="as-mark is-small" aria-hidden="true"><span class="material-icons">auto_awesome</span></span>
+    <span *ngIf="m.role !== 'user'" class="as-orb is-small" aria-hidden="true"><span class="material-icons">auto_awesome</span></span>
     <div class="as-msg" [class.is-error]="m.kind === 'error'" [class.is-quiet]="isQuiet(m)">
       <span class="sr-only">{{ m.role === 'user' ? 'You' : name }}: </span>
       <ng-container *ngFor="let b of blocksOf(m)">
@@ -68,8 +66,8 @@
     </div>
   </div>
 
-  <div *ngIf="sending" class="as-row" role="status">
-    <span class="as-mark is-small" aria-hidden="true"><span class="material-icons">auto_awesome</span></span>
+  <div *ngIf="sending" class="as-row is-thinking" role="status">
+    <span class="as-orb is-small" aria-hidden="true"><span class="material-icons">auto_awesome</span></span>
     <div class="as-msg as-thinking">
       <span class="as-dots" aria-hidden="true"><i></i><i></i><i></i></span>
       <span>{{ name }} is looking into it…</span>
@@ -83,13 +81,15 @@
   <div class="as-field">
     <label class="sr-only" for="as-input">Your question for {{ name }}</label>
     <textarea #input id="as-input" name="question" rows="1" maxlength="500" [(ngModel)]="draft" (keydown)="onKeydown($event)"
-              (input)="grow()" [disabled]="closed" placeholder="Ask about your factory…"></textarea>
+              (input)="grow()" [disabled]="closed" placeholder="Ask about production, OEE, machines…"></textarea>
     <button type="submit" class="as-send" [disabled]="!draft.trim() || sending || closed" aria-label="Send">
       <span class="material-icons" aria-hidden="true">arrow_upward</span>
     </button>
   </div>
-  <p class="as-foot">
-    <span *ngIf="allowance" [class.is-low]="allowance.remaining <= 5" [attr.title]="'Resets at ' + allowance.resets_text">{{ allowanceText() }}</span>
+  <div class="as-foot">
+    <span *ngIf="allowance" class="as-meter" [class.is-low]="allowance.remaining <= 5" [attr.title]="'Resets at ' + allowance.resets_text">
+      <span class="as-meter-bar" aria-hidden="true"><i [style.width.%]="meterPct()"></i></span>{{ allowanceText() }}
+    </span>
     <span>Answers can be wrong — check key figures.</span>
-  </p>
+  </div>
 </form>

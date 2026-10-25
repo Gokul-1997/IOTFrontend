@@ -1,6 +1,6 @@
 <ng-container *ngIf="visible">
   <!-- the launcher, bottom right on every signed-in page -->
-  <button #launcher type="button" class="as-launcher" [class.is-greeting]="greet" [class.is-open]="open"
+  <button #launcher type="button" class="as-launcher" [class.is-greeting]="greet" [class.is-open]="open" [class.is-pop]="pop"
           (click)="open ? close() : openPanel()" [attr.aria-expanded]="open" aria-controls="as-panel"
           [attr.aria-label]="open ? 'Close ' + name : 'Ask ' + name">
     <span class="material-icons" aria-hidden="true">{{ open ? 'close' : 'auto_awesome' }}</span>

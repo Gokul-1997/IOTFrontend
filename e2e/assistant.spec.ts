@@ -43,7 +43,8 @@ test('report users get the launcher; it opens the chat over the page with the we
   await launcher(page).click();
   await expect(panel(page)).toBeVisible();
   await expect(page).toHaveURL(/\/profile$/);                            // the page stays
-  await expect(panel(page)).toContainText('How can I help, test?');           // the person's own name
+  await expect(panel(page)).toContainText(/(Good (morning|afternoon|evening)|Hello), test/);   // the person's own name, by the plant's clock
+  await expect(panel(page)).toContainText('How can I help you today?');
   await expect(panel(page)).toContainText(WELCOME);
   await expect(panel(page)).toContainText('38 of 50 left today');
   const chips = panel(page).getByRole('group', { name: 'Suggested questions' }).getByRole('button');
@@ -416,7 +417,7 @@ test('opened directly; View report from the full page opens the report with the 
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.goto('/assistant');
   await expect(fullPage(page)).toBeVisible();
-  await expect(page.getByRole('log', { name: 'Conversation' })).toContainText('How can I help, test?');
+  await expect(page.getByRole('log', { name: 'Conversation' })).toContainText(/(Good (morning|afternoon|evening)|Hello), test/);
   await expect(page.getByRole('group', { name: 'Suggested questions' }).getByRole('button')).toHaveCount(4);
   await expect(page.getByRole('button', { name: 'New chat' })).toHaveCount(0);   // nothing to start over yet
 
@@ -482,4 +483,30 @@ test('switched off by S&T, the full page says so and asks nothing', async ({ aut
   await expect(page.getByLabel('Your question for Mexa AI')).toBeDisabled();
   await expect(page.getByRole('group', { name: 'Suggested questions' })).toHaveCount(0);
   expect(chats).toEqual([]);
+});
+
+/* 25 Oct 2026, the user: "the icon does nothing when clicked" — and "your own
+   best design, not a copy": the sparkle turns and the chat grows out of it. */
+test('a click turns the sparkle into the close mark and the chat grows out of the button; no motion for less motion', async ({ authedPage: page }) => {
+  await stub(page);
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto('/profile');
+  await launcher(page).click();
+  const button = page.locator('.as-launcher');                                 // named "Close Mexa AI" while open
+  await expect(button).toHaveClass(/is-pop/);                                   // the sparkle turns…
+  await expect(button).not.toHaveClass(/is-pop/);                               // …once
+  await expect(panel(page)).toBeVisible();
+  const spark = (await button.boundingBox())!;
+  await expect.poll(async () => {
+    const b = (await panel(page).boundingBox())!;
+    return [Math.round(b.x + b.width) === Math.round(spark.x + spark.width), b.y + b.height < spark.y];
+  }).toEqual([true, true]);                                                     // right above the button, its right edge on the button's
+  await expect(panel(page).getByRole('group', { name: 'Suggested questions' }).getByRole('button')).toHaveCount(4);
+  await expect(panel(page)).toContainText('38 of 50 left today');
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.keyboard.press('Escape');
+  await launcher(page).click();
+  expect(await page.locator('.as-launcher .material-icons').evaluate((el: Element) => getComputedStyle(el).animationName)).toBe('none');
+  expect(await panel(page).evaluate((el: Element) => getComputedStyle(el).animationName)).toBe('none');
 });
