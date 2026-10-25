@@ -304,6 +304,7 @@ test('on a phone the chat is a full-screen sheet with nothing off the side', asy
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/notifications');
   await expect(launcher(page)).toBeVisible();
+  await expect(launcher(page).locator('.as-launcher-text')).toBeHidden();      // on a phone, the sparkle alone
   const before = await page.evaluate(() => document.documentElement.scrollWidth);
   await launcher(page).click();
   // once its short opening slide has finished, it covers the screen
@@ -491,6 +492,7 @@ test('a click turns the sparkle into the close mark and the chat grows out of th
   await stub(page);
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.goto('/profile');
+  await expect(launcher(page).locator('.as-launcher-text')).toHaveText('Ask Mexa AI');   // a pill that says what it is
   await launcher(page).click();
   const button = page.locator('.as-launcher');                                 // named "Close Mexa AI" while open
   await expect(button).toHaveClass(/is-pop/);                                   // the sparkle turns…

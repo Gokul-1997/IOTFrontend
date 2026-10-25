@@ -615,5 +615,7 @@ html.dark .mexa-note :is([class~="text-red-500"], [class~="text-red-600"]) { col
 }
 
 /* The report assistant's launcher sits bottom right on every signed-in page
-   (shared/assistant): the footer's last words stay clear of it. */
+   (shared/assistant), a pill with its name — the round sparkle on a phone:
+   the footer's last words stay clear of it. */
 body:has(app-assistant .as-launcher) .mexa-footer { padding-right: 84px; }
+@media (min-width: 641px) { body:has(app-assistant .as-launcher) .mexa-footer { padding-right: 220px; } }

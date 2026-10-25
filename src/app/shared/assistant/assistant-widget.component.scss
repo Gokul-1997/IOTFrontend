@@ -4,17 +4,33 @@
    covers the header too. */
 :host { position: fixed; right: 20px; bottom: 20px; z-index: 45; --as-brand: linear-gradient(135deg, #2b3a8f, #6e3b71 60%, #dd403e); }
 
+/* the launcher (25 Oct 2026, the user: "any design change for it?"): a white
+   MEXA pill with the STM gradient as its edge and its sparkle — "Ask Mexa AI"
+   in words, so it says what it is; open, it closes up into the gradient
+   close button. On a phone, the sparkle alone. */
 .as-launcher {
-  position: relative; width: 56px; height: 56px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer;
-  color: #fff; background: var(--as-brand); box-shadow: 0 10px 24px rgba(43, 57, 144, .35);
-  .material-icons { font-size: 26px; transition: transform .3s ease; }
-  &:hover { filter: brightness(1.08); }
+  position: relative; display: inline-flex; align-items: center; gap: .55rem; height: 52px; padding: 0 1.1rem 0 6px; cursor: pointer;
+  border: 2px solid transparent; border-radius: 999px; color: var(--mexa-ink); font: inherit; font-size: .95rem; font-weight: 700;
+  background: linear-gradient(var(--mexa-card), var(--mexa-card)) padding-box, var(--as-brand) border-box;
+  box-shadow: 0 12px 28px rgba(18, 14, 64, .28); transition: transform .2s, box-shadow .2s, padding .25s, gap .25s;
+  &:hover { transform: translateY(-2px); box-shadow: 0 16px 34px rgba(18, 14, 64, .34); }
   &:not(.is-open):hover .material-icons { transform: rotate(-15deg) scale(1.1); }
   &:focus-visible { outline: 3px solid var(--tbl-accent); outline-offset: 3px; }
 }
+.as-launcher-icon { flex: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; color: #fff;
+  background: var(--as-brand); box-shadow: 0 4px 10px rgba(110, 59, 113, .35);
+  .material-icons { font-size: 21px; transition: transform .3s ease; } }
+.as-launcher-text { max-width: 9.5rem; overflow: hidden; white-space: nowrap; transition: max-width .25s, opacity .2s; }
+/* open: the pill closes up round, the gradient close mark in the middle */
+.as-launcher.is-open { gap: 0; padding: 0 5px; .as-launcher-text { max-width: 0; opacity: 0; } }
+@media (max-width: 640px) {
+  .as-launcher { gap: 0; padding: 0 5px; }
+  .as-launcher-text { display: none; }
+}
+
 /* the click (25 Oct 2026, the user: "the icon does nothing"): the sparkle turns and a ring goes out as the chat grows */
 .as-launcher.is-pop .material-icons { animation: as-spin .55s cubic-bezier(.3, 1.4, .5, 1); }
-.as-launcher.is-pop::after { content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; animation: as-ring .6s ease-out; }
+.as-launcher.is-pop::after { content: ''; position: absolute; inset: -2px; border-radius: 999px; pointer-events: none; animation: as-ring .6s ease-out; }
 @keyframes as-spin { 0% { transform: none; } 35% { transform: scale(.7) rotate(-70deg); } 100% { transform: rotate(180deg); } }
 @keyframes as-ring { from { box-shadow: 0 0 0 0 rgba(110, 59, 113, .55); } to { box-shadow: 0 0 0 18px rgba(110, 59, 113, 0); } }
 
@@ -24,7 +40,7 @@
 @keyframes as-glow { 0% { box-shadow: 0 0 0 0 rgba(221, 64, 62, .45); } 100% { box-shadow: 0 0 0 16px rgba(221, 64, 62, 0); } }
 
 .as-panel {
-  position: absolute; right: 0; bottom: 72px; width: 410px; height: min(660px, calc(100vh - 150px));
+  position: absolute; right: 0; bottom: 68px; width: 410px; height: min(660px, calc(100vh - 150px));
   box-shadow: 0 28px 64px rgba(17, 22, 64, .3), 0 2px 6px rgba(17, 22, 64, .08);
   transform-origin: calc(100% - 28px) calc(100% + 44px);
   animation: as-grow .32s cubic-bezier(.2, .9, .25, 1.05);
@@ -41,5 +57,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .as-launcher.is-greeting, .as-launcher.is-pop .material-icons, .as-launcher.is-pop::after, .as-panel { animation: none; }
-  .as-launcher .material-icons { transition: none; }
+  .as-launcher, .as-launcher .material-icons, .as-launcher-text { transition: none; }
+  .as-launcher:hover { transform: none; }
 }

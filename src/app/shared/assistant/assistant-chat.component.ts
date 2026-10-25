@@ -90,9 +90,11 @@ export class AssistantChatComponent implements OnInit {
   downloading: AssistantSource | null = null;
 
   get name(): string { return this.status?.name || 'Mexa AI'; }
-  /** "Good evening, Ravi" */
+  /** "Good evening, Ravi" — the first name, or the whole name when it starts with an initial ("S AND T", "R Kumar"). */
   get greeting(): string {
-    const who = String(this.auth.getUser()?.username || '').trim().split(/\s+/)[0];
+    const name = String(this.auth.getUser()?.username || '').trim().replace(/\s+/g, ' ');
+    const first = name.split(' ')[0];
+    const who = first.length > 2 ? first : name;
     return who ? `${timeGreeting()}, ${who}` : timeGreeting();
   }
   get allowance() { return this.status?.allowance; }

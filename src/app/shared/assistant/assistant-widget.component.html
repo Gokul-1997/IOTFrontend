@@ -3,7 +3,8 @@
   <button #launcher type="button" class="as-launcher" [class.is-greeting]="greet" [class.is-open]="open" [class.is-pop]="pop"
           (click)="open ? close() : openPanel()" [attr.aria-expanded]="open" aria-controls="as-panel"
           [attr.aria-label]="open ? 'Close ' + name : 'Ask ' + name">
-    <span class="material-icons" aria-hidden="true">{{ open ? 'close' : 'auto_awesome' }}</span>
+    <span class="as-launcher-icon" aria-hidden="true"><span class="material-icons">{{ open ? 'close' : 'auto_awesome' }}</span></span>
+    <span class="as-launcher-text" aria-hidden="true">Ask {{ name }}</span>
   </button>
 
   <!-- the chat, over the page: the page stays where it was -->
