@@ -69,15 +69,17 @@ export function figureWidth(text: string): number {
  * columns, each piece. ApexCharts hands the formatter the axis top, the plot
  * height and the column width.
  */
-export function columnFigure(format: (v: number) => string, minPx = 22) {
+export function columnFigure(format: (v: number) => string, minPx = 22, vertical = false) {
   return (v: number, opts?: any): string => {
     const n = Number(v), w = opts?.w, g = w?.globals;
     if (!Number.isFinite(n) || n <= 0) return '';
     const text = format(n);
     const top = Number(g?.maxYArr?.[opts?.seriesIndex] ?? g?.maxY), height = Number(w?.layout?.gridHeight ?? g?.gridHeight);
-    if (top > 0 && height > 0 && (n / top) * height < minPx) return '';
     const width = Number(g?.barWidth);
-    if (width > 0 && width < figureWidth(text) + 8) return '';
+    // upright, a figure runs up the column: it needs the column's height for its length
+    const along = vertical ? figureWidth(text) + 10 : minPx, across = vertical ? 16 : figureWidth(text) + 8;
+    if (top > 0 && height > 0 && (n / top) * height < along) return '';
+    if (width > 0 && width < across) return '';
     return text;
   };
 }
@@ -86,10 +88,12 @@ export function columnFigure(format: (v: number) => string, minPx = 22) {
  * The figures on a column chart, as on the horizontal ones: in white in the
  * middle of a column that can hold it, none on one too short or too narrow —
  * its figure on hover (26 Oct 2026, the user: "the column charts too").
+ * Upright (`vertical`) for columns side by side, too narrow to hold one across:
+ * pass plotOptions.bar.dataLabels.orientation 'vertical' with it.
  */
-export function columnFigures(format: (v: number) => string, series?: number[]) {
+export function columnFigures(format: (v: number) => string, series?: number[], { vertical = false }: { vertical?: boolean } = {}) {
   return {
-    enabled: true, ...(series ? { enabledOnSeries: series } : {}), formatter: columnFigure(format),
+    enabled: true, ...(series ? { enabledOnSeries: series } : {}), formatter: columnFigure(format, 22, vertical),
     // px, not rem: ApexCharts centres a figure in its column from the size's number —
     // by its baseline, which leaves the digits 4px low
     offsetY: 4, style: { fontSize: '12px', fontWeight: 700, colors: ['#fff'] }

@@ -84,3 +84,11 @@ test('a long name on two lines, never cut mid-word unless one word is too long',
   expect(wrapLabel('(Z)+ OVERTRAVEL ( SOFT 1) ON THE FOURTH AXIS DRIVE')).toEqual(['(Z)+ OVERTRAVEL (', 'SOFT 1) ON THE FO…']);
   expect(wrapLabel('SUPERCALIFRAGILISTICEXPIALIDOCIOUS')).toEqual(['SUPERCALIFRAGILIS…']);
 });
+
+test('upright in a narrow column: judged by the column\'s height for the figure\'s length', () => {
+  const f = columnFigure(v => `${Math.round(v)}%`, 22, true);
+  const g = (barWidth: number) => ({ w: { globals: { maxY: 100, barWidth }, layout: { gridHeight: 240 } } });
+  expect(f(70, g(26))).toBe('70%');                // 168 px tall, 26 px wide: fits upright
+  expect(f(10, g(26))).toBe('');                   // 24 px tall: "10%" does not run up it
+  expect(f(70, g(12))).toBe('');                   // too thin even upright
+});

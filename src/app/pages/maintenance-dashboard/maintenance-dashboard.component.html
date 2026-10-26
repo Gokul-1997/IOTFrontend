@@ -142,17 +142,14 @@
       <p class="mt-lastseen" *ngIf="rowStatus(r) === 'OFFLINE'">
         {{ r.received_at ? 'Last reading ' + (r.received_at | date:'d MMM, h:mm a') : 'No reading in this window' }}
       </p>
-      <!-- the machine's job and who runs it, each in its own box (26 Oct 2026, the user:
-           Part No for Component ID, Operator Name for Operation Number, Part Name for Part) -->
+      <!-- who runs the machine, for how long, and on what part — four boxes, two by two
+           (26 Oct 2026, the user: Operator Name first, no Machine Id, Part No and Part Name) -->
       <div class="mt-facts-top">
         <dl class="mt-facts">
-          <div class="mt-facts-inner"><dt>Machine Id</dt><dd>{{ r.machine_id }}</dd></div>
-          <div class="mt-facts-inner"><dt>Part No</dt><dd>{{ r.part_number || '--' }}</dd></div>
-          <div class="mt-facts-inner"><dt>Run Time</dt><dd>{{ hm(r.run_seconds) }}</dd></div>
-        </dl>
-        <dl class="flex justify-start gap-3 mt-3">
           <div class="mt-facts-inner"><dt>Operator Name</dt><dd>{{ r.operator_name || 'Unassigned' }}</dd></div>
+          <div class="mt-facts-inner"><dt>Run Time</dt><dd>{{ hm(r.run_seconds) }}</dd></div>
           <div class="mt-facts-inner"><dt>Part Name</dt><dd>{{ r.part_name || '--' }}</dd></div>
+          <div class="mt-facts-inner"><dt>Part No</dt><dd>{{ r.part_number || '--' }}</dd></div>
         </dl>
       </div>
       

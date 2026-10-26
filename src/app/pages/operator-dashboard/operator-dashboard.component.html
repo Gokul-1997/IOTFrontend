@@ -201,28 +201,12 @@
         <h2 id="opOeeTitle" class="mexa-card-title mexa-card-title-left">OEE <app-metric-help topic="oee"></app-metric-help></h2>
         <ng-container *ngTemplateOutlet="seg; context: { board: 'oee', label: 'OEE' }"></ng-container>
       </div>
-      <!-- made afresh for each half, so the new rows ease in -->
       <div *ngFor="let k of [which.oee]" class="mexa-swap">
-        <ol *ngIf="rows('oee').length" class="op-oee" [attr.aria-label]="(which.oee === 'top' ? 'Top' : 'Bottom') + ' operators by OEE'">
-          <!-- &ngsp;: the words keep their spaces when read out ("Kumar, Excellent, 85% OEE") -->
-          <li *ngFor="let r of rows('oee'); let i = index; trackBy: byOperator" class="op-oee-row" [ngClass]="oeeGradeClass(r.oee_pct)">
-            <span class="op-oee-rank" aria-hidden="true">{{ i + 1 }}</span>&ngsp;
-            <span class="op-oee-who">
-              <span class="op-oee-name" [title]="r.operator_name">{{ r.operator_name }}</span>&ngsp;
-              <span class="op-oee-grade">{{ oeeGradeWord(r.oee_pct) }}</span>
-            </span>&ngsp;
-            <span class="op-oee-score"><strong>{{ pctOf(r.oee_pct) }}</strong>&ngsp;<small>OEE</small></span>&ngsp;
-            <span class="op-oee-factors">
-              <span *ngFor="let f of oeeFactors" class="op-oee-factor">
-                <span class="op-oee-factor-label">{{ f.label }}</span>&ngsp;
-                <span class="op-oee-factor-bar">
-                  <span class="op-oee-track" aria-hidden="true"><i [ngClass]="f.cls" [style.width.%]="barOf(r[f.key])"></i></span>
-                  <b>{{ pctOf(r[f.key]) }}</b>
-                </span>&ngsp;
-              </span>
-            </span>
-          </li>
-        </ol>
+        <apx-chart *ngIf="rows('oee').length"
+          [series]="oeeChart.series" [chart]="oeeChart.chart" [plotOptions]="oeeChart.plotOptions" [stroke]="oeeChart.stroke" [fill]="oeeChart.fill"
+          [colors]="oeeChart.colors" [dataLabels]="oeeChart.dataLabels" [legend]="oeeChart.legend"
+          [xaxis]="oeeChart.xaxis" [yaxis]="oeeChart.yaxis" [grid]="oeeChart.grid"
+          [tooltip]="oeeChart.tooltip" [noData]="oeeChart.noData" [responsive]="oeeChart.responsive"></apx-chart>
         <p *ngIf="!rows('oee').length" class="mexa-empty">
           No operator's machines have a cycle time, so OEE cannot be worked out.
         </p>

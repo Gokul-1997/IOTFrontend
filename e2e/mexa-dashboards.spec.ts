@@ -568,36 +568,48 @@ test('Preventive: a From–To range, checked before it is sent', async ({ authed
   await expect(page.locator('#pvRangeError')).toHaveCount(0);
 });
 
-/* 26 Oct 2026, the user. Maintenance: the machine card says Part No (not
-   Component ID), Operator Name (not Operation Number) and Part Name (not
-   Part). Operator Performance: OEE is a ranked scorecard, not fifteen
-   grouped columns. Preventive: machines are rows, like the reasons. */
-test('Maintenance machine card: Machine Id, Part No, Run Time; Operator Name first under them, then Part Name', async ({ authedPage: page }) => {
+/* 26 Oct 2026, the user. Maintenance: the machine card's four boxes, two by
+   two — Operator Name first, Run Time, Part Name, Part No (no Machine Id;
+   Part No for Component ID, Operator Name for Operation Number). Operator
+   Performance: the OEE chart stays a chart, only cleaner. Preventive:
+   machines are rows, like the reasons. */
+test('Maintenance machine card: Operator Name first, then Run Time, Part Name and Part No, two by two', async ({ authedPage: page }) => {
   await page.routeWebSocket(/.*/, (ws: any) => ws.close());
   await mockApi(page);
-  await page.setViewportSize({ width: 1600, height: 1200 });
-  await page.goto('/maintenance-dashboard');
-  const facts = page.locator('.mt-facts-top dt');
-  await expect(facts).toHaveText(['Machine Id', 'Part No', 'Run Time', 'Operator Name', 'Part Name']);
-  await expect(page.getByText('Component ID')).toHaveCount(0);
-  await expect(page.getByText('Operation Number')).toHaveCount(0);
-  await expect(page.locator('.mt-facts-top dd').nth(3)).toHaveText('Suresh Babu');
+  for (const width of [1600, 1920, 1280]) {
+    await page.setViewportSize({ width, height: 1200 });
+    await page.goto('/maintenance-dashboard');
+    const boxes = page.locator('.mt-facts .mt-facts-inner');
+    await expect(boxes.locator('dt')).toHaveText(['Operator Name', 'Run Time', 'Part Name', 'Part No']);
+    await expect(boxes.first().locator('dd')).toHaveText('Suresh Babu');
+    for (const gone of ['Machine Id', 'Component ID', 'Operation Number']) await expect(page.getByText(gone, { exact: true })).toHaveCount(0);
+    // two by two: the first two on one row, the next two under them, all the same width, a gap between the rows
+    const [a, b, c, d] = await Promise.all([0, 1, 2, 3].map(async i => (await boxes.nth(i).boundingBox())!));
+    expect(Math.round(a.y)).toBe(Math.round(b.y));
+    expect(Math.round(c.y)).toBe(Math.round(d.y));
+    expect(c.y - (a.y + a.height)).toBeGreaterThanOrEqual(6);
+    expect(Math.abs(a.width - d.width)).toBeLessThan(1);
+    expect(Math.round(a.x)).toBe(Math.round(c.x));
+  }
 });
 
-test('Operator Performance → OEE: a ranked scorecard with each factor beside the OEE', async ({ authedPage: page }) => {
+test('Operator Performance → OEE: still a chart — the three side by side, each operator\'s OEE under the name', async ({ authedPage: page }) => {
   await page.routeWebSocket(/.*/, (ws: any) => ws.close());
   await mockApi(page);
   await page.setViewportSize({ width: 1600, height: 1200 });
   await page.goto('/operator-performance');
   const card = page.getByRole('region', { name: /^OEE/ });
-  const rows = card.getByRole('listitem');
-  await expect(rows.first()).toBeVisible();
-  expect(await card.locator('apx-chart').count()).toBe(0);
-  await expect(rows.first()).toContainText(/1\s*\S.*\s(Excellent|Good|Avg|Needs Improvement)\s*\d+(\.\d)?%\s*OEE/);
-  for (const f of ['Availability', 'Performance', 'Quality']) await expect(rows.first()).toContainText(f);
-  // nothing cut short or run together at desktop width
-  const label = rows.first().locator('.op-oee-factor-label').nth(1);
-  expect(await label.evaluate((el: HTMLElement) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await expect(card.locator('apx-chart')).toHaveCount(1);
+  await expect(card.locator('.apexcharts-bar-series .apexcharts-series')).toHaveCount(3);
+  await expect(card.locator('.apexcharts-legend-text')).toHaveText(['Availability', 'Performance', 'Quality']);
+  await expect(card.locator('.apexcharts-xaxis-label').first()).toContainText(/OEE \d+(\.\d)?%/);
+  const first = card.locator('.apexcharts-bar-area').first();
+  await expect(first).toHaveAttribute('fill', /#0b7267|rgba\(11,\s*114,\s*103/i);   // the MEXA teal, not salmon
+  const b = (await first.boundingBox())!;
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  const tip = card.locator('.apexcharts-tooltip.apexcharts-active');
+  await expect(tip).toContainText(/— OEE \d+(\.\d)?%/);
+  for (const f of ['Availability', 'Performance', 'Quality']) await expect(tip).toContainText(f);
 });
 
 test('Preventive: machines and reasons are rows, their counts inside the bars; the trend\'s days stand level', async ({ authedPage: page }) => {

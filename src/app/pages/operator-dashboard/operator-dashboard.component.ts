@@ -8,8 +8,7 @@ import { OperatorDashboardService } from './operator-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
-import { barFigures } from '../../shared/bar-figures';
-import { oeeGrade, oeeGradeClass, oeeGradeWord } from '../../shared/oee-grade';
+import { barFigures, columnFigures } from '../../shared/bar-figures';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
@@ -53,8 +52,7 @@ type Tab = Exclude<Board, 'oee'>;
   selector: 'app-operator-dashboard',
   standalone: true,
   imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, UiTabsDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
-  templateUrl: './operator-dashboard.component.html',
-  styleUrl: './operator-dashboard.component.scss'
+  templateUrl: './operator-dashboard.component.html'
 })
 export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
 
@@ -369,23 +367,59 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
   /** The chart of the tab on show — the only one of the three that exists. */
   get boardChart(): any { return this.hbar(this.tab); }
 
-  /* OEE for each operator as a ranked scorecard (26 Oct 2026, the user: the
-     grouped columns "not professional" — fifteen bars, most at 100 %, said
-     little). Each row: the rank, the operator, the OEE in its grade's colour,
-     and the three factors it multiplies from as slim bars with their values. */
-  readonly oeeFactors = [
-    { key: 'availability_pct', label: 'Availability', cls: 'is-a' },
-    { key: 'efficiency_pct', label: 'Performance', cls: 'is-p' },
-    { key: 'quality_rate_pct', label: 'Quality', cls: 'is-q' }
-  ] as const;
-
-  oeeGradeClass(v: number | null | undefined): string { return oeeGradeClass(oeeGrade(v)); }
-  oeeGradeWord(v: number | null | undefined): string { return oeeGradeWord(oeeGrade(v)); }
-  /** "70%", "--" when not measured */
-  pctOf(v: number | null | undefined): string { return v === null || v === undefined ? '--' : `${this.fix(Number(v))}%`; }
-  /** A factor's bar length: 0–100. */
-  barOf(v: number | null | undefined): number { return Math.max(0, Math.min(100, Number(v) || 0)); }
-  byOperator(_: number, r: any): any { return r.operator_id ?? r.operator_name; }
+  /* OEE for each operator: Availability, Performance and Quality side by side.
+     The chart stays (26 Oct 2026, the user: "the same chart — only better to
+     look at"): the MEXA colours, a gap between the three, rounded tops, each
+     value upright inside its column when the column can hold it, the
+     operator's OEE under the name, and all three with the OEE on hover. */
+  get oeeChart(): any {
+    const dark = document.documentElement.classList.contains('dark');
+    return this.charts.memo('oee', () => {
+      const rows = this.rows('oee');
+      const col = (f: string) => rows.map((r: any) => r[f] ?? null);
+      const pct = (v: number | null | undefined) => (v === null || v === undefined ? '--' : `${this.fix(Number(v))}%`);
+      return {
+        series: [
+          { name: 'Availability', data: col('availability_pct') },
+          { name: 'Performance', data: col('efficiency_pct') },
+          { name: 'Quality', data: col('quality_rate_pct') }
+        ],
+        chart: { type: 'bar', height: 290, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
+        plotOptions: { bar: { columnWidth: '66%', borderRadius: 5, borderRadiusApplication: 'end',
+                              dataLabels: { orientation: 'vertical', position: 'center' } } },
+        // a clear gap between the three columns of an operator
+        stroke: { show: true, width: 3, colors: ['transparent'] },
+        fill: { opacity: 1 },
+        // the white figures keep their contrast on the dark card too
+        colors: dark ? ['#13917e', '#5a58d6', '#9a4fb4'] : ['#0b7267', '#2b3a8f', '#6e3b71'],
+        dataLabels: columnFigures(v => `${Math.round(v)}%`, undefined, { vertical: true }),
+        legend: { position: 'bottom', markers: { shape: 'circle', size: 6 }, itemMargin: { horizontal: 12 } },
+        xaxis: { categories: rows.map((r: any) => [r.operator_name, `OEE ${pct(r.oee_pct)}`]),
+                 labels: { rotate: 0, trim: true }, axisTicks: { show: false } },
+        yaxis: { min: 0, max: 100, tickAmount: 4, labels: { formatter: (v: number) => `${Math.round(v)}%` } },
+        grid: { borderColor: 'rgba(148,163,184,.25)', strokeDashArray: 4 },
+        tooltip: {
+          theme: dark ? 'dark' : 'light', shared: true, intersect: false,
+          y: { formatter: (v: number | null) => pct(v) },
+          // the OEE itself, which the three multiply to
+          x: { formatter: (_: any, o: any) => {
+            const r = rows[o?.dataPointIndex];
+            return r ? `${r.operator_name} — OEE ${pct(r.oee_pct)}` : '';
+          } }
+        },
+        noData: { text: 'Nothing measured for this period' },
+        // a phone: thinner gaps, wider columns, the first name slanted to fit (the OEE on hover)
+        responsive: [{ breakpoint: 640, options: {
+          chart: { height: 320 }, stroke: { width: 1 }, plotOptions: { bar: { columnWidth: '80%' } },
+          xaxis: { categories: rows.map((r: any) => {
+                     const first = String(r.operator_name || '').split(/\s+/)[0];
+                     return first.length > 9 ? first.slice(0, 8) + '…' : first;
+                   }),
+                   labels: { rotate: -45, rotateAlways: true, trim: false, hideOverlappingLabels: false, maxHeight: 70 } }
+        } }]
+      };
+    }, this.drawn('oee') + dark);
+  }
 
   /* ── view helpers ── */
 
