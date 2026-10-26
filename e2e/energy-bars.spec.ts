@@ -75,7 +75,10 @@ test('Energy Cost Trend: figures in the columns that hold them; a hover above a 
   await card.scrollIntoViewIfNeeded();
   const columns = card.locator('.apexcharts-bar-area');
   await expect(columns).toHaveCount(3);
-  await expect.poll(async () => (await columns.first().boundingBox())!.height).toBeGreaterThan(100);   // grown in
+  // grown in: the tallest column has stopped moving
+  let last = -1;
+  await expect.poll(async () => { const h = (await columns.first().boundingBox())!.height; const still = h > 100 && h === last; last = h; return still; },
+                    { intervals: [150] }).toBe(true);
   const short = (await columns.nth(1).boundingBox())!;
   expect(short.height).toBeLessThan(5);
   // the column charts too (26 Oct 2026): a figure in the middle of a column that can hold it, none on a sliver

@@ -8,7 +8,7 @@ import { MaintenanceReportService } from './maintenance-report.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
-import { BAR_HOVER } from '../../shared/bar-figures';
+import { barFigures } from '../../shared/bar-figures';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
@@ -311,18 +311,23 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHo
     }));
   }
 
+  /* As on the Energy chart (26 Oct 2026): the hours inside each bar that can
+     hold them; a short bar's on hover, anywhere along its row (shared/bar-figures). */
   get downtimeChart(): any {
-    return this.charts.memo('downtimeChart', () => ({
-      chart:  { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
-      plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '60%' } },
-      colors: ['#c8384b'],
-      dataLabels: { enabled: false },
-      xaxis:  { categories: this.downtimeCategories, title: { text: 'Hours stopped' } },
-      yaxis:  { labels: { style: { fontSize: '12px' } } },
-      grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'light', ...BAR_HOVER, y: { formatter: (v: number) => `${v} h` } },
-      noData: { text: 'No downtime recorded' }
-    }));
+    return this.charts.memo('downtimeChart', () => {
+      const fig = barFigures(this.downtimeSeries[0]?.data || [], v => `${v} h`, { borderRadius: 4, barHeight: '60%' });
+      return {
+        chart:  { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
+        plotOptions: fig.plotOptions,
+        colors: ['#c8384b'],
+        dataLabels: fig.dataLabels,
+        xaxis:  { categories: this.downtimeCategories, title: { text: 'Hours stopped' }, ...fig.xaxis },
+        yaxis:  { labels: { style: { fontSize: '12px' } } },
+        grid:   { borderColor: 'rgba(148,163,184,.25)' },
+        tooltip:{ theme: 'light', ...fig.tooltip },
+        noData: { text: 'No downtime recorded' }
+      };
+    }, JSON.stringify([this.downtimeCategories, this.downtimeSeries]));
   }
 
   get typeChart(): any {

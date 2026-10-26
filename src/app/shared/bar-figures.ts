@@ -62,8 +62,9 @@ export function figureFits(value: number, text: string, max: number, width: numb
   return (value / max) * width >= text.length * 7 + 10;
 }
 
-export function barFigures(values: unknown[], format: (v: number) => string, bar: Record<string, unknown> = {}, whole = false) {
-  const top = Math.max(0, ...values.map(Number).filter(Number.isFinite));
+export function barFigures(values: unknown[], format: (v: number) => string, bar: Record<string, unknown> = {}, whole = false,
+                           axisMax?: number) {
+  const top = axisMax ?? Math.max(0, ...values.map(Number).filter(Number.isFinite));
   const { max, ticks } = barAxisMax(top, whole);
   return {
     plotOptions: { bar: { ...bar, horizontal: true } },

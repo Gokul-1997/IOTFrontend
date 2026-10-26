@@ -65,3 +65,10 @@ test('the column chart part: white, 12px, on the series asked for', () => {
   expect(d).toMatchObject({ enabled: true, enabledOnSeries: [0], style: { fontSize: '12px', colors: ['#fff'] } });
   expect(columnFigures(v => `${v}`)).not.toHaveProperty('enabledOnSeries');
 });
+
+test('a fixed axis end (a score runs to 100 %) is the one figures are judged against', () => {
+  const fig = barFigures([91, 52], v => `${v}%`, {}, false, 100);
+  expect(fig.xaxis).toEqual({ min: 0, max: 100, tickAmount: 5 });
+  expect(fig.dataLabels.formatter(52, { w: { layout: { gridWidth: 600 } } })).toBe('52%');   // 312 px of 600
+  expect(fig.dataLabels.formatter(3, { w: { layout: { gridWidth: 600 } } })).toBe('');       // 18 px
+});

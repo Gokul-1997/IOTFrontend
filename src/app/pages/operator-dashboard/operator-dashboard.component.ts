@@ -8,7 +8,7 @@ import { OperatorDashboardService } from './operator-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
-import { BAR_HOVER, columnFigures } from '../../shared/bar-figures';
+import { barFigures, columnFigures } from '../../shared/bar-figures';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
@@ -327,7 +327,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
 
   /** What a ranking's chart is drawn from: rebuilt — and the chart redrawn — only when this changes. */
   private drawn(board: Board): string {
-    return `${board}|${this.which[board]}|${this.ink}|${JSON.stringify(this.rows(board))}`;
+    return `${board}|${this.which[board]}|${JSON.stringify(this.rows(board))}`;
   }
 
   /* One horizontal bar per operator. A fresh options object whenever the
@@ -339,33 +339,26 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
       const pct = (v: number) => `${this.fix(v)}%`;
       const fmt = board === 'downtime' ? (v: number) => this.dur(v * 3600) : pct;
       const axisTitle = board === 'score' ? 'Score (%)' : board === 'rejection' ? 'Rejection rate (%)' : 'Downtime (h)';
-      /* Room past the longest bar for its label, and a scale that is never
-         0–1 with repeated ticks when every value is 0 (no rejects entered).
-         A multiple of 5, so the five ticks are whole numbers (0, 4, 8 … 20,
-         not 0, 3, 7 … 17). A score runs to 100 %: the axis goes on to 120
-         for the labels only. */
+      /* As on the Energy chart (26 Oct 2026): each figure inside its bar when
+         the bar can hold it, a short bar's on hover anywhere along its row
+         (shared/bar-figures). A score runs to 100 %. */
       const values = rows.map((r: any) => board === 'downtime' ? r.value / 3600 : r.value);
-      const top = Math.max(0, ...values);
-      const max = board === 'score' ? 120 : (top > 0 ? Math.ceil((top * 1.3) / 5) * 5 : 10);
+      const fig = barFigures(values, fmt, { borderRadius: 3, barHeight: '62%', distributed: true }, false, board === 'score' ? 100 : undefined);
       return {
         series: [{ name: axisTitle, data: values }],
         chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
-        plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '62%', distributed: true,
-                              dataLabels: { position: 'top' } } },
+        plotOptions: fig.plotOptions,
         colors: this.palette,
-        dataLabels: { enabled: true, offsetX: board === 'downtime' ? 40 : 34, formatter: (v: number) => fmt(v),
-                      style: { fontSize: '.72rem', fontWeight: 700, colors: [this.ink] } },
+        dataLabels: fig.dataLabels,
         legend: { show: false },
-        xaxis: { categories: rows.map((r: any) => r.operator_name), title: { text: axisTitle },
-                 min: 0, max, tickAmount: board === 'score' ? 6 : 5,
+        xaxis: { categories: rows.map((r: any) => r.operator_name), title: { text: axisTitle }, ...fig.xaxis,
                  labels: { formatter: (v: any) => {
                    const n = Math.round(Number(v));
-                   if (board === 'score' && n > 100) return '';
                    return board === 'downtime' ? `${n}h` : `${n}`;
                  } } },
         yaxis: { labels: { maxWidth: 120 } },
-        grid: { borderColor: 'rgba(148,163,184,.25)', padding: { right: 12 } },
-        tooltip: { theme: 'light', ...BAR_HOVER, y: { formatter: (v: number) => fmt(v) } },
+        grid: { borderColor: 'rgba(148,163,184,.25)' },
+        tooltip: { theme: 'light', ...fig.tooltip },
         noData: { text: 'Nothing measured for this period' }
       };
     }, this.drawn(board));
@@ -422,11 +415,6 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
   }
 
   /* ── view helpers ── */
-
-  /** Label colour for the theme in use — the labels sit outside the bars, on the card. */
-  private get ink(): string {
-    return document.documentElement.classList.contains('dark') ? '#e8ebf2' : '#1f2430';
-  }
 
   private fix(v: number): string { return Number.isInteger(v) ? String(v) : Number(v).toFixed(1); }
 
