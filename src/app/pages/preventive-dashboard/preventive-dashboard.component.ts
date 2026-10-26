@@ -19,7 +19,7 @@ import { SEVERITY } from '../../shared/severity';
 import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
-import { barFigures } from '../../shared/bar-figures';
+import { BAR_HOVER, barFigures } from '../../shared/bar-figures';
 
 /** Charts | PM Ticket Details (the tickets and the alarm rules), under the tiles both share. */
 const TABS: DashTab[] = [
@@ -511,7 +511,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
       xaxis:  { categories: this.machineCategories },
       yaxis:  { title: { text: 'No. of Alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'light' },
+      tooltip:{ theme: 'light', ...BAR_HOVER },
       noData: { text: 'No critical alarms in this period' }
     };
   });

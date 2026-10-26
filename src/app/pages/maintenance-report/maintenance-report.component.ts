@@ -8,6 +8,7 @@ import { MaintenanceReportService } from './maintenance-report.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
+import { BAR_HOVER } from '../../shared/bar-figures';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
@@ -319,7 +320,7 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHo
       xaxis:  { categories: this.downtimeCategories, title: { text: 'Hours stopped' } },
       yaxis:  { labels: { style: { fontSize: '12px' } } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'light', y: { formatter: (v: number) => `${v} h` } },
+      tooltip:{ theme: 'light', ...BAR_HOVER, y: { formatter: (v: number) => `${v} h` } },
       noData: { text: 'No downtime recorded' }
     }));
   }

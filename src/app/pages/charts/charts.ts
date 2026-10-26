@@ -5,6 +5,7 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { ChartsService } from './charts.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ReportDateDirective, plantToday } from '../../shared/report-date.directive';
+import { columnFigure } from '../../shared/bar-figures';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { Subscription } from 'rxjs';
@@ -72,7 +73,8 @@ export class Charts implements OnInit, OnDestroy {
       plotOptions: { bar: { horizontal: false, columnWidth: '55%', borderRadius: 4 } },
       dataLabels: {
         enabled: true,
-        formatter: (val: number) => val > 0 ? `${val}m` : '',
+        // a piece too short for its minutes shows them on hover
+        formatter: columnFigure(v => `${v}m`, 14),
         style: { fontSize: '11px', colors: ['#fff'] }
       },
       yaxis:  { title: { text: 'Time (minutes)', style: { color: textColor } }, min: 0,

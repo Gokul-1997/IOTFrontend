@@ -349,10 +349,11 @@ h4 {
   overflow: visible !important;
 }
 
+/* No lift (26 Oct 2026): lifted 30px, a tooltip stood over the chart's top
+   edge — cut off, or over the card's title. ApexCharts keeps it in the chart. */
 .apexcharts-tooltip {
   z-index: 9999 !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transform: translateY(-30px);
 }
 
 .spindle-gauge-wrapper {

@@ -7,6 +7,7 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, interval, startWith, switchMap, takeUntil, catchError, of } from 'rxjs';
 import { MaintenanceDashboardService } from './maintenance-dashboard.service';
 import { ChartMemo } from '../../shared/chart-memo';
+import { BAR_HOVER } from '../../shared/bar-figures';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { ConditionGaugeComponent, ConditionZone } from './condition-gauge.component';
@@ -752,7 +753,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
                labels: { rotate: 0, hideOverlappingLabels: false, trim: false } },
       yaxis: { min: 0, max: (m: number) => Math.max(50, Math.ceil((m || 0) / 10) * 10 + 10), title: { text: unit === '°C' ? 'Celsius' : unit } },
       grid: { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip: { theme: 'light', y: { formatter: (v: number | null) => v == null ? 'not reported' : `${v} ${unit}` } },
+      tooltip: { theme: 'light', ...BAR_HOVER, y: { formatter: (v: number | null) => v == null ? 'not reported' : `${v} ${unit}` } },
       responsive: [
           {
             breakpoint: 1600,

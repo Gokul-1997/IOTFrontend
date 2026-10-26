@@ -11,6 +11,24 @@
  * Spread the parts into the chart's options; plotOptions.bar is merged.
  */
 
+/** A hover anywhere in a bar's row or column — not only on the bar, which may be a sliver — shows its tooltip. */
+export const BAR_HOVER = { shared: false, intersect: false } as const;
+
+/**
+ * A column's figure, or nothing when the column is too short to hold it
+ * (16px by default); for stacked columns, each piece. ApexCharts hands the
+ * formatter the axis top and the plot height.
+ */
+export function columnFigure(format: (v: number) => string, minPx = 16) {
+  return (v: number, opts?: any): string => {
+    const n = Number(v), g = opts?.w?.globals;
+    if (!Number.isFinite(n) || n <= 0) return '';
+    const top = Number(g?.maxY), height = Number(g?.gridHeight);
+    if (top > 0 && height > 0 && (n / top) * height < minPx) return '';
+    return format(n);
+  };
+}
+
 /** The axis end: a round number at or past `top`, in at most six steps — whole steps for counts. */
 export function barAxisMax(top: number, whole = false): { max: number; ticks: number } {
   if (!(top > 0)) return { max: 1, ticks: 1 };
@@ -43,6 +61,6 @@ export function barFigures(values: unknown[], format: (v: number) => string, bar
       style: { fontSize: '12px', fontWeight: 700, colors: ['#fff'] }
     },
     xaxis: { min: 0, max, tickAmount: ticks },
-    tooltip: { shared: false, intersect: false, followCursor: true, y: { formatter: (v: number) => format(Number(v)) } }
+    tooltip: { ...BAR_HOVER, y: { formatter: (v: number) => format(Number(v)) } }
   };
 }

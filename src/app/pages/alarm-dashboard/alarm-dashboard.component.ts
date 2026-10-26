@@ -9,6 +9,7 @@ import { AlarmDashboardService } from './alarm-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
+import { BAR_HOVER } from '../../shared/bar-figures';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { ReportDateDirective } from '../../shared/report-date.directive';
@@ -445,7 +446,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
       yaxis:  { title: { text: 'No. of Alarms' }, 
       labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'light' },
+      tooltip:{ theme: 'light', ...BAR_HOVER },
       noData: { text: 'No alarms in this period' }
     };
   });

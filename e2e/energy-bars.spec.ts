@@ -20,12 +20,12 @@ const ENERGY = { updated_at: '2026-10-26T10:30:00.000Z', currency: 'INR', rate_p
   by_month: [{ month: '2026-10-01T00:00:00.000Z', kwh: 309.77 }],
   top_consumers: TOP, overloads: [], machines: { data: [], total: 0, page: 1, limit: 20, totalPages: 1 } };
 
-async function openChart(page: any) {
+async function openChart(page: any, body: any = ENERGY) {
   await seedAuth(page, { roles: ['COMPANY_ADMIN'] });
   await page.routeWebSocket(/.*/, (ws: any) => ws.close());
   await page.route('**/api/**', (r: any) => r.fulfill(ok([])));
   await page.route('**/api/dashboard/energy/meter*', (r: any) => r.fulfill(ok({ meters: [], machine: null })));
-  await page.route(/\/api\/dashboard\/energy(\?|$)/, (r: any) => r.fulfill(ok(ENERGY)));
+  await page.route(/\/api\/dashboard\/energy(\?|$)/, (r: any) => r.fulfill(ok(body)));
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/energy-dashboard');
   const card = page.locator('section', { has: page.getByRole('heading', { name: 'High Energy Consumption by Machine (kWh)' }) });
@@ -64,4 +64,22 @@ test('a hover anywhere along a row shows that machine, with its kWh — the tiny
   await page.mouse.move(big.x + big.width / 2, big.y + big.height / 2);
   await expect(tip).toContainText('VMC - 2 - F');
   await expect(tip).toContainText('233.13 kWh');
+});
+
+/* "This hover on every chart" (26 Oct 2026): a column chart answers a hover
+   anywhere in a column too — above a short one, not only on its sliver. */
+test('Energy Cost Trend: a hover above a short day\'s column shows that day', async ({ page }) => {
+  await openChart(page, { ...ENERGY, trend: [{ day: '2026-10-24T00:00:00.000Z', kwh: 400, machines: 5 },
+    { day: '2026-10-25T00:00:00.000Z', kwh: 2, machines: 5 }, { day: '2026-10-26T00:00:00.000Z', kwh: 30, machines: 5 }] });
+  const card = page.locator('section', { has: page.getByRole('heading', { name: 'Energy Cost Trend' }) });
+  await card.scrollIntoViewIfNeeded();
+  const columns = card.locator('.apexcharts-bar-area');
+  await expect(columns).toHaveCount(3);
+  await expect.poll(async () => (await columns.first().boundingBox())!.height).toBeGreaterThan(100);   // grown in
+  const short = (await columns.nth(1).boundingBox())!;
+  expect(short.height).toBeLessThan(5);
+  await page.mouse.move(short.x + short.width / 2, short.y - 60);             // in its column, well above it
+  const tip = card.locator('.apexcharts-tooltip.apexcharts-active');
+  await expect(tip).toContainText('25 Oct');
+  await expect(tip).toContainText('₹22');                                      // 2 kWh × ₹10.95
 });

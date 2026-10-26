@@ -15,7 +15,7 @@ import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { compactQty, qty } from '../../shared/format-number';
-import { barFigures } from '../../shared/bar-figures';
+import { BAR_HOVER, barFigures, columnFigure } from '../../shared/bar-figures';
 import { SEVERITY } from '../../shared/severity';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -308,12 +308,13 @@ export class FactoryComponent implements OnInit, OnDestroy {
     return {
       chart:  { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 6, columnWidth: '45%', distributed: true } },
-      dataLabels: { enabled: true },
+      // a column too short for its figure shows it on hover
+      dataLabels: { enabled: true, formatter: columnFigure(v => `${v}`) },
       colors: ['#2F2D8F', '#9365B0'],
       xaxis:  { categories: this.shiftCategories },
       yaxis:  { title: { text: 'Qty' } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'light' }
+      tooltip:{ theme: 'light', ...BAR_HOVER }
     };
   });
   }

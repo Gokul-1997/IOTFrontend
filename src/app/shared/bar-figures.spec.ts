@@ -1,4 +1,4 @@
-import { barAxisMax, barFigures, figureFits } from './bar-figures';
+import { BAR_HOVER, barAxisMax, barFigures, columnFigure, figureFits } from './bar-figures';
 
 /* 26 Oct 2026, the user on Energy: one big bar left the others tiny — their
    figures did not fit, and a tiny bar could not be hovered. */
@@ -35,4 +35,17 @@ test('the chart parts: the axis, the figure for a bar that fits and none for one
   expect(fig.dataLabels.style.fontSize).toBe('12px');
   expect(fig.tooltip).toMatchObject({ shared: false, intersect: false });
   expect(fig.tooltip.y.formatter(1.84)).toBe('1.84');
+});
+
+test('a column shows its figure only when it is tall enough; a stacked piece the same', () => {
+  const f = columnFigure(v => `${v}m`, 14);
+  const g = (maxY: number, gridHeight: number) => ({ w: { globals: { maxY, gridHeight } } });
+  expect(f(40, g(100, 300))).toBe('40m');          // 120 px
+  expect(f(3, g(100, 300))).toBe('');              // 9 px: on hover only
+  expect(f(0, g(100, 300))).toBe('');              // nothing to say
+  expect(f(5, undefined)).toBe('5m');              // not drawn yet: nothing to judge by
+});
+
+test('every bar chart answers a hover anywhere in a bar\'s row or column', () => {
+  expect(BAR_HOVER).toEqual({ shared: false, intersect: false });
 });

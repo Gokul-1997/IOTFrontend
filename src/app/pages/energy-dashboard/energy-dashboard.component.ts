@@ -16,7 +16,7 @@ import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { compactQty, qty } from '../../shared/format-number';
-import { barFigures } from '../../shared/bar-figures';
+import { BAR_HOVER, barFigures } from '../../shared/bar-figures';
 import { MeterPanelComponent } from '../../shared/meter-panel/meter-panel.component';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
@@ -442,7 +442,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
       yaxis: { title: { text: this.data?.rate_per_kwh != null ? `Cost (${this.data?.currency || 'INR'})` : 'kWh' },
                labels: { formatter: compactQty } },
       grid:  { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip: { theme: 'light', y: { formatter: (v: number) => this.data?.rate_per_kwh != null ? this.money(v) : `${qty(v, 1)} kWh` } },
+      tooltip: { theme: 'light', ...BAR_HOVER, y: { formatter: (v: number) => this.data?.rate_per_kwh != null ? this.money(v) : `${qty(v, 1)} kWh` } },
       noData: { text: 'Nothing recorded for this period' }
     };
   }, `${this.costBy}|${this.data?.rate_per_kwh}|${this.charts.sig('monthCats')}|${this.charts.sig('monthSeries')}`);

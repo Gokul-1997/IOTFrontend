@@ -8,6 +8,7 @@ import { OperatorDashboardService } from './operator-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
+import { BAR_HOVER } from '../../shared/bar-figures';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
@@ -364,7 +365,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
                  } } },
         yaxis: { labels: { maxWidth: 120 } },
         grid: { borderColor: 'rgba(148,163,184,.25)', padding: { right: 12 } },
-        tooltip: { theme: 'light', y: { formatter: (v: number) => fmt(v) } },
+        tooltip: { theme: 'light', ...BAR_HOVER, y: { formatter: (v: number) => fmt(v) } },
         noData: { text: 'Nothing measured for this period' }
       };
     }, this.drawn(board));
