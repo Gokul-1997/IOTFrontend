@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { LicensingService } from '../../core/services/licensing.service';
+import { Subject, takeUntil } from 'rxjs';
 
 
 /**
@@ -56,9 +58,14 @@ import { AuthService } from '../../core/services/auth.service';
     Roles &amp; Permissions
   </a>
 
+  <a *ngIf="licensingAvailable" class="ui-tab" routerLink="/admin/licensing" routerLinkActive="is-active">Deployment licenses</a>
 </nav>
   `
 })
-export class AdminTabsComponent {
-  constructor(public auth: AuthService) {}
+export class AdminTabsComponent implements OnInit, OnDestroy {
+  licensingAvailable = false;
+  private destroy = new Subject<void>();
+  constructor(public auth: AuthService, private licensing: LicensingService, private cdr: ChangeDetectorRef) {}
+  ngOnInit() { this.licensing.available().pipe(takeUntil(this.destroy)).subscribe(value => { this.licensingAvailable = value; this.cdr.markForCheck(); }); }
+  ngOnDestroy() { this.destroy.next(); this.destroy.complete(); }
 }

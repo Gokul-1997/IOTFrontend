@@ -4,6 +4,7 @@ import { AuthService } from './core/services/auth.service';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
 import { sntSuperGuard } from './core/guards/snt-super.guard';
+import { licensingGuard } from './core/guards/licensing.guard';
 import { companyAdminGuard, companyRolesGuard, companyUserGuard } from './core/guards/company-admin.guard';
 import { permissionGuard, anyPermissionGuard } from './core/guards/permission.guard';
 import { assistantGuard } from './core/guards/assistant.guard';
@@ -95,6 +96,7 @@ export const routes: Routes = [
         children: [
           { path: 'companies', canActivate: [sntSuperGuard], loadComponent: () => import('./pages/admin/company-management.component').then(m => m.CompanyManagementComponent) },
           { path: 'plans', canActivate: [sntSuperGuard], loadComponent: () => import('./pages/admin/plan-management.component').then(m => m.PlanManagementComponent) },
+          { path: 'licensing', canActivate: [sntSuperGuard, licensingGuard], loadComponent: () => import('./pages/admin/licensing.component').then(m => m.LicensingComponent) },
           { path: 'users', canActivate: [companyAdminGuard], loadComponent: () => import('./pages/admin/user-management.component').then(m => m.UserManagementComponent) },
           { path: 'roles', canActivate: [companyRolesGuard], loadComponent: () => import('./pages/admin/role-management.component').then(m => m.RoleManagementComponent) },
           { path: '', redirectTo: 'users', pathMatch: 'full' }
