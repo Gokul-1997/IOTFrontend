@@ -74,11 +74,11 @@
 
   <!-- No rules means no tickets will ever be raised. A setup gap, not an
        empty result, so it is said in words with the fix attached. -->
-  <div *ngIf="isUnconfigured" class="mexa-note mexa-note-warn ">
-    <div class="marquee">
-    <span><strong>No alarm rules yet</strong> — tickets come from repeated critical alarms; add a rule under <strong>Alarm rules</strong> on the PM Ticket Details tab. </span>
- </div>
-</div>
+  <!-- still, in one line, with its fix: it scrolled by as a marquee, and between passes the bar stood empty (26 Oct 2026) -->
+  <p *ngIf="isUnconfigured" class="mexa-note mexa-note-warn" role="status">
+    <strong>No alarm rules yet</strong> — PM tickets are raised from repeated critical alarms.
+    <button type="button" class="mexa-note-action" (click)="openRules()">Add an alarm rule</button>
+  </p>
 
   <!-- ══════════ KPI TILES ══════════
        Each tile opens the records behind its number: the PM tickets raised
@@ -163,7 +163,7 @@
       <h2 class="mexa-card-title">Critical Alarm Trend</h2>
       <div>
       <apx-chart class="-mb-8" *ngIf="trendSeries.length"
-        [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
+        [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke" [markers]="trendChart.markers"
         [fill]="trendChart.fill" [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
         [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
         [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
@@ -336,7 +336,7 @@
       <apx-chart class="-mb-8 -mt-4" *ngIf="reasonSeries.length"
         [series]="reasonSeries" [chart]="reasonChart.chart" [plotOptions]="reasonChart.plotOptions"
         [colors]="reasonChart.colors" [dataLabels]="reasonChart.dataLabels" [legend]="reasonChart.legend"
-        [xaxis]="reasonChart.xaxis" [grid]="reasonChart.grid" [tooltip]="reasonChart.tooltip"
+        [xaxis]="reasonChart.xaxis" [yaxis]="reasonChart.yaxis" [grid]="reasonChart.grid" [tooltip]="reasonChart.tooltip"
         [noData]="reasonChart.noData"></apx-chart>
       <div *ngIf="!reasonSeries.length" class="mexa-empty">
         <div class="downtime-empty">
@@ -479,7 +479,7 @@
   </section>
 
   <!-- ══════════ ALARM RULES ══════════ -->
-  <section class="mexa-card" *ngIf="showRules">
+  <section class="mexa-card mexa-scroll-target" id="pvRules" *ngIf="showRules">
     <h2 class="mexa-card-title mexa-card-title-left">Alarm Rules</h2>
     <p class="mexa-card-hint">
       A ticket is raised when an alarm repeats this many times inside the window.

@@ -315,7 +315,7 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHo
      hold them; a short bar's on hover, anywhere along its row (shared/bar-figures). */
   get downtimeChart(): any {
     return this.charts.memo('downtimeChart', () => {
-      const fig = barFigures(this.downtimeSeries[0]?.data || [], v => `${v} h`, { borderRadius: 4, barHeight: '60%' });
+      const fig = barFigures(this.downtimeSeries[0]?.data || [], v => `${v} h`, { bar: { borderRadius: 4, barHeight: '60%' } });
       return {
         chart:  { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit', events: fig.events },
         plotOptions: fig.plotOptions,

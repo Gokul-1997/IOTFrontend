@@ -386,7 +386,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
     return this.charts.memo('downtimeChart', () => {
     // inside the bar, as in the mock, so long reason names keep their room; a
     // bar too short for its figure shows it on hover (shared/bar-figures)
-    const fig = barFigures(this.downtimeSeries, v => `${v}`, { borderRadius: 3, barHeight: '62%', distributed: true }, true);
+    const fig = barFigures(this.downtimeSeries, v => `${v}`, { bar: { borderRadius: 3, barHeight: '62%', distributed: true }, whole: true });
     return {
       chart: { type: 'bar', height: 320, toolbar: { show: false }, fontFamily: 'inherit', events: fig.events },
       plotOptions: fig.plotOptions,

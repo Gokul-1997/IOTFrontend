@@ -2140,30 +2140,6 @@ transition: transform 0.3s ease;
 //   animation: needleAlive 1.8s ease-in-out infinite;
 // }
 
-.marquee {
-  overflow: hidden;
-  white-space: nowrap;
-  width: 100%;
-}
-
-.marquee span {
-  display: inline-block;
-  padding-left: 100%;
-  animation: marqueeScroll 40s linear infinite;
-}
-
-@keyframes marqueeScroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-100%);
-  }
-}
-
-.marquee:hover span {
-  animation-play-state: paused;
-}
 
 // dot animation
 
@@ -2222,7 +2198,7 @@ transition: transform 0.3s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mexa-kpi:hover .mexa-kpi-icon .mat-icon, .marquee span { animation: none; }
+  .mexa-kpi:hover .mexa-kpi-icon .mat-icon { animation: none; }
   .mexa-kpi, .mexa-card, .mexa-lift, .sp-card, .sp-stat, .machine-child { transition: none; }
   .mexa-kpi:hover, .mexa-card:hover, .mexa-lift:hover, .sp-card:hover, .sp-stat:hover, .machine-child:hover { transform: none; }
   .status_dot::after {

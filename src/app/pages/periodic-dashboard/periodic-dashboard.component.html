@@ -70,11 +70,10 @@
 
   <!-- No plan means no tickets are ever generated. A setup gap, not an
        empty result, so it is said in words with the fix attached. -->
-  <div *ngIf="isUnconfigured" class="mexa-note mexa-note-warn">
-    <marquee>
-    <span><strong>No maintenance plan yet</strong> — add a schedule under <strong>Create Ticket</strong>.</span>
-    </marquee>
-    </div>
+  <p *ngIf="isUnconfigured" class="mexa-note mexa-note-warn" role="status">
+    <strong>No maintenance plan yet</strong> — tickets come from the schedules in the plan.
+    <button *ngIf="!showPlan" type="button" class="mexa-note-action" (click)="togglePlan()">Add a schedule</button>
+  </p>
 
   <!-- ══════════ KPI TILES ══════════
        Each tile opens the tickets behind its number in Maintenance Details

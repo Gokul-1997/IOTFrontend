@@ -340,7 +340,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
      (shared/bar-figures, 26 Oct 2026). */
   get machineChart(): any {
     return this.charts.memo('machineChart', () => {
-    const fig = barFigures(this.machineSeries[0]?.data || [], v => this.num(v), { borderRadius: 3, barHeight: '60%', distributed: true });
+    const fig = barFigures(this.machineSeries[0]?.data || [], v => this.num(v), { bar: { borderRadius: 3, barHeight: '60%', distributed: true } });
     return {
       chart:  { type: 'bar', height: 300, toolbar: { show: false }, fontFamily: 'inherit', events: fig.events },
       plotOptions: fig.plotOptions,

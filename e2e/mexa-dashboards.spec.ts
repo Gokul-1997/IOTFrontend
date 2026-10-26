@@ -567,3 +567,49 @@ test('Preventive: a From–To range, checked before it is sent', async ({ authed
   expect(seen.some(inverted)).toBe(false);
   await expect(page.locator('#pvRangeError')).toHaveCount(0);
 });
+
+/* 26 Oct 2026, the user. Maintenance: the machine card says Part No (not
+   Component ID), Operator Name (not Operation Number) and Part Name (not
+   Part). Operator Performance: OEE is a ranked scorecard, not fifteen
+   grouped columns. Preventive: machines are rows, like the reasons. */
+test('Maintenance machine card: Machine Id, Part No, Run Time; Operator Name first under them, then Part Name', async ({ authedPage: page }) => {
+  await page.routeWebSocket(/.*/, (ws: any) => ws.close());
+  await mockApi(page);
+  await page.setViewportSize({ width: 1600, height: 1200 });
+  await page.goto('/maintenance-dashboard');
+  const facts = page.locator('.mt-facts-top dt');
+  await expect(facts).toHaveText(['Machine Id', 'Part No', 'Run Time', 'Operator Name', 'Part Name']);
+  await expect(page.getByText('Component ID')).toHaveCount(0);
+  await expect(page.getByText('Operation Number')).toHaveCount(0);
+  await expect(page.locator('.mt-facts-top dd').nth(3)).toHaveText('Suresh Babu');
+});
+
+test('Operator Performance → OEE: a ranked scorecard with each factor beside the OEE', async ({ authedPage: page }) => {
+  await page.routeWebSocket(/.*/, (ws: any) => ws.close());
+  await mockApi(page);
+  await page.setViewportSize({ width: 1600, height: 1200 });
+  await page.goto('/operator-performance');
+  const card = page.getByRole('region', { name: /^OEE/ });
+  const rows = card.getByRole('listitem');
+  await expect(rows.first()).toBeVisible();
+  expect(await card.locator('apx-chart').count()).toBe(0);
+  await expect(rows.first()).toContainText(/1\s*\S.*\s(Excellent|Good|Avg|Needs Improvement)\s*\d+(\.\d)?%\s*OEE/);
+  for (const f of ['Availability', 'Performance', 'Quality']) await expect(rows.first()).toContainText(f);
+  // nothing cut short or run together at desktop width
+  const label = rows.first().locator('.op-oee-factor-label').nth(1);
+  expect(await label.evaluate((el: HTMLElement) => el.scrollWidth <= el.clientWidth)).toBe(true);
+});
+
+test('Preventive: machines and reasons are rows, their counts inside the bars; the trend\'s days stand level', async ({ authedPage: page }) => {
+  await page.routeWebSocket(/.*/, (ws: any) => ws.close());
+  await mockApi(page);
+  await page.setViewportSize({ width: 1600, height: 1200 });
+  await page.goto('/preventive-maintenance');
+  const machines = page.locator('section', { has: page.getByRole('heading', { name: 'Machine Wise Critical Alarms' }) });
+  await expect(machines.locator('.apexcharts-yaxis-label').first()).toContainText('CNC-01');      // names down the side
+  await expect(machines.locator('.apexcharts-datalabel').first()).toHaveText('12');
+  const trend = page.locator('section', { has: page.getByRole('heading', { name: 'Critical Alarm Trend' }) });
+  const tick = trend.locator('.apexcharts-xaxis-label').first();
+  await expect(tick).toBeVisible();
+  expect(await tick.getAttribute('transform') ?? '').not.toMatch(/rotate\(-/);                  // not slanted
+});

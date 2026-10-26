@@ -1,4 +1,4 @@
-import { BAR_HOVER, barAxisMax, barFigures, columnFigure, columnFigures, figureFits } from './bar-figures';
+import { BAR_HOVER, barAxisMax, barFigures, columnFigure, columnFigures, figureFits, wrapLabel } from './bar-figures';
 
 /* 26 Oct 2026, the user on Energy: one big bar left the others tiny — their
    figures did not fit, and a tiny bar could not be hovered. */
@@ -26,7 +26,7 @@ test('a figure shows inside its bar only when the bar can hold it', () => {
 });
 
 test('the chart parts: the axis, the figure for a bar that fits and none for one that does not, a row-wide tooltip', () => {
-  const fig = barFigures([233.13, 32, 1.84], v => `${v}`, { distributed: true });
+  const fig = barFigures([233.13, 32, 1.84], v => `${v}`, { bar: { distributed: true } });
   expect(fig.plotOptions.bar).toMatchObject({ horizontal: true, distributed: true });
   expect(fig.xaxis).toEqual({ min: 0, max: 250, tickAmount: 5 });
   const w = { w: { globals: { gridWidth: 540 } } };
@@ -67,8 +67,20 @@ test('the column chart part: white, 12px, on the series asked for', () => {
 });
 
 test('a fixed axis end (a score runs to 100 %) is the one figures are judged against', () => {
-  const fig = barFigures([91, 52], v => `${v}%`, {}, false, 100);
+  const fig = barFigures([91, 52], v => `${v}%`, { axisMax: 100 });
   expect(fig.xaxis).toEqual({ min: 0, max: 100, tickAmount: 5 });
   expect(fig.dataLabels.formatter(52, { w: { layout: { gridWidth: 600 } } })).toBe('52%');   // 312 px of 600
   expect(fig.dataLabels.formatter(3, { w: { layout: { gridWidth: 600 } } })).toBe('');       // 18 px
+});
+
+test('a narrow card asks for fewer ticks', () => {
+  expect(barAxisMax(122, true)).toEqual({ max: 125, ticks: 5 });
+  expect(barAxisMax(122, true, 4)).toEqual({ max: 150, ticks: 3 });
+});
+
+test('a long name on two lines, never cut mid-word unless one word is too long', () => {
+  expect(wrapLabel('Spindle Overload')).toBe('Spindle Overload');
+  expect(wrapLabel('PRESS SERVO ON FOR MORE THAN 5 SEC')).toEqual(['PRESS SERVO ON FOR', 'MORE THAN 5 SEC']);
+  expect(wrapLabel('(Z)+ OVERTRAVEL ( SOFT 1) ON THE FOURTH AXIS DRIVE')).toEqual(['(Z)+ OVERTRAVEL (', 'SOFT 1) ON THE FO…']);
+  expect(wrapLabel('SUPERCALIFRAGILISTICEXPIALIDOCIOUS')).toEqual(['SUPERCALIFRAGILIS…']);
 });

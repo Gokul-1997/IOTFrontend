@@ -19,7 +19,7 @@ import { SEVERITY } from '../../shared/severity';
 import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
-import { BAR_HOVER, barFigures, columnFigures } from '../../shared/bar-figures';
+import { barFigures, wrapLabel } from '../../shared/bar-figures';
 
 /** Charts | PM Ticket Details (the tickets and the alarm rules), under the tiles both share. */
 const TABS: DashTab[] = [
@@ -319,6 +319,19 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
 
   /* ── threshold rules ── */
 
+  /** The setup note's link: PM Ticket Details with the alarm rules open, brought into view. */
+  openRules(): void {
+    if (this.views.tab !== 'details') this.setView('details');
+    if (!this.showRules) this.toggleRules();
+    let tries = 0;
+    const reveal = () => {
+      const el = document.getElementById('pvRules');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      else if (++tries < 40) requestAnimationFrame(reveal);
+    };
+    requestAnimationFrame(reveal);
+  }
+
   /** The Alarm rules button: the rules are asked for when they are first shown, never on landing. */
   toggleRules(): void {
     this.showRules = !this.showRules;
@@ -456,16 +469,23 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
 
   get trendChart(): any {
     return this.charts.memo('trendChart', () => {
+    /* 26 Oct 2026, the user: "not professional". A curve that never swings
+       past the day's count (smooth overshot to below zero between days), a
+       dot on each day, the days level rather than slanted, whole counts. */
     return {
       chart:  { type: 'area', height: 220, toolbar: { show: false }, fontFamily: 'inherit' },
-      stroke: { width: 2, curve: 'smooth' },
-      fill:   { type: 'gradient', gradient: { shadeIntensity: 0.3, opacityFrom: 0.4, opacityTo: 0.05 } },
+      stroke: { width: 2.5, curve: 'monotoneCubic' },
+      markers: { size: 3.5, strokeWidth: 2, strokeColors: '#fff', hover: { size: 5.5 } },
+      fill:   { type: 'gradient', gradient: { shadeIntensity: 0.3, opacityFrom: 0.32, opacityTo: 0.02 } },
       colors: ['#dc2626'],
       dataLabels: { enabled: false },
-      xaxis:  { categories: this.trendCategories },
-      yaxis:  { title: { text: 'Critical alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
+      // more than five days in this narrow card: every other day named; the tooltip names each
+      xaxis:  { categories: this.trendCategories, tooltip: { enabled: false },
+                labels: { rotate: 0, hideOverlappingLabels: true,
+                          formatter: (v: string) => this.trendCategories.length > 5 && this.trendCategories.indexOf(v) % 2 === 1 ? '' : v } },
+      yaxis:  { min: 0, forceNiceScale: true, title: { text: 'Critical alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'light' },
+      tooltip:{ theme: 'light', x: { formatter: (_v: unknown, o?: any) => this.trendCategories[o?.dataPointIndex] ?? '' } },
       responsive: [
           {
             breakpoint: 1600,
@@ -496,23 +516,25 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
   });
   }
 
-  /* Machine-wise alarms is a column chart in the design, matching the
-     other "by machine" panels; reasons stay horizontal because the
-     labels are sentences. */
+  /* Machine-wise alarms as rows, like the reasons beside it (26 Oct 2026,
+     the user: "not professional"): as columns, a dozen machine names stood
+     slanted under bars too thin to read. Each count inside its bar; a short
+     bar's on hover anywhere along its row (shared/bar-figures). */
   get machineChart(): any {
     return this.charts.memo('machineChart', () => {
+    const fig = barFigures(this.machineSeries[0]?.data || [], v => `${v}`,
+                           { bar: { borderRadius: 3, barHeight: '70%', distributed: true }, whole: true, maxTicks: 4 });
     return {
-      chart:  { type: 'bar', height: 230, toolbar: { show: false }, fontFamily: 'inherit' },
-      plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
+      chart:  { type: 'bar', height: 230, toolbar: { show: false }, fontFamily: 'inherit', events: fig.events },
+      plotOptions: fig.plotOptions,
       colors: this.palette,
-      // a column too short or narrow for its count shows it on hover
-      dataLabels: columnFigures(v => `${v}`),
+      dataLabels: fig.dataLabels,
       // distributed repeats every machine in the legend; the axis names them
       legend: { show: false },
-      xaxis:  { categories: this.machineCategories },
-      yaxis:  { title: { text: 'No. of Alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
+      xaxis:  { categories: this.machineCategories, title: { text: 'No. of alarms' }, ...fig.xaxis },
+      yaxis:  { labels: { maxWidth: 110 } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'light', ...BAR_HOVER },
+      tooltip:{ theme: 'light', ...fig.tooltip },
       noData: { text: 'No critical alarms in this period' }
     };
   });
@@ -581,14 +603,17 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
   get reasonChart(): any {
     return this.charts.memo('reasonChart', () => {
     // a bar too short for its count shows it on hover (shared/bar-figures)
-    const fig = barFigures(this.reasonSeries[0]?.data || [], v => `${v}`, { borderRadius: 3, barHeight: '80%', distributed: true }, true);
+    // a long alarm text on two lines, not cut short; fewer ticks in the narrow card
+    const fig = barFigures(this.reasonSeries[0]?.data || [], v => `${v}`,
+                           { bar: { borderRadius: 3, barHeight: '70%', distributed: true }, whole: true, maxTicks: 4 });
     return {
       chart: { type: 'bar', height: 230, toolbar: { show: false }, fontFamily: 'inherit', events: fig.events },
       plotOptions: fig.plotOptions,
       colors: this.palette,
       dataLabels: fig.dataLabels,
       legend: { show: false },
-      xaxis: { categories: this.reasonCategories, title: { text: 'Occurrences' }, ...fig.xaxis },
+      xaxis: { categories: this.reasonCategories.map(r => wrapLabel(r)), title: { text: 'Occurrences' }, ...fig.xaxis },
+      yaxis: { labels: { maxWidth: 140 } },
       grid:  { borderColor: 'rgba(148,163,184,.25)' },
       tooltip: { theme: 'light', ...fig.tooltip },
       noData: { text: 'No critical alarms in this period' }

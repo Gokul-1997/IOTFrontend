@@ -280,3 +280,26 @@ test('the setup notes come with the tiles: no rule or plan list is loaded to kno
   await expect(page.locator('.mexa-kpi').first()).toBeVisible();
   await expect(page.getByText('No alarm rules yet')).toHaveCount(0);
 });
+
+/* 26 Oct 2026, the user: the Preventive page "not professional" — its setup
+   note scrolled by as a marquee, and between passes the yellow bar stood
+   empty. Every setup note is still now, in one line, with its fix beside it. */
+test('the setup note stands still and says what to do; its link opens the alarm rules', async ({ authedPage: page }) => {
+  await page.route('**/api/**', (r: any) => r.fulfill(json({ status: 'success', success: true, data: [] })));
+  await page.route('**/api/charts/meta*', (r: any) => r.fulfill(json(meta)));
+  await page.route(/\/api\/dashboard\/preventive\?/, (r: any) => r.fulfill(json({ status: 'success', data: {
+    updated_at: new Date().toISOString(), kpis: { rules: 0, pm_generated: 0 } } })));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/preventive-maintenance');
+
+  const note = page.locator('.mexa-note-warn');
+  await expect(note).toHaveText(/No alarm rules yet\s*— PM tickets are raised from repeated critical alarms\.\s*Add an alarm rule/);
+  await expect(page.locator('marquee, .marquee')).toHaveCount(0);
+  const at = (await note.getByText('No alarm rules yet').boundingBox())!;
+  await page.waitForTimeout(600);
+  expect((await note.getByText('No alarm rules yet').boundingBox())!.x).toBe(at.x);   // not moving
+
+  await note.getByRole('button', { name: 'Add an alarm rule' }).click();
+  await expect(page.getByRole('tab', { name: 'PM Ticket Details' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('heading', { name: 'Alarm Rules' })).toBeInViewport();
+});

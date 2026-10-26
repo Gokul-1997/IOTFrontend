@@ -80,14 +80,10 @@
   <!-- Telemetry shows idle time but nobody entered a reason: a setup gap,
        not an empty filter result, and worth saying in words. -->
   <!-- the gap, its size, and where to close it -->
-  <div *ngIf="hasNoReasons" class="mexa-note mexa-note-warn">
-    <marquee>
-    <span>
+  <p *ngIf="hasNoReasons" class="mexa-note mexa-note-warn" role="status">
     <strong>No downtime reasons entered</strong> — {{ hours(data.kpis.idle_seconds) }} idle with no reason recorded.
-    <a *ngIf="canRecordReasons" routerLink="/downtime" class="mexa-kpi-link">Record reasons</a>
-    </span>
-    </marquee>
-  </div>
+    <a *ngIf="canRecordReasons" routerLink="/downtime" class="mexa-note-action">Record reasons</a>
+  </p>
 
   <!-- ══════════ KPI TILES ══════════
        Each tile opens Downtime Details: the declared downtime and its events

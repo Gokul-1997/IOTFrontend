@@ -490,6 +490,14 @@ html, body { font-family: var(--font-ui); }
 .mexa-note-bad  { border-left-color: #dc2626; background: #fdecec; color: #5c1414; }
 .mexa-note-bad::before  { content: 'error_outline'; color: #dc2626; }
 .mexa-note :is(a, button) { color: inherit; text-decoration: underline; font-weight: 600; }
+/* A card on a card — each dashboard's tab panel holds its chart and table
+   cards: drawn flat, a hairline apart, not a second shadow (26 Oct 2026, the
+   user: the Preventive page "not professional"). */
+.mexa-card .mexa-card { box-shadow: none; border: 1px solid var(--mexa-rule); }
+
+/* a note's fix, beside it: a link or a button that reads as one */
+.mexa-note-action { margin-left: .35rem; padding: 0; border: 0; background: none; font: inherit; cursor: pointer; text-underline-offset: 2px; }
+.mexa-note-action:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 3px; }
 .dark .mexa-note-note { background: #14243d; color: #c9dcfb; }
 .dark .mexa-note-warn { background: #362a10; color: #f6dfa8; }
 .dark .mexa-note-bad  { background: #3a1620; color: #f8c4cb; }

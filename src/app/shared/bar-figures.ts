@@ -96,16 +96,39 @@ export function columnFigures(format: (v: number) => string, series?: number[]) 
   };
 }
 
-/** The axis end: a round number at or past `top`, in at most six steps — whole steps for counts. */
-export function barAxisMax(top: number, whole = false): { max: number; ticks: number } {
+/** The axis end: a round number at or past `top`, in at most `maxTicks` steps (six) — whole steps for counts. */
+export function barAxisMax(top: number, whole = false, maxTicks = 6): { max: number; ticks: number } {
   if (!(top > 0)) return { max: 1, ticks: 1 };
   const mag = Math.pow(10, Math.floor(Math.log10(top)));
   for (const step of [0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10].map(f => f * mag).filter(st => !whole || Number.isInteger(st))) {
     const ticks = Math.ceil(top / step - 1e-9);
-    if (ticks <= 6) return { max: +(step * ticks).toPrecision(12), ticks };
+    if (ticks <= maxTicks) return { max: +(step * ticks).toPrecision(12), ticks };
   }
   return { max: 10 * mag, ticks: 1 };
 }
+
+/**
+ * A long category name on two lines rather than cut short (an alarm's text,
+ * "PRESS SERVO ON FOR MORE THAN 5 SEC"); a longer one ends in "…". ApexCharts
+ * draws an array as one line each.
+ */
+export function wrapLabel(text: string, width = 18, lines = 2): string | string[] {
+  const words = String(text ?? '').trim().split(/\s+/);
+  if (words.join(' ').length <= width) return words.join(' ');
+  const out: string[] = [];
+  let line = '';
+  for (const w of words) {
+    if (line && (line + ' ' + w).length > width) { out.push(line); line = w; }
+    else line = line ? line + ' ' + w : w;
+  }
+  if (line) out.push(line);
+  // the last line takes the rest, cut short
+  if (out.length > lines) out.splice(lines - 1, out.length, out.slice(lines - 1).join(' '));
+  return out.map(l => (l.length > width ? l.slice(0, width - 1).trimEnd() + '…' : l));
+}
+
+/** How a bar chart is read: its bars' options, whole steps for counts, a fixed axis end, at most so many ticks. */
+export interface BarFigureOptions { bar?: Record<string, unknown>; whole?: boolean; axisMax?: number; maxTicks?: number; }
 
 /** Whether a figure of `text` fits inside a bar of `value` on an axis to `max` drawn `width` px wide (12px bold). */
 export function figureFits(value: number, text: string, max: number, width: number): boolean {
@@ -113,10 +136,10 @@ export function figureFits(value: number, text: string, max: number, width: numb
   return (value / max) * width >= figureWidth(text) + 12;
 }
 
-export function barFigures(values: unknown[], format: (v: number) => string, bar: Record<string, unknown> = {}, whole = false,
-                           axisMax?: number) {
+export function barFigures(values: unknown[], format: (v: number) => string,
+                           { bar = {}, whole = false, axisMax, maxTicks = 6 }: BarFigureOptions = {}) {
   const top = axisMax ?? Math.max(0, ...values.map(Number).filter(Number.isFinite));
-  const { max, ticks } = barAxisMax(top, whole);
+  const { max, ticks } = barAxisMax(top, whole, maxTicks);
   return {
     plotOptions: { bar: { ...bar, horizontal: true } },
     dataLabels: {

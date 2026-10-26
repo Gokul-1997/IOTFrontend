@@ -1,0 +1,49 @@
+/* Operator Performance → OEE: a ranked scorecard, one row per operator.
+   The grade's colours come from the global .mexa-grade-* classes
+   (--band for the edge, --band-ink for the OEE and its word). */
+.op-oee { display: grid; gap: .5rem; margin: .35rem 0 0; padding: 0; list-style: none; }
+.op-oee-row {
+  display: grid; grid-template-columns: 1.75rem minmax(6rem, .9fr) 4.5rem minmax(0, 3fr); align-items: center; gap: .85rem;
+  padding: .65rem .85rem; border: 1px solid var(--mexa-rule); border-left: 4px solid var(--band); border-radius: 12px;
+  background: var(--mexa-card);
+}
+.op-oee-rank {
+  display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%;
+  font-size: .78rem; font-weight: 700; color: var(--mexa-ink-2); background: var(--mexa-row-alt);
+}
+.op-oee-who { display: grid; min-width: 0; line-height: 1.25; }
+.op-oee-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; color: var(--mexa-ink); }
+.op-oee-grade { font-size: .75rem; font-weight: 600; color: var(--band-ink); }
+.op-oee-score {
+  display: grid; justify-items: end; line-height: 1.1;
+  strong { font-size: 1.3rem; font-weight: 700; color: var(--band-ink); font-variant-numeric: tabular-nums; }
+  small { font-size: .68rem; font-weight: 600; letter-spacing: .06em; color: var(--mexa-ink-3); }
+}
+.op-oee-factors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.1rem; }
+.op-oee-factor { display: grid; gap: .2rem; min-width: 0; }
+/* the factor's name over its bar, the value at the bar's end */
+.op-oee-factor-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .74rem; color: var(--mexa-ink-2); }
+.op-oee-factor-bar {
+  display: flex; align-items: center; gap: .45rem;
+  b { flex: none; min-width: 2.6rem; text-align: right; font-size: .8rem; font-weight: 700; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
+}
+.op-oee-track {
+  flex: 1; height: 6px; border-radius: 99px; background: var(--mexa-rule); overflow: hidden;
+  i { display: block; height: 100%; border-radius: inherit; transition: width .4s ease; }
+}
+/* the three factors in MEXA colours, lighter on the dark card */
+.is-a { background: #0b7267; }
+.is-p { background: #2b3a8f; }
+.is-q { background: #6e3b71; }
+:host-context(.dark) {
+  .is-a { background: #2fb39b; }
+  .is-p { background: #8b88f0; }
+  .is-q { background: #c48ad8; }
+}
+
+/* a phone: the factors under the name and the score */
+@media (max-width: 640px) {
+  .op-oee-row { grid-template-columns: 1.75rem minmax(0, 1fr) auto; }
+  .op-oee-factors { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) { .op-oee-track i { transition: none; } }

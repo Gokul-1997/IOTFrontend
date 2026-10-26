@@ -18,6 +18,7 @@ import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
+import { OeeGrade, oeeGrade, oeeGradeClass, oeeGradeWord } from '../../shared/oee-grade';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 8 — OEE Dashboard
@@ -340,19 +341,11 @@ setTab(tab: 'oee' | 'charts'): void {
     return Number((oee - target).toFixed(2));
   }
 
-  /* ── the design's four grades, on OEE ──
+  /* ── the design's four grades, on OEE (shared/oee-grade) ──
      > 85 Excellent · 75–85 Good · 60–75 Avg · < 60 Needs Improvement */
-  grade(m: any): string {
-    const v = m?.oee_pct;
-    if (v === null || v === undefined) return 'UNKNOWN';
-    return v >= 85 ? 'EXCELLENT' : v >= 75 ? 'GOOD' : v >= 60 ? 'AVG' : 'POOR';
-  }
-  gradeTile(g: string): string {
-    return ({ EXCELLENT: 'mexa-grade-excellent', GOOD: 'mexa-grade-good', AVG: 'mexa-grade-avg', POOR: 'mexa-grade-poor' } as any)[g] || 'mexa-grade-unknown';
-  }
-  gradeWord(g: string): string {
-    return ({ EXCELLENT: 'Excellent', GOOD: 'Good', AVG: 'Avg', POOR: 'Needs Improvement' } as any)[g] || 'No cycle time';
-  }
+  grade(m: any): OeeGrade { return oeeGrade(m?.oee_pct); }
+  gradeTile(g: OeeGrade): string { return oeeGradeClass(g); }
+  gradeWord(g: OeeGrade): string { return oeeGradeWord(g); }
 
   /** A date in plant time, `offset` days from today. Converting back through
    *  toISOString() gave yesterday's date before 05:30 IST. */

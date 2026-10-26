@@ -8,7 +8,8 @@ import { OperatorDashboardService } from './operator-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
-import { barFigures, columnFigures } from '../../shared/bar-figures';
+import { barFigures } from '../../shared/bar-figures';
+import { oeeGrade, oeeGradeClass, oeeGradeWord } from '../../shared/oee-grade';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
@@ -52,7 +53,8 @@ type Tab = Exclude<Board, 'oee'>;
   selector: 'app-operator-dashboard',
   standalone: true,
   imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, UiTabsDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
-  templateUrl: './operator-dashboard.component.html'
+  templateUrl: './operator-dashboard.component.html',
+  styleUrl: './operator-dashboard.component.scss'
 })
 export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
 
@@ -343,7 +345,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
          the bar can hold it, a short bar's on hover anywhere along its row
          (shared/bar-figures). A score runs to 100 %. */
       const values = rows.map((r: any) => board === 'downtime' ? r.value / 3600 : r.value);
-      const fig = barFigures(values, fmt, { borderRadius: 3, barHeight: '62%', distributed: true }, false, board === 'score' ? 100 : undefined);
+      const fig = barFigures(values, fmt, { bar: { borderRadius: 3, barHeight: '62%', distributed: true }, axisMax: board === 'score' ? 100 : undefined });
       return {
         series: [{ name: axisTitle, data: values }],
         chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false }, events: fig.events },
@@ -367,52 +369,23 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
   /** The chart of the tab on show — the only one of the three that exists. */
   get boardChart(): any { return this.hbar(this.tab); }
 
-  /** Availability, Performance and Quality for each operator, ranked by OEE. */
-  get oeeChart(): any {
-    return this.charts.memo('oee', () => {
-      const rows = this.rows('oee');
-      const col = (f: string) => rows.map((r: any) => r[f] ?? null);
-      return {
-        series: [
-          { name: 'Availability', data: col('availability_pct') },
-          { name: 'Performance', data: col('efficiency_pct') },
-          { name: 'Quality', data: col('quality_rate_pct') }
-        ],
-        chart: { type: 'bar', height: 270, toolbar: { show: false }, 
-        fontFamily: 'inherit', animations: { enabled: false } 
-      },
-        plotOptions: { bar: { borderRadius: 2, columnWidth: '50%' } },
-        colors: ['#F37362', '#FEBC3B', '#26A0FC'],
-        // a column too short or narrow for its % shows it on hover
-        dataLabels: columnFigures(v => `${Math.round(v)}%`),
-        legend: { position: 'bottom', markers: { shape: 'circle' } },
-        xaxis: { categories: rows.map((r: any) => r.operator_name), 
-          labels: { rotate:0, trim: true } },
-        yaxis: { min: 0, max: 100, tickAmount: 5, labels: { formatter: (v: number) => `${Math.round(v)}%` } },
-        grid: { borderColor: 'rgba(148,163,184,.25)' },
-        tooltip: {
-          theme: 'light', shared: true, intersect: false,
-          y: { formatter: (v: number | null) => v == null ? '--' : `${v}%` },
-          // the OEE itself, which the three bars multiply to
-          x: { formatter: (_: any, o: any) => {
-            const r = rows[o?.dataPointIndex];
-            return r ? `${r.operator_name} — OEE ${r.oee_pct == null ? '--' : r.oee_pct + '%'}` : '';
-          } }
-        },
-        noData: { text: 'Nothing measured for this period' },
-        responsive: [
-  {
-    breakpoint: 1600,
-    options: {
-      chart: {
-        height: 240
-      }
-    }
-  }
-]
-      };
-    }, this.drawn('oee'));
-  }
+  /* OEE for each operator as a ranked scorecard (26 Oct 2026, the user: the
+     grouped columns "not professional" — fifteen bars, most at 100 %, said
+     little). Each row: the rank, the operator, the OEE in its grade's colour,
+     and the three factors it multiplies from as slim bars with their values. */
+  readonly oeeFactors = [
+    { key: 'availability_pct', label: 'Availability', cls: 'is-a' },
+    { key: 'efficiency_pct', label: 'Performance', cls: 'is-p' },
+    { key: 'quality_rate_pct', label: 'Quality', cls: 'is-q' }
+  ] as const;
+
+  oeeGradeClass(v: number | null | undefined): string { return oeeGradeClass(oeeGrade(v)); }
+  oeeGradeWord(v: number | null | undefined): string { return oeeGradeWord(oeeGrade(v)); }
+  /** "70%", "--" when not measured */
+  pctOf(v: number | null | undefined): string { return v === null || v === undefined ? '--' : `${this.fix(Number(v))}%`; }
+  /** A factor's bar length: 0–100. */
+  barOf(v: number | null | undefined): number { return Math.max(0, Math.min(100, Number(v) || 0)); }
+  byOperator(_: number, r: any): any { return r.operator_id ?? r.operator_name; }
 
   /* ── view helpers ── */
 
