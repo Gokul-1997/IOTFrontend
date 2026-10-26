@@ -152,10 +152,7 @@
     </div>
     <div *ngIf="views.has('charts')" class="pv-chart-grid">
       <section class="mexa-card pv-chart-card" aria-labelledby="pvTrendTitle">
-        <header class="pv-card-head">
-          <div><h2 id="pvTrendTitle">Critical Alarm Trend</h2></div>
-          <span class="pv-chart-icon pv-chart-icon-red material-icons" aria-hidden="true">show_chart</span>
-        </header>
+        <h2 id="pvTrendTitle" class="mexa-card-title mexa-card-title-left">Critical Alarm Trend</h2>
         <div class="pv-chart-body">
           <apx-chart *ngIf="trendSeries.length && trendCategories.length; else noTrend"
             [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke" [markers]="trendChart.markers"
@@ -167,29 +164,23 @@
       </section>
 
       <section class="mexa-card pv-chart-card" aria-labelledby="pvSeverityTitle">
-        <header class="pv-card-head">
-          <div><h2 id="pvSeverityTitle">Alarms by Severity</h2></div>
-          <span class="pv-chart-icon material-icons" aria-hidden="true">donut_large</span>
-        </header>
+        <h2 id="pvSeverityTitle" class="mexa-card-title">Alarms by Severity</h2>
         <div class="pv-chart-body pv-severity" *ngIf="severityTotal > 0; else noSeverity">
           <apx-chart [series]="severitySeries" [chart]="severityDonut.chart" [labels]="severityDonut.labels"
             [colors]="severityDonut.colors" [dataLabels]="severityDonut.dataLabels" [stroke]="severityDonut.stroke"
             [plotOptions]="severityDonut.plotOptions" [legend]="severityDonut.legend"
             [tooltip]="severityDonut.tooltip" [noData]="severityDonut.noData"></apx-chart>
-          <ul class="pv-severity-key" aria-label="Alarm severity counts">
-            <li><span class="pv-key-dot" [style.background]="SEV.critical.color" aria-hidden="true"></span><span>{{ SEV.critical.label }}</span><strong>{{ data.alarm_severity.critical }}</strong></li>
-            <li><span class="pv-key-dot" [style.background]="SEV.noncritical.color" aria-hidden="true"></span><span>{{ SEV.noncritical.label }}</span><strong>{{ data.alarm_severity.non_critical }}</strong></li>
-            <li><span class="pv-key-dot" [style.background]="SEV.info.color" aria-hidden="true"></span><span>{{ SEV.info.label }}</span><strong>{{ data.alarm_severity.information }}</strong></li>
+          <ul class="mexa-keylist pv-severity-key" aria-label="Alarm severity counts">
+            <li><span class="mexa-key-swatch" [style.--swatch]="SEV.critical.color" aria-hidden="true"></span><span><span class="mexa-key-label">{{ SEV.critical.label }}</span><span class="mexa-key-value">{{ data.alarm_severity.critical }}</span></span></li>
+            <li><span class="mexa-key-swatch" [style.--swatch]="SEV.noncritical.color" aria-hidden="true"></span><span><span class="mexa-key-label">{{ SEV.noncritical.label }}</span><span class="mexa-key-value">{{ data.alarm_severity.non_critical }}</span></span></li>
+            <li><span class="mexa-key-swatch" [style.--swatch]="SEV.info.color" aria-hidden="true"></span><span><span class="mexa-key-label">{{ SEV.info.label }}</span><span class="mexa-key-value">{{ data.alarm_severity.information }}</span></span></li>
           </ul>
         </div>
         <ng-template #noSeverity><div class="pv-chart-body pv-empty"><span class="material-icons" aria-hidden="true">donut_large</span><strong>No alarms in this period.</strong><p>Severity distribution appears when alarms are recorded.</p></div></ng-template>
       </section>
 
       <section class="mexa-card pv-chart-card" aria-labelledby="pvMachineTitle">
-        <header class="pv-card-head">
-          <div><h2 id="pvMachineTitle">Machine Wise Critical Alarms</h2></div>
-          <span class="pv-chart-icon material-icons" aria-hidden="true">precision_manufacturing</span>
-        </header>
+        <h2 id="pvMachineTitle" class="mexa-card-title mexa-card-title-left">Machine Wise Critical Alarms</h2>
         <div class="pv-chart-body">
           <apx-chart *ngIf="machineSeries.length && machineCategories.length; else noMachines"
             [series]="machineSeries" [chart]="machineChart.chart" [plotOptions]="machineChart.plotOptions"
@@ -201,10 +192,7 @@
       </section>
 
       <section class="mexa-card pv-chart-card" aria-labelledby="pvReasonsTitle">
-        <header class="pv-card-head">
-          <div><h2 id="pvReasonsTitle">Top 5 Alarm Reasons</h2></div>
-          <span class="pv-chart-icon pv-chart-icon-teal material-icons" aria-hidden="true">format_list_numbered</span>
-        </header>
+        <h2 id="pvReasonsTitle" class="mexa-card-title mexa-card-title-left">Top 5 Alarm Reasons</h2>
         <div class="pv-chart-body">
           <apx-chart *ngIf="reasonSeries.length; else noReasons"
             [series]="reasonSeries" [chart]="reasonChart.chart" [plotOptions]="reasonChart.plotOptions"

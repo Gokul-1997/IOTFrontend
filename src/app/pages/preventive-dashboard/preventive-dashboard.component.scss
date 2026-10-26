@@ -4,33 +4,17 @@
 .mexa-titlebar .titlebar { min-width: 0; }
 .pv-chart-panel { zoom: 1; }
 .pv-chart-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
-.pv-chart-card { display: flex; flex-direction: column; min-width: 0; padding: 14px 14px 6px; border: 1px solid var(--mexa-rule); border-radius: 16px; zoom: 1; }
-.pv-chart-card:hover { transform: none; }
-.pv-card-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px solid var(--mexa-rule); }
-.pv-card-head h2 { color: var(--mexa-ink); font-size: 15px; font-weight: 700; line-height: 1.45; margin: 0; }
-.pv-chart-icon { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 30px; border-radius: 10px; background: rgba(99,91,223,.1); color: #635bdf; font-size: 20px; }
-.pv-chart-icon-red { color: #dc2626; background: rgba(220,38,38,.08); }
-.pv-chart-icon-teal { color: #147d92; background: rgba(20,125,146,.09); }
+.pv-chart-card { display: flex; flex-direction: column; zoom: 1; }
 .pv-chart-body { min-width: 0; min-height: 210px; flex: 1; }
 .pv-severity { display: grid; grid-template-columns: minmax(0,1fr) minmax(130px,.65fr); gap: 12px; align-items: center; }
-.pv-severity-key { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-.pv-severity-key li { display: grid; grid-template-columns: 9px minmax(0,1fr) auto; align-items: center; gap: 9px; padding: 12px 0; border-bottom: 1px solid var(--mexa-rule); color: var(--mexa-ink-2); font-size: 12px; }
-.pv-severity-key li:last-child { border: 0; }
-.pv-severity-key strong { font-size: 18px; font-weight: 700; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
-.pv-key-dot { width: 8px; height: 8px; border-radius: 50%; }
 .pv-empty { min-height: 210px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 10px; padding: 24px; color: var(--mexa-ink-3); }
 .pv-empty .material-icons { display: grid; place-items: center; width: 52px; height: 52px; border: 1px solid var(--mexa-rule); background: var(--mexa-row-alt); border-radius: 16px; color: var(--mexa-ink-3); font-size: 25px; margin-bottom: 3px; }
 .pv-empty strong { font-size: 13px; font-weight: 600; color: var(--mexa-ink-2); }
 .pv-empty p { font-size: 12px; line-height: 1.6; max-width: 240px; margin: 0; }
 @media (max-width: 991px) {
-  .pv-severity { grid-template-columns: minmax(0,1fr); gap: 0; }
-  .pv-severity-key { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
-  .pv-severity-key li { grid-template-columns: 8px minmax(0,1fr); align-items: start; gap: 7px; padding: 7px 0 10px; border: 0; font-size: 10px; }
-  .pv-severity-key strong { grid-column: 2; font-size: 17px; }
+  .pv-severity { grid-template-columns: minmax(0,1fr); }
 }
 @media (max-width: 767px) {
   .pv-chart-grid { grid-template-columns: minmax(0,1fr); gap: 16px; }
-  .pv-card-head { gap: 10px; padding-bottom: 8px; }
-  .pv-card-head h2 { font-size: 14px; }
   .pv-chart-body, .pv-empty { min-height: 240px; }
 }

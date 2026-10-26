@@ -1,6 +1,13 @@
 import { test, expect, localFixtureOrigin } from './fixtures/auth';
 
 const titles = ['Critical Alarm Trend', 'Alarms by Severity', 'Machine Wise Critical Alarms', 'Top 5 Alarm Reasons'];
+const cardAppearance = (el: Element) => {
+  const card = getComputedStyle(el), title = getComputedStyle(el.querySelector('h2')!);
+  return {
+    border: card.border, radius: card.borderRadius, padding: card.padding, shadow: card.boxShadow,
+    font: title.fontSize, weight: title.fontWeight, lineHeight: title.lineHeight, titleMargin: title.marginBottom
+  };
+};
 const fixture = (empty = false) => ({
   updated_at: new Date().toISOString(),
   kpis: { critical_alarms: empty ? 0 : 40, critical_alarms_open: 20, pm_generated: 25, pm_open: 5, pm_completed: 20,
@@ -32,19 +39,24 @@ for (const dark of [false, true]) {
     await page.addInitScript(value => localStorage.setItem('theme', value), dark ? 'dark' : 'light');
     const f = await mock(page);
     await page.setViewportSize({width:1440,height:900});
+    await page.goto('/energy-dashboard');
+    const energyCard = page.locator('#dashPanel-charts .mexa-grid > .mexa-card').first();
+    await expect(energyCard.locator('h2')).toBeVisible();
+    const energyAppearance = await energyCard.evaluate(cardAppearance);
     await page.goto('/preventive-maintenance');
     await expect(page.locator('.pv-chart-card')).toHaveCount(4);
     await expect(page.locator('apx-chart .apexcharts-canvas')).toHaveCount(4);
-    await expect(page.locator('.pv-card-head h2')).toHaveText(titles);
-    await expect(page.locator('.pv-card-head p')).toHaveCount(0);
+    await expect(page.locator('.pv-chart-card > h2')).toHaveText(titles);
+    await expect(page.locator('.pv-chart-card > header')).toHaveCount(0);
     await expect(page.locator('#dashPanel-charts')).toHaveCSS('background-color', dark ? 'rgb(3, 23, 53)' : 'rgb(255, 255, 255)');
     await expect(page.getByText('Maintenance planning', {exact:true})).toHaveCount(0);
     await expect(page.getByText('Track critical alarms, preventive work and resolution performance.', {exact:true})).toHaveCount(0);
     await expect(page.locator('.mexa-titlebar .titlebar .mexa-title')).toHaveText('Preventive Maintenance Dashboard');
     await expect(page.locator('.last-updated-vertical .updated-time')).toContainText('Updated');
     await expect(page.locator('.mexa-kpis .mexa-kpi')).toHaveCount(5);
-    await expect(page.locator('.pv-severity-key strong')).toHaveText(['24','16','8']);
+    await expect(page.locator('.pv-severity-key .mexa-key-value')).toHaveText(['24','16','8']);
     const cards = page.locator('.pv-chart-card');
+    for (const card of await cards.all()) expect(await card.evaluate(cardAppearance)).toEqual(energyAppearance);
     const first = (await cards.nth(0).boundingBox())!, second = (await cards.nth(1).boundingBox())!;
     expect(Math.abs(first.y-second.y)).toBeLessThan(2); expect(second.x).toBeGreaterThan(first.x+first.width);
     await expect.poll(() => cards.nth(3).evaluate(el => el.getBoundingClientRect().bottom <= innerHeight)).toBe(true);
