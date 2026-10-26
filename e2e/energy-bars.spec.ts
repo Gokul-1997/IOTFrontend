@@ -68,7 +68,7 @@ test('a hover anywhere along a row shows that machine, with its kWh — the tiny
 
 /* "This hover on every chart" (26 Oct 2026): a column chart answers a hover
    anywhere in a column too — above a short one, not only on its sliver. */
-test('Energy Cost Trend: a hover above a short day\'s column shows that day', async ({ page }) => {
+test('Energy Cost Trend: figures in the columns that hold them; a hover above a short column shows that day', async ({ page }) => {
   await openChart(page, { ...ENERGY, trend: [{ day: '2026-10-24T00:00:00.000Z', kwh: 400, machines: 5 },
     { day: '2026-10-25T00:00:00.000Z', kwh: 2, machines: 5 }, { day: '2026-10-26T00:00:00.000Z', kwh: 30, machines: 5 }] });
   const card = page.locator('section', { has: page.getByRole('heading', { name: 'Energy Cost Trend' }) });
@@ -78,6 +78,12 @@ test('Energy Cost Trend: a hover above a short day\'s column shows that day', as
   await expect.poll(async () => (await columns.first().boundingBox())!.height).toBeGreaterThan(100);   // grown in
   const short = (await columns.nth(1).boundingBox())!;
   expect(short.height).toBeLessThan(5);
+  // the column charts too (26 Oct 2026): a figure in the middle of a column that can hold it, none on a sliver
+  const figures = card.locator('.apexcharts-datalabel');
+  await expect(figures.filter({ hasText: '₹4,380' })).toHaveCount(1);
+  await expect(figures.filter({ hasText: '₹22' })).toHaveCount(0);
+  const tall = (await columns.first().boundingBox())!, label = (await figures.filter({ hasText: '₹4,380' }).boundingBox())!;
+  expect(Math.abs((label.y + label.height / 2) - (tall.y + tall.height / 2))).toBeLessThan(4);
   await page.mouse.move(short.x + short.width / 2, short.y - 60);             // in its column, well above it
   const tip = card.locator('.apexcharts-tooltip.apexcharts-active');
   await expect(tip).toContainText('25 Oct');

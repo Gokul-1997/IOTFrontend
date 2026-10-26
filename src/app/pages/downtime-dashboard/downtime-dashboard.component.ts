@@ -10,6 +10,7 @@ import { takeLinkedFilters } from '../../shared/linked-filters';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
+import { columnFigures } from '../../shared/bar-figures';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { EnumLabelPipe } from '../../shared/enum-label.pipe';
@@ -366,7 +367,9 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy, DashViewHo
       plotOptions: { bar: { columnWidth: '55%', borderRadius: 3 } },
       // the columns carry their own fillColor; this sets the line
       colors: ['#2f2d8f', '#1f2937'],
-      dataLabels: { enabled: false },
+      // the hours in each column that can hold them; the rest, and the line, on hover.
+      // A bar+line chart puts a column's figure at its top, boxed: unboxed, just inside.
+      dataLabels: { ...columnFigures(v => v.toFixed(1), [0]), background: { enabled: false }, offsetY: 14 },
       legend: { position: 'top', horizontalAlign: 'right' },
       xaxis:  { categories: this.paretoCategories, labels: { rotate: -35, trim: true } },
       yaxis: [

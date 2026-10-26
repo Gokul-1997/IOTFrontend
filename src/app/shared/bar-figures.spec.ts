@@ -1,4 +1,4 @@
-import { BAR_HOVER, barAxisMax, barFigures, columnFigure, figureFits } from './bar-figures';
+import { BAR_HOVER, barAxisMax, barFigures, columnFigure, columnFigures, figureFits } from './bar-figures';
 
 /* 26 Oct 2026, the user on Energy: one big bar left the others tiny — their
    figures did not fit, and a tiny bar could not be hovered. */
@@ -48,4 +48,20 @@ test('a column shows its figure only when it is tall enough; a stacked piece the
 
 test('every bar chart answers a hover anywhere in a bar\'s row or column', () => {
   expect(BAR_HOVER).toEqual({ shared: false, intersect: false });
+});
+
+test('a column too narrow for its figure shows none; a second axis is read for its own series', () => {
+  const f = columnFigure(v => `${Math.round(v)}%`);
+  const g = (barWidth: number) => ({ w: { globals: { maxY: 100, barWidth }, layout: { gridHeight: 300 } } });
+  expect(f(87, g(40))).toBe('87%');
+  expect(f(87, g(20))).toBe('');                   // 3 characters need ~27 px
+  const pareto = columnFigure(v => v.toFixed(1));
+  const axes = { seriesIndex: 0, w: { globals: { maxY: 100, maxYArr: [6, 100], barWidth: 80 }, layout: { gridHeight: 300 } } };
+  expect(pareto(1.3, axes)).toBe('1.3');           // 1.3 of 6 h, not of 100 %: 65 px
+});
+
+test('the column chart part: white, 12px, on the series asked for', () => {
+  const d = columnFigures(v => `${v}`, [0]);
+  expect(d).toMatchObject({ enabled: true, enabledOnSeries: [0], style: { fontSize: '12px', colors: ['#fff'] } });
+  expect(columnFigures(v => `${v}`)).not.toHaveProperty('enabledOnSeries');
 });

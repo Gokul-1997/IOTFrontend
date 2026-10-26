@@ -15,17 +15,33 @@
 export const BAR_HOVER = { shared: false, intersect: false } as const;
 
 /**
- * A column's figure, or nothing when the column is too short to hold it
- * (16px by default); for stacked columns, each piece. ApexCharts hands the
- * formatter the axis top and the plot height.
+ * A column's figure, or nothing when the column is too short or too narrow to
+ * hold it (16px tall by default); for stacked columns, each piece. ApexCharts
+ * hands the formatter the axis top, the plot height and the column width.
  */
 export function columnFigure(format: (v: number) => string, minPx = 16) {
   return (v: number, opts?: any): string => {
-    const n = Number(v), g = opts?.w?.globals;
+    const n = Number(v), w = opts?.w, g = w?.globals;
     if (!Number.isFinite(n) || n <= 0) return '';
-    const top = Number(g?.maxY), height = Number(g?.gridHeight);
+    const text = format(n);
+    const top = Number(g?.maxYArr?.[opts?.seriesIndex] ?? g?.maxY), height = Number(w?.layout?.gridHeight ?? g?.gridHeight);
     if (top > 0 && height > 0 && (n / top) * height < minPx) return '';
-    return format(n);
+    const width = Number(g?.barWidth);
+    if (width > 0 && width < text.length * 7 + 6) return '';
+    return text;
+  };
+}
+
+/**
+ * The figures on a column chart, as on the horizontal ones: in white in the
+ * middle of a column that can hold it, none on one too short or too narrow —
+ * its figure on hover (26 Oct 2026, the user: "the column charts too").
+ */
+export function columnFigures(format: (v: number) => string, series?: number[]) {
+  return {
+    enabled: true, ...(series ? { enabledOnSeries: series } : {}), formatter: columnFigure(format),
+    // px, not rem: ApexCharts centres a figure in its column from the size's number
+    style: { fontSize: '12px', fontWeight: 700, colors: ['#fff'] }
   };
 }
 
@@ -55,7 +71,7 @@ export function barFigures(values: unknown[], format: (v: number) => string, bar
       enabled: true,
       formatter: (v: number, opts?: any) => {
         const text = format(Number(v));
-        return figureFits(Number(v), text, max, opts?.w?.globals?.gridWidth) ? text : '';
+        return figureFits(Number(v), text, max, opts?.w?.layout?.gridWidth ?? opts?.w?.globals?.gridWidth) ? text : '';
       },
       // px, not rem: ApexCharts centres a figure in its bar from the size's number
       style: { fontSize: '12px', fontWeight: 700, colors: ['#fff'] }

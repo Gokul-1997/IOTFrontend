@@ -16,7 +16,7 @@ import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { compactQty, qty } from '../../shared/format-number';
-import { BAR_HOVER, barFigures } from '../../shared/bar-figures';
+import { BAR_HOVER, barFigures, columnFigures } from '../../shared/bar-figures';
 import { MeterPanelComponent } from '../../shared/meter-panel/meter-panel.component';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
@@ -436,7 +436,8 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
       chart: { type: 'bar', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '50%', distributed: true } },
       colors: this.palette,
-      dataLabels: { enabled: false },
+      // a column too short or narrow for its figure shows it on hover
+      dataLabels: columnFigures(v => this.data?.rate_per_kwh != null ? this.money(v) : qty(v, 1)),
       legend: { show: false },
       xaxis: { categories: this.monthCategories },
       yaxis: { title: { text: this.data?.rate_per_kwh != null ? `Cost (${this.data?.currency || 'INR'})` : 'kWh' },

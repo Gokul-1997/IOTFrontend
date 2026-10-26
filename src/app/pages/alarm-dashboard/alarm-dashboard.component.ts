@@ -9,7 +9,7 @@ import { AlarmDashboardService } from './alarm-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
-import { BAR_HOVER } from '../../shared/bar-figures';
+import { BAR_HOVER, columnFigures } from '../../shared/bar-figures';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { ReportDateDirective } from '../../shared/report-date.directive';
@@ -439,7 +439,8 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
       chart:  { type: 'bar', height:200, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
       colors: this.palette,
-      dataLabels: { enabled: false },
+      // a column too short or narrow for its count shows it on hover
+      dataLabels: columnFigures(v => `${v}`),
       // distributed repeats every machine in the legend; the axis names them
       legend: { show: false },
       xaxis:  { categories: this.machineCategories },

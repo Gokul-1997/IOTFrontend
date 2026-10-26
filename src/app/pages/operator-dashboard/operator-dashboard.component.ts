@@ -8,7 +8,7 @@ import { OperatorDashboardService } from './operator-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
-import { BAR_HOVER } from '../../shared/bar-figures';
+import { BAR_HOVER, columnFigures } from '../../shared/bar-figures';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
@@ -390,7 +390,8 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
       },
         plotOptions: { bar: { borderRadius: 2, columnWidth: '50%' } },
         colors: ['#F37362', '#FEBC3B', '#26A0FC'],
-        dataLabels: { enabled: false },
+        // a column too short or narrow for its % shows it on hover
+        dataLabels: columnFigures(v => `${Math.round(v)}%`),
         legend: { position: 'bottom', markers: { shape: 'circle' } },
         xaxis: { categories: rows.map((r: any) => r.operator_name), 
           labels: { rotate:0, trim: true } },

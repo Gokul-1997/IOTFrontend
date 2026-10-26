@@ -19,7 +19,7 @@ import { SEVERITY } from '../../shared/severity';
 import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
-import { BAR_HOVER, barFigures } from '../../shared/bar-figures';
+import { BAR_HOVER, barFigures, columnFigures } from '../../shared/bar-figures';
 
 /** Charts | PM Ticket Details (the tickets and the alarm rules), under the tiles both share. */
 const TABS: DashTab[] = [
@@ -505,7 +505,8 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
       chart:  { type: 'bar', height: 230, toolbar: { show: false }, fontFamily: 'inherit' },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
       colors: this.palette,
-      dataLabels: { enabled: false },
+      // a column too short or narrow for its count shows it on hover
+      dataLabels: columnFigures(v => `${v}`),
       // distributed repeats every machine in the legend; the axis names them
       legend: { show: false },
       xaxis:  { categories: this.machineCategories },
