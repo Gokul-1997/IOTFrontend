@@ -1,9 +1,5 @@
-<!-- Phase 2 · Screen 3 — Preventive Maintenance Dashboard, MEXA design. -->
-
-
-
-<!-- ══════════ TITLE BAR ══════════ -->
-<form class="mexa-titlebar" (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
+<div class="pv-dashboard">
+  <form class="mexa-titlebar" (ngSubmit)="submit()" appAutoApply (autoApply)="submit()">
   <div class="flex gap-2">
     <div class="titlebar w-fit flex items-center gap-2 text-white">
         <span class="material-icons" aria-hidden="true">event_available</span>
@@ -35,7 +31,6 @@
     </span>
   </div>
 </form>
-
 <div class="last-updated-vertical">
   <svg
     class="refresh-icon"
@@ -150,227 +145,77 @@
 <app-dash-view-tabs [tabs]="views.tabs" [active]="views.tab" (activeChange)="setView($event)"
                     label="Preventive Maintenance views"></app-dash-view-tabs>
 
-<div class="ui-tab-content">
-  <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="mexa-card">
-  <div *ngIf="loading && !views.has('charts')" class="mexa-grid lg:grid-cols-2">
-    <section class="mexa-card" *ngFor="let i of [1, 2, 3, 4]"><app-skeleton kind="chart" label="Loading the charts"></app-skeleton></section>
+<div class="ui-tab-content pv-tab-content">
+  <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="pv-chart-panel">
+    <div *ngIf="loading && !views.has('charts')" class="pv-chart-grid">
+      <section class="mexa-card pv-chart-card" *ngFor="let i of [1, 2, 3, 4]"><app-skeleton kind="chart" label="Loading the charts"></app-skeleton></section>
+    </div>
+    <div *ngIf="views.has('charts')" class="pv-chart-grid">
+      <section class="mexa-card pv-chart-card" aria-labelledby="pvTrendTitle">
+        <header class="pv-card-head">
+          <div><h2 id="pvTrendTitle">Critical Alarm Trend</h2></div>
+          <span class="pv-chart-icon pv-chart-icon-red material-icons" aria-hidden="true">show_chart</span>
+        </header>
+        <div class="pv-chart-body">
+          <apx-chart *ngIf="trendSeries.length && trendCategories.length; else noTrend"
+            [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke" [markers]="trendChart.markers"
+            [fill]="trendChart.fill" [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
+            [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
+            [tooltip]="trendChart.tooltip" [responsive]="trendChart.responsive" [noData]="trendChart.noData"></apx-chart>
+          <ng-template #noTrend><div class="pv-empty"><span class="material-icons" aria-hidden="true">show_chart</span><strong>No critical alarms in this period.</strong><p>Try another date range or machine.</p></div></ng-template>
+        </div>
+      </section>
+
+      <section class="mexa-card pv-chart-card" aria-labelledby="pvSeverityTitle">
+        <header class="pv-card-head">
+          <div><h2 id="pvSeverityTitle">Alarms by Severity</h2></div>
+          <span class="pv-chart-icon material-icons" aria-hidden="true">donut_large</span>
+        </header>
+        <div class="pv-chart-body pv-severity" *ngIf="severityTotal > 0; else noSeverity">
+          <apx-chart [series]="severitySeries" [chart]="severityDonut.chart" [labels]="severityDonut.labels"
+            [colors]="severityDonut.colors" [dataLabels]="severityDonut.dataLabels" [stroke]="severityDonut.stroke"
+            [plotOptions]="severityDonut.plotOptions" [legend]="severityDonut.legend"
+            [tooltip]="severityDonut.tooltip" [noData]="severityDonut.noData"></apx-chart>
+          <ul class="pv-severity-key" aria-label="Alarm severity counts">
+            <li><span class="pv-key-dot" [style.background]="SEV.critical.color" aria-hidden="true"></span><span>{{ SEV.critical.label }}</span><strong>{{ data.alarm_severity.critical }}</strong></li>
+            <li><span class="pv-key-dot" [style.background]="SEV.noncritical.color" aria-hidden="true"></span><span>{{ SEV.noncritical.label }}</span><strong>{{ data.alarm_severity.non_critical }}</strong></li>
+            <li><span class="pv-key-dot" [style.background]="SEV.info.color" aria-hidden="true"></span><span>{{ SEV.info.label }}</span><strong>{{ data.alarm_severity.information }}</strong></li>
+          </ul>
+        </div>
+        <ng-template #noSeverity><div class="pv-chart-body pv-empty"><span class="material-icons" aria-hidden="true">donut_large</span><strong>No alarms in this period.</strong><p>Severity distribution appears when alarms are recorded.</p></div></ng-template>
+      </section>
+
+      <section class="mexa-card pv-chart-card" aria-labelledby="pvMachineTitle">
+        <header class="pv-card-head">
+          <div><h2 id="pvMachineTitle">Machine Wise Critical Alarms</h2></div>
+          <span class="pv-chart-icon material-icons" aria-hidden="true">precision_manufacturing</span>
+        </header>
+        <div class="pv-chart-body">
+          <apx-chart *ngIf="machineSeries.length && machineCategories.length; else noMachines"
+            [series]="machineSeries" [chart]="machineChart.chart" [plotOptions]="machineChart.plotOptions"
+            [colors]="machineChart.colors" [dataLabels]="machineChart.dataLabels" [legend]="machineChart.legend"
+            [xaxis]="machineChart.xaxis" [yaxis]="machineChart.yaxis" [grid]="machineChart.grid"
+            [tooltip]="machineChart.tooltip" [noData]="machineChart.noData"></apx-chart>
+          <ng-template #noMachines><div class="pv-empty"><span class="material-icons" aria-hidden="true">precision_manufacturing</span><strong>No critical alarms in this period.</strong><p>Machine comparisons appear when alarms are recorded.</p></div></ng-template>
+        </div>
+      </section>
+
+      <section class="mexa-card pv-chart-card" aria-labelledby="pvReasonsTitle">
+        <header class="pv-card-head">
+          <div><h2 id="pvReasonsTitle">Top 5 Alarm Reasons</h2></div>
+          <span class="pv-chart-icon pv-chart-icon-teal material-icons" aria-hidden="true">format_list_numbered</span>
+        </header>
+        <div class="pv-chart-body">
+          <apx-chart *ngIf="reasonSeries.length; else noReasons"
+            [series]="reasonSeries" [chart]="reasonChart.chart" [plotOptions]="reasonChart.plotOptions"
+            [colors]="reasonChart.colors" [dataLabels]="reasonChart.dataLabels" [legend]="reasonChart.legend"
+            [xaxis]="reasonChart.xaxis" [yaxis]="reasonChart.yaxis" [grid]="reasonChart.grid" [tooltip]="reasonChart.tooltip"
+            [noData]="reasonChart.noData"></apx-chart>
+          <ng-template #noReasons><div class="pv-empty"><span class="material-icons" aria-hidden="true">format_list_numbered</span><strong>No critical alarms in this period.</strong><p>Recurring alarm reasons will appear here.</p></div></ng-template>
+        </div>
+      </section>
+    </div>
   </div>
-  <ng-container *ngIf="views.has('charts')">
-  <!-- ══════════ ROW 2 ══════════ -->
-  <div class="mexa-grid grid-cols-2 xl:grid-cols-4 lg:grid-cols-2">
-
-    <section class="mexa-card">
-      <h2 class="mexa-card-title">Critical Alarm Trend</h2>
-      <div>
-      <apx-chart class="-mb-8" *ngIf="trendSeries.length"
-        [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke" [markers]="trendChart.markers"
-        [fill]="trendChart.fill" [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
-        [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
-        [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
-        </div>
-      <div *ngIf="!trendSeries.length" class="mexa-empty">
-        
-        <div class="downtime-empty">
-          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-            stroke="currentColor"
-            stroke-width="2"
-          />
-          <path
-            d="M12 7.5V13"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-          <circle
-            cx="12"
-            cy="16.5"
-            r="1"
-            fill="currentColor"
-          />
-        </svg>
-
-          <div class="empty-title">
-            
-            <div class="downtime-empty">
-          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-            stroke="currentColor"
-            stroke-width="2"
-          />
-          <path
-            d="M12 7.5V13"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-          <circle
-            cx="12"
-            cy="16.5"
-            r="1"
-            fill="currentColor"
-          />
-        </svg>
-
-          <p class="empty-title">No critical alarms in this period.</p>
-        </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="mexa-card">
-      <h2 class="mexa-card-title">Alarms by Severity</h2>
-      <div class="flex mt-6 gap-3" *ngIf="severityTotal > 0; else noSeverity">
-        <apx-chart
-          [series]="severitySeries" [chart]="severityDonut.chart" [labels]="severityDonut.labels"
-          [colors]="severityDonut.colors" [dataLabels]="severityDonut.dataLabels"
-          [plotOptions]="severityDonut.plotOptions" [legend]="severityDonut.legend"
-          [tooltip]="severityDonut.tooltip" [noData]="severityDonut.noData"></apx-chart>
-        <ul class="mexa-keylist">
-          <li>
-            <span class="mexa-key-swatch" [style.--swatch]="SEV.critical.color" aria-hidden="true"></span>
-            <span>
-              <span class="mexa-key-label">{{ SEV.critical.label }}</span>
-              <span class="mexa-key-value">{{ data.alarm_severity.critical }}</span>
-            </span>
-          </li>
-          <li>
-            <span class="mexa-key-swatch" [style.--swatch]="SEV.noncritical.color" aria-hidden="true"></span>
-            <span>
-              <span class="mexa-key-label">{{ SEV.noncritical.label }}</span>
-              <span class="mexa-key-value">{{ data.alarm_severity.non_critical }}</span>
-            </span>
-          </li>
-          <li>
-            <span class="mexa-key-swatch" [style.--swatch]="SEV.info.color" aria-hidden="true"></span>
-            <span>
-              <span class="mexa-key-label">{{ SEV.info.label }}</span>
-              <span class="mexa-key-value">{{ data.alarm_severity.information }}</span>
-            </span>
-          </li>
-        </ul>
-      </div>
-      <ng-template #noSeverity>
-        <div class="mexa-empty">
-<div class="downtime-empty">
-          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-            stroke="currentColor"
-            stroke-width="2"
-          />
-          <path
-            d="M12 7.5V13"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-          <circle
-            cx="12"
-            cy="16.5"
-            r="1"
-            fill="currentColor"
-          />
-        </svg>
-
-          <p class="empty-title">No alarms in this period.</p>
-        </div>
-        </div>
-      </ng-template>
-    </section>
-
-    <section class="mexa-card">
-      <h2 class="mexa-card-title">Machine Wise Critical Alarms</h2>
-      <apx-chart class="-mb-10" *ngIf="machineSeries.length && machineCategories.length"
-        [series]="machineSeries" [chart]="machineChart.chart" [plotOptions]="machineChart.plotOptions"
-        [colors]="machineChart.colors" [dataLabels]="machineChart.dataLabels" [legend]="machineChart.legend"
-        [xaxis]="machineChart.xaxis" [yaxis]="machineChart.yaxis" [grid]="machineChart.grid"
-        [tooltip]="machineChart.tooltip" [noData]="machineChart.noData"></apx-chart>
-      <div *ngIf="!machineCategories.length" class="mexa-empty">
-        
-        <div class="downtime-empty">
-          
-
-          <div class="empty-title">
-            <div class="downtime-empty">
-          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-            stroke="currentColor"
-            stroke-width="2"
-          />
-          <path
-            d="M12 7.5V13"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-          <circle
-            cx="12"
-            cy="16.5"
-            r="1"
-            fill="currentColor"
-          />
-        </svg>
-
-          <p class="empty-title">No critical alarms in this period.</p>
-        </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="mexa-card">
-      <h2 class="mexa-card-title">Top 5 Alarm Reasons</h2>
-      <apx-chart class="-mb-8 -mt-4" *ngIf="reasonSeries.length"
-        [series]="reasonSeries" [chart]="reasonChart.chart" [plotOptions]="reasonChart.plotOptions"
-        [colors]="reasonChart.colors" [dataLabels]="reasonChart.dataLabels" [legend]="reasonChart.legend"
-        [xaxis]="reasonChart.xaxis" [yaxis]="reasonChart.yaxis" [grid]="reasonChart.grid" [tooltip]="reasonChart.tooltip"
-        [noData]="reasonChart.noData"></apx-chart>
-      <div *ngIf="!reasonSeries.length" class="mexa-empty">
-        <div class="downtime-empty">
-          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-            stroke="currentColor"
-            stroke-width="2"
-          />
-          <path
-            d="M12 7.5V13"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-          <circle
-            cx="12"
-            cy="16.5"
-            r="1"
-            fill="currentColor"
-          />
-        </svg>
-
-          <p class="empty-title">No critical alarms in this period.</p>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  </ng-container>
-  </div>
-
   <div *ngIf="views.tab === 'details'" id="dashPanel-details" role="tabpanel" aria-labelledby="dashTab-details" class="mexa-card">
   <section *ngIf="loading && !views.has('table')" class="mexa-card">
     <app-skeleton kind="table" [count]="8" label="Loading the PM tickets"></app-skeleton>
@@ -589,4 +434,6 @@
   </section>
 </ng-container>
   </div>
+</div>
+
 </div>

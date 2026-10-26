@@ -44,7 +44,8 @@ const TABS: DashTab[] = [
   selector: 'app-preventive-dashboard',
   standalone: true,
   imports: [DashViewTabsComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
-  templateUrl: './preventive-dashboard.component.html'
+  templateUrl: './preventive-dashboard.component.html',
+  styleUrl: './preventive-dashboard.component.scss'
 })
 export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
   /** "Are you sure?" in the app's own dialog, not the browser's confirm() box. */
@@ -473,42 +474,30 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
        past the day's count (smooth overshot to below zero between days), a
        dot on each day, the days level rather than slanted, whole counts. */
     return {
-      chart:  { type: 'area', height: 220, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart:  { type: 'area', height: 210, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
       stroke: { width: 2.5, curve: 'monotoneCubic' },
       markers: { size: 3.5, strokeWidth: 2, strokeColors: '#fff', hover: { size: 5.5 } },
-      fill:   { type: 'gradient', gradient: { shadeIntensity: 0.3, opacityFrom: 0.32, opacityTo: 0.02 } },
+      fill:   { type: 'gradient', gradient: { shadeIntensity: 0.2, opacityFrom: 0.22, opacityTo: 0.015 } },
       colors: ['#dc2626'],
       dataLabels: { enabled: false },
       // more than five days in this narrow card: every other day named; the tooltip names each
       xaxis:  { categories: this.trendCategories, tooltip: { enabled: false },
                 labels: { rotate: 0, hideOverlappingLabels: true,
                           formatter: (v: string) => this.trendCategories.length > 5 && this.trendCategories.indexOf(v) % 2 === 1 ? '' : v } },
-      yaxis:  { min: 0, forceNiceScale: true, title: { text: 'Critical alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
-      grid:   { borderColor: 'rgba(148,163,184,.25)' },
+      yaxis:  { min: 0, forceNiceScale: true, title: { text: 'Critical alarms', style: { fontWeight: 500 } }, labels: { formatter: (v: number) => v?.toFixed(0) } },
+      grid:   { borderColor: 'rgba(148,163,184,.2)', strokeDashArray: 4, padding: { left: 8, right: 16, top: 8, bottom: 0 } },
       tooltip:{ theme: 'light', x: { formatter: (_v: unknown, o?: any) => this.trendCategories[o?.dataPointIndex] ?? '' } },
       responsive: [
           {
-            breakpoint: 1600,
-            options: {
-              chart: {
-                height: 280
-              }
-            }
-          },
-          {
             breakpoint: 1280,
             options: {
-              chart: {
-                height: 250
-              }
+              chart: { height: 210 }
             }
           },
           {
             breakpoint: 768,
             options: {
-              chart: {
-                height: 220
-              }
+              chart: { height: 240 }
             }
           }
         ]
@@ -523,24 +512,24 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
   get machineChart(): any {
     return this.charts.memo('machineChart', () => {
     const fig = barFigures(this.machineSeries[0]?.data || [], v => `${v}`,
-                           { bar: { borderRadius: 3, barHeight: '70%', distributed: true }, whole: true, maxTicks: 4 });
+                           { bar: { borderRadius: 5, barHeight: '48%', distributed: false }, whole: true, maxTicks: 5 });
     return {
-      chart:  { type: 'bar', height: 230, toolbar: { show: false }, fontFamily: 'inherit', events: fig.events },
+      chart:  { type: 'bar', height: 210, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false }, events: fig.events },
       plotOptions: fig.plotOptions,
       colors: this.palette,
       dataLabels: fig.dataLabels,
       // distributed repeats every machine in the legend; the axis names them
       legend: { show: false },
       xaxis:  { categories: this.machineCategories, title: { text: 'No. of alarms' }, ...fig.xaxis },
-      yaxis:  { labels: { maxWidth: 110 } },
-      grid:   { borderColor: 'rgba(148,163,184,.25)' },
+      yaxis:  { labels: { maxWidth: 140, style: { fontSize: '12px' } } },
+      grid:   { borderColor: 'rgba(148,163,184,.2)', strokeDashArray: 4, padding: { left: 8, right: 16 } },
       tooltip:{ theme: 'light', ...fig.tooltip },
       noData: { text: 'No critical alarms in this period' }
     };
   });
   }
 
-  private readonly palette = ['#151458', '#073B9D', '#471E87', '#0B7267', '#3B414D'];
+  private readonly palette = ['#635bdf'];
 
   /** Completed over raised. Null-safe: nothing raised is not 0% compliant. */
   get compliance(): string {
@@ -581,17 +570,20 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
   get severityDonut(): any {
     return this.charts.memo('severityDonut', () => {
     return {
-      chart: { type: 'donut', height: 180, fontFamily: 'inherit' },
+      chart: { type: 'donut', height: 200, fontFamily: 'inherit', animations: { enabled: false } },
+      stroke: { width: 0 },
       labels: [SEVERITY.critical.label, SEVERITY.noncritical.label, SEVERITY.info.label],
       colors: [SEVERITY.critical.color, SEVERITY.noncritical.color, SEVERITY.info.color],
       plotOptions: {
-        pie: { donut: { size: '62%', labels: {
+        pie: { donut: { size: '72%', labels: {
           show: true,
-          total: { show: true, label: 'Total', fontSize: '.8rem',
+          value: { fontSize: '28px', fontWeight: 700 },
+          total: { show: true, label: 'Total alarms', fontSize: '12px', fontWeight: 500,
                    formatter: () => String(this.severityTotal) }
         } } }
       },
-      dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%` },
+      dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%`,
+        style: { fontSize: '11px', fontWeight: 600, colors: ['#fff', '#172033', '#fff'] }, dropShadow: { enabled: false } },
       // the key list beside the donut already names every severity
       legend: { show: false },
       tooltip: { y: { formatter: (v: number) => `${v} alarms` } },
@@ -605,16 +597,16 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
     // a bar too short for its count shows it on hover (shared/bar-figures)
     // a long alarm text on two lines, not cut short; fewer ticks in the narrow card
     const fig = barFigures(this.reasonSeries[0]?.data || [], v => `${v}`,
-                           { bar: { borderRadius: 3, barHeight: '70%', distributed: true }, whole: true, maxTicks: 4 });
+                           { bar: { borderRadius: 5, barHeight: '48%', distributed: false }, whole: true, maxTicks: 5 });
     return {
-      chart: { type: 'bar', height: 230, toolbar: { show: false }, fontFamily: 'inherit', events: fig.events },
+      chart: { type: 'bar', height: 210, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false }, events: fig.events },
       plotOptions: fig.plotOptions,
-      colors: this.palette,
+      colors: ['#147d92'],
       dataLabels: fig.dataLabels,
       legend: { show: false },
       xaxis: { categories: this.reasonCategories.map(r => wrapLabel(r)), title: { text: 'Occurrences' }, ...fig.xaxis },
-      yaxis: { labels: { maxWidth: 140 } },
-      grid:  { borderColor: 'rgba(148,163,184,.25)' },
+      yaxis: { labels: { maxWidth: 155, style: { fontSize: '12px' } } },
+      grid:  { borderColor: 'rgba(148,163,184,.2)', strokeDashArray: 4, padding: { left: 8, right: 16 } },
       tooltip: { theme: 'light', ...fig.tooltip },
       noData: { text: 'No critical alarms in this period' }
     };
