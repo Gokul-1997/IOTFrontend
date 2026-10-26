@@ -583,7 +583,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
     // a bar too short for its count shows it on hover (shared/bar-figures)
     const fig = barFigures(this.reasonSeries[0]?.data || [], v => `${v}`, { borderRadius: 3, barHeight: '80%', distributed: true }, true);
     return {
-      chart: { type: 'bar', height: 230, toolbar: { show: false }, fontFamily: 'inherit' },
+      chart: { type: 'bar', height: 230, toolbar: { show: false }, fontFamily: 'inherit', events: fig.events },
       plotOptions: fig.plotOptions,
       colors: this.palette,
       dataLabels: fig.dataLabels,

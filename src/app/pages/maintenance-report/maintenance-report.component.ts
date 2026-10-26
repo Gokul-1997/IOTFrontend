@@ -317,7 +317,7 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHo
     return this.charts.memo('downtimeChart', () => {
       const fig = barFigures(this.downtimeSeries[0]?.data || [], v => `${v} h`, { borderRadius: 4, barHeight: '60%' });
       return {
-        chart:  { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit' },
+        chart:  { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'inherit', events: fig.events },
         plotOptions: fig.plotOptions,
         colors: ['#c8384b'],
         dataLabels: fig.dataLabels,

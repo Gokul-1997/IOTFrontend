@@ -6,7 +6,7 @@
  *
  * A figure stays inside its bar, in white, when the bar is long enough to hold
  * it; a bar too short for it shows none. A hover anywhere along a row — not
- * only on the bar — shows that row's tooltip, beside the pointer.
+ * only on the bar — shades the row and shows that row's tooltip.
  *
  * Spread the parts into the chart's options; plotOptions.bar is merged.
  */
@@ -15,11 +15,61 @@
 export const BAR_HOVER = { shared: false, intersect: false } as const;
 
 /**
- * A column's figure, or nothing when the column is too short or too narrow to
- * hold it (16px tall by default); for stacked columns, each piece. ApexCharts
- * hands the formatter the axis top, the plot height and the column width.
+ * The row under the pointer, shaded light as ApexCharts shades a hovered
+ * column's band — it draws none for a horizontal bar (26 Oct 2026, the user:
+ * "the same light background on hover"). Goes in the chart's events.
  */
-export function columnFigure(format: (v: number) => string, minPx = 16) {
+export const ROW_BAND = {
+  mouseMove: (e: MouseEvent | TouchEvent, chart: any) => shadeRow(chart, e),
+  mouseLeave: (_e: Event, chart: any) => shadeRow(chart, null)
+};
+
+function shadeRow(chart: any, e: MouseEvent | TouchEvent | null): void {
+  const inner: SVGGElement | null = chart?.el?.querySelector('.apexcharts-inner.apexcharts-graphical') ?? null;
+  if (!inner) return;
+  let band = inner.querySelector<SVGRectElement>(':scope > rect.mexa-row-band');
+  const w = chart.w, rows = Number(w?.globals?.labels?.length ?? w?.globals?.dataPoints);
+  const width = Number(w?.layout?.gridWidth ?? w?.globals?.gridWidth), height = Number(w?.layout?.gridHeight ?? w?.globals?.gridHeight);
+  const at = e && ('touches' in e ? e.touches[0] : e);
+  const ctm = inner.getScreenCTM();
+  let row = -1;
+  if (at && ctm && rows > 0 && width > 0 && height > 0) {
+    const local = new DOMPoint(at.clientX, at.clientY).matrixTransform(ctm.inverse());
+    if (local.x >= 0 && local.x <= width && local.y >= 0 && local.y < height) row = Math.floor(local.y / (height / rows));
+  }
+  if (row < 0) { band?.setAttribute('visibility', 'hidden'); return; }
+  if (!band) {
+    band = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    band.setAttribute('class', 'mexa-row-band');
+    band.setAttribute('fill', 'rgba(148, 163, 184, .18)');
+    band.setAttribute('pointer-events', 'none');
+    inner.insertBefore(band, inner.firstChild);          // behind the bars and their figures
+  }
+  const h = height / rows;
+  band.setAttribute('x', '0'); band.setAttribute('width', String(width));
+  band.setAttribute('y', String(row * h)); band.setAttribute('height', String(h));
+  band.setAttribute('visibility', 'visible');
+}
+
+/** How wide a 12px bold figure draws, measured in the app's font where the browser can. */
+let measure: OffscreenCanvasRenderingContext2D | null | undefined;
+export function figureWidth(text: string): number {
+  if (measure === undefined) {
+    try {
+      measure = typeof OffscreenCanvas === 'function' ? new OffscreenCanvas(1, 1).getContext('2d') : null;
+      if (measure) measure.font = '700 12px Ubuntu, system-ui, sans-serif';
+    } catch { measure = null; }
+  }
+  return measure ? measure.measureText(text).width : text.length * 7;
+}
+
+/**
+ * A column's figure, or nothing when the column is too short or too narrow to
+ * hold it (22px tall by default: the figure and room round it); for stacked
+ * columns, each piece. ApexCharts hands the formatter the axis top, the plot
+ * height and the column width.
+ */
+export function columnFigure(format: (v: number) => string, minPx = 22) {
   return (v: number, opts?: any): string => {
     const n = Number(v), w = opts?.w, g = w?.globals;
     if (!Number.isFinite(n) || n <= 0) return '';
@@ -27,7 +77,7 @@ export function columnFigure(format: (v: number) => string, minPx = 16) {
     const top = Number(g?.maxYArr?.[opts?.seriesIndex] ?? g?.maxY), height = Number(w?.layout?.gridHeight ?? g?.gridHeight);
     if (top > 0 && height > 0 && (n / top) * height < minPx) return '';
     const width = Number(g?.barWidth);
-    if (width > 0 && width < text.length * 7 + 6) return '';
+    if (width > 0 && width < figureWidth(text) + 8) return '';
     return text;
   };
 }
@@ -40,8 +90,9 @@ export function columnFigure(format: (v: number) => string, minPx = 16) {
 export function columnFigures(format: (v: number) => string, series?: number[]) {
   return {
     enabled: true, ...(series ? { enabledOnSeries: series } : {}), formatter: columnFigure(format),
-    // px, not rem: ApexCharts centres a figure in its column from the size's number
-    style: { fontSize: '12px', fontWeight: 700, colors: ['#fff'] }
+    // px, not rem: ApexCharts centres a figure in its column from the size's number —
+    // by its baseline, which leaves the digits 4px low
+    offsetY: 4, style: { fontSize: '12px', fontWeight: 700, colors: ['#fff'] }
   };
 }
 
@@ -59,7 +110,7 @@ export function barAxisMax(top: number, whole = false): { max: number; ticks: nu
 /** Whether a figure of `text` fits inside a bar of `value` on an axis to `max` drawn `width` px wide (12px bold). */
 export function figureFits(value: number, text: string, max: number, width: number): boolean {
   if (!(width > 0) || !(max > 0)) return true;
-  return (value / max) * width >= text.length * 7 + 10;
+  return (value / max) * width >= figureWidth(text) + 12;
 }
 
 export function barFigures(values: unknown[], format: (v: number) => string, bar: Record<string, unknown> = {}, whole = false,
@@ -78,6 +129,7 @@ export function barFigures(values: unknown[], format: (v: number) => string, bar
       style: { fontSize: '12px', fontWeight: 700, colors: ['#fff'] }
     },
     xaxis: { min: 0, max, tickAmount: ticks },
-    tooltip: { ...BAR_HOVER, y: { formatter: (v: number) => format(Number(v)) } }
+    tooltip: { ...BAR_HOVER, y: { formatter: (v: number) => format(Number(v)) } },
+    events: ROW_BAND
   };
 }

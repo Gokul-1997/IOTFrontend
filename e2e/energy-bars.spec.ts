@@ -59,6 +59,14 @@ test('a hover anywhere along a row shows that machine, with its kWh — the tiny
   await expect(tip).toContainText('1.84 kWh');
   const box = (await tip.boundingBox())!, chart = (await card.boundingBox())!;
   expect(box.y).toBeGreaterThanOrEqual(chart.y);                               // inside the card, not cut off at its top
+  // the row under the pointer is shaded, as a hovered column's band is (26 Oct 2026)
+  const band = card.locator('rect.mexa-row-band');
+  await expect(band).toBeVisible();
+  const b = (await band.boundingBox())!;
+  expect(b.y).toBeLessThanOrEqual(tiny.y);
+  expect(b.y + b.height).toBeGreaterThanOrEqual(tiny.y + tiny.height);
+  await page.mouse.move(chart.x + 5, chart.y + 5);                             // off the chart: no band
+  await expect(band).toBeHidden();
 
   const big = (await card.locator('.apexcharts-bar-area').first().boundingBox())!;
   await page.mouse.move(big.x + big.width / 2, big.y + big.height / 2);
