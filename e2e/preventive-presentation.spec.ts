@@ -37,6 +37,7 @@ for (const dark of [false, true]) {
     await expect(page.locator('apx-chart .apexcharts-canvas')).toHaveCount(4);
     await expect(page.locator('.pv-card-head h2')).toHaveText(titles);
     await expect(page.locator('.pv-card-head p')).toHaveCount(0);
+    await expect(page.locator('#dashPanel-charts')).toHaveCSS('background-color', dark ? 'rgb(3, 23, 53)' : 'rgb(255, 255, 255)');
     await expect(page.getByText('Maintenance planning', {exact:true})).toHaveCount(0);
     await expect(page.getByText('Track critical alarms, preventive work and resolution performance.', {exact:true})).toHaveCount(0);
     await expect(page.locator('.mexa-titlebar .titlebar .mexa-title')).toHaveText('Preventive Maintenance Dashboard');

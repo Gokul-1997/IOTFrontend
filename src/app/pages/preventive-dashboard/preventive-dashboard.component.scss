@@ -2,7 +2,7 @@
 .pv-dashboard { min-width: 0; }
 .mexa-titlebar > .flex { min-width: 0; max-width: 100%; }
 .mexa-titlebar .titlebar { min-width: 0; }
-.pv-tab-content { margin-top: 16px; }
+.pv-chart-panel { zoom: 1; }
 .pv-chart-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
 .pv-chart-card { display: flex; flex-direction: column; min-width: 0; padding: 14px 14px 6px; border: 1px solid var(--mexa-rule); border-radius: 16px; zoom: 1; }
 .pv-chart-card:hover { transform: none; }

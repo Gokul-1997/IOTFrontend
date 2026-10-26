@@ -145,8 +145,8 @@
 <app-dash-view-tabs [tabs]="views.tabs" [active]="views.tab" (activeChange)="setView($event)"
                     label="Preventive Maintenance views"></app-dash-view-tabs>
 
-<div class="ui-tab-content pv-tab-content">
-  <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="pv-chart-panel">
+<div class="ui-tab-content">
+  <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="mexa-card pv-chart-panel">
     <div *ngIf="loading && !views.has('charts')" class="pv-chart-grid">
       <section class="mexa-card pv-chart-card" *ngFor="let i of [1, 2, 3, 4]"><app-skeleton kind="chart" label="Loading the charts"></app-skeleton></section>
     </div>
