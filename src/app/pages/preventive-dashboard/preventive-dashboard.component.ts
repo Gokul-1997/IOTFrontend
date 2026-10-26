@@ -19,6 +19,7 @@ import { SEVERITY } from '../../shared/severity';
 import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { barFigures } from '../../shared/bar-figures';
 
 /** Charts | PM Ticket Details (the tickets and the alarm rules), under the tiles both share. */
 const TABS: DashTab[] = [
@@ -578,17 +579,19 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
 
   get reasonChart(): any {
     return this.charts.memo('reasonChart', () => {
+    // a bar too short for its count shows it on hover (shared/bar-figures)
+    const fig = barFigures(this.reasonSeries[0]?.data || [], v => `${v}`, { borderRadius: 3, barHeight: '80%', distributed: true }, true);
     return {
       chart: { type: 'bar', height: 230, toolbar: { show: false }, fontFamily: 'inherit' },
-      plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '80%', distributed: true } },
+      plotOptions: fig.plotOptions,
       colors: this.palette,
-      dataLabels: { enabled: true, offsetY: 7, style: { fontSize: '.72rem', fontWeight: 700, colors: ['#fff'] } },
+      dataLabels: fig.dataLabels,
       legend: { show: false },
-      xaxis: { categories: this.reasonCategories, title: { text: 'Occurrences' } },
+      xaxis: { categories: this.reasonCategories, title: { text: 'Occurrences' }, ...fig.xaxis },
       grid:  { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip: { theme: 'light' },
+      tooltip: { theme: 'light', ...fig.tooltip },
       noData: { text: 'No critical alarms in this period' }
     };
-  });
+  }, JSON.stringify([this.reasonCategories, this.reasonSeries]));
   }
 }

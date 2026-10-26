@@ -15,6 +15,7 @@ import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { compactQty, qty } from '../../shared/format-number';
+import { barFigures } from '../../shared/bar-figures';
 import { SEVERITY } from '../../shared/severity';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -382,23 +383,23 @@ export class FactoryComponent implements OnInit, OnDestroy {
    */
   get downtimeChart(): any {
     return this.charts.memo('downtimeChart', () => {
+    // inside the bar, as in the mock, so long reason names keep their room; a
+    // bar too short for its figure shows it on hover (shared/bar-figures)
+    const fig = barFigures(this.downtimeSeries, v => `${v}`, { borderRadius: 3, barHeight: '62%', distributed: true }, true);
     return {
       chart: { type: 'bar', height: 320, toolbar: { show: false }, fontFamily: 'inherit' },
-      plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '62%', distributed: true } },
+      plotOptions: fig.plotOptions,
       colors: ['#9b7ec8', '#f5811f', '#3b9ae1', '#22c6d6', '#4a5a7a', '#8a63d2', '#f06a8a', '#17b3a3'],
-      dataLabels: {
-        enabled: true,
-        // inside the bar, as in the mock, so long reason names keep their room
-        offsetX: 0, style: { fontSize: '.72rem', fontWeight: 700, colors: ['#fff'] }
-      },
+      dataLabels: fig.dataLabels,
       // distributed gives each bar its own colour, which also duplicates
       // the category in the legend — the axis already names them
       legend: { show: false },
+      xaxis: { categories: this.downtimeLabels, title: { text: 'Minutes' }, ...fig.xaxis },
       grid: { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip: { y: { formatter: (v: number) => `${v} min` } },
+      tooltip: { ...fig.tooltip, y: { formatter: (v: number) => `${v} min` } },
       noData: { text: 'No downtime reasons recorded' }
     };
-  });
+  }, JSON.stringify([this.downtimeLabels, this.downtimeSeries]));
   }
 
   /* ── MEXA charts ────────────────────────────────────────── */

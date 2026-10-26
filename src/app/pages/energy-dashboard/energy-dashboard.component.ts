@@ -16,6 +16,7 @@ import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { updatedLabel } from '../../shared/updated-label';
 import { compactQty, qty } from '../../shared/format-number';
+import { barFigures } from '../../shared/bar-figures';
 import { MeterPanelComponent } from '../../shared/meter-panel/meter-panel.component';
 import { MetricHelpComponent } from '../../shared/metric-help/metric-help.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
@@ -334,21 +335,26 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
     return `${Math.round((n / total) * 1000) / 10}%`;
   }
 
+  /* A figure that does not fit its bar — one machine far ahead of the rest
+     leaves the others tiny — is left off; a hover on its row shows it
+     (shared/bar-figures, 26 Oct 2026). */
   get machineChart(): any {
     return this.charts.memo('machineChart', () => {
+    const fig = barFigures(this.machineSeries[0]?.data || [], v => this.num(v), { borderRadius: 3, barHeight: '60%', distributed: true });
     return {
       chart:  { type: 'bar', height: 300, toolbar: { show: false }, fontFamily: 'inherit' },
-      plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '60%', distributed: true } },
+      plotOptions: fig.plotOptions,
       colors: this.palette,
-      dataLabels: { enabled: true, style: { fontSize: '.72rem', fontWeight: 700, colors: ['#fff'] } },
+      dataLabels: fig.dataLabels,
       // distributed repeats every machine in the legend; the axis names them
       legend: { show: false },
-      xaxis:  { categories: this.machineCategories, title: { text: 'kWh' } },
+      xaxis:  { categories: this.machineCategories, title: { text: 'kWh' }, ...fig.xaxis },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'dark' },
+      tooltip:{ theme: this.isDarkMode ? 'dark' : 'light', ...fig.tooltip,
+                y: { formatter: (v: number) => `${this.num(v)} kWh`, title: { formatter: () => 'Energy:' } } },
       noData: { text: 'No machine is sending energy readings yet' }
     };
-  }, this.charts.sig('machineCats') + this.charts.sig('machineSeries'));
+  }, this.charts.sig('machineCats') + this.charts.sig('machineSeries') + this.isDarkMode);
   }
 
   get shiftDonut(): any {

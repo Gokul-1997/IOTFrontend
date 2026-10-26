@@ -377,7 +377,7 @@
         [series]="[{ name: 'Minutes', data: downtimeSeries }]"
         [chart]="downtimeChart.chart" [plotOptions]="downtimeChart.plotOptions"
         [colors]="downtimeChart.colors" [dataLabels]="downtimeChart.dataLabels"
-        [xaxis]="{ categories: downtimeLabels, title: { text: 'Minutes' } }"
+        [xaxis]="downtimeChart.xaxis"
         [grid]="downtimeChart.grid" [tooltip]="downtimeChart.tooltip"
         [legend]="downtimeChart.legend" [noData]="downtimeChart.noData"></apx-chart>
       <div *ngIf="!downtimeSeries.length" class="mexa-empty">
