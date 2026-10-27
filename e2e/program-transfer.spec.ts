@@ -22,6 +22,7 @@ type Machine = {
   last_backup: { id: number; program_name: string; created_at: string } | null;
   backup_request: { id: number; requested_at: string } | null;
   backup_failure?: { message: string; at: string } | null;
+  status?: string; on_hold?: boolean; last_seen_at?: string | null;
 };
 const fileRow = (id: number, machine: number, name: string, kind = 'NEW', delivery: any = {}) => ({
   id, machine_id: machine, program_name: name, kind, size_bytes: 2048, sha256: 'a'.repeat(64),
@@ -210,6 +211,52 @@ test('Backup now asks the gateway, and says it is waiting', async ({ authedPage:
   await expect(page.getByRole('status').filter({ hasText: 'waiting for the gateway' })).toBeVisible();
   await expect(backup).toBeDisabled();
   expect(state.calls.filter(c => c.method === 'POST' && c.path === '/api/programs/machines/7/backup')).toHaveLength(1);
+});
+
+/* 27 Oct 2026, the user: "alarm, emergency, disconnect — program transfer must not work; show the machine status here" */
+test('the machine list shows each machine\'s status; one in emergency stop says transfer is off, and Upload and Backup now wait', async ({ authedPage: page }) => {
+  const state = await fixtures(page);
+  Object.assign(state.machines[0], { status: 'RUNNING', on_hold: false, last_seen_at: ago(3) });
+  Object.assign(state.machines[1], { status: 'EMERGENCY', on_hold: true, last_seen_at: ago(4), waiting: 1,
+    next: { id: 50, program_name: 'O5000.nc', size_bytes: 2048, created_at: ago(600) } });
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto('/programs');
+  const picker = page.getByLabel('Machine', { exact: true });
+  await expect(picker.locator('option')).toHaveText(['VMC-1 · Running', 'VMC-2 · Emergency stop — transfer off']);
+  await expect(page.getByLabel('Where programs for VMC-1 go').getByText('Running', { exact: true })).toBeVisible();
+  await expect(page.getByText('Program transfer is off.')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Upload program' })).toBeEnabled();
+
+  await picker.selectOption({ label: 'VMC-2 · Emergency stop — transfer off' });
+  await expect(page.getByLabel('Where programs for VMC-2 go').getByText('Emergency stop', { exact: true })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'Program transfer is off.' }))
+    .toHaveText('Program transfer is off. VMC-2 is in emergency stop. Programs and backups wait until it is running or idle again.');
+  await expect(programCard(page)).toContainText('Next to send — on hold until the machine is running or idle');
+  await expect(page.getByRole('button', { name: 'Upload program' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Backup now' })).toBeDisabled();
+  await expect(filesTable(page)).toBeVisible();                                  // its files can still be looked at
+  expect(state.calls.filter(c => c.method === 'POST')).toHaveLength(0);
+
+  // the emergency stop released: transfer comes back on by itself at the page's next look
+  Object.assign(state.machines[1], { status: 'IDLE', on_hold: false, last_seen_at: ago(1) });
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await expect(page.getByText('Program transfer is off.')).toHaveCount(0);
+  await expect(picker.locator('option')).toHaveText(['VMC-1 · Running', 'VMC-2 · Idle']);
+  await expect(page.getByRole('button', { name: 'Upload program' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Backup now' })).toBeEnabled();
+  await expect(programCard(page)).toContainText('Next to send — waiting for the gateway');
+});
+
+test('a disconnected machine says since when; on a phone the note fits without sideways scrolling', async ({ authedPage: page }) => {
+  const state = await fixtures(page);
+  Object.assign(state.machines[0], { status: 'OFFLINE', on_hold: true, last_seen_at: ago(300) });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/programs');
+  await expect(page.getByRole('status').filter({ hasText: 'Program transfer is off.' }))
+    .toContainText('VMC-1 is disconnected — last data 5 min ago.');
+  await expect(page.getByRole('button', { name: 'Upload program' })).toBeDisabled();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
 });
 
 test('a file is downloaded; deleting asks in the app first — a waiting upload leaves the line', async ({ authedPage: page }) => {

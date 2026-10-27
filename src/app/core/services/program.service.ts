@@ -5,10 +5,21 @@ import { environment } from '../../../environments/environment';
 /** The company's one gateway, as its own people see it: online or not. S&T makes and holds its token. */
 export interface PtGateway { token_prefix: string; token_created_at: string; last_seen_at: string | null; online: boolean }
 
+/** What a machine is doing now, from its telemetry, as the Live Dashboard reads it (OFFLINE: no data for a minute). */
+export type PtMachineStatus = 'RUNNING' | 'IDLE' | 'ALARM' | 'EMERGENCY' | 'OFFLINE';
+
 /** A machine as Program Transfer shows it: its line of programs, the last one reported, its last backup. */
 export interface PtMachine {
   id: number;
   machine_serial_no: string;
+  /**
+   * what it is doing now, and when MEXA last heard from it (both absent from an older server).
+   * on_hold: in alarm, emergency stop or disconnected — no upload, no backup, and the gateway is
+   * offered nothing for it until it is running or idle again (27 Oct 2026)
+   */
+  status?: PtMachineStatus | null;
+  last_seen_at?: string | null;
+  on_hold?: boolean;
   /** where the gateway sends its programs, as set on the Machines page (absent from an older server) */
   program_path?: string | null;
   machine_ip?: string | null;

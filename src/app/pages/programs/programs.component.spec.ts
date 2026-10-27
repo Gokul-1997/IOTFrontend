@@ -213,3 +213,34 @@ test("each upload's state: its place in line, or what the gateway reported", () 
   expect(c.deliveryClass({ delivery_status: null, queue_position: 2 })).toBe('mexa-badge-neutral');
   fixture.destroy();
 });
+
+/* 27 Oct 2026, the user: "alarm, emergency, disconnect — program transfer must not work; show the machine status here" */
+test('each machine says what it is doing; one on hold says why, and nothing is sent for it', () => {
+  const held = machine({ id: 15, machine_serial_no: 'HMC - 15 - F', status: 'EMERGENCY', on_hold: true });
+  const fixture = create([machine({ status: 'RUNNING', on_hold: false }), held]);
+  const c = fixture.componentInstance;
+  files().flush({ data: [], pagination: page });
+  expect(c.machines.map(m => [c.statusLabel(m), c.statusBadge(m)])).toEqual([['Running', 'mexa-badge-good'], ['Emergency stop', 'mexa-badge-bad']]);
+  expect(c.statusLabel({ status: 'IDLE' })).toBe('Idle');
+  expect(c.statusLabel({ status: 'OFFLINE' })).toBe('Disconnected');
+  expect(c.statusLabel({})).toBe('');                                   // an older server does not say
+  expect(c.holdReason(c.machines[0])).toBe('');
+  expect(c.holdReason(held)).toBe('HMC - 15 - F is in emergency stop.');
+  expect(c.holdReason(machine({ status: 'ALARM', on_hold: true }))).toBe('VMC-1 is in alarm.');
+  const fiveMinutes = new Date(Date.now() - 5 * 60000).toISOString();
+  expect(c.holdReason(machine({ status: 'OFFLINE', on_hold: true, last_seen_at: fiveMinutes }))).toBe('VMC-1 is disconnected — last data 5 min ago.');
+  expect(c.holdReason(machine({ status: 'OFFLINE', on_hold: true, last_seen_at: null }))).toBe('VMC-1 is disconnected — no data from it in the last hour.');
+
+  c.selectedMachineId = 15; c.changeMachine();
+  files(15).flush({ data: [], pagination: page });                       // its files can still be looked at
+  c.openUpload();
+  c.onFileSelected({ target: { files: [new File(['%\nO1\nM30\n%'], 'O1.nc')] } } as any);
+  c.upload();
+  expect(c.uploadError).toBe('HMC - 15 - F is in emergency stop. Program transfer is off until it is running or idle again.');
+  c.requestBackup();
+  http.expectNone(`${api}/files`);
+  http.expectNone(`${api}/machines/15/backup`);
+  expect(c.trackMachine(0, held)).toBe(15);
+  http.verify();
+  fixture.destroy();
+});

@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpEventType } from '@angular/common/http';
 import { Subject, Subscription, takeUntil } from 'rxjs';
-import { ProgramService, PtFile, PtFilter, PtGateway, PtMachine, PtPage } from '../../core/services/program.service';
+import { ProgramService, PtFile, PtFilter, PtGateway, PtMachine, PtMachineStatus, PtPage } from '../../core/services/program.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
@@ -22,6 +22,15 @@ const REFRESH_MS = 15_000;
 /** 1st, 2nd, 3rd, 4th … 11th, 12th, 13th, 21st */
 const ordinal = (n: number) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
 
+/** A machine's state as the page names it, and its badge: the Live Dashboard's colours. */
+const STATUS: Record<PtMachineStatus, { label: string; badge: string }> = {
+  RUNNING: { label: 'Running', badge: 'mexa-badge-good' },
+  IDLE: { label: 'Idle', badge: 'mexa-badge-warn' },
+  ALARM: { label: 'Alarm', badge: 'mexa-badge-bad' },
+  EMERGENCY: { label: 'Emergency stop', badge: 'mexa-badge-bad' },
+  OFFLINE: { label: 'Disconnected', badge: 'mexa-badge-neutral' }
+};
+
 /*
  * Program Transfer, kept simple (21 Oct 2026, the user: "machine select,
  * upload and download only — no company, no plant, no FTP or FANUC"):
@@ -34,6 +43,12 @@ const ordinal = (n: number) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th
  * (22 Oct 2026: "super admin side … don't company side"); this page only
  * says whether it is online. Forms open in the app's one dialog; "Are you
  * sure?" is ConfirmService.
+ *
+ * Each machine shows what it is doing now; in alarm, emergency stop or
+ * disconnected it is on hold (27 Oct 2026, the user: "program transfer must
+ * not work then — show the status here"): Upload and Backup now are off, and
+ * the page says why, until it is running or idle again. Its files can still
+ * be looked at and downloaded.
  */
 @Component({
   selector: 'app-programs',
@@ -116,6 +131,20 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   typeLabel(value: string | null | undefined): string { return controllerTypeLabel(value); }
   get canDelete() { return this.auth.hasAction('programs', 'delete'); }
   get selectedMachine(): PtMachine | null { return this.machines.find(m => m.id === this.selectedMachineId) || null; }
+
+  /** "Running", "Emergency stop" … — '' from an older server, which does not say. */
+  statusLabel(m: Pick<PtMachine, 'status'>): string { return (m.status && STATUS[m.status]?.label) || ''; }
+  statusBadge(m: Pick<PtMachine, 'status'>): string { return (m.status && STATUS[m.status]?.badge) || 'mexa-badge-neutral'; }
+
+  /** Why nothing moves for a machine on hold: "HMC - 15 - F is in emergency stop." — '' when it is not. */
+  holdReason(m: PtMachine): string {
+    if (!m.on_hold) return '';
+    const name = m.machine_serial_no;
+    if (m.status === 'EMERGENCY') return `${name} is in emergency stop.`;
+    if (m.status === 'ALARM') return `${name} is in alarm.`;
+    return m.last_seen_at ? `${name} is disconnected — last data ${this.ago(m.last_seen_at)}.`
+                          : `${name} is disconnected — no data from it in the last hour.`;
+  }
 
   ngOnInit(): void {
     const linked = takeLinkedRecord(this.route, this.router, ['machine_id', 'file_id']);
@@ -312,6 +341,8 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   upload(): void {
     const machine = this.selectedMachine;
     if (!machine || this.uploading) return;
+    // it went on hold while the dialog was open: said here, as the server would
+    if (machine.on_hold) { this.uploadError = `${this.holdReason(machine)} Program transfer is off until it is running or idle again.`; return; }
     if (!this.uploadFile) { this.uploadError = 'Choose the program file.'; return; }
     if (this.uploadError) return;
     const file = this.uploadFile;
@@ -347,7 +378,7 @@ export class ProgramsComponent implements OnInit, OnDestroy {
 
   requestBackup(): void {
     const machine = this.selectedMachine;
-    if (!machine || this.requestingBackup) return;
+    if (!machine || this.requestingBackup || machine.on_hold) return;
     this.requestingBackup = true;
     this.programs.requestBackup(machine.id).pipe(takeUntil(this.destroy$)).subscribe({
       next: res => {
@@ -384,4 +415,6 @@ export class ProgramsComponent implements OnInit, OnDestroy {
   }
 
   trackFile = (_: number, f: PtFile) => f.id;
+  /** The list reloads every 15 s: options keep their elements, only their status changes. */
+  trackMachine = (_: number, m: PtMachine) => m.id;
 }

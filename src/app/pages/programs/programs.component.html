@@ -12,12 +12,17 @@
     <select id="ptMachine" class="ui-input" [(ngModel)]="selectedMachineId" (ngModelChange)="changeMachine()"
             [disabled]="loadingMachines || !machines.length">
       <option *ngIf="!machines.length" [ngValue]="null">{{ loadingMachines ? 'Loading machines…' : 'No machines' }}</option>
-      <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+      <!-- each machine with what it is doing now; on hold (alarm, emergency stop, disconnected): no transfer (27 Oct 2026) -->
+      <option *ngFor="let m of machines; trackBy: trackMachine" [ngValue]="m.id">{{ m.machine_serial_no }}{{ m.status ? ' · ' + statusLabel(m) : '' }}{{ m.on_hold ? ' — transfer off' : '' }}</option>
     </select>
   </div>
   <!-- where the gateway sends this machine's programs, as set on the Machines page: seen here, so a wrong one is caught (23 Oct 2026) -->
   <div *ngIf="selectedMachine as sm" class="pt-target-wrap">
     <dl class="pt-target" [attr.aria-label]="'Where programs for ' + sm.machine_serial_no + ' go'">
+      <div *ngIf="sm.status">
+        <dt>Status</dt>
+        <dd><span class="mexa-badge" [ngClass]="statusBadge(sm)">{{ statusLabel(sm) }}</span></dd>
+      </div>
       <div>
         <dt>Program path</dt>
         <dd [class.is-missing]="!sm.program_path"><code *ngIf="sm.program_path; else pathNotSet">{{ sm.program_path }}</code><ng-template #pathNotSet>Not set</ng-template></dd>
@@ -51,6 +56,10 @@
 </div>
 
 <ng-container *ngIf="selectedMachine as m">
+  <!-- in alarm, emergency stop or disconnected: nothing moves for it until it is back (27 Oct 2026) -->
+  <p *ngIf="m.on_hold" class="mexa-note mexa-note-bad pt-hold" role="status">
+    <strong>Program transfer is off.</strong> {{ holdReason(m) }} Programs and backups wait until it is running or idle again.
+  </p>
   <div class="pt-grid">
     <!-- the line of programs the gateway sends, one at a time -->
     <section class="mexa-card pt-card" aria-labelledby="ptProgramTitle">
@@ -74,9 +83,9 @@
                 *ngIf="m.waiting > 1"> · {{ m.waiting - 1 }} more after it</ng-container><ng-container *ngIf="p.report_late"><br><small>No report since then: the programs after it wait until the gateway reports DONE or FAILED.</small></ng-container></span>
         </p>
         <ng-template #notTaken>
-          <p class="pt-state">
-            <span class="material-icons" aria-hidden="true">hourglass_top</span>
-            <span>Next to send — {{ gateway ? 'waiting for the gateway' : 'the company has no gateway yet' }}<ng-container
+          <p class="pt-state" [class.is-warn]="m.on_hold">
+            <span class="material-icons" aria-hidden="true">{{ m.on_hold ? 'pause_circle' : 'hourglass_top' }}</span>
+            <span>Next to send — {{ m.on_hold ? 'on hold until the machine is running or idle' : gateway ? 'waiting for the gateway' : 'the company has no gateway yet' }}<ng-container
                   *ngIf="m.waiting > 1"> · {{ m.waiting - 1 }} more after it</ng-container></span>
           </p>
         </ng-template>
@@ -92,7 +101,7 @@
         </p>
       </ng-container>
       <p class="ui-hint">Programs go to the machine one at a time, oldest first: the gateway sends the next when the last is done.</p>
-      <button *ngIf="canUpload; else noUpload" type="button" class="ui-btn ui-btn-primary pt-action" (click)="openUpload()">
+      <button *ngIf="canUpload; else noUpload" type="button" class="ui-btn ui-btn-primary pt-action" (click)="openUpload()" [disabled]="!!m.on_hold">
         <span class="material-icons" aria-hidden="true">upload_file</span>Upload program
       </button>
       <ng-template #noUpload><p class="mexa-note mexa-note-note pt-noupload">{{ uploadBlockedReason }}</p></ng-template>
@@ -113,8 +122,8 @@
       </div>
       <ng-template #noBackup><p class="pt-meta">No backup yet.</p></ng-template>
       <p *ngIf="m.backup_request as r" class="pt-waiting" role="status">
-        <span class="ui-spinner" aria-hidden="true"></span>
-        Backup asked for at {{ r.requested_at | date:'h:mm a' }} — waiting for the gateway
+        <span *ngIf="!m.on_hold" class="ui-spinner" aria-hidden="true"></span>
+        Backup asked for at {{ r.requested_at | date:'h:mm a' }} — {{ m.on_hold ? 'on hold until the machine is running or idle' : 'waiting for the gateway' }}
       </p>
       <p *ngIf="m.backup_failure as f" class="pt-state is-bad" role="alert">
         <span class="material-icons" aria-hidden="true">error</span>
@@ -122,7 +131,7 @@
       </p>
       <p *ngIf="!gateway" class="ui-hint">Backups come through the company's gateway, which S&T sets up.</p>
       <button *ngIf="canBackup" type="button" class="ui-btn ui-btn-primary pt-action" (click)="requestBackup()"
-              [disabled]="requestingBackup || !!m.backup_request">
+              [disabled]="requestingBackup || !!m.backup_request || !!m.on_hold">
         <span class="material-icons" aria-hidden="true">cloud_download</span>{{ requestingBackup ? 'Asking…' : 'Backup now' }}
       </button>
     </section>
