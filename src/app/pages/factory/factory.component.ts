@@ -63,6 +63,7 @@ export type FactoryTarget = keyof typeof TARGETS;
     .fx-more a:hover, .fx-rank-link:hover { text-decoration: underline; }
     .fx-more a:focus-visible, .fx-rank-link:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 2px; }
     .fx-more mat-icon { width: 1rem; height: 1rem; font-size: 1rem; }
+    .fx-shift-status { font-size: .72rem; color: var(--mexa-ink-3); }
   `]
 })
 export class FactoryComponent implements OnInit, OnDestroy {
@@ -196,9 +197,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
     this.data = d;
     this.updatedAt = updatedLabel(d.updated_at);
 
-    /* shift-wise production, each shift labelled with its hours as the mock does */
-    this.shiftCategories = (d.shiftwise || []).map((s: any) =>
-      s.start_time ? [s.shift_code, `(${this.hhmm(s.start_time)} - ${this.hhmm(s.end_time)})`] as any : s.shift_code);
+    this.shiftCategories = (d.shiftwise || []).map((s: any) => s.shift_code);
     this.shiftSeries = [{
       name: 'Produced',
       data: (d.shiftwise || []).map((s: any) => s.produced)
@@ -296,9 +295,11 @@ export class FactoryComponent implements OnInit, OnDestroy {
   }
 
   private todayStr(): string {
-    return new Date(
-      new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
-    ).toISOString().split('T')[0];
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(new Date());
+    const part = (name: string) => parts.find(p => p.type === name)?.value;
+    return `${part('year')}-${part('month')}-${part('day')}`;
   }
 
   /* ── chart option blocks (kept out of the template) ── */
@@ -312,7 +313,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
       dataLabels: columnFigures(v => `${v}`),
       colors: ['#2F2D8F', '#9365B0'],
       xaxis:  { categories: this.shiftCategories },
-      yaxis:  { title: { text: 'Qty' } },
+      yaxis:  { min: 0, title: { text: 'Qty' } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'light', ...BAR_HOVER }
     };
@@ -361,8 +362,9 @@ export class FactoryComponent implements OnInit, OnDestroy {
 
   readonly qty = qty;
 
-  /** "08:00:00" → "08:00". */
-  hhmm(t: string | null | undefined): string { return t ? String(t).slice(0, 5) : ''; }
+  shiftStatus(s: any): string {
+    return ({ upcoming: 'Not started', in_progress: 'In progress', completed: 'Completed' } as Record<string, string>)[s.status] || '';
+  }
 
   /** Share of target for the Actual vs Target bars, capped for drawing only. */
   targetBar(actual: number, target: number | null): number {

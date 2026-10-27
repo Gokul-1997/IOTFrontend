@@ -263,8 +263,8 @@
       <p class="fx-more" *ngIf="can('downtime')"><a [routerLink]="targets.downtime.path" [queryParams]="linkParams('downtime')">Downtime Analysis<mat-icon aria-hidden="true">chevron_right</mat-icon></a></p>
     </section>
 
-    <section class="mexa-card">
-      <h2 class="mexa-card-title">Shift wise Production</h2>
+    <section class="mexa-card" aria-labelledby="fxShiftTitle">
+      <h2 id="fxShiftTitle" class="mexa-card-title">Shift wise Production <app-metric-help topic="shift_production"></app-metric-help></h2>
       <div class="-m-4">
       <apx-chart *ngIf="shiftSeries.length"
         [series]="shiftSeries" [chart]="shiftChart.chart" [plotOptions]="shiftChart.plotOptions"
@@ -279,8 +279,10 @@
       <div *ngIf="data.production.target" class="border-t border-[--mexa-rule] p-2 mt-1">
         <h3 class="mexa-card-title mexa-card-title-left !mb-2">Actual vs Target</h3>
         <div class="grid grid-cols-2 gap-4">
-          <div *ngFor="let s of data.shiftwise; let i = index">
+          <div *ngFor="let s of data.shiftwise; let i = index" class="fx-shift-row">
             <p class="text-sm font-semibold text-[--mexa-ink]">{{ s.shift_code }}</p>
+            <p *ngIf="shiftStatus(s)" class="fx-shift-status">{{ shiftStatus(s) }}</p>
+            <ng-container *ngIf="s.target; else untargetedShift">
             <div class="h-2.5 rounded-full bg-[--mexa-row-alt] overflow-hidden my-1.5" role="progressbar"
                  [attr.aria-valuenow]="s.actual" aria-valuemin="0" [attr.aria-valuemax]="s.target"
                  [attr.aria-label]="s.shift_code + ' actual against target'">
@@ -288,6 +290,8 @@
                    [style.background]="i % 2 ? '#9b7ec8' : '#2f2d8f'"></div>
             </div>
             <p class="text-sm text-[--mexa-ink-2] tabular-nums">{{ s.actual | number }} / {{ s.target | number }} Units</p>
+            </ng-container>
+            <ng-template #untargetedShift><p class="text-sm text-[--mexa-ink-2] tabular-nums">{{ s.produced | number }} Units</p></ng-template>
           </div>
         </div>
       </div>

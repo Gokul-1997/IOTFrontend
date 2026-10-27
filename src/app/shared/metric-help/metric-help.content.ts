@@ -162,6 +162,13 @@ export function metricHelp(topic: string, basis: HelpBasis = 'period'): MetricHe
         example: 'Run 8h 15m and idle 2h 45m: 495 ÷ (495 + 165) minutes = 75 %.',
         why: 'The rest of the switched-on time was idle: waiting, setting up or stopped by an alarm. It shows "--" when no machine sent data.'
       };
+    case 'shift_production':
+      return {
+        title: 'Shift-wise production',
+        what: 'Each bar counts the shift starting on the selected date, in plant local time (IST). A shift that has not begun says "Not started".',
+        example: 'The 27 October night shift runs from 8:00 PM on 27 October to 8:00 AM on 28 October. Output before 8:00 AM on 27 October belongs to the night shift that started on 26 October.',
+        why: 'Factory production totals and the Production report use the same recorded quantities. Output after midnight stays with the date that shift started; a future shift stays at zero.'
+      };
     case 'production_vs_target':
       return {
         title: 'Production against target',

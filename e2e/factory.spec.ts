@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures/auth';
+import { test, expect, localFixtureOrigin } from './fixtures/auth';
 
 /**
  * Phase 2 · Screen 1 — Factory Overall Dashboard.
@@ -53,6 +53,8 @@ const factoryResponse = {
  * API, and the auth interceptor logs the stub user out mid-test.
  */
 async function mockApi(page: any, factory: any = factoryResponse) {
+  const origin = localFixtureOrigin();
+  await page.route('**/*', (route: any) => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
   await page.route('**/api/**', (route: any) =>
     route.fulfill({
       status: 200, contentType: 'application/json',
@@ -153,3 +155,73 @@ test('no job targets: the production tile counts pieces and says why there is no
   await expect(prod.getByText(/no job target set/)).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Actual vs Target' })).toHaveCount(0);
 });
+
+const todayResponse = () => {
+  const response = structuredClone(factoryResponse);
+  response.data.filters.date = '2026-10-27';
+  response.data.updated_at = '2026-10-27T07:04:00.000Z';
+  response.data.production = { produced: 149, actual: 149, target: 1724, target_pct: 8.6, machines_with_target: 6 };
+  response.data.time.run_seconds = 37.75 * 3600;
+  response.data.energy.kwh = 30.52;
+  response.data.shiftwise = [
+    { shift_id: 1, shift_code: 'Shift 1', start_time: '08:00:00', end_time: '20:00:00', produced: 149, actual: 149, target: 862, status: 'in_progress' },
+    { shift_id: 2, shift_code: 'Shift 2', start_time: '20:00:00', end_time: '08:00:00', produced: 0, actual: 0, target: 862, status: 'upcoming' }
+  ] as any;
+  return response;
+};
+
+test('shift chart keeps simple names and tonight stays not started until its own output arrives', async ({ authedPage: page }) => {
+  await page.clock.install({ time: new Date('2026-10-27T12:34:00+05:30') });
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  const response = todayResponse();
+  await mockApi(page, response);
+  await page.goto('/factory');
+  const card = page.locator('section[aria-labelledby="fxShiftTitle"]');
+  await expect(card.locator('.apexcharts-xaxis-label tspan')).toHaveText(['Shift 1', 'Shift 2']);
+  await expect(card).not.toContainText(/\d{1,2}:\d{2}/);
+  await expect(card.locator('.fx-shift-row').nth(1)).toContainText('Not started');
+  await expect(card.locator('.fx-shift-row').nth(1)).toContainText('0 / 862 Units');
+  await expect(page.locator('.mexa-kpi', { hasText: 'Production' })).toContainText('149 of 1724 target · 149 pieces');
+  await page.clock.runFor(1200);
+  await card.screenshot({ path: '/private/tmp/mexa-factory-shifts.png' });
+  await card.getByRole('button', { name: 'What is Shift-wise production?' }).click();
+  await expect(page.getByRole('dialog', { name: 'Shift-wise production' })).toContainText('Output after midnight stays with the date that shift started');
+  await page.keyboard.press('Escape');
+
+  response.data.updated_at = '2026-10-27T15:30:00.000Z';
+  Object.assign(response.data.shiftwise[1], { produced: 60, actual: 60, status: 'in_progress' });
+  Object.assign(response.data.production, { produced: 209, actual: 209, target_pct: 12.1 });
+  await page.clock.setSystemTime(new Date('2026-10-27T21:00:00+05:30'));
+  await page.reload();
+  await expect(card.locator('.fx-shift-row').nth(1)).toContainText('In progress');
+  await expect(card.locator('.fx-shift-row').nth(1)).toContainText('60 / 862 Units');
+});
+
+test('unassigned recorded output has a count without an invalid target bar', async ({ authedPage: page }) => {
+  const response = todayResponse();
+  response.data.shiftwise.push({ shift_id: null, shift_code: 'Unassigned', start_time: null, end_time: null, produced: 4, actual: 0, target: null } as any);
+  await mockApi(page, response);
+  await page.goto('/factory');
+  const row = page.locator('.fx-shift-row').filter({ hasText: 'Unassigned' });
+  await expect(row).toContainText('4 Units');
+  await expect(row.getByRole('progressbar')).toHaveCount(0);
+});
+
+for (const timezoneId of ['Asia/Kolkata', 'America/Los_Angeles']) {
+  test.describe(`plant date with browser timezone ${timezoneId}`, () => {
+    test.use({ timezoneId });
+    test('after plant midnight the selected day is the new plant date', async ({ authedPage: page }) => {
+      await page.clock.install({ time: new Date('2026-10-27T01:00:00+05:30') });
+      const response = todayResponse();
+      const dates: string[] = [];
+      page.on('request', request => {
+        const url = new URL(request.url());
+        if (url.pathname === '/api/dashboard/factory') dates.push(url.searchParams.get('date')!);
+      });
+      await mockApi(page, response);
+      await page.goto('/factory');
+      await expect(page.locator('#fDate')).toHaveValue('2026-10-27');
+      await expect.poll(() => dates[0]).toBe('2026-10-27');
+    });
+  });
+}
