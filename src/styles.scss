@@ -1244,9 +1244,6 @@ html.dark [class~="bg-blue-600"][class~="text-white"] { color: #fff; }
 /* The system layer — one font, one type scale, one table design — is
    loaded last so it settles what the rules above left different. */
 @include meta.load-css('styles/system');
-.bar-cht{
-  background-color: rgb(245, 245, 255); height: 260px; overflow: hidden; border-radius: 15px;
-}
 .mexa-card-cht {
     padding-bottom: 0rem!important;
 }
@@ -1322,9 +1319,6 @@ html.dark [class~="bg-blue-600"][class~="text-white"] { color: #fff; }
 }
 .mat-mdc-row, .mat-mdc-row{
   height: 35px!important;
-}
-.dark .bar-cht, .dark .mt-facts-inner{
-  background-color:rgb(10 30 63) !important;
 }
 
 
@@ -1911,6 +1905,15 @@ html.dark [class~="bg-blue-600"][class~="text-white"] { color: #fff; }
 }
 
 
+/* The tab is fixed to the window's right edge, about 30px wide. Below 1600px
+   the page's own margin is narrower than that (1rem–1.5rem), so on a 1280,
+   1366 or 1440 screen it covered the right-hand cards' edge — a Maintenance
+   battery's "Not reported", a dashboard's last column (27 Oct 2026): on a page
+   with the tab, keep both margins clear of it. */
+@media (min-width: 768px) and (max-width: 1599px) {
+  .mexa-shell:has(.last-updated-vertical) { padding-left: 2.5rem; padding-right: 2.5rem; }
+}
+
 .refresh-icon {
   color: #0cad5d;
   flex-shrink: 0;
@@ -2392,7 +2395,6 @@ transition: transform 0.3s ease;
   }
 }
 
-.dark .mt-facts .mt-facts-inner dt, .dark .mt-facts-top .mt-facts-inner dt { font-size: .78rem; color: #868a93!important; }
 .dark 
 {
   .sp-card.blue {
@@ -2468,3 +2470,6 @@ transition: transform 0.3s ease;
     ),
     #112b4e;
 }
+
+/* The Maintenance Dashboard's page rules, last, keyed to the page (styles/_maintenance.scss) */
+@include meta.load-css('styles/maintenance');

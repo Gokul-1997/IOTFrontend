@@ -7,7 +7,7 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { Subject, interval, startWith, switchMap, takeUntil, catchError, of } from 'rxjs';
 import { MaintenanceDashboardService } from './maintenance-dashboard.service';
 import { ChartMemo } from '../../shared/chart-memo';
-import { BAR_HOVER } from '../../shared/bar-figures';
+import { BAR_HOVER, barAxisMax } from '../../shared/bar-figures';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { ConditionGaugeComponent, ConditionZone } from './condition-gauge.component';
@@ -693,8 +693,9 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       colors: ['#2f2d8f'],
       dataLabels: { enabled: false },
       legend: { show: true, position: 'bottom' },
-      xaxis: { categories: this.cycleCategories, 
-      title: { text: 'Hour', offsetY: -15}, labels: { rotate: -45, hideOverlappingLabels: true } },
+      // always slanted: level, a narrow card's "10:00 AM" ran into the next hour's (1024px)
+      xaxis: { categories: this.cycleCategories,
+      title: { text: 'Hour', offsetY: -15}, labels: { rotate: -45, rotateAlways: true, hideOverlappingLabels: true } },
       yaxis: { min: 0, title: { text: this.cycleUnit }, labels: { formatter: (v: number) => v == null ? '' : String(Math.round(v)) } },
       grid: { borderColor: 'rgba(148,163,184,.25)' },
       tooltip: { theme: 'light', y: { formatter: (v: number | null) => v == null ? 'no part this hour' : `${v} ${this.cycleUnit.toLowerCase()}` } },
@@ -736,11 +737,14 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   /** X / Y / Z as three bars, one colour per axis as in the design. */
   axisBars(key: string, values: (number | null)[], labels: string[], unit: string): any {
     // kept until the readings or labels change (see ChartMemo.memo on why not updateSeries)
-    return this.charts.memo(`bars:${key}`, () => ({ ...this.barOptions(labels, unit), series: [{ name: unit, data: values }] }),
+    return this.charts.memo(`bars:${key}`, () => ({ ...this.barOptions(labels, unit, values), series: [{ name: unit, data: values }] }),
                             JSON.stringify([values, labels, unit]));
   }
 
-  private barOptions(labels: string[], unit: string): any {
+  private barOptions(labels: string[], unit: string, values: (number | null)[] = []): any {
+    // whole steps to a round top, with room for the figure over the tallest bar: a servo at
+    // 91 °C read "91.7 · 73.3 · 55" up the side with the old top of 110 in six steps
+    const axis = barAxisMax(Math.max(50, ...values.map(v => Number(v) || 0)) * 1.1, true, 6);
     return {
       chart: { type: 'bar', height: 245, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
       plotOptions: { bar: { columnWidth: '55%', borderRadius: 4, distributed: true, dataLabels: { position: 'top' } } },
@@ -751,19 +755,10 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       // two lines ("Encoder" / "Temp X"), as the design sets them, so no label is dropped
       xaxis: { categories: labels.map(l => [l.slice(0, l.indexOf(' ')), l.slice(l.indexOf(' ') + 1)]),
                labels: { rotate: 0, hideOverlappingLabels: false, trim: false } },
-      yaxis: { min: 0, max: (m: number) => Math.max(50, Math.ceil((m || 0) / 10) * 10 + 10), title: { text: unit === '°C' ? 'Celsius' : unit } },
+      yaxis: { min: 0, max: axis.max, tickAmount: axis.ticks, title: { text: unit === '°C' ? 'Celsius' : unit },
+               labels: { formatter: (v: number) => String(Math.round(v)) } },
       grid: { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip: { theme: 'light', ...BAR_HOVER, y: { formatter: (v: number | null) => v == null ? 'not reported' : `${v} ${unit}` } },
-      responsive: [
-          {
-            breakpoint: 1600,
-            options: {
-              chart: {
-                height: 190
-              }
-            }
-          }
-        ]
+      tooltip: { theme: 'light', ...BAR_HOVER, y: { formatter: (v: number | null) => v == null ? 'not reported' : `${v} ${unit}` } }
     };
   }
 

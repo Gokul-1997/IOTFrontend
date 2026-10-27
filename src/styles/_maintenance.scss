@@ -1,0 +1,125 @@
+/* Maintenance Dashboard — its page rules that live outside the component:
+   the fan and battery tiles (the component's own stylesheet is at Angular's
+   8 kB budget), and what other stylesheets used to hold for this page: the
+   bars' panel (styles.scss), the photo heights and zoom (_responsive.scss),
+   and a phone rule keyed to a build hash, which stops matching whenever the
+   component changes. All of it under app-maintenance-dashboard, so no other
+   page picks any of it up.
+
+   Nothing here gives content a height it can outgrow: a hint under the bars,
+   a long part name or six fans make a card taller, never cut off (27 Oct
+   2026, the user: "this page keeps getting design problems — fix it for
+   good"). e2e/maintenance-layout.spec.ts measures the page at nine screen
+   sizes with the data that broke it before. */
+
+app-maintenance-dashboard {
+  /* the X / Y / Z bars: their panel takes what is left of the card, so no
+     strip of empty card sits under it, and a hint under the bars is never cut */
+  .bar-cht {
+    flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center;
+    min-height: 16.25rem; border-radius: 15px; background-color: rgb(245, 245, 255);
+  }
+  .bar-cht > .mexa-empty { flex: 1 1 auto; }
+  .bar-cht > .mexa-card-hint { margin: -.4rem .75rem .6rem; }
+
+  /* ── fans and batteries ── */
+  .mt-cooling { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
+  .mt-fans-card { display: flex; flex-direction: column; gap: .35rem; }
+  .mt-fans-head { display: flex; align-items: center; justify-content: center; gap: .4rem; margin: 0;
+                  font-size: .78rem; font-weight: 600; color: var(--mexa-ink-2); }
+  .mt-count {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 1.35rem; height: 1.35rem;
+    padding: 0 .35rem; border-radius: 999px; background: var(--mexa-row-alt); color: var(--mexa-ink);
+    font-size: .72rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  /* one row of fans (a controller with two) sits in the middle of the card, not along its top */
+  .mt-fans.is-one-row { align-content: center; }
+  .mt-fan { text-align: center; padding: .15rem .35rem; min-width: 0; display: flex; align-items: center;
+            justify-content: center; gap: .75rem; }
+  .mt-fan:not(:nth-child(3n + 1)) { border-top: 1px solid var(--mexa-rule); padding-top: 6px; }
+  .mt-fan-icon { width: 1.65rem; height: 1.65rem; color: #fff; display: block; margin: 0; transition: color .3s ease; }
+  .mt-fan.is-still .mt-fan-icon { color: var(--mexa-ink-3); }
+  .mt-fan.is-fault .mt-fan-icon { color: #e03131; }
+  /* each fan sits on a disc tinted by its state: turning, still, or faulted */
+  .mt-fan-hub {
+    display: grid; place-items: center; flex: none; width: 2.75rem; height: 2.75rem; margin: 0;
+    border-radius: 999px; background: rgb(4 120 87); transition: background-color .3s ease;
+  }
+  .mt-fan.is-fault .mt-fan-hub { background: rgba(224, 49, 49, .13); }
+  .mt-fans.is-one-row .mt-fan-hub { margin-bottom: .55rem; }
+  .mt-fans.is-one-row .mt-fan-icon { width: 2.2rem; height: 2.2rem; }
+  .mt-fans.is-one-row .mt-fan-name { font-size: .85rem; }
+  .mt-fans.is-one-row .mt-fan-reading { font-size: 1rem; margin-top: 0; }
+  /* four to six fans: two by two, each its disc over its words */
+  .mt-fans.is-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem .3rem; }
+  .mt-fans.is-grid .mt-fan { flex-direction: column; gap: .15rem; border-top: 0; padding: .15rem; }
+  .mt-fans.is-grid .mt-fan-hub { width: 2.25rem; height: 2.25rem; }
+  .mt-fans.is-grid .mt-fan-icon { width: 1.4rem; height: 1.4rem; }
+  .mt-fans.is-grid .mt-fan-reading { font-size: .8rem; }
+
+  /* A turning fan, and only a turning one. The whole <svg> turns — one
+     transform the browser runs off the main thread, no repaint per frame —
+     at a steady pace that says "running", not its rpm. Paused while the cards
+     are off-screen or the tab is hidden (appPauseOffscreen), still for anyone
+     who asked for less motion. */
+  .mt-fan-icon.is-spinning { animation: mt-fan-spin var(--mt-spin, 1.2s) linear infinite; }
+  .is-paused .mt-fan-icon.is-spinning { animation-play-state: paused; }
+  .mt-fan-place { margin: .1rem 0 0; font-size: .7rem; color: var(--mexa-ink-2); line-height: 1.25; }
+  /* "10,350 rpm" on one line, however narrow the column */
+  .mt-fan-reading { margin: .1rem 0 0; font-size: .88rem; font-weight: 800; color: var(--mexa-ink);
+                    font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .mt-tiles { display: grid; gap: .6rem; height: 100%; align-items: center; }
+  .mt-tile { text-align: center; padding: .7rem .75rem !important; display: flex; gap: .875rem; justify-content: center;
+             height: 100%; align-items: center; }
+  .mt-tile-name, .mt-fan-name { margin: 0; font-size: .78rem; color: var(--mexa-ink-2); }
+  .mt-tile-value { display: flex; align-items: center; justify-content: center; gap: .3rem; margin: 0;
+                   font-size: 1.05rem; font-weight: 800; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
+  .mt-battery-holder {
+    display: flex; align-items: center; justify-content: center; flex: none; width: 3.75rem; height: 3.75rem;
+    margin-bottom: .55rem; border-radius: 999px; background: rgba(34, 197, 94, .13);
+  }
+  .mt-battery { width: 1.5rem; height: auto; color: var(--mexa-ink); flex: none; }
+  /* filled to its band (full / half / low / empty when not reported); a change of band slides */
+  .mt-battery-fill { transform-box: fill-box; transform-origin: 50% 100%;
+                     transition: transform .4s cubic-bezier(.2, .8, .25, 1), fill .3s ease; }
+  /* the APC battery tile with one battery per axis (app-axis-batteries) */
+  .mt-tile.mt-apc { flex-direction: column; gap: .45rem; align-items: stretch; }
+  .mt-apc-head { display: flex; align-items: center; justify-content: space-between; gap: .1rem .4rem; flex-wrap: wrap; }
+  .mt-apc-head > * { margin: 0; display: inline-flex; align-items: center; gap: .35rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mt-fan-icon.is-spinning { animation: none; }
+    .mt-fan-icon, .mt-fan-hub, .mt-battery-fill { transition: none; }
+  }
+}
+@keyframes mt-fan-spin { to { transform: rotate(360deg); } }
+
+.dark app-maintenance-dashboard {
+  .bar-cht, .mt-facts-inner { background-color: rgb(10 30 63) !important; }
+  .mt-facts-inner dt { color: #868a93 !important; }
+}
+
+/* the machine photo's height, and the facts a size up, on the wide screens */
+@media (min-width: 1280px) and (max-width: 1599px) {
+  app-maintenance-dashboard .mt-machine-img { height: 172px; }
+}
+@media (min-width: 1600px) {
+  app-maintenance-dashboard {
+    .mt-machine-img { height: 180px; }
+    .mt-facts { zoom: 1.1; }
+  }
+}
+
+/* on a phone the fans stand side by side, three to a row at most (six in one
+   row ran into each other), each its icon over its words, no rule between them */
+@media (max-width: 767px) {
+  app-maintenance-dashboard {
+    .mt-facts-top { zoom: 1.1; }
+    .mt-fans, .mt-fans.is-grid { display: grid; grid-template-columns: repeat(var(--mt-fan-cols, 3), minmax(0, 1fr)); gap: .6rem .25rem; }
+    .mt-fan { flex-direction: column; gap: .15rem; }
+    .mt-fan:not(:nth-child(3n + 1)) { border-top: 0; padding-top: .15rem; }
+    .mt-fan-hub { margin-bottom: .1rem; }
+    .mt-fan-reading { font-size: .85rem; }
+  }
+}

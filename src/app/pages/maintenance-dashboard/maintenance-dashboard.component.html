@@ -146,10 +146,11 @@
            (26 Oct 2026, the user: Operator Name first, no Machine Id, Part No and Part Name) -->
       <div class="mt-facts-top">
         <dl class="mt-facts">
-          <div class="mt-facts-inner"><dt>Operator Name</dt><dd>{{ r.operator_name || 'Unassigned' }}</dd></div>
+          <!-- a value longer than three lines ends in "…"; all of it on hover -->
+          <div class="mt-facts-inner"><dt>Operator Name</dt><dd [title]="r.operator_name || 'Unassigned'">{{ r.operator_name || 'Unassigned' }}</dd></div>
           <div class="mt-facts-inner"><dt>Run Time</dt><dd>{{ hm(r.run_seconds) }}</dd></div>
-          <div class="mt-facts-inner"><dt>Part Name</dt><dd>{{ r.part_name || '--' }}</dd></div>
-          <div class="mt-facts-inner"><dt>Part No</dt><dd>{{ r.part_number || '--' }}</dd></div>
+          <div class="mt-facts-inner"><dt>Part Name</dt><dd [title]="r.part_name || '--'">{{ r.part_name || '--' }}</dd></div>
+          <div class="mt-facts-inner"><dt>Part No</dt><dd [title]="r.part_number || '--'">{{ r.part_number || '--' }}</dd></div>
         </dl>
       </div>
       
@@ -283,7 +284,8 @@
         <p class="mt-fans-head" *ngIf="fansReported">
           CNC fans <span class="mt-count" [attr.aria-label]="fanTiles.length + (fanTiles.length === 1 ? ' fan' : ' fans')">{{ fanTiles.length }}</span>
         </p>
-        <div class="mt-fans" [class.is-one-row]="fanTiles.length <= fanCols" [style.--mt-fan-cols]="fanCols">
+        <!-- up to three fans one under the other; four to six two by two, so the column stays as tall as its row -->
+        <div class="mt-fans" [class.is-one-row]="fanTiles.length <= fanCols" [class.is-grid]="fanTiles.length > 3" [style.--mt-fan-cols]="fanCols">
         <div class="mt-fan" *ngFor="let f of fanTiles; trackBy: fanKey"
              [class.is-still]="!f.running" [class.is-fault]="f.status === 'Critical'"
              [class.is-new-alert]="freshAlerts.has('fan:' + f.name)">

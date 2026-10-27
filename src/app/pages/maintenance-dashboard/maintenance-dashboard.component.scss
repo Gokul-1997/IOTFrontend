@@ -5,14 +5,14 @@
 
 :host { display: block; }
 
-/* the Healthy / Stable / Critical key in the title bar */
-.mt-legend { color: #fff; font-size: .85rem; }
-@media (max-width: 1279px) { .mt-legend { display: none; } }
-
 /* ── the two rows ── */
 .mt-row1, .mt-row2 { display: grid; gap: 1rem; margin-bottom: 1rem; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
 @media (min-width: 768px)  { .mt-row1 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1280px) { .mt-row1 { grid-template-columns: repeat(3, minmax(0, 1fr)) 0.5fr;} }
+/* the fans and batteries column never narrower than its readings: "10,350 rpm"
+   and "Not reported" stay on one line (at 1280px half a column was 169px);
+   wider from 1600px, where every card is drawn a fifth larger */
+@media (min-width: 1280px) { .mt-row1 { grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(13rem, .55fr); } }
+@media (min-width: 1600px) { .mt-row1 { grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(15.5rem, .6fr); } }
 /* between tablet and wide desktop three charts were too narrow ("Cycle Time
    (Min)" wrapped into its own headline): cycle time and alarms side by side,
    the trend across both under them */
@@ -48,6 +48,8 @@
 .mt-state.is-offline .mt-state-dot { background: transparent; box-shadow: inset 0 0 0 2px #fff; }
 /* a tablet's half-width card made the photo 350px tall and pushed the facts away */
 .mt-machine-img { display: block; width: 100%; max-height: 12.5rem; object-fit: contain; margin: .6rem 0 .2rem; }
+/* in a card stretched to its row, the four boxes sit along its bottom, level with the other cards' last edge */
+.mt-facts-top { margin-top: auto; }
 
 /* the one line under the name: what needs a look, worst first — or that nothing does */
 .mt-attention {
@@ -70,7 +72,10 @@
 
 
 
-.mt-facts dd, .mt-facts-top dd { margin: .1rem 0 0; font-size: .9rem; font-weight: 700; color: var(--mexa-ink); overflow-wrap: anywhere; }
+/* a long part name wraps at its words, three lines at most — all of it on hover */
+.mt-facts dd, .mt-facts-top dd { margin: .1rem 0 0; font-size: .9rem; font-weight: 700; color: var(--mexa-ink); overflow-wrap: break-word;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+@media (max-width: 479px) { .mt-facts dd { font-size: .8rem; } }
 .mt-facts-inner{
   padding: .45rem .65rem;
   border-radius: 10px;
@@ -94,108 +99,23 @@
 .is-new-alert .mt-word, .mt-state.is-new-alert { animation: mt-alert 1.2s ease-in-out 3; }
 .mt-center { text-align: center; }
 
-/* ── fans and batteries ── */
-.mt-cooling { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
-// .mt-fans { flex: 1; display: grid; grid-template-columns: repeat(var(--mt-fan-cols, 3), minmax(0, 1fr)); gap: .6rem 0; }
-.mt-fans{}
-/* one row of fans (a controller with two) sits in the middle of the card, not along its top */
-.mt-fans.is-one-row { align-content: center; }
-.mt-fan { text-align: center; padding: .15rem .35rem; min-width: 0; display: flex; align-items: center;
-          justify-content: center; gap: .75rem; }
-.mt-fan:not(:nth-child(3n + 1)) { border-top: 1px solid var(--mexa-rule); padding-top: 6px;}
-.mt-fan-icon { width: 1.65rem; height: 1.65rem; color: #fff; display: block; margin: 0;
-                transition: color .3s ease; }
-.mt-fan.is-still .mt-fan-icon { color: var(--mexa-ink-3); }
-.mt-fan.is-fault .mt-fan-icon { color: #e03131; }
-/* each fan sits on a disc tinted by its state: turning, still, or faulted */
-.mt-fan-hub {
-  display: grid; place-items: center; width: 2.75rem; height: 2.75rem; margin: 0;
-  border-radius: 999px; background: rgb(4 120 87); transition: background-color .3s ease;
-}
-.mt-fan.is-still .mt-fan-hub { background: rgb(4 120 87); }
-.mt-fan.is-fault .mt-fan-hub { background: rgba(224, 49, 49, .13); }
-/* two or three fans get the card's room: a bigger disc, the speed as the figure */
-.mt-fans.is-one-row .mt-fan-hub { margin-bottom: .55rem; }
-.mt-fans.is-one-row .mt-fan-icon { width: 2.2rem; height: 2.2rem; }
-.mt-fans.is-one-row .mt-fan-name { font-size: .85rem; }
-.mt-fans.is-one-row .mt-fan-reading { font-size: 1rem; margin-top: .0rem; }
-
-/* A turning fan, and only a turning one. The whole <svg> turns — one
-   transform the browser runs off the main thread, no repaint per frame —
-   at a steady pace that says "running", not its rpm. Paused while the cards
-   are off-screen or the tab is hidden (appPauseOffscreen), still for anyone
-   who asked for less motion. */
-@keyframes mt-fan-spin { to { transform: rotate(360deg); } }
-.mt-fan-icon.is-spinning { animation: mt-fan-spin var(--mt-spin, 1.2s) linear infinite; }
-.is-paused .mt-fan-icon.is-spinning { animation-play-state: paused; }
-.mt-fan-place { margin: .1rem 0 0; font-size: .7rem; color: var(--mexa-ink-2); line-height: 1.25; }
-.mt-fan-reading { margin: .1rem 0 0; font-size: .88rem; font-weight: 800; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
-.mt-tiles { display: grid; 
-  // grid-template-columns: repeat(3, minmax(0, 1fr)); 
-  gap: .6rem; 
-  height: 100%;
-  align-items: center;
-}
-.mt-tile { text-align: center; padding: .7rem .4rem !important; display: flex; gap: 14px; justify-content: center; height: 100%; align-items: center;}
-.mt-tile-name, .mt-fan-name { margin: 0; 
-  font-size: 0.78rem;
-    color: var(--mexa-ink-2);
- }
-.mt-tile-value { display: flex; align-items: center; justify-content: center; gap: .3rem; margin: .0rem 0 0;
-                 font-size: 1.05rem; font-weight: 800; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
-.mt-battery-holder{width: 3.75rem;
-    height: 3.75rem;
-    margin-bottom: 0.55rem;
-  // margin: 0 auto 0.35rem;
-    border-radius: 999px;
-    background: rgba(34, 197, 94, 0.13);
-    align-items: center;
-    display: flex;
-    justify-content: center;
-  }            
-.mt-battery { width: 1.5rem; height: auto; color: var(--mexa-ink); flex: none; }
-/* filled to its band (full / half / low / empty when not reported); a change of band slides */
-.mt-battery-fill { transform-box: fill-box; transform-origin: 50% 100%;
-                   transition: transform .4s cubic-bezier(.2, .8, .25, 1), fill .3s ease; }
-
-/* the fans card: how many the controller reports, then each by its number */
-.mt-fans-card { display: flex; flex-direction: column; gap: .35rem; }
-.mt-fans-head { display: flex; align-items: center; justify-content: center; gap: .4rem; margin: 0;
-                font-size: .78rem; font-weight: 600; color: var(--mexa-ink-2); }
-.mt-count {
-  display: inline-flex; align-items: center; justify-content: center; min-width: 1.35rem; height: 1.35rem;
-  padding: 0 .35rem; border-radius: 999px; background: var(--mexa-row-alt); color: var(--mexa-ink);
-  font-size: .72rem; font-weight: 700; font-variant-numeric: tabular-nums;
-}
-
-/* on a phone three fans share one row: each stacks its icon over its words,
-   so "10,206 rpm" stays on one line */
-@media (max-width: 767px) {
-  .mt-fan { flex-direction: column; gap: .15rem; }
-  .mt-fan-hub { margin-bottom: .1rem; }
-  .mt-fan-reading { white-space: nowrap; font-size: .85rem; }
-}
-
-/* the APC battery tile with one battery per axis (app-axis-batteries) */
-.mt-tile.mt-apc { flex-direction: column; gap: .45rem; align-items: stretch; }
-.mt-apc-head { display: flex; align-items: center; justify-content: space-between; gap: .4rem; flex-wrap: wrap; }
-.mt-apc-head > * { margin: 0; display: inline-flex; align-items: center; gap: .35rem; }
+/* the fans and battery tiles: styles/_maintenance.scss (moved there when this stylesheet reached
+   Angular's 8 kB budget); e2e/maintenance-layout.spec.ts measures the whole page */
 
 /* the readings above the bars sit on the card, so they take its ink — in
    either theme, and at once when the theme is switched */
 :host ::ng-deep .mt-bars .apexcharts-datalabel { fill: var(--mexa-ink); }
 
 @media (prefers-reduced-motion: reduce) {
-  .mt-fan-icon.is-spinning, .mt-state.is-running .mt-state-dot::after,
-  .is-new-alert .mt-word, .mt-state.is-new-alert { animation: none; }
-  .mt-state, .mt-word, .mt-fan-icon, .mt-fan-hub, .mt-attention, .mt-battery-fill { transition: none; }
+  .mt-state.is-running .mt-state-dot::after, .is-new-alert .mt-word, .mt-state.is-new-alert { animation: none; }
+  .mt-state, .mt-word, .mt-attention { transition: none; }
 }
 
 /* ── bottom row ── */
 .mt-current { font-size: .82rem; color: var(--mexa-ink-2); white-space: nowrap; }
 .mt-current strong { color: var(--mexa-ink); }
-.mt-hint { margin: -.4rem 0 .4rem; }
-.mt-alarmlist { list-style: none; margin: 0 0 0; padding: 0; display: grid; gap: 3px; }
+/* the chart cards keep no bottom padding (.mexa-card-cht): the list brings its own */
+.mt-alarmlist { list-style: none; margin: 0 0 .75rem; padding: 0; display: grid; gap: 3px; }
 .mt-alarmlist li { display: flex; align-items: center; gap: .5rem; font-size: .88rem; color: var(--mexa-ink); padding-bottom: .2rem; border-bottom: 1px solid var(--mexa-rule); }
 .mt-alarmlist li:last-child { border-bottom: 0; padding-bottom: 0; }
 .mt-alarmlist strong { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
