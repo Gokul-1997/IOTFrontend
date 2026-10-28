@@ -346,13 +346,6 @@
           </div>
           <p class="mexa-card-hint mt-battery-volts" *ngIf="apcVolts">{{ apcVolts }}</p>
           <app-axis-batteries *ngIf="apcAxes.length" [axes]="apcAxes" [fresh]="freshAxes"></app-axis-batteries>
-          <details class="mt-battery-help" *ngIf="apcAxes.length">
-            <summary>Battery warning codes</summary>
-            <dl><div><dt>ABP · bit 3</dt><dd>A/B phase detector battery low</dd></div>
-              <div><dt>INP · bit 4</dt><dd>Built-in serial pulse coder battery low</dd></div>
-              <div><dt>EXP · bit 5</dt><dd>Separate / external serial detector battery low</dd></div></dl>
-          </details>
-          <p class="mt-battery-note">Controller warnings only; battery charge is not measured.</p>
         </section>
       </div>
     </div>

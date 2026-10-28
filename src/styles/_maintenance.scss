@@ -70,23 +70,25 @@ app-maintenance-dashboard {
                     font-variant-numeric: tabular-nums; white-space: nowrap; }
 
   .mt-tiles { display: grid; gap: .6rem; height: 100%; align-items: center; }
-  .mt-tile { text-align: center; padding: .7rem .75rem !important; display: flex; gap: .875rem; justify-content: center;
+  .mt-tile { text-align: center; padding: .55rem .6rem !important; display: flex; gap: .6rem; justify-content: center;
              height: 100%; align-items: center; }
   .mt-tile-name, .mt-fan-name { margin: 0; font-size: .78rem; color: var(--mexa-ink-2); }
+  .mt-tiles .mt-tile-name { font-size: .72rem; }
   .mt-tile-value { display: flex; align-items: center; justify-content: center; gap: .3rem; margin: 0;
                    font-size: 1.05rem; font-weight: 800; color: var(--mexa-ink); font-variant-numeric: tabular-nums; }
   .mt-battery-holder {
-    display: flex; align-items: center; justify-content: center; flex: none; width: 3.75rem; height: 3.75rem;
-    margin-bottom: .55rem; border-radius: 999px; background: rgba(34, 197, 94, .13);
+    display: flex; align-items: center; justify-content: center; flex: none; width: 2.75rem; height: 2.75rem;
+    border-radius: 999px; background: rgba(34, 197, 94, .13);
   }
-  .mt-battery { width: 1.5rem; height: auto; color: var(--mexa-ink); flex: none; }
+  .mt-battery { width: 1.15rem; height: auto; color: var(--mexa-ink); flex: none; }
   /* filled to its band (full / half / low / empty when not reported); a change of band slides */
   .mt-battery-fill { transform-box: fill-box; transform-origin: 50% 100%;
                      transition: transform .4s cubic-bezier(.2, .8, .25, 1), fill .3s ease; }
   /* the APC battery tile with one battery per axis (app-axis-batteries) */
-  .mt-tile.mt-apc { flex-direction: column; gap: .45rem; align-items: stretch; }
+  .mt-tile.mt-apc { flex-direction: column; gap: .35rem; align-items: stretch; }
   .mt-apc-head { display: flex; align-items: center; justify-content: space-between; gap: .1rem .4rem; flex-wrap: wrap; }
   .mt-apc-head > * { margin: 0; display: inline-flex; align-items: center; gap: .35rem; }
+  .mt-apc-head .mt-count { min-width: 1.15rem; height: 1.15rem; padding: 0 .3rem; font-size: .65rem; }
 
   @media (prefers-reduced-motion: reduce) {
     .mt-fan-icon.is-spinning { animation: none; }

@@ -123,12 +123,7 @@
 
 /* Battery diagnostics use explicit warning flags, without an invented charge gauge. */
 .mt-battery-warning { margin: .2rem 0; font-size: .85rem; font-weight: 700; color: var(--mexa-ink); }
-.mt-battery-note, .mt-battery-help, .mt-battery-volts { margin: 0; color: var(--mexa-ink-2); font-size: .7rem; line-height: 1.4; }
-.mt-battery-note { padding: 0 .25rem; }
-.mt-battery-help summary { cursor: pointer; padding: .2rem 0; font-weight: 600; }
-.mt-battery-help dl { margin: .35rem 0 0; display: grid; gap: .35rem; }
-.mt-battery-help dt { font-weight: 700; color: var(--mexa-ink); }
-.mt-battery-help dd { margin: 0; overflow-wrap: anywhere; }
+.mt-battery-volts { margin: 0; color: var(--mexa-ink-2); font-size: .7rem; line-height: 1.4; }
 
 .mt-battery-holder { background: rgba(148,163,184,.12); }
 .mt-battery-holder.mt-battery-warning-icon { background: rgba(245,166,35,.15); }

@@ -273,7 +273,8 @@ test('battery warning icons do not imply a measured charge level', async ({ auth
   await page.goto('/maintenance-dashboard');
   await expect(tile(page, 'ACC battery').locator('.fill')).toHaveCount(0);
   await expect(tile(page, 'CNC battery').locator('.mt-battery-fill')).toHaveCount(0);
-  await expect(page.locator('.mt-battery-note')).toHaveText('Controller warnings only; battery charge is not measured.');
+  await expect(page.getByText('Battery warning codes', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Controller warnings only; battery charge is not measured.', { exact: true })).toHaveCount(0);
   await page.locator('.mt-tiles').screenshot({ path: 'mexa-maintenance-battery.png' });
 });
 
@@ -414,9 +415,8 @@ test('FANUC ACC shows every reported axis and the specific active detector warni
   await expect(tile(page, 'CNC battery')).toContainText('Battery warning');
   await expect(tile(page, 'CNC battery')).toContainText('Check battery');
   await expect(page.locator('.mt-state')).toHaveText('Running');
-  await tile(page, 'ACC battery').getByText('Battery warning codes', { exact: true }).click();
-  await expect(tile(page, 'ACC battery')).toContainText('Built-in serial pulse coder battery low');
-  await expect(tile(page, 'ACC battery')).toContainText('Separate / external serial detector battery low');
+  await expect(axes(page).nth(1)).toHaveAttribute('aria-label', /Built-in serial pulse coder battery low/);
+  await expect(axes(page).nth(2)).toHaveAttribute('aria-label', /Separate \/ external serial detector battery low/);
 });
 
 test('CNC false warning remains clear even when the general alarm mask is nonzero', async ({ authedPage: page }) => {
@@ -466,16 +466,15 @@ test('failed machine selection removes the previous machine battery diagnostics'
   await expect(tile(page, 'ACC battery')).toHaveCount(0);
 });
 
-test('five-axis FANUC battery diagnostics and explanations fit on a narrow phone', async ({ authedPage: page }) => {
+test('five-axis FANUC battery diagnostics fit on a narrow phone', async ({ authedPage: page }) => {
   await mockApi(page, row({ acc_battery_status: { X: { ...clearAxis(), ABP: true, INP: true, EXP: true },
     Y: clearAxis(), Z: clearAxis(), A: clearAxis(), B: {} }, cnc_battery_warning: { warning: true } }));
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto('/maintenance-dashboard');
   await expect(axes(page)).toHaveCount(5);
-  await tile(page, 'ACC battery').getByText('Battery warning codes', { exact: true }).click();
   const overflow = await page.evaluate(() => ({
     page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    clipped: [...document.querySelectorAll('.mt-tiles li, .mt-battery-help dd, .mt-battery-warning')]
+    clipped: [...document.querySelectorAll('.mt-tiles li, .mt-battery-warning')]
       .filter(el => el.scrollWidth > el.clientWidth + 1).map(el => el.textContent?.trim())
   }));
   expect(overflow.page).toBeLessThanOrEqual(1);

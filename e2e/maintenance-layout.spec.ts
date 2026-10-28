@@ -184,11 +184,10 @@ test('the servo bars\' hint is read in full, and a long part name ends in "…" 
 });
 
 for (const width of [390, 1280]) {
-  test(`FANUC battery code explanations fit when expanded at ${width}px`, async ({ authedPage: page }) => {
+  test(`FANUC battery cards fit in dark theme at ${width}px`, async ({ authedPage: page }) => {
     await page.setViewportSize({ width, height: 900 });
     await open(page, DATA['six fans, five battery axes, in alarm']);
-    await page.getByText('Battery warning codes', { exact: true }).click();
-    await expect(page.locator('.mt-battery-help')).toHaveAttribute('open', '');
+    await page.evaluate(() => document.documentElement.classList.add('dark'));
     expect(await problems(page)).toEqual([]);
   });
 }
