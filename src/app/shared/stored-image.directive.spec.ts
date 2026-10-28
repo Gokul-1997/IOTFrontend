@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
-import { StoredImageDirective } from './stored-image.directive';
+import { NO_PHOTO, StoredImageDirective } from './stored-image.directive';
 import { StoredImageService } from '../core/services/stored-image.service';
 
 @Component({ standalone: true, imports: [StoredImageDirective], template: '<img [appStoredImage]="image()" />' })
@@ -44,10 +44,36 @@ test('legacy HTTPS images use direct src and visibility changes do not assign it
   expect(assigned).not.toHaveBeenCalled();
 });
 
-test('a foreign local-file-looking URL and unsafe URL use the fallback', () => {
+test('a foreign local-file-looking URL and unsafe URL show the "No photo" mark', () => {
   fixture.componentInstance.image.set('https://foreign.example/api/files/companies/4/images/machines/file.png'); fixture.detectChanges();
-  expect(fixture.nativeElement.querySelector('img').getAttribute('src')).toBe('/images/product/machine_login_02.png');
+  expect(fixture.nativeElement.querySelector('img').getAttribute('src')).toBe(NO_PHOTO);
   fixture.componentInstance.image.set('javascript:alert(1)'); fixture.detectChanges();
-  expect(fixture.nativeElement.querySelector('img').getAttribute('src')).toBe('/images/product/machine_login_02.png');
+  expect(fixture.nativeElement.querySelector('img').getAttribute('src')).toBe(NO_PHOTO);
   expect(service.acquire).not.toHaveBeenCalled();
+});
+
+/* 28 Oct 2026, the user: a machine with no image added showed one anyway — a stock photo of another machine */
+test('no photo added: the "No photo" mark, never a stock picture of a machine', () => {
+  const img = () => fixture.nativeElement.querySelector('img') as HTMLImageElement;
+  fixture.componentInstance.image.set(''); fixture.detectChanges();
+  expect(img().getAttribute('src')).toBe(NO_PHOTO);
+  expect(img().classList).toContain('is-no-photo');
+  expect(decodeURIComponent(NO_PHOTO)).toContain('No photo');
+  expect(img().getAttribute('src')).not.toContain('machine_login');
+  fixture.componentInstance.image.set('https://old-bucket.example/image.png'); fixture.detectChanges();
+  expect(img().classList).not.toContain('is-no-photo');
+  img().dispatchEvent(new Event('error'));                              // a photo that cannot be read: the mark too
+  expect(img().getAttribute('src')).toBe(NO_PHOTO);
+});
+
+test('a stored photo: nothing while it is on its way, the photo when it comes, the mark if it cannot be read', () => {
+  const source$ = new BehaviorSubject<string | null>(null);
+  service.acquire.mockReturnValue({ source$, release });
+  const img = () => fixture.nativeElement.querySelector('img') as HTMLImageElement;
+  expect(img().getAttribute('src')).toMatch(/^data:image\/gif/);       // off-screen: nothing yet
+  visible(true);
+  expect(img().getAttribute('src')).toMatch(/^data:image\/gif/);       // downloading: still nothing, no stand-in
+  expect(img().classList).not.toContain('is-no-photo');
+  source$.next(null);                                                   // could not be read
+  expect(img().getAttribute('src')).toBe(NO_PHOTO);
 });

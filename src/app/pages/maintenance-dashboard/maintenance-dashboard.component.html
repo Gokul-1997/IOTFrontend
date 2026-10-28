@@ -137,7 +137,7 @@
           <span class="mt-attention-text">All reported readings normal</span>
         }
       </p>
-      <img class="mt-machine-img" [appStoredImage]="r.image_url || '/images/product/machine_login_02.png'"
+      <img class="mt-machine-img" [appStoredImage]="r.image_url"
            [alt]="'Photo of ' + r.machine_serial_no" />
       <p class="mt-lastseen" *ngIf="rowStatus(r) === 'OFFLINE'">
         {{ r.received_at ? 'Last reading ' + (r.received_at | date:'d MMM, h:mm a') : 'No reading in this window' }}
