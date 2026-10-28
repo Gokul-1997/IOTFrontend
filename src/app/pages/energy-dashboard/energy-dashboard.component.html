@@ -199,7 +199,8 @@
   </div>
   <ng-container *ngIf="hasCurrent('charts')">
      <!-- ══════════ ROW 2 — trend + distribution ══════════ -->
-  <div class="mexa-grid grid-cols-2 lg:grid-cols-3">
+  <!-- one column below a laptop: two side by side squeezed the trend to a sliver on a phone -->
+  <div class="mexa-grid lg:grid-cols-3">
 
     <section class="mexa-card lg:col-span-2">
       <h2 class="mexa-card-title mexa-card-title-left">Energy Consumption Over Time (kWh)</h2>

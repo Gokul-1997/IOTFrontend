@@ -183,81 +183,34 @@
 
 <div class="ui-tab-content">
   <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="mexa-card">
-  <div *ngIf="loading && !views.has('charts')" class="mexa-grid grid-cols-2 xl:grid-cols-4 lg:grid-cols-2">
+  <div *ngIf="loading && !views.has('charts')" class="mexa-grid lg:grid-cols-2">
     <section class="mexa-card" *ngFor="let i of [1, 2, 3, 4]"><app-skeleton kind="chart" label="Loading the charts"></app-skeleton></section>
   </div>
   <ng-container *ngIf="views.has('charts')">
-  <!-- ══════════ ROW 2 ══════════ -->
-  <div class="mexa-grid grid-cols-2 xl:grid-cols-4 lg:grid-cols-2">
+  <!-- ══════════ the Energy Dashboard's layout (28 Oct 2026, the user: "this looks very simple") ══════════
+       the trend wide beside how they split by severity; then the machines that alarm most beside the shifts -->
+  <!-- one column below a laptop: two side by side squeezed the trend to a sliver on a phone -->
+  <div class="mexa-grid lg:grid-cols-3">
 
-    <section class="mexa-card">
-      <h2 class="mexa-card-title">Top 5 Alarms By Machine</h2>
-      <div >
-      <apx-chart class="-mb-12 " *ngIf="machineSeries.length"
-        [series]="machineSeries" [chart]="machineChart.chart" [plotOptions]="machineChart.plotOptions"
-        [colors]="machineChart.colors" [dataLabels]="machineChart.dataLabels"
-        [xaxis]="machineChart.xaxis" [yaxis]="machineChart.yaxis" [grid]="machineChart.grid"
-        [legend]="machineChart.legend" [tooltip]="machineChart.tooltip"
-        [noData]="machineChart.noData"></apx-chart>
-        </div>
-      <p *ngIf="!machineSeries.length" class="mexa-empty">No alarms in this period.</p>
-    </section>
-
-    <section class="mexa-card">
-      <h2 class="mexa-card-title">Alarms by Shift</h2>
-      <div class="flex gap-3" *ngIf="shiftDonutSeries.length; else noShift">
-        <apx-chart
-          [series]="shiftDonutSeries" [chart]="shiftDonut.chart" [labels]="shiftDonut.labels"
-          [colors]="shiftDonut.colors" [dataLabels]="shiftDonut.dataLabels"
-          [plotOptions]="shiftDonut.plotOptions" [legend]="shiftDonut.legend"
-          [tooltip]="shiftDonut.tooltip" [noData]="shiftDonut.noData"></apx-chart>
-        <ul class="mexa-keylist">
-          <li *ngFor="let s of data.by_shift; let i = index">
-            <span class="mexa-key-swatch" [style.--swatch]="donutColour(i)" aria-hidden="true"></span>
-            <span>
-              <span class="mexa-key-label">{{ s.shift_name }}</span>
-              <span class="mexa-key-value">{{ s.total }} ({{ sharePct(s.total, shiftTotal) }})</span>
-            </span>
-          </li>
-        </ul>
-      </div>
-      <ng-template #noShift>
-            <div class="mexa-empty">
-              <div class="downtime-empty">
-          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-            stroke="currentColor"
-            stroke-width="2"
-          />
-          <path
-            d="M12 7.5V13"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-          <circle
-            cx="12"
-            cy="16.5"
-            r="1"
-            fill="currentColor"
-          />
-        </svg>
-
+    <section class="mexa-card lg:col-span-2" aria-labelledby="alTrendTitle">
+      <h2 id="alTrendTitle" class="mexa-card-title mexa-card-title-left">Alarms Trend {{ data.trend_by === 'hour' ? '(By Hour)' : '(By Day)' }}</h2>
+      <apx-chart *ngIf="trendSeries.length && trendCategories.length; else noTrend"
+        [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke" [fill]="trendChart.fill"
+        [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
+        [markers]="trendChart.markers" [legend]="trendChart.legend"
+        [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
+        [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
+      <ng-template #noTrend><div class="mexa-empty"><div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="currentColor"/></svg>
           <p class="empty-title">No alarms in this period.</p>
-        </div>
-        </div>
-
-      </ng-template>
+        </div></div></ng-template>
     </section>
 
-    <section class="mexa-card">
-      <!-- The mock calls this "Alarm Type Distribution" but plots severity;
-           named for what it actually shows. -->
-      <h2 class="mexa-card-title">Alarm Severity Distribution</h2>
-      <div class="flex gap-3" *ngIf="data.kpis.total; else noSeverity">
+    <!-- The mock calls this "Alarm Type Distribution" but plots severity;
+         named for what it actually shows. -->
+    <section class="mexa-card" aria-labelledby="alSeverityTitle">
+      <h2 id="alSeverityTitle" class="mexa-card-title">Alarm Severity Distribution</h2>
+      <div class="mexa-donutrow" *ngIf="data.kpis.total; else noSeverity">
         <apx-chart
           [series]="severitySeries" [chart]="severityDonut.chart" [labels]="severityDonut.labels"
           [colors]="severityDonut.colors" [dataLabels]="severityDonut.dataLabels"
@@ -268,60 +221,52 @@
             <span class="mexa-key-swatch" [style.--swatch]="SEV.critical.color" aria-hidden="true"></span>
             <span>
               <span class="mexa-key-label">{{ SEV.critical.label }}</span>
-              <span class="mexa-key-value">{{ data.by_severity.critical }}
-                ({{ sharePct(data.by_severity.critical, data.kpis.total) }})</span>
+              <span class="mexa-key-value">{{ sharePct(data.by_severity.critical, data.kpis.total) }} ({{ data.by_severity.critical }})</span>
             </span>
           </li>
           <li>
             <span class="mexa-key-swatch" [style.--swatch]="SEV.noncritical.color" aria-hidden="true"></span>
             <span>
               <span class="mexa-key-label">{{ SEV.noncritical.label }}</span>
-              <span class="mexa-key-value">{{ data.by_severity.normal }}
-                ({{ sharePct(data.by_severity.normal, data.kpis.total) }})</span>
+              <span class="mexa-key-value">{{ sharePct(data.by_severity.normal, data.kpis.total) }} ({{ data.by_severity.normal }})</span>
             </span>
           </li>
         </ul>
       </div>
-      <ng-template #noSeverity>
-        <div class="mexa-empty">
-              <div class="downtime-empty">
-          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-            stroke="currentColor"
-            stroke-width="2"
-          />
-          <path
-            d="M12 7.5V13"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-          <circle
-            cx="12"
-            cy="16.5"
-            r="1"
-            fill="currentColor"
-          />
-        </svg>
-
+      <ng-template #noSeverity><div class="mexa-empty"><div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="currentColor"/></svg>
           <p class="empty-title">No alarms in this period.</p>
-        </div>
-        </div>
-      </ng-template>
+        </div></div></ng-template>
+    </section>
+  </div>
+
+  <div class="mexa-grid lg:grid-cols-2">
+
+    <section class="mexa-card" aria-labelledby="alMachineTitle">
+      <h2 id="alMachineTitle" class="mexa-card-title mexa-card-title-left">Top 5 Alarms By Machine</h2>
+      <apx-chart *ngIf="machineSeries[0]?.data?.length; else noMachines"
+        [series]="machineSeries" [chart]="machineChart.chart" [plotOptions]="machineChart.plotOptions"
+        [colors]="machineChart.colors" [dataLabels]="machineChart.dataLabels"
+        [xaxis]="machineChart.xaxis" [grid]="machineChart.grid"
+        [legend]="machineChart.legend" [tooltip]="machineChart.tooltip"
+        [noData]="machineChart.noData"></apx-chart>
+      <ng-template #noMachines><div class="mexa-empty"><div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="currentColor"/></svg>
+          <p class="empty-title">No alarms in this period.</p>
+        </div></div></ng-template>
     </section>
 
-    <section class="mexa-card">
-      <h2 class="mexa-card-title">Alarms Trend {{ data.trend_by === 'hour' ? '(By Hour)' : '(By Day)' }}</h2>
-      <apx-chart class="-mb-10 " *ngIf="trendSeries.length"
-        [series]="trendSeries" [chart]="trendChart.chart" [plotOptions]="trendChart.plotOptions"
-        [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels" [stroke]="trendChart.stroke"
-        [markers]="trendChart.markers" [legend]="trendChart.legend"
-        [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
-        [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
-      <p *ngIf="!trendSeries.length" class="mexa-empty">No alarms in this period.</p>
+    <section class="mexa-card" aria-labelledby="alShiftTitle">
+      <h2 id="alShiftTitle" class="mexa-card-title mexa-card-title-left">Alarms by Shift</h2>
+      <apx-chart *ngIf="shiftTotal > 0; else noShift"
+        [series]="shiftSeries" [chart]="shiftChart.chart" [plotOptions]="shiftChart.plotOptions"
+        [colors]="shiftChart.colors" [dataLabels]="shiftChart.dataLabels"
+        [xaxis]="shiftChart.xaxis" [yaxis]="shiftChart.yaxis" [grid]="shiftChart.grid" [legend]="shiftChart.legend"
+        [tooltip]="shiftChart.tooltip" [noData]="shiftChart.noData"></apx-chart>
+      <ng-template #noShift><div class="mexa-empty"><div class="downtime-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="currentColor"/></svg>
+          <p class="empty-title">No alarms in this period.</p>
+        </div></div></ng-template>
     </section>
   </div>
 

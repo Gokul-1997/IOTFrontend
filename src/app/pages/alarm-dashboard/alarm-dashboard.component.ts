@@ -9,7 +9,7 @@ import { AlarmDashboardService } from './alarm-dashboard.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChartMemo } from '../../shared/chart-memo';
-import { BAR_HOVER, columnFigures } from '../../shared/bar-figures';
+import { BAR_HOVER, barAxisMax, barFigures, columnFigures } from '../../shared/bar-figures';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { ReportDateDirective } from '../../shared/report-date.directive';
@@ -135,6 +135,8 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
   machineSeries: any[] = [];
   machineCategories: string[] = [];
   shiftDonutSeries: number[] = [];
+  /** Alarms by Shift as columns, as the Energy Dashboard draws its trend (28 Oct 2026). */
+  shiftSeries: any[] = [];
   /* The donut's own total. Not kpis.total: an alarm outside every shift
      window is counted there but not here, so using it as the key's
      denominator makes the key disagree with the slice it labels. */
@@ -301,6 +303,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
        renders an empty chart with no error. */
     this.shiftDonutSeries = (d.by_shift || []).map((s: any) => Number(s.total) || 0);
     this.shiftTotal = this.shiftDonutSeries.reduce((a, b) => a + b, 0);
+    this.shiftSeries = [{ name: 'Alarms', data: this.shiftDonutSeries }];
     this.severitySeries = [Number(d.by_severity.critical) || 0, Number(d.by_severity.normal) || 0];
   }
 
@@ -413,21 +416,25 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
     return `${Math.round((n / total) * 1000) / 10}%`;
   }
 
+  /* The Energy Dashboard's look (28 Oct 2026, the user: the Alarm Report
+     "very simple"): the trend as shaded areas, wide; the machines as bars
+     with their counts inside; the shifts as columns; severity a donut with
+     the total in its middle. */
   get trendChart(): any {
     return this.charts.memo('trendChart', () => {
     return {
-      chart:  { type: 'line', height: 180, toolbar: { show: false }, fontFamily: 'inherit' },
-      plotOptions: {},
-      stroke: { width: 3, curve: 'smooth' },
-      markers: { size: 4 },
+      chart:  { type: 'area', height: 260, toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false } },
+      stroke: { width: 2.5, curve: 'smooth' },
+      fill:   { type: 'gradient', gradient: { shadeIntensity: 0.3, opacityFrom: 0.32, opacityTo: 0.04 } },
+      markers: { size: 3, strokeWidth: 0, hover: { size: 5 } },
       colors: [SEVERITY.critical.color, SEVERITY.noncritical.color],
       dataLabels: { enabled: false },
       // two lines in two colours: the key says which is which
       legend: { show: true, position: 'top', horizontalAlign: 'right', fontSize: '12px', markers: { size: 5 } },
-      xaxis:  { categories: this.trendCategories },
-      yaxis:  { title: { text: 'No. of Alarms' }, labels: { formatter: (v: number) => v?.toFixed(0) } },
+      xaxis:  { categories: this.trendCategories, tickAmount: Math.min(12, this.trendCategories.length), labels: { hideOverlappingLabels: true } },
+      yaxis:  { min: 0, forceNiceScale: true, title: { text: 'No. of Alarms' }, labels: { formatter: (v: number) => v == null ? '' : String(Math.round(v)) } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'light' },
+      tooltip:{ theme: 'light', shared: true, intersect: false, y: { formatter: (v: number) => `${v} alarm${v === 1 ? '' : 's'}` } },
       noData: { text: 'No alarms in this period' }
     };
   });
@@ -435,35 +442,38 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
 
   get machineChart(): any {
     return this.charts.memo('machineChart', () => {
+    const fig = barFigures(this.machineSeries[0]?.data || [], v => `${v}`,
+                           { bar: { borderRadius: 3, barHeight: '60%', distributed: true }, whole: true });
     return {
-      chart:  { type: 'bar', height:200, toolbar: { show: false }, fontFamily: 'inherit' },
-      plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: true } },
+      chart:  { type: 'bar', height: 300, toolbar: { show: false }, fontFamily: 'inherit', events: fig.events },
+      plotOptions: fig.plotOptions,
       colors: this.palette,
-      // a column too short or narrow for its count shows it on hover
-      dataLabels: columnFigures(v => `${v}`),
+      dataLabels: fig.dataLabels,
       // distributed repeats every machine in the legend; the axis names them
       legend: { show: false },
-      xaxis:  { categories: this.machineCategories },
-      yaxis:  { title: { text: 'No. of Alarms' }, 
-      labels: { formatter: (v: number) => v?.toFixed(0) } },
+      xaxis:  { categories: this.machineCategories, title: { text: 'No. of Alarms' }, ...fig.xaxis },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip:{ theme: 'light', ...BAR_HOVER },
+      tooltip:{ theme: 'light', ...fig.tooltip, y: { formatter: (v: number) => `${v} alarm${v === 1 ? '' : 's'}`, title: { formatter: () => 'Alarms:' } } },
       noData: { text: 'No alarms in this period' }
     };
   });
   }
 
-  get shiftDonut(): any {
-    return this.charts.memo('shiftDonut', () => {
+  /** Alarms by shift as columns, the count in the middle of each, as the Energy trend. */
+  get shiftChart(): any {
+    return this.charts.memo('shiftChart', () => {
+    const axis = barAxisMax(Math.max(1, ...this.shiftDonutSeries) * 1.1, true, 5);
     return {
-      chart: { type: 'donut', height: 180, fontFamily: 'inherit' },
-      labels: (this.data?.by_shift || []).map((s: any) => s.shift_name),
+      chart:  { type: 'bar', height: 300, toolbar: { show: false }, fontFamily: 'inherit' },
+      plotOptions: { bar: { borderRadius: 4, borderRadiusApplication: 'end', columnWidth: '38%', distributed: true } },
       colors: this.palette,
-      plotOptions: { pie: { donut: { size: '62%' } } },
-      dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%` },
-      // the key list beside the donut already names every shift
+      dataLabels: columnFigures(v => `${v}`),
       legend: { show: false },
-      tooltip: { y: { formatter: (v: number) => `${v} alarms` } },
+      xaxis:  { categories: (this.data?.by_shift || []).map((s: any) => s.shift_name) },
+      yaxis:  { min: 0, max: axis.max, tickAmount: axis.ticks, title: { text: 'No. of Alarms' },
+                labels: { formatter: (v: number) => String(Math.round(v)) } },
+      grid:   { borderColor: 'rgba(148,163,184,.25)' },
+      tooltip:{ theme: 'light', ...BAR_HOVER, y: { formatter: (v: number) => `${v} alarm${v === 1 ? '' : 's'} (${this.sharePct(v, this.shiftTotal)})` } },
       noData: { text: 'No alarms in this period' }
     };
   });
@@ -472,11 +482,12 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
   get severityDonut(): any {
     return this.charts.memo('severityDonut', () => {
     return {
-      chart: { type: 'donut', height: 180, fontFamily: 'inherit' },
+      chart: { type: 'donut', height: 220, fontFamily: 'inherit' },
       labels: [SEVERITY.critical.label, SEVERITY.noncritical.label],
       colors: [SEVERITY.critical.color, SEVERITY.noncritical.color],
-      plotOptions: { pie: { donut: { size: '62%' } } },
-      dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%` },
+      plotOptions: { pie: { donut: { size: '66%', labels: { show: true,
+        total: { show: true, label: 'Alarms', fontSize: '.8rem', formatter: () => String(this.data?.kpis?.total ?? 0) } } } } },
+      dataLabels: { enabled: false },
       legend: { show: false },
       tooltip: { y: { formatter: (v: number) => `${v} alarms` } },
       noData: { text: 'No alarms in this period' }
