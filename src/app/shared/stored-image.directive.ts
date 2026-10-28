@@ -3,9 +3,9 @@ import { Subscription } from 'rxjs';
 import { ImageLease, StoredImageService } from '../core/services/stored-image.service';
 
 /*
- * A machine with no photo shows a quiet "No photo" mark, not a stock picture
- * of some other machine (28 Oct 2026, the user: "machines with no image added
- * all show an image"). The same mark when its photo cannot be shown.
+ * A machine that has no photo added shows a quiet "No photo" mark, not the
+ * stock picture of a machine (28 Oct 2026, the user). Only that: a machine
+ * with a photo loads and falls back exactly as it always did.
  */
 const NO_PHOTO_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 140" fill="none" stroke="#94a3b8" stroke-width="3" stroke-linejoin="round">' +
@@ -13,14 +13,12 @@ const NO_PHOTO_SVG =
   '<rect x="121" y="28" width="13" height="34" rx="2"/><path d="M48 98h104"/>' +
   '<text x="100" y="126" fill="#94a3b8" stroke="none" font-family="system-ui,sans-serif" font-size="15" font-weight="600" text-anchor="middle">No photo</text></svg>';
 export const NO_PHOTO = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(NO_PHOTO_SVG);
-/** Nothing at all, while a stored photo is still on its way. */
-const BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
 /** Keeps Bearer tokens out of image URLs and uses one loader for all views. */
 @Directive({ selector: 'img[appStoredImage]', standalone: true })
 export class StoredImageDirective implements OnChanges, OnDestroy {
   @Input() appStoredImage: string | null | undefined;
-  @Input() imageFallback = NO_PHOTO;
+  @Input() imageFallback = '/images/product/machine_login_02.png';
   private lease?: ImageLease;
   private subscription?: Subscription;
   private observer?: IntersectionObserver;
@@ -45,17 +43,13 @@ export class StoredImageDirective implements OnChanges, OnDestroy {
   private render(): void {
     this.release();
     const value = this.appStoredImage || '';
-    if (!value) { this.setSource(this.imageFallback); return; }
+    // no photo added for this machine
+    if (!value) { this.setSource(NO_PHOTO); return; }
     const protectedUrl = this.images.protectedUrl(value);
     if (protectedUrl) {
-      if (!this.visible) { this.setSource(BLANK); return; }
+      if (!this.visible) { this.setSource(this.imageFallback); return; }
       this.lease = this.images.acquire(protectedUrl);
-      // the first "none yet" is the download starting; a later one, that it could not be read
-      let first = true;
-      this.subscription = this.lease.source$.subscribe(source => {
-        this.setSource(source || (first ? BLANK : this.imageFallback));
-        first = false;
-      });
+      this.subscription = this.lease.source$.subscribe(source => this.setSource(source || this.imageFallback));
       return;
     }
     // Old S3 URLs remain readable during migration, without API credentials.
@@ -71,13 +65,12 @@ export class StoredImageDirective implements OnChanges, OnDestroy {
   ngOnDestroy(): void { this.observer?.disconnect(); this.release(); }
 
   private setSource(value: string): void {
-    const img = this.element.nativeElement;
-    // a class to style or find the mark by, beside the picture it stands in for
-    if (value === this.imageFallback) this.renderer.addClass(img, 'is-no-photo');
-    else this.renderer.removeClass(img, 'is-no-photo');
-    if (img.getAttribute('src') === value) return;
-    if (value) this.renderer.setAttribute(img, 'src', value);
-    else this.renderer.removeAttribute(img, 'src');
+    // a class to style or find the mark by
+    if (value === NO_PHOTO) this.renderer.addClass(this.element.nativeElement, 'is-no-photo');
+    else this.renderer.removeClass(this.element.nativeElement, 'is-no-photo');
+    if (this.element.nativeElement.getAttribute('src') === value) return;
+    if (value) this.renderer.setAttribute(this.element.nativeElement, 'src', value);
+    else this.renderer.removeAttribute(this.element.nativeElement, 'src');
   }
 
   private release(): void {

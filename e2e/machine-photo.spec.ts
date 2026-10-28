@@ -3,9 +3,9 @@ import { test, expect, seedAuth } from './fixtures/auth';
 /*
  * A machine with no photo added shows a quiet "No photo" mark — not a stock
  * picture of some other machine (28 Oct 2026, the user: "some machines have
- * no image added, but every machine shows an image"). A machine with a photo
- * shows its own, as before: on the Live Dashboard card, its own page and the
- * Maintenance Dashboard.
+ * no image added, but every machine shows an image"). Only that changed: a
+ * machine with a photo loads and shows it exactly as before, on the Live
+ * Dashboard card, its own page and the Maintenance Dashboard.
  */
 const ok = (body: unknown) => ({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
 const PHOTO = '/images/product/machine_login_02.png';      // stands in for an uploaded photo: a direct path is shown as it is
