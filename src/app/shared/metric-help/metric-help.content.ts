@@ -242,17 +242,17 @@ export function metricHelp(topic: string, basis: HelpBasis = 'period'): MetricHe
       return {
         title: 'Energy consumed',
         what: 'Electricity the machines used in the period, in kilowatt-hours (kWh), from each machine\'s own energy counter.',
-        formula: ['Energy used = last counter reading − first, day by day, added up'],
+        formula: ['Energy used = sum of accepted changes between consecutive counter readings'],
         example: 'A counter at 1,200.0 kWh in the morning and 1,262.5 kWh at night: 62.5 kWh used that day.',
         why: 'A machine whose device sends no energy counter shows "not reporting", never 0 — it is left out of the total, not counted as using nothing.'
       };
     case 'energy_cost':
       return {
         title: 'Total energy cost',
-        what: 'What the energy used in the period cost, at the tariff set on Master → Tariff & Rates (₹ per unit, kWh).',
+        what: 'Estimated energy cost at the tariffs currently set on Master → Tariff & Rates. Historical bills may use different rates.',
         formula: ['Energy cost = kWh used × ₹ per kWh'],
         example: '1,248.6 kWh at ₹10.95 per kWh: ₹13,672.',
-        why: 'A machine with a rate of its own is priced at that rate; every other machine at the company default. With no tariff set, cost shows "--".'
+        why: 'Each machine uses its own tariff or the company default. Missing readings, rejected intervals, missing tariffs or different currencies leave the full selection cost unavailable.'
       };
     case 'energy_per_part':
       return {
@@ -295,9 +295,9 @@ export function metricHelp(topic: string, basis: HelpBasis = 'period'): MetricHe
     case 'energy_cost_trend':
       return {
         title: 'Energy cost trend',
-        what: 'Energy used each day, week or month, priced at the company tariff. With no tariff set, the bars show kWh instead.',
-        formula: ['Cost of a bar = kWh in it × ₹ per kWh'],
-        why: 'Weeks are the days of each week added together; switching Day, Week or Month does not reload the page.'
+        what: 'Energy used each day, week or month, estimated at each machine\'s configured tariff. Incomplete pricing shows kWh instead.',
+        formula: ['Cost of a bar = sum of each machine\'s measured kWh × its configured tariff'],
+        why: 'Missing days stay gaps. A week containing a missing day is unavailable. Switching Day, Week or Month regroups the loaded data.'
       };
     case 'oee_loss':
       return {

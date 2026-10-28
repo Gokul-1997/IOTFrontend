@@ -141,7 +141,8 @@ test.describe('Operator Performance: one ranking card', () => {
 
 /* ── Energy ── */
 
-const energy = (over: any = {}) => ok({
+const energy = (over: any = {}) => {
+const data: any = {
   updated_at: '2026-06-18T10:30:00.000Z',
   currency: 'INR',
   rate_per_kwh: 10.95,
@@ -158,7 +159,13 @@ const energy = (over: any = {}) => ok({
                        kwh_per_part: 0.209, cost: 5755, peak_kw: 15.2, overload_kw: null, is_overloaded: false }],
               total: 1, page: 1, limit: 20, totalPages: 1 },
   ...over
-});
+};
+// Fixtures mirror API-priced points; the browser never prices consumption.
+for (const key of ['trend', 'by_month']) data[key] = data[key].map((r: any) => ({ ...r,
+  cost: data.rate_per_kwh == null || r.kwh == null ? null : r.kwh * data.rate_per_kwh,
+  cost_complete: data.rate_per_kwh != null && r.kwh != null }));
+return ok(data);
+};
 
 async function openEnergy(page: any, body: any, asked: string[] = []) {
   await stubAll(page);

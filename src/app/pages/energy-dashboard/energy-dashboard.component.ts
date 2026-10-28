@@ -35,8 +35,8 @@ const TABS: DashTab[] = [
    Phase 2 · Screen 9 — Energy Monitoring
 
    Devices report energy as a cumulative kWh counter, so consumption is
-   a difference between readings, never a sum of them. No machine sends
-   that counter yet, so this screen reports "not reporting" rather than
+   a difference between readings, never a sum of them. When a machine does not send
+   that counter, this screen reports "not reporting" rather than
    zeros that would read as a remarkably efficient factory.
 
    Kept to what can be read at a glance (6 Oct 2026): a value and at most
@@ -86,6 +86,8 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
   shiftTotal = 0;
   monthSeries: any[] = [];
   monthCategories: string[] = [];
+  costTrendIsCost = false;
+  private receivedKeys: Partial<Record<DashPart, string>> = {};
 
   private destroy$ = new Subject<void>();
   private search$ = new RxSubject<string>();
@@ -133,7 +135,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
 
   blankFilters() {
     const today = this.todayStr();
-    const weekAgo = new Date(Date.now() - 6 * 86_400_000).toISOString().slice(0, 10);
+    const weekAgo = new Date(Date.parse(today + 'T00:00:00Z') - 6 * 86_400_000).toISOString().slice(0, 10);
     return { from: weekAgo, to: today, machine_id: null, search: '' };
   }
 
@@ -167,6 +169,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
   /** Bring what is on screen up to date with the filters; the other tabs follow when they are opened. */
   load(): void {
     this.errorMsg = '';
+    if (this.receivedKeys.kpis !== this.partKeys().kpis) this.updatedAt = '';
     this.views.load();
     this.cdr.markForCheck();
   }
@@ -190,7 +193,8 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
       return false;
     }
     const d = res.data;
-    const next: any = { ...(this.data ?? {}), currency: d.currency || 'INR', rate_per_kwh: d.rate_per_kwh ?? null };
+    const next: any = { ...(this.data ?? {}), currency: d.currency || 'INR', rate_per_kwh: d.rate_per_kwh ?? null,
+      cost_basis: d.cost_basis, energy_source: d.energy_source, by_shift_source: d.by_shift_source };
     if (parts.includes('kpis')) {
       next.kpis = { total_kwh: null, total_operating_seconds: 0, total_produced: 0, kwh_per_part: null,
                     total_cost: null, overload_alerts: 0, ...(d.kpis ?? {}) };
@@ -202,6 +206,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
     if (parts.includes('table')) this.drill.revealIfAsked();
     if (parts.includes('charts')) this.applyCharts(next);
     this.updatedAt = updatedLabel(d.updated_at);
+    for (const part of parts) this.receivedKeys[part] = this.partKeys()[part];
     this.cdr.markForCheck();
     return true;
   }
@@ -212,19 +217,20 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
     /* keep(): the same arrays as last time when the figures are the same, so
        paging or searching the machine table redraws no chart. */
     this.trendCategories = this.charts.keep('trendCats', (d.trend || []).map((t: any) =>
-      new Date(t.day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })));
-    this.trendSeries = this.charts.keep('trendSeries', [{ name: 'kWh', data: (d.trend || []).map((t: any) => t.kwh) }]);
+      this.calendarLabel(t.day)));
+    const trendValues = (d.trend || []).map((t: any) => this.measured(t.kwh));
+    this.trendSeries = this.charts.keep('trendSeries', trendValues.some((v: any) => v !== null) ? [{ name: 'kWh', data: trendValues }] : []);
 
     /* The five machines that used the most, over every machine — not the
        table's page. Only machines that report a counter are in it: a zero
        bar would read as a machine using no electricity. */
-    const top = d.top_consumers || [];
+    const top = (d.top_consumers || []).filter((m: any) => this.measured(m.kwh) !== null);
     this.machineCategories = this.charts.keep('machineCats', top.map((m: any) => m.machine_serial_no));
     this.machineSeries = this.charts.keep('machineSeries', top.length ? [{ name: 'kWh', data: top.map((m: any) => m.kwh) }] : []);
 
     /* A donut needs a flat array of numbers, not a {name,data} series —
        passing the series shape renders an empty chart with no error. */
-    this.shiftDonutSeries = this.charts.keep('shiftSeries', (d.by_shift || []).map((s: any) => Number(s.kwh) || 0));
+    this.shiftDonutSeries = this.charts.keep('shiftSeries', (d.by_shift || []).map((s: any) => this.measured(s.kwh)!));
     this.shiftTotal = this.shiftDonutSeries.reduce((a, b) => a + b, 0);
 
     this.buildCostTrend();
@@ -234,7 +240,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
   private normalise(d: any): any {
     return {
       trend:     d?.trend     ?? [],
-      by_shift:  d?.by_shift  ?? [],
+      by_shift:  (d?.by_shift ?? []).filter((s: any) => this.measured(s.kwh) !== null),
       by_month:  d?.by_month  ?? [],
       top_consumers: d?.top_consumers ?? [],
       overloads: d?.overloads ?? []
@@ -273,17 +279,17 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
   /** True when not one machine reports a counter — a device gap, not an
    *  empty filter result, and worth saying plainly. */
   get noEnergyData(): boolean {
-    return this.data?.coverage?.reporting === 0;
+    return this.data?.coverage?.machines > 0 && this.data?.coverage?.reporting === 0;
   }
 
   /** Unknown shows as a dash, never 0 — they are different claims. */
   num(v: number | null | undefined, unit = ''): string {
-    return v === null || v === undefined ? '--' : `${qty(v, 3)}${unit}`;
+    return this.measured(v) === null ? '--' : `${qty(v, 3)}${unit}`;
   }
 
   /** "₹8,926" — rupees as the plant reads them; another currency by its code. */
   money(v: number | null | undefined, digits = 0): string {
-    if (v === null || v === undefined) return '--';
+    if (this.measured(v) === null) return '--';
     const cur = this.data?.currency || 'INR';
     return `${cur === 'INR' ? '₹' : cur + ' '}${qty(v, digits)}`;
   }
@@ -301,9 +307,24 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
   }
 
+  hasCurrent(part: DashPart): boolean {
+    return this.views.has(part) && this.receivedKeys[part] === this.partKeys()[part];
+  }
+
+  private measured(value: any): number | null {
+    return value == null || (typeof value !== 'number' && typeof value !== 'string') || String(value).trim() === '' || !Number.isFinite(Number(value)) ? null : Number(value);
+  }
+
+  private calendarLabel(value: any, month = false): string {
+    const day = String(value).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return '';
+    return new Date(day + 'T12:00:00Z').toLocaleDateString('en-IN', {
+      timeZone: 'UTC', ...(month ? { month: 'short', year: '2-digit' } as const : { day: '2-digit', month: 'short' } as const)
+    });
+  }
+
   private todayStr(): string {
-    return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
-      .toISOString().split('T')[0];
+    return new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);
   }
 
   get trendChart(): any {
@@ -318,7 +339,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
       yaxis:  { title: { text: 'kWh' }, labels: { formatter: compactQty } },
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: 'light' },
-      noData: { text: 'No machine is sending energy readings yet' }
+      noData: { text: 'No measured energy in this period' }
     };
   }, this.charts.sig('trendCats') + this.charts.sig('trendSeries'));
   }
@@ -330,8 +351,8 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
 
   /** Share of a total, guarding the empty-period divide-by-zero. */
   sharePct(value: number | null | undefined, total: number): string {
-    const n = Number(value);
-    if (!total || !Number.isFinite(n)) return '--';
+    const n = this.measured(value);
+    if (!total || n === null) return '--';
     return `${Math.round((n / total) * 1000) / 10}%`;
   }
 
@@ -352,7 +373,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
       grid:   { borderColor: 'rgba(148,163,184,.25)' },
       tooltip:{ theme: this.isDarkMode ? 'dark' : 'light', ...fig.tooltip,
                 y: { formatter: (v: number) => `${this.num(v)} kWh`, title: { formatter: () => 'Energy:' } } },
-      noData: { text: 'No machine is sending energy readings yet' }
+      noData: { text: 'No measured energy in this period' }
     };
   }, this.charts.sig('machineCats') + this.charts.sig('machineSeries') + this.isDarkMode);
   }
@@ -393,35 +414,31 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
     this.cdr.markForCheck();
   }
 
-  /* Priced at the company tariff when one is set; otherwise the bars are kWh
-     and say so. It used to plot kWh under a "Cost" title. Days come from the
-     daily trend, weeks are those days summed, months are the API's own. */
+  /* Costs are priced by the API using each machine's effective tariff.
+     Missing readings stay gaps; regrouping never replaces them with zero. */
   private buildCostTrend(): void {
-    const d = this.data;
-    const rate = d?.rate_per_kwh ?? null;
-    const price = (kwh: number) => rate != null ? Number((kwh * rate).toFixed(2)) : Number(kwh.toFixed(2));
-    let rows: { label: string; kwh: number }[] = [];
-    if (this.costBy === 'month') {
-      rows = (d?.by_month || []).map((m: any) => ({
-        label: new Date(m.month).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }), kwh: Number(m.kwh) || 0 }));
-    } else {
-      const days = (d?.trend || []).filter((t: any) => t.machines > 0);
-      if (this.costBy === 'day') {
-        rows = days.map((t: any) => ({ label: new Date(t.day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }), kwh: Number(t.kwh) || 0 }));
-      } else {
-        const weeks = new Map<string, number>();
-        for (const t of days) {
-          const dt = new Date(t.day);
-          const monday = new Date(dt); monday.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
-          const key = monday.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
-          weeks.set(key, (weeks.get(key) || 0) + (Number(t.kwh) || 0));
-        }
-        rows = [...weeks.entries()].map(([label, kwh]) => ({ label: `Wk ${label}`, kwh }));
+    const source = this.costBy === 'month' ? this.data?.by_month || [] : this.data?.trend || [];
+    const known = source.filter((r: any) => this.measured(r.kwh) !== null);
+    this.costTrendIsCost = known.length > 0 && known.every((r: any) => r.cost_complete === true && this.measured(r.cost) !== null);
+    const value = (r: any) => this.measured(this.costTrendIsCost ? r.cost : r.kwh);
+    let rows: { label: string; value: number | null }[];
+    if (this.costBy === 'week') {
+      const weeks = new Map<string, { label: string; value: number | null }>();
+      for (const point of source) {
+        const day = new Date(String(point.day).slice(0, 10) + 'T12:00:00Z');
+        day.setUTCDate(day.getUTCDate() - ((day.getUTCDay() + 6) % 7));
+        const key = day.toISOString().slice(0, 10), amount = value(point);
+        const week = weeks.get(key) || { label: `Wk ${this.calendarLabel(key)}`, value: 0 };
+        week.value = week.value === null || amount === null ? null : week.value + amount;
+        weeks.set(key, week);
       }
+      rows = [...weeks.values()];
+    } else {
+      rows = source.map((r: any) => ({ label: this.calendarLabel(r.month || r.day, this.costBy === 'month'), value: value(r) }));
     }
     this.monthCategories = this.charts.keep('monthCats', rows.map(r => r.label));
-    this.monthSeries = this.charts.keep('monthSeries',
-      rows.length ? [{ name: rate != null ? 'Cost' : 'kWh', data: rows.map(r => price(r.kwh)) }] : []);
+    this.monthSeries = this.charts.keep('monthSeries', rows.some(r => r.value !== null)
+      ? [{ name: this.costTrendIsCost ? 'Cost' : 'kWh', data: rows.map(r => r.value === null ? null : Number(r.value.toFixed(2))) }] : []);
   }
 
   /** "↑ 12.5%" / "↓ 3.4%". */
@@ -437,15 +454,15 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
       plotOptions: { bar: { borderRadius: 4, columnWidth: '50%', distributed: true } },
       colors: this.palette,
       // a column too short or narrow for its figure shows it on hover
-      dataLabels: columnFigures(v => this.data?.rate_per_kwh != null ? this.money(v) : qty(v, 1)),
+      dataLabels: columnFigures(v => this.costTrendIsCost ? this.money(v) : qty(v, 1)),
       legend: { show: false },
       xaxis: { categories: this.monthCategories },
-      yaxis: { title: { text: this.data?.rate_per_kwh != null ? `Cost (${this.data?.currency || 'INR'})` : 'kWh' },
+      yaxis: { title: { text: this.costTrendIsCost ? `Cost (${this.data?.currency || 'INR'})` : 'kWh' },
                labels: { formatter: compactQty } },
       grid:  { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip: { theme: 'light', ...BAR_HOVER, y: { formatter: (v: number) => this.data?.rate_per_kwh != null ? this.money(v) : `${qty(v, 1)} kWh` } },
+      tooltip: { theme: 'light', ...BAR_HOVER, y: { formatter: (v: number) => this.costTrendIsCost ? this.money(v) : `${qty(v, 1)} kWh` } },
       noData: { text: 'Nothing recorded for this period' }
     };
-  }, `${this.costBy}|${this.data?.rate_per_kwh}|${this.charts.sig('monthCats')}|${this.charts.sig('monthSeries')}`);
+  }, `${this.costBy}|${this.costTrendIsCost}|${this.data?.currency}|${this.charts.sig('monthCats')}|${this.charts.sig('monthSeries')}`);
   }
 }

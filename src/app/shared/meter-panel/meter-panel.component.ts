@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnChanges, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgApexchartsModule } from 'ng-apexcharts';
@@ -83,7 +83,7 @@ export function imbalancePct(values: (number | null | undefined)[]): number | nu
 
 /** Phase-to-phase voltage against the nominal supply and its tolerance. */
 export function voltageBand(v: number | null | undefined, l: MeterLimits): Band {
-  if (v === null || v === undefined) return null;
+  if (v === null || v === undefined || !Number.isFinite(v)) return null;
   const lo = l.v_ll_nominal * (1 - l.v_tolerance_pct / 100);
   const hi = l.v_ll_nominal * (1 + l.v_tolerance_pct / 100);
   if (v < lo) return { label: 'Low', badge: 'mexa-badge-warn', icon: 'south' };
@@ -93,7 +93,7 @@ export function voltageBand(v: number | null | undefined, l: MeterLimits): Band 
 
 /** Power factor by its size: a meter wired the wrong way round reports it negative. */
 export function pfBand(pf: number | null | undefined, l: MeterLimits): Band {
-  if (pf === null || pf === undefined) return null;
+  if (pf === null || pf === undefined || !Number.isFinite(pf)) return null;
   const a = Math.abs(pf);
   if (a >= l.pf_good) return { label: 'Good', badge: 'mexa-badge-good', icon: 'check_circle' };
   if (a >= l.pf_low) return { label: 'Fair', badge: 'mexa-badge-info', icon: 'info' };
@@ -101,7 +101,7 @@ export function pfBand(pf: number | null | undefined, l: MeterLimits): Band {
 }
 
 export function hzBand(hz: number | null | undefined, l: MeterLimits): Band {
-  if (hz === null || hz === undefined) return null;
+  if (hz === null || hz === undefined || !Number.isFinite(hz)) return null;
   return hz < l.hz_min || hz > l.hz_max
     ? { label: 'Out of range', badge: 'mexa-badge-warn', icon: 'warning_amber' }
     : { label: 'Normal', badge: 'mexa-badge-good', icon: 'check_circle' };
@@ -178,31 +178,32 @@ let uidSeq = 0;
         <div class="mp-titlewrap">
           <h2 class="mp-title" [id]="ids.title">Energy meter</h2>
           <!-- only machines that have sent meter readings are offered -->
-          <ng-container *ngIf="meters.length > 1; else oneMeter">
+          <ng-container *ngIf="!machineId && meters.length > 1; else oneMeter">
             <label class="sr-only" [for]="ids.machine">Machine</label>
-            <select class="mexa-select mp-select" [id]="ids.machine" [ngModel]="data?.machine?.id" (ngModelChange)="setMachine($event)">
+            <select class="mexa-select mp-select" [id]="ids.machine" [ngModel]="selectedId" (ngModelChange)="setMachine($event)">
               <option *ngFor="let m of meters" [ngValue]="m.id">{{ m.serial }}</option>
             </select>
           </ng-container>
-          <ng-template #oneMeter><span class="mp-machine">{{ data?.machine?.serial }}</span></ng-template>
-          <span class="mp-at" *ngIf="data?.machine" [class.is-stale]="!latest || latest.stale" aria-live="polite">
+          <ng-template #oneMeter><span class="mp-machine">{{ machine?.serial }}</span></ng-template>
+          <span class="mp-at" *ngIf="machine" [class.is-stale]="!latest || latest.stale" aria-live="polite">
             <span class="material-icons" aria-hidden="true">{{ !latest || latest.stale ? 'history' : 'schedule' }}</span>{{ asOf }}
           </span>
         </div>
-        <div class="mexa-seg" role="group" aria-label="Time range" *ngIf="data?.machine">
+        <div class="mexa-seg" role="group" aria-label="Time range" *ngIf="machine">
           <button type="button" *ngFor="let r of ranges" [attr.aria-pressed]="range === r.key" (click)="setRange(r.key)">{{ r.label }}</button>
         </div>
       </div>
 
       <app-state *ngIf="state === 'error'" kind="error" title="Could not load the energy meter"
         text="Check the connection, then try again." action="Try again" (act)="reload()"></app-state>
+      <app-state *ngIf="state === 'loading'" kind="loading" title="Loading energy meter readings"></app-state>
 
-      <ng-container *ngIf="state !== 'error' && data?.machine">
+      <ng-container *ngIf="state === 'ready' && data?.machine">
         <p *ngIf="data.checks?.ct_reversed" class="mexa-note mexa-note-warn">
-          This meter reads the machine's power as negative and counts its energy as Export
-          ({{ fmt(latest?.kwh_export, 1) }} kWh) rather than Import ({{ fmt(latest?.kwh_import, 1) }} kWh). Its current
-          transformers are most likely fitted the wrong way round — ask the electrician to turn them, or to change the
-          meter's CT direction. Energy used is still right: it comes from the meter's total, which counts both ways.
+          This meter reports negative power and more cumulative Export ({{ fmt(latest?.kwh_export, 1) }} kWh)
+          than Import ({{ fmt(latest?.kwh_import, 1) }} kWh). This can indicate reversed current transformers.
+          Ask an electrician to check the wiring and CT configuration.
+          Energy used is calculated from accepted changes in the meter's total register.
         </p>
 
         <app-state *ngIf="!latest" kind="empty" icon="sensors_off" title="No meter reading from this machine in the last 30 days"
@@ -413,7 +414,7 @@ let uidSeq = 0;
   <div class="mp-section-heading">
     <div>
       <h3 class="mp-section" id="meter-totals-title">Meter totals</h3>
-      <p class="mp-section-sub">Cumulative readings since installation</p>
+      <p class="mp-section-sub">Cumulative registers reported by the meter</p>
     </div>
     <span class="material-icons mp-section-icon" aria-hidden="true">database</span>
   </div>
@@ -498,6 +499,13 @@ let uidSeq = 0;
 
         <!-- ── over the range ── -->
         <ng-container *ngIf="data.summary?.readings">
+          <p *ngIf="data.summary.energy_rejected_intervals > 0" class="mexa-note mexa-note-warn mp-incomplete" role="status">
+            Some energy intervals were excluded because the meter reset or reported an implausible change.
+            Energy used includes accepted intervals only.
+          </p>
+          <p *ngIf="metric === 'kwh' && data.summary.kwh_used == null" class="mp-basis mp-unknown-energy" role="status">
+            Energy used is unavailable: no valid change between total-register readings could be measured.
+          </p>
           <div class="mp-chartbar">
             <div class="mexa-seg" role="group" aria-label="Show on the chart">
               <button type="button" *ngFor="let m of metrics" [attr.aria-pressed]="metric === m.key" (click)="setMetric(m.key)">{{ m.label }}</button>
@@ -525,7 +533,11 @@ let uidSeq = 0;
     </section>
   `
 })
-export class MeterPanelComponent implements OnInit, OnDestroy {
+export class MeterPanelComponent implements OnInit, OnChanges, OnDestroy {
+
+  /** A machine chosen in the dashboard header takes precedence over the
+   * panel's own selector. Null keeps the all-machines meter selector. */
+  @Input() machineId: number | null = null;
 
   readonly ranges = RANGES;
   readonly metrics = METRICS;
@@ -540,23 +552,45 @@ export class MeterPanelComponent implements OnInit, OnDestroy {
   state: 'loading' | 'ready' | 'error' = 'loading';
 
   private selected: number | null = null;
+  private meterOptions: any[] = [];
+  private currentMachine: any = null;
   private query$ = new BehaviorSubject<{ id: number | null; range: RangeKey }>({ id: null, range: this.range });
   private sub?: Subscription;
   private chartCache: any = null;
 
   constructor(private api: MeterService, private cdr: ChangeDetectorRef) {}
 
+  ngOnChanges(): void {
+    this.selected = this.machineId;
+    this.currentMachine = null;
+    this.beginLoad();
+    this.query$.next({ id: this.selected, range: this.range });
+  }
+
   ngOnInit(): void {
     // a new machine or range loads at once; the same one refreshes every 30 s
     // while it is worth asking (see worthPolling)
     this.sub = this.query$.pipe(
       switchMap(q => interval(POLL_MS).pipe(startWith(0), filter((_, i) => i === 0 || this.worthPolling), map(() => q))),
-      switchMap(q => this.api.forEnergy(q.id, q.range).pipe(
-        map((res: any) => ({ ok: res?.status === 'success', data: res?.data })),
-        catchError(() => of({ ok: false, data: null })))))
+      switchMap(q => {
+        const id = q.id ?? this.selected;
+        return this.api.forEnergy(id, q.range).pipe(
+          map((res: any) => ({ ok: res?.status === 'success' && !!res?.data
+            && (id === null || Number(res.data.machine?.id) === id)
+            && (!res.data.range?.key || res.data.range.key === q.range), data: res?.data })),
+          catchError(() => of({ ok: false, data: null })));
+      }))
       .subscribe(({ ok, data }) => {
-        if (ok && data) { this.data = data; this.state = 'ready'; }
-        else this.state = 'error';
+        if (ok && data) {
+          this.data = data;
+          this.meterOptions = data.meters ?? [];
+          this.currentMachine = data.machine ?? null;
+          this.selected = data.machine?.id ?? null;
+          this.state = 'ready';
+        } else {
+          this.data = null;
+          this.state = 'error';
+        }
         this.chartCache = null;
         this.cdr.markForCheck();
       });
@@ -564,38 +598,54 @@ export class MeterPanelComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void { this.sub?.unsubscribe(); }
 
-  /** Shown once a machine with a meter is known: a company with none sees nothing. */
-  get visible(): boolean { return !!this.data?.machine; }
+  /** A confirmed absence stays quiet. Loading/errors remain visible so
+   * connection failures cannot be mistaken for a company without meters. */
+  get visible(): boolean { return this.state !== 'ready' || !!this.machine; }
 
   /** Not every 30 s for a company with no meter, nor for a tab in the background.
    *  A first load that failed is tried again: it is not yet known there is none. */
   private get worthPolling(): boolean {
-    return !document.hidden && (this.data === null || !!this.data?.machine);
+    return !document.hidden && (this.state !== 'ready' || !!this.machine);
   }
 
-  get meters(): any[] { return this.data?.meters ?? []; }
-  get latest(): any { return this.data?.latest ?? null; }
+  get meters(): any[] { return this.meterOptions; }
+  get machine(): any { return this.currentMachine; }
+  get selectedId(): number | null { return this.selected; }
+  get latest(): any {
+    const reading = this.data?.latest;
+    const now = Math.max(Date.now(), Number.isFinite(this.data?.range?.to) ? this.data.range.to : 0);
+    if (!reading || !Number.isFinite(reading.at) || reading.at > now) return null;
+    return { ...reading, stale: reading.stale || now - reading.at > 120_000 };
+  }
   get limits(): MeterLimits { return this.data?.limits; }
 
-  setMachine(id: number): void {
-    if (id === this.data?.machine?.id) return;
-    this.selected = id;
+  private beginLoad(): void {
+    this.data = null;
+    this.chartCache = null;
     this.state = 'loading';
+  }
+
+  setMachine(id: number): void {
+    if (this.machineId || !Number.isSafeInteger(id) || !this.meters.some(m => m.id === id) || id === this.selected) return;
+    this.selected = id;
+    this.currentMachine = this.meters.find(m => m.id === id) ?? null;
+    this.beginLoad();
     this.query$.next({ id, range: this.range });
   }
 
   setRange(r: RangeKey): void {
     if (r === this.range) return;
     this.range = r;
-    this.state = 'loading';
-    this.query$.next({ id: this.selected ?? this.data?.machine?.id ?? null, range: r });
+    this.beginLoad();
+    this.query$.next({ id: this.selected, range: r });
   }
 
   setMetric(m: Metric): void { this.metric = m; this.chartCache = null; }
 
-  reload(): void { this.state = 'loading'; this.query$.next({ id: this.selected, range: this.range }); }
+  reload(): void { this.beginLoad(); this.query$.next({ id: this.selected, range: this.range }); }
 
   get asOf(): string {
+    if (this.state === 'error') return 'Readings could not be updated';
     const l = this.latest;
     if (!l) return this.state === 'loading' ? 'Waiting for the first reading…' : 'No reading in the last 30 days';
     return l.stale ? `No reading since ${dayClock.format(l.at)}` : `As of ${clock.format(l.at)}`;
@@ -629,7 +679,7 @@ export class MeterPanelComponent implements OnInit, OnDestroy {
   get vMaxRecorded(): number | null {
     const l = this.latest;
     if (!l) return null;
-    const vs = [l.v12_max, l.v23_max, l.v31_max].filter((v: any) => v !== null && v !== undefined);
+    const vs = [l.v12_max, l.v23_max, l.v31_max].filter((v: any) => Number.isFinite(v));
     return vs.length ? Math.max(...vs) : null;
   }
 
@@ -696,7 +746,10 @@ export class MeterPanelComponent implements OnInit, OnDestroy {
     const byT = new Map<number, any>(d.points.map((p: any) => [p.t, p]));
     const times: number[] = [];
     for (let t = Math.floor(d.range.from / step) * step; t <= d.range.to; t += step) times.push(t);
-    const line = (key: string) => times.map(t => [t, byT.get(t)?.[key] ?? null] as [number, number | null]);
+    const line = (key: string) => times.map(t => {
+      const value = byT.get(t)?.[key];
+      return [t, Number.isFinite(value) ? value : null] as [number, number | null];
+    });
 
     let series: any[];
     let colors: string[];

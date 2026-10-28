@@ -15,9 +15,9 @@ const ENERGY = { updated_at: '2026-10-26T10:30:00.000Z', currency: 'INR', rate_p
   kpis: { total_kwh: 309.77, total_operating_seconds: 475200, total_produced: 1256, kwh_per_part: 0.25, total_cost: 3392,
           avg_voltage: null, avg_current: null, kwh_vs_yesterday_pct: 2.5, overload_alerts: 0, overload_top: null },
   coverage: { machines: 5, reporting: 5, tariff_configured: true, note: '' },
-  trend: Array.from({ length: 7 }, (_, i) => ({ day: `2026-10-${String(20 + i).padStart(2, '0')}T00:00:00.000Z`, kwh: 40 + i, machines: 5 })),
+  trend: Array.from({ length: 7 }, (_, i) => ({ day: `2026-10-${String(20 + i).padStart(2, '0')}T00:00:00.000Z`, kwh: 40 + i, cost: (40 + i) * 10.95, cost_complete: true, machines: 5 })),
   by_shift: [{ shift_name: 'Shift 1', kwh: 200 }, { shift_name: 'Shift 2', kwh: 109.77 }],
-  by_month: [{ month: '2026-10-01T00:00:00.000Z', kwh: 309.77 }],
+  by_month: [{ month: '2026-10-01T00:00:00.000Z', kwh: 309.77, cost: 3391.9815, cost_complete: true }],
   top_consumers: TOP, overloads: [], machines: { data: [], total: 0, page: 1, limit: 20, totalPages: 1 } };
 
 async function openChart(page: any, body: any = ENERGY) {
@@ -77,8 +77,8 @@ test('a hover anywhere along a row shows that machine, with its kWh — the tiny
 /* "This hover on every chart" (26 Oct 2026): a column chart answers a hover
    anywhere in a column too — above a short one, not only on its sliver. */
 test('Energy Cost Trend: figures in the columns that hold them; a hover above a short column shows that day', async ({ page }) => {
-  await openChart(page, { ...ENERGY, trend: [{ day: '2026-10-24T00:00:00.000Z', kwh: 400, machines: 5 },
-    { day: '2026-10-25T00:00:00.000Z', kwh: 2, machines: 5 }, { day: '2026-10-26T00:00:00.000Z', kwh: 30, machines: 5 }] });
+  await openChart(page, { ...ENERGY, trend: [{ day: '2026-10-24T00:00:00.000Z', kwh: 400, cost: 400 * 10.95, cost_complete: true, machines: 5 },
+    { day: '2026-10-25T00:00:00.000Z', kwh: 2, cost: 2 * 10.95, cost_complete: true, machines: 5 }, { day: '2026-10-26T00:00:00.000Z', kwh: 30, cost: 30 * 10.95, cost_complete: true, machines: 5 }] });
   const card = page.locator('section', { has: page.getByRole('heading', { name: 'Energy Cost Trend' }) });
   await card.scrollIntoViewIfNeeded();
   const columns = card.locator('.apexcharts-bar-area');

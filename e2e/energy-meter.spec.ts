@@ -1,4 +1,4 @@
-import { test, expect, seedAuth } from './fixtures/auth';
+import { test, expect, seedAuth, localFixtureOrigin } from './fixtures/auth';
 
 /*
  * The energy meter panel: every value a machine's 3-phase meter sends, at
@@ -42,6 +42,7 @@ function meter(range: string, over: any = {}) {
         v_ll_avg: 416.8, v_ll_min: 416, v_ll_max: 418.2, pf_avg: -0.83, pf_min: -0.84, hz_avg: 49.97, kwh: 0.017 }
     ],
     summary: { readings: 8, first_at: t0, last_at: to - 5000, kwh_used: 0.033, kwh_import: 0, kwh_export: 0.033, kvarh: 0.02, kvah: 0.04,
+      energy_intervals: 7, energy_rejected_intervals: 0,
       kw: { avg: -0.73, min: -0.8, max: -0.69, peak: 0.8 }, kva: { avg: 0.9, max: 0.92 }, i: { avg: 1.245, max: 1.52 },
       v_ll: { min: 415.9, avg: 416.75, max: 418.2 }, v_ln: { min: 239.8, avg: 240.6, max: 241.5 },
       pf: { avg: -0.835, min: -0.85 }, hz: { min: 49.95, avg: 49.96, max: 49.98 } },
@@ -51,12 +52,24 @@ function meter(range: string, over: any = {}) {
   } };
 }
 
+function meterFor(url: URL, over: any = {}) {
+  const id = Number(url.searchParams.get('machine_id') || 15);
+  return meter(url.searchParams.get('range') || '24h', {
+    machine: { id, serial: id === 34 ? 'VMC - 13 - M' : 'VMC - 1 - F' }, ...over
+  });
+}
+
 // the panel, not the Meter totals section inside it
 const panel = (page: any) => page.locator('app-meter-panel section').first();
 const card = (page: any, name: string) => panel(page).getByRole('article', { name, exact: true });
 
 async function openEnergy(page: any, respond: (url: URL) => any, asked: string[] = []) {
+  const origin = localFixtureOrigin();
+  await page.route('**/*', (r: any) => new URL(r.request().url()).origin === origin ? r.continue() : r.abort());
   await page.route('**/api/**', (r: any) => r.fulfill(ok({ status: 'success', data: [] })));
+  await page.route('**/api/charts/meta*', (r: any) => r.fulfill(ok({ status: 'success', data: {
+    machines: [{ id: 15, machine_serial_no: 'VMC - 1 - F' }, { id: 34, machine_serial_no: 'VMC - 13 - M' }]
+  } })));
   await page.route('**/api/dashboard/energy/meter*', (r: any) => {
     const url = new URL(r.request().url());
     asked.push(url.search);
@@ -70,7 +83,7 @@ async function openEnergy(page: any, respond: (url: URL) => any, asked: string[]
 
 test.describe('energy meter — Energy screen', () => {
   test('every reading with its unit, phase by phase, and plain bands', async ({ authedPage: page }) => {
-    await openEnergy(page, u => meter(u.searchParams.get('range') || '24h'));
+    await openEnergy(page, u => meterFor(u));
     await expect(panel(page).getByRole('heading', { name: 'Energy meter' })).toBeVisible();
 
     const power = card(page, 'Power');
@@ -98,24 +111,27 @@ test.describe('energy meter — Energy screen', () => {
   });
 
   test('a meter wired the wrong way round is said in words, not hidden', async ({ authedPage: page }) => {
-    await openEnergy(page, u => meter(u.searchParams.get('range') || '24h'));
+    await openEnergy(page, u => meterFor(u));
     await expect(panel(page).locator('.mexa-note-warn'))
-      .toContainText('current transformers are most likely fitted the wrong way round');
-    await expect(panel(page).locator('.mexa-note-warn')).toContainText('Export (77.5 kWh) rather than Import (33.1 kWh)');
+      .toContainText('This can indicate reversed current transformers');
+    await expect(panel(page).locator('.mexa-note-warn')).toContainText('than Import (33.1 kWh)');
+    await expect(panel(page)).toContainText('Energy used is calculated from accepted changes');
+    await expect(panel(page)).not.toContainText('Energy used is still right');
   });
 
   test('only machines with a meter are offered, and choosing one asks for it', async ({ authedPage: page }) => {
     const asked: string[] = [];
-    await openEnergy(page, u => meter(u.searchParams.get('range') || '24h'), asked);
+    await openEnergy(page, u => meterFor(u), asked);
     const pick = panel(page).getByLabel('Machine');
     await expect(pick.locator('option')).toHaveText(['VMC - 1 - F', 'VMC - 13 - M']);
     await pick.selectOption({ label: 'VMC - 13 - M' });
     await expect.poll(() => asked.some(q => q.includes('machine_id=34'))).toBe(true);
+    await expect(pick.locator('option:checked')).toHaveText('VMC - 13 - M');
   });
 
   test('the range and the chart metric change what is shown', async ({ authedPage: page }) => {
     const asked: string[] = [];
-    await openEnergy(page, u => meter(u.searchParams.get('range') || '24h'), asked);
+    await openEnergy(page, u => meterFor(u), asked);
     const ranges = panel(page).getByRole('group', { name: 'Time range' });
     await expect(ranges.getByRole('button', { name: '24 hours' })).toHaveAttribute('aria-pressed', 'true');
     await ranges.getByRole('button', { name: '7 days' }).click();
@@ -133,7 +149,7 @@ test.describe('energy meter — Energy screen', () => {
      (That it is then asked once, not every 30 s, is in the unit spec.) */
   test('no machine has a meter: no card at all', async ({ authedPage: page }) => {
     const asked: string[] = [];
-    await openEnergy(page, u => meter(u.searchParams.get('range') || '24h',
+    await openEnergy(page, u => meterFor(u,
       { meters: [], machine: null, latest: null, points: [], summary: { readings: 0 } }), asked);
     await expect(page.getByRole('heading', { name: 'Energy Dashboard' })).toBeVisible();
     await expect.poll(() => asked.length).toBe(1);
@@ -145,22 +161,57 @@ test.describe('energy meter — Energy screen', () => {
   test('a failed refresh says what to do, and Try again asks again', async ({ authedPage: page }) => {
     const asked: string[] = [];
     let fail = false;
-    await openEnergy(page, u => (fail ? 'fail' : meter(u.searchParams.get('range') || '24h')), asked);
+    await openEnergy(page, u => (fail ? 'fail' : meterFor(u)), asked);
     await expect(card(page, 'Voltage')).toContainText('416.7V');
     fail = true;
     await panel(page).getByRole('group', { name: 'Time range' }).getByRole('button', { name: '7 days' }).click();
     await expect(panel(page)).toContainText('Could not load the energy meter');
+    await expect(card(page, 'Voltage')).toHaveCount(0);
     fail = false;
     await panel(page).getByRole('button', { name: 'Try again' }).click();
     await expect(card(page, 'Voltage')).toContainText('416.7V');
   });
 
   test('one meter is named, not offered as a choice of one', async ({ authedPage: page }) => {
-    await openEnergy(page, u => meter(u.searchParams.get('range') || '24h',
+    await openEnergy(page, u => meterFor(u,
       { meters: [{ id: 15, serial: 'VMC - 1 - F', last_read_at: Date.now() }] }));
     await expect(card(page, 'Voltage')).toContainText('416.7V');
     await expect(panel(page).getByLabel('Machine')).toHaveCount(0);
     await expect(panel(page).locator('.mp-machine')).toHaveText('VMC - 1 - F');
+  });
+
+  test('unavailable energy is shown as -- and rejected intervals are disclosed', async ({ authedPage: page }) => {
+    await openEnergy(page, u => {
+      const response = meterFor(u);
+      response.data.summary = { ...response.data.summary, kwh_used: null, kwh_import: null,
+        kwh_export: null, kvarh: null, kvah: null, energy_intervals: 0, energy_rejected_intervals: 2 };
+      response.data.points = response.data.points.map((point: any) => ({ ...point, kwh: null }));
+      return response;
+    });
+    await panel(page).getByRole('group', { name: 'Show on the chart' }).getByRole('button', { name: 'Energy used' }).click();
+    await expect(panel(page).locator('.mp-totals').last()).toContainText('Energy used--kWh');
+    await expect(panel(page).locator('.mp-unknown-energy')).toContainText('no valid change');
+    await expect(panel(page).locator('.mp-incomplete')).toContainText('accepted intervals only');
+  });
+
+  test('the dashboard machine filter also controls the meter and disables its separate selector', async ({ authedPage: page }) => {
+    const asked: string[] = [];
+    await openEnergy(page, u => meterFor(u), asked);
+    await expect(card(page, 'Voltage')).toBeVisible();
+    await page.locator('#enMachine').selectOption({ label: 'VMC - 13 - M' });
+    await expect.poll(() => asked.some(q => q.includes('machine_id=34'))).toBe(true);
+    await expect(panel(page).locator('.mp-machine')).toHaveText('VMC - 13 - M');
+    await expect(panel(page).getByLabel('Machine', { exact: true })).toHaveCount(0);
+  });
+
+  test('a first-load error is visible and does not impersonate a company without meters', async ({ authedPage: page }) => {
+    let fail = true;
+    await openEnergy(page, u => fail ? 'fail' : meterFor(u));
+    await expect(panel(page)).toContainText('Could not load the energy meter');
+    await expect(card(page, 'Voltage')).toHaveCount(0);
+    fail = false;
+    await panel(page).getByRole('button', { name: 'Try again' }).click();
+    await expect(card(page, 'Voltage')).toContainText('416.7V');
   });
 });
 

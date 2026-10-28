@@ -62,7 +62,7 @@
   </svg>
 
   <!-- <span class="updated-label">LAST UPDATED</span> -->
-  <span class="updated-time">{{ loading ? 'Updating…' : 'Updated ' + updatedAt }}</span>
+  <span class="updated-time">{{ loading ? 'Updating…' : updatedAt ? 'Updated ' + updatedAt : 'Not updated' }}</span>
 </div>
 
 <!-- ══════════ STATES ══════════ -->
@@ -70,16 +70,16 @@
 <!-- First load: placeholders shaped like the cards that are coming, so
      the page does not jump when the data lands. No values are shown —
      a placeholder reading would be a claim about a machine. -->
-<ng-container *ngIf="loading && !views.has('kpis')">
+<ng-container *ngIf="loading && !hasCurrent('kpis')">
   <app-skeleton kind="kpis" [count]="5" label="Loading dashboard"></app-skeleton>
 </ng-container>
 
-<ng-container *ngIf="views.has('kpis')">
+<ng-container *ngIf="hasCurrent('kpis')">
 
   <!-- Said plainly rather than shown as zeros, which would read as a
        remarkably efficient factory. Where the figure comes from is behind the (i). -->
   <p *ngIf="noEnergyData" class="mexa-note mexa-note-warn">
-    <strong>No machine is sending energy readings yet.</strong>
+    <strong>No measured energy in this selection.</strong>
     <app-metric-help topic="energy_consumed"></app-metric-help>
   </p>
 
@@ -102,6 +102,7 @@
         <span class="mexa-delta" [class.mexa-delta-bad]="data.kpis.kwh_vs_yesterday_pct > 0"
               [class.mexa-delta-good]="data.kpis.kwh_vs_yesterday_pct < 0">{{ change(data.kpis.kwh_vs_yesterday_pct) }}</span> vs Yesterday
       </p>
+      <p class="mexa-kpi-sub" *ngIf="data.coverage.energy_complete === false && !noEnergyData">Partial readings</p>
       <!-- only when some machines send no counter: the total leaves them out -->
       <p class="mexa-kpi-sub" *ngIf="!noEnergyData && data.coverage.reporting < data.coverage.machines">
         {{ data.coverage.reporting }} of {{ data.coverage.machines }} machines reporting
@@ -116,7 +117,9 @@
         </span>
       </div>
       <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('')" aria-labelledby="enk2-name enk2-value enk2-act"><span id="enk2-value">{{ money(data.kpis.total_cost) }}</span></button></p><span hidden id="enk2-name">Total energy cost:</span><span hidden id="enk2-act">show each machine</span>
-      <p class="mexa-kpi-sub" *ngIf="data.rate_per_kwh != null">{{ money(data.rate_per_kwh, 2) }} per kWh</p>
+      <p class="mexa-kpi-sub" *ngIf="data.cost_basis && data.kpis.total_cost != null">Estimate at configured tariffs</p>
+      <p class="mexa-kpi-sub" *ngIf="data.coverage.cost_complete === false && data.coverage.reporting > 0">Cost unavailable for the full selection</p>
+      <p class="mexa-kpi-sub" *ngIf="!data.cost_basis && data.rate_per_kwh != null">{{ money(data.rate_per_kwh, 2) }} per kWh</p>
       <!-- no tariff: said on the tile it empties, with the way to set one -->
       <p class="mexa-kpi-sub" *ngIf="data.rate_per_kwh == null && !data.coverage.tariff_configured">
         No tariff set<ng-container *ngIf="canEditSettings"> · <a routerLink="/energy-tariff" class="mexa-kpi-link">Set tariff</a></ng-container>
@@ -191,10 +194,10 @@
 
   <!-- Charts -->
   <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="mexa-card">
-  <div *ngIf="loading && !views.has('charts')" class="mexa-grid lg:grid-cols-2">
+  <div *ngIf="loading && !hasCurrent('charts')" class="mexa-grid lg:grid-cols-2">
     <section class="mexa-card" *ngFor="let i of [1, 2, 3, 4]"><app-skeleton kind="chart" label="Loading the charts"></app-skeleton></section>
   </div>
-  <ng-container *ngIf="views.has('charts')">
+  <ng-container *ngIf="hasCurrent('charts')">
      <!-- ══════════ ROW 2 — trend + distribution ══════════ -->
   <div class="mexa-grid grid-cols-2 lg:grid-cols-3">
 
@@ -205,12 +208,12 @@
         [fill]="trendChart.fill" [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
         [xaxis]="trendChart.xaxis" [yaxis]="trendChart.yaxis" [grid]="trendChart.grid"
         [tooltip]="trendChart.tooltip" [noData]="trendChart.noData"></apx-chart>
-      <p *ngIf="!trendSeries.length" class="mexa-empty">No energy counter reported in this period.</p>
+      <p *ngIf="!trendSeries.length" class="mexa-empty">No measured energy in this period.</p>
     </section>
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Energy by Shift</h2>
-      <div class="mexa-donutrow" *ngIf="data.by_shift.length; else noShift">
+      <div class="mexa-donutrow" *ngIf="data.by_shift.length && shiftTotal > 0; else noShift">
         <apx-chart
           [series]="shiftDonutSeries" [chart]="shiftDonut.chart" [labels]="shiftDonut.labels"
           [colors]="shiftDonut.colors" [dataLabels]="shiftDonut.dataLabels"
@@ -227,7 +230,8 @@
           </li>
         </ul>
       </div>
-      <ng-template #noShift><p class="mexa-empty">Nothing recorded by shift.</p></ng-template>
+      <ng-template #noShift><p class="mexa-empty">{{ data.by_shift.length ? 'Recorded shift energy is zero.' : 'Nothing measured by shift.' }}</p></ng-template>
+      <p *ngIf="data.by_shift_source" class="mexa-card-hint">Allocated from hourly records for the selected calendar dates.</p>
     </section>
   </div>
 
@@ -243,14 +247,14 @@
         [colors]="machineChart.colors" [dataLabels]="machineChart.dataLabels"
         [xaxis]="machineChart.xaxis" [grid]="machineChart.grid" [legend]="machineChart.legend"
         [tooltip]="machineChart.tooltip" [noData]="machineChart.noData"></apx-chart>
-      <p *ngIf="!machineSeries.length" class="mexa-empty">No machine is sending energy readings yet.</p>
+      <p *ngIf="!machineSeries.length" class="mexa-empty">No measured energy in this selection.</p>
     </section>
 
     <!-- Day / Week / Month regroup the figures already on the page: no request -->
     <section class="mexa-card" aria-labelledby="enCostTitle">
       <div class="mexa-card-head">
         <h2 id="enCostTitle" class="mexa-card-title mexa-card-title-left">
-          {{ data.rate_per_kwh != null ? 'Energy Cost Trend' : 'Energy Trend (kWh)' }}
+          {{ costTrendIsCost ? 'Energy Cost Trend' : 'Energy Trend (kWh)' }}
           <app-metric-help topic="energy_cost_trend"></app-metric-help>
         </h2>
         <span class="mexa-seg" role="group" aria-label="Energy trend: group by">
@@ -274,8 +278,8 @@
 
   <!-- Machine Detail -->
   <div *ngIf="views.tab === 'details'" id="dashPanel-details" role="tabpanel" aria-labelledby="dashTab-details" class="mexa-card">
-  <app-skeleton *ngIf="loading && !views.has('table')" kind="table" [count]="8" label="Loading Machine Detail"></app-skeleton>
-  <ng-container *ngIf="views.has('table')">
+  <app-skeleton *ngIf="loading && !hasCurrent('table')" kind="table" [count]="8" label="Loading Machine Detail"></app-skeleton>
+  <ng-container *ngIf="hasCurrent('table')">
       <!-- ══════════ MACHINE DETAIL ══════════ -->
 
     <div class="mexa-tablebar mb-2 mexa-scroll-target" id="enDetails">
@@ -334,6 +338,7 @@
             <td class="num strong qty">
                
               <span *ngIf="m.kwh !== null">{{ num(m.kwh) }}</span>
+              <span *ngIf="m.kwh !== null && m.energy_complete === false" class="mexa-rank-sub block">Partial readings</span>
               <span *ngIf="m.kwh === null" class="mexa-rank-sub">not reporting</span>
             </td>
             <td class="num whitespace-nowrap qty col-lg">{{ hours(m.run_seconds) }}</td>
@@ -347,7 +352,7 @@
             </td>
           </tr>
           <tr *ngIf="!data.machines.data.length">
-            <td colspan="8" class="mexa-empty">No machines match these filters.</td>
+            <td colspan="9" class="mexa-empty">No machines match these filters.</td>
           </tr>
         </tbody>
       </table>
@@ -364,7 +369,7 @@
     <!-- ══════════ ENERGY METER ══════════
        Every value a 3-phase meter sends, for the machines that have one;
        nothing at all, and no polling, for a company without (meter-panel). -->
-  <app-meter-panel class="mt-4"></app-meter-panel>
+  <app-meter-panel class="mt-4" [machineId]="f.machine_id"></app-meter-panel>
   </div>
 
 </div>
