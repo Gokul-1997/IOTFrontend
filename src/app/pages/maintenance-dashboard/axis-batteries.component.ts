@@ -32,6 +32,9 @@ export function accAxisBatteries(diagnostics: any, legacy?: any): AxisBattery[] 
       return { axis, low, active, detailed: true };
     }).sort(order);
 }
+export function accBatteryWord(low: boolean | null): string {
+  return low === true ? 'Battery issue' : low === false ? 'Healthy' : 'Not reported';
+}
 export function batteryWarningWord(low: boolean | null): string {
   return low === true ? 'Check battery' : low === false ? 'No warning reported' : 'Not reported';
 }
@@ -52,6 +55,9 @@ export function fanucBatterySupported(row: any): boolean {
     svg { width: .8rem; height: 1.1rem; color: var(--mexa-ink-2); flex: none; }
     .axis { font-size: .8rem; font-weight: 800; color: var(--mexa-ink); }
     .word { font-size: .67rem; line-height: 1.3; color: var(--mexa-ink-2); overflow-wrap: anywhere; }
+    li.is-healthy { background: rgba(34,197,94,.08); border-color: rgba(34,197,94,.25); }
+    .is-healthy .word { color: #047857; font-weight: 700; }
+    :host-context(.dark) .is-healthy .word { color: #6ee7b7; }
     .is-low .word { color: #92400e; font-weight: 700; }
     :host-context(.dark) .is-low .word { color: #fcd34d; }
     .flags { display: flex; flex-wrap: wrap; gap: .2rem; }
@@ -62,7 +68,7 @@ export function fanucBatterySupported(row: any): boolean {
   `],
   template: `
     <ul role="list" aria-label="ACC battery by axis">
-      <li *ngFor="let a of axes; trackBy: axisKey" [class.is-low]="a.low === true" [class.fresh]="fresh.has(a.axis)"
+      <li *ngFor="let a of axes; trackBy: axisKey" [class.is-low]="a.low === true" [class.is-healthy]="a.low === false" [class.fresh]="fresh.has(a.axis)"
           [attr.aria-label]="axisLabel(a)">
         <span class="head"><svg viewBox="0 0 14 24" aria-hidden="true">
           <rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
@@ -78,7 +84,7 @@ export function fanucBatterySupported(row: any): boolean {
 export class AxisBatteriesComponent {
   @Input() axes: AxisBattery[] = [];
   @Input() fresh: Set<string> = new Set();
-  word = batteryWarningWord;
+  word = accBatteryWord;
   axisKey(_: number, axis: AxisBattery): string { return axis.axis; }
   meaning(flag: BatteryFlag): string { return BATTERY_FLAGS.find(item => item.key === flag)!.meaning; }
   axisLabel(axis: AxisBattery): string {

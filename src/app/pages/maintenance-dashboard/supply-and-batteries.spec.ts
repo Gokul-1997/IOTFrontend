@@ -1,5 +1,5 @@
 import { supplyView } from './supply-voltage.component';
-import { axisBatteries, accAxisBatteries, batteryWarningWord, fanucBatterySupported } from './axis-batteries.component';
+import { axisBatteries, accAxisBatteries, accBatteryWord, batteryWarningWord, fanucBatterySupported } from './axis-batteries.component';
 
 const limits = { ll_nominal: 415, ln_nominal: 240, tolerance_pct: 10, imbalance_pct: 2 };
 const reading = (o: any = {}) => ({
@@ -106,6 +106,9 @@ describe('FANUC battery diagnostics', () => {
     expect(fanucBatterySupported({})).toBe(false);
   });
   it('describes reported warnings without claiming charge or full battery health', () => {
+    expect(accBatteryWord(true)).toBe('Battery issue');
+    expect(accBatteryWord(false)).toBe('Healthy');
+    expect(accBatteryWord(null)).toBe('Not reported');
     expect(batteryWarningWord(true)).toBe('Check battery');
     expect(batteryWarningWord(false)).toBe('No warning reported');
     expect(batteryWarningWord(null)).toBe('Not reported');

@@ -17,7 +17,7 @@ import { updatedLabel } from '../../shared/updated-label';
 import { SEVERITY } from '../../shared/severity';
 import { PauseOffscreenDirective } from '../../shared/pause-offscreen.directive';
 import { SupplyVoltageComponent, SupplyView, supplyView } from './supply-voltage.component';
-import { AxisBatteriesComponent, AxisBattery, accAxisBatteries, batteryWarningWord, fanucBatterySupported } from './axis-batteries.component';
+import { AxisBatteriesComponent, AxisBattery, accAxisBatteries, accBatteryWord, batteryWarningWord, fanucBatterySupported } from './axis-batteries.component';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 2 — Maintenance Dashboard
@@ -328,7 +328,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     this.apcAxes = this.batterySupported ? accAxisBatteries(batteryRow?.acc_battery_status, batteryRow?.apc_battery_status) : [];
     const accLow = this.apcAxes.some(axis => axis.low === true) ? true
       : this.apcAxes.length && this.apcAxes.every(axis => axis.low === false) ? false : null;
-    this.apcBattery = this.batteryTile(accLow);
+    this.apcBattery = this.batteryTile(accLow, 'acc');
     const cncWarning = batteryRow?.cnc_battery_warning?.warning;
     this.cncBattery = this.batteryTile(this.batterySupported && typeof cncWarning === 'boolean' ? cncWarning : null);
     const volts = batteryRow?.apc_battery_voltage;
@@ -626,9 +626,9 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       .join(' ');
   }
 
-  private batteryTile(warning: boolean | null): BatteryTile {
-    return { value: warning === true ? 'Battery warning' : '', word: batteryWarningWord(warning),
-      band: warning === true ? 'Stable' : '' };
+  private batteryTile(warning: boolean | null, kind: 'cnc' | 'acc' = 'cnc'): BatteryTile {
+    return { value: warning === true ? 'Battery warning' : '', word: kind === 'acc' ? accBatteryWord(warning) : batteryWarningWord(warning),
+      band: warning === true ? 'Stable' : kind === 'acc' && warning === false ? 'Healthy' : '' };
   }
 
   /** A controller's fan value in the design's words. */

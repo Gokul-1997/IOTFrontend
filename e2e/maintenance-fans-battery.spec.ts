@@ -93,10 +93,10 @@ test('each fan by its number, with its speed and state; the battery axis by axis
   // one battery per axis, each named, and the tile's word over all of them
   await expect(axes(page)).toHaveCount(3);
   await expect(axes(page).locator('.axis')).toHaveText(['X', 'Y', 'Z']);
-  await expect(axes(page).locator('.word')).toHaveText(['No warning reported', 'No warning reported', 'No warning reported']);
-  await expect(axes(page).first()).toHaveAttribute('aria-label', 'X axis battery: No warning reported');
+  await expect(axes(page).locator('.word')).toHaveText(['Healthy', 'Healthy', 'Healthy']);
+  await expect(axes(page).first()).toHaveAttribute('aria-label', 'X axis battery: Healthy');
   await expect(tile(page, 'ACC battery').locator('.mt-count')).toHaveText('3 axes');
-  await expect(apcWord(page)).toHaveText('No warning reported');
+  await expect(apcWord(page)).toHaveText('Healthy');
   // the collector sends no voltage, and the CNC battery is not one of the flags
   await expect(tile(page, 'CNC battery').locator('.mt-word')).toHaveText('Not reported');
 
@@ -127,10 +127,10 @@ test('a faulted fan remains Critical while a low battery axis asks for a check',
   await expect(page.locator('.mt-attention')).toContainText('CNC fan 2 Fault · 0 rpm');
 
   // the low axis, on its own
-  await expect(axes(page).nth(1)).toHaveAttribute('aria-label', 'Y axis battery: Check battery');
+  await expect(axes(page).nth(1)).toHaveAttribute('aria-label', 'Y axis battery: Battery issue');
   await expect(axes(page).nth(1)).toHaveClass(/is-low/);
-  await expect(axes(page).locator('.word')).toHaveText(['No warning reported', 'Check battery', 'No warning reported']);
-  await expect(apcWord(page)).toHaveText('Check battery');
+  await expect(axes(page).locator('.word')).toHaveText(['Healthy', 'Battery issue', 'Healthy']);
+  await expect(apcWord(page)).toHaveText('Battery issue');
   await expect(page.locator('.mt-attention')).toContainText('+');   // more than the fan needs a look
 
   await page.waitForTimeout(800);
@@ -159,7 +159,7 @@ test('on a phone the fan and battery tiles fit, nothing clipped or pushed sidewa
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/maintenance-dashboard');
   await expect(axes(page)).toHaveCount(6);
-  await expect(axes(page).locator('.word')).toHaveText(['Check battery', 'Check battery', 'No warning reported', 'No warning reported', 'No warning reported', 'No warning reported']);
+  await expect(axes(page).locator('.word')).toHaveText(['Battery issue', 'Battery issue', 'Healthy', 'Healthy', 'Healthy', 'Healthy']);
 
   const overflow = await page.evaluate(() => ({
     page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -320,7 +320,7 @@ test('battery axes read in the machine\'s order, not the database\'s', async ({ 
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/maintenance-dashboard');
   await expect(axes(page).locator('.axis')).toHaveText(['X', 'Y', 'Z', 'B']);
-  await expect(apcWord(page)).toHaveText('No warning reported');
+  await expect(apcWord(page)).toHaveText('Healthy');
 });
 
 test('five or six axes (HMC - 15 - F sends B, W, X, Y, Z): each its own battery, in the machine\'s order', async ({ authedPage: page }) => {
@@ -328,7 +328,7 @@ test('five or six axes (HMC - 15 - F sends B, W, X, Y, Z): each its own battery,
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/maintenance-dashboard');
   await expect(axes(page).locator('.axis')).toHaveText(['X', 'Y', 'Z', 'B', 'W']);
-  await expect(axes(page).nth(4)).toHaveAttribute('aria-label', 'W axis battery: Check battery');
+  await expect(axes(page).nth(4)).toHaveAttribute('aria-label', 'W axis battery: Battery issue');
   await expect(tile(page, 'ACC battery').locator('.mt-count')).toHaveText('5 axes');
   await expect(page.locator('.mt-attention')).toContainText('ACC battery W');
 });
@@ -407,8 +407,9 @@ test('FANUC ACC shows every reported axis and the specific active detector warni
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/maintenance-dashboard');
   await expect(axes(page).locator('.axis')).toHaveText(['X', 'Y', 'Z', 'A', 'B']);
-  await expect(axes(page).locator('.word')).toHaveText(['Check battery', 'Check battery', 'Check battery', 'No warning reported', 'Not reported']);
+  await expect(axes(page).locator('.word')).toHaveText(['Battery issue', 'Battery issue', 'Battery issue', 'Healthy', 'Not reported']);
   await expect(axes(page).locator('.flag')).toHaveText(['ABP', 'INP', 'EXP']);
+  await expect(apcWord(page)).toHaveText('Battery issue');
   await expect(axes(page).first()).toHaveAttribute('aria-label', /A\/B phase detector battery low \(bit 3\)/);
   await expect(tile(page, 'CNC battery')).toContainText('Battery warning');
   await expect(tile(page, 'CNC battery')).toContainText('Check battery');
@@ -423,15 +424,15 @@ test('CNC false warning remains clear even when the general alarm mask is nonzer
     cnc_battery_warning: { warning: false, raw_alarm_value: 56 } }));
   await page.goto('/maintenance-dashboard');
   await expect(tile(page, 'CNC battery').locator('.mt-word')).toHaveText('No warning reported');
-  await expect(apcWord(page)).toHaveText('No warning reported');
+  await expect(apcWord(page)).toHaveText('Healthy');
   await expect(page.locator('.mt-attention')).not.toContainText('battery');
 });
 
 test('unknown warnings and raw diagnostics do not become clear or faulty batteries', async ({ authedPage: page }) => {
-  await mockApi(page, row({ acc_battery_status: { X: { raw: 56, status: 'LOW' } },
+  await mockApi(page, row({ acc_battery_status: { X: { raw: 56, status: 'LOW' }, Y: clearAxis() },
     cnc_battery_warning: { warning: null, raw_alarm_value: 0 } }));
   await page.goto('/maintenance-dashboard');
-  await expect(axes(page).locator('.word')).toHaveText('Not reported');
+  await expect(axes(page).locator('.word')).toHaveText(['Not reported', 'Healthy']);
   await expect(apcWord(page)).toHaveText('Not reported');
   await expect(tile(page, 'CNC battery').locator('.mt-word')).toHaveText('Not reported');
   await expect(page.locator('.mt-attention')).not.toContainText('battery');
@@ -456,7 +457,7 @@ test('failed machine selection removes the previous machine battery diagnostics'
     ...meta.data, machines: [...meta.data.machines, { id: 20, machine_serial_no: 'VMC - 3 - F' }]
   } } }));
   await page.goto('/maintenance-dashboard');
-  await expect(axes(page).locator('.word')).toHaveText('Check battery');
+  await expect(axes(page).locator('.word')).toHaveText('Battery issue');
   await page.route('**/api/dashboard/maintenance*', route => route.fulfill({ status: 500,
     json: { status: 'error', message: 'Unable to load this machine.' } }));
   await page.locator('#mtMachine').selectOption({ label: 'VMC - 3 - F' });
