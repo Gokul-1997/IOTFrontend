@@ -26,6 +26,7 @@ const meta = { success: true, data: {
   shifts: [{ id: 10, shift_code: 'S1', shift_name: 'Shift 1' }] } };
 
 const row = (o: Record<string, unknown> = {}) => ({
+  controller_type: 'FANUC', battery_supported: true,
   machine_id: 17, machine_serial_no: 'VMC - 17 - F', image_url: null, component_id: 31, part_name: 'LM GUIDE ARRESTING BLOCK',
   part_number: '5V2102002M', target_qty: 431, operator_name: 'PRAGADEESH G', machine_status: 'RUNNING', alarm: false,
   spindle_load: 2, feed_rate: 1200, spindle_speed: 2098, spindle_motor_temp: 54, spindle_insulation_res: null,
@@ -98,13 +99,19 @@ function problems(page: Page) {
     const overlap = (a: DOMRect, b: DOMRect, slack = 1) =>
       a.width > 0 && b.width > 0 && a.left < b.right - slack && b.left < a.right - slack && a.top < b.bottom - slack && b.top < a.bottom - slack;
 
+    // Closed native details retain layout boxes for unpainted descendants.
+    const hiddenByDisclosure = (el: Element) => {
+      const closed = el.closest('details:not([open])');
+      return !!closed && el !== closed && !closed.querySelector(':scope > summary')?.contains(el);
+    };
+
     const sideways = document.documentElement.scrollWidth - document.documentElement.clientWidth;
     if (sideways > 1) found.push(`the page scrolls sideways by ${sideways}px`);
 
     // nothing cut off: a box that hides its overflow holds all of it (a clamped value says "…" and shows the rest on hover)
     for (const el of Array.from(page.querySelectorAll('*'))) {
       const cs = getComputedStyle(el) as CSSStyleDeclaration & { webkitLineClamp?: string };
-      if (cs.display === 'none' || el.closest('apx-chart, .sr-only') || (cs.webkitLineClamp && cs.webkitLineClamp !== 'none')) continue;
+      if (hiddenByDisclosure(el) || cs.display === 'none' || el.closest('apx-chart, .sr-only') || (cs.webkitLineClamp && cs.webkitLineClamp !== 'none')) continue;
       if (['hidden', 'clip'].includes(cs.overflowY) && el.scrollHeight - el.clientHeight > 2) found.push(`cut off at the bottom: ${label(el)}`);
       if (['hidden', 'clip'].includes(cs.overflowX) && cs.textOverflow !== 'ellipsis' && el.scrollWidth - el.clientWidth > 2) found.push(`cut off at the side: ${label(el)}`);
     }
@@ -113,7 +120,7 @@ function problems(page: Page) {
     for (const card of cards) {
       const c = card.getBoundingClientRect();
       // words: inside their card, and never on top of other words
-      const words = Array.from(card.querySelectorAll('*')).filter(el => !el.closest('apx-chart, .sr-only')
+      const words = Array.from(card.querySelectorAll('*')).filter(el => !hiddenByDisclosure(el) && !el.closest('apx-chart, .sr-only')
         && Array.from(el.childNodes).some(n => n.nodeType === 3 && (n.textContent || '').trim()))
         .map(el => {
           const r = document.createRange(); r.selectNodeContents(el);
@@ -175,3 +182,13 @@ test('the servo bars\' hint is read in full, and a long part name ends in "…" 
   const lines = await part.evaluate(el => Math.round(el.clientHeight / parseFloat(getComputedStyle(el).lineHeight)));
   expect(lines).toBeLessThanOrEqual(3);
 });
+
+for (const width of [390, 1280]) {
+  test(`FANUC battery code explanations fit when expanded at ${width}px`, async ({ authedPage: page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await open(page, DATA['six fans, five battery axes, in alarm']);
+    await page.getByText('Battery warning codes', { exact: true }).click();
+    await expect(page.locator('.mt-battery-help')).toHaveAttribute('open', '');
+    expect(await problems(page)).toEqual([]);
+  });
+}

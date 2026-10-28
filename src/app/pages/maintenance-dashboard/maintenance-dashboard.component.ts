@@ -17,7 +17,7 @@ import { updatedLabel } from '../../shared/updated-label';
 import { SEVERITY } from '../../shared/severity';
 import { PauseOffscreenDirective } from '../../shared/pause-offscreen.directive';
 import { SupplyVoltageComponent, SupplyView, supplyView } from './supply-voltage.component';
-import { AxisBatteriesComponent, AxisBattery, axisBatteries } from './axis-batteries.component';
+import { AxisBatteriesComponent, AxisBattery, accAxisBatteries, batteryWarningWord, fanucBatterySupported } from './axis-batteries.component';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 2 — Maintenance Dashboard
@@ -48,16 +48,8 @@ interface Watched { key: string; label: string; value: string; band: Band; }
 
 const BAND_RANK: Record<string, number> = { '': 0, Healthy: 1, Stable: 2, Critical: 3 };
 
-/* Axes in the order a machine names them, then anything else alphabetically:
-   a 4-axis machine's battery flags come back from JSONB as B, X, Y, Z. */
-const AXIS_ORDER = ['X', 'Y', 'Z', 'A', 'B', 'C', 'U', 'V', 'W'];
-const axisRank = (a: string) => { const i = AXIS_ORDER.indexOf(a); return i < 0 ? AXIS_ORDER.length : i; };
-
-/** A battery tile: its reading, its band, and how full its icon is drawn (0–1). */
-interface BatteryTile { value: string; word: string; level: number; }
-
-/** How full a battery icon is drawn, by band: the word under it says the same. */
-const BATTERY_LEVEL: Record<string, number> = { Healthy: 1, Stable: 0.55, Critical: 0.22 };
+/** Controller warning flags describe attention, never battery charge or machine breakdown. */
+interface BatteryTile { value: string; word: string; band: Band; }
 
 /* The six fan positions the design shows, as a FANUC cabinet has them. */
 const DESIGN_FANS = [
@@ -71,7 +63,7 @@ const SIGNAL_LABELS: Record<string, string> = {
   servo_temperature:     'Servo motor temperature',
   spindle_temperature:   'Spindle motor temperature',
   encoder_temperature:   'Encoder temperature',
-  battery_status:        'CNC / APC battery',
+  battery_status:        'CNC / ACC battery',
   insulation_resistance: 'Insulation resistance',
   fan_amplifier_status:  'Cooling fan & amplifier status'
 };
@@ -138,15 +130,12 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   fansRunning = false;
   /** Columns in the fan card: three, or fewer when fewer fans report, so two fans fill the card. */
   fanCols = 3;
-  /* The battery tiles: volts when the controller sends them, else (APC) the
-     battery flag it keeps per axis; `level` is how full the icon is drawn. */
-  apcBattery: BatteryTile = { value: '--', word: '', level: 0 };
-  cncBattery: BatteryTile = { value: '--', word: '', level: 0 };
-  /* The APC battery axis by axis, as the controller flags them — five or six
-     on a machine with A, B or W axes — instead of one line for all. */
+  batterySupported = false;
+  apcBattery: BatteryTile = { value: '', word: 'Not reported', band: '' };
+  cncBattery: BatteryTile = { value: '', word: 'Not reported', band: '' };
   apcAxes: AxisBattery[] = [];
-  /** The APC battery's voltage, when a controller sends one besides the flags. */
   apcVolts = '';
+  private loadedSelection = '';
   /* The supply voltage from the machine's energy meter, or null when it has none. */
   supply: SupplyView | null = null;
 
@@ -155,7 +144,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
      which pulse briefly and are told to a screen reader once. */
   attention: Watched[] = [];
   freshAlerts = new Set<string>();
-  /** The axes whose APC battery has just gone low, for the per-axis list to pulse. */
+  /** Axes with a newly reported ACC battery warning. */
   freshAxes = new Set<string>();
   alertNote = '';
   private lastBands = new Map<string, Band>();
@@ -249,6 +238,16 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   }
 
   private fetch$() {
+    const selection = JSON.stringify([this.selectedDate, this.selectedShift, this.selectedMachine]);
+    if (this.loadedSelection && selection !== this.loadedSelection) {
+      this.data = null;
+      this.updatedAt = '';
+      this.apcAxes = [];
+      this.batterySupported = false;
+      this.attention = [];
+      this.alertNote = '';
+      this.charts.bump();
+    }
     this.loading  = true;
     this.errorMsg = '';
     this.cdr.markForCheck();
@@ -275,6 +274,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     }
 
     const d = this.data = res.data;
+    this.loadedSelection = JSON.stringify([this.selectedDate, this.selectedShift, this.selectedMachine]);
     this.updatedAt = updatedLabel(d.updated_at);
 
     /* Donuts and gauges take a flat number array; the {name,data} series
@@ -323,11 +323,16 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       : DESIGN_FANS.map(f => ({ ...f, reading: '', status: 'Not reported', running: false, spin: '1.2s' }));
     this.fanCols = Math.min(3, this.fanTiles.length);
     this.fansRunning = this.fanTiles.some(f => f.running);
-    this.apcBattery = this.batteryTile(this.focusRow?.apc_battery_voltage, this.focusRow?.apc_battery_status);
-    this.cncBattery = this.batteryTile(this.focusRow?.cnc_battery_voltage, null);
-    this.apcAxes = axisBatteries(this.focusRow?.apc_battery_status);
-    const volts = this.focusRow?.apc_battery_voltage;
-    this.apcVolts = volts !== null && volts !== undefined && Number.isFinite(Number(volts)) ? `${Number(volts).toFixed(2)} v` : '';
+    const batteryRow = this.focusRow;
+    this.batterySupported = fanucBatterySupported(batteryRow);
+    this.apcAxes = this.batterySupported ? accAxisBatteries(batteryRow?.acc_battery_status, batteryRow?.apc_battery_status) : [];
+    const accLow = this.apcAxes.some(axis => axis.low === true) ? true
+      : this.apcAxes.length && this.apcAxes.every(axis => axis.low === false) ? false : null;
+    this.apcBattery = this.batteryTile(accLow);
+    const cncWarning = batteryRow?.cnc_battery_warning?.warning;
+    this.cncBattery = this.batteryTile(this.batterySupported && typeof cncWarning === 'boolean' ? cncWarning : null);
+    const volts = batteryRow?.apc_battery_voltage;
+    this.apcVolts = typeof volts === 'number' && Number.isFinite(volts) && volts >= 0 ? `${volts.toFixed(2)} V reported` : '';
     this.supply = supplyView(d.supply);
     this.noteAlerts(this.focusRow);
 
@@ -473,12 +478,9 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
      a needle at 0 would read as a cold, idle motor. */
   readonly LOAD_BANDS = { stable: 60, critical: 85 };
   readonly TEMP_BANDS = { stable: 60, critical: 80 };
-  /* Insulation resistance and battery voltage are the other way round: a
-     low reading is the risk. FANUC flags motor insulation under 10 MΩ and
-     starts warning under 100 MΩ; a 3 V lithium cell is due for change
-     below 2.8 V. */
-  readonly IR_BANDS      = { stable: 100, critical: 10 };
-  readonly BATTERY_BANDS = { stable: 3.0, critical: 2.8 };
+  /* Lower insulation resistance needs attention. Battery warnings are
+     supplied explicitly by the controller and do not use voltage bands. */
+  readonly IR_BANDS = { stable: 100, critical: 10 };
 
   /* The gauges' three colours, in order of value */
   readonly LOAD_ZONES: ConditionZone[] = [
@@ -564,14 +566,12 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
           if (f.status in BAND_RANK) watched.push({ key: `fan:${f.name}`, label, value: f.reading, band: f.status as Band });
         }
       }
-      watched.push({ key: 'battery:cnc', label: 'CNC battery', value: this.cncBattery.value, band: this.cncBattery.word as Band });
-      if (this.apcAxes.length) {
-        // each axis on its own, so the line says which battery to change
-        for (const a of this.apcAxes) {
-          watched.push({ key: `battery:apc:${a.axis}`, label: `APC battery ${a.axis}`, value: a.low ? 'low' : '', band: a.low ? 'Critical' : 'Healthy' });
+      if (this.batterySupported) {
+        watched.push({ key: 'battery:cnc', label: 'CNC battery', value: this.cncBattery.value, band: this.cncBattery.band });
+        for (const axis of this.apcAxes) {
+          watched.push({ key: `battery:apc:${axis.axis}`, label: `ACC battery ${axis.axis}`,
+            value: axis.active?.join(', ') || '', band: axis.low === true ? 'Stable' : '' });
         }
-      } else {
-        watched.push({ key: 'battery:apc', label: 'APC battery', value: this.apcBattery.value, band: this.apcBattery.word as Band });
       }
       if (this.supply) watched.push({ key: 'supply', label: 'Supply voltage', value: this.supply.problem, band: this.supply.word });
     }
@@ -626,28 +626,9 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       .join(' ');
   }
 
-  /**
-   * The APC battery tile. Volts, banded as before, when the controller sends
-   * them; otherwise the battery flag per axis — true is a battery alarm on
-   * that axis (`battery: {"X": false, ...}` from the collector).
-   */
-  private batteryTile(volts: any, flags: any): BatteryTile {
-    const axes = flags && typeof flags === 'object' && !Array.isArray(flags)
-      ? (Object.entries(flags).filter(([, low]) => typeof low === 'boolean') as [string, boolean][])
-          .sort(([a], [b]) => axisRank(a) - axisRank(b) || a.localeCompare(b))
-      : [];
-    const low = axes.filter(([, isLow]) => isLow).map(([axis]) => axis);
-    const flagWord = axes.length ? (low.length ? 'Critical' : 'Healthy') : '';
-    const tile = (value: string, word: string): BatteryTile => ({ value, word, level: BATTERY_LEVEL[word] ?? 0 });
-
-    if (volts !== null && volts !== undefined && Number.isFinite(Number(volts))) {
-      const voltWord = this.bandLow(volts, this.BATTERY_BANDS);
-      const rank = (w: string) => ['', 'Healthy', 'Stable', 'Critical'].indexOf(w);
-      return tile(`${Number(volts).toFixed(2)} v`, rank(flagWord) > rank(voltWord) ? flagWord : voltWord);
-    }
-    if (!axes.length) return tile('--', '');
-    // all fine: the axes it covers ("X Y Z B", with "Healthy" under it); else which are low
-    return tile(low.length ? `${low.join(', ')} low` : axes.map(([axis]) => axis).join(' '), flagWord);
+  private batteryTile(warning: boolean | null): BatteryTile {
+    return { value: warning === true ? 'Battery warning' : '', word: batteryWarningWord(warning),
+      band: warning === true ? 'Stable' : '' };
   }
 
   /** A controller's fan value in the design's words. */
@@ -814,7 +795,8 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
 
   /** Signals the API says it cannot supply, in readable form. */
   get missingSignals(): string[] {
-    return (this.data?.unavailable || []).map((k: string) => SIGNAL_LABELS[k] || k);
+    return (this.data?.unavailable || []).filter((key: string) => key !== 'battery_status' || this.batterySupported)
+      .map((key: string) => SIGNAL_LABELS[key] || key);
   }
 
   /** Seconds → "8h 12m", the format the shop floor reads fastest. */
@@ -853,9 +835,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   }
 
   private todayStr(): string {
-    return new Date(
-      new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
-    ).toISOString().split('T')[0];
+    return new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);
   }
 
 }

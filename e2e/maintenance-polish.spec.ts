@@ -18,6 +18,7 @@ const meta = { success: true, data: {
 const hour = (h: number) => new Date(Date.UTC(2026, 9, 6, h - 6, 30)).toISOString();   // IST hours
 
 const row = (o: any = {}) => ({
+  controller_type: 'FANUC', battery_supported: true,
   machine_id: 25, machine_serial_no: 'HMC - 7 - F', image_url: null, component_id: '74', part_name: 'FEED BOX',
   target_qty: 40, operator_name: 'MANICKAM', machine_status: 'RUNNING', alarm: false,
   spindle_load: 0, feed_rate: 1200, received_at: new Date().toISOString(), run_seconds: 36900,
@@ -61,11 +62,11 @@ async function serve(page: any, body: any) {
   return api;
 }
 
-/** A refresh with `body`, as a filter change makes one; resolves once it is shown. */
-async function refresh(page: any, api: { body: any; n: number }, body: any, shift: number) {
+/** Refresh the current selection. Filter changes deliberately clear old figures and have separate coverage. */
+async function refresh(page: any, api: { body: any; n: number }, body: any, _shift: number) {
   api.body = body;
   const before = api.n;
-  await page.locator('#mtShift').selectOption({ index: shift });
+  await page.locator('form.mexa-titlebar').dispatchEvent('submit');
   await expect.poll(() => api.n).toBeGreaterThan(before);
   await page.waitForTimeout(400);
 }

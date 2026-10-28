@@ -30,6 +30,7 @@ const row = (o: any = {}) => ({
   servo_load_x: 4, servo_load_y: 7, servo_load_z: 25,
   servo_temp_x: null, servo_temp_y: null, servo_temp_z: 42,
   encoder_temp_x: 31, encoder_temp_y: 34, encoder_temp_z: 43,
+  controller_type: 'FANUC', battery_supported: true,
   cnc_battery_voltage: null, apc_battery_voltage: null,
   fan_status: {
     CNC_FAN1: { on: true, fault: false, rpm: 10206 },
@@ -69,8 +70,8 @@ async function mockApi(page: any, r: any, supply: any = null) {
 }
 
 const tile = (page: any, label: string) => page.locator(`section[aria-label="${label}"]`);
-const axes = (page: any) => tile(page, 'APC battery').getByRole('listitem');
-const apcWord = (page: any) => tile(page, 'APC battery').locator('.mt-apc-head .mt-word');
+const axes = (page: any) => tile(page, 'ACC battery').getByRole('listitem');
+const apcWord = (page: any) => tile(page, 'ACC battery').locator('.mt-apc-head .mt-word');
 
 test('each fan by its number, with its speed and state; the battery axis by axis', async ({ authedPage: page }) => {
   await mockApi(page, row());
@@ -92,10 +93,10 @@ test('each fan by its number, with its speed and state; the battery axis by axis
   // one battery per axis, each named, and the tile's word over all of them
   await expect(axes(page)).toHaveCount(3);
   await expect(axes(page).locator('.axis')).toHaveText(['X', 'Y', 'Z']);
-  await expect(axes(page).locator('.word')).toHaveText(['OK', 'OK', 'OK']);
-  await expect(axes(page).first()).toHaveAttribute('aria-label', 'X axis battery OK');
-  await expect(tile(page, 'APC battery').locator('.mt-count')).toHaveText('3 axes');
-  await expect(apcWord(page)).toHaveText('Healthy');
+  await expect(axes(page).locator('.word')).toHaveText(['No warning reported', 'No warning reported', 'No warning reported']);
+  await expect(axes(page).first()).toHaveAttribute('aria-label', 'X axis battery: No warning reported');
+  await expect(tile(page, 'ACC battery').locator('.mt-count')).toHaveText('3 axes');
+  await expect(apcWord(page)).toHaveText('No warning reported');
   // the collector sends no voltage, and the CNC battery is not one of the flags
   await expect(tile(page, 'CNC battery').locator('.mt-word')).toHaveText('Not reported');
 
@@ -103,7 +104,7 @@ test('each fan by its number, with its speed and state; the battery axis by axis
   await page.locator('.mt-cooling').screenshot({ path: 'mexa-maintenance-fans.png' });
 });
 
-test('a faulted fan and a low battery axis read Critical, and say which', async ({ authedPage: page }) => {
+test('a faulted fan remains Critical while a low battery axis asks for a check', async ({ authedPage: page }) => {
   await mockApi(page, row({
     fan_status: {
       CNC_FAN1: { on: true, fault: false, rpm: 10206 },
@@ -126,17 +127,17 @@ test('a faulted fan and a low battery axis read Critical, and say which', async 
   await expect(page.locator('.mt-attention')).toContainText('CNC fan 2 Fault · 0 rpm');
 
   // the low axis, on its own
-  await expect(axes(page).nth(1)).toHaveAttribute('aria-label', 'Y axis battery low');
+  await expect(axes(page).nth(1)).toHaveAttribute('aria-label', 'Y axis battery: Check battery');
   await expect(axes(page).nth(1)).toHaveClass(/is-low/);
-  await expect(axes(page).locator('.word')).toHaveText(['OK', 'Low', 'OK']);
-  await expect(apcWord(page)).toHaveText('Critical');
+  await expect(axes(page).locator('.word')).toHaveText(['No warning reported', 'Check battery', 'No warning reported']);
+  await expect(apcWord(page)).toHaveText('Check battery');
   await expect(page.locator('.mt-attention')).toContainText('+');   // more than the fan needs a look
 
   await page.waitForTimeout(800);
   await page.locator('.mt-cooling').screenshot({ path: 'mexa-maintenance-fans-critical.png' });
 });
 
-test('older controllers: a word per fan and a battery voltage still read as before', async ({ authedPage: page }) => {
+test('older FANUC controllers keep fan words and report voltage without inferring battery health', async ({ authedPage: page }) => {
   await mockApi(page, row({
     fan_status: { radiator_fan1: 'OK', radiator_fan2: 'NG' },
     apc_battery_status: null, apc_battery_voltage: 2.9, cnc_battery_voltage: 3.1
@@ -148,9 +149,9 @@ test('older controllers: a word per fan and a battery voltage still read as befo
   const fans = tile(page, 'Cooling fans');
   await expect(fans.locator('.mt-fan-name')).toHaveText(['Radiator Fan 1', 'Radiator Fan 2']);
   await expect(fans.locator('.mt-word')).toHaveText(['Healthy', 'Critical']);
-  await expect(tile(page, 'APC battery')).toContainText('2.90 v');
-  await expect(tile(page, 'APC battery').locator('.mt-word')).toHaveText('Stable');
-  await expect(tile(page, 'CNC battery')).toContainText('3.10 v');
+  await expect(tile(page, 'ACC battery')).toContainText('2.90 V reported');
+  await expect(tile(page, 'ACC battery').locator('.mt-word')).toHaveText('Not reported');
+  await expect(tile(page, 'CNC battery')).toContainText('Not reported');
 });
 
 test('on a phone the fan and battery tiles fit, nothing clipped or pushed sideways', async ({ authedPage: page }) => {
@@ -158,7 +159,7 @@ test('on a phone the fan and battery tiles fit, nothing clipped or pushed sidewa
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/maintenance-dashboard');
   await expect(axes(page)).toHaveCount(6);
-  await expect(axes(page).locator('.word')).toHaveText(['Low', 'Low', 'OK', 'OK', 'OK', 'OK']);
+  await expect(axes(page).locator('.word')).toHaveText(['Check battery', 'Check battery', 'No warning reported', 'No warning reported', 'No warning reported', 'No warning reported']);
 
   const overflow = await page.evaluate(() => ({
     page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -234,43 +235,45 @@ test('for anyone who asked for less motion, nothing turns or slides', async ({ a
   // still marked as running — only the motion is withheld
   await expect(icon).toHaveClass(/is-spinning/);
   expect((await spinOf(icon)).name).toBe('none');
-  const fill = tile(page, 'APC battery').locator('.fill').first();
-  expect(await fill.evaluate((e: Element) => getComputedStyle(e).transitionDuration)).toBe('0s');
+  await expect(tile(page, 'ACC battery').locator('.fill')).toHaveCount(0);
 });
 
-test('turning fans stay off the main thread: no style work per frame', async ({ authedPage: page }) => {
+test('turning fans add no recurring style work to the rest of the dashboard', async ({ authedPage: page }) => {
   await mockApi(page, row());
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/maintenance-dashboard');
-  await expect(tile(page, 'Cooling fans').locator('.mt-fan-icon.is-spinning')).toHaveCount(2);
-  await page.waitForTimeout(1500);   // first paint and the charts settle
+  const fans = tile(page, 'Cooling fans').locator('.mt-fan-icon.is-spinning');
+  await expect(fans).toHaveCount(2);
+  await page.waitForTimeout(1500);
 
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Performance.enable');
   const recalcs = async () =>
-    (await cdp.send('Performance.getMetrics')).metrics.find((m: any) => m.name === 'RecalcStyleCount')!.value;
-  /* An animation run on the main thread recalculates style every frame, 60–120
-     times a second, for as long as it turns; an IntersectionObserver anywhere
-     on the page causes exactly that. Three one-second windows, judged by the
-     quietest, so a chart finishing its first draw on a busy machine cannot
-     fail this — a per-frame cost shows in every window. */
-  const perSecond: number[] = [];
-  for (let i = 0; i < 3; i++) {
-    const before = await recalcs();
-    await page.waitForTimeout(1000);
-    perSecond.push(await recalcs() - before);
-  }
-  expect(Math.min(...perSecond), `style recalculations per second: ${perSecond}`).toBeLessThan(10);
+    (await cdp.send('Performance.getMetrics')).metrics.find((metric: any) => metric.name === 'RecalcStyleCount')!.value;
+  const samples = async () => {
+    const counts: number[] = [];
+    for (let i = 0; i < 3; i++) {
+      const before = await recalcs();
+      await page.waitForTimeout(1000);
+      counts.push(await recalcs() - before);
+    }
+    return Math.min(...counts);
+  };
+  const running = await samples();
+  await fans.evaluateAll(elements => elements.forEach(element => (element as HTMLElement).style.animationPlayState = 'paused'));
+  const paused = await samples();
+  // Other page animations (machine status / refresh) remain active in both
+  // samples. Compare the same page with only the fans paused to isolate them.
+  expect(running - paused, `style recalculations: fans running ${running}/s; paused ${paused}/s`).toBeLessThan(10);
 });
 
-test('the battery icons fill to their band', async ({ authedPage: page }) => {
+test('battery warning icons do not imply a measured charge level', async ({ authedPage: page }) => {
   await mockApi(page, row({ apc_battery_status: { X: false, Y: false, Z: false }, cnc_battery_voltage: null }));
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/maintenance-dashboard');
-  await expect(tile(page, 'APC battery').locator('.fill')).toHaveCount(3);
-  for (const f of await tile(page, 'APC battery').locator('.fill').all()) await expect(f).toHaveAttribute('style', /scaleY\(1\)/);
-  // nothing reported: an empty outline, not three bars that look like a full battery
-  await expect(tile(page, 'CNC battery').locator('.mt-battery-fill')).toHaveAttribute('style', /scaleY\(0\)/);
+  await expect(tile(page, 'ACC battery').locator('.fill')).toHaveCount(0);
+  await expect(tile(page, 'CNC battery').locator('.mt-battery-fill')).toHaveCount(0);
+  await expect(page.locator('.mt-battery-note')).toHaveText('Controller warnings only; battery charge is not measured.');
   await page.locator('.mt-tiles').screenshot({ path: 'mexa-maintenance-battery.png' });
 });
 
@@ -282,13 +285,14 @@ test('a refresh keeps each fan\'s element, so a turning icon never snaps back', 
     return x.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload(row())) });
   });
   await page.setViewportSize({ width: 1500, height: 1100 });
+  await page.clock.install();
   await page.goto('/maintenance-dashboard');
   const icon = tile(page, 'Cooling fans').locator('.mt-fan-icon').first();
   await expect(icon).toHaveClass(/is-spinning/);
   await icon.evaluate((e: any) => { e.__sameElement = true; });
 
   const before = served;
-  await page.locator('#mtShift').selectOption({ index: 1 });
+  await page.clock.fastForward(60_000);
   await expect.poll(() => served).toBeGreaterThan(before);
   await expect(tile(page, 'Cooling fans').locator('.mt-fan')).toHaveCount(2);
   expect(await icon.evaluate((e: any) => e.__sameElement === true)).toBe(true);
@@ -316,7 +320,7 @@ test('battery axes read in the machine\'s order, not the database\'s', async ({ 
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/maintenance-dashboard');
   await expect(axes(page).locator('.axis')).toHaveText(['X', 'Y', 'Z', 'B']);
-  await expect(apcWord(page)).toHaveText('Healthy');
+  await expect(apcWord(page)).toHaveText('No warning reported');
 });
 
 test('five or six axes (HMC - 15 - F sends B, W, X, Y, Z): each its own battery, in the machine\'s order', async ({ authedPage: page }) => {
@@ -324,9 +328,9 @@ test('five or six axes (HMC - 15 - F sends B, W, X, Y, Z): each its own battery,
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/maintenance-dashboard');
   await expect(axes(page).locator('.axis')).toHaveText(['X', 'Y', 'Z', 'B', 'W']);
-  await expect(axes(page).nth(4)).toHaveAttribute('aria-label', 'W axis battery low');
-  await expect(tile(page, 'APC battery').locator('.mt-count')).toHaveText('5 axes');
-  await expect(page.locator('.mt-attention')).toContainText('APC battery W');
+  await expect(axes(page).nth(4)).toHaveAttribute('aria-label', 'W axis battery: Check battery');
+  await expect(tile(page, 'ACC battery').locator('.mt-count')).toHaveText('5 axes');
+  await expect(page.locator('.mt-attention')).toContainText('ACC battery W');
 });
 
 test('nothing reported: the design\'s fan position "Not reported", no count; the battery and supply say so too', async ({ authedPage: page }) => {
@@ -338,8 +342,7 @@ test('nothing reported: the design\'s fan position "Not reported", no count; the
   await expect(tile(page, 'Cooling fans').locator('.mt-fans-head')).toHaveCount(0);
   await expect(tile(page, 'Cooling fans').locator('.mt-word').first()).toHaveText('Not reported');
   await expect(axes(page)).toHaveCount(0);
-  await expect(tile(page, 'APC battery')).toContainText('--');
-  await expect(tile(page, 'APC battery').locator('.mt-word')).toHaveText('Not reported');
+  await expect(tile(page, 'ACC battery').locator('.mt-word')).toHaveText('Not reported');
   await expect(page.locator('app-supply-voltage')).toContainText('Not reported — no energy meter reading');
 });
 
@@ -390,4 +393,90 @@ test('phases more than 2 % apart but all in tolerance: Stable', async ({ authedP
   await expect(supplyCard(page).locator('.phase.is-out')).toHaveCount(0);
   await expect(supplyCard(page).locator('.word')).toHaveText('Stable');
   await expect(page.locator('.mt-attention')).toContainText('Supply voltage L-L 3.6 % apart');
+});
+
+/* FANUC diagnostics introduced by the embedded collector on 28 Oct 2026. */
+const clearAxis = () => ({ low: false, ABP: false, INP: false, EXP: false, raw: 0 });
+
+test('FANUC ACC shows every reported axis and the specific active detector warnings', async ({ authedPage: page }) => {
+  await mockApi(page, row({ acc_battery_status: {
+    B: { low: null, ABP: null, INP: null, EXP: null },
+    A: clearAxis(), X: { ...clearAxis(), low: true, ABP: true },
+    Y: { ...clearAxis(), low: true, INP: true }, Z: { ...clearAxis(), low: true, EXP: true }
+  }, cnc_battery_warning: { warning: true, raw_alarm_value: 0 } }));
+  await page.setViewportSize({ width: 1500, height: 1100 });
+  await page.goto('/maintenance-dashboard');
+  await expect(axes(page).locator('.axis')).toHaveText(['X', 'Y', 'Z', 'A', 'B']);
+  await expect(axes(page).locator('.word')).toHaveText(['Check battery', 'Check battery', 'Check battery', 'No warning reported', 'Not reported']);
+  await expect(axes(page).locator('.flag')).toHaveText(['ABP', 'INP', 'EXP']);
+  await expect(axes(page).first()).toHaveAttribute('aria-label', /A\/B phase detector battery low \(bit 3\)/);
+  await expect(tile(page, 'CNC battery')).toContainText('Battery warning');
+  await expect(tile(page, 'CNC battery')).toContainText('Check battery');
+  await expect(page.locator('.mt-state')).toHaveText('Running');
+  await tile(page, 'ACC battery').getByText('Battery warning codes', { exact: true }).click();
+  await expect(tile(page, 'ACC battery')).toContainText('Built-in serial pulse coder battery low');
+  await expect(tile(page, 'ACC battery')).toContainText('Separate / external serial detector battery low');
+});
+
+test('CNC false warning remains clear even when the general alarm mask is nonzero', async ({ authedPage: page }) => {
+  await mockApi(page, row({ acc_battery_status: { X: clearAxis() },
+    cnc_battery_warning: { warning: false, raw_alarm_value: 56 } }));
+  await page.goto('/maintenance-dashboard');
+  await expect(tile(page, 'CNC battery').locator('.mt-word')).toHaveText('No warning reported');
+  await expect(apcWord(page)).toHaveText('No warning reported');
+  await expect(page.locator('.mt-attention')).not.toContainText('battery');
+});
+
+test('unknown warnings and raw diagnostics do not become clear or faulty batteries', async ({ authedPage: page }) => {
+  await mockApi(page, row({ acc_battery_status: { X: { raw: 56, status: 'LOW' } },
+    cnc_battery_warning: { warning: null, raw_alarm_value: 0 } }));
+  await page.goto('/maintenance-dashboard');
+  await expect(axes(page).locator('.word')).toHaveText('Not reported');
+  await expect(apcWord(page)).toHaveText('Not reported');
+  await expect(tile(page, 'CNC battery').locator('.mt-word')).toHaveText('Not reported');
+  await expect(page.locator('.mt-attention')).not.toContainText('battery');
+});
+
+for (const controller of ['MITSUBISHI', null]) {
+  test(`battery diagnostics are hidden for ${controller || 'an unknown controller'}`, async ({ authedPage: page }) => {
+    await mockApi(page, row({ controller_type: controller, battery_supported: false,
+      acc_battery_status: { X: { ...clearAxis(), low: true, ABP: true } },
+      cnc_battery_warning: { warning: true } }));
+    await page.goto('/maintenance-dashboard');
+    await expect(page.locator('.mt-machine')).toBeVisible();
+    await expect(tile(page, 'ACC battery')).toHaveCount(0);
+    await expect(tile(page, 'CNC battery')).toHaveCount(0);
+    await expect(page.locator('.mt-attention')).not.toContainText('battery');
+  });
+}
+
+test('failed machine selection removes the previous machine battery diagnostics', async ({ authedPage: page }) => {
+  await mockApi(page, row({ acc_battery_status: { X: { ...clearAxis(), low: true, ABP: true } } }));
+  await page.route('**/api/charts/meta*', route => route.fulfill({ json: { ...meta, data: {
+    ...meta.data, machines: [...meta.data.machines, { id: 20, machine_serial_no: 'VMC - 3 - F' }]
+  } } }));
+  await page.goto('/maintenance-dashboard');
+  await expect(axes(page).locator('.word')).toHaveText('Check battery');
+  await page.route('**/api/dashboard/maintenance*', route => route.fulfill({ status: 500,
+    json: { status: 'error', message: 'Unable to load this machine.' } }));
+  await page.locator('#mtMachine').selectOption({ label: 'VMC - 3 - F' });
+  await expect(page.getByRole('alert')).toContainText('Unable to load this machine.');
+  await expect(page.locator('.mt-machine')).toHaveCount(0);
+  await expect(tile(page, 'ACC battery')).toHaveCount(0);
+});
+
+test('five-axis FANUC battery diagnostics and explanations fit on a narrow phone', async ({ authedPage: page }) => {
+  await mockApi(page, row({ acc_battery_status: { X: { ...clearAxis(), ABP: true, INP: true, EXP: true },
+    Y: clearAxis(), Z: clearAxis(), A: clearAxis(), B: {} }, cnc_battery_warning: { warning: true } }));
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto('/maintenance-dashboard');
+  await expect(axes(page)).toHaveCount(5);
+  await tile(page, 'ACC battery').getByText('Battery warning codes', { exact: true }).click();
+  const overflow = await page.evaluate(() => ({
+    page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    clipped: [...document.querySelectorAll('.mt-tiles li, .mt-battery-help dd, .mt-battery-warning')]
+      .filter(el => el.scrollWidth > el.clientWidth + 1).map(el => el.textContent?.trim())
+  }));
+  expect(overflow.page).toBeLessThanOrEqual(1);
+  expect(overflow.clipped).toEqual([]);
 });

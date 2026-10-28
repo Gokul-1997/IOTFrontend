@@ -1,5 +1,5 @@
 import { supplyView } from './supply-voltage.component';
-import { axisBatteries } from './axis-batteries.component';
+import { axisBatteries, accAxisBatteries, batteryWarningWord, fanucBatterySupported } from './axis-batteries.component';
 
 const limits = { ll_nominal: 415, ln_nominal: 240, tolerance_pct: 10, imbalance_pct: 2 };
 const reading = (o: any = {}) => ({
@@ -71,5 +71,43 @@ describe('axisBatteries', () => {
     expect(axisBatteries(null)).toEqual([]);
     expect(axisBatteries([true, false])).toEqual([]);
     expect(axisBatteries('X')).toEqual([]);
+  });
+});
+
+
+describe('FANUC battery diagnostics', () => {
+  it('keeps rotary axes and names every active detector warning in machine order', () => {
+    const axes = accAxisBatteries({
+      B: { low: false, ABP: false, INP: false, EXP: false },
+      X: { low: false, ABP: true, INP: true, EXP: false },
+      A: { low: true, ABP: false, INP: false, EXP: true }
+    });
+    expect(axes.map(axis => [axis.axis, axis.low, axis.active])).toEqual([
+      ['X', true, ['ABP', 'INP']], ['A', true, ['EXP']], ['B', false, []]
+    ]);
+  });
+  it('does not decode a raw diagnostic mask or trust a status word', () => {
+    expect(accAxisBatteries({ X: { raw: 56, status: 'LOW' }, Y: { status: 'OK' } }).map(axis => axis.low))
+      .toEqual([null, null]);
+  });
+  it('retains an unknown axis instead of displaying a healthy battery', () => {
+    expect(accAxisBatteries({ X: null, Y: { ABP: false, INP: false, EXP: null } }).map(axis => axis.low))
+      .toEqual([null, null]);
+    expect(accAxisBatteries({ X: { ABP: false, INP: false, EXP: false } })[0].low).toBe(false);
+  });
+  it('uses older boolean flags only when structured diagnostics are absent', () => {
+    expect(accAxisBatteries(null, { X: true, Z: false })).toEqual([{ axis: 'X', low: true }, { axis: 'Z', low: false }]);
+    expect(accAxisBatteries({}, { X: true })).toEqual([]);
+  });
+  it('requires an explicit supported controller, without guessing from a battery payload', () => {
+    expect(fanucBatterySupported({ controller_type: 'FANUC' })).toBe(true);
+    expect(fanucBatterySupported({ battery_supported: true })).toBe(true);
+    expect(fanucBatterySupported({ controller_type: 'MITSUBISHI', acc_battery_status: { X: true } })).toBe(false);
+    expect(fanucBatterySupported({})).toBe(false);
+  });
+  it('describes reported warnings without claiming charge or full battery health', () => {
+    expect(batteryWarningWord(true)).toBe('Check battery');
+    expect(batteryWarningWord(false)).toBe('No warning reported');
+    expect(batteryWarningWord(null)).toBe('Not reported');
   });
 });

@@ -104,7 +104,7 @@
 
 /* the readings above the bars sit on the card, so they take its ink — in
    either theme, and at once when the theme is switched */
-:host ::ng-deep .mt-bars .apexcharts-datalabel { fill: var(--mexa-ink); }
+:host ::ng-deep .mt-bars .apexcharts-datalabel { fill: var(--mexa-ink) !important; }
 
 @media (prefers-reduced-motion: reduce) {
   .mt-state.is-running .mt-state-dot::after, .is-new-alert .mt-word, .mt-state.is-new-alert { animation: none; }
@@ -120,3 +120,15 @@
 .mt-alarmlist li:last-child { border-bottom: 0; padding-bottom: 0; }
 .mt-alarmlist strong { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
 .mt-dot { width: .7rem; height: .7rem; border-radius: 999px; flex: none; }
+
+/* Battery diagnostics use explicit warning flags, without an invented charge gauge. */
+.mt-battery-warning { margin: .2rem 0; font-size: .85rem; font-weight: 700; color: var(--mexa-ink); }
+.mt-battery-note, .mt-battery-help, .mt-battery-volts { margin: 0; color: var(--mexa-ink-2); font-size: .7rem; line-height: 1.4; }
+.mt-battery-note { padding: 0 .25rem; }
+.mt-battery-help summary { cursor: pointer; padding: .2rem 0; font-weight: 600; }
+.mt-battery-help dl { margin: .35rem 0 0; display: grid; gap: .35rem; }
+.mt-battery-help dt { font-weight: 700; color: var(--mexa-ink); }
+.mt-battery-help dd { margin: 0; overflow-wrap: anywhere; }
+
+.mt-battery-holder { background: rgba(148,163,184,.12); }
+.mt-battery-holder.mt-battery-warning-icon { background: rgba(245,166,35,.15); }

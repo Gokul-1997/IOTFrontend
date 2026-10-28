@@ -17,7 +17,7 @@
   <h1 class="mexa-title">Maintenance Dashboard</h1></div>
 <!-- <p class="mexa-updated" *ngIf="updatedAt || loading">
   <mat-icon class="!w-4 !h-4 !text-base" [class.mexa-spin]="loading" aria-hidden="true">refresh</mat-icon>
-  {{ loading ? 'Updating…' : 'Updated ' + updatedAt }}
+  {{ loading ? 'Updating…' : updatedAt ? 'Updated ' + updatedAt : 'Not updated' }}
 </p> -->
 </div>
   <!-- One machine, named. The fleet counts that used to sit here belong on
@@ -87,7 +87,7 @@
   </svg>
 
   <!-- <span class="updated-label">LAST UPDATED</span> -->
-  <span class="updated-time"> {{ loading ? 'Updating…' : 'Updated ' + updatedAt }}</span>
+  <span class="updated-time"> {{ loading ? 'Updating…' : updatedAt ? 'Updated ' + updatedAt : 'Not updated' }}</span>
 </div>
 
 <!-- ══════════ STATES ══════════ -->
@@ -275,8 +275,8 @@
     </section>
 
     <!-- fans and batteries. A fan's icon turns only while the controller says
-         it is turning and the machine is reporting live; the battery icons
-         fill to their band. Motion pauses off-screen and in a hidden tab
+         it is turning and the machine is reporting live. Battery warnings
+         are static status icons. Motion pauses off-screen and in a hidden tab
          (appPauseOffscreen) and stays still for reduced-motion users. -->
     <div class="mt-cooling" appPauseOffscreen>
       <section class="mexa-card mt-fans-card" aria-label="Cooling fans">
@@ -328,40 +328,31 @@
           
         </section> -->
 
-      <div class="mt-tiles">
-        
+      <div class="mt-tiles" *ngIf="batterySupported">
         <section class="mexa-card mt-tile" aria-label="CNC battery" [class.is-new-alert]="freshAlerts.has('battery:cnc')">
-          <span class="mt-battery-holder">
-          <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><rect class="mt-battery-fill" x="3.6" y="5.6" width="6.8" height="14.8" rx=".8" [style.fill]="bandColour(cncBattery.word)" [style.transform]="'scaleY(' + cncBattery.level + ')'"/></svg>
-            </span>
+          <span class="mt-battery-holder" [class.mt-battery-warning-icon]="!!cncBattery.band">
+            <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><path *ngIf="cncBattery.band" d="M7 8v6m0 3v.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </span>
           <div>
-          <p class="mt-tile-name">CNC battery</p>
-          <p class="mt-tile-value">
-            <span>{{ cncBattery.value }}</span>
-          </p>
-          <p class="mt-word" [ngClass]="bandText(cncBattery.word)">{{ cncBattery.word || 'Not reported' }}</p>
+            <p class="mt-tile-name">CNC battery</p>
+            <p class="mt-battery-warning" *ngIf="cncBattery.value">{{ cncBattery.value }}</p>
+            <p class="mt-word" [ngClass]="bandText(cncBattery.band)">{{ cncBattery.word }}</p>
           </div>
         </section>
-        <section class="mexa-card mt-tile" aria-label="APC battery" [class.mt-apc]="apcAxes.length"
-                 [class.is-new-alert]="freshAlerts.has('battery:apc')">
-          <!-- one battery per axis, as the controller flags them (X Y Z, and A, B or W on a 4- or 5-axis machine) -->
-          @if (apcAxes.length) {
-            <div class="mt-apc-head">
-              <p class="mt-tile-name">APC battery <span class="mt-count">{{ apcAxes.length }} axes</span></p>
-              <p class="mt-word" [ngClass]="bandText(apcBattery.word)">{{ apcBattery.word }}</p>
-            </div>
-            <p class="mt-tile-value mt-apc-volts" *ngIf="apcVolts">{{ apcVolts }}</p>
-            <app-axis-batteries [axes]="apcAxes" [fresh]="freshAxes"></app-axis-batteries>
-          } @else {
-            <span class="mt-battery-holder">
-            <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><rect class="mt-battery-fill" x="3.6" y="5.6" width="6.8" height="14.8" rx=".8" [style.fill]="bandColour(apcBattery.word)" [style.transform]="'scaleY(' + apcBattery.level + ')'"/></svg>
-            </span>
-            <div>
-            <p class="mt-tile-name">APC battery</p>
-            <p class="mt-tile-value"><span>{{ apcBattery.value }}</span></p>
-            <p class="mt-word" [ngClass]="bandText(apcBattery.word)">{{ apcBattery.word || 'Not reported' }}</p>
-            </div>
-          }
+        <section class="mexa-card mt-tile mt-apc" aria-label="ACC battery">
+          <div class="mt-apc-head">
+            <p class="mt-tile-name">ACC battery <span class="mt-count" *ngIf="apcAxes.length">{{ apcAxes.length }} axes</span></p>
+            <p class="mt-word" [ngClass]="bandText(apcBattery.band)">{{ apcBattery.word }}</p>
+          </div>
+          <p class="mexa-card-hint mt-battery-volts" *ngIf="apcVolts">{{ apcVolts }}</p>
+          <app-axis-batteries *ngIf="apcAxes.length" [axes]="apcAxes" [fresh]="freshAxes"></app-axis-batteries>
+          <details class="mt-battery-help" *ngIf="apcAxes.length">
+            <summary>Battery warning codes</summary>
+            <dl><div><dt>ABP · bit 3</dt><dd>A/B phase detector battery low</dd></div>
+              <div><dt>INP · bit 4</dt><dd>Built-in serial pulse coder battery low</dd></div>
+              <div><dt>EXP · bit 5</dt><dd>Separate / external serial detector battery low</dd></div></dl>
+          </details>
+          <p class="mt-battery-note">Controller warnings only; battery charge is not measured.</p>
         </section>
       </div>
     </div>
