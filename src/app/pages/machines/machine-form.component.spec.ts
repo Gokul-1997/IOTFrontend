@@ -93,6 +93,28 @@ test('moving a new photo to another plant resets that photo with an actionable r
   expect(form.uploadError).toContain('Upload the photo again');
 });
 
+/* 28 Oct 2026, the user: a saved photo could only be replaced — a remove icon in its top corner */
+test('the corner icon removes the photo; it goes on Save, and the machine then has none', () => {
+  const remove = () => fixture.nativeElement.querySelector('button.mf-image-remove') as HTMLButtonElement | null;
+  expect(remove()?.getAttribute('aria-label')).toBe('Remove photo');
+  expect(remove()?.closest('label')).toBeNull();                         // never opens the file picker
+  remove()!.click(); fixture.detectChanges();
+  expect(form.previewUrl).toBeNull();
+  expect(form.form.value.image_url).toBe('');
+  expect(remove()).toBeNull();                                           // nothing left to remove
+  expect(fixture.nativeElement.textContent).toContain('Add a photo');
+  expect(service.update).not.toHaveBeenCalled();                         // nothing goes until Save
+  form.save();
+  expect(service.update).toHaveBeenLastCalledWith(9, expect.objectContaining({ image_url: '' }));   // stored as no photo
+});
+
+test('a photo cannot be removed while one is uploading', () => {
+  select(new File(['image'], 'machine.jpg', { type: 'image/jpeg' }));
+  expect(form.uploading).toBe(true);                                     // the icon is hidden while uploading
+  form.removeImage();
+  expect(form.form.value.image_url).toBe(existing);
+});
+
 describe('a new machine', () => {
   let created: ComponentFixture<MachineFormComponent>, fresh: MachineFormComponent;
   beforeEach(() => {

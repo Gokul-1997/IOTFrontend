@@ -292,6 +292,21 @@ export class MachineFormComponent implements OnInit, AfterViewInit {
     });
   }
 
+  /**
+   * Take the photo off the machine with the corner icon (28 Oct 2026, the
+   * user: a photo could only be replaced, never removed). It goes when the
+   * form is saved — the machine then shows "No photo"; Cancel keeps it.
+   */
+  removeImage(): void {
+    if (this.uploading || this.saving) return;
+    this.releasePreview();
+    this.previewUrl = null;
+    this.uploadError = '';
+    this.uploadedPlantId = null;
+    this.form.patchValue({ image_url: '' });
+    this.form.get('image_url')?.markAsDirty();
+  }
+
   private releasePreview(): void {
     if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
     this.objectUrl = null;

@@ -74,8 +74,22 @@
   background: rgba(15, 23, 42, 0.72);
 }
 
+/* the photo's remove icon, in its top-right corner — outside the label, so it never opens the file picker */
+.mf-image-wrap { position: relative; }
+.mf-image-remove {
+  position: absolute; top: .4rem; right: .4rem; z-index: 1;
+  display: grid; place-items: center; width: 1.75rem; height: 1.75rem; padding: 0;
+  border: 1px solid #e2e8f0; border-radius: 999px; background: rgba(255, 255, 255, .92); color: #64748b;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .18); cursor: pointer; transition: color .15s, background .15s, border-color .15s;
+  .material-icons { font-size: 1.05rem; }
+  &:hover:not(:disabled) { color: #b42334; border-color: #f0c2c8; background: #fff; }
+  &:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+  &:disabled { opacity: .5; cursor: default; }
+}
+:host-context(.dark) .mf-image-remove { background: rgba(15, 23, 42, .85); border-color: #2c5085; color: #cbd5e1; }
+
 @media (prefers-reduced-motion: reduce) {
-  .mf-image { transition: none; }
+  .mf-image, .mf-image-remove { transition: none; }
 }
 
 /* "₹/hour" is wider than "rpm": keep the figure clear of it */

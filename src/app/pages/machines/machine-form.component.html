@@ -43,6 +43,7 @@
             <!-- image well: the label wraps the input, so the whole card is the control -->
             <div class="sm:col-span-4 lg:col-span-3">
               <span class="ui-label" id="mfImageLabel">Machine photo</span>
+              <div class="mf-image-wrap">
               <label class="mf-image" [attr.aria-labelledby]="'mfImageLabel'">
                 <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFileSelect($event)"
                        [disabled]="uploading || saving || loadingOptions"
@@ -64,6 +65,12 @@
                   </span>
                 </ng-template>
               </label>
+              <!-- the photo comes off with the corner icon, as well as being replaced; it goes on Save (28 Oct 2026) -->
+              <button *ngIf="(previewUrl || form.get('image_url')?.value) && !uploading" type="button" class="mf-image-remove"
+                      (click)="removeImage()" [disabled]="saving" aria-label="Remove photo" title="Remove photo">
+                <span class="material-icons" aria-hidden="true">close</span>
+              </button>
+              </div>
               <p id="mfImageHint" class="ui-hint">
                 {{ uploading ? 'Uploading…' : (form.value.plant_id ? 'JPG, PNG or WebP, up to 5 MB. Optional.' : 'Choose a plant, then add a photo.') }}
               </p>
