@@ -84,6 +84,12 @@ app-maintenance-dashboard {
   /* filled to its band (full / half / low / empty when not reported); a change of band slides */
   .mt-battery-fill { transform-box: fill-box; transform-origin: 50% 100%;
                      transition: transform .4s cubic-bezier(.2, .8, .25, 1), fill .3s ease; }
+  /* the CNC battery: a warning flag, not a charge — its disc and mark say which (28 Oct 2026) */
+  .mt-cnc .mt-battery-holder { background: rgba(148, 163, 184, .14); color: #94a3b8; }
+  .mt-cnc.is-ok .mt-battery-holder { background: rgba(4, 120, 87, .12); color: #047857; }
+  .mt-cnc.is-warn .mt-battery-holder { background: rgba(245, 166, 35, .18); color: #b45309; }
+  .mt-cnc .mt-battery { width: 1.25rem; color: inherit; }
+  .mt-cnc.is-ok .mt-word { color: #047857; }
   /* the APC battery tile with one battery per axis (app-axis-batteries) */
   .mt-tile.mt-apc { flex-direction: column; gap: .35rem; align-items: stretch; }
   .mt-apc-head { display: flex; align-items: center; justify-content: space-between; gap: .1rem .4rem; flex-wrap: wrap; }
@@ -98,6 +104,10 @@ app-maintenance-dashboard {
 @keyframes mt-fan-spin { to { transform: rotate(360deg); } }
 
 .dark app-maintenance-dashboard {
+  .mt-cnc .mt-battery-holder { color: #64748b; }
+  .mt-cnc.is-ok .mt-battery-holder { background: rgba(110, 231, 183, .12); color: #6ee7b7; }
+  .mt-cnc.is-warn .mt-battery-holder { background: rgba(252, 211, 77, .14); color: #fcd34d; }
+  .mt-cnc.is-ok .mt-word { color: #6ee7b7; }
   .bar-cht, .mt-facts-inner { background-color: rgb(10 30 63) !important; }
   .mt-facts-inner dt { color: #868a93 !important; }
 }

@@ -329,9 +329,17 @@
         </section> -->
 
       <div class="mt-tiles" *ngIf="batterySupported">
-        <section class="mexa-card mt-tile" aria-label="CNC battery" [class.is-new-alert]="freshAlerts.has('battery:cnc')">
-          <span class="mt-battery-holder" [class.mt-battery-warning-icon]="!!cncBattery.band">
-            <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/><path *ngIf="cncBattery.band" d="M7 8v6m0 3v.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <!-- a warning flag, not a charge: the disc and its mark say which — no warning ✓, a warning !, nothing heard – (28 Oct 2026) -->
+        @let cncState = cncBattery.band === 'Stable' ? 'warn' : cncBattery.word === 'Not reported' ? 'none' : 'ok';
+        <section class="mexa-card mt-tile mt-cnc" [ngClass]="'is-' + cncState" aria-label="CNC battery" [class.is-new-alert]="freshAlerts.has('battery:cnc')">
+          <span class="mt-battery-holder">
+            <svg class="mt-battery" viewBox="0 0 14 24" aria-hidden="true"><rect x="1.5" y="3.5" width="11" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4.5" y="1" width="5" height="2.5" rx=".8" fill="currentColor"/>
+              @switch (cncState) {
+                @case ('warn') { <path d="M7 8v6m0 3v.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/> }
+                @case ('ok') { <path d="m4.3 13.4 1.9 2 3.5-4.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/> }
+                @default { <path d="M4.8 13h4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/> }
+              }
+            </svg>
           </span>
           <div>
             <p class="mt-tile-name">CNC battery</p>

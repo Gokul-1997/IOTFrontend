@@ -730,7 +730,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
       chart: { type: 'bar', height: 245, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
       plotOptions: { bar: { columnWidth: '55%', borderRadius: 4, distributed: true, dataLabels: { position: 'top' } } },
       colors: ['#18215B', '#1E4AAE', '#59237B'],
-      dataLabels: { enabled: true, offsetY: -18, formatter: (v: number | null) => v == null ? '--' : Number(v).toFixed(0),
+      dataLabels: { enabled: true, offsetY: -18, formatter: (v: number | null) => v == null || !Number.isFinite(Number(v)) ? '--' : Number(v).toFixed(0),
                     style: { fontSize: '.72rem', colors: [document.documentElement.classList.contains('dark') ? '#e8ebf2' : '#1f2430'] } },
       legend: { show: false },
       // two lines ("Encoder" / "Temp X"), as the design sets them, so no label is dropped
