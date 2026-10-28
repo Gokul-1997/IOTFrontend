@@ -54,7 +54,8 @@ for (const dark of [false, true]) {
     await expect(page.locator('.mexa-titlebar .titlebar .mexa-title')).toHaveText('Preventive Maintenance Dashboard');
     await expect(page.locator('.last-updated-vertical .updated-time')).toContainText('Updated');
     await expect(page.locator('.mexa-kpis .mexa-kpi')).toHaveCount(5);
-    await expect(page.locator('.pv-severity-key .mexa-key-value')).toHaveText(['24','16','8']);
+    // share and count, as the Energy and Alarm Report keys read (28 Oct 2026)
+    await expect(page.locator('.pv-severity-key .mexa-key-value')).toHaveText(['50% (24)','33.3% (16)','16.7% (8)']);
     const cards = page.locator('.pv-chart-card');
     for (const card of await cards.all()) expect(await card.evaluate(cardAppearance)).toEqual(energyAppearance);
     const first = (await cards.nth(0).boundingBox())!, second = (await cards.nth(1).boundingBox())!;

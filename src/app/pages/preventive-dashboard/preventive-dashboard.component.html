@@ -147,11 +147,14 @@
 
 <div class="ui-tab-content">
   <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="mexa-card pv-chart-panel">
-    <div *ngIf="loading && !views.has('charts')" class="pv-chart-grid">
+    <div *ngIf="loading && !views.has('charts')" class="mexa-grid lg:grid-cols-2">
       <section class="mexa-card pv-chart-card" *ngFor="let i of [1, 2, 3, 4]"><app-skeleton kind="chart" label="Loading the charts"></app-skeleton></section>
     </div>
-    <div *ngIf="views.has('charts')" class="pv-chart-grid">
-      <section class="mexa-card pv-chart-card" aria-labelledby="pvTrendTitle">
+    <!-- the Energy Dashboard's layout (28 Oct 2026, the user): the trend wide beside the severity donut,
+         then the machines beside the reasons, each count inside its bar -->
+    <ng-container *ngIf="views.has('charts')">
+    <div class="mexa-grid lg:grid-cols-3">
+      <section class="mexa-card pv-chart-card lg:col-span-2" aria-labelledby="pvTrendTitle">
         <h2 id="pvTrendTitle" class="mexa-card-title mexa-card-title-left">Critical Alarm Trend</h2>
         <div class="pv-chart-body">
           <apx-chart *ngIf="trendSeries.length && trendCategories.length; else noTrend"
@@ -171,13 +174,16 @@
             [plotOptions]="severityDonut.plotOptions" [legend]="severityDonut.legend"
             [tooltip]="severityDonut.tooltip" [noData]="severityDonut.noData"></apx-chart>
           <ul class="mexa-keylist pv-severity-key" aria-label="Alarm severity counts">
-            <li><span class="mexa-key-swatch" [style.--swatch]="SEV.critical.color" aria-hidden="true"></span><span><span class="mexa-key-label">{{ SEV.critical.label }}</span><span class="mexa-key-value">{{ data.alarm_severity.critical }}</span></span></li>
-            <li><span class="mexa-key-swatch" [style.--swatch]="SEV.noncritical.color" aria-hidden="true"></span><span><span class="mexa-key-label">{{ SEV.noncritical.label }}</span><span class="mexa-key-value">{{ data.alarm_severity.non_critical }}</span></span></li>
-            <li><span class="mexa-key-swatch" [style.--swatch]="SEV.info.color" aria-hidden="true"></span><span><span class="mexa-key-label">{{ SEV.info.label }}</span><span class="mexa-key-value">{{ data.alarm_severity.information }}</span></span></li>
+            <li><span class="mexa-key-swatch" [style.--swatch]="SEV.critical.color" aria-hidden="true"></span><span><span class="mexa-key-label">{{ SEV.critical.label }}</span><span class="mexa-key-value">{{ severityShare(data.alarm_severity.critical) }} ({{ data.alarm_severity.critical }})</span></span></li>
+            <li><span class="mexa-key-swatch" [style.--swatch]="SEV.noncritical.color" aria-hidden="true"></span><span><span class="mexa-key-label">{{ SEV.noncritical.label }}</span><span class="mexa-key-value">{{ severityShare(data.alarm_severity.non_critical) }} ({{ data.alarm_severity.non_critical }})</span></span></li>
+            <li><span class="mexa-key-swatch" [style.--swatch]="SEV.info.color" aria-hidden="true"></span><span><span class="mexa-key-label">{{ SEV.info.label }}</span><span class="mexa-key-value">{{ severityShare(data.alarm_severity.information) }} ({{ data.alarm_severity.information }})</span></span></li>
           </ul>
         </div>
         <ng-template #noSeverity><div class="pv-chart-body pv-empty"><span class="material-icons" aria-hidden="true">donut_large</span><strong>No alarms in this period.</strong><p>Severity distribution appears when alarms are recorded.</p></div></ng-template>
       </section>
+    </div>
+
+    <div class="mexa-grid lg:grid-cols-2">
 
       <section class="mexa-card pv-chart-card" aria-labelledby="pvMachineTitle">
         <h2 id="pvMachineTitle" class="mexa-card-title mexa-card-title-left">Machine Wise Critical Alarms</h2>
@@ -203,6 +209,7 @@
         </div>
       </section>
     </div>
+    </ng-container>
   </div>
   <div *ngIf="views.tab === 'details'" id="dashPanel-details" role="tabpanel" aria-labelledby="dashTab-details" class="mexa-card">
   <section *ngIf="loading && !views.has('table')" class="mexa-card">

@@ -480,10 +480,8 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
       fill:   { type: 'gradient', gradient: { shadeIntensity: 0.2, opacityFrom: 0.22, opacityTo: 0.015 } },
       colors: ['#dc2626'],
       dataLabels: { enabled: false },
-      // more than five days in this narrow card: every other day named; the tooltip names each
-      xaxis:  { categories: this.trendCategories, tooltip: { enabled: false },
-                labels: { rotate: 0, hideOverlappingLabels: true,
-                          formatter: (v: string) => this.trendCategories.length > 5 && this.trendCategories.indexOf(v) % 2 === 1 ? '' : v } },
+      // the card is wide now, as the Energy trend: every day named, slanted only when they do not fit
+      xaxis:  { categories: this.trendCategories, tooltip: { enabled: false }, labels: { hideOverlappingLabels: true } },
       yaxis:  { min: 0, forceNiceScale: true, title: { text: 'Critical alarms', style: { fontWeight: 500 } }, labels: { formatter: (v: number) => v?.toFixed(0) } },
       grid:   { borderColor: 'rgba(148,163,184,.2)', strokeDashArray: 4, padding: { left: 8, right: 16, top: 8, bottom: 0 } },
       tooltip:{ theme: 'light', x: { formatter: (_v: unknown, o?: any) => this.trendCategories[o?.dataPointIndex] ?? '' } },
@@ -512,9 +510,9 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
   get machineChart(): any {
     return this.charts.memo('machineChart', () => {
     const fig = barFigures(this.machineSeries[0]?.data || [], v => `${v}`,
-                           { bar: { borderRadius: 5, barHeight: '48%', distributed: false }, whole: true, maxTicks: 5 });
+                           { bar: { borderRadius: 3, barHeight: '60%', distributed: true }, whole: true, maxTicks: 5 });
     return {
-      chart:  { type: 'bar', height: 210, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false }, events: fig.events },
+      chart:  { type: 'bar', height: 230, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false }, events: fig.events },
       plotOptions: fig.plotOptions,
       colors: this.palette,
       dataLabels: fig.dataLabels,
@@ -529,7 +527,15 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
   });
   }
 
-  private readonly palette = ['#635bdf'];
+  /** The Energy Dashboard's bar colours, one per machine (28 Oct 2026). */
+  private readonly palette = ['#151458', '#073B9D', '#471E87', '#0B7267', '#3B414D', '#9D8248', '#0079AF'];
+
+  /** "50%" of all alarms in the window, as the severity key reads on the Energy and Alarm pages. */
+  severityShare(n: number | null | undefined): string {
+    const v = Number(n);
+    if (!this.severityTotal || !Number.isFinite(v)) return '--';
+    return `${Math.round((v / this.severityTotal) * 1000) / 10}%`;
+  }
 
   /** Completed over raised. Null-safe: nothing raised is not 0% compliant. */
   get compliance(): string {
@@ -575,15 +581,12 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
       labels: [SEVERITY.critical.label, SEVERITY.noncritical.label, SEVERITY.info.label],
       colors: [SEVERITY.critical.color, SEVERITY.noncritical.color, SEVERITY.info.color],
       plotOptions: {
-        pie: { donut: { size: '72%', labels: {
+        pie: { donut: { size: '66%', labels: {
           show: true,
-          value: { fontSize: '28px', fontWeight: 700 },
-          total: { show: true, label: 'Total alarms', fontSize: '12px', fontWeight: 500,
-                   formatter: () => String(this.severityTotal) }
+          total: { show: true, label: 'Alarms', fontSize: '.8rem', formatter: () => String(this.severityTotal) }
         } } }
       },
-      dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%`,
-        style: { fontSize: '11px', fontWeight: 600, colors: ['#fff', '#172033', '#fff'] }, dropShadow: { enabled: false } },
+      dataLabels: { enabled: false },
       // the key list beside the donut already names every severity
       legend: { show: false },
       tooltip: { y: { formatter: (v: number) => `${v} alarms` } },
@@ -597,11 +600,11 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
     // a bar too short for its count shows it on hover (shared/bar-figures)
     // a long alarm text on two lines, not cut short; fewer ticks in the narrow card
     const fig = barFigures(this.reasonSeries[0]?.data || [], v => `${v}`,
-                           { bar: { borderRadius: 5, barHeight: '48%', distributed: false }, whole: true, maxTicks: 5 });
+                           { bar: { borderRadius: 3, barHeight: '60%', distributed: true }, whole: true, maxTicks: 5 });
     return {
-      chart: { type: 'bar', height: 210, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false }, events: fig.events },
+      chart: { type: 'bar', height: 230, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false }, events: fig.events },
       plotOptions: fig.plotOptions,
-      colors: ['#147d92'],
+      colors: this.palette,
       dataLabels: fig.dataLabels,
       legend: { show: false },
       xaxis: { categories: this.reasonCategories.map(r => wrapLabel(r)), title: { text: 'Occurrences' }, ...fig.xaxis },

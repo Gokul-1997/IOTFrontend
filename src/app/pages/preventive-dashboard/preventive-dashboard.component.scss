@@ -3,7 +3,6 @@
 .mexa-titlebar > .flex { min-width: 0; max-width: 100%; }
 .mexa-titlebar .titlebar { min-width: 0; }
 .pv-chart-panel { zoom: 1; }
-.pv-chart-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
 .pv-chart-card { display: flex; flex-direction: column; zoom: 1; }
 .pv-chart-body { min-width: 0; min-height: 210px; flex: 1; }
 .pv-severity { display: grid; grid-template-columns: minmax(0,1fr) minmax(130px,.65fr); gap: 12px; align-items: center; }
@@ -15,6 +14,5 @@
   .pv-severity { grid-template-columns: minmax(0,1fr); }
 }
 @media (max-width: 767px) {
-  .pv-chart-grid { grid-template-columns: minmax(0,1fr); gap: 16px; }
   .pv-chart-body, .pv-empty { min-height: 240px; }
 }
