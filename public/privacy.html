@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>STM MEXA Privacy Policy</title>
+<meta name="description" content="How the STM MEXA mobile app and web app collect, use and protect your data.">
+<link rel="icon" href="/favicon.png">
+<!--
+  The app and web privacy policy (App Store 5.1.1, Google Play User Data):
+  linked from the sign-in screen, Profile → Privacy & support, the AI
+  assistant's agreement card, and the App Store / Play Console listings.
+  A plain page outside the Angular app, so it opens fast from a phone and
+  without signing in. Keep it true to what the code does; change the date
+  at the top whenever the wording changes.
+-->
+<style>
+  @font-face { font-family: 'Ubuntu'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/ubuntu-400-latin.woff2') format('woff2'); }
+  @font-face { font-family: 'Ubuntu'; font-style: normal; font-weight: 500; font-display: swap; src: url('/fonts/ubuntu-500-latin.woff2') format('woff2'); }
+  @font-face { font-family: 'Ubuntu'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/ubuntu-700-latin.woff2') format('woff2'); }
+
+  /* MEXA tokens (styles/_mexa.scss): the STM field, a white card, MEXA ink */
+  :root {
+    --field: linear-gradient(to top right, #2b3990 0%, #3f3a8c 20%, #6e3b78 50%, #b8404f 100%);
+    --field-base: #3f3a8c;
+    --card: #ffffff;
+    --ink: #1f2430;
+    --ink-2: #4b5262;
+    --ink-3: #5d6679;
+    --rule: #e3e6ef;
+    --accent: #2b3990;
+    --tint: #f2f4fb;
+    --shadow: 0 18px 48px rgba(18, 14, 64, .28), 0 2px 6px rgba(18, 14, 64, .12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --field: linear-gradient(to top right, #0e1233 0%, #171a45 38%, #2a1840 68%, #461a2e 100%);
+      --field-base: #171a45;
+      --card: #031735;
+      --ink: #e8ebf2;
+      --ink-2: #a8b0c2;
+      --ink-3: #949eb2;
+      --rule: #252b39;
+      --accent: #8ea2ff;
+      --tint: #0a1e3f;
+      --shadow: 0 18px 48px rgba(0, 0, 0, .45), 0 2px 6px rgba(0, 0, 0, .35);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; min-height: 100vh;
+    background: var(--field-base) var(--field);
+    color: var(--ink);
+    font: 400 1rem/1.65 'Ubuntu', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    padding: max(2rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(2.5rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  }
+  main {
+    max-width: 46rem; margin: 0 auto;
+    background: var(--card); border-radius: 18px; box-shadow: var(--shadow);
+    padding: clamp(1.4rem, 5vw, 3rem);
+  }
+  .brand { display: inline-flex; padding: .55rem .8rem; border-radius: 12px; background: #ffffff; margin: 0 0 1.6rem -.8rem; }
+  .brand img { display: block; width: 150px; height: auto; }
+  @media (prefers-color-scheme: dark) { .brand { margin-left: 0; } }
+
+  h1 { margin: 0; font-size: clamp(1.7rem, 5vw, 2.15rem); line-height: 1.2; font-weight: 700; letter-spacing: -.01em; text-wrap: balance; }
+  .meta { margin: .45rem 0 0; color: var(--ink-3); font-size: .9rem; }
+  h2 { margin: 2.4rem 0 .6rem; font-size: 1.18rem; line-height: 1.35; font-weight: 700; text-wrap: balance; }
+  p, ul { margin: 0 0 .9rem; color: var(--ink-2); max-width: 65ch; }
+  ul { padding-left: 1.2rem; }
+  li { margin: .3rem 0; }
+  li::marker { color: var(--ink-3); }
+  strong { color: var(--ink); font-weight: 500; }
+  a { color: var(--accent); font-weight: 500; text-underline-offset: .18em; overflow-wrap: anywhere; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+
+  .short { margin: 1.8rem 0 0; padding: 1.1rem 1.25rem; border-radius: 12px; background: var(--tint); }
+  .short h2 { margin: 0 0 .5rem; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .short ul { margin: 0; }
+
+  dl { margin: 0 0 .9rem; display: grid; gap: .9rem; }
+  dt { color: var(--ink); font-weight: 500; }
+  dd { margin: .15rem 0 0; color: var(--ink-2); max-width: 65ch; }
+
+  .contact { margin-top: 2.6rem; padding-top: 1.4rem; border-top: 1px solid var(--rule); }
+  .contact p { margin: 0 0 .35rem; }
+  footer { max-width: 46rem; margin: 1.2rem auto 0; text-align: center; color: rgba(255, 255, 255, .84); font-size: .84rem; }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand"><img src="/images/logo/STM_Mexa_logo.svg" alt="STM MEXA"></div>
+  <h1>Privacy Policy</h1>
+  <p class="meta">STM MEXA mobile app and web app · Last updated 29 October 2026</p>
+
+  <section class="short" aria-labelledby="short">
+    <h2 id="short">In short</h2>
+    <ul>
+      <li>Your company gives you your MEXA account. We use your account details and your company’s machine records only to run MEXA for your company.</li>
+      <li>We do not sell your data, show ads, or track you across other apps or websites.</li>
+      <li>The AI assistant is off unless your company turns it on, and the phone app asks for your agreement before your first question goes to the AI service.</li>
+      <li>To have your account deleted, ask your company admin or write to us.</li>
+    </ul>
+  </section>
+
+  <h2>Who we are</h2>
+  <p>STM MEXA is a machine-monitoring service for CNC workshops, provided by S&amp;T Machinery (STM CNC) — “we” and “us” in this policy. It covers the STM MEXA app for iPhone, iPad and Android, and the STM MEXA web app.</p>
+  <p>Your employer (“your company”) signs up for MEXA, creates your account and decides what you can see. For the records your company keeps in MEXA, we act on your company’s instructions.</p>
+
+  <h2>What we collect</h2>
+  <dl>
+    <div>
+      <dt>Your account</dt>
+      <dd>Your name, email address, company, plant and role, entered by your company admin. Your password is kept only in a scrambled form (a hash) that no one, including us, can read.</dd>
+    </div>
+    <div>
+      <dt>Sign-in and change records</dt>
+      <dd>When you sign in: the time, your IP address and the type of device or browser. Changes made in MEXA are recorded with who made them and when, so your company can see what changed.</dd>
+    </div>
+    <div>
+      <dt>Your company’s records</dt>
+      <dd>Machines, production counts, OEE, alarms, downtime, maintenance tickets, programs, shifts and the names of operators — sent by your company’s machines or entered by its people.</dd>
+    </div>
+    <div>
+      <dt>Questions to the AI assistant</dt>
+      <dd>Only when your company has turned it on — and, in the phone app, you have agreed. See below.</dd>
+    </div>
+    <div>
+      <dt>On your phone</dt>
+      <dd>The app keeps your sign-in in the phone’s secure storage (iOS Keychain or Android Keystore) and remembers your light or dark choice and your AI agreement.</dd>
+    </div>
+  </dl>
+  <p>We do not collect your location, contacts, photos, camera, microphone or files. The app contains no advertising or analytics tools.</p>
+
+  <h2>How we use it</h2>
+  <ul>
+    <li>to sign you in and keep your account and your company’s data secure;</li>
+    <li>to show your company’s machines, reports and alerts;</li>
+    <li>to send the emails you ask for, such as a password reset or a large report;</li>
+    <li>to answer the questions you ask the AI assistant;</li>
+    <li>to give support and fix problems.</li>
+  </ul>
+  <p>We do not use your data for advertising, and we never sell it.</p>
+
+  <h2 id="ai">The AI assistant (Mexa AI)</h2>
+  <p>The assistant is off unless your company turns it on, and before your first question the phone app asks for your agreement. When you ask, MEXA sends your question, with the company records needed to answer it — such as machine names, production figures and operator names — to Claude, the AI service of Anthropic, PBC. Anthropic uses them only to write the answer; under <a href="https://www.anthropic.com/legal/commercial-terms" rel="noopener">Anthropic’s commercial terms</a> they are not used to train its AI models.</p>
+  <p>Your conversation is not stored on our servers: we keep only how many questions each person asks per day, for your company’s daily allowance. The app keeps the conversation until you start a new chat, sign out or close the app. If you report an answer as wrong or offensive, that answer and your question are kept in your company’s activity log, so we and your company admin can look into it.</p>
+  <p>You can take your agreement back at any time in the phone app, under Profile → Privacy &amp; support.</p>
+
+  <h2>Who can see your data</h2>
+  <ul>
+    <li><strong>Your company.</strong> Your company’s admins can see the accounts and records of your company. People in other companies cannot.</li>
+    <li><strong>Service providers who run MEXA for us:</strong> our cloud hosting provider (servers and database), our email provider (password-reset and report emails), and Anthropic for the AI assistant — only when it is on and you have agreed. They may use the data only to provide their service to us.</li>
+    <li><strong>Authorities,</strong> when the law requires it.</li>
+  </ul>
+
+  <h2>How your data is protected</h2>
+  <p>Everything between the app and our servers travels encrypted (HTTPS). Each company’s records are kept apart, and what each person can see is limited by the role their company gives them. If your company runs MEXA on its own server, its records stay on that server and your company looks after them.</p>
+
+  <h2>How long we keep it</h2>
+  <ul>
+    <li><strong>Your account:</strong> while your company uses MEXA and your account is active. When your account is deleted, your personal details are removed within 30 days.</li>
+    <li><strong>Your company’s records, sign-in and change records:</strong> while your company uses MEXA. They are deleted when your company asks or its subscription ends, unless the law requires us to keep them longer.</li>
+    <li><strong>AI conversations:</strong> not stored on our servers, except an answer you report.</li>
+  </ul>
+
+  <h2 id="delete">Your choices and rights</h2>
+  <ul>
+    <li>See your account details in the app, under Profile.</li>
+    <li>Ask us to correct or delete your personal data: in the app, go to Profile → Privacy &amp; support → Delete my account, or write to us. Your account belongs to your company, so we may confirm the request with your company admin.</li>
+    <li>Take back your agreement for the AI assistant at any time (Profile → Privacy &amp; support).</li>
+    <li>If you have a complaint, write to us first. You can also complain to the data protection authority where you live — in India, the Data Protection Board of India.</li>
+  </ul>
+
+  <h2>Children</h2>
+  <p>MEXA is a work tool for adults. It is not meant for children, and we do not knowingly collect data from anyone under 18.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>When we change this policy, we update this page and the date at the top. For important changes, we also tell you in the app.</p>
+
+  <div class="contact">
+    <h2 id="contact" style="margin-top:0">Contact us</h2>
+    <p>S&amp;T Machinery (STM CNC)</p>
+    <p><a href="mailto:enquiry.lead.mfg@stengineers.com">enquiry.lead.mfg@stengineers.com</a></p>
+  </div>
+</main>
+<footer>© STM MEXA</footer>
+</body>
+</html>
