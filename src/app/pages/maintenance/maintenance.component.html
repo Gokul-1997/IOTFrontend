@@ -100,7 +100,7 @@
           <ng-container *ngIf="tickets.length > 0; else noTickets">
             <tr *ngFor="let t of tickets" class="is-clickable" (click)="openTicket(t)">
               <td class="strong">{{ t.machine_serial_no }}</td>
-              <td class="wrap"><button type="button" class="row-link" (click)="$event.stopPropagation(); openTicket(t)">{{ t.title }}</button></td>
+              <td class="wrap"><button type="button" class="row-link" (click)="$event.stopPropagation(); openTicket(t)"><span class="text-[var(--mexa-ink-3)]">#{{ t.id }}</span> {{ t.title }}</button></td>
               <td class="col-lg">{{ t.issue_type | enumLabel }}</td>
               <td class="col-md"><span class="mexa-badge" [ngClass]="priorityClass(t.priority)">{{ t.priority | enumLabel }}</span></td>
               <td class="col-md">{{ t.assigned_to_name || '--' }}</td>
@@ -111,7 +111,7 @@
           <ng-template #noTickets>
             <tr><td colspan="7">
               <div class="mexa-empty">
-              No tickets
+              {{ ticketFilter === 'open' ? 'No open tickets' : 'No tickets' }}
               </div>
             </td></tr>
           </ng-template>
@@ -119,6 +119,9 @@
       </table>
       </div>
     </div>
+    <app-mexa-pager *ngIf="ticketPagination.total > ticketLimit || ticketPage > 1" [page]="ticketPage" [totalPages]="ticketPagination.totalPages || 1"
+                    [total]="ticketPagination.total || tickets.length" [shown]="tickets.length" [limit]="ticketLimit" [sizes]="[20, 50, 100]"
+                    (pageChange)="ticketPage = $event; loadTickets()" (limitChange)="ticketLimit = $event; ticketPage = 1; loadTickets()"></app-mexa-pager>
   </div>
 </div>
 
@@ -145,10 +148,19 @@
           <span class="mexa-badge mexa-badge-neutral">{{ selectedTicket.issue_type | enumLabel }}</span>
         </div>
 
-        <p *ngIf="selectedTicket.description" class="ui-section-hint">{{ selectedTicket.description }}</p>
+        <p *ngIf="selectedTicket.description" class="ui-section-hint whitespace-pre-line">{{ selectedTicket.description }}</p>
 
-        <div *ngIf="selectedTicket.alarm_id" class="ui-alert ui-alert-error">
-          Raised from alarm: {{ selectedTicket.alarm_type }} ({{ selectedTicket.alarm_severity }}) &mdash; {{ selectedTicket.alarm_message }}
+        <!-- the alarm it was raised from, said once (shared/alarm-text.ts), and a way back to it -->
+        <div *ngIf="selectedTicket.alarm_id" class="mt-alarm" [class.is-critical]="sevOf(selectedTicket.alarm_severity) === 'critical'">
+          <div class="mt-alarm-head">
+            <span>Raised from an alarm</span>
+            <span>{{ SEV[sevOf(selectedTicket.alarm_severity)].label }}</span>
+            <span *ngIf="selectedTicket.alarm_code">{{ selectedTicket.alarm_code }}</span>
+            <span *ngIf="selectedTicket.alarm_started_at">{{ selectedTicket.alarm_started_at | date:'d MMM y, h:mm a' }}</span>
+            <span>{{ selectedTicket.alarm_is_resolved ? 'Alarm resolved' : 'Alarm open' }}</span>
+            <a routerLink="/alarms" [queryParams]="{ alarm_id: selectedTicket.alarm_id }">View alarm</a>
+          </div>
+          <p class="mt-alarm-text">{{ alarmText({ message: selectedTicket.alarm_message, alarm_type: selectedTicket.alarm_type }) || 'No description from the machine' }}</p>
         </div>
 
         <!-- Assign -->

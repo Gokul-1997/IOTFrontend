@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures/auth';
+import { test, expect, seedAuth } from './fixtures/auth';
 
 /*
  * Machine Alarms (/alarms), 29 Oct 2026 — the user: "this page looks
@@ -8,8 +8,11 @@ import { test, expect } from './fixtures/auth';
  *  - the text is said once, the Code column holds only the code;
  *  - Status says still on / cleared / resolved, Started says for how long;
  *  - All | Critical | Non-critical with counts narrows the list (severity=);
- *  - Resolve opens THE dialog and sends the note; a ticket becomes
- *    "Ticket raised", also after a reload (ticket_id);
+ *  - Resolve opens THE dialog and sends the note;
+ *  - Create ticket opens the ticket form filled in from the alarm, with
+ *    Priority and Assign to; the row then shows the ticket and its status
+ *    and opens it in Maintenance; a ticket someone already raised is shown,
+ *    not made twice (409 TICKET_EXISTS); the buttons follow the permissions;
  *  - the machine filter is the flat list with search.
  */
 
@@ -30,7 +33,7 @@ const ROWS = [
     alarm_type: 'RELEASE EMERGENCY', message: 'RELEASE EMERGENCY', started_at: ago(2 * 24 * 60 + 190) }),
   alarm({ id: 103, machine_id: 8, machine_serial_no: 'VMC - 8 - F', alarm_code: 'OT0500',
     alarm_type: '(Y)+ OVERTRAVEL ( SOFT 1 ) (axis 2)', message: '(Y)+ OVERTRAVEL ( SOFT 1 ) (axis 2)',
-    started_at: ago(130), ended_at: ago(126), ticket_id: 77 }),
+    started_at: ago(130), ended_at: ago(126), ticket_id: 77, ticket_status: 'IN_PROGRESS' }),
   alarm({ id: 104, machine_id: 8, machine_serial_no: 'VMC - 8 - F', alarm_code: null,
     alarm_type: 'UNSPECIFIED', message: 'UNSPECIFIED', started_at: ago(131) }),
   alarm({ id: 105, machine_id: 1, machine_serial_no: 'VMC - 1 - F', alarm_code: 'EX1201',
@@ -79,7 +82,8 @@ test('each alarm said once, its code apart, how bad, and whether it is still on'
   await expect(row(page, 1).locator('td').nth(4)).toContainText('for 2 days 3 h');
   await expect(row(page, 2).locator('td').nth(4)).toContainText('lasted 4 min');
   await expect(row(page, 2).locator('td').nth(5)).toHaveText(/Cleared/);
-  await expect(row(page, 2)).toContainText('Ticket raised');                 // from ticket_id, after a reload too
+  await expect(row(page, 2).getByRole('link', { name: 'Ticket 77, In progress, open in Maintenance' })).toHaveAttribute('href', '/maintenance?ticket_id=77');
+  await expect(row(page, 2).getByRole('button', { name: 'Create ticket' })).toHaveCount(0);   // never a second one
   await expect(row(page, 3).locator('td').nth(1)).toHaveText('No description from the machine');
   await expect(row(page, 6).locator('td').nth(1)).toHaveText(/Machine stopped sending data\s*Offline/);
 
@@ -117,38 +121,114 @@ test('each alarm said once, its code apart, how bad, and whether it is still on'
   await page.screenshot({ path: 'test-results/machine-alarms-dark.png' });
 });
 
-test('Resolve opens the dialog, sends the note and reloads; a ticket becomes "Ticket raised"', async ({ authedPage: page }) => {
+test('Create ticket: the form filled in from the alarm, assigned, and the row shows the ticket', async ({ authedPage: page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const asked: URL[] = [];
-  const resolved: any[] = [];
   const tickets: any[] = [];
   await openPage(page, asked);
   // after the page's catch-all: the last route registered wins
-  await page.route(/\/api\/alarms\/\d+\/resolve$/, (r: any) => {
-    resolved.push({ url: r.request().url(), body: r.request().postDataJSON() });
-    return json({ success: true, data: {} })(r);
-  });
+  await page.route('**/api/tickets/assignees', json({ success: true, data: [{ id: 3, username: 'ravi' }, { id: 4, username: 'kumar' }] }));
   await page.route(/\/api\/tickets(\?.*)?$/, (r: any) => {
     if (r.request().method() !== 'POST') return json({ success: true, data: [] })(r);
     tickets.push(r.request().postDataJSON());
-    return json({ success: true, data: { id: 501 } }, 201)(r);
+    return json({ success: true, data: { id: 501, status: 'ASSIGNED' } }, 201)(r);
   });
 
   const first = row(page, 0);
   await first.getByRole('button', { name: 'Create ticket' }).click();
-  await expect(first).toContainText('Ticket raised');
-  expect(tickets).toEqual([expect.objectContaining({
-    alarm_id: 101, machine_id: 25, issue_type: 'ALARM', priority: 'MEDIUM',
-    title: 'ATC INTERRUPTED RESET THE ALARM CALL M80 IN MDI MODE on HMC - 7 - F'
-  })]);
+  const form = page.getByRole('dialog', { name: 'Create maintenance ticket' });
+  await expect(form).toContainText('From the alarm on HMC - 7 - F · EX1062');
+  await expect(form.getByLabel('Title')).toHaveValue('ATC INTERRUPTED RESET THE ALARM CALL M80 IN MDI MODE on HMC - 7 - F');
+  await expect(form.getByLabel('Priority')).toHaveValue('MEDIUM');
+  await expect(form.getByLabel('Description')).toHaveValue(/^Alarm: ATC INTERRUPTED RESET THE ALARM CALL M80 IN MDI MODE\nCode: EX1062\nSeverity: Non-critical\nStarted: /);
+  await form.getByLabel('Assign to').selectOption({ label: 'ravi' });
+  await form.getByLabel('Priority').selectOption('HIGH');
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: 'test-results/machine-alarms-ticket.png' });
 
+  // a title is needed
+  await form.getByLabel('Title').fill('  ');
+  await form.getByRole('button', { name: 'Create ticket' }).click();
+  await expect(form.getByText('Enter a title.')).toBeVisible();
+  expect(tickets).toHaveLength(0);
+  await form.getByLabel('Title').fill('ATC reset alarm on HMC - 7 - F');
+  await form.getByRole('button', { name: 'Create ticket' }).click();
+
+  await expect(form).toHaveCount(0);
+  expect(tickets).toEqual([expect.objectContaining({
+    alarm_id: 101, machine_id: 25, issue_type: 'ALARM', priority: 'HIGH', assigned_to: 3,
+    title: 'ATC reset alarm on HMC - 7 - F'
+  })]);
+  await expect(first.getByRole('link', { name: 'Ticket 501, Assigned, open in Maintenance' })).toBeVisible();
+  await expect(first.getByRole('button', { name: 'Create ticket' })).toHaveCount(0);
+  await expect(page.getByText('Ticket #501 raised')).toBeVisible();
+});
+
+test('a ticket someone already raised is shown, not made twice', async ({ authedPage: page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openPage(page, []);
+  await page.route(/\/api\/tickets(\?.*)?$/, json({ status: 'error', code: 'TICKET_EXISTS',
+    message: 'Ticket #41 is already open for this alarm', ticket_id: 41, ticket_status: 'IN_PROGRESS' }, 409));
+  await row(page, 1).getByRole('button', { name: 'Create ticket' }).click();
+  const form = page.getByRole('dialog', { name: 'Create maintenance ticket' });
+  await form.getByRole('button', { name: 'Create ticket' }).click();
+  await expect(form).toHaveCount(0);
+  await expect(row(page, 1).getByRole('link', { name: 'Ticket 41, In progress, open in Maintenance' })).toBeVisible();
+  await expect(page.getByText('Ticket #41 is already open for this alarm')).toBeVisible();
+});
+
+test('a ticket that could not be raised says why in the form and keeps what was typed', async ({ authedPage: page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openPage(page, []);
+  await page.route(/\/api\/tickets(\?.*)?$/, json({ status: 'error', message: 'Machine not found in your plant' }, 404));
+  await row(page, 0).getByRole('button', { name: 'Create ticket' }).click();
+  const form = page.getByRole('dialog', { name: 'Create maintenance ticket' });
+  await form.getByLabel('Title').fill('Kept');
+  await form.getByRole('button', { name: 'Create ticket' }).click();
+  await expect(form.getByRole('alert')).toHaveText('Machine not found in your plant');
+  await expect(form.getByLabel('Title')).toHaveValue('Kept');
+});
+
+test('the buttons follow the permissions: Resolve is page:alarms:resolve, a ticket is page:maintenance:create', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const as = (permissions: string[]) => seedAuth(page, { roles: ['SUPERVISOR'], user_type: 'company_user', permissions, company_permissions: [] });
+  await as(['page:alarms:view', 'page:alarms:resolve']);
+  await openPage(page, []);
+  await expect(row(page, 0).getByRole('button', { name: 'Resolve' })).toBeVisible();
+  await expect(row(page, 0).getByRole('button', { name: 'Create ticket' })).toHaveCount(0);
+  await expect(row(page, 2)).toContainText('#77 · In progress');
+  await expect(row(page, 2).getByRole('link')).toHaveCount(0);          // cannot open Maintenance: the number, not a link
+
+  await page.evaluate(() => localStorage.clear());
+  await as(['page:alarms:view', 'page:maintenance:view', 'page:maintenance:create']);
+  await page.reload();
+  await expect(page.locator('table.al-table tbody tr')).toHaveCount(ROWS.length);
+  await expect(row(page, 0).getByRole('button', { name: 'Create ticket' })).toBeVisible();
+  await expect(row(page, 0).getByRole('button', { name: 'Resolve' })).toHaveCount(0);
+
+  await page.evaluate(() => localStorage.clear());
+  await as(['page:alarms:view']);
+  await page.reload();
+  await expect(page.locator('table.al-table tbody tr')).toHaveCount(ROWS.length);
+  await expect(page.locator('table.al-table thead th')).toHaveCount(6);   // nothing to do: no Action column
+});
+
+test('Resolve opens the dialog, sends the note and reloads', async ({ authedPage: page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const asked: URL[] = [];
+  const resolved: any[] = [];
+  await openPage(page, asked);
+  await page.route(/\/api\/alarms\/\d+\/resolve$/, (r: any) => {
+    resolved.push({ url: r.request().url(), body: r.request().postDataJSON() });
+    return json({ success: true, data: {} })(r);
+  });
+
+  const first = row(page, 0);
   await first.getByRole('button', { name: 'Resolve' }).click();
   const dialog = page.getByRole('dialog', { name: 'Resolve alarm' });
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('HMC - 7 - F · EX1062');
   await expect(dialog).toContainText('ATC INTERRUPTED RESET THE ALARM CALL M80 IN MDI MODE');
-  await page.waitForTimeout(200);
-  await page.screenshot({ path: 'test-results/machine-alarms-resolve.png' });
   await dialog.getByLabel(/What was done/).fill('Reset the ATC and referenced the magazine');
   const loads = asked.length;
   await dialog.getByRole('button', { name: 'Mark resolved' }).click();

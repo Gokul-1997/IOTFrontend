@@ -120,21 +120,26 @@
             </ng-template>
           </td>
           <td *ngIf="showActions" class="actions">
-            <!-- resolving is its own permission (page:alarms:resolve); the API refuses it otherwise -->
             <div *ngIf="!alarm.is_resolved" class="ui-btn-row">
-              <span *ngIf="ticketOf(alarm) as ticket; else raise" class="al-ticket"
-                    [title]="ticket > 0 ? 'Maintenance ticket #' + ticket : 'Maintenance ticket raised'">
-                <span class="material-icons" aria-hidden="true">assignment_turned_in</span>Ticket raised
-              </span>
+              <!-- the ticket still being worked on: its number and status, opening it in Maintenance -->
+              <ng-container *ngIf="openTicketOf(alarm) as ticket; else raise">
+                <a *ngIf="canOpenTickets; else ticketText" class="al-ticket" routerLink="/maintenance" [queryParams]="{ ticket_id: ticket }"
+                   [attr.aria-label]="'Ticket ' + ticket + ', ' + (alarm.ticket_status | enumLabel) + ', open in Maintenance'">
+                  <span class="material-icons" aria-hidden="true">assignment</span>#{{ ticket }} · {{ alarm.ticket_status | enumLabel }}
+                </a>
+                <ng-template #ticketText>
+                  <span class="al-ticket"><span class="material-icons" aria-hidden="true">assignment</span>#{{ ticket }} · {{ alarm.ticket_status | enumLabel }}</span>
+                </ng-template>
+              </ng-container>
               <ng-template #raise>
-                <button type="button" class="ux-icon-btn al-raise" (click)="createTicketFromAlarm(alarm)"
-                        [disabled]="creatingTicketId === alarm.id"
+                <!-- creating a ticket is Maintenance's own permission (page:maintenance:create), as the API checks -->
+                <button *ngIf="canRaiseTicket" type="button" class="ux-icon-btn al-raise" (click)="openTicketForm(alarm)"
                         aria-label="Create ticket" [attr.title]="'Create a maintenance ticket for ' + alarm.machine_serial_no">
-                  <span *ngIf="creatingTicketId !== alarm.id" class="material-icons" aria-hidden="true">post_add</span>
-                  <span *ngIf="creatingTicketId === alarm.id" class="ui-spinner" aria-hidden="true"></span>
+                  <span class="material-icons" aria-hidden="true">post_add</span>
                 </button>
               </ng-template>
-              <button type="button" class="al-resolve" (click)="openResolve(alarm)">
+              <!-- resolving is its own permission (page:alarms:resolve); the API refuses it otherwise -->
+              <button *ngIf="canResolve" type="button" class="al-resolve" (click)="openResolve(alarm)">
                 <span class="material-icons" aria-hidden="true">done_all</span>Resolve
               </button>
             </div>
@@ -184,6 +189,74 @@
           <span *ngIf="resolveSaving" class="ui-spinner" aria-hidden="true"></span>
           {{ resolveSaving ? 'Resolving…' : 'Mark resolved' }}
         </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── RAISE A TICKET ── -->
+<div *ngIf="ticketFor" class="ui-overlay">
+  <div class="ui-dialog ui-dialog-lg" role="dialog" aria-modal="true" aria-labelledby="alTicketTitle">
+    <div class="ui-dialog-header">
+      <div>
+        <h2 id="alTicketTitle" class="ui-dialog-title">Create maintenance ticket</h2>
+        <p class="ui-dialog-subtitle">From the alarm on {{ ticketFor.machine_serial_no }}<ng-container *ngIf="ticketFor.alarm_code"> · {{ ticketFor.alarm_code }}</ng-container></p>
+      </div>
+      <button type="button" class="ui-close" (click)="closeTicketForm()" aria-label="Close without saving" [disabled]="ticketSaving">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <form (ngSubmit)="raiseTicket()" class="contents" novalidate>
+      <div class="ui-dialog-body">
+        <div *ngIf="ticketError" class="ui-alert ui-alert-error mb-4" role="alert">{{ ticketError }}</div>
+        <div class="al-quote" [ngClass]="'al-' + sevOf(ticketFor.severity)">
+          <span class="al-sev" [ngClass]="'is-' + sevOf(ticketFor.severity)">
+            <span class="material-icons" aria-hidden="true">{{ SEV[sevOf(ticketFor.severity)].icon }}</span>{{ SEV[sevOf(ticketFor.severity)].label }}
+          </span>
+          <p>{{ alarmText(ticketFor) || 'No description from the machine' }}</p>
+          <p class="al-sub">Started {{ ticketFor.started_at | date:dateFormat(ticketFor.started_at) }}<ng-container *ngIf="durationText(ticketFor) as span">, {{ span }}</ng-container></p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="sm:col-span-2">
+            <label class="ui-label" for="al-tk-title">Title<span class="ui-req" aria-hidden="true">*</span></label>
+            <input id="al-tk-title" name="title" class="ui-input" maxlength="200" aria-required="true" [(ngModel)]="ticketForm.title"
+                   [class.is-invalid]="ticketMissingTitle" [attr.aria-invalid]="ticketMissingTitle ? true : null"
+                   [attr.aria-describedby]="ticketMissingTitle ? 'alTkTitleErr' : null" />
+            <p *ngIf="ticketMissingTitle" id="alTkTitleErr" class="ui-error" role="alert">Enter a title.</p>
+          </div>
+          <div>
+            <label class="ui-label" for="al-tk-priority">Priority</label>
+            <select id="al-tk-priority" name="priority" class="ui-input" [(ngModel)]="ticketForm.priority">
+              <option *ngFor="let p of priorities" [value]="p">{{ p | enumLabel }}</option>
+            </select>
+          </div>
+          <div *ngIf="assignees?.length">
+            <label class="ui-label" for="al-tk-assign">Assign to</label>
+            <select appSearchSelect id="al-tk-assign" name="assigned_to" class="ui-input" [(ngModel)]="ticketForm.assigned_to">
+              <option [ngValue]="null">Unassigned</option>
+              <option *ngFor="let u of assignees" [ngValue]="u.id">{{ u.username }}</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="ui-label" for="al-tk-desc">Description</label>
+            <textarea id="al-tk-desc" name="description" rows="4" class="ui-input" [(ngModel)]="ticketForm.description"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="ui-dialog-footer is-split">
+        <p class="ui-hint !mt-0"><span class="ui-req" aria-hidden="true">*</span> Required fields</p>
+        <div class="flex items-center gap-2">
+          <button type="button" class="ui-btn ui-btn-ghost" (click)="closeTicketForm()" [disabled]="ticketSaving">Cancel</button>
+          <button type="submit" class="ui-btn ui-btn-primary" [disabled]="ticketSaving">
+            <span *ngIf="ticketSaving" class="ui-spinner" aria-hidden="true"></span>
+            {{ ticketSaving ? 'Creating…' : 'Create ticket' }}
+          </button>
+        </div>
       </div>
     </form>
   </div>

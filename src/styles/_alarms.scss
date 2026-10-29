@@ -109,11 +109,15 @@ app-alarms {
   .al-resolve:hover { background: var(--tbl-row-selected); border-color: var(--tbl-accent); }
   .al-raise { width: 30px; height: 30px; }
   .al-raise .ui-spinner { width: 16px; height: 16px; }
+  /* the open ticket: its number and status, a link into Maintenance */
   .al-ticket {
-    display: inline-flex; align-items: center; gap: .25rem; padding: 0 .25rem;
-    color: var(--tbl-good); font-size: .76rem; font-weight: 600; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: .25rem; min-height: 30px; padding: 0 .55rem;
+    border-radius: 8px; background: var(--mexa-row-alt); color: var(--mexa-ink-2);
+    font-size: .76rem; font-weight: 600; white-space: nowrap; text-decoration: none;
   }
-  .al-ticket .material-icons { font-size: 16px; width: 16px; height: 16px; }
+  .al-ticket .material-icons { font-size: 16px; width: 16px; height: 16px; color: var(--tbl-accent); }
+  a.al-ticket:hover { background: var(--tbl-row-selected); color: var(--tbl-accent); }
+  a.al-ticket:focus-visible { outline: 2px solid var(--tbl-accent); outline-offset: 1px; }
 
   /* ── the Resolve dialog: which alarm, said once more ── */
   .al-quote {

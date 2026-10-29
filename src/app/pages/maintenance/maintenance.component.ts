@@ -1,6 +1,7 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MaintenanceService } from '../../core/services/maintenance.service';
 import { TicketService } from '../../core/services/ticket.service';
 import { MachinesService } from '../machines/machines.service';
@@ -9,11 +10,15 @@ import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { EnumLabelPipe } from '../../shared/enum-label.pipe';
 import { SearchSelectDirective } from '../../shared/search-select.directive';
+import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { takeLinkedRecord } from '../../shared/linked-record';
+import { alarmText } from '../../shared/alarm-text';
+import { SEVERITY, severityOf } from '../../shared/severity';
 
 @Component({
   selector: 'app-maintenance',
   standalone: true,
-  imports: [CommonModule, FormsModule, EnumLabelPipe, SearchSelectDirective],
+  imports: [CommonModule, FormsModule, RouterLink, EnumLabelPipe, SearchSelectDirective, MexaPagerComponent],
   templateUrl: './maintenance.component.html',
   styles: [`
     /* a block, not the default inline: the page's blocks inside an inline host
@@ -28,6 +33,11 @@ import { SearchSelectDirective } from '../../shared/search-select.directive';
     tr.is-clickable { cursor: pointer; }
     .mt-history { border-left: 2px solid var(--mexa-rule); padding-left: .75rem; display: grid; gap: .5rem; margin-top: .5rem; font-size: .8rem; }
     .mt-history .muted { color: var(--mexa-ink-3); }
+    .mt-alarm { padding: .7rem .9rem; border-radius: 8px; background: var(--mexa-row-alt); border-left: 3px solid #d97706; font-size: .84rem; }
+    .mt-alarm.is-critical { border-left-color: #dc2626; }
+    .mt-alarm-head { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .75rem; color: var(--mexa-ink-3); font-size: .76rem; font-weight: 600; }
+    .mt-alarm-text { margin: .3rem 0 0; color: var(--mexa-ink); font-weight: 500; }
+    .mt-alarm a { color: var(--tbl-accent); font-weight: 600; margin-left: auto; }
   `]
 })
 export class MaintenanceComponent implements OnInit {
@@ -55,6 +65,12 @@ export class MaintenanceComponent implements OnInit {
   // ── Tickets ──────────────────────────────────────────────
   tickets: any[] = [];
   ticketFilter: 'open' | 'all' = 'open';
+  /* Paged by the API: Open asked for the newest 20 tickets of any status and
+     hid the finished ones here, so an open ticket older than those 20 never
+     showed (29 Oct 2026). */
+  ticketPage = 1;
+  ticketLimit = 20;
+  ticketPagination: any = {};
   showTicketForm = false;
   ticketForm: any = blankTicket();
   ticketMissing = { machine: false, title: false };
@@ -78,6 +94,9 @@ export class MaintenanceComponent implements OnInit {
   readonly priorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
   readonly ticketStatuses = ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
 
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
   constructor(
     private svc: MaintenanceService,
     private ticketSvc: TicketService,
@@ -89,6 +108,9 @@ export class MaintenanceComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    // a ticket opened from Machine Alarms (/maintenance?ticket_id=12)
+    const linked = takeLinkedRecord(this.route, this.router, ['ticket_id']).ticket_id;
+    if (linked) this.openTicket({ id: linked });
     this.loadTickets();
     this.loadUpcoming();
     this.ticketSvc.getAssignees().subscribe({
@@ -112,13 +134,16 @@ export class MaintenanceComponent implements OnInit {
   loadTickets() {
     this.loading = true;
     this.cdr.markForCheck();
-    const params = this.ticketFilter === 'open' ? {} : {};
+    const params: any = { page: this.ticketPage, limit: this.ticketLimit };
+    if (this.ticketFilter === 'open') params.open = true;
     this.ticketSvc.getTickets(params).subscribe({
       next: (r: any) => {
         const rows = r.data || [];
+        // an API from before open=true: it still says which are open
         this.tickets = this.ticketFilter === 'open'
           ? rows.filter((t: any) => t.status !== 'RESOLVED' && t.status !== 'CLOSED')
           : rows;
+        this.ticketPagination = r.pagination || {};
         this.loading = false;
         this.cdr.markForCheck();
       },
@@ -126,7 +151,12 @@ export class MaintenanceComponent implements OnInit {
     });
   }
 
-  setTicketFilter(f: 'open' | 'all') { this.ticketFilter = f; this.loadTickets(); }
+  setTicketFilter(f: 'open' | 'all') { this.ticketFilter = f; this.ticketPage = 1; this.loadTickets(); }
+
+  /* ── the alarm a ticket was raised from ── */
+  readonly alarmText = alarmText;
+  readonly SEV = SEVERITY;
+  readonly sevOf = severityOf;
 
   openTicketForm() {
     this.ticketForm = blankTicket();
@@ -166,23 +196,38 @@ export class MaintenanceComponent implements OnInit {
   }
 
   openTicket(t: any) {
-    this.ticketSvc.getTicketById(t.id).subscribe({ next: (r: any) => { this.selectedTicket = r.data; this.statusNote = ''; this.cdr.markForCheck(); } });
+    this.ticketSvc.getTicketById(t.id).subscribe({
+      next: (r: any) => { this.selectedTicket = r.data; this.statusNote = ''; this.cdr.markForCheck(); },
+      error: err => { this.toast.error(err?.error?.message || 'Could not open this ticket.'); this.cdr.markForCheck(); }
+    });
   }
 
   closeTicketDetail() { this.selectedTicket = null; this.statusNote = ''; }
 
   changeTicketStatus(status: string) {
     if (!this.selectedTicket) return;
+    const fromAlarm = this.selectedTicket.alarm_id && !this.selectedTicket.alarm_is_resolved && (status === 'RESOLVED' || status === 'CLOSED');
     this.ticketSvc.updateStatus(this.selectedTicket.id, status, this.statusNote || undefined).subscribe({
-      next: () => { this.openTicket(this.selectedTicket); this.statusNote = ''; this.cdr.markForCheck(); this.loadTickets(); }
+      next: () => {
+        // the API resolves the alarm a ticket was raised from along with it
+        this.toast.success(fromAlarm ? `Ticket ${this.statusWord(status)}; its alarm is resolved too` : `Ticket ${this.statusWord(status)}`);
+        this.openTicket(this.selectedTicket); this.statusNote = ''; this.cdr.markForCheck(); this.loadTickets();
+      },
+      /* a refused change (no Edit permission, a ticket gone) used to say nothing */
+      error: err => { this.toast.error(err?.error?.message || 'Could not change the ticket status.'); this.cdr.markForCheck(); }
     });
   }
 
   assignTicketTo(userId: number) {
     if (!this.selectedTicket || !userId) return;
     this.ticketSvc.assignTicket(this.selectedTicket.id, userId).subscribe({
-      next: () => { this.openTicket(this.selectedTicket); this.cdr.markForCheck(); this.loadTickets(); }
+      next: () => { this.toast.success('Ticket assigned'); this.openTicket(this.selectedTicket); this.cdr.markForCheck(); this.loadTickets(); },
+      error: err => { this.toast.error(err?.error?.message || 'Could not assign the ticket.'); this.cdr.markForCheck(); }
     });
+  }
+
+  private statusWord(status: string): string {
+    return ({ OPEN: 're-opened', ASSIGNED: 'assigned', IN_PROGRESS: 'in progress', RESOLVED: 'resolved', CLOSED: 'closed' } as any)[status] || 'updated';
   }
 
   ticketStatusClass(s: string) {

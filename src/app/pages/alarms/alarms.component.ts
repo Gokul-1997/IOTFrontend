@@ -15,6 +15,9 @@ import { takeLinkedRecord } from '../../shared/linked-record';
 import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
 import { StateComponent } from '../../shared/state/state.component';
 import { SearchSelectDirective } from '../../shared/search-select.directive';
+import { EnumLabelPipe } from '../../shared/enum-label.pipe';
+import { alarmText, isOpenTicket } from '../../shared/alarm-text';
+import { RouterLink } from '@angular/router';
 
 /** The same alarms counted without the severity filter (GET /api/alarms → summary). */
 interface AlarmSummary { total: number; critical: number; still_on: number; machines: number; }
@@ -31,8 +34,7 @@ interface AlarmSummary { total: number; critical: number; still_on: number; mach
  *    machine has cleared it, and Started says for how long;
  *  - every row had two grey buttons and Resolve opened a text box inside
  *    the row: Resolve is one small button that opens THE dialog, and the
- *    ticket is an icon that becomes "Ticket raised" (kept after a reload,
- *    from the API's ticket_id);
+ *    ticket is an icon that opens the ticket form;
  *  - nothing said how many, or how bad: a strip above the table counts
  *    them, and All | Critical | Non-critical narrows the list;
  *  - a Machine filter, the flat list with search, as on every page.
@@ -42,7 +44,7 @@ interface AlarmSummary { total: number; critical: number; still_on: number; mach
 @Component({
   selector: 'app-alarms',
   standalone: true,
-  imports: [FilterPanelDirective, CommonModule, FormsModule, MexaPagerComponent, SkeletonRowsComponent, StateComponent, SearchSelectDirective],
+  imports: [FilterPanelDirective, CommonModule, FormsModule, RouterLink, MexaPagerComponent, SkeletonRowsComponent, StateComponent, SearchSelectDirective, EnumLabelPipe],
   templateUrl: './alarms.component.html'
 })
 export class AlarmsComponent implements OnInit {
@@ -63,8 +65,24 @@ export class AlarmsComponent implements OnInit {
   resolveSaving = false;
   resolveError = '';
 
-  ticketedAlarmIds = new Set<number>();
-  creatingTicketId: number | null = null;
+  /*
+   * Raising a ticket (29 Oct 2026, the user: "the ticket flow is not working
+   * properly"). It was one click that made an unassigned ticket nobody was
+   * told about, offered again after a reload (a second ticket for the same
+   * fault), shown to whoever could resolve alarms rather than to who may
+   * create tickets (the API refused the rest), and the alarm stayed Active
+   * after the ticket was done. Now: the ticket form, filled in from the
+   * alarm, with Priority and Assign to; the API keeps one open ticket per
+   * alarm and resolves the alarm when its ticket is resolved; the row shows
+   * the ticket and its status, and opens it in Maintenance.
+   */
+  ticketFor: any = null;
+  ticketForm = { title: '', priority: 'MEDIUM', assigned_to: null as number | null, description: '' };
+  ticketMissingTitle = false;
+  ticketSaving = false;
+  ticketError = '';
+  assignees: { id: number; username: string }[] | null = null;
+  readonly priorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 
   /** The alarm a notification opened (?alarm_id=): its row is marked and brought into view. */
   linkedAlarmId: number | null = null;
@@ -109,8 +127,12 @@ export class AlarmsComponent implements OnInit {
   /** Resolving is its own grant, as the API checks it. */
   get canResolve(): boolean { return this.auth.hasAction('alarms', 'resolve'); }
 
+  /** A ticket is Maintenance's: creating one is page:maintenance:create, as the API checks. */
+  get canRaiseTicket(): boolean { return this.auth.hasAction('maintenance', 'create'); }
+  get canOpenTickets(): boolean { return this.auth.hasAction('maintenance', 'view'); }
+
   /** The Action column: only where there is something to do. */
-  get showActions(): boolean { return this.canResolve && this.filter.is_resolved !== 'true'; }
+  get showActions(): boolean { return (this.canResolve || this.canRaiseTicket) && this.filter.is_resolved !== 'true'; }
 
   get columns(): number { return this.showActions ? 7 : 6; }
 
@@ -180,17 +202,8 @@ export class AlarmsComponent implements OnInit {
 
   /* ── what a row says ── */
 
-  /**
-   * The alarm in the machine's words, said once. Some controllers send
-   * "Alarm type: X X" — a label and the text twice; "UNSPECIFIED" is no text.
-   */
-  alarmText(alarm: any): string {
-    let text = String(alarm?.message || alarm?.alarm_type || '').replace(/\s+/g, ' ').trim();
-    text = text.replace(/^alarm type\s*:\s*/i, '');
-    const twice = /^(.{6,}?)\s+\1$/i.exec(text);
-    if (twice) text = twice[1];
-    return /^(unspecified|unknown|null|none|-+)$/i.test(text) ? '' : text;
-  }
+  /** The alarm in the machine's words, said once (shared/alarm-text.ts). */
+  alarmText(alarm: any): string { return alarmText(alarm); }
 
   /** The kind of event (Offline, Low performance) when the text does not already say it. */
   kindOf(alarm: any): string {
@@ -230,8 +243,9 @@ export class AlarmsComponent implements OnInit {
     return d && d.getFullYear() !== new Date(this.now).getFullYear() ? 'd MMM y, h:mm a' : 'd MMM, h:mm a';
   }
 
-  ticketOf(alarm: any): number | null {
-    return alarm.ticket_id ?? (this.ticketedAlarmIds.has(alarm.id) ? -1 : null);
+  /** The ticket still being worked on for this alarm, if there is one. */
+  openTicketOf(alarm: any): number | null {
+    return alarm.ticket_id && isOpenTicket(alarm.ticket_status) ? Number(alarm.ticket_id) : null;
   }
 
   /* ── resolve, in THE dialog ── */
@@ -272,30 +286,81 @@ export class AlarmsComponent implements OnInit {
     });
   }
 
-  createTicketFromAlarm(alarm: any) {
-    this.creatingTicketId = alarm.id;
+  /* ── raise a ticket, in THE dialog, filled in from the alarm ── */
+
+  openTicketForm(alarm: any): void {
+    const text = this.alarmText(alarm) || this.kindOf(alarm) || 'Alarm';
+    const when = alarm.started_at ? new Date(alarm.started_at).toLocaleString('en-IN', {
+      day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+    this.ticketFor = alarm;
+    this.ticketForm = {
+      title: `${text} on ${alarm.machine_serial_no}`.slice(0, 200),
+      priority: this.priorityFor(alarm.severity),
+      assigned_to: null,
+      description: [
+        `Alarm: ${text}`,
+        alarm.alarm_code ? `Code: ${alarm.alarm_code}` : '',
+        `Severity: ${SEVERITY[severityOf(alarm.severity)].label}`,
+        when ? `Started: ${when}` : ''
+      ].filter(Boolean).join('\n')
+    };
+    this.ticketMissingTitle = false;
+    this.ticketError = '';
     this.cdr.markForCheck();
-    const what = this.alarmText(alarm) || this.kindOf(alarm) || 'Alarm';
+    // who it can go to: asked once, when first needed; without it the ticket is raised unassigned
+    if (this.assignees === null && this.canOpenTickets) {
+      this.assignees = [];
+      this.ticketService.getAssignees().subscribe({
+        next: (r: any) => { this.assignees = r?.data || []; this.cdr.markForCheck(); },
+        error: () => { this.assignees = []; this.cdr.markForCheck(); }
+      });
+    }
+  }
+
+  closeTicketForm(): void {
+    if (this.ticketSaving) return;
+    this.ticketFor = null;
+    this.cdr.markForCheck();
+  }
+
+  raiseTicket(): void {
+    const alarm = this.ticketFor;
+    if (!alarm || this.ticketSaving) return;
+    const title = this.ticketForm.title.trim();
+    this.ticketMissingTitle = !title;
+    if (!title) { document.getElementById('al-tk-title')?.focus(); return; }
+    this.ticketSaving = true;
+    this.ticketError = '';
+    this.cdr.markForCheck();
     this.ticketService.createTicket({
       machine_id: alarm.machine_id,
       alarm_id: alarm.id,
-      title: `${what} on ${alarm.machine_serial_no}`.slice(0, 200),
-      description: alarm.message || undefined,
+      title,
+      description: this.ticketForm.description.trim() || undefined,
       issue_type: 'ALARM',
-      priority: this.priorityFor(alarm.severity)
+      priority: this.ticketForm.priority,
+      assigned_to: this.ticketForm.assigned_to || undefined
     }).subscribe({
       next: (r: any) => {
-        this.ticketedAlarmIds.add(alarm.id);
-        if (r?.data?.id) alarm.ticket_id = r.data.id;
-        this.creatingTicketId = null;
-        this.toast.success('Maintenance ticket raised');
+        this.ticketSaving = false;
+        this.ticketFor = null;
+        alarm.ticket_id = r?.data?.id ?? alarm.ticket_id;
+        alarm.ticket_status = r?.data?.status || 'OPEN';
+        this.toast.success(r?.data?.id ? `Ticket #${r.data.id} raised` : 'Maintenance ticket raised');
         this.cdr.markForCheck();
       },
-      /* Silence told the user nothing: the button simply stopped spinning
-         while the ticket was never created. */
       error: err => {
-        this.creatingTicketId = null;
-        this.toast.error(err?.error?.message || 'Could not raise a ticket for this alarm.');
+        this.ticketSaving = false;
+        const body = err?.error || {};
+        // someone raised one already (another person, another tab): show theirs
+        if (err?.status === 409 && body.code === 'TICKET_EXISTS' && body.ticket_id) {
+          alarm.ticket_id = body.ticket_id;
+          alarm.ticket_status = body.ticket_status || 'OPEN';
+          this.ticketFor = null;
+          this.toast.info(body.message || `Ticket #${body.ticket_id} is already open for this alarm`);
+        } else {
+          this.ticketError = body.message || 'Could not raise the ticket. Try again.';
+        }
         this.cdr.markForCheck();
       }
     });
