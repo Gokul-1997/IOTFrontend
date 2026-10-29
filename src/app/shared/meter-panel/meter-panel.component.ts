@@ -649,6 +649,8 @@ export class MeterPanelComponent implements OnInit, OnChanges, OnDestroy {
     if (this.state === 'error') return 'Readings could not be updated';
     const l = this.latest;
     if (!l) return this.state === 'loading' ? 'Waiting for the first reading…' : 'No reading in the last 30 days';
+    const fields = Object.values(l.field_stale || {});
+    if (fields.includes(true) && fields.includes(false)) return 'Some readings are older';
     return l.stale ? `No reading since ${dayClock.format(l.at)}` : `As of ${clock.format(l.at)}`;
   }
 

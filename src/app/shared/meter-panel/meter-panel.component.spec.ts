@@ -203,3 +203,12 @@ describe('meter panel polling', () => {
     expect(panel.stats[0].value).toBe('0.00');
   });
 });
+
+
+describe('sparse meter timestamps', () => {
+  it('does not say all channels stopped when a different field arrived recently', () => {
+    const panel = new MeterPanelComponent({} as any, { markForCheck() {} } as any);
+    panel.data = { latest: { at: Date.now(), stale: true, field_stale: { kwh_total: false, v_ll_avg: true } } };
+    expect(panel.asOf).toBe('Some readings are older');
+  });
+});
