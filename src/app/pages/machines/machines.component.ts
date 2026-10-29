@@ -83,8 +83,9 @@ export class MachinesComponent implements OnInit, OnDestroy {
   total    = 0;
   loading  = false;
 
-  sortBy  = 'm.id';
-  sortDir: 'asc' | 'desc' = 'desc';
+  /** By name, its numbers as numbers (VMC - 2 before VMC - 10), as every machine list the API gives (29 Oct 2026). */
+  sortBy  = 'm.machine_serial_no';
+  sortDir: 'asc' | 'desc' = 'asc';
 
   showForm   = false;
   editData: any = null;
@@ -158,9 +159,10 @@ export class MachinesComponent implements OnInit, OnDestroy {
   sortedColumn: string = '';
   onSort(e: any) {
     this.sortedColumn = e.direction ? e.active : '';
-    if (!e.active || !e.direction) return;
-    this.sortBy  = SORT_MAP[e.active] ?? 'm.id';
-    this.sortDir = e.direction as 'asc' | 'desc';
+    if (!e.active) return;
+    // a column's sort cleared: back to the list's own order, by name
+    this.sortBy  = e.direction ? SORT_MAP[e.active] ?? 'm.machine_serial_no' : 'm.machine_serial_no';
+    this.sortDir = e.direction ? e.direction as 'asc' | 'desc' : 'asc';
     this.load();
   }
   
