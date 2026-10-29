@@ -1,0 +1,152 @@
+/* Machine Alarms (pages/alarms) — its own rules, keyed to the page, so no
+   other table picks them up. THE table design stays as it is (system.scss);
+   this adds what an alarm list needs on top (29 Oct 2026):
+   - severity as a stripe at the row's start, and as a word with its icon;
+   - whether the alarm is still on the machine, cleared, or resolved;
+   - one quiet Resolve button and a ticket icon instead of two grey buttons;
+   - the All | Critical | Non-critical switch with its counts above the table. */
+
+app-alarms {
+  --al-critical: #dc2626;
+  --al-noncritical: #d97706;
+  --al-info: #2563eb;
+  --al-info-ink: #1d4ed8;
+
+  /* ── the strip above the table ── */
+  .al-card > .al-bar {
+    padding: .9rem 1rem .25rem;
+    margin: 0;
+    row-gap: .6rem;
+  }
+
+  .al-seg {
+    display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px;
+    border: 1px solid var(--mexa-rule); border-radius: 10px; background: var(--mexa-row-alt);
+  }
+  .al-seg button {
+    display: inline-flex; align-items: center; gap: .4rem;
+    min-height: 32px; padding: .3rem .8rem; border: 0; border-radius: 8px;
+    background: none; color: var(--mexa-ink-2); font: inherit; font-size: .82rem; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+    transition: background-color .15s, color .15s, box-shadow .15s;
+  }
+  .al-seg button:hover { color: var(--mexa-ink); }
+  .al-seg button[aria-pressed="true"] {
+    background: var(--mexa-card); color: var(--mexa-ink);
+    box-shadow: 0 1px 3px rgba(18, 14, 64, .14), 0 0 0 1px var(--mexa-rule);
+  }
+  .al-seg button:focus-visible { outline: 2px solid var(--tbl-accent); outline-offset: 1px; }
+  .al-swatch { width: .5rem; height: .5rem; border-radius: 999px; flex: none; }
+  .is-critical .al-swatch { background: var(--al-critical); }
+  .is-noncritical .al-swatch { background: var(--al-noncritical); }
+  .al-n {
+    min-width: 1.6rem; padding: 0 .4rem; border-radius: 999px; text-align: center;
+    background: rgba(43, 57, 144, .08); color: var(--mexa-ink-2);
+    font-size: .74rem; font-weight: 700; line-height: 1.35rem; font-variant-numeric: tabular-nums;
+  }
+  .al-seg button[aria-pressed="true"] .al-n { background: var(--tbl-accent); color: #fff; }
+  .al-seg button.is-critical[aria-pressed="true"] .al-n { background: var(--al-critical); }
+  .al-seg button.is-noncritical[aria-pressed="true"] .al-n { background: #b45309; }
+
+  .al-facts {
+    display: flex; flex-wrap: wrap; gap: .35rem 1.1rem; margin: 0;
+    color: var(--mexa-ink-3); font-size: .84rem;
+  }
+  .al-facts strong { color: var(--mexa-ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .al-card > .mexa-tablewrap { padding-top: .6rem; }
+
+  /* ── rows ── */
+  .al-table tbody tr > td:first-child { box-shadow: inset 3px 0 0 transparent; }
+  .al-table tbody tr.al-critical > td:first-child { box-shadow: inset 3px 0 0 var(--al-critical); }
+  .al-table tbody tr.al-noncritical > td:first-child { box-shadow: inset 3px 0 0 var(--al-noncritical); }
+  .al-table tbody tr.al-info > td:first-child { box-shadow: inset 3px 0 0 var(--al-info); }
+  .al-table tbody td { padding-top: .6rem; padding-bottom: .6rem; vertical-align: middle; }
+
+  .al-machine { white-space: nowrap; }
+  .al-table td.al-text { max-width: 34rem; color: var(--mexa-ink); font-weight: 500; }
+  .al-none { color: var(--mexa-ink-3); font-weight: 400; }
+  .al-kind {
+    display: inline-block; margin-left: .4rem; padding: 0 .45rem; border-radius: 6px;
+    background: var(--mexa-row-alt); color: var(--mexa-ink-2);
+    font-size: .72rem; font-weight: 600; line-height: 1.25rem; vertical-align: 1px;
+  }
+  .al-code { color: var(--mexa-ink-2); font-size: .8rem; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+
+  .al-sev {
+    display: inline-flex; align-items: center; gap: .3rem;
+    font-size: .8rem; font-weight: 600; white-space: nowrap;
+  }
+  .al-sev .material-icons { font-size: 17px; width: 17px; height: 17px; }
+  .al-sev.is-critical { color: var(--tbl-bad); }
+  .al-sev.is-noncritical { color: var(--tbl-warn); }
+  .al-sev.is-info { color: var(--al-info-ink); }
+
+  .al-sub { display: block; margin-top: .1rem; color: var(--mexa-ink-3); font-size: .76rem; font-weight: 400; white-space: nowrap; }
+  .al-sub.is-on { color: var(--mexa-ink-2); font-weight: 500; }
+  .al-note { max-width: 16rem; overflow: hidden; text-overflow: ellipsis; }
+
+  .al-state { display: inline-flex; align-items: center; gap: .35rem; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+  .al-state .material-icons { font-size: 17px; width: 17px; height: 17px; }
+  .al-state.is-on { color: var(--tbl-bad); }
+  .al-state.is-cleared { color: var(--mexa-ink-3); }
+  .al-state.is-resolved { color: var(--tbl-good); }
+  /* a still dot with a soft ring: on, without motion */
+  .al-dot {
+    width: .5rem; height: .5rem; border-radius: 999px; flex: none;
+    background: var(--al-critical); box-shadow: 0 0 0 3px rgba(220, 38, 38, .16);
+  }
+
+  /* ── actions ── */
+  .al-resolve {
+    display: inline-flex; align-items: center; gap: .3rem;
+    min-height: 30px; padding: .25rem .7rem; border-radius: 8px;
+    border: 1px solid var(--tbl-head-rule); background: var(--mexa-card); color: var(--tbl-accent);
+    font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+    transition: background-color .15s, border-color .15s;
+  }
+  .al-resolve .material-icons { font-size: 16px; width: 16px; height: 16px; }
+  .al-resolve:hover { background: var(--tbl-row-selected); border-color: var(--tbl-accent); }
+  .al-raise { width: 30px; height: 30px; }
+  .al-raise .ui-spinner { width: 16px; height: 16px; }
+  .al-ticket {
+    display: inline-flex; align-items: center; gap: .25rem; padding: 0 .25rem;
+    color: var(--tbl-good); font-size: .76rem; font-weight: 600; white-space: nowrap;
+  }
+  .al-ticket .material-icons { font-size: 16px; width: 16px; height: 16px; }
+
+  /* ── the Resolve dialog: which alarm, said once more ── */
+  .al-quote {
+    margin-bottom: 1rem; padding: .7rem .9rem; border-radius: 8px;
+    background: var(--mexa-row-alt); border-left: 3px solid var(--al-noncritical);
+  }
+  .al-quote.al-critical { border-left-color: var(--al-critical); }
+  .al-quote.al-info { border-left-color: var(--al-info); }
+  .al-quote p { margin: .3rem 0 0; color: var(--mexa-ink); font-weight: 500; line-height: 1.4; }
+  .al-quote p.al-sub { margin-top: .25rem; color: var(--mexa-ink-3); font-weight: 400; white-space: normal; }
+
+  @media (max-width: 767.98px) {
+    .al-card > .al-bar { padding: .75rem .75rem .25rem; }
+    .al-seg button { padding: .3rem .5rem; gap: .3rem; font-size: .78rem; }
+    .al-n { min-width: 1.35rem; padding: 0 .3rem; }
+    .al-table td.al-text { min-width: 10rem; }
+  }
+  @media (pointer: coarse) {
+    .al-seg button, .al-resolve { min-height: 40px; }
+    .al-raise { width: 40px; height: 40px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .al-seg button, .al-resolve { transition: none; }
+  }
+}
+
+:is(.dark, :root[data-theme="dark"]) app-alarms {
+  --al-info-ink: #8fb8f5;
+  .al-n { background: rgba(255, 255, 255, .08); }
+  .al-seg button[aria-pressed="true"] { box-shadow: 0 0 0 1px var(--mexa-rule); }
+  .al-seg button[aria-pressed="true"] .al-n { color: #0d1020; background: var(--tbl-accent); }
+  .al-seg button.is-critical[aria-pressed="true"] .al-n { background: #f87171; }
+  .al-seg button.is-noncritical[aria-pressed="true"] .al-n { background: #f7c667; }
+  .al-resolve { background: transparent; }
+  .al-dot { box-shadow: 0 0 0 3px rgba(248, 113, 113, .22); }
+}

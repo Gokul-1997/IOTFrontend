@@ -1,109 +1,190 @@
 <div class="mexa-titlebar">
   <div class="titlebar w-fit flex items-center gap-2 text-white">
-        <span class="material-icons" aria-hidden="true">warning_amber</span>
+    <span class="material-icons" aria-hidden="true">warning_amber</span>
     <h1 class="mexa-title">Machine Alarms</h1>
     <p class="mexa-subtitle">Alarms and offline events to look into and resolve</p>
   </div>
   <span class="mexa-titlebar-spacer"></span>
   <div class="mexa-filters" appFilterPanel>
     <span class="mexa-filter-set">
+      <label class="mexa-filter-label" for="alarm-machine">Machine</label>
+      <select appSearchSelect id="alarm-machine" class="mexa-select" [ngModel]="filter.machine_id"
+              (ngModelChange)="filter.machine_id = $event; apply()">
+        <option [ngValue]="null">All machines</option>
+        <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
+      </select>
+    </span>
+    <span class="mexa-filter-set">
       <label class="mexa-filter-label" for="alarm-status">Status</label>
-      <select id="alarm-status" class="mexa-select" [(ngModel)]="filter.is_resolved" (change)="filter.page=1; load()">
+      <select id="alarm-status" class="mexa-select" [ngModel]="filter.is_resolved"
+              (ngModelChange)="filter.is_resolved = $event; apply()">
         <option value="false">Active alarms</option>
         <option value="true">Resolved</option>
         <option value="">All</option>
       </select>
     </span>
-    <button type="button" class="mexa-submit inline-flex items-center gap-1" (click)="load()">
+    <button type="button" class="mexa-submit inline-flex items-center gap-1" (click)="load()" [disabled]="loading">
       <span class="material-icons text-[18px]" aria-hidden="true">refresh</span>Refresh
     </button>
   </div>
 </div>
 
-<div class="mexa-card mexa-card-flush">
-  <div *ngIf="loading" class="mexa-empty" role="status">
-    <span class="ui-spinner" aria-hidden="true"></span> Loading alarms…
+<div class="mexa-card mexa-card-flush al-card">
+  <!-- how many, how bad: the same alarms counted without the severity switch -->
+  <div class="mexa-tablebar al-bar">
+    <div class="al-seg" role="group" aria-label="Severity">
+      <button type="button" [attr.aria-pressed]="filter.severity === ''" (click)="setSeverity('')">
+        All<span *ngIf="summary" class="al-n">{{ summary.total }}</span>
+      </button>
+      <button type="button" class="is-critical" [attr.aria-pressed]="filter.severity === 'CRITICAL'" (click)="setSeverity('CRITICAL')">
+        <span class="al-swatch" aria-hidden="true"></span>Critical<span *ngIf="summary" class="al-n">{{ summary.critical }}</span>
+      </button>
+      <button type="button" class="is-noncritical" [attr.aria-pressed]="filter.severity === 'NORMAL'" (click)="setSeverity('NORMAL')">
+        <span class="al-swatch" aria-hidden="true"></span>Non-critical<span *ngIf="summary" class="al-n">{{ summary.total - summary.critical }}</span>
+      </button>
+    </div>
+    <p *ngIf="summary && summary.total" class="al-facts" aria-live="polite">
+      <span *ngIf="filter.is_resolved !== 'true'"><strong>{{ summary.still_on }}</strong> still on the machine</span>
+      <span><strong>{{ summary.machines }}</strong> {{ summary.machines === 1 ? 'machine' : 'machines' }}</span>
+    </p>
   </div>
 
-  <div *ngIf="!loading" class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Alarms">
-    <div class="table-wrap">
-    <table class="mexa-table">
-      <caption class="sr-only">Machine alarms, newest first</caption>
+  <div class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Alarms">
+    <table class="mexa-table al-table">
+      <caption class="sr-only">Machine alarms, those still on first, then newest</caption>
       <thead>
         <tr>
           <th scope="col">Machine</th>
           <th scope="col">Alarm</th>
-          <th scope="col">Code</th>
-          <th scope="col">Severity</th>
+          <th scope="col" class="col-lg">Code</th>
+          <th scope="col" class="col-lg">Severity</th>
           <th scope="col">Started</th>
           <th scope="col" class="col-md">Status</th>
-          <th scope="col" class="actions">Action</th>
+          <th scope="col" *ngIf="showActions" class="actions"><span class="sr-only">Actions</span></th>
         </tr>
       </thead>
-      <tbody>
-        <ng-container *ngIf="alarms.length > 0; else noAlarms">
-          <!-- the alarm a notification opened is marked (shared/linked-record.ts) -->
-          <tr *ngFor="let alarm of alarms" [id]="'alarm-' + alarm.id"
-              [class.is-linked]="alarm.id === linkedAlarmId" [attr.tabindex]="alarm.id === linkedAlarmId ? -1 : null">
-            <td class="strong"><span *ngIf="alarm.id === linkedAlarmId" class="sr-only">From your notification: </span>{{ alarm.machine_serial_no }}</td>
-            <!-- the alarm in words; its code and type underneath when they add something -->
-            <td class="wrap">
-              <span class="block text-[var(--mexa-ink)]">{{ alarm.message || alarm.alarm_type || '--' }}</span>
-            </td>
-            <td class="wrap">
-              <span *ngIf="alarm.alarm_code || (alarm.alarm_type && alarm.message && !alarm.message.startsWith(alarm.alarm_type))"
-                    class="block text-xs text-[var(--mexa-ink-3)]">
-                {{ alarm.alarm_code }}<ng-container *ngIf="alarm.alarm_type && alarm.message && !alarm.message.startsWith(alarm.alarm_type)">{{ alarm.alarm_code ? ' · ' : '' }}{{ alarm.alarm_type }}</ng-container>
+
+      <tbody *ngIf="loading" appSkeletonRows [cols]="columns" [rows]="6" label="Loading alarms…"></tbody>
+
+      <tbody *ngIf="!loading">
+        <tr *ngIf="loadError">
+          <td [attr.colspan]="columns" class="mexa-empty">
+            <app-state kind="error" title="Could not load the alarms" text="Check the connection, then try again."
+                       action="Try again" (act)="load()"></app-state>
+          </td>
+        </tr>
+        <tr *ngIf="!loadError && !alarms.length">
+          <td [attr.colspan]="columns" class="mexa-empty">
+            <app-state *ngIf="filter.is_resolved === 'false' && !filter.severity && !filter.machine_id; else noMatch"
+                       icon="task_alt" title="No active alarms" text="Every machine is clear."></app-state>
+            <ng-template #noMatch><app-state title="No alarms match these filters" text="Choose another machine, status or severity."></app-state></ng-template>
+          </td>
+        </tr>
+
+        <!-- the alarm a notification opened is marked (shared/linked-record.ts) -->
+        <tr *ngFor="let alarm of alarms" [id]="'alarm-' + alarm.id" [ngClass]="'al-' + sevOf(alarm.severity)"
+            [class.is-linked]="alarm.id === linkedAlarmId" [attr.tabindex]="alarm.id === linkedAlarmId ? -1 : null">
+          <td class="strong al-machine">
+            <span *ngIf="alarm.id === linkedAlarmId" class="sr-only">From your notification: </span>{{ alarm.machine_serial_no }}
+            <span class="sr-only">, {{ SEV[sevOf(alarm.severity)].label }}</span>
+          </td>
+          <td class="wrap al-text">
+            <ng-container *ngIf="alarmText(alarm) as text; else noText">{{ text }}</ng-container>
+            <ng-template #noText><span class="al-none">No description from the machine</span></ng-template>
+            <span *ngIf="kindOf(alarm) as kind" class="al-kind">{{ kind }}</span>
+          </td>
+          <td class="col-lg al-code">{{ alarm.alarm_code || '' }}</td>
+          <td class="col-lg">
+            <span class="al-sev" [ngClass]="'is-' + sevOf(alarm.severity)">
+              <span class="material-icons" aria-hidden="true">{{ SEV[sevOf(alarm.severity)].icon }}</span>{{ SEV[sevOf(alarm.severity)].label }}
+            </span>
+          </td>
+          <td class="num al-when">
+            <span class="block">{{ alarm.started_at | date:dateFormat(alarm.started_at) }}</span>
+            <span *ngIf="durationText(alarm) as span" class="al-sub" [class.is-on]="stillOn(alarm)">{{ span }}</span>
+          </td>
+          <td class="col-md al-status">
+            <ng-container *ngIf="alarm.is_resolved; else open">
+              <span class="al-state is-resolved"><span class="material-icons" aria-hidden="true">check_circle</span>Resolved</span>
+              <span class="al-sub">
+                <ng-container *ngIf="alarm.resolved_by_name">by {{ alarm.resolved_by_name }}, </ng-container>{{ alarm.resolved_at | date:dateFormat(alarm.resolved_at) }}
               </span>
-            </td>
-            <td>
-              <span class="mexa-badge" [ngClass]="SEV[sevOf(alarm.severity)].badge">
-                <span class="material-icons" aria-hidden="true">{{ SEV[sevOf(alarm.severity)].icon }}</span>{{ SEV[sevOf(alarm.severity)].label }}
+              <span *ngIf="alarm.resolution_note" class="al-sub al-note" [title]="alarm.resolution_note">“{{ alarm.resolution_note }}”</span>
+            </ng-container>
+            <ng-template #open>
+              <span *ngIf="stillOn(alarm)" class="al-state is-on"><span class="al-dot" aria-hidden="true"></span>Still on</span>
+              <span *ngIf="!stillOn(alarm)" class="al-state is-cleared"
+                    title="The machine has cleared it; nobody has marked it resolved yet">
+                <span class="material-icons" aria-hidden="true">done</span>Cleared
               </span>
-            </td>
-            <td class="num">{{ alarm.started_at | date:'d MMM y, h:mm:ss a' }}</td>
-            <td class="col-md">
-              <span *ngIf="alarm.is_resolved" class="mexa-badge mexa-badge-good"><span class="material-icons" aria-hidden="true">check_circle</span>Resolved</span>
-              <span *ngIf="!alarm.is_resolved" class="mexa-badge mexa-badge-warn"><span class="material-icons" aria-hidden="true">notifications_active</span>Active</span>
-            </td>
-            <td class="actions">
-              <!-- resolving is its own permission (page:alarms:resolve); the API refuses it otherwise -->
-              <ng-container *ngIf="!alarm.is_resolved && canResolve">
-                <div *ngIf="resolvingId === alarm.id" class="ui-btn-row">
-                  <input [(ngModel)]="resolveNote" placeholder="Resolution note" class="ui-input alarm-note" aria-label="Resolution note" />
-                  <button type="button" (click)="resolve(alarm.id)" class="ui-btn ui-btn-primary ui-btn-xs">
-                    <span class="material-icons" aria-hidden="true">save</span>
-                    Save</button>
-                  <button type="button" (click)="resolvingId=null" class="ui-btn ui-btn-ghost ui-btn-xs">
-                    <span class="material-icons" aria-hidden="true">close</span>
-                    Cancel</button>
-                </div>
-                <div *ngIf="resolvingId !== alarm.id" class="ui-btn-row">
-                  <button type="button" (click)="resolvingId=alarm.id" class="ui-btn ui-btn-ghost ui-btn-xs">
-                    <span class="material-icons" aria-hidden="true">mark_chat_read</span>
-                    Resolve</button>
-                  <span *ngIf="ticketedAlarmIds.has(alarm.id)" class="mexa-badge mexa-badge-neutral">
-                    <span class="material-icons" aria-hidden="true">description</span>
-                    Ticket created</span>
-                  <button type="button" *ngIf="!ticketedAlarmIds.has(alarm.id)" (click)="createTicketFromAlarm(alarm)" [disabled]="creatingTicketId === alarm.id"
-                    class="ui-btn ui-btn-ghost ui-btn-xs">
-                    <span class="material-icons" aria-hidden="true">description</span>
-                    {{ creatingTicketId === alarm.id ? 'Creating…' : 'Create ticket' }}
-                  </button>
-                </div>
-              </ng-container>
-            </td>
-          </tr>
-        </ng-container>
-        <ng-template #noAlarms>
-          <tr><td colspan="6" class="mexa-empty">{{ filter.is_resolved === 'false' ? 'No active alarms. Every machine is clear.' : 'No alarms match this filter.' }}</td></tr>
-        </ng-template>
+            </ng-template>
+          </td>
+          <td *ngIf="showActions" class="actions">
+            <!-- resolving is its own permission (page:alarms:resolve); the API refuses it otherwise -->
+            <div *ngIf="!alarm.is_resolved" class="ui-btn-row">
+              <span *ngIf="ticketOf(alarm) as ticket; else raise" class="al-ticket"
+                    [title]="ticket > 0 ? 'Maintenance ticket #' + ticket : 'Maintenance ticket raised'">
+                <span class="material-icons" aria-hidden="true">assignment_turned_in</span>Ticket raised
+              </span>
+              <ng-template #raise>
+                <button type="button" class="ux-icon-btn al-raise" (click)="createTicketFromAlarm(alarm)"
+                        [disabled]="creatingTicketId === alarm.id"
+                        aria-label="Create ticket" [attr.title]="'Create a maintenance ticket for ' + alarm.machine_serial_no">
+                  <span *ngIf="creatingTicketId !== alarm.id" class="material-icons" aria-hidden="true">post_add</span>
+                  <span *ngIf="creatingTicketId === alarm.id" class="ui-spinner" aria-hidden="true"></span>
+                </button>
+              </ng-template>
+              <button type="button" class="al-resolve" (click)="openResolve(alarm)">
+                <span class="material-icons" aria-hidden="true">done_all</span>Resolve
+              </button>
+            </div>
+          </td>
+        </tr>
       </tbody>
     </table>
-    </div>
   </div>
 
   <app-mexa-pager *ngIf="pagination.total > filter.limit || filter.page > 1" [page]="filter.page" [totalPages]="pagination.totalPages || 1"
                   [total]="pagination.total || alarms.length" [shown]="alarms.length" [limit]="filter.limit" [sizes]="[20, 50, 100]"
                   (pageChange)="filter.page = $event; load()" (limitChange)="filter.limit = $event; filter.page = 1; load()"></app-mexa-pager>
+</div>
+
+<!-- ── RESOLVE ── -->
+<div *ngIf="resolving" class="ui-overlay">
+  <div class="ui-dialog ui-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="alResolveTitle">
+    <div class="ui-dialog-header">
+      <div>
+        <h2 id="alResolveTitle" class="ui-dialog-title">Resolve alarm</h2>
+        <p class="ui-dialog-subtitle">{{ resolving.machine_serial_no }}<ng-container *ngIf="resolving.alarm_code"> · {{ resolving.alarm_code }}</ng-container></p>
+      </div>
+      <button type="button" class="ui-close" (click)="closeResolve()" aria-label="Close without saving" [disabled]="resolveSaving">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <form (ngSubmit)="resolve()" class="contents" novalidate>
+      <div class="ui-dialog-body">
+        <div *ngIf="resolveError" class="ui-alert ui-alert-error mb-4" role="alert">{{ resolveError }}</div>
+        <div class="al-quote" [ngClass]="'al-' + sevOf(resolving.severity)">
+          <span class="al-sev" [ngClass]="'is-' + sevOf(resolving.severity)">
+            <span class="material-icons" aria-hidden="true">{{ SEV[sevOf(resolving.severity)].icon }}</span>{{ SEV[sevOf(resolving.severity)].label }}
+          </span>
+          <p>{{ alarmText(resolving) || 'No description from the machine' }}</p>
+          <p class="al-sub">Started {{ resolving.started_at | date:dateFormat(resolving.started_at) }}<ng-container *ngIf="durationText(resolving) as span">, {{ span }}</ng-container></p>
+        </div>
+        <label class="ui-label" for="al-note">What was done <span class="font-normal text-[var(--mexa-ink-3)]">(optional)</span></label>
+        <textarea id="al-note" name="note" rows="3" class="ui-input" maxlength="500" [(ngModel)]="resolveNote"></textarea>
+      </div>
+
+      <div class="ui-dialog-footer">
+        <button type="button" class="ui-btn ui-btn-ghost" (click)="closeResolve()" [disabled]="resolveSaving">Cancel</button>
+        <button type="submit" class="ui-btn ui-btn-primary" [disabled]="resolveSaving">
+          <span *ngIf="resolveSaving" class="ui-spinner" aria-hidden="true"></span>
+          {{ resolveSaving ? 'Resolving…' : 'Mark resolved' }}
+        </button>
+      </div>
+    </form>
+  </div>
 </div>

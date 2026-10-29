@@ -2476,3 +2476,6 @@ transition: transform 0.3s ease;
 
 /* The searchable list machine and operator dropdowns open (shared/search-select) */
 @include meta.load-css('styles/search-select');
+
+/* The Machine Alarms page's rules, keyed to the page (styles/_alarms.scss) */
+@include meta.load-css('styles/alarms');
