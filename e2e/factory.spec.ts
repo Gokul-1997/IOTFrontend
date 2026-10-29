@@ -87,9 +87,10 @@ test.describe('Factory Overall Dashboard', () => {
     // the counts behind the percentage
     const prod = page.locator('.mexa-kpi', { hasText: 'Production' });
     await expect(prod.getByText('63.3%')).toBeVisible();
-    await expect(prod.getByText(/380 of 600 target · 420 pieces/)).toBeVisible();
+    await expect(prod).toContainText('420 total pieces');
+    await expect(prod).toContainText('380 of 600 target');
 
-    // Actual vs Target per shift, and each shift labelled with its hours
+    // Actual vs Target uses the same output as each shift's chart.
     await expect(page.getByRole('heading', { name: 'Actual vs Target' })).toBeVisible();
     await expect(page.getByText('200 / 300 Units')).toBeVisible();
     await expect(page.getByText('180 / 300 Units')).toBeVisible();
@@ -181,7 +182,8 @@ test('shift chart keeps simple names and tonight stays not started until its own
   await expect(card).not.toContainText(/\d{1,2}:\d{2}/);
   await expect(card.locator('.fx-shift-row').nth(1)).toContainText('Not started');
   await expect(card.locator('.fx-shift-row').nth(1)).toContainText('0 / 862 Units');
-  await expect(page.locator('.mexa-kpi', { hasText: 'Production' })).toContainText('149 of 1724 target · 149 pieces');
+  await expect(page.locator('.mexa-kpi', { hasText: 'Production' })).toContainText('149 total pieces');
+  await expect(page.locator('.mexa-kpi', { hasText: 'Production' })).toContainText('149 of 1,724 target');
   await page.clock.runFor(1200);
   await card.screenshot({ path: '/private/tmp/mexa-factory-shifts.png' });
   await card.getByRole('button', { name: 'What is Shift-wise production?' }).click();
@@ -205,6 +207,39 @@ test('unassigned recorded output has a count without an invalid target bar', asy
   const row = page.locator('.fx-shift-row').filter({ hasText: 'Unassigned' });
   await expect(row).toContainText('4 Units');
   await expect(row.getByRole('progressbar')).toHaveCount(0);
+});
+
+test('shift chart and target rows use identical counts while all output stays in total pieces', async ({ authedPage: page }) => {
+  const response = todayResponse();
+  Object.assign(response.data.production, { produced: 6122, actual: 493, target: 1726, target_pct: 28.6 });
+  Object.assign(response.data.shiftwise[0], { produced: 433, actual: 433, target: 863, status: 'completed' });
+  Object.assign(response.data.shiftwise[1], { produced: 5689, actual: 60, target: 863, status: 'in_progress' });
+  await mockApi(page, response);
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  await page.goto('/factory');
+  const card = page.locator('section[aria-labelledby="fxShiftTitle"]');
+  await expect(card.locator('.fx-shift-produced')).toHaveCount(0);
+  await expect(card).not.toContainText('Targeted machines:');
+  await expect(card.locator('.apexcharts-bar-area').nth(0)).toHaveAttribute('val', '433');
+  await expect(card.locator('.apexcharts-bar-area').nth(1)).toHaveAttribute('val', '60');
+  await expect(card.locator('.fx-shift-row').nth(1)).toContainText('60 / 863 Units');
+  const headline = page.locator('.mexa-kpi', { hasText: 'Production' });
+  await expect(headline).toContainText('6,122 total pieces');
+  await expect(headline).toContainText('493 of 1,726 target');
+  await page.waitForTimeout(1000); // Capture the chart after its initial bar animation.
+  await card.screenshot({ path: '/private/tmp/mexa-production-count-scope.png' });
+});
+
+test('failed new filters cannot show the previous machine counts under the new selection', async ({ authedPage: page }) => {
+  await mockApi(page);
+  await page.goto('/factory');
+  await expect(page.locator('.mexa-kpi', { hasText: 'Production' })).toContainText('420 total pieces');
+  await page.route('**/api/dashboard/factory*', route => route.fulfill({ status: 500,
+    json: { status: 'error', message: 'Selected machine data is unavailable.' } }));
+  await page.locator('#fMachine').selectOption({ label: 'VMC-2-F' });
+  await expect(page.getByRole('alert')).toContainText('Selected machine data is unavailable.');
+  await expect(page.locator('section[aria-labelledby="fxShiftTitle"]')).toHaveCount(0);
+  await expect(page.locator('.mexa-kpi')).toHaveCount(0);
 });
 
 for (const timezoneId of ['Asia/Kolkata', 'America/Los_Angeles']) {

@@ -75,6 +75,7 @@ test('chart text stays legible on the dark surface', async ({ authedPage: page }
   await page.setViewportSize({ width: 1500, height: 1100 });
   await page.goto('/oee-dashboard');
   await expect(page.locator('.mexa-kpi').first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Charts', exact: true }).click();
   await page.waitForTimeout(1500);
 
   /* The header toggles the theme by putting `dark` on <html>; do the same,
@@ -190,6 +191,7 @@ test('where OEE is lost adds up to 100 and names the biggest loss', async ({ aut
   await page.route('**/api/dashboard/oee*', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fleet) }));
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/oee-dashboard');
+  await page.getByRole('tab', { name: 'Charts', exact: true }).click();
 
   const panel = page.getByRole('region', { name: 'Where OEE is lost' });
   const rows = panel.locator('.mexa-losslist li');
@@ -213,6 +215,7 @@ test('the loss panel says what it needs when OEE cannot be computed', async ({ a
   await mockApi(page);
   await page.route('**/api/dashboard/oee*', (r: any) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(none) }));
   await page.goto('/oee-dashboard');
+  await page.getByRole('tab', { name: 'Charts', exact: true }).click();
   const panel = page.getByRole('region', { name: 'Where OEE is lost' });
   await expect(panel).toContainText('Needs a machine with a cycle time');
   await expect(panel.locator('.mexa-lossbar')).toHaveCount(0);
@@ -236,6 +239,7 @@ test('the trend draws OEE against the target, with its three factors', async ({ 
     body: JSON.stringify(ok({ ...oee.data, trend: days })) }));
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/oee-dashboard');
+  await page.getByRole('tab', { name: 'Charts', exact: true }).click();
   const trend = page.getByRole('region', { name: 'OEE Trend' });
   await expect(trend.locator('.apexcharts-legend-text')).toHaveText(['OEE', 'Availability', 'Performance', 'Quality']);
   await expect(trend.getByText('Target 85%')).toBeVisible();

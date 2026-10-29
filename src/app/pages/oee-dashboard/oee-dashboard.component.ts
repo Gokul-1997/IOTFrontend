@@ -92,6 +92,7 @@ setTab(tab: 'oee' | 'charts'): void {
   private destroy$ = new Subject<void>();
   /** The request on its way; a newer filter choice replaces it, so an older answer can never land last. */
   private loadSub?: Subscription;
+  private requestedFilters = '';
 
   constructor(
     private svc: OeeDashboardService,
@@ -148,12 +149,21 @@ setTab(tab: 'oee' | 'charts'): void {
   }
 
   load(): void {
+    const key = JSON.stringify(this.f);
+    if (key !== this.requestedFilters) {
+      this.data = null;
+      this.updatedAt = '';
+      this.trendSeries = [];
+      this.trendCategories = [];
+      this.loss = null;
+      this.requestedFilters = key;
+    }
     this.loading = true;
     this.errorMsg = '';
     this.cdr.markForCheck();
 
     this.loadSub?.unsubscribe();
-    this.loadSub = this.svc.getOee({ ...this.f, page: this.page, limit: this.limit })
+    this.loadSub = this.svc.getOee({ ...this.f, all_machines: true })
       .pipe(takeUntil(this.destroy$), catchError(err => {
         this.errorMsg = err?.error?.message || 'Unable to load OEE data.';
         return of(null);

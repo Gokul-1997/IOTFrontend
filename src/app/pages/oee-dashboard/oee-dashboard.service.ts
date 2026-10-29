@@ -19,7 +19,7 @@ export class OeeDashboardService {
   private toQuery(f: any): any {
     const q: any = {};
     for (const k of ['from', 'to', 'machine_id', 'shift_id', 'search',
-                     'threshold_good', 'threshold_fair', 'page', 'limit']) {
+                     'threshold_good', 'threshold_fair', 'page', 'limit', 'all_machines']) {
       if (f[k] !== null && f[k] !== undefined && f[k] !== '') q[k] = f[k];
     }
     return q;

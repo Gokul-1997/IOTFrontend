@@ -102,6 +102,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   /** A filter change: fetch now, and start the minute's polling again from here. */
   private refresh$ = new Subject<void>();
+  private requestedFilters = '';
 
   constructor(
     private svc: FactoryService,
@@ -168,14 +169,20 @@ export class FactoryComponent implements OnInit, OnDestroy {
   }
 
   private fetch$() {
+    const filters = {
+      date: this.selectedDate, shift_id: this.selectedShift, machine_id: this.selectedMachine
+    };
+    const key = JSON.stringify(filters);
+    if (key !== this.requestedFilters) {
+      this.data = null;
+      this.updatedAt = '';
+      this.shiftSeries = this.trendSeries = this.energySeries = [];
+      this.requestedFilters = key;
+    }
     this.loading = true;
     this.errorMsg = '';
     this.cdr.markForCheck();
-    return this.svc.getFactory({
-      date:       this.selectedDate,
-      shift_id:   this.selectedShift,
-      machine_id: this.selectedMachine
-    }).pipe(
+    return this.svc.getFactory(filters).pipe(
       catchError(err => {
         this.errorMsg = err?.error?.message || 'Unable to load factory dashboard.';
         return of(null);
@@ -200,7 +207,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
     this.shiftCategories = (d.shiftwise || []).map((s: any) => s.shift_code);
     this.shiftSeries = [{
       name: 'Produced',
-      data: (d.shiftwise || []).map((s: any) => s.produced)
+      data: (d.shiftwise || []).map((s: any) => s.target ? s.actual : s.produced)
     }];
 
     /* Production Trend: actual against target, hour by hour (the mock's two
@@ -211,7 +218,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
     );
     const hasTarget = trend.some((t: any) => t.target != null);
     this.trendSeries = trend.length ? [
-      { name: 'Actual', data: trend.map((t: any) => t.produced) },
+      { name: 'Actual', data: trend.map((t: any) => this.hasProductionTarget ? (t.actual ?? null) : t.produced) },
       ...(hasTarget ? [{ name: 'Target', data: trend.map((t: any) => t.target) }] : [])
     ] : [];
     this.energySeries = trend.some((t: any) => t.kwh > 0)

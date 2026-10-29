@@ -153,7 +153,7 @@
       </div>
       <!-- share of target when any machine has a job target; the count otherwise -->
       <p class="mexa-kpi-value"><button *ngIf="can('production'); else prodPlain" type="button" class="mexa-kpi-open" (click)="open('production')" aria-labelledby="fk5-name fk5-value fk5-act"><span id="fk5-value">{{ productionValue }}</span></button><ng-template #prodPlain>{{ productionValue }}</ng-template></p><span hidden id="fk5-name">Overall production:</span><span hidden id="fk5-act">open the Production report for this day</span>
-      <p class="mexa-kpi-sub" *ngIf="hasProductionTarget; else rawCount">{{ data.production.actual }} of {{ data.production.target }} target · {{ data.production.produced }} pieces</p>
+      <p class="mexa-kpi-sub" *ngIf="hasProductionTarget; else rawCount"><span class="block">{{ data.production.produced | number }} total pieces</span>{{ data.production.actual | number }} of {{ data.production.target | number }} target</p>
       <ng-template #rawCount><p class="mexa-kpi-sub">pieces · no job target set</p></ng-template>
     </div>
 
@@ -276,22 +276,22 @@
 
       <!-- Actual vs Target: each shift's output on machines with a job
            target, against the sum of those targets -->
-      <div *ngIf="data.production.target" class="border-t border-[--mexa-rule] p-2 mt-1">
-        <h3 class="mexa-card-title mexa-card-title-left !mb-2">Actual vs Target</h3>
+      <div *ngIf="data.shiftwise?.length" class="border-t border-[--mexa-rule] p-2 mt-1">
+        <h3 class="mexa-card-title mexa-card-title-left !mb-2">{{ data.production.target ? 'Actual vs Target' : 'Produced' }}</h3>
         <div class="grid grid-cols-2 gap-4">
           <div *ngFor="let s of data.shiftwise; let i = index" class="fx-shift-row">
             <p class="text-sm font-semibold text-[--mexa-ink]">{{ s.shift_code }}</p>
             <p *ngIf="shiftStatus(s)" class="fx-shift-status">{{ shiftStatus(s) }}</p>
-            <ng-container *ngIf="s.target; else untargetedShift">
+            <ng-container *ngIf="s.target">
             <div class="h-2.5 rounded-full bg-[--mexa-row-alt] overflow-hidden my-1.5" role="progressbar"
                  [attr.aria-valuenow]="s.actual" aria-valuemin="0" [attr.aria-valuemax]="s.target"
-                 [attr.aria-label]="s.shift_code + ' actual against target'">
+                 [attr.aria-label]="s.shift_code + ' targeted machines actual against target'">
               <div class="h-full rounded-full" [style.width.%]="targetBar(s.actual, s.target)"
                    [style.background]="i % 2 ? '#9b7ec8' : '#2f2d8f'"></div>
             </div>
             <p class="text-sm text-[--mexa-ink-2] tabular-nums">{{ s.actual | number }} / {{ s.target | number }} Units</p>
             </ng-container>
-            <ng-template #untargetedShift><p class="text-sm text-[--mexa-ink-2] tabular-nums">{{ s.produced | number }} Units</p></ng-template>
+            <p *ngIf="!s.target" class="text-sm text-[--mexa-ink-2] tabular-nums">{{ s.produced | number }} Units</p>
           </div>
         </div>
       </div>

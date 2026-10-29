@@ -157,14 +157,14 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
   private loadSub?: Subscription;
 
   load(): void {
-    this.loading = true; this.errorMsg = ''; this.cdr.markForCheck();
+    this.loading = true; this.errorMsg = ''; this.rows = []; this.cdr.markForCheck();
     // the report assistant answers about what is on screen when a question does not say
     const shift = this.shifts.find(s => s.id === this.f.shift_id);
     this.assistant.setContext({ report: 'machine-oee', title: 'Machine OEE', from: this.f.from, to: this.f.to,
                                 machine: null, shift: shift ? (shift.shift_name || shift.name) : null });
     // a newer choice of filters drops the request still on its way
     this.loadSub?.unsubscribe();
-    this.loadSub = this.svc.getOee({ ...this.f, page: 1, limit: 200 })
+    this.loadSub = this.svc.getOee({ ...this.f, all_machines: true })
       .pipe(takeUntil(this.destroy$), catchError(err => {
         this.errorMsg = err?.error?.message || 'Unable to load the machine OEE report.';
         return of(null);
@@ -232,6 +232,6 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
   }
   private daysAgo(n: number): string {
     const d = new Date(Date.now() - n * 86_400_000);
-    return new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })).toISOString().slice(0, 10);
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(d);
   }
 }

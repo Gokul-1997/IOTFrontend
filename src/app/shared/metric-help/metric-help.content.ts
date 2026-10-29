@@ -165,9 +165,9 @@ export function metricHelp(topic: string, basis: HelpBasis = 'period'): MetricHe
     case 'shift_production':
       return {
         title: 'Shift-wise production',
-        what: 'Each bar counts the shift starting on the selected date, in plant local time (IST). A shift that has not begun says "Not started".',
+        what: 'Each bar uses the same actual output as Actual vs Target: machines with a configured job target. Without any job targets, it shows all recorded output instead. Shifts use their starting date in plant local time (IST). A shift that has not begun says "Not started".',
         example: 'The 27 October night shift runs from 8:00 PM on 27 October to 8:00 AM on 28 October. Output before 8:00 AM on 27 October belongs to the night shift that started on 26 October.',
-        why: 'Factory production totals and the Production report use the same recorded quantities. Output after midnight stays with the date that shift started; a future shift stays at zero.'
+        why: 'The bar, target comparison and production trend use the same scope. Total pieces and the Production report also include machines without targets. Output after midnight stays with the date that shift started; a future shift stays at zero.'
       };
     case 'production_vs_target':
       return {
@@ -175,7 +175,7 @@ export function metricHelp(topic: string, basis: HelpBasis = 'period'): MetricHe
         what: 'Parts made by machines that have a job target, as a share of those targets added together.',
         formula: ['Production % = Parts made ÷ Total target'],
         example: 'Targets 1,000 and 726 (1,726 in all), 548 made: 548 ÷ 1,726 = 31.7 %.',
-        why: 'Shows how far the planned jobs have got. When no machine has a job target, the plain count of parts is shown instead.'
+        why: 'Shows how far the planned jobs have got. Total pieces also include machines without a job target; they are excluded from this percentage and are never lost from production totals. When no machine has a job target, the plain count of parts is shown instead.'
       };
     case 'machine_status':
       return {
