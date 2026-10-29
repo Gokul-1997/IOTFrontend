@@ -2482,3 +2482,6 @@ transition: transform 0.3s ease;
 
 /* The MEXA table header: sort and filter in every column (styles/_table.scss) */
 @include meta.load-css('styles/table');
+
+/* One maintenance ticket in its dialog (styles/_ticket.scss) */
+@include meta.load-css('styles/ticket');

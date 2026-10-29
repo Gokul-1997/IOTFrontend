@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Injector, OnInit, afterNextRender, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -34,13 +34,6 @@ import { StateComponent } from '../../shared/state/state.component';
     .row-link:hover { text-decoration: underline; }
     .row-link:focus-visible { outline: 2px solid var(--mexa-submit); outline-offset: 2px; border-radius: 4px; }
     tr.is-clickable { cursor: pointer; }
-    .mt-history { border-left: 2px solid var(--mexa-rule); padding-left: .75rem; display: grid; gap: .5rem; margin-top: .5rem; font-size: .8rem; }
-    .mt-history .muted { color: var(--mexa-ink-3); }
-    .mt-alarm { padding: .7rem .9rem; border-radius: 8px; background: var(--mexa-row-alt); border-left: 3px solid #d97706; font-size: .84rem; }
-    .mt-alarm.is-critical { border-left-color: #dc2626; }
-    .mt-alarm-head { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .75rem; color: var(--mexa-ink-3); font-size: .76rem; font-weight: 600; }
-    .mt-alarm-text { margin: .3rem 0 0; color: var(--mexa-ink); font-weight: 500; }
-    .mt-alarm a { color: var(--tbl-accent); font-weight: 600; margin-left: auto; }
   `]
 })
 export class MaintenanceComponent implements OnInit {
@@ -138,6 +131,7 @@ export class MaintenanceComponent implements OnInit {
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
 
   constructor(
     private svc: MaintenanceService,
@@ -239,37 +233,88 @@ export class MaintenanceComponent implements OnInit {
 
   openTicket(t: any) {
     this.ticketSvc.getTicketById(t.id).subscribe({
-      next: (r: any) => { this.selectedTicket = r.data; this.statusNote = ''; this.cdr.markForCheck(); },
-      error: err => { this.toast.error(err?.error?.message || 'Could not open this ticket.'); this.cdr.markForCheck(); }
+      next: (r: any) => {
+        const first = !this.selectedTicket;
+        this.selectedTicket = r.data; this.ticketBusy = false; this.cdr.markForCheck();
+        // a ticket opens to be read: focus on the dialog itself, not on its assignee list (which looked mid-edit)
+        if (first) afterNextRender(() => document.querySelector<HTMLElement>('.tk-dialog')?.focus(), { injector: this.injector });
+      },
+      error: err => { this.ticketBusy = false; this.toast.error(err?.error?.message || 'Could not open this ticket.'); this.cdr.markForCheck(); }
     });
   }
 
-  closeTicketDetail() { this.selectedTicket = null; this.statusNote = ''; }
+  /* ── one ticket, in its dialog (29 Oct 2026, the user: "this looks clumsy") ── */
+
+  /** A ticket's way: Open → Assigned → In progress → Resolved → Closed. */
+  readonly flow = ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
+  /** A status change or an assignment on its way: the buttons wait. */
+  ticketBusy = false;
+
+  /** Moving and assigning tickets is page:maintenance:edit, as the API checks; without it the dialog only shows. */
+  get canEditTickets(): boolean { return this.auth.hasAction('maintenance', 'edit'); }
+
+  stepOf(status: string): number { return Math.max(0, this.flow.indexOf(status)); }
+
+  /** The next steps from here: the likely one as the main button. Reopening keeps the assignee. */
+  ticketActions(t: any): { label: string; status: string; primary?: boolean }[] {
+    const reopen = { label: 'Reopen', status: t?.assigned_to ? 'ASSIGNED' : 'OPEN' };
+    switch (t?.status) {
+      case 'OPEN':
+      case 'ASSIGNED':    return [{ label: 'Close ticket', status: 'CLOSED' }, { label: 'Mark resolved', status: 'RESOLVED' },
+                                  { label: 'Start work', status: 'IN_PROGRESS', primary: true }];
+      case 'IN_PROGRESS': return [{ label: 'Close ticket', status: 'CLOSED' }, { label: 'Mark resolved', status: 'RESOLVED', primary: true }];
+      case 'RESOLVED':    return [reopen, { label: 'Close ticket', status: 'CLOSED', primary: true }];
+      case 'CLOSED':      return [reopen];
+      default:            return [];
+    }
+  }
+
+  /** A history row in words: "Work started", not "ASSIGNED → IN_PROGRESS". */
+  historyTitle(h: any): string {
+    if (!h?.from_status) return 'Ticket opened';
+    const said: Record<string, string> = { OPEN: 'Reopened', ASSIGNED: 'Assigned', IN_PROGRESS: 'Work started', RESOLVED: 'Resolved', CLOSED: 'Closed' };
+    return said[h.to_status] || String(h.to_status || '');
+  }
+
+  /** The ticket's own notes — not when they only repeat the alarm shown above them. */
+  ticketNotes(t: any): string {
+    const notes = String(t?.description || '').trim();
+    if (!notes || !t.alarm_id) return notes;
+    if (alarmText({ message: notes }) === alarmText({ message: t.alarm_message, alarm_type: t.alarm_type })) return '';
+    // the alarm's facts as Machine Alarms fills them in (Alarm: / Code: / Severity: / Started:)
+    if (notes.split('\n').every(line => /^(Alarm|Code|Severity|Started): /.test(line.trim()))) return '';
+    return notes;
+  }
+
+  closeTicketDetail() { if (this.ticketBusy) return; this.selectedTicket = null; this.statusNote = ''; }
 
   changeTicketStatus(status: string) {
-    if (!this.selectedTicket) return;
+    if (!this.selectedTicket || this.ticketBusy) return;
     const fromAlarm = this.selectedTicket.alarm_id && !this.selectedTicket.alarm_is_resolved && (status === 'RESOLVED' || status === 'CLOSED');
-    this.ticketSvc.updateStatus(this.selectedTicket.id, status, this.statusNote || undefined).subscribe({
+    this.ticketBusy = true;
+    this.ticketSvc.updateStatus(this.selectedTicket.id, status, this.statusNote.trim() || undefined).subscribe({
       next: () => {
         // the API resolves the alarm a ticket was raised from along with it
         this.toast.success(fromAlarm ? `Ticket ${this.statusWord(status)}; its alarm is resolved too` : `Ticket ${this.statusWord(status)}`);
-        this.openTicket(this.selectedTicket); this.statusNote = ''; this.cdr.markForCheck(); this.loadTickets();
+        this.statusNote = '';
+        this.openTicket(this.selectedTicket); this.cdr.markForCheck(); this.loadTickets();
       },
-      /* a refused change (no Edit permission, a ticket gone) used to say nothing */
-      error: err => { this.toast.error(err?.error?.message || 'Could not change the ticket status.'); this.cdr.markForCheck(); }
+      /* a refused change (no Edit permission, a ticket gone) used to say nothing; the note typed stays */
+      error: err => { this.ticketBusy = false; this.toast.error(err?.error?.message || 'Could not change the ticket status.'); this.cdr.markForCheck(); }
     });
   }
 
   assignTicketTo(userId: number) {
-    if (!this.selectedTicket || !userId) return;
+    if (!this.selectedTicket || !userId || this.ticketBusy || userId === this.selectedTicket.assigned_to) return;
+    this.ticketBusy = true;
     this.ticketSvc.assignTicket(this.selectedTicket.id, userId).subscribe({
       next: () => { this.toast.success('Ticket assigned'); this.openTicket(this.selectedTicket); this.cdr.markForCheck(); this.loadTickets(); },
-      error: err => { this.toast.error(err?.error?.message || 'Could not assign the ticket.'); this.cdr.markForCheck(); }
+      error: err => { this.ticketBusy = false; this.toast.error(err?.error?.message || 'Could not assign the ticket.'); this.cdr.markForCheck(); }
     });
   }
 
   private statusWord(status: string): string {
-    return ({ OPEN: 're-opened', ASSIGNED: 'assigned', IN_PROGRESS: 'in progress', RESOLVED: 'resolved', CLOSED: 'closed' } as any)[status] || 'updated';
+    return ({ OPEN: 'reopened', ASSIGNED: 'assigned', IN_PROGRESS: 'in progress', RESOLVED: 'resolved', CLOSED: 'closed' } as any)[status] || 'updated';
   }
 
   ticketStatusClass(s: string) {

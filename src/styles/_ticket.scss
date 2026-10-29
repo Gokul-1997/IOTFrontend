@@ -1,0 +1,142 @@
+/* One maintenance ticket, in its dialog (pages/maintenance, 29 Oct 2026, the
+   user: "this page looks clumsy"). THE dialog (.ui-dialog), with what a
+   ticket needs inside it: where it is on its way (the steps), what it is
+   (the facts), why (the alarm it came from), what happened (the activity)
+   and the next step as the footer's main button. Keyed to .tk-dialog. */
+
+.tk-dialog {
+  --tk-line: var(--mexa-rule);
+  --tk-accent: var(--tbl-accent, #2b3990);
+
+  &:focus { outline: none; }
+
+  .tk-overline {
+    margin: 0 0 .15rem; color: var(--mexa-ink-3);
+    font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  }
+  .tk-title { overflow-wrap: anywhere; line-height: 1.3; }
+  .tk-body { display: grid; gap: 1.1rem; padding-top: 1rem; }
+  .tk-muted { color: var(--mexa-ink-3); font-weight: 400; }
+  .tk-strong { font-weight: 600; color: var(--mexa-ink); }
+  .tk-h {
+    display: block; margin: 0 0 .45rem; color: var(--mexa-ink-2);
+    font-size: .74rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  }
+  .tk-section { min-width: 0; }
+
+  /* ── the steps: Open → Assigned → In progress → Resolved → Closed ── */
+  .tk-steps { display: flex; list-style: none; margin: 0; padding: 0; }
+  .tk-steps li {
+    position: relative; flex: 1 1 0; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; gap: .4rem;
+    color: var(--mexa-ink-3); font-size: .74rem; font-weight: 600; text-align: center;
+  }
+  /* the line from the step before */
+  .tk-steps li + li::before {
+    content: ''; position: absolute; top: .7rem; right: 50%; width: 100%; height: 2px;
+    background: var(--tk-line); transform: translateY(-50%);
+  }
+  .tk-steps li.is-done + li::before, .tk-steps li.is-done + li.is-current::before { background: var(--tk-accent); }
+  .tk-dot {
+    position: relative; z-index: 1;
+    display: grid; place-items: center; width: 1.4rem; height: 1.4rem; border-radius: 999px;
+    background: var(--mexa-card); border: 2px solid var(--tk-line);
+  }
+  .tk-steps li.is-done .tk-dot { background: var(--tk-accent); border-color: var(--tk-accent); }
+  /* a drawn tick: no icon text in the page */
+  .tk-steps li.is-done .tk-dot::after {
+    content: ''; width: .28rem; height: .55rem; margin-top: -2px;
+    border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
+  .tk-steps li.is-current { color: var(--mexa-ink); }
+  .tk-steps li.is-current:not(.is-done) .tk-dot { border-color: var(--tk-accent); box-shadow: 0 0 0 4px rgba(43, 57, 144, .14); }
+  .tk-steps li.is-current:not(.is-done) .tk-dot::after {
+    content: ''; width: .5rem; height: .5rem; border-radius: 999px; background: var(--tk-accent);
+  }
+  .tk-step { overflow-wrap: anywhere; }
+
+  /* ── the facts ── */
+  .tk-facts {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .1rem 1.5rem; margin: 0;
+    padding: .75rem 1rem; border: 1px solid var(--tk-line); border-radius: 10px;
+  }
+  .tk-facts > div {
+    display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); align-items: center; gap: .75rem;
+    min-height: 2.4rem; border-bottom: 1px dashed var(--tk-line);
+  }
+  .tk-facts > div:nth-last-child(-n + 2):nth-child(odd),
+  .tk-facts > div:last-child { border-bottom: 0; }
+  .tk-facts dt { color: var(--mexa-ink-3); font-size: .8rem; font-weight: 500; }
+  .tk-facts dt label { cursor: pointer; }
+  .tk-facts dd { margin: 0; min-width: 0; color: var(--mexa-ink); font-size: .86rem; overflow-wrap: anywhere; }
+  .tk-assignee { min-height: 2.1rem; padding-top: .3rem; padding-bottom: .3rem; font-size: .86rem; }
+
+  /* ── the alarm it came from ── */
+  .tk-alarm {
+    padding: .8rem 1rem; border-radius: 10px;
+    background: var(--mexa-row-alt); border: 1px solid var(--tk-line); border-left: 3px solid #d97706;
+  }
+  .tk-alarm.is-critical { border-left-color: #dc2626; }
+  .tk-alarm.is-info { border-left-color: #2563eb; }
+  .tk-alarm-top { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .9rem; font-size: .78rem; }
+  .tk-alarm-sev { display: inline-flex; align-items: center; gap: .3rem; font-weight: 700; color: var(--tbl-warn, #9a5b00); }
+  .tk-alarm.is-critical .tk-alarm-sev { color: var(--tbl-bad, #b42318); }
+  .tk-alarm.is-info .tk-alarm-sev { color: #1d4ed8; }
+  .tk-alarm-sev .material-icons { font-size: 1rem; width: 1rem; height: 1rem; }
+  .tk-alarm-code {
+    padding: .05rem .45rem; border-radius: 6px; background: var(--mexa-card); border: 1px solid var(--tk-line);
+    color: var(--mexa-ink-2); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .02em;
+  }
+  .tk-link {
+    margin-left: auto; display: inline-flex; align-items: center; gap: .2rem;
+    color: var(--tk-accent); font-weight: 600; text-decoration: none; border-radius: 4px;
+  }
+  .tk-link .material-icons { font-size: .95rem; width: .95rem; height: .95rem; }
+  .tk-link:hover { text-decoration: underline; }
+  .tk-link:focus-visible { outline: 2px solid var(--tk-accent); outline-offset: 2px; }
+  .tk-alarm-text { margin: .45rem 0 0; color: var(--mexa-ink); font-size: .92rem; font-weight: 600; overflow-wrap: anywhere; }
+  .tk-alarm-state {
+    display: flex; align-items: center; gap: .35rem; margin: .4rem 0 0;
+    color: var(--tbl-bad, #b42318); font-size: .78rem; font-weight: 500;
+  }
+  .tk-alarm-state .material-icons { font-size: .95rem; width: .95rem; height: .95rem; }
+  .tk-alarm-state.is-resolved { color: var(--tbl-good, #13703f); }
+
+  .tk-notes { margin: 0; color: var(--mexa-ink); font-size: .88rem; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
+
+  /* ── the activity ── */
+  .tk-timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: .1rem; }
+  .tk-timeline li { position: relative; display: grid; grid-template-columns: 1rem minmax(0, 1fr); gap: .65rem; padding-bottom: .65rem; }
+  /* the line to the next entry */
+  .tk-timeline li:not(:last-child)::before {
+    content: ''; position: absolute; left: calc(.5rem - 1px); top: 1.1rem; bottom: -.1rem; width: 2px; background: var(--tk-line);
+  }
+  .tk-tl-dot { width: .7rem; height: .7rem; margin: .32rem auto 0; border-radius: 999px; background: var(--mexa-ink-3); box-shadow: 0 0 0 3px var(--mexa-card); }
+  .tk-timeline li.is-assigned .tk-tl-dot { background: #2563eb; }
+  .tk-timeline li.is-in_progress .tk-tl-dot { background: #d97706; }
+  .tk-timeline li.is-resolved .tk-tl-dot { background: #16a34a; }
+  .tk-timeline li.is-closed .tk-tl-dot { background: var(--mexa-ink-2); }
+  .tk-tl-body p { margin: 0; font-size: .84rem; color: var(--mexa-ink); line-height: 1.45; }
+  .tk-tl-body strong { font-weight: 600; }
+  .tk-tl-note {
+    margin-top: .3rem !important; padding: .4rem .6rem; border-radius: 8px;
+    background: var(--mexa-row-alt); color: var(--mexa-ink-2) !important; white-space: pre-line;
+  }
+
+  .tk-footer { gap: .5rem; }
+
+  @media (max-width: 640px) {
+    .tk-facts { grid-template-columns: minmax(0, 1fr); }
+    .tk-facts > div:nth-last-child(-n + 2):nth-child(odd) { border-bottom: 1px dashed var(--tk-line); }
+    .tk-facts > div:last-child { border-bottom: 0; }
+    .tk-steps li { font-size: .66rem; }
+    .tk-link { margin-left: 0; }
+  }
+}
+
+:is(.dark, :root[data-theme="dark"]) .tk-dialog {
+  .tk-steps li.is-done .tk-dot::after { border-color: #0d1020; }
+  .tk-steps li.is-current:not(.is-done) .tk-dot { box-shadow: 0 0 0 4px rgba(142, 162, 255, .18); }
+  .tk-alarm-code { background: transparent; }
+  .tk-alarm.is-info .tk-alarm-sev { color: #8fb8f5; }
+}
