@@ -336,7 +336,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="ui-label" for="tk-machine">Machine<span class="ui-req" aria-hidden="true">*</span></label>
-            <select id="tk-machine" name="machine" [(ngModel)]="ticketForm.machine_id" class="ui-input" aria-required="true"
+            <select appSearchSelect id="tk-machine" name="machine" [(ngModel)]="ticketForm.machine_id" class="ui-input" aria-required="true"
                     [class.is-invalid]="ticketMissing.machine" [attr.aria-invalid]="ticketMissing.machine ? true : null"
                    [attr.aria-describedby]="ticketMissing.machine ? 'tkMachineErr' : null">
               <option [ngValue]="''" disabled>Select machine</option>
@@ -421,7 +421,7 @@
           </div>
           <div>
             <label class="ui-label" for="sc-machine">Machine<span class="ui-req" aria-hidden="true">*</span></label>
-            <select id="sc-machine" name="machine" [(ngModel)]="form.machine_id" class="ui-input" aria-required="true"
+            <select appSearchSelect id="sc-machine" name="machine" [(ngModel)]="form.machine_id" class="ui-input" aria-required="true"
                     [class.is-invalid]="scheduleMissing.machine" [attr.aria-invalid]="scheduleMissing.machine ? true : null"
                    [attr.aria-describedby]="scheduleMissing.machine ? 'scMachineErr' : null">
               <option [ngValue]="''" disabled>Select machine</option>
@@ -502,7 +502,7 @@
           </div>
           <div>
             <label class="ui-label" for="lg-machine">Machine<span class="ui-req" aria-hidden="true">*</span></label>
-            <select id="lg-machine" name="machine" [(ngModel)]="logForm.machine_id" class="ui-input" aria-required="true"
+            <select appSearchSelect id="lg-machine" name="machine" [(ngModel)]="logForm.machine_id" class="ui-input" aria-required="true"
                     [class.is-invalid]="logMissing.machine" [attr.aria-invalid]="logMissing.machine ? true : null"
                    [attr.aria-describedby]="logMissing.machine ? 'lgMachineErr' : null">
               <option [ngValue]="''" disabled>Select machine</option>

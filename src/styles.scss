@@ -2473,3 +2473,6 @@ transition: transform 0.3s ease;
 
 /* The Maintenance Dashboard's page rules, last, keyed to the page (styles/_maintenance.scss) */
 @include meta.load-css('styles/maintenance');
+
+/* The searchable list machine and operator dropdowns open (shared/search-select) */
+@include meta.load-css('styles/search-select');

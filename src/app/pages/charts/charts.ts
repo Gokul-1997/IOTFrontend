@@ -9,11 +9,12 @@ import { columnFigure } from '../../shared/bar-figures';
 import { FilterPanelDirective } from '../../shared/filter-panel.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { Subscription } from 'rxjs';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 @Component({
   selector: 'app-charts',
   standalone: true,
-  imports: [FilterPanelDirective, ReportDateDirective, AutoApplyDirective, CommonModule, FormsModule, NgApexchartsModule],
+  imports: [FilterPanelDirective, ReportDateDirective, AutoApplyDirective, CommonModule, FormsModule, NgApexchartsModule, SearchSelectDirective],
   templateUrl: './charts.html',
   styleUrl: './charts.scss'
 })

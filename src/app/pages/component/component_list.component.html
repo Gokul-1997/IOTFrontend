@@ -160,7 +160,7 @@
                 <label class="ui-label" for="compMachine">
                   Machine<span class="ui-req" aria-hidden="true">*</span>
                 </label>
-                <select id="compMachine" class="ui-input" formControlName="machine_id" aria-required="true"
+                <select appSearchSelect id="compMachine" class="ui-input" formControlName="machine_id" aria-required="true"
                         [class.is-invalid]="invalid('machine_id')"
                         [attr.aria-invalid]="invalid('machine_id')"
                         [attr.aria-describedby]="invalid('machine_id') ? 'compMachineErr' : null">

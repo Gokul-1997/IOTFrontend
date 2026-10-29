@@ -6,11 +6,12 @@ import { MachinesService } from '../machines/machines.service';
 import { AssignmentService } from './assignment.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 @Component({
   standalone: true,
   selector: 'app-assignment',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, SearchSelectDirective],
   templateUrl: './assignment.component.html',
   styleUrls: ['./assignment.component.scss']
 })

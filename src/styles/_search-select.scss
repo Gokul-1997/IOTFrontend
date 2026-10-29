@@ -1,0 +1,89 @@
+/* The list a machine or operator dropdown opens, with a search box on top
+   (shared/search-select.directive.ts, 29 Oct 2026). The dropdown itself keeps
+   its look; only this list is new. It sits on <body>, so these rules are
+   global, and it takes the page's tokens, so it follows the theme. A little
+   roomier than the browser's own list: wider than a small filter, taller rows. */
+
+.ss-panel {
+  position: fixed;
+  z-index: 1100;                      /* over a dialog (.ui-overlay is 50) */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--mexa-card);
+  color: var(--mexa-ink);
+  border: 1px solid var(--mexa-rule);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(18, 14, 64, .22), 0 2px 6px rgba(18, 14, 64, .10);
+  font-size: .9rem;
+  text-align: left;
+}
+
+.ss-search {
+  position: relative;
+  flex: none;
+  padding: .5rem;
+  border-bottom: 1px solid var(--mexa-rule);
+
+  svg {
+    position: absolute; left: 1.05rem; top: 50%;
+    width: 1rem; height: 1rem; transform: translateY(-50%);
+    color: var(--mexa-ink-3); pointer-events: none;
+  }
+
+  input {
+    width: 100%;
+    padding: .5rem .75rem .5rem 2.1rem;
+    border: 1px solid var(--mexa-rule);
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 500;
+    outline: none;
+  }
+  input::placeholder { color: var(--mexa-ink-3); }
+  input:focus-visible { border-color: var(--mexa-navy); box-shadow: 0 0 0 2px rgba(43, 58, 143, .22); }
+}
+
+.ss-panel ul[role="listbox"] {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: .3rem;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .55rem .75rem;
+    border-radius: 7px;
+    line-height: 1.25;
+    font-weight: 500;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+  }
+  li.is-active { background: #eef0fa; }      /* the keyboard's row, or the one under the mouse */
+  li[aria-selected="true"] { color: var(--mexa-navy); font-weight: 700; }
+  /* the one picked now: a tick, so it is not told by colour alone */
+  li[aria-selected="true"]::after {
+    content: ''; flex: none; margin-left: auto;
+    width: .45rem; height: .8rem;
+    border: solid currentColor; border-width: 0 2px 2px 0;
+    transform: translateY(-.1rem) rotate(45deg);
+  }
+  li[aria-disabled="true"] { color: var(--mexa-ink-3); cursor: not-allowed; }
+  li.ss-none { color: var(--mexa-ink-3); cursor: default; font-weight: 400; }
+}
+
+:is(.dark, :root[data-theme="dark"]) .ss-panel {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .5), 0 2px 6px rgba(0, 0, 0, .35);
+
+  .ss-search input:focus-visible { border-color: #8fa2ff; box-shadow: 0 0 0 2px rgba(143, 162, 255, .3); }
+  ul[role="listbox"] li.is-active { background: rgba(255, 255, 255, .08); }
+  ul[role="listbox"] li[aria-selected="true"] { color: #a5b4fc; }
+}

@@ -10,6 +10,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { StateComponent } from '../../shared/state/state.component';
 import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
 import { qty } from '../../shared/format-number';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 /** One machine's row in the hour-rate table: what is saved, and what is typed. */
 interface RateRow { id: number; name: string; model: string | null; saved: number | null; value: number | null; }
@@ -37,7 +38,7 @@ const toRate = (v: any): number | null =>
 @Component({
   selector: 'app-energy-tariff',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, StateComponent, SkeletonRowsComponent],
+  imports: [CommonModule, FormsModule, RouterModule, StateComponent, SkeletonRowsComponent, SearchSelectDirective],
   template: `
   <div class="mexa-titlebar">
   <div class="titlebar w-fit flex items-center gap-2 text-white">
@@ -149,7 +150,7 @@ const toRate = (v: any): number | null =>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="sm:col-span-2">
               <label for="tfMachine" class="ui-label">Applies to</label>
-              <select id="tfMachine" class="ui-input" [(ngModel)]="form.machine_id" name="tfMachine" [disabled]="editing"
+              <select appSearchSelect id="tfMachine" class="ui-input" [(ngModel)]="form.machine_id" name="tfMachine" [disabled]="editing"
                       [attr.aria-describedby]="editing ? 'tfMachineHint' : null">
                 <option [ngValue]="null">Company default</option>
                 <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>

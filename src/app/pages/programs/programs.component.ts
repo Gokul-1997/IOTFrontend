@@ -13,6 +13,7 @@ import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { takeLinkedRecord } from '../../shared/linked-record';
 import { controllerTypeLabel } from '../machines/controller-types';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 /** The server's limit (PROGRAM_MAX_MB); said before sending, so a big file is not uploaded for nothing. */
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -53,7 +54,7 @@ const STATUS: Record<PtMachineStatus, { label: string; badge: string }> = {
 @Component({
   selector: 'app-programs',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, StateComponent, SkeletonRowsComponent, MexaPagerComponent],
+  imports: [CommonModule, FormsModule, RouterLink, StateComponent, SkeletonRowsComponent, MexaPagerComponent, SearchSelectDirective],
   templateUrl: './programs.component.html',
   styleUrl: './programs.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

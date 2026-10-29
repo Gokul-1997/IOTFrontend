@@ -22,6 +22,7 @@ import { MetricHelpComponent } from '../../shared/metric-help/metric-help.compon
 import { lostCostLine, LOST_COST_HINT } from '../../shared/lost-cost';
 import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 /** Charts | Downtime Details (the reason summary and the events), under the tiles both share. */
 const TABS: DashTab[] = [
@@ -44,7 +45,7 @@ const TABS: DashTab[] = [
 @Component({
   selector: 'app-downtime-dashboard',
   standalone: true,
-  imports: [DashViewTabsComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, RouterModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent, EnumLabelPipe],
+  imports: [DashViewTabsComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, RouterModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent, EnumLabelPipe, SearchSelectDirective],
   templateUrl: './downtime-dashboard.component.html'
 })
 export class DowntimeDashboardComponent implements OnInit, OnDestroy, DashViewHooks {

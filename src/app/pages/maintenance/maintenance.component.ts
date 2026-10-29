@@ -8,11 +8,12 @@ import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { EnumLabelPipe } from '../../shared/enum-label.pipe';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 @Component({
   selector: 'app-maintenance',
   standalone: true,
-  imports: [CommonModule, FormsModule, EnumLabelPipe],
+  imports: [CommonModule, FormsModule, EnumLabelPipe, SearchSelectDirective],
   templateUrl: './maintenance.component.html',
   styles: [`
     /* a block, not the default inline: the page's blocks inside an inline host

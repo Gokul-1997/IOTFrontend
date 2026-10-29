@@ -20,6 +20,7 @@ import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } fro
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { barFigures, wrapLabel } from '../../shared/bar-figures';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 /** Charts | PM Ticket Details (the tickets and the alarm rules), under the tiles both share. */
 const TABS: DashTab[] = [
@@ -43,7 +44,7 @@ const TABS: DashTab[] = [
 @Component({
   selector: 'app-preventive-dashboard',
   standalone: true,
-  imports: [DashViewTabsComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
+  imports: [DashViewTabsComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent, SearchSelectDirective],
   templateUrl: './preventive-dashboard.component.html',
   styleUrl: './preventive-dashboard.component.scss'
 })

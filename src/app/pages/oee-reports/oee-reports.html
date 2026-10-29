@@ -16,7 +16,7 @@
 
   <div class="flex flex-col gap-1">
     <label class="label_custom" for="orMachine">Machine</label>
-    <select id="orMachine" name="orMachine" [(ngModel)]="selectedMachine" [disabled]="loadingMeta" class="filter-select">
+    <select appSearchSelect id="orMachine" name="orMachine" [(ngModel)]="selectedMachine" [disabled]="loadingMeta" class="filter-select">
       <option [ngValue]="null">All Machines</option>
       <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
     </select>

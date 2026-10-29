@@ -10,11 +10,12 @@ import { MetricHelpComponent } from '../../shared/metric-help/metric-help.compon
 import { StateComponent } from '../../shared/state/state.component';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { Subscription, forkJoin, catchError, of } from 'rxjs';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 @Component({
   selector: 'app-quality',
   standalone: true,
-  imports: [StoredImageDirective, MetricHelpComponent, StateComponent, ReportDateDirective, AutoApplyDirective, CommonModule, FormsModule, NgApexchartsModule],
+  imports: [StoredImageDirective, MetricHelpComponent, StateComponent, ReportDateDirective, AutoApplyDirective, CommonModule, FormsModule, NgApexchartsModule, SearchSelectDirective],
   templateUrl: './quality.html',
   styleUrl: './quality.scss'
 })

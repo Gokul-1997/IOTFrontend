@@ -16,7 +16,7 @@
         <!-- Machine -->
         <div class="flex flex-col md:flex-row gap-2 items-center">
           <label class="text-sm font-medium text-white">Machine</label>
-          <select [(ngModel)]="selectedMachine"
+          <select appSearchSelect [(ngModel)]="selectedMachine"
             class="filter-select" aria-label="Machine" >
             <option [ngValue]="null">All Machines</option>
             <option *ngFor="let m of machines" [ngValue]="m.id">

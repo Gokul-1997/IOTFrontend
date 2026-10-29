@@ -18,6 +18,7 @@ import { SEVERITY } from '../../shared/severity';
 import { PauseOffscreenDirective } from '../../shared/pause-offscreen.directive';
 import { SupplyVoltageComponent, SupplyView, supplyView } from './supply-voltage.component';
 import { AxisBatteriesComponent, AxisBattery, accAxisBatteries, accBatteryWord, batteryWarningWord, fanucBatterySupported } from './axis-batteries.component';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 2 — Maintenance Dashboard
@@ -71,7 +72,7 @@ const SIGNAL_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-maintenance-dashboard',
   standalone: true,
-  imports: [StoredImageDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, PauseOffscreenDirective, SupplyVoltageComponent, AxisBatteriesComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, ConditionGaugeComponent],
+  imports: [StoredImageDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, PauseOffscreenDirective, SupplyVoltageComponent, AxisBatteriesComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, ConditionGaugeComponent, SearchSelectDirective],
   templateUrl: './maintenance-dashboard.component.html',
   styleUrl: './maintenance-dashboard.component.scss'
 })

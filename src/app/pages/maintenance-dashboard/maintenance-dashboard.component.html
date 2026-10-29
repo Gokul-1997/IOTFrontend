@@ -50,7 +50,7 @@
 
     <span class="mexa-filter-set">
       <label class="mexa-filter-label" for="mtMachine">Machine</label>
-      <select id="mtMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine"
+      <select appSearchSelect id="mtMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine"
               aria-describedby="mtMachineHint">
         <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
       </select>

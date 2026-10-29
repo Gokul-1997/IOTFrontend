@@ -15,6 +15,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../core/services/auth.service';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 @Component({
   selector: 'app-component-list',
@@ -23,7 +24,8 @@ import { AuthService } from '../../core/services/auth.service';
     CommonModule, FormsModule, ReactiveFormsModule,
     MatTableModule, MatPaginatorModule, MatSortModule,
     MatButtonModule, MatIconModule, MatInputModule,
-    MatTooltipModule, MatProgressSpinnerModule
+    MatTooltipModule, MatProgressSpinnerModule,
+    SearchSelectDirective
   ],
   templateUrl: './component_list.component.html',
   styleUrl: './component_list.component.scss'

@@ -18,6 +18,7 @@ import { compactQty, qty } from '../../shared/format-number';
 import { BAR_HOVER, barFigures, columnFigures } from '../../shared/bar-figures';
 import { SEVERITY } from '../../shared/severity';
 import { AuthService } from '../../core/services/auth.service';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 /* ─────────────────────────────────────────────────────────────
    Phase 2 · Screen 1 — Factory Overall Dashboard
@@ -50,7 +51,7 @@ export type FactoryTarget = keyof typeof TARGETS;
 @Component({
   selector: 'app-factory',
   standalone: true,
-  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, RouterLink, NgApexchartsModule, SkeletonComponent],
+  imports: [MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, RouterLink, NgApexchartsModule, SkeletonComponent, SearchSelectDirective],
   templateUrl: './factory.component.html',
   styles: [`
     /* a card's way to the page with its records */

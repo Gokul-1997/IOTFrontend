@@ -12,11 +12,12 @@ import {
 import { MachinesService } from '../machines/machines.service';
 import { ShiftsService } from '../shifts/shifts.service';
 import { MachineShiftService } from './machine-shift.service';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 @Component({
   standalone: true,
   selector: 'app-machine-shift',
-  imports: [CommonModule, ReactiveFormsModule,FormsModule], // ✅ NO FormsModule
+  imports: [CommonModule, ReactiveFormsModule,FormsModule, SearchSelectDirective], // ✅ NO FormsModule
   templateUrl: './machine-shift.component.html',
   styleUrls: ['./machine-shift.component.scss']
 })

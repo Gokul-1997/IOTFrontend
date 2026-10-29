@@ -22,6 +22,7 @@ import { MetricHelpComponent } from '../../shared/metric-help/metric-help.compon
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 /** Charts | Machine Detail | Energy Meter, under the tiles all three share. The meter
  *  panel fetches its own readings, so its tab needs nothing more from this page. */
@@ -48,7 +49,7 @@ const TABS: DashTab[] = [
 @Component({
   selector: 'app-energy-dashboard',
   standalone: true,
-  imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MeterPanelComponent],
+  imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MeterPanelComponent, SearchSelectDirective],
   templateUrl: './energy-dashboard.component.html'
 })
 export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHooks {

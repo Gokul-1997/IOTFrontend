@@ -29,6 +29,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { downloadError, saveOrMessage } from '../../shared/report-file';
 import { pctText, pctTone } from '../../shared/report-value';
 import { AssistantService } from '../../core/services/assistant.service';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 type Tab = ReportType | 'oee-records' | 'machine-oee';
 
@@ -88,7 +89,7 @@ const COL_DEFS: Record<ReportType, ColDef[]> = {
 @Component({
   standalone: true,
   selector: 'app-reports',
-  imports: [MexaPagerComponent, StateComponent, MetricHelpComponent, ReportDateDirective, UiTabsDirective, AutoApplyDirective, CommonModule, FormsModule, OeeReportsComponent, MachineOeeReportComponent],
+  imports: [MexaPagerComponent, StateComponent, MetricHelpComponent, ReportDateDirective, UiTabsDirective, AutoApplyDirective, CommonModule, FormsModule, OeeReportsComponent, MachineOeeReportComponent, SearchSelectDirective],
   templateUrl: './reports.html',
   styleUrl: './reports.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

@@ -19,7 +19,7 @@
   <div class="mexa-filters" appFilterPanel>
     <span class="mexa-filter-set">
       <label class="mexa-filter-label" for="dtMachine">Machine</label>
-      <select id="dtMachine" class="mexa-select max-w-24" [(ngModel)]="f.machine_id" name="machine">
+      <select appSearchSelect id="dtMachine" class="mexa-select max-w-24" [(ngModel)]="f.machine_id" name="machine">
         <option [ngValue]="null">All</option>
         <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
       </select>

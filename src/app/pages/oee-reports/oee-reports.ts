@@ -12,6 +12,7 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { dayText, pctText, pctTone } from '../../shared/report-value';
 import { downloadError, saveOrMessage } from '../../shared/report-file';
 import { AssistantService } from '../../core/services/assistant.service';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 interface RecordColumn {
   key: string;
@@ -48,7 +49,7 @@ const COLUMNS: RecordColumn[] = [
 @Component({
   standalone: true,
   selector: 'app-oee-reports',
-  imports: [ReportDateDirective, AutoApplyDirective, SkeletonRowsComponent, MexaPagerComponent, CommonModule, FormsModule],
+  imports: [ReportDateDirective, AutoApplyDirective, SkeletonRowsComponent, MexaPagerComponent, CommonModule, FormsModule, SearchSelectDirective],
   templateUrl: './oee-reports.html',
   styleUrl: './oee-reports.scss'
 })

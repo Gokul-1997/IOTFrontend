@@ -163,7 +163,7 @@
       <!-- Machine -->
       <div class="flex flex-col gap-1">
         <label class="label_custom">Machine</label>
-        <select [(ngModel)]="filters.machine_id" (change)="onMachineChange()"
+        <select appSearchSelect [(ngModel)]="filters.machine_id" (change)="onMachineChange()"
           class="filter-select" aria-label="Machine" >
           <option value="">All Machines</option>
           <option *ngFor="let m of machines" [value]="m.id">{{ m.name }}</option>
@@ -173,7 +173,7 @@
       <!-- Operator -->
       <div class="flex flex-col gap-1">
         <label class="label_custom">Operator</label>
-        <select [(ngModel)]="filters.operator_id"
+        <select appSearchSelect [(ngModel)]="filters.operator_id"
           class="filter-select" aria-label="Operator" >
           <option value="">All Operators</option>
           <option *ngFor="let o of operators" [value]="o.id">{{ o.name }}</option>

@@ -19,7 +19,7 @@
   <div class="mexa-filters" appFilterPanel>
     <span class="mexa-filter-set">
       <label class="mexa-filter-label" for="peMachine">Machine</label>
-      <select id="peMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine">
+      <select appSearchSelect id="peMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine">
         <option [ngValue]="null">All</option>
         <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
       </select>
@@ -536,7 +536,7 @@
     <form class="grid gap-3 sm:grid-cols-2 lg:grid-cols-6 items-end my-4" (ngSubmit)="saveSchedule()">
       <div>
         <label for="scMachine" class="ui-label">Machine</label>
-        <select id="scMachine" class="filter-select w-full" [(ngModel)]="scheduleForm.machine_id" name="scMachine">
+        <select appSearchSelect id="scMachine" class="filter-select w-full" [(ngModel)]="scheduleForm.machine_id" name="scMachine">
           <option [ngValue]="null">Select a machine</option>
           <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
         </select>

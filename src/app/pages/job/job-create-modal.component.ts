@@ -5,11 +5,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DialogFormBase } from '../../shared/dialog-form.base';
 import { JobService } from './job.service';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 @Component({
   standalone: true,
   selector: 'app-job-create-modal',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchSelectDirective],
   templateUrl: './job-create-modal.component.html'
 })
 export class JobCreateModalComponent extends DialogFormBase implements OnInit {

@@ -8,7 +8,7 @@
 <form [formGroup]="form" (ngSubmit)="submit()" class="mexa-card asg-form">
   <div class="ui-field">
     <label class="ui-label" for="os-operator">Operator</label>
-    <select id="os-operator" class="ui-input" formControlName="operator_id">
+    <select appSearchSelect id="os-operator" class="ui-input" formControlName="operator_id">
       <option value="">Select operator</option>
       <option *ngFor="let o of operators" [value]="o.id">{{ o.operator_name }}</option>
     </select>

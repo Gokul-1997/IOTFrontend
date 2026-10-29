@@ -9,7 +9,7 @@
   <form [formGroup]="form">
     <div class="ui-field">
       <label class="ui-label" for="ms-machine">Machine</label>
-      <select id="ms-machine" class="ui-input" formControlName="machine_id" [attr.disabled]="saving ? '' : null" (change)="loadConfig()">
+      <select appSearchSelect id="ms-machine" class="ui-input" formControlName="machine_id" [attr.disabled]="saving ? '' : null" (change)="loadConfig()">
         <option value="">Select machine</option>
         <option *ngFor="let m of machines" [value]="m.id">{{ m.machine_serial_no }}</option>
       </select>

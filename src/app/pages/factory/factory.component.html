@@ -30,7 +30,7 @@
 
     <span class="mexa-filter-set">
       <label class="mexa-filter-label" for="fMachine">Machine</label>
-      <select id="fMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine">
+      <select appSearchSelect id="fMachine" class="mexa-select" [(ngModel)]="selectedMachine" name="machine">
         <option [ngValue]="null">All</option>
         <option *ngFor="let m of machines" [ngValue]="m.id">{{ m.machine_serial_no }}</option>
       </select>

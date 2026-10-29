@@ -19,6 +19,7 @@ import { UiTabsDirective } from '../../shared/ui-tabs.directive';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 /** Charts | Operator Performance Details, under the tiles both share. */
 const VIEWS: DashTab[] = [
@@ -51,7 +52,7 @@ type Tab = Exclude<Board, 'oee'>;
 @Component({
   selector: 'app-operator-dashboard',
   standalone: true,
-  imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, UiTabsDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, UiTabsDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, SearchSelectDirective],
   templateUrl: './operator-dashboard.component.html'
 })
 export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHooks {

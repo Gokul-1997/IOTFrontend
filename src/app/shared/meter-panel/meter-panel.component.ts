@@ -5,6 +5,7 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { BehaviorSubject, Subscription, catchError, filter, interval, map, of, startWith, switchMap } from 'rxjs';
 import { MeterService } from './meter.service';
 import { StateComponent } from '../state/state.component';
+import { SearchSelectDirective } from '../search-select.directive';
 
 /*
  * Everything a machine's energy meter reports, at the foot of the Energy
@@ -131,7 +132,7 @@ let uidSeq = 0;
 @Component({
   selector: 'app-meter-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgApexchartsModule, StateComponent],
+  imports: [CommonModule, FormsModule, NgApexchartsModule, StateComponent, SearchSelectDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host { display: block; }
@@ -180,7 +181,7 @@ let uidSeq = 0;
           <!-- only machines that have sent meter readings are offered -->
           <ng-container *ngIf="!machineId && meters.length > 1; else oneMeter">
             <label class="sr-only" [for]="ids.machine">Machine</label>
-            <select class="mexa-select mp-select" [id]="ids.machine" [ngModel]="selectedId" (ngModelChange)="setMachine($event)">
+            <select appSearchSelect class="mexa-select mp-select" [id]="ids.machine" [ngModel]="selectedId" (ngModelChange)="setMachine($event)">
               <option *ngFor="let m of meters" [ngValue]="m.id">{{ m.serial }}</option>
             </select>
           </ng-container>

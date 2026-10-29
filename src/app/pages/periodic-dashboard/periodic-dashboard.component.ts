@@ -16,6 +16,7 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { DashPart, DashTab, DashViewHooks, DashViews, revealWhenShown, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 /** Charts | Maintenance Details (upcoming, by type, the tickets and the plan), under the tiles both share. */
 const TABS: DashTab[] = [
@@ -38,7 +39,7 @@ const TABS: DashTab[] = [
 @Component({
   selector: 'app-periodic-dashboard',
   standalone: true,
-  imports: [DashViewTabsComponent, MexaPagerComponent, AutoApplyDirective, FilterPanelDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [DashViewTabsComponent, MexaPagerComponent, AutoApplyDirective, FilterPanelDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, SearchSelectDirective],
   templateUrl: './periodic-dashboard.component.html'
 })
 export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHooks {

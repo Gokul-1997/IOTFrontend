@@ -30,7 +30,7 @@
           <label class="ui-label" for="jobMachine">
             Machine<span class="ui-req" aria-hidden="true">*</span>
           </label>
-          <select id="jobMachine" class="ui-input" aria-required="true"
+          <select appSearchSelect id="jobMachine" class="ui-input" aria-required="true"
                   [(ngModel)]="form.machine_id" (ngModelChange)="onMachineChange()"
                   [disabled]="saving || machines.length === 0"
                   aria-describedby="jobMachineHint">

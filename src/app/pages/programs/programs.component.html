@@ -9,7 +9,7 @@
 <section class="mexa-card pt-machine" aria-label="Choose a machine">
   <div class="pt-select">
     <label class="ui-label" for="ptMachine">Machine</label>
-    <select id="ptMachine" class="ui-input" [(ngModel)]="selectedMachineId" (ngModelChange)="changeMachine()"
+    <select appSearchSelect id="ptMachine" class="ui-input" [(ngModel)]="selectedMachineId" (ngModelChange)="changeMachine()"
             [disabled]="loadingMachines || !machines.length">
       <option *ngIf="!machines.length" [ngValue]="null">{{ loadingMachines ? 'Loading machines…' : 'No machines' }}</option>
       <!-- each machine with what it is doing now; on hold (alarm, emergency stop, disconnected): no transfer (27 Oct 2026) -->

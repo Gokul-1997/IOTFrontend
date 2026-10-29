@@ -18,6 +18,7 @@ import { MetricHelpComponent } from '../../shared/metric-help/metric-help.compon
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 /** Charts | Ticket Details (Machine Summary and Maintenance Tickets), under the tiles both share. */
 const TABS: DashTab[] = [
@@ -38,7 +39,7 @@ const TABS: DashTab[] = [
 @Component({
   selector: 'app-maintenance-report',
   standalone: true,
-  imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent],
+  imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, SearchSelectDirective],
   templateUrl: './maintenance-report.component.html'
 })
 export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHooks {

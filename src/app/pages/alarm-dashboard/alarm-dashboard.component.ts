@@ -19,6 +19,7 @@ import { updatedLabel } from '../../shared/updated-label';
 import { ALARM_STATE, SEVERITY, severityOf } from '../../shared/severity';
 import { DashPart, DashTab, DashViewHooks, DashViews, revealWhenShown, viewInUrl } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 /** Charts | Alarms Details, under the cards both share. */
 const TABS: DashTab[] = [
@@ -38,7 +39,7 @@ const TABS: DashTab[] = [
 @Component({
   selector: 'app-alarm-dashboard',
   standalone: true,
-  imports: [DashViewTabsComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent],
+  imports: [DashViewTabsComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent, SearchSelectDirective],
   templateUrl: './alarm-dashboard.component.html'
 })
 export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks {

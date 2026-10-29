@@ -6,11 +6,12 @@ import { ShiftsService } from '../shifts/shifts.service';
 import { AssignmentService } from './assignment.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
+import { SearchSelectDirective } from '../../shared/search-select.directive';
 
 @Component({
   standalone: true,
   selector: 'app-operator-shift',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, SearchSelectDirective],
   templateUrl: './operator-shift.component.html',
   styleUrls: ['./operator-shift.component.scss']
 })
