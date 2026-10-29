@@ -8,6 +8,8 @@ import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AdminTabsComponent } from './admin-tabs.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 import { environment } from '../../../environments/environment';
 
 /** Timezones for a company's day: a short list first, then every one the browser knows. */
@@ -21,7 +23,7 @@ type AiFigure = 'person_daily' | 'company_daily' | 'monthly_usd';
 @Component({
   selector: 'app-company-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, AdminTabsComponent],
+  imports: [CommonModule, FormsModule, RouterModule, AdminTabsComponent, ...MEXA_TABLE],
   templateUrl: './company-management.component.html',
 })
 export class CompanyManagementComponent implements OnInit {
@@ -42,6 +44,20 @@ export class CompanyManagementComponent implements OnInit {
   get inactiveCompanyCount(): number { return this.companies.filter(c => !c.is_active).length; }
   get unassignedCompanyCount(): number { return this.companies.filter(c => !c.plan_id).length; }
   get hasCompanyFilters(): boolean { return !!this.searchTerm.trim() || this.statusFilter !== 'all' || this.planFilter !== 'all'; }
+
+  /* The tables' headers (shared/table, 29 Oct 2026): sort any column, filter the plan, the status. */
+  readonly companyTable = new TableState<any>([
+    { key: 'company_name' },
+    { key: 'plan_name', filter: 'list' },
+    { key: 'status', value: c => (c.is_active ? 'Active' : 'Inactive'), filter: 'list' }
+  ]);
+  readonly plantTable = new TableState<any>([
+    { key: 'plant_code' }, { key: 'plant_name' }, { key: 'location' },
+    { key: 'status', value: p => (p.is_active ? 'Active' : 'Inactive'), filter: 'list' }
+  ]);
+  readonly historyTable = new TableState<any>([
+    { key: 'changed_at', type: 'date' }, { key: 'plan_name', filter: 'list' }, { key: 'by', value: h => h.changed_by_name ?? h.changed_by }
+  ]);
 
   get filteredCompanies(): any[] {
     const query = this.searchTerm.trim().toLocaleLowerCase();

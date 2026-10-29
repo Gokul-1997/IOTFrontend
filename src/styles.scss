@@ -2479,3 +2479,6 @@ transition: transform 0.3s ease;
 
 /* The Machine Alarms page's rules, keyed to the page (styles/_alarms.scss) */
 @include meta.load-css('styles/alarms');
+
+/* The MEXA table header: sort and filter in every column (styles/_table.scss) */
+@include meta.load-css('styles/table');

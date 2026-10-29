@@ -14,11 +14,14 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { takeLinkedRecord } from '../../shared/linked-record';
 import { alarmText } from '../../shared/alarm-text';
 import { SEVERITY, severityOf } from '../../shared/severity';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { BLANK, TableState, codes, words } from '../../shared/table/table-state';
+import { StateComponent } from '../../shared/state/state.component';
 
 @Component({
   selector: 'app-maintenance',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, EnumLabelPipe, SearchSelectDirective, MexaPagerComponent],
+  imports: [CommonModule, FormsModule, RouterLink, EnumLabelPipe, SearchSelectDirective, MexaPagerComponent, StateComponent, ...MEXA_TABLE],
   templateUrl: './maintenance.component.html',
   styles: [`
     /* a block, not the default inline: the page's blocks inside an inline host
@@ -71,6 +74,45 @@ export class MaintenanceComponent implements OnInit {
   ticketPage = 1;
   ticketLimit = 20;
   ticketPagination: any = {};
+
+  /* The tables' headers (shared/table): sort any column, filter or search
+     it. Tickets are paged by the API, so it sorts and filters them; the
+     schedules, logs and MTTR are all here, so they are sorted here. */
+  readonly ticketTable = new TableState<any>([
+    { key: 'machine', filter: 'list', options: () => this.machines.map(m => ({ value: m.machine_serial_no, label: m.machine_serial_no })) },
+    { key: 'title' },
+    { key: 'issue', filter: 'list', options: () => codes(this.issueTypes) },
+    { key: 'priority', filter: 'list', options: () => codes(this.priorities) },
+    { key: 'assigned', filter: 'list', options: () => [{ value: BLANK, label: 'Unassigned' },
+      ...this.assignableUsers.map(u => ({ value: u.username, label: u.username }))] },
+    { key: 'status', filter: 'list', options: () => codes(this.ticketFilter === 'open' ? ['OPEN', 'ASSIGNED', 'IN_PROGRESS'] : this.ticketStatuses) },
+    { key: 'created' }
+  ], { mode: 'server', onChange: () => { this.ticketPage = 1; this.loadTickets(); } });
+
+  readonly scheduleTable = new TableState<any>([
+    { key: 'machine_serial_no', filter: 'list' },
+    { key: 'title' },
+    { key: 'maintenance_type', filter: 'list', label: words },
+    { key: 'scheduled_at' },
+    { key: 'assigned_to', filter: 'list' },
+    { key: 'status', filter: 'list', label: words }
+  ]);
+
+  readonly logTable = new TableState<any>([
+    { key: 'machine_serial_no', filter: 'list' },
+    { key: 'title' },
+    { key: 'maintenance_type', filter: 'list', label: words },
+    { key: 'started_at' },
+    { key: 'technician_name', filter: 'list' },
+    { key: 'status', filter: 'list', label: words }
+  ]);
+
+  readonly mttrTable = new TableState<any>([
+    { key: 'machine_serial_no' },
+    { key: 'total_events', type: 'number' },
+    { key: 'avg_repair_minutes', type: 'number' },
+    { key: 'total_downtime_minutes', type: 'number' }
+  ]);
   showTicketForm = false;
   ticketForm: any = blankTicket();
   ticketMissing = { machine: false, title: false };
@@ -134,7 +176,7 @@ export class MaintenanceComponent implements OnInit {
   loadTickets() {
     this.loading = true;
     this.cdr.markForCheck();
-    const params: any = { page: this.ticketPage, limit: this.ticketLimit };
+    const params: any = { page: this.ticketPage, limit: this.ticketLimit, ...this.ticketTable.params() };
     if (this.ticketFilter === 'open') params.open = true;
     this.ticketSvc.getTickets(params).subscribe({
       next: (r: any) => {

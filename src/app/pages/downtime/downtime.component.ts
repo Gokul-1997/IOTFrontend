@@ -7,11 +7,13 @@ import { ToastService } from '../../core/services/toast.service';
 import { StateComponent } from '../../shared/state/state.component';
 import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
 import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 
 @Component({
   selector: 'app-downtime',
   standalone: true,
-  imports: [CommonModule, FormsModule, StateComponent, SkeletonRowsComponent, MexaPagerComponent],
+  imports: [CommonModule, FormsModule, StateComponent, SkeletonRowsComponent, MexaPagerComponent, ...MEXA_TABLE],
   templateUrl: './downtime.component.html',
   styles: [`
     .num-col { text-align: right; }
@@ -28,8 +30,32 @@ export class DowntimeComponent implements OnInit {
   reasonsState: 'loading' | 'ready' | 'error' = 'loading';
   summaryState: 'loading' | 'ready' | 'error' = 'loading';
   reasonSearch = '';
-  reasonSort: 'code' | 'name' | 'category' = 'code';
-  reasonDir: 'asc' | 'desc' = 'asc';
+
+  /* The tables' headers (shared/table, 29 Oct 2026): sort any column,
+     filter or search it. Events are paged by the API, which sorts and
+     filters them; reason codes and the summary are all here. */
+  readonly eventTable = new TableState<any>([
+    { key: 'machine' },
+    { key: 'reason', filter: 'list', options: () => this.reasons.map(r => ({ value: r.name, label: r.name })) },
+    { key: 'category', filter: 'list', options: () => this.categories.map(c => ({ value: c, label: this.categoryLabel(c) })) },
+    { key: 'started' },
+    { key: 'duration' },
+    { key: 'by' }
+  ], { mode: 'server', onChange: () => { this.filter.page = 1; this.loadEvents(); } });
+
+  readonly reasonTable = new TableState<any>([
+    { key: 'code' },
+    { key: 'name' },
+    { key: 'category', filter: 'list', label: c => this.categoryLabel(c) },
+    { key: 'source', value: r => (r.company_id ? 'Your company' : 'Built-in'), filter: 'list' }
+  ], { sort: { key: 'code', dir: 'asc' } });
+
+  readonly summaryTable = new TableState<any>([
+    { key: 'reason_name' },
+    { key: 'category', filter: 'list', label: c => this.categoryLabel(c) },
+    { key: 'event_count', type: 'number' },
+    { key: 'total_seconds', type: 'number' }
+  ]);
   /* Add reason code: a dialog, like every other form in the app (it used to open in the page) */
   showReasonForm = false;
   reasonForm: any = { code: '', name: '', category: 'UNPLANNED' };
@@ -60,22 +86,10 @@ export class DowntimeComponent implements OnInit {
     });
   }
 
-  /** The reason codes the search matches, in the chosen order. */
+  /** The reason codes the search matches, sorted and filtered by the table's header. */
   get shownReasons(): any[] {
     const q = this.reasonSearch.trim().toLowerCase();
-    const sign = this.reasonDir === 'asc' ? 1 : -1;
-    const k = this.reasonSort;
-    return this.reasons
-      .filter(r => !q || `${r.code} ${r.name}`.toLowerCase().includes(q))
-      .sort((a, b) => sign * String(a[k] ?? '').localeCompare(String(b[k] ?? ''), undefined, { numeric: true }));
-  }
-  sortReasons(k: 'code' | 'name' | 'category') {
-    if (this.reasonSort === k) this.reasonDir = this.reasonDir === 'asc' ? 'desc' : 'asc';
-    else { this.reasonSort = k; this.reasonDir = 'asc'; }
-  }
-  reasonArrow(k: string): string { return this.reasonSort === k ? (this.reasonDir === 'asc' ? '▲' : '▼') : '⇅'; }
-  reasonAriaSort(k: string): string | null {
-    return this.reasonSort === k ? (this.reasonDir === 'asc' ? 'ascending' : 'descending') : null;
+    return this.reasonTable.view(q ? this.reasons.filter(r => `${r.code} ${r.name}`.toLowerCase().includes(q)) : this.reasons);
   }
   trackReason = (_: number, r: any) => r.id;
 
@@ -84,7 +98,7 @@ export class DowntimeComponent implements OnInit {
     this.eventsError = false;
     this.cdr.markForCheck();
 
-    const params: any = { ...this.filter };
+    const params: any = { ...this.filter, ...this.eventTable.params() };
     Object.keys(params).forEach(k => !params[k] && delete params[k]);
     this.svc.getEvents(params).subscribe({
       next: r => {

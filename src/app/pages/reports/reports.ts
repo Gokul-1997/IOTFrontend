@@ -30,6 +30,8 @@ import { downloadError, saveOrMessage } from '../../shared/report-file';
 import { pctText, pctTone } from '../../shared/report-value';
 import { AssistantService } from '../../core/services/assistant.service';
 import { SearchSelectDirective } from '../../shared/search-select.directive';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 
 type Tab = ReportType | 'oee-records' | 'machine-oee';
 
@@ -89,7 +91,7 @@ const COL_DEFS: Record<ReportType, ColDef[]> = {
 @Component({
   standalone: true,
   selector: 'app-reports',
-  imports: [MexaPagerComponent, StateComponent, MetricHelpComponent, ReportDateDirective, UiTabsDirective, AutoApplyDirective, CommonModule, FormsModule, OeeReportsComponent, MachineOeeReportComponent, SearchSelectDirective],
+  imports: [MexaPagerComponent, StateComponent, MetricHelpComponent, ReportDateDirective, UiTabsDirective, AutoApplyDirective, CommonModule, FormsModule, OeeReportsComponent, MachineOeeReportComponent, SearchSelectDirective, ...MEXA_TABLE],
   templateUrl: './reports.html',
   styleUrl: './reports.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -228,9 +230,25 @@ export class Reports implements OnInit, OnDestroy {
   get rangeDays(): number { return rangeDays(this.filters.date_from, this.filters.date_to); }
   get rangeTooLong(): boolean { return this.rangeDays > this.maxDirectDays; }
 
-  /* ── sort ── */
-  sortCol = '';
-  sortDir: 'asc' | 'desc' = 'asc';
+  /* ── sort ──
+     The table's header (shared/table, 29 Oct 2026): every row of the report
+     is here, so it sorts here — numbers as numbers, "VMC - 2" before
+     "VMC - 10", empty cells last — and the export follows the same order. */
+  /** The header for the report on screen: made again when the report changes (a tab, or a link that opens one). */
+  get tbl(): TableState<any> {
+    if (!this.table || this.tableFor !== this.activeTab) { this.tableFor = this.activeTab; this.table = this.makeTable(); }
+    return this.table;
+  }
+  private table?: TableState<any>;
+  private tableFor = '';
+  get sortCol(): string { return this.tbl.sort?.key || ''; }
+  get sortDir(): 'asc' | 'desc' { return this.tbl.sort?.dir || 'asc'; }
+
+  /** A header for this report's columns; a new report starts in its own order. */
+  private makeTable(): TableState<any> {
+    const defs = COL_DEFS[this.activeTab as ReportType] || [];
+    return new TableState<any>(defs.map(c => ({ key: c.key })), { onChange: () => { this.page = 1; this.cdr.markForCheck(); } });
+  }
 
   constructor(
     private svc: ReportsService,
@@ -288,7 +306,6 @@ export class Reports implements OnInit, OnDestroy {
     if (!this.isBuilt) { this.cdr.markForCheck(); return; }   // the embedded report loads itself
     this.loadFilterLists();
     this.page      = 1;
-    this.sortCol   = '';
     this.colBuilderOpen = false;
     this.resetColSelection();
     this.loadReport();
@@ -391,26 +408,7 @@ export class Reports implements OnInit, OnDestroy {
     });
   }
 
-  /* ── sort ── */
-  sort(col: string): void {
-    if (this.sortCol === col) {
-      this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortCol = col;
-      this.sortDir = 'asc';
-    }
-    this.page = 1;
-  }
-
-  get sortedRows(): any[] {
-    if (!this.sortCol) return this.rows;
-    return [...this.rows].sort((a, b) => {
-      const av = a[this.sortCol] ?? '';
-      const bv = b[this.sortCol] ?? '';
-      const cmp = isNaN(Number(av)) ? String(av).localeCompare(String(bv)) : Number(av) - Number(bv);
-      return this.sortDir === 'asc' ? cmp : -cmp;
-    });
-  }
+  get sortedRows(): any[] { return this.tbl.view(this.rows); }
 
   get pagedRows(): any[] {
     const start = (this.page - 1) * this.pageSize;

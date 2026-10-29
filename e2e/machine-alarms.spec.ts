@@ -54,7 +54,7 @@ async function openPage(page: any, asked: URL[], rows = ROWS) {
   await page.route(/\/api\/alarms(\?.*)?$/, (r: any) => {
     const url = new URL(r.request().url());
     asked.push(url);
-    const sev = url.searchParams.get('severity');
+    const sev = url.searchParams.get('f_severity');
     const list = sev === 'CRITICAL' ? rows.filter(a => a.severity === 'CRITICAL')
       : sev === 'NORMAL' ? rows.filter(a => a.severity !== 'CRITICAL') : rows;
     return json({ success: true, data: list, summary: SUMMARY, pagination: { page: 1, limit: 20, total: list.length, totalPages: 1 } })(r);
@@ -104,7 +104,7 @@ test('each alarm said once, its code apart, how bad, and whether it is still on'
   await seg.getByRole('button', { name: /^Critical/ }).click();
   await expect(seg.getByRole('button', { name: /^Critical/ })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('table.al-table tbody tr')).toHaveCount(2);
-  expect(asked.at(-1)!.searchParams.get('severity')).toBe('CRITICAL');
+  expect(asked.at(-1)!.searchParams.get('f_severity')).toBe('CRITICAL');
   expect(asked.at(-1)!.searchParams.get('page')).toBe('1');
 
   // a machine, from the flat list with search

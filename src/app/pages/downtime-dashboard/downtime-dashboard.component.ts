@@ -23,6 +23,8 @@ import { lostCostLine, LOST_COST_HINT } from '../../shared/lost-cost';
 import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 import { SearchSelectDirective } from '../../shared/search-select.directive';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState, codes } from '../../shared/table/table-state';
 
 /** Charts | Downtime Details (the reason summary and the events), under the tiles both share. */
 const TABS: DashTab[] = [
@@ -45,7 +47,7 @@ const TABS: DashTab[] = [
 @Component({
   selector: 'app-downtime-dashboard',
   standalone: true,
-  imports: [DashViewTabsComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, RouterModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent, EnumLabelPipe, SearchSelectDirective],
+  imports: [DashViewTabsComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, RouterModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent, EnumLabelPipe, SearchSelectDirective, ...MEXA_TABLE],
   templateUrl: './downtime-dashboard.component.html'
 })
 export class DowntimeDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
@@ -61,6 +63,22 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy, DashViewHo
 
   machines: any[] = [];
   shifts: any[] = [];
+
+  /* The tables' headers (shared/table, 29 Oct 2026). The reasons are all
+     here, so they sort here; the events are paged by the API, which sorts
+     and filters them. */
+  readonly reasonTable = new TableState<any>([
+    { key: 'reason' }, { key: 'events', type: 'number' }, { key: 'seconds', type: 'number' }, { key: 'share_pct', type: 'number' }
+  ]);
+  readonly eventTable = new TableState<any>([
+    { key: 'started' }, { key: 'ended' }, { key: 'duration' }, { key: 'machine' },
+    { key: 'shift', filter: 'list', options: () => [...this.shifts.map((s: any) => ({ value: s.shift_name, label: s.shift_name })),
+      { value: 'Unassigned', label: 'Unassigned' }] },
+    { key: 'reason', filter: 'list', options: () => (this.data?.by_reason || []).map((r: any) => ({ value: r.reason, label: r.reason })) },
+    { key: 'category', filter: 'list', options: codes(['UNPLANNED', 'PLANNED', 'QUALITY', 'CHANGEOVER', 'UNKNOWN']) },
+    { key: 'operator' },
+    { key: 'status', filter: 'list', options: [{ value: 'open', label: 'Open' }, { value: 'closed', label: 'Closed' }] }
+  ], { mode: 'server', onChange: () => { this.page = 1; this.load(); } });
   f: any = this.blankFilters();
   page = 1;
   limit = 20;
@@ -188,11 +206,11 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy, DashViewHo
      search narrows them too); the tables on those and the page. */
   partKeys(): Record<DashPart, string> {
     const shared = JSON.stringify(this.f);
-    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.page, this.limit]) };
+    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.eventTable.params(), this.page, this.limit]) };
   }
 
   fetchParts(parts: DashPart[]) {
-    const paging = parts.includes('table') ? { page: this.page, limit: this.limit } : {};
+    const paging = parts.includes('table') ? { ...this.eventTable.params(), page: this.page, limit: this.limit } : {};
     return this.svc.getDowntime({ ...this.f, ...paging, part: parts.join(',') }).pipe(takeUntil(this.destroy$));
   }
 
@@ -277,7 +295,7 @@ export class DowntimeDashboardComponent implements OnInit, OnDestroy, DashViewHo
     this.exporting = format;
     this.cdr.markForCheck();
 
-    this.svc.exportAs(format, this.f)
+    this.svc.exportAs(format, { ...this.f, ...this.eventTable.params() })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: blob => {

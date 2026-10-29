@@ -313,19 +313,19 @@
     </p>
 
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="machineTable">
         <caption class="sr-only">Energy by machine, highest first</caption>
         <thead>
           <tr>
-            <th scope="col">Machine</th>
-            <th scope="col">Sub</th>
-            <th class="qty" scope="col">Energy</th>
-            <th class="qty col-lg" scope="col">Operating Time</th>
-            <th class="qty" scope="col">Production</th>
-            <th class="qty col-md" scope="col">kWh / Part</th>
-            <th class="qty" scope="col">Cost ({{ data.currency }})</th>
-            <th class="qty col-md" scope="col">Peak kW</th>
-            <th scope="col">Status</th>
+            <th scope="col" mexaCol="machine">Machine</th>
+            <th scope="col" mexaCol="model">Sub</th>
+            <th class="qty" scope="col" mexaCol="energy">Energy</th>
+            <th class="qty col-lg" scope="col" mexaCol="run">Operating Time</th>
+            <th class="qty" scope="col" mexaCol="produced">Production</th>
+            <th class="qty col-md" scope="col" mexaCol="kwh_per_part">kWh / Part</th>
+            <th class="qty" scope="col" mexaCol="cost">Cost ({{ data.currency }})</th>
+            <th class="qty col-md" scope="col" mexaCol="peak">Peak kW</th>
+            <th scope="col" mexaCol="status">Status</th>
           </tr>
         </thead>
         <tbody>

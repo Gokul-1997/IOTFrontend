@@ -14,8 +14,9 @@ export class JobService {
         return this.http.get(`${this.api}/jobs/current`);
     }
 
-    getJobHistory(page = 1, limit = 10) {
-        return this.http.get(`${this.api}/jobs/history`, { params: { page, limit } });
+    /** `table`: the history table's header sort and filters (shared/table: sort, dir, f_…, q_…). */
+    getJobHistory(page = 1, limit = 10, table: Record<string, string> = {}) {
+        return this.http.get(`${this.api}/jobs/history`, { params: { ...table, page, limit } });
     }
 
     startJob(data: any) {

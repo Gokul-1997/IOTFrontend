@@ -23,6 +23,8 @@ export class OperatorDashboardService {
     for (const k of ['from', 'to', 'machine_id', 'shift_id', 'operator_id', 'search', 'show', 'sort', 'dir', 'page', 'limit', 'part']) {
       if (f[k] !== null && f[k] !== undefined && f[k] !== '') q[k] = f[k];
     }
+    // the table's header filters (shared/table: f_<column>=a,b)
+    for (const k of Object.keys(f)) if (k.startsWith('f_') && f[k]) q[k] = f[k];
     return q;
   }
 

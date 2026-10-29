@@ -29,6 +29,8 @@ export class PreventiveDashboardService {
     limit?: number;
     /** Which parts: 'kpis', 'charts', 'table', comma-separated (Backend dashboard/parts.js). */
     part?: string;
+    /** The tickets table's header: sort, dir, f_<column> (shared/table). */
+    table?: Record<string, string>;
   }): Observable<any> {
     const query: any = {};
     if (params.show)       query.show       = params.show;
@@ -40,6 +42,7 @@ export class PreventiveDashboardService {
     if (params.limit)      query.limit      = params.limit;
     // which parts of the dashboard: the tiles, the charts, the tables (Backend dashboard/parts.js)
     if (params.part)       query.part       = params.part;
+    Object.assign(query, params.table || {});
     return this.http.get<any>(`${this.api}/dashboard/preventive`, { params: query });
   }
 

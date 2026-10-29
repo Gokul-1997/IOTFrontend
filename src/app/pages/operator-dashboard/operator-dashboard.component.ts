@@ -20,6 +20,8 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 import { SearchSelectDirective } from '../../shared/search-select.directive';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 
 /** Charts | Operator Performance Details, under the tiles both share. */
 const VIEWS: DashTab[] = [
@@ -52,7 +54,7 @@ type Tab = Exclude<Board, 'oee'>;
 @Component({
   selector: 'app-operator-dashboard',
   standalone: true,
-  imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, UiTabsDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, SearchSelectDirective],
+  imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, UiTabsDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, SearchSelectDirective, ...MEXA_TABLE],
   templateUrl: './operator-dashboard.component.html'
 })
 export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
@@ -103,6 +105,21 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
 
   private destroy$ = new Subject<void>();
   private search$ = new RxSubject<string>();
+
+  /** The table's header (shared/table, 29 Oct 2026): the API sorts and filters
+   *  the operators (best Performance first until a column is chosen). */
+  readonly tbl = new TableState<any>([
+    { key: 'operator_code' }, { key: 'operator_name' },
+    { key: 'shift_name', filter: 'list', options: () => this.shiftOptions },
+    { key: 'machine_names' }, { key: 'score' }, { key: 'run_seconds' }, { key: 'downtime_seconds' },
+    { key: 'utilization_pct' }, { key: 'produced' }, { key: 'good' }, { key: 'rejected' }, { key: 'quality_rate_pct' },
+    { key: 'alarm_count' }, { key: 'oee_pct' }, { key: 'efficiency_pct' },
+    { key: 'band', sort: false, filter: 'list', options: () => Object.entries(this.bandText).map(([value, label]) => ({ value, label })) }
+  ], { mode: 'server', sort: { key: 'score', dir: 'desc' }, onChange: () => this.tableChanged() });
+
+  private get shiftOptions() {
+    return this.shifts.map((s: any) => ({ value: s.shift_name, label: s.shift_name }));
+  }
 
   /** The table's columns, in the mock's order. `key` is what the server sorts by. */
   readonly columns = [
@@ -171,6 +188,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
   reset(): void {
     this.f = this.blankFilters();
     this.page = 1; this.sort = 'score'; this.dir = 'desc';
+    this.tbl.reset();          // quiet enough: load() follows
     this.drill.clear();
     this.load();
   }
@@ -203,16 +221,18 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
 
   setPageSize(size: number): void { this.limit = Number(size) || 10; this.page = 1; this.load(); }
 
-  /** Click a header: sort by it; click it again to flip the direction. */
-  sortBy(key: string): void {
-    if (this.sort === key) this.dir = this.dir === 'desc' ? 'asc' : 'desc';
-    else { this.sort = key; this.dir = ['operator_code', 'operator_name', 'shift_name', 'machine_names'].includes(key) ? 'asc' : 'desc'; }
+  /** The header's sort or a filter changed: the table asks again, from its first page. */
+  private tableChanged(): void {
+    this.sort = this.tbl.sort?.key || 'score';
+    this.dir = this.tbl.sort?.dir || 'desc';
     this.page = 1;
     this.load();
   }
 
-  ariaSort(key: string): 'ascending' | 'descending' | 'none' {
-    return this.sort !== key ? 'none' : this.dir === 'asc' ? 'ascending' : 'descending';
+  /** The header's filters as the API reads them (f_<column>=a,b); the sort goes as sort/dir. */
+  private tableFilters(): Record<string, string> {
+    const { sort, dir, ...filters } = this.tbl.params();
+    return filters;
   }
 
   isShowing(board: string, which: Which): boolean { return this.which[board as Board] === which; }
@@ -242,11 +262,11 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
      operator search narrows them too); the list on those and its order and page. */
   partKeys(): Record<DashPart, string> {
     const shared = JSON.stringify(this.f);
-    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.drill.kind, this.sort, this.dir, this.page, this.limit]) };
+    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.drill.kind, this.sort, this.dir, this.tbl.filters, this.page, this.limit]) };
   }
 
   fetchParts(parts: DashPart[]) {
-    const table = parts.includes('table') ? { show: this.drill.kind || null, sort: this.sort, dir: this.dir, page: this.page, limit: this.limit } : {};
+    const table = parts.includes('table') ? { ...this.tableFilters(), show: this.drill.kind || null, sort: this.sort, dir: this.dir, page: this.page, limit: this.limit } : {};
     return this.svc.getOperators({ ...this.f, ...table, part: parts.join(',') }).pipe(takeUntil(this.destroy$));
   }
 
@@ -289,7 +309,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
   export(format: 'xlsx' | 'csv'): void {
     this.exporting = format;
     this.cdr.markForCheck();
-    this.svc.exportAs(format, { ...this.f, show: this.drill.kind || null, sort: this.sort, dir: this.dir })
+    this.svc.exportAs(format, { ...this.f, ...this.tableFilters(), show: this.drill.kind || null, sort: this.sort, dir: this.dir })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: blob => {

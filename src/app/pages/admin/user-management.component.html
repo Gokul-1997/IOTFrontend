@@ -78,18 +78,18 @@
       </div>
 
       <div *ngIf="filteredUsers.length > 0" class="admin-tablewrap" tabindex="0" role="region" aria-label="Company Admins" [attr.aria-busy]="loading">
-        <table class="admin-table admin-user-directory">
+        <table class="admin-table admin-user-directory" [mexaTable]="adminTable">
           <thead>
             <tr>
-              <th scope="col">Administrator</th>
-              <th scope="col">Company</th>
-              <th scope="col">Role</th>
-              <th scope="col">Status</th>
+              <th scope="col" mexaCol="username">Administrator</th>
+              <th scope="col" mexaCol="company_name">Company</th>
+              <th scope="col" mexaCol="role">Role</th>
+              <th scope="col" mexaCol="status">Status</th>
               <th scope="col" class="actions">Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let user of filteredUsers">
+            <tr *ngFor="let user of filteredUsers | tableView:adminTable:adminTable.version">
               <td>
                 <div class="admin-record">
                   <span class="admin-record-avatar" aria-hidden="true">{{ user.username.charAt(0).toUpperCase() }}</span>
@@ -171,19 +171,19 @@
 
     <!-- Users Table -->
     <div *ngIf="!loading && users.length > 0" class="mexa-tablewrap" tabindex="0" role="region" aria-label="Users">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="userTable">
         <thead>
           <tr>
             <th class="col-lg" scope="col">#</th>
-            <th scope="col">User</th>
-            <th scope="col" *ngIf="auth.isSntSuper()" >Company</th>
-            <th class="col-md" scope="col">Roles</th>
-            <th scope="col">Status</th>
+            <th scope="col" mexaCol="username">User</th>
+            <th scope="col" *ngIf="auth.isSntSuper()" mexaCol="company_name">Company</th>
+            <th class="col-md" scope="col" mexaCol="roles">Roles</th>
+            <th scope="col" mexaCol="status">Status</th>
             <th scope="col" class="actions">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let user of users; let i = index">
+          <tr *ngFor="let user of users | tableView:userTable:userTable.version; let i = index">
             <td class="px-4 py-3 text-sm text-gray-400 col-lg">{{ i + 1 }}</td>
             <td class="px-4 py-3">
               <div class="flex items-center gap-3">

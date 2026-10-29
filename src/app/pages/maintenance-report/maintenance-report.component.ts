@@ -19,6 +19,8 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 import { SearchSelectDirective } from '../../shared/search-select.directive';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { BLANK, TableState, codes } from '../../shared/table/table-state';
 
 /** Charts | Ticket Details (Machine Summary and Maintenance Tickets), under the tiles both share. */
 const TABS: DashTab[] = [
@@ -39,7 +41,7 @@ const TABS: DashTab[] = [
 @Component({
   selector: 'app-maintenance-report',
   standalone: true,
-  imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, SearchSelectDirective],
+  imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, SearchSelectDirective, ...MEXA_TABLE],
   templateUrl: './maintenance-report.component.html'
 })
 export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHooks {
@@ -58,6 +60,24 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHo
 
   machines: any[] = [];
   f: any = this.blankFilters();
+
+  /* The tables' headers (shared/table, 29 Oct 2026): the machine summary is
+     all here; the tickets are paged by the API, which sorts and filters them. */
+  readonly machineTable = new TableState<any>([
+    { key: 'machine_serial_no' }, { key: 'tickets', type: 'number' }, { key: 'breakdowns', type: 'number' },
+    { key: 'downtime_minutes', type: 'number' }, { key: 'mttr_hours', type: 'number' }
+  ]);
+  readonly ticketTable = new TableState<any>([
+    { key: 'machine', filter: 'list', options: () => this.machines.map((m: any) => ({ value: m.machine_serial_no, label: m.machine_serial_no })) },
+    { key: 'title' },
+    { key: 'type', filter: 'list', options: codes(['BREAKDOWN', 'ALARM', 'INSPECTION', 'PREVENTIVE', 'PERIODIC', 'OTHER']) },
+    { key: 'priority', filter: 'list', options: codes(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']) },
+    { key: 'raised' }, { key: 'repair' }, { key: 'downtime' },
+    { key: 'assigned', filter: 'list', options: () => [{ value: BLANK, label: 'Unassigned' },
+      ...[...new Set((this.data?.tickets?.data || []).map((t: any) => t.assigned_to_name).filter(Boolean))]
+        .map(n => ({ value: n as string, label: n as string }))] },
+    { key: 'status', filter: 'list', options: codes(['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']) }
+  ], { mode: 'server', onChange: () => { this.page = 1; this.load(); } });
   page = 1;
   readonly limit = 20;
 
@@ -160,11 +180,11 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHo
      ticket search narrows them too); the tables on those and the page. */
   partKeys(): Record<DashPart, string> {
     const shared = JSON.stringify(this.f);
-    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.drill.kind, this.page, this.limit]) };
+    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.drill.kind, this.ticketTable.params(), this.page, this.limit]) };
   }
 
   fetchParts(parts: DashPart[]) {
-    const paging = parts.includes('table') ? { show: this.drill.kind || null, page: this.page, limit: this.limit } : {};
+    const paging = parts.includes('table') ? { ...this.ticketTable.params(), show: this.drill.kind || null, page: this.page, limit: this.limit } : {};
     return this.svc.getReport({ ...this.f, ...paging, part: parts.join(',') }).pipe(takeUntil(this.destroy$));
   }
 
@@ -230,7 +250,7 @@ export class MaintenanceReportComponent implements OnInit, OnDestroy, DashViewHo
   export(format: 'xlsx' | 'csv'): void {
     this.exporting = format;
     this.cdr.markForCheck();
-    this.svc.exportAs(format, { ...this.f, show: this.drill.kind || null })
+    this.svc.exportAs(format, { ...this.f, ...this.ticketTable.params(), show: this.drill.kind || null })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: blob => {

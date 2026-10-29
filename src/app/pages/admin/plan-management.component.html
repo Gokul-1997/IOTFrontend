@@ -80,20 +80,20 @@
     </div>
 
     <div *ngIf="filteredPlans.length > 0" class="admin-tablewrap" tabindex="0" role="region" aria-label="Plans" [attr.aria-busy]="loading">
-      <table class="admin-table plan-directory">
+      <table class="admin-table plan-directory" [mexaTable]="planTable">
         <thead>
           <tr>
-            <th scope="col">Plan</th>
-            <th scope="col">Users</th>
-            <th scope="col">Plants</th>
-            <th scope="col">Machines</th>
-            <th scope="col">Companies</th>
-            <th scope="col">Status</th>
+            <th scope="col" mexaCol="plan_name">Plan</th>
+            <th scope="col" mexaCol="max_users">Users</th>
+            <th scope="col" mexaCol="max_plants">Plants</th>
+            <th scope="col" mexaCol="max_machines">Machines</th>
+            <th scope="col" mexaCol="companies">Companies</th>
+            <th scope="col" mexaCol="status">Status</th>
             <th scope="col" class="actions">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let plan of filteredPlans">
+          <tr *ngFor="let plan of filteredPlans | tableView:planTable:planTable.version">
             <td>
               <div class="admin-record">
                 <span class="admin-record-avatar material-icons" aria-hidden="true">layers</span>

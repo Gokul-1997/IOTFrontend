@@ -8,7 +8,8 @@ import { ComponentApi } from './component.api';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSortModule } from '@angular/material/sort';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -22,7 +23,7 @@ import { SearchSelectDirective } from '../../shared/search-select.directive';
   standalone: true,
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
-    MatTableModule, MatPaginatorModule, MatSortModule,
+    MatTableModule, MatPaginatorModule, ...MEXA_TABLE,
     MatButtonModule, MatIconModule, MatInputModule,
     MatTooltipModule, MatProgressSpinnerModule,
     SearchSelectDirective
@@ -120,10 +121,18 @@ export class ComponentList implements OnInit, OnDestroy {
     });
   }
 
+  /* The table's header (shared/table, 29 Oct 2026): the API pages the
+     components, so it sorts and filters them. Machines picked by name. */
+  readonly componentTable = new TableState<any>([
+    { key: 'machine', filter: 'list', options: () => (this.machines || []).map((m: any) => ({ value: m.machine_serial_no, label: m.machine_serial_no })) },
+    { key: 'part_name' }, { key: 'part_number' }, { key: 'operation' },
+    { key: 'cycle_time' }, { key: 'target' }, { key: 'factor' }
+  ], { mode: 'server', onChange: () => { this.page = 1; this.load(); } });
+
   load() {
     this.loadRequest?.unsubscribe();
     this.loading = true;
-    this.loadRequest = this.api.list(this.page, this.limit, this.search).pipe(takeUntil(this.destroy$)).subscribe({
+    this.loadRequest = this.api.list(this.page, this.limit, this.search, this.componentTable.params()).pipe(takeUntil(this.destroy$)).subscribe({
       next: res => {
         this.components = res.data;
         this.total      = res.meta.total;

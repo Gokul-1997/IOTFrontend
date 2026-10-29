@@ -148,16 +148,16 @@
       </div>
     </div>
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Program files">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="fileTable">
         <caption class="sr-only">Files of {{ m.machine_serial_no }}, newest first</caption>
         <thead>
           <tr>
-            <th scope="col">Program</th>
-            <th scope="col">Type</th>
-            <th scope="col">At the machine</th>
-            <th scope="col" class="qty col-md">Size</th>
-            <th scope="col">Saved</th>
-            <th scope="col" class="col-lg">By</th>
+            <th scope="col" mexaCol="program">Program</th>
+            <th scope="col" mexaCol="type">Type</th>
+            <th scope="col" mexaCol="delivery">At the machine</th>
+            <th scope="col" class="qty col-md" mexaCol="size">Size</th>
+            <th scope="col" mexaCol="saved">Saved</th>
+            <th scope="col" class="col-lg" mexaCol="by">By</th>
             <th scope="col" class="actions"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
@@ -200,7 +200,12 @@
                 </span>
               </td>
             </tr>
-            <tr *ngIf="!files.length">
+            <tr *ngIf="!files.length && fileTable.anyFilter">
+              <td colspan="7" class="mexa-empty">
+                <app-state title="No files match these filters" action="Clear filters" (act)="fileTable.reset()"></app-state>
+              </td>
+            </tr>
+            <tr *ngIf="!files.length && !fileTable.anyFilter">
               <td colspan="7" class="mexa-empty">
                 <app-state [title]="filter === 'backups' ? 'No backups yet' : filter === 'uploads' ? 'No uploads yet' : 'No files yet'"
                            [text]="filter === 'backups' ? 'Backups appear here when the gateway sends them.' : 'Upload a program for this machine to start.'"></app-state>

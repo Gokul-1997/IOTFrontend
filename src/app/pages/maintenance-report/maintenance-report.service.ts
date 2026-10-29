@@ -23,6 +23,8 @@ export class MaintenanceReportService {
     for (const k of ['from', 'to', 'machine_id', 'status', 'issue_type', 'priority', 'search', 'show', 'page', 'limit', 'part']) {
       if (f[k] !== null && f[k] !== undefined && f[k] !== '') q[k] = f[k];
     }
+    // the tickets table's header: its sort and filters (shared/table)
+    for (const k of Object.keys(f)) if ((k === 'sort' || k === 'dir' || k.startsWith('f_')) && f[k]) q[k] = f[k];
     return q;
   }
 

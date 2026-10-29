@@ -36,7 +36,7 @@
     </div>
 
     <div class="table-wrapper">
-      <table mat-table [dataSource]="components" class="ent-table">
+      <table mat-table [dataSource]="components" class="ent-table" [mexaTable]="componentTable">
 
         <!-- # -->
         <ng-container matColumnDef="index">
@@ -46,7 +46,7 @@
 
         <!-- Machine -->
         <ng-container matColumnDef="machine_serial_no">
-          <th mat-header-cell *matHeaderCellDef>Machine</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="machine">Machine</th>
           <td mat-cell *matCellDef="let r">
             <span class="serial-no strong">{{ r.machine_serial_no || '—' }}</span>
           </td>
@@ -54,25 +54,25 @@
 
         <!-- Part Name -->
         <ng-container matColumnDef="part_name">
-          <th mat-header-cell *matHeaderCellDef>Part Name</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="part_name">Part Name</th>
           <td mat-cell *matCellDef="let r"><span class="clip" [title]="r.part_name">{{ r.part_name }}</span></td>
         </ng-container>
 
         <!-- Part Number -->
         <ng-container matColumnDef="part_number">
-          <th mat-header-cell *matHeaderCellDef class="col-md">Part No</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="part_number" class="col-md">Part No</th>
           <td mat-cell *matCellDef="let r" class="col-md">{{ r.part_number || '—' }}</td>
         </ng-container>
 
         <!-- Operation -->
         <ng-container matColumnDef="operation_number">
-          <th mat-header-cell *matHeaderCellDef class="col-lg">Operation</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="operation" class="col-lg">Operation</th>
           <td mat-cell *matCellDef="let r" class="col-lg">{{ r.operation_number || '—' }}</td>
         </ng-container>
 
         <!-- Cycle Time -->
         <ng-container matColumnDef="cycle_time">
-          <th mat-header-cell *matHeaderCellDef class="qty">Cycle Time</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="cycle_time" class="qty">Cycle Time</th>
           <td mat-cell *matCellDef="let r" class="qty">
             {{ formatCycleTimeTable(r.cycle_time) }}
           </td>
@@ -80,13 +80,13 @@
 
         <!-- Target -->
         <ng-container matColumnDef="target">
-          <th mat-header-cell *matHeaderCellDef class="qty">Target</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="target" class="qty">Target</th>
           <td mat-cell *matCellDef="let r" class="qty">{{ r.target }}</td>
         </ng-container>
 
         <!-- Factor -->
         <ng-container matColumnDef="multiplication_factor">
-          <th mat-header-cell *matHeaderCellDef class="qty col-lg">Factor</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="factor" class="qty col-lg">Factor</th>
           <td mat-cell *matCellDef="let r" class="qty col-lg">{{ r.multiplication_factor }}</td>
         </ng-container>
 

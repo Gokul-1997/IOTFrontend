@@ -21,6 +21,8 @@ import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.com
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { barFigures, wrapLabel } from '../../shared/bar-figures';
 import { SearchSelectDirective } from '../../shared/search-select.directive';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState, codes } from '../../shared/table/table-state';
 
 /** Charts | PM Ticket Details (the tickets and the alarm rules), under the tiles both share. */
 const TABS: DashTab[] = [
@@ -44,7 +46,7 @@ const TABS: DashTab[] = [
 @Component({
   selector: 'app-preventive-dashboard',
   standalone: true,
-  imports: [DashViewTabsComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent, SearchSelectDirective],
+  imports: [DashViewTabsComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent, SearchSelectDirective, ...MEXA_TABLE],
   templateUrl: './preventive-dashboard.component.html',
   styleUrl: './preventive-dashboard.component.scss'
 })
@@ -87,6 +89,26 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
 
   /* ── threshold rules ── */
   thresholds: any[] = [];
+
+  /* The tables' headers (shared/table, 29 Oct 2026): the PM tickets are paged
+     by the API, which sorts and filters them; the alarm rules are all here. */
+  readonly ticketTable = new TableState<any>([
+    { key: 'ticket' },
+    { key: 'machine', filter: 'list', options: () => (this.machines || []).map((m: any) => ({ value: m.machine_serial_no, label: m.machine_serial_no })) },
+    { key: 'alarm' },
+    { key: 'priority', filter: 'list', options: codes(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']) },
+    { key: 'triggered' }, { key: 'due' },
+    { key: 'status', filter: 'list', options: codes(['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']) },
+    { key: 'age' }
+  ], { mode: 'server', onChange: () => { this.page = 1; this.load(); } });
+  readonly ruleTable = new TableState<any>([
+    { key: 'scope', value: r => r.machine_serial_no || r.scope_machine || 'All machines', filter: 'list' },
+    { key: 'alarm_type', value: r => r.alarm_type || 'Any', filter: 'list' },
+    { key: 'threshold_count', type: 'number' }, { key: 'window_hours', type: 'number' }, { key: 'due_hours', type: 'number' },
+    { key: 'priority', filter: 'list', label: v => v.charAt(0) + v.slice(1).toLowerCase() },
+    { key: 'tickets_created', type: 'number' },
+    { key: 'active', value: r => (r.is_active ? 'Active' : 'Off'), filter: 'list' }
+  ]);
   showRules = false;
   /** The rules were asked for (they are company-wide: once is enough until one changes). */
   private rulesAsked = false;
@@ -239,11 +261,12 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
     const window = JSON.stringify([this.fromDate, this.toDate, this.selectedMachine]);
     // a tile's narrowing is bounded by the dates, as the tiles are; the backlog is not
     const tile = this.drill.kind ? [this.drill.kind, this.fromDate, this.toDate] : null;
-    return { kpis: window, charts: window, table: JSON.stringify([this.selectedMachine, this.search, tile, this.page, this.limit]) };
+    return { kpis: window, charts: window, table: JSON.stringify([this.selectedMachine, this.search, tile, this.ticketTable.params(), this.page, this.limit]) };
   }
 
   fetchParts(parts: DashPart[]) {
-    const table = parts.includes('table') ? { search: this.search, show: this.drill.kind || null, page: this.page, limit: this.limit } : {};
+    const table = parts.includes('table')
+      ? { search: this.search, show: this.drill.kind || null, page: this.page, limit: this.limit, table: this.ticketTable.params() } : {};
     return this.svc.getPreventive({ from: this.fromDate, to: this.toDate, machine_id: this.selectedMachine, ...table, part: parts.join(',') })
       .pipe(takeUntil(this.destroy$));
   }

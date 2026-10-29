@@ -288,18 +288,12 @@
     <!-- Data table -->
     <div *ngIf="!loading && rows.length > 0 && selectedCount > 0" class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Report table — scroll to see every row and column">
      <div class="table-wrap">
-      <table class="mexa-table is-dense is-striped">
+      <table class="mexa-table is-dense is-striped" [mexaTable]="tbl">
         <thead>
           <tr>
             <th scope="col" class="col-index">#</th>
-            <!-- a quantity column lines up on the right; the header is the sort button -->
-            <th scope="col" *ngFor="let col of activeColumns" [class.qty]="col.align && col.align !== 'left'"
-                [attr.aria-sort]="sortCol === col.key ? (sortDir === 'asc' ? 'ascending' : 'descending') : null">
-              <button type="button" class="mexa-sort" (click)="sort(col.key)" [attr.aria-current]="sortCol === col.key">
-                {{ col.label }}
-                <span class="mexa-sort-arrow" aria-hidden="true">{{ sortCol === col.key ? (sortDir === 'asc' ? '▲' : '▼') : '⇅' }}</span>
-              </button>
-            </th>
+            <!-- a quantity column lines up on the right; the header sorts it (shared/table) -->
+            <th scope="col" *ngFor="let col of activeColumns" [class.qty]="col.align && col.align !== 'left'" [mexaCol]="col.key">{{ col.label }}</th>
           </tr>
         </thead>
         <tbody>

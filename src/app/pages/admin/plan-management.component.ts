@@ -7,6 +7,8 @@ import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AdminTabsComponent } from './admin-tabs.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 
 /*
  * Plans — the catalogue a company is assigned from.
@@ -23,7 +25,7 @@ import { ConfirmService } from '../../shared/confirm/confirm.service';
 @Component({
   selector: 'app-plan-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, AdminTabsComponent],
+  imports: [CommonModule, FormsModule, RouterModule, AdminTabsComponent, ...MEXA_TABLE],
   templateUrl: './plan-management.component.html'
 })
 export class PlanManagementComponent implements OnInit {
@@ -38,6 +40,13 @@ export class PlanManagementComponent implements OnInit {
   companiesLoaded = false;
   searchQuery = '';
   statusFilter = 'all';
+
+  /** The table's header (shared/table, 29 Oct 2026): sort any column. */
+  readonly planTable = new TableState<any>([
+    { key: 'plan_name' }, { key: 'max_users', type: 'number' }, { key: 'max_plants', type: 'number' },
+    { key: 'max_machines', type: 'number' }, { key: 'companies', value: p => this.companiesOn(p.id), type: 'number' },
+    { key: 'status', value: p => (p.is_active ? 'Available' : 'Retired') }
+  ]);
 
   get filteredPlans(): any[] {
     const query = this.searchQuery.trim().toLowerCase();

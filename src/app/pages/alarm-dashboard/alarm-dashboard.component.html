@@ -311,17 +311,12 @@
 
     <div class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Alarms — scroll to see every row and column">
       <div class="table-wrap">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="tbl">
         <caption class="sr-only">Alarms matching the current filters, newest first</caption>
         <thead>
           <tr>
             <th scope="col">#</th>
-            <th scope="col" *ngFor="let c of columns" [class]="c.cls || ''" [attr.aria-sort]="ariaSort(c.key)">
-              <button type="button" class="mexa-sort" (click)="sortBy(c.key)" [attr.aria-current]="sort === c.key">
-                {{ c.label }}
-                <span class="mexa-sort-arrow" aria-hidden="true">{{ sort === c.key ? (dir === 'asc' ? '▲' : '▼') : '⇅' }}</span>
-              </button>
-            </th>
+            <th scope="col" *ngFor="let c of columns" [ngClass]="c.cls || ''" [mexaCol]="c.key">{{ c.label }}</th>
           </tr>
         </thead>
         <tbody>

@@ -7,10 +7,12 @@ import { DeploymentLicense, LicenseForm, LicensingService, licenseFormError } fr
 import { CompanyService } from '../../core/services/company.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule, AdminTabsComponent],
+  imports: [CommonModule, FormsModule, AdminTabsComponent, ...MEXA_TABLE],
   template: `
   <section class="p-4 md:p-6 space-y-5">
     <app-admin-tabs />
@@ -26,23 +28,27 @@ import { ConfirmService } from '../../shared/confirm/confirm.service';
     </div>
     <p *ngIf="error" role="alert" class="text-red-600 dark:text-red-300">{{error}} <button class="underline" (click)="load()">Retry</button></p>
     <p *ngIf="busy" role="status">Loading…</p>
-    <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-      <table class="w-full text-sm text-left"><thead class="bg-slate-50 dark:bg-slate-800"><tr>
-        <th class="p-3">Company / deployment</th><th class="p-3">Allowance</th><th class="p-3">Expiry</th><th class="p-3">Status</th><th class="p-3">Actions</th>
-      </tr></thead><tbody><tr *ngFor="let row of rows" class="border-t border-slate-100 dark:border-slate-800">
-        <td class="p-3"><strong>{{row.company_name || row.company_id}}</strong><br>{{row.name}} · {{row.deployment_mode === 'cloud' ? 'Cloud' : 'On-premise'}}
+    <!-- the same table as every other page: the MEXA table, with its header (shared/table, 29 Oct 2026) -->
+    <div class="mexa-card mexa-card-flush">
+    <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Deployment licenses">
+      <table class="mexa-table" [mexaTable]="licenseTable"><thead><tr>
+        <th scope="col" mexaCol="company">Company / deployment</th><th scope="col" class="qty" mexaCol="max_machines">Allowance</th>
+        <th scope="col" mexaCol="expires_at">Expiry</th><th scope="col" mexaCol="status">Status</th><th scope="col" class="actions">Actions</th>
+      </tr></thead><tbody><tr *ngFor="let row of rows | tableView:licenseTable:licenseTable.version">
+        <td class="wrap"><strong>{{row.company_name || row.company_id}}</strong><br>{{row.name}} · {{row.deployment_mode === 'cloud' ? 'Cloud' : 'On-premise'}}
           <small *ngIf="row.last_seen_at" class="block text-slate-500">Last check {{row.last_seen_at | date:'short'}}</small></td>
-        <td class="p-3">{{row.max_machines}} machines</td><td class="p-3">{{row.expires_at | date:'medium'}}</td>
-        <td class="p-3">{{expired(row) ? 'Expired' : row.status}}</td>
-        <td class="p-3"><div class="flex flex-wrap gap-3">
+        <td class="num qty">{{row.max_machines}} machines</td><td class="num">{{row.expires_at | date:'medium'}}</td>
+        <td>{{ statusOf(row) }}</td>
+        <td class="actions"><div class="flex flex-wrap gap-3">
           <button class="underline" (click)="edit(row)" [disabled]="busy || row.status === 'revoked'">Edit / renew</button>
           <button class="underline" (click)="status(row, row.status === 'active' ? 'suspended' : 'active')" [disabled]="busy || row.status === 'revoked'">{{row.status === 'active' ? 'Suspend' : 'Resume'}}</button>
           <button class="underline text-red-600 dark:text-red-300" (click)="status(row,'revoked')" [disabled]="busy || row.status === 'revoked'">Revoke</button>
           <button *ngIf="row.deployment_mode === 'on_prem'" class="underline" (click)="rotate(row)" [disabled]="busy || row.status === 'revoked'">Rotate credential</button>
           <button class="underline" (click)="history(row)">History</button>
         </div></td></tr>
-        <tr *ngIf="!rows.length && !busy"><td class="p-6 text-center" colspan="5">No companies are enrolled. Creating a license enables enforcement for that company.</td></tr>
+        <tr *ngIf="!rows.length && !busy"><td class="mexa-empty" colspan="5">No companies are enrolled. Creating a license enables enforcement for that company.</td></tr>
       </tbody></table>
+    </div>
     </div>
     <div *ngIf="showForm" class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5">
       <h2 class="text-lg font-bold mb-4">{{editing ? 'Edit / renew license' : 'Create deployment license'}}</h2>
@@ -77,6 +83,15 @@ export class LicensingComponent implements OnInit, OnDestroy {
   showForm = false; editing: DeploymentLicense | null = null; credential = ''; installationId = '';
   events: { id: number; actor_id: number; action: string; created_at: string; note?: string; payment_reference?: string }[] | null = null;
   form = this.blank(); private destroy = new Subject<void>(); private clearTimer?: ReturnType<typeof setTimeout>;
+
+  /** The table's header (shared/table, 29 Oct 2026): sort any column, filter the status. */
+  readonly licenseTable = new TableState<DeploymentLicense>([
+    { key: 'company', value: r => r.company_name || String(r.company_id) },
+    { key: 'max_machines', type: 'number' }, { key: 'expires_at', type: 'date' },
+    { key: 'status', value: r => this.statusOf(r), filter: 'list' }
+  ]);
+  /** "Expired" once its date has passed, else its own status. */
+  statusOf(row: DeploymentLicense): string { return this.expired(row) ? 'Expired' : String(row.status); }
   constructor(private licenses: LicensingService, private companyService: CompanyService, private toast: ToastService, private confirm: ConfirmService, private cdr: ChangeDetectorRef) {}
   ngOnInit() { this.licenses.available().pipe(takeUntil(this.destroy)).subscribe(allowed => { if (allowed) { this.load(); this.companyService.getCompanies().pipe(takeUntil(this.destroy)).subscribe({next: rows => { this.companies=rows; this.cdr.markForCheck(); },error: () => this.toast.error('Could not load companies')}); } }); }
   ngOnDestroy() { this.destroy.next(); this.destroy.complete(); this.clearCredential(); }

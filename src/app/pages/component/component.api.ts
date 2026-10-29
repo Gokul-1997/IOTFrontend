@@ -8,8 +8,9 @@ export class ComponentApi {
 
     constructor(private http: HttpClient) { }
 
-    list(page: number, limit: number, search: string) {
-        return this.http.get<any>(`${this.api}/components?page=${page}&limit=${limit}&search=${search}`);
+    /** `table`: the table's header sort and filters (shared/table: sort, dir, f_…, q_…). */
+    list(page: number, limit: number, search: string, table: Record<string, string> = {}) {
+        return this.http.get<any>(`${this.api}/components`, { params: { ...table, page: String(page), limit: String(limit), search } });
     }
     create(data: any) {
         return this.http.post<any>(`${this.api}/components`, data);

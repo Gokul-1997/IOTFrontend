@@ -48,16 +48,16 @@
 
     <!-- Roles Table -->
     <div *ngIf="!loading && roles.length > 0" class="mexa-tablewrap" tabindex="0" role="region" aria-label="Roles">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="roleTable">
         <thead>
           <tr>
-            <th scope="col">Role</th>
-            <th scope="col" class="col-md">Access</th>
+            <th scope="col" mexaCol="role_name">Role</th>
+            <th scope="col" class="col-md" mexaCol="access">Access</th>
             <th scope="col" class="actions">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let role of roles">
+          <tr *ngFor="let role of roles | tableView:roleTable:roleTable.version">
             <td class="px-4 py-3">
               <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span class="font-semibold text-gray-800 dark:text-white">{{ role.role_name }}</span>

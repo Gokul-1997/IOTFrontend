@@ -11,6 +11,8 @@ import { ReportDateDirective } from '../../shared/report-date.directive';
 import { AutoApplyDirective } from '../../shared/auto-apply.directive';
 import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
 import { AssistantService } from '../../core/services/assistant.service';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 
 /**
  * Machine Wise OEE Summary — one row per machine over a date range.
@@ -23,7 +25,7 @@ import { AssistantService } from '../../core/services/assistant.service';
 @Component({
   selector: 'app-machine-oee-report',
   standalone: true,
-  imports: [ReportDateDirective, AutoApplyDirective, SkeletonRowsComponent, CommonModule, FormsModule, MexaPagerComponent],
+  imports: [ReportDateDirective, AutoApplyDirective, SkeletonRowsComponent, CommonModule, FormsModule, MexaPagerComponent, ...MEXA_TABLE],
   template: `
   <!-- The filters apply themselves, as on the dashboards. The same filter bar
        as the Reports page's other tabs (reports.html) — grid, labels, fields
@@ -58,17 +60,12 @@ import { AssistantService } from '../../core/services/assistant.service';
 
   <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Machine OEE table — scroll sideways to see every column">
   <div class="table-wrap">
-    <table class="mexa-table is-dense is-striped">
+    <table class="mexa-table is-dense is-striped" [mexaTable]="tbl">
       <caption class="sr-only">OEE by machine</caption>
       <thead>
         <tr>
           <th scope="col" class="col-index">#</th>
-          <th scope="col" *ngFor="let c of columns" [class]="$any(c).cls || ''" [attr.aria-sort]="aria(c.key)">
-            <button type="button" class="mexa-sort" (click)="sortBy(c.key)" [attr.aria-current]="sort === c.key">
-              {{ c.label }}
-              <span class="mexa-sort-arrow" aria-hidden="true">{{ sort === c.key ? (dir === 'asc' ? '▲' : '▼') : '⇅' }}</span>
-            </button>
-          </th>
+          <th scope="col" *ngFor="let c of columns" [ngClass]="$any(c).cls || ''" [mexaCol]="c.key">{{ c.label }}</th>
         </tr>
       </thead>
       <!-- every load, as the other tabs: the old rows never stand in for the new filters -->
@@ -108,8 +105,6 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
   loading = false;
   errorMsg = '';
   exporting = '';
-  sort = 'oee_pct';
-  dir: 'asc' | 'desc' = 'desc';
   page = 1;
   limit = 10;
 
@@ -122,6 +117,13 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
     { key: 'rejected', label: 'Rejected', cls: 'qty col-lg' }, { key: 'rework', label: 'Rework', cls: 'qty col-lg' },
     { key: 'rejection_rate_pct', label: 'Rejected (%)', cls: 'qty col-lg' }, { key: 'idle_seconds', label: 'Downtime', cls: 'qty col-md' }
   ];
+
+  /** The table's header (shared/table, 29 Oct 2026): every machine is here, so
+   *  it sorts and filters here — best OEE first until a column is chosen. */
+  readonly tbl = new TableState<any>([
+    ...this.columns.map(c => ({ key: c.key })).filter(c => c.key !== 'status'),
+    { key: 'status', filter: 'list' as const }
+  ], { sort: { key: 'oee_pct', dir: 'desc' }, onChange: () => { this.page = 1; this.cdr.markForCheck(); } });
 
   private destroy$ = new Subject<void>();
 
@@ -148,9 +150,8 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
     if (Number.isInteger(shift) && shift > 0) this.f = { ...this.f, shift_id: shift };
     const sort = q.get('sort');
     if (sort && this.columns.some(c => c.key === sort)) {
-      this.sort = sort;
       // the biggest first, as each tile reads; downtime too — the worst on top
-      this.dir = sort === 'machine_serial_no' || sort === 'status' ? 'asc' : 'desc';
+      this.tbl.setSort({ key: sort, dir: sort === 'machine_serial_no' || sort === 'status' ? 'asc' : 'desc' }, false);
     }
   }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
@@ -185,25 +186,10 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
   /** The last seven days, every shift. */
   private defaults() { return { from: this.daysAgo(6), to: this.daysAgo(0), shift_id: null }; }
 
-  get filtered(): any[] {
-    const k = this.sort, sign = this.dir === 'asc' ? 1 : -1;
-    return [...this.rows].sort((a, b) => {
-      const x = a[k], y = b[k];
-      if (x == null && y == null) return 0;
-      if (x == null) return 1;
-      if (y == null) return -1;
-      return typeof x === 'string' ? sign * x.localeCompare(y) : sign * (x - y);
-    });
-  }
+  get filtered(): any[] { return this.tbl.view(this.rows); }
   get totalPages(): number { return Math.max(1, Math.ceil(this.filtered.length / this.limit)); }
   get pageRows(): any[] { return this.filtered.slice((this.page - 1) * this.limit, this.page * this.limit); }
 
-  sortBy(key: string): void {
-    if (this.sort === key) this.dir = this.dir === 'desc' ? 'asc' : 'desc';
-    else { this.sort = key; this.dir = key === 'machine_serial_no' || key === 'status' ? 'asc' : 'desc'; }
-    this.page = 1;
-  }
-  aria(key: string): string { return this.sort !== key ? 'none' : this.dir === 'asc' ? 'ascending' : 'descending'; }
 
   /** Called by the Reports toolbar: Excel or CSV (no PDF). */
   export(format: 'xlsx' | 'csv'): void {

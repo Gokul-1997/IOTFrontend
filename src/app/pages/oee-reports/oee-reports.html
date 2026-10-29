@@ -43,19 +43,12 @@
 
 <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="OEE records table — scroll sideways to see every column">
   <div class="table-wrap">
-    <table class="mexa-table is-dense is-striped">
+    <table class="mexa-table is-dense is-striped" [mexaTable]="tbl">
       <caption class="sr-only">OEE records by machine and shift</caption>
       <thead>
         <tr>
           <th scope="col" class="col-index">#</th>
-          <th *ngFor="let c of columns" scope="col" [ngClass]="c.cls || ''" [attr.aria-sort]="c.sort ? ariaSort(c.sort) : null">
-            <button *ngIf="c.sort as key; else plainHead" type="button" class="mexa-sort"
-                    (click)="changeSort(key)" [attr.aria-current]="sortBy === key">
-              {{ c.label }}
-              <span class="mexa-sort-arrow" aria-hidden="true">{{ sortIcon(key) }}</span>
-            </button>
-            <ng-template #plainHead>{{ c.label }}</ng-template>
-          </th>
+          <th *ngFor="let c of columns" scope="col" [ngClass]="c.cls || ''" [mexaCol]="c.key">{{ c.label }}</th>
         </tr>
       </thead>
       <tbody *ngIf="loading" appSkeletonRows [cols]="columns.length + 1" label="Loading the OEE records…"></tbody>

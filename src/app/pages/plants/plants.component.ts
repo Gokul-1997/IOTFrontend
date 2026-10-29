@@ -6,7 +6,8 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSortModule } from '@angular/material/sort';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -24,7 +25,7 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-plants',
   imports: [
     CommonModule, FormsModule,
-    MatTableModule, MatPaginatorModule, MatSortModule,
+    MatTableModule, MatPaginatorModule, ...MEXA_TABLE,
     MatButtonModule, MatIconModule, MatInputModule,
     MatSlideToggleModule, MatProgressSpinnerModule, MatTooltipModule,
     PlantFormComponent
@@ -78,10 +79,16 @@ export class PlantsComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  /* The table's header (shared/table, 29 Oct 2026): the API pages the plants, so it sorts and filters them. */
+  readonly plantTable = new TableState<any>([
+    { key: 'code' }, { key: 'name' }, { key: 'location' },
+    { key: 'status', filter: 'list', options: [{ value: 'true', label: 'Active' }, { value: 'false', label: 'Inactive' }] }
+  ], { mode: 'server', onChange: () => { this.page = 1; this.load(); } });
+
   load() {
     this.loadRequest?.unsubscribe();
     this.loading = true;
-    this.loadRequest = this.service.getPlants({ page: this.page, limit: this.limit, search: this.search })
+    this.loadRequest = this.service.getPlants({ page: this.page, limit: this.limit, search: this.search, ...this.plantTable.params() })
       .pipe(takeUntil(this.destroy$)).subscribe({
         next: res => {
           this.rows    = res.data;

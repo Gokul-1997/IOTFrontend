@@ -1,0 +1,158 @@
+/* ═══════════════════════════════════════════════════════════════
+   THE MEXA TABLE HEADER — sort and filter in every column header
+   (29 Oct 2026, the user: "this table design and features — header filter
+   and sorting — on all pages", pointing at Ant Design's table).
+
+   Ant's way of working, in MEXA's own colours and type: a light header
+   with short separators between columns; two small carets at the end of a
+   sortable header (the lit one says which way); a funnel at the very end,
+   lit while the column is filtered;
+   the sorted column faintly tinted down the body. The header cells come
+   from shared/table/mexa-table.ts (th[mexaCol]); the rest of the table is
+   THE table design in system.scss, for .mexa-table and Material tables
+   alike.
+   No search box inside a table (the user, 29 Oct 2026): a filter is a
+   list of the column's values to tick.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --tbl-head-hover: #eceef7;
+  --tbl-head-sorted: #e9ecf7;
+  --tbl-caret: #b3b9cc;
+  --tbl-sorted-col: rgba(43, 57, 144, .035);
+}
+:root[data-theme="dark"], .dark {
+  --tbl-head-hover: #222844;
+  --tbl-head-sorted: #252c4c;
+  --tbl-caret: #5d6688;
+  --tbl-sorted-col: rgba(142, 162, 255, .05);
+}
+
+/* ── the header row ── */
+.mexa-table thead th { padding-top: .6rem; padding-bottom: .6rem; }
+
+/* short separators between header cells, not a full-height rule */
+.mexa-table thead th + th,
+.mat-mdc-table .mat-mdc-header-cell + .mat-mdc-header-cell { box-shadow: none; }
+.mexa-table thead th + th::before,
+.mat-mdc-table .mat-mdc-header-cell + .mat-mdc-header-cell::before {
+  content: ''; position: absolute; left: 0; top: 50%;
+  width: 1px; height: 1.5em; transform: translateY(-50%);
+  background: var(--tbl-col-rule); pointer-events: none;
+}
+
+/* ── a header cell with a sort and/or a filter ── */
+.mexa-table thead th.mt-col,
+.mat-mdc-table .mat-mdc-header-cell.mt-col { padding: 0; }
+
+.mt-th { display: flex; align-items: stretch; min-height: 2.6rem; }
+
+.mt-sort, .mt-plain {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: .5rem;
+  padding: .55rem var(--tbl-pad-x, .75rem);
+  white-space: nowrap;
+}
+.mt-sort {
+  justify-content: space-between;
+  border: 0; background: transparent; color: inherit;
+  font: inherit; font-weight: inherit; letter-spacing: inherit; text-align: left;
+  cursor: pointer; border-radius: 0;
+}
+.mt-th:has(.mt-filter) :is(.mt-sort, .mt-plain) { padding-right: .3rem; }
+/* the dense report tables keep their shorter header */
+:is(.mexa-table, .mat-mdc-table).is-dense .mt-th { min-height: 2.1rem; }
+:is(.mexa-table, .mat-mdc-table).is-dense :is(.mt-sort, .mt-plain) { padding-top: .3rem; padding-bottom: .3rem; }
+.mt-sort:focus-visible { outline: 2px solid var(--tbl-accent); outline-offset: -3px; border-radius: 6px; }
+.mt-title { min-width: 0; }
+
+/* figures line up on the right, and so does their header */
+:is(.mexa-table, .mat-mdc-table) .mt-col.qty .mt-sort,
+:is(.mexa-table, .mat-mdc-table) .mt-col.qty .mt-plain { justify-content: flex-end; }
+:is(.mexa-table, .mat-mdc-table) .mt-col.center .mt-sort { justify-content: center; }
+
+.mt-carets { display: inline-flex; flex-direction: column; gap: 2px; flex: none; }
+.mt-caret { display: block; width: .5rem; height: .32rem; fill: var(--tbl-caret); transition: fill .15s; }
+.mt-caret.on { fill: var(--tbl-accent); }
+
+.mt-filter {
+  flex: none; align-self: center;
+  display: grid; place-items: center;
+  width: 1.75rem; height: 1.75rem; margin: 0 .3rem 0 0; padding: 0;
+  border: 0; border-radius: 6px; background: transparent;
+  color: var(--tbl-caret); cursor: pointer;
+  transition: background-color .15s, color .15s;
+}
+.mt-filter svg { width: .8rem; height: .8rem; }
+.mt-filter:hover, .mt-filter[aria-expanded="true"] { background: rgba(43, 57, 144, .09); color: var(--mexa-ink-2); }
+.mt-filter.on { color: var(--tbl-accent); }
+.mt-filter:focus-visible { outline: 2px solid var(--tbl-accent); outline-offset: 0; }
+
+/* the header under the pointer, and the sorted one */
+.mexa-table thead th.mt-sortable:hover,
+.mat-mdc-table .mat-mdc-header-cell.mt-sortable:hover { background: var(--tbl-head-hover); }
+.mexa-table thead th.is-sorted,
+.mat-mdc-table .mat-mdc-header-cell.is-sorted { background: var(--tbl-head-sorted); }
+
+/* the S&T admin pages' own table (styles/_admin.scss): the same header, in its spacing */
+.admin-table thead th.mt-col { padding: 0; }
+.admin-table :is(.mt-sort, .mt-plain) { padding: .8rem 1.2rem; }
+.admin-table thead th.mt-sortable:hover,
+.admin-table thead th.is-sorted { background: rgba(43, 57, 144, .05); }
+
+/* the sorted column, faintly, down the body: over the row's own colour, so hover still shows */
+@for $i from 1 through 30 {
+  :is(.mexa-table, .mat-mdc-table, .admin-table)[data-sorted-col="#{$i}"] > tbody > tr > td:nth-child(#{$i}) {
+    background-image: linear-gradient(var(--tbl-sorted-col), var(--tbl-sorted-col));
+  }
+}
+
+/* ── the filter panel (on <body>, under the funnel) ── */
+.mt-panel {
+  min-width: 13rem; max-width: min(18rem, calc(100vw - 16px));
+  background: var(--mexa-card); color: var(--mexa-ink);
+  border: 1px solid var(--mexa-rule); border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(18, 14, 64, .2), 0 2px 6px rgba(18, 14, 64, .08);
+  font-size: .84rem; text-align: left; overflow: hidden;
+}
+.mt-options {
+  list-style: none; margin: 0; padding: .3rem;
+  max-height: 16rem; overflow-y: auto; overscroll-behavior: contain;
+}
+.mt-option {
+  display: flex; align-items: center; gap: .55rem;
+  padding: .42rem .55rem; border-radius: 6px; cursor: pointer; line-height: 1.3;
+}
+.mt-option:hover { background: var(--tbl-row-hover); }
+.mt-option input { flex: none; width: 15px; height: 15px; margin: 0; accent-color: var(--tbl-accent); cursor: pointer; }
+.mt-option input:focus-visible { outline: 2px solid var(--tbl-accent); outline-offset: 1px; }
+.mt-option-text { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.mt-count { flex: none; color: var(--mexa-ink-3); font-size: .74rem; font-variant-numeric: tabular-nums; }
+.mt-none { padding: .55rem .6rem; color: var(--mexa-ink-3); }
+
+.mt-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  padding: .4rem .55rem; border-top: 1px solid var(--mexa-rule);
+}
+.mt-clear {
+  border: 0; background: none; padding: .25rem .4rem; border-radius: 6px;
+  color: var(--tbl-accent); font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer;
+}
+.mt-clear:hover:not(:disabled) { background: rgba(43, 57, 144, .08); }
+.mt-clear:disabled { color: var(--mexa-ink-3); opacity: .6; cursor: default; }
+.mt-clear:focus-visible { outline: 2px solid var(--tbl-accent); outline-offset: 1px; }
+.mt-picked { color: var(--mexa-ink-3); font-size: .76rem; }
+
+:is(.dark, :root[data-theme="dark"]) {
+  .mt-filter:hover, .mt-filter[aria-expanded="true"] { background: rgba(255, 255, 255, .08); }
+  .mt-panel { box-shadow: 0 12px 32px rgba(0, 0, 0, .5), 0 2px 6px rgba(0, 0, 0, .35); }
+  .mt-clear:hover:not(:disabled) { background: rgba(255, 255, 255, .08); }
+}
+
+@media (pointer: coarse) {
+  .mt-filter { width: 2.4rem; height: 2.4rem; }
+  .mt-option { padding: .6rem .55rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mt-caret, .mt-filter { transition: none; }
+}

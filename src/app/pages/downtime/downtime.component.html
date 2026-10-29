@@ -51,16 +51,16 @@
 <div *ngIf="activeTab === 'events'" class="mexa-card mexa-card-flush" role="tabpanel">
   <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Downtime events">
     <div class="table-wrap">
-    <table class="mexa-table">
+    <table class="mexa-table" [mexaTable]="eventTable">
       <caption class="sr-only">Downtime events, newest first</caption>
       <thead>
         <tr>
-          <th scope="col">Machine</th>
-          <th scope="col">Reason</th>
-          <th scope="col" class="col-md">Category</th>
-          <th scope="col">Started</th>
-          <th class="qty" scope="col">Duration</th>
-          <th scope="col" class="col-lg">Entered by</th>
+          <th scope="col" mexaCol="machine">Machine</th>
+          <th scope="col" mexaCol="reason">Reason</th>
+          <th scope="col" class="col-md" mexaCol="category">Category</th>
+          <th scope="col" mexaCol="started">Started</th>
+          <th class="qty" scope="col" mexaCol="duration">Duration</th>
+          <th scope="col" class="col-lg" mexaCol="by">Entered by</th>
         </tr>
       </thead>
       <tbody *ngIf="loading" appSkeletonRows [cols]="6" label="Loading downtime events…"></tbody>
@@ -82,7 +82,11 @@
           </tr>
           <tr *ngIf="!events.length">
             <td colspan="6" class="mexa-empty">
-              <app-state kind="empty" title="No downtime events yet" text="Events appear here as they are logged."></app-state>
+              <app-state *ngIf="eventTable.anyFilter; else noEventsAtAll" title="No events match these filters"
+                         action="Clear filters" (act)="eventTable.reset()"></app-state>
+              <ng-template #noEventsAtAll>
+                <app-state kind="empty" title="No downtime events yet" text="Events appear here as they are logged."></app-state>
+              </ng-template>
             </td>
           </tr>
         </ng-container>
@@ -108,26 +112,14 @@
 
   <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Reason codes">
     <div class="table-wrap">
-    <table class="mexa-table is-compact">
+    <table class="mexa-table is-compact" [mexaTable]="reasonTable">
       <caption class="sr-only">Downtime reason codes</caption>
       <thead>
         <tr>
-          <th scope="col" [attr.aria-sort]="reasonAriaSort('code')">
-            <button type="button" class="mexa-sort" (click)="sortReasons('code')" [attr.aria-current]="reasonSort === 'code'">
-              Code <span class="mexa-sort-arrow" aria-hidden="true">{{ reasonArrow('code') }}</span>
-            </button>
-          </th>
-          <th scope="col" [attr.aria-sort]="reasonAriaSort('name')">
-            <button type="button" class="mexa-sort" (click)="sortReasons('name')" [attr.aria-current]="reasonSort === 'name'">
-              Name <span class="mexa-sort-arrow" aria-hidden="true">{{ reasonArrow('name') }}</span>
-            </button>
-          </th>
-          <th scope="col" [attr.aria-sort]="reasonAriaSort('category')">
-            <button type="button" class="mexa-sort" (click)="sortReasons('category')" [attr.aria-current]="reasonSort === 'category'">
-              Category <span class="mexa-sort-arrow" aria-hidden="true">{{ reasonArrow('category') }}</span>
-            </button>
-          </th>
-          <th scope="col" class="col-md">Source</th>
+          <th scope="col" mexaCol="code">Code</th>
+          <th scope="col" mexaCol="name">Name</th>
+          <th scope="col" mexaCol="category">Category</th>
+          <th scope="col" class="col-md" mexaCol="source">Source</th>
         </tr>
       </thead>
       <tbody *ngIf="reasonsState === 'loading'" appSkeletonRows [cols]="4" [rows]="6" label="Loading reason codes…"></tbody>
@@ -152,8 +144,8 @@
           </tr>
           <tr *ngIf="reasons.length && !shownReasons.length">
             <td colspan="4" class="mexa-empty">
-              <app-state kind="empty" icon="search_off" [title]="'No reason code matches “' + reasonSearch + '”'"
-                         text="Search by code or name." action="Clear search" (act)="reasonSearch = ''"></app-state>
+              <app-state kind="empty" icon="search_off" [title]="reasonSearch ? 'No reason code matches “' + reasonSearch + '”' : 'No reason codes match these filters'"
+                         text="Search by code or name." action="Clear search and filters" (act)="reasonSearch = ''; reasonTable.reset()"></app-state>
             </td>
           </tr>
         </ng-container>
@@ -167,14 +159,14 @@
 <div *ngIf="activeTab === 'summary'" class="mexa-card mexa-card-flush" role="tabpanel">
   <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Downtime summary">
     <div class="table-wrap">
-    <table class="mexa-table is-compact">
+    <table class="mexa-table is-compact" [mexaTable]="summaryTable">
       <caption class="sr-only">Downtime by reason, last 7 days, longest first</caption>
       <thead>
         <tr>
-          <th scope="col">Reason</th>
-          <th scope="col" class="col-md">Category</th>
-          <th scope="col" class="qty">Events</th>
-          <th scope="col" class="qty">Total time</th>
+          <th scope="col" mexaCol="reason_name">Reason</th>
+          <th scope="col" class="col-md" mexaCol="category">Category</th>
+          <th scope="col" class="qty" mexaCol="event_count">Events</th>
+          <th scope="col" class="qty" mexaCol="total_seconds">Total time</th>
         </tr>
       </thead>
       <tbody *ngIf="summaryState === 'loading'" appSkeletonRows [cols]="4" [rows]="4" label="Loading the downtime summary…"></tbody>
@@ -186,7 +178,7 @@
           </td>
         </tr>
         <ng-container *ngIf="summaryState === 'ready'">
-          <tr *ngFor="let s of summary">
+          <tr *ngFor="let s of summary | tableView:summaryTable:summaryTable.version">
             <td class="strong">{{ s.reason_name || 'Unknown' }} <span class="sub code">{{ s.code }}</span></td>
             <td class="col-md"><span class="mexa-badge" [ngClass]="categoryClass(s.category)">{{ categoryLabel(s.category) }}</span></td>
             <td class="num qty">{{ s.event_count }}</td>

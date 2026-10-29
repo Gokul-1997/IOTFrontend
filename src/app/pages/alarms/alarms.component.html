@@ -17,7 +17,7 @@
     <span class="mexa-filter-set">
       <label class="mexa-filter-label" for="alarm-status">Status</label>
       <select id="alarm-status" class="mexa-select" [ngModel]="filter.is_resolved"
-              (ngModelChange)="filter.is_resolved = $event; apply()">
+              (ngModelChange)="setResolved($event)">
         <option value="false">Active alarms</option>
         <option value="true">Resolved</option>
         <option value="">All</option>
@@ -33,13 +33,13 @@
   <!-- how many, how bad: the same alarms counted without the severity switch -->
   <div class="mexa-tablebar al-bar">
     <div class="al-seg" role="group" aria-label="Severity">
-      <button type="button" [attr.aria-pressed]="filter.severity === ''" (click)="setSeverity('')">
+      <button type="button" [attr.aria-pressed]="severity === ''" (click)="setSeverity('')">
         All<span *ngIf="summary" class="al-n">{{ summary.total }}</span>
       </button>
-      <button type="button" class="is-critical" [attr.aria-pressed]="filter.severity === 'CRITICAL'" (click)="setSeverity('CRITICAL')">
+      <button type="button" class="is-critical" [attr.aria-pressed]="severity === 'CRITICAL'" (click)="setSeverity('CRITICAL')">
         <span class="al-swatch" aria-hidden="true"></span>Critical<span *ngIf="summary" class="al-n">{{ summary.critical }}</span>
       </button>
-      <button type="button" class="is-noncritical" [attr.aria-pressed]="filter.severity === 'NORMAL'" (click)="setSeverity('NORMAL')">
+      <button type="button" class="is-noncritical" [attr.aria-pressed]="severity === 'NORMAL'" (click)="setSeverity('NORMAL')">
         <span class="al-swatch" aria-hidden="true"></span>Non-critical<span *ngIf="summary" class="al-n">{{ summary.total - summary.critical }}</span>
       </button>
     </div>
@@ -50,16 +50,16 @@
   </div>
 
   <div class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Alarms">
-    <table class="mexa-table al-table">
+    <table class="mexa-table al-table" [mexaTable]="tbl">
       <caption class="sr-only">Machine alarms, those still on first, then newest</caption>
       <thead>
         <tr>
-          <th scope="col">Machine</th>
-          <th scope="col">Alarm</th>
-          <th scope="col" class="col-lg">Code</th>
-          <th scope="col" class="col-lg">Severity</th>
-          <th scope="col">Started</th>
-          <th scope="col" class="col-md">Status</th>
+          <th scope="col" mexaCol="machine">Machine</th>
+          <th scope="col" mexaCol="alarm">Alarm</th>
+          <th scope="col" mexaCol="code" class="col-lg">Code</th>
+          <th scope="col" mexaCol="severity" class="col-lg">Severity</th>
+          <th scope="col" mexaCol="started">Started</th>
+          <th scope="col" mexaCol="status" class="col-md">Status</th>
           <th scope="col" *ngIf="showActions" class="actions"><span class="sr-only">Actions</span></th>
         </tr>
       </thead>
@@ -75,7 +75,7 @@
         </tr>
         <tr *ngIf="!loadError && !alarms.length">
           <td [attr.colspan]="columns" class="mexa-empty">
-            <app-state *ngIf="filter.is_resolved === 'false' && !filter.severity && !filter.machine_id; else noMatch"
+            <app-state *ngIf="filter.is_resolved === 'false' && !tbl.anyFilter && !filter.machine_id; else noMatch"
                        icon="task_alt" title="No active alarms" text="Every machine is clear."></app-state>
             <ng-template #noMatch><app-state title="No alarms match these filters" text="Choose another machine, status or severity."></app-state></ng-template>
           </td>

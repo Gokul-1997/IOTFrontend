@@ -78,29 +78,29 @@
     <app-state *ngIf="activeState === 'loading'" kind="loading" title="Loading the running jobs…"></app-state>
     <app-state *ngIf="activeState === 'error'" kind="error" title="Could not load the running jobs"
                text="Check the connection, then try again." action="Try again" (act)="loadActive()"></app-state>
-    <app-state *ngIf="activeState === 'ready' && activeSource.data.length === 0" icon="work_outline"
+    <app-state *ngIf="activeState === 'ready' && activeSource.data.length === 0 && !activeTable.anyFilter" icon="work_outline"
                title="No jobs running" text="Start a job to assign a part to a machine."></app-state>
 
-    <div *ngIf="activeState === 'ready' && activeSource.data.length > 0" class="table-wrapper" tabindex="0" role="region" aria-label="Running jobs">
-    <table mat-table [dataSource]="activeSource" class="w-full">
+    <div *ngIf="activeState === 'ready' && (activeSource.data.length > 0 || activeTable.anyFilter)" class="table-wrapper" tabindex="0" role="region" aria-label="Running jobs">
+    <table mat-table [dataSource]="activeSource" class="w-full" [mexaTable]="activeTable">
 
       <ng-container matColumnDef="machine">
-        <th mat-header-cell *matHeaderCellDef>Machine</th>
+        <th mat-header-cell *matHeaderCellDef mexaCol="machine">Machine</th>
         <td mat-cell *matCellDef="let row" class="strong">{{ row.machine_serial_no }}</td>
       </ng-container>
 
       <ng-container matColumnDef="part">
-        <th mat-header-cell *matHeaderCellDef>Part</th>
+        <th mat-header-cell *matHeaderCellDef mexaCol="part">Part</th>
         <td mat-cell *matCellDef="let row"><span class="clip" [title]="row.part_name">{{ row.part_name }}</span></td>
       </ng-container>
 
       <ng-container matColumnDef="target">
-        <th mat-header-cell *matHeaderCellDef class="qty">Target</th>
+        <th mat-header-cell *matHeaderCellDef class="qty" mexaCol="target">Target</th>
         <td mat-cell *matCellDef="let row" class="qty">{{ row.target_qty }}</td>
       </ng-container>
 
       <ng-container matColumnDef="started_at">
-        <th mat-header-cell *matHeaderCellDef class="col-md">Started</th>
+        <th mat-header-cell *matHeaderCellDef class="col-md" mexaCol="started_at">Started</th>
         <td mat-cell *matCellDef="let row" class="col-md num">{{ fmt(row.started_at) }}</td>
       </ng-container>
 
@@ -120,6 +120,11 @@
 
       <tr mat-header-row *matHeaderRowDef="activeColumns; sticky: true"></tr>
       <tr mat-row *matRowDef="let row; columns: activeColumns;"></tr>
+      <tr class="mat-mdc-row" *matNoDataRow>
+        <td class="mexa-empty" [attr.colspan]="activeColumns.length">
+          <app-state title="No running jobs match these filters" action="Clear filters" (act)="activeTable.reset()"></app-state>
+        </td>
+      </tr>
     </table>
     </div>
 
@@ -132,39 +137,39 @@
     <app-state *ngIf="historyState === 'loading'" kind="loading" title="Loading the job history…"></app-state>
     <app-state *ngIf="historyState === 'error'" kind="error" title="Could not load the job history"
                text="Check the connection, then try again." action="Try again" (act)="loadHistory()"></app-state>
-    <app-state *ngIf="historyState === 'ready' && historySource.data.length === 0" icon="history"
+    <app-state *ngIf="historyState === 'ready' && historySource.data.length === 0 && !historyTable.anyFilter" icon="history"
                title="No finished jobs yet" text="Jobs appear here once they are stopped."></app-state>
 
-    <div *ngIf="historyState === 'ready' && historySource.data.length > 0" class="table-wrapper" tabindex="0" role="region" aria-label="Job history">
-    <table mat-table [dataSource]="historySource" class="w-full">
+    <div *ngIf="historyState === 'ready' && (historySource.data.length > 0 || historyTable.anyFilter)" class="table-wrapper" tabindex="0" role="region" aria-label="Job history">
+    <table mat-table [dataSource]="historySource" class="w-full" [mexaTable]="historyTable">
 
       <ng-container matColumnDef="machine">
-        <th mat-header-cell *matHeaderCellDef>Machine</th>
+        <th mat-header-cell *matHeaderCellDef mexaCol="machine">Machine</th>
         <td mat-cell *matCellDef="let row" class="strong">{{ row.machine_serial_no }}</td>
       </ng-container>
 
       <ng-container matColumnDef="part">
-        <th mat-header-cell *matHeaderCellDef>Part</th>
+        <th mat-header-cell *matHeaderCellDef mexaCol="part">Part</th>
         <td mat-cell *matCellDef="let row"><span class="clip" [title]="row.part_name">{{ row.part_name }}</span></td>
       </ng-container>
 
       <ng-container matColumnDef="target">
-        <th mat-header-cell *matHeaderCellDef class="qty">Target</th>
+        <th mat-header-cell *matHeaderCellDef class="qty" mexaCol="target">Target</th>
         <td mat-cell *matCellDef="let row" class="qty">{{ row.target_qty }}</td>
       </ng-container>
 
       <ng-container matColumnDef="started_at">
-        <th mat-header-cell *matHeaderCellDef class="col-md">Started</th>
+        <th mat-header-cell *matHeaderCellDef class="col-md" mexaCol="started_at">Started</th>
         <td mat-cell *matCellDef="let row" class="col-md num">{{ fmt(row.started_at) }}</td>
       </ng-container>
 
       <ng-container matColumnDef="ended_at">
-        <th mat-header-cell *matHeaderCellDef>Ended</th>
+        <th mat-header-cell *matHeaderCellDef mexaCol="ended_at">Ended</th>
         <td mat-cell *matCellDef="let row" class="num">{{ fmt(row.ended_at) }}</td>
       </ng-container>
 
       <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <th mat-header-cell *matHeaderCellDef mexaCol="status">Status</th>
         <td mat-cell *matCellDef="let row">
           <span class="mexa-badge" [class.mexa-badge-info]="row.is_active" [class.mexa-badge-good]="!row.is_active">
             {{ row.is_active ? 'Running' : 'Completed' }}
@@ -174,6 +179,11 @@
 
       <tr mat-header-row *matHeaderRowDef="historyColumns; sticky: true"></tr>
       <tr mat-row *matRowDef="let row; columns: historyColumns;"></tr>
+      <tr class="mat-mdc-row" *matNoDataRow>
+        <td class="mexa-empty" [attr.colspan]="historyColumns.length">
+          <app-state title="No jobs match these filters" action="Clear filters" (act)="historyTable.reset()"></app-state>
+        </td>
+      </tr>
     </table>
     </div>
 

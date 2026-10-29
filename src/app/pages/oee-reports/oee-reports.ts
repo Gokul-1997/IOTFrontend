@@ -13,6 +13,8 @@ import { dayText, pctText, pctTone } from '../../shared/report-value';
 import { downloadError, saveOrMessage } from '../../shared/report-file';
 import { AssistantService } from '../../core/services/assistant.service';
 import { SearchSelectDirective } from '../../shared/search-select.directive';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 
 interface RecordColumn {
   key: string;
@@ -49,7 +51,7 @@ const COLUMNS: RecordColumn[] = [
 @Component({
   standalone: true,
   selector: 'app-oee-reports',
-  imports: [ReportDateDirective, AutoApplyDirective, SkeletonRowsComponent, MexaPagerComponent, CommonModule, FormsModule, SearchSelectDirective],
+  imports: [ReportDateDirective, AutoApplyDirective, SkeletonRowsComponent, MexaPagerComponent, CommonModule, FormsModule, SearchSelectDirective, ...MEXA_TABLE],
   templateUrl: './oee-reports.html',
   styleUrl: './oee-reports.scss'
 })
@@ -79,6 +81,17 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
 
   sortBy = 'shift_date';
   sortOrder: 'ASC' | 'DESC' = 'DESC';
+
+  /** The table's header (shared/table, 29 Oct 2026): the API sorts the records (newest date first until a column is chosen). */
+  readonly tbl = new TableState<any>(COLUMNS.map(c => ({ key: c.key, sort: !!c.sort })), {
+    mode: 'server', sort: { key: 'shift_date', dir: 'desc' },
+    onChange: () => {
+      this.sortBy = this.tbl.sort?.key || 'shift_date';
+      this.sortOrder = this.tbl.sort ? (this.tbl.sort.dir === 'asc' ? 'ASC' : 'DESC') : 'DESC';
+      this.page = 1;
+      this.loadReports();
+    }
+  });
 
   loading = false;
   loadingMeta = false;
@@ -175,22 +188,6 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
   changePage(p: number): void { this.page = p; this.loadReports(); }
   changeLimit(n: number): void { this.limit = n; this.page = 1; this.loadReports(); }
 
-  changeSort(column: string): void {
-    if (this.sortBy === column) this.sortOrder = this.sortOrder === 'ASC' ? 'DESC' : 'ASC';
-    else { this.sortBy = column; this.sortOrder = 'ASC'; }
-    this.page = 1;
-    this.loadReports();
-  }
-
-  ariaSort(column: string): 'ascending' | 'descending' | 'none' {
-    if (this.sortBy !== column) return 'none';
-    return this.sortOrder === 'ASC' ? 'ascending' : 'descending';
-  }
-
-  sortIcon(column: string): string {
-    if (this.sortBy !== column) return '⇅';
-    return this.sortOrder === 'ASC' ? '▲' : '▼';
-  }
 
   /** A cell as the Reports tables write it: 21-Oct-2026, 82.35%, "--" for nothing. */
   cell(c: RecordColumn, row: any): string {

@@ -20,6 +20,8 @@ import { ALARM_STATE, SEVERITY, severityOf } from '../../shared/severity';
 import { DashPart, DashTab, DashViewHooks, DashViews, revealWhenShown, viewInUrl } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 import { SearchSelectDirective } from '../../shared/search-select.directive';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 
 /** Charts | Alarms Details, under the cards both share. */
 const TABS: DashTab[] = [
@@ -39,7 +41,7 @@ const TABS: DashTab[] = [
 @Component({
   selector: 'app-alarm-dashboard',
   standalone: true,
-  imports: [DashViewTabsComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent, SearchSelectDirective],
+  imports: [DashViewTabsComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MexaPagerComponent, SearchSelectDirective, ...MEXA_TABLE],
   templateUrl: './alarm-dashboard.component.html'
 })
 export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
@@ -55,6 +57,17 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
   limit = 10;
   sort = '';
   dir: 'asc' | 'desc' = 'desc';
+
+  /** The table's header (shared/table, 29 Oct 2026): the API sorts and filters
+   *  the alarms; Severity, Status and Shift can be filtered. */
+  readonly tbl = new TableState<any>([
+    { key: 'machine_serial_no' }, { key: 'shift_name', filter: 'list', options: () => [
+      ...this.shifts.map((s: any) => ({ value: s.shift_name, label: s.shift_name })), { value: 'Unassigned', label: 'Unassigned' }] },
+    { key: 'alarm_code' }, { key: 'message' },
+    { key: 'severity', filter: 'list', options: [{ value: 'CRITICAL', label: 'Critical' }, { value: 'NORMAL', label: 'Non-critical' }] },
+    { key: 'status', filter: 'list', options: [{ value: 'open', label: 'Open' }, { value: 'closed', label: 'Closed' }] },
+    { key: 'duration_seconds' }, { key: 'started_at' }, { key: 'ended_at' }
+  ], { mode: 'server', onChange: () => this.tableChanged() });
 
   /** Table columns, in the design's order; `key` is what the server sorts by. */
   readonly columns = [
@@ -93,6 +106,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
     const next = kind === 'all' || kind === this.drillKind ? '' : kind;   // same card again: back to all
     if (next === 'longest') { this.sort = 'duration_seconds'; this.dir = 'desc'; }
     else if (this.drillKind === 'longest') { this.sort = ''; this.dir = 'desc'; }
+    this.tbl.setSort(this.sort ? { key: this.sort, dir: this.dir } : null, false);   // the header shows it, quietly
     this.drillKind = next;
     this.page = 1;
     this.scrollToTable = true;
@@ -108,16 +122,21 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
     return this.drillKind === 'longest' ? '' : this.drillKind;
   }
 
-  /** Click a header to sort by it; again to flip the direction. */
-  sortBy(key: string): void {
-    if (this.sort === key) this.dir = this.dir === 'desc' ? 'asc' : 'desc';
-    else { this.sort = key; this.dir = ['machine_serial_no', 'shift_name', 'alarm_code', 'message'].includes(key) ? 'asc' : 'desc'; }
+  /** The header's filters as the API reads them (f_<column>=a,b); the sort goes as sort/dir. */
+  private tableFilters(): Record<string, string> {
+    const { sort, dir, ...filters } = this.tbl.params();
+    return filters;
+  }
+
+  /** The header's sort or a filter changed: the table asks again, from its first page. */
+  private tableChanged(): void {
+    this.sort = this.tbl.sort?.key || '';
+    this.dir = this.tbl.sort?.dir || 'desc';
     // a header sort replaces the Max Duration card's ordering
     if (this.drillKind === 'longest') this.drillKind = '';
     this.page = 1;
     this.load();
   }
-  ariaSort(key: string): string { return this.sort !== key ? 'none' : this.dir === 'asc' ? 'ascending' : 'descending'; }
   goTo(p: number): void { this.page = p; this.load(); }
   setLimit(n: number): void { this.limit = n || 10; this.page = 1; this.load(); }
 
@@ -253,12 +272,12 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
      search narrows them too); the list on those and its narrowing, order and page. */
   partKeys(): Record<DashPart, string> {
     const shared = JSON.stringify(this.f);
-    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.show, this.sort, this.dir, this.page, this.limit]) };
+    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.show, this.sort, this.dir, this.tbl.filters, this.page, this.limit]) };
   }
 
   fetchParts(parts: DashPart[]) {
     const table = parts.includes('table')
-      ? { show: this.show, sort: this.sort || null, dir: this.dir, page: this.page, limit: this.limit } : {};
+      ? { ...this.tableFilters(), show: this.show, sort: this.sort || null, dir: this.dir, page: this.page, limit: this.limit } : {};
     return this.svc.getAlarms({ ...this.f, ...table, part: parts.join(',') }).pipe(takeUntil(this.destroy$));
   }
 
@@ -337,7 +356,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
     this.cdr.markForCheck();
 
     // the file is what the table shows: same card narrowing, same order
-    this.svc.exportAs(format, { ...this.f, show: this.show, sort: this.sort || null, dir: this.dir })
+    this.svc.exportAs(format, { ...this.f, ...this.tableFilters(), show: this.show, sort: this.sort || null, dir: this.dir })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: blob => {

@@ -71,10 +71,11 @@
 
     <ng-container *ngIf="filteredCompanies as visibleCompanies">
       <div *ngIf="visibleCompanies.length > 0" class="admin-tablewrap" tabindex="0" role="region" aria-label="Companies" (scroll)="closeCompanyMenus()">
-        <table class="admin-table company-directory">
-          <thead><tr><th scope="col">Company</th><th scope="col">Plan &amp; capacity</th><th scope="col">Status</th><th scope="col" class="admin-actions-heading">Manage company</th></tr></thead>
+        <table class="admin-table company-directory" [mexaTable]="companyTable">
+          <thead><tr><th scope="col" mexaCol="company_name">Company</th><th scope="col" mexaCol="plan_name">Plan &amp; capacity</th>
+            <th scope="col" mexaCol="status">Status</th><th scope="col" class="admin-actions-heading">Manage company</th></tr></thead>
           <tbody>
-            <tr *ngFor="let c of visibleCompanies; trackBy: trackCompany">
+            <tr *ngFor="let c of visibleCompanies | tableView:companyTable:companyTable.version; trackBy: trackCompany">
               <td>
                 <div class="admin-record">
                   <span class="admin-record-avatar" aria-hidden="true">{{ companyInitials(c) }}</span>
@@ -576,19 +577,19 @@
         <p class="text-sm mt-1">Click <strong>+ Add Plant</strong> to create the first plant.</p>
       </div>
       <div *ngIf="!plantsLoading && plants.length > 0" class="mexa-tablewrap" tabindex="0" role="region" aria-label="Plants">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="plantTable">
         <thead>
           <tr>
             <th class="col-lg" scope="col">#</th>
-            <th scope="col">Code</th>
-            <th scope="col">Name</th>
-            <th class="col-md" scope="col">Location</th>
-            <th scope="col" class="center">Status</th>
+            <th scope="col" mexaCol="plant_code">Code</th>
+            <th scope="col" mexaCol="plant_name">Name</th>
+            <th class="col-md" scope="col" mexaCol="location">Location</th>
+            <th scope="col" class="center" mexaCol="status">Status</th>
             <th scope="col" class="actions">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let p of plants; let i = index">
+          <tr *ngFor="let p of plants | tableView:plantTable:plantTable.version; let i = index">
             <td class="num muted col-lg">{{ i + 1 }}</td>
             <td class="num strong">{{ p.plant_code }}</td>
             <td class="strong">{{ p.plant_name }}</td>
@@ -697,17 +698,17 @@
         </div>
 
         <div *ngIf="!historyLoading && history.length > 0" class="mexa-tablewrap">
-          <table class="mexa-table">
+          <table class="mexa-table" [mexaTable]="historyTable">
             <thead>
               <tr>
-                <th scope="col">When</th>
-                <th scope="col">Change</th>
+                <th scope="col" mexaCol="changed_at">When</th>
+                <th scope="col" mexaCol="plan_name">Change</th>
                 <th scope="col">Limits</th>
-                <th scope="col">By</th>
+                <th scope="col" mexaCol="by">By</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let h of history">
+              <tr *ngFor="let h of history | tableView:historyTable:historyTable.version">
                 <td class="num">
                   {{ h.changed_at | date:'d MMM y, h:mm a' }}
                 </td>

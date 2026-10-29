@@ -6,7 +6,8 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSortModule } from '@angular/material/sort';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -26,7 +27,7 @@ import { AuthService } from '../../core/services/auth.service';
   styleUrl: './shifts.component.scss',
   imports: [
     CommonModule, FormsModule,
-    MatTableModule, MatPaginatorModule, MatSortModule,
+    MatTableModule, MatPaginatorModule, ...MEXA_TABLE,
     MatButtonModule, MatIconModule, MatInputModule,
     MatSlideToggleModule, MatProgressSpinnerModule, MatTooltipModule,
     ShiftFormComponent,
@@ -51,6 +52,16 @@ export class ShiftsComponent implements OnInit, OnDestroy {
   deleteTarget: any = null;
   deleting          = false;
   deleteError       = '';
+
+  /* The table's header (shared/table, 29 Oct 2026). Every shift is here, so
+     it sorts and filters here, before the page is cut. (The old sort arrows
+     did nothing: Material's sort was never connected to the rows.) */
+  readonly shiftTable = new TableState<any>([
+    { key: 'shift_code' }, { key: 'shift_name' },
+    { key: 'time', value: r => r.start_time },
+    { key: 'break_minutes', type: 'number' },
+    { key: 'is_active', filter: 'list', label: v => (v === 'true' ? 'Active' : 'Inactive') }
+  ], { onChange: () => { this.page = 0; this.updatePage(); } });
 
   private searchSubject = new Subject<string>();
   private destroy$      = new Subject<void>();
@@ -111,8 +122,12 @@ export class ShiftsComponent implements OnInit, OnDestroy {
 
   updatePage() {
     const start    = this.page * this.limit;
-    this.pagedRows = this.filteredRows.slice(start, start + this.limit);
+    this.pagedRows = this.shiftTable.view(this.filteredRows).slice(start, start + this.limit);
+    this.cdr.markForCheck();
   }
+
+  /** The shifts after the search and the header's filters. */
+  get shownCount(): number { return this.shiftTable.view(this.filteredRows).length; }
 
   rowIndex(i: number) { return this.page * this.limit + i + 1; }
 

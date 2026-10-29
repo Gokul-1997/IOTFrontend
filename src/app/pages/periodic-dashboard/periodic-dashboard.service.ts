@@ -28,8 +28,10 @@ export class PeriodicDashboardService {
     limit?: number;
     /** Which parts: 'kpis', 'charts', 'table', comma-separated (Backend dashboard/parts.js). */
     part?: string;
+    /** The tickets table's header: sort, dir, f_<column> (shared/table). */
+    table?: Record<string, string>;
   }): Observable<any> {
-    const query: any = {};
+    const query: any = { ...(params.table || {}) };
     if (params.machine_id) query.machine_id = params.machine_id;
     if (params.search)     query.search     = params.search;
     if (params.status)     query.status     = params.status;
@@ -69,9 +71,9 @@ export class PeriodicDashboardService {
    * xlsx body before it ever reached the browser's save dialog.
    */
   exportAs(format: 'xlsx' | 'csv', params: {
-    machine_id?: number | null; search?: string; status?: string; due?: string;
+    machine_id?: number | null; search?: string; status?: string; due?: string; table?: Record<string, string>;
   }): Observable<Blob> {
-    const query: any = {};
+    const query: any = { ...(params.table || {}) };
     if (params.machine_id) query.machine_id = params.machine_id;
     if (params.search)     query.search     = params.search;
     if (params.status)     query.status     = params.status;

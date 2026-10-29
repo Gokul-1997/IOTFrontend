@@ -17,6 +17,8 @@ import { DashPart, DashTab, DashViewHooks, DashViews, revealWhenShown, viewInUrl
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
 import { SearchSelectDirective } from '../../shared/search-select.directive';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState, codes } from '../../shared/table/table-state';
 
 /** Charts | Maintenance Details (upcoming, by type, the tickets and the plan), under the tiles both share. */
 const TABS: DashTab[] = [
@@ -39,7 +41,7 @@ const TABS: DashTab[] = [
 @Component({
   selector: 'app-periodic-dashboard',
   standalone: true,
-  imports: [DashViewTabsComponent, MexaPagerComponent, AutoApplyDirective, FilterPanelDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, SearchSelectDirective],
+  imports: [DashViewTabsComponent, MexaPagerComponent, AutoApplyDirective, FilterPanelDirective, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, SearchSelectDirective, ...MEXA_TABLE],
   templateUrl: './periodic-dashboard.component.html'
 })
 export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
@@ -86,6 +88,40 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
 
   /* ── the plan ── */
   schedules: any[] = [];
+
+  /* The tables' headers (shared/table, 29 Oct 2026). The tickets are paged by
+     the API, which sorts and filters them; the rest are all here. */
+  readonly upcomingTable = new TableState<any>([
+    { key: 'machine_serial_no', filter: 'list' }, { key: 'title' }, { key: 'due_date', type: 'date' },
+    { key: 'assigned_to_name', value: u => u.assigned_to_name || 'Unassigned', filter: 'list' },
+    { key: 'status', value: u => (u.is_overdue ? 'Overdue' : 'Scheduled'), filter: 'list' }
+  ]);
+  readonly frequencyTable = new TableState<any>([
+    { key: 'frequency', value: f => this.frequencyLabel(f.frequency) },
+    { key: 'open', type: 'number' }, { key: 'completed', type: 'number' }, { key: 'overdue', type: 'number' },
+    { key: 'next_due_at', type: 'date' }
+  ]);
+  readonly ticketTable = new TableState<any>([
+    { key: 'ticket' },
+    { key: 'assignee', filter: 'list', options: () => [{ value: '__blank__', label: 'Unassigned' },
+      ...[...new Set((this.data?.tickets?.data || []).map((t: any) => t.assigned_to_name).filter(Boolean))]
+        .map(n => ({ value: n as string, label: n as string }))] },
+    { key: 'machine', filter: 'list', options: () => (this.machines || []).map((m: any) => ({ value: m.machine_serial_no, label: m.machine_serial_no })) },
+    { key: 'title' },
+    { key: 'priority', filter: 'list', options: codes(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']) },
+    { key: 'frequency', filter: 'list', options: () => ['DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'HALF_YEARLY', 'YEARLY']
+      .map(f => ({ value: f, label: this.frequencyLabel(f) })) },
+    { key: 'due' },
+    { key: 'status', filter: 'list', options: codes(['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']) },
+    { key: 'completed' }
+  ], { mode: 'server', onChange: () => { this.page = 1; this.load(); } });
+  readonly scheduleTable = new TableState<any>([
+    { key: 'machine_serial_no', filter: 'list' }, { key: 'title' },
+    { key: 'frequency', value: s => this.frequencyLabel(s.frequency), filter: 'list' },
+    { key: 'next_due_at', type: 'date' }, { key: 'grace_days', type: 'number' },
+    { key: 'assigned_to_name', value: s => s.assigned_to_name || 'Unassigned', filter: 'list' },
+    { key: 'active', value: s => (s.is_active ? 'Active' : 'Off'), filter: 'list' }
+  ]);
   showPlan = false;
   /** The machine the plan's schedules were asked for; null until the plan is opened. */
   private plansFor: string | null = null;
@@ -222,13 +258,13 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
     const machine = JSON.stringify([this.selectedMachine]);
     return {
       kpis: machine, charts: machine,
-      table: JSON.stringify([this.selectedMachine, this.search, this.statusFilter, this.dueFilter, this.page, this.limit])
+      table: JSON.stringify([this.selectedMachine, this.search, this.statusFilter, this.dueFilter, this.ticketTable.params(), this.page, this.limit])
     };
   }
 
   fetchParts(parts: DashPart[]) {
     const table = parts.includes('table')
-      ? { search: this.search, status: this.statusFilter, due: this.dueFilter, page: this.page, limit: this.limit } : {};
+      ? { search: this.search, status: this.statusFilter, due: this.dueFilter, page: this.page, limit: this.limit, table: this.ticketTable.params() } : {};
     return this.svc.getPeriodic({ machine_id: this.selectedMachine, ...table, part: parts.join(',') })
       .pipe(takeUntil(this.destroy$));
   }
@@ -407,7 +443,8 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
     this.cdr.markForCheck();
 
     this.svc.exportAs(format, {
-      machine_id: this.selectedMachine, search: this.search, status: this.statusFilter, due: this.dueFilter
+      machine_id: this.selectedMachine, search: this.search, status: this.statusFilter, due: this.dueFilter,
+      table: this.ticketTable.params()
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({

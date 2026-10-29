@@ -87,8 +87,9 @@ export class ProgramService {
     return this.http.get<{ data: PtMachine[]; gateway?: PtGateway | null }>(`${this.api}/machines`);
   }
 
-  getFiles(machineId: number, kind: PtFilter, page: number, limit: number) {
-    const params: Record<string, string> = { machine_id: String(machineId), page: String(page), limit: String(limit) };
+  /** `table`: the files table's header sort and filters (shared/table: sort, dir, f_…, q_…). */
+  getFiles(machineId: number, kind: PtFilter, page: number, limit: number, table: Record<string, string> = {}) {
+    const params: Record<string, string> = { ...table, machine_id: String(machineId), page: String(page), limit: String(limit) };
     if (kind) params['kind'] = kind;
     return this.http.get<{ data: PtFile[]; pagination: PtPage }>(`${this.api}/files`, { params });
   }

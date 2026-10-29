@@ -18,6 +18,8 @@ import { SearchSelectDirective } from '../../shared/search-select.directive';
 import { EnumLabelPipe } from '../../shared/enum-label.pipe';
 import { alarmText, isOpenTicket } from '../../shared/alarm-text';
 import { RouterLink } from '@angular/router';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 
 /** The same alarms counted without the severity filter (GET /api/alarms → summary). */
 interface AlarmSummary { total: number; critical: number; still_on: number; machines: number; }
@@ -37,14 +39,17 @@ interface AlarmSummary { total: number; critical: number; still_on: number; mach
  *    ticket is an icon that opens the ticket form;
  *  - nothing said how many, or how bad: a strip above the table counts
  *    them, and All | Critical | Non-critical narrows the list;
- *  - a Machine filter, the flat list with search, as on every page.
+ *  - a Machine filter, the flat list with search, as on every page;
+ *  - the MEXA table header (shared/table): sort any column, filter Severity
+ *    and Status — asked of the API, which pages the list (the switch is a
+ *    shortcut for Severity).
  * Severity is also a stripe at the row's start, so a critical alarm stands
  * out on a phone where the Severity column is hidden.
  */
 @Component({
   selector: 'app-alarms',
   standalone: true,
-  imports: [FilterPanelDirective, CommonModule, FormsModule, RouterLink, MexaPagerComponent, SkeletonRowsComponent, StateComponent, SearchSelectDirective, EnumLabelPipe],
+  imports: [FilterPanelDirective, CommonModule, FormsModule, RouterLink, MexaPagerComponent, SkeletonRowsComponent, StateComponent, SearchSelectDirective, EnumLabelPipe, ...MEXA_TABLE],
   templateUrl: './alarms.component.html'
 })
 export class AlarmsComponent implements OnInit {
@@ -54,8 +59,30 @@ export class AlarmsComponent implements OnInit {
   machines: { id: number; machine_serial_no: string }[] = [];
   loading = false;
   loadError = false;
-  filter: { is_resolved: string; machine_id: number | null; severity: '' | 'CRITICAL' | 'NORMAL'; page: number; limit: number } =
-    { is_resolved: 'false', machine_id: null, severity: '', page: 1, limit: 20 };
+  filter: { is_resolved: string; machine_id: number | null; page: number; limit: number } =
+    { is_resolved: 'false', machine_id: null, page: 1, limit: 20 };
+
+  /** The table's header: sorted and filtered by the API (?sort=&dir=&f_…=&q_…=). */
+  readonly tbl = new TableState<any>([
+    { key: 'machine' },
+    { key: 'alarm' },
+    { key: 'code' },
+    { key: 'severity', filter: 'list', options: [{ value: 'CRITICAL', label: 'Critical' }, { value: 'NORMAL', label: 'Non-critical' }] },
+    { key: 'started' },
+    { key: 'status', filter: 'list', options: () => this.statusOptions }
+  ], { mode: 'server', onChange: () => this.apply() });
+
+  /** The Status filter's choices follow the Status above: Active alarms are still on or cleared. */
+  get statusOptions() {
+    const on = { value: 'on', label: 'Still on' }, cleared = { value: 'cleared', label: 'Cleared' }, done = { value: 'resolved', label: 'Resolved' };
+    return this.filter.is_resolved === 'false' ? [on, cleared] : this.filter.is_resolved === 'true' ? [done] : [on, cleared, done];
+  }
+
+  /** The switch above the table: the Severity filter, one value or none. */
+  get severity(): '' | 'CRITICAL' | 'NORMAL' {
+    const v = this.tbl.filters['severity'] || [];
+    return v.length === 1 ? v[0] as 'CRITICAL' | 'NORMAL' : '';
+  }
   /** When the rows were read: "for 2 h" is measured to it, and stays put between renders. */
   now = Date.now();
 
@@ -171,10 +198,16 @@ export class AlarmsComponent implements OnInit {
     this.load();
   }
 
+  /** Active / Resolved / All above: a Status filter from the other list no longer applies. */
+  setResolved(value: string): void {
+    this.filter.is_resolved = value;
+    if (this.tbl.isFiltered('status')) this.tbl.clearFilter('status');   // asks again (onChange)
+    else this.apply();
+  }
+
   setSeverity(severity: '' | 'CRITICAL' | 'NORMAL'): void {
-    if (this.filter.severity === severity) return;
-    this.filter.severity = severity;
-    this.apply();
+    if (this.severity === severity && (severity || !this.tbl.isFiltered('severity'))) return;
+    this.tbl.setFilter('severity', severity ? [severity] : []);    // the table asks again (onChange)
   }
 
   load() {
@@ -184,7 +217,7 @@ export class AlarmsComponent implements OnInit {
     this.loadError = false;
     this.cdr.markForCheck();
 
-    const params: any = { ...this.filter };
+    const params: any = { ...this.filter, ...this.tbl.params() };
     Object.keys(params).forEach(k => (params[k] === '' || params[k] === null || params[k] === undefined) && delete params[k]);
     this.loadSub = this.alarmService.getAlarms(params).subscribe({
       next: res => {

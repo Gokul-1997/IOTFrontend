@@ -6,11 +6,16 @@ import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AdminTabsComponent } from './admin-tabs.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
+
+/** An account's state in words, as its badge says it. */
+const statusWord = (u: any) => (u.company_active === false ? 'Company disabled' : u.is_active ? 'Active' : 'Inactive');
 
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, AdminTabsComponent],
+  imports: [CommonModule, FormsModule, AdminTabsComponent, ...MEXA_TABLE],
   templateUrl: './user-management.component.html',
   changeDetection: ChangeDetectionStrategy.Default
 })
@@ -28,6 +33,20 @@ export class UserManagementComponent implements OnInit {
   showCreateModal = false;
   showEditModal = false;
   selectedUser: any = null;
+
+  /* The tables' headers (shared/table, 29 Oct 2026): sort any column, filter the company, role and status. */
+  readonly adminTable = new TableState<any>([
+    { key: 'username' },
+    { key: 'company_name', filter: 'list' },
+    { key: 'role', value: u => this.roleNames(u), filter: 'list' },
+    { key: 'status', value: statusWord }
+  ]);
+  readonly userTable = new TableState<any>([
+    { key: 'username' },
+    { key: 'company_name', filter: 'list' },
+    { key: 'roles', value: u => (u.roles || []).map((r: any) => r.role_name).join(', ') },
+    { key: 'status', value: statusWord, filter: 'list' }
+  ]);
 
   get filteredUsers(): any[] {
     if (!this.auth.isSntSuper()) return this.users;

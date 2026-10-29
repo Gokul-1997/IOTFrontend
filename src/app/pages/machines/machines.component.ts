@@ -17,7 +17,6 @@ import { controllerTypeLabel } from './controller-types';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSortModule } from '@angular/material/sort';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -27,23 +26,17 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 
-// Maps Material sort column names → DB prefixed column names expected by backend
-const SORT_MAP: Record<string, string> = {
-  name:               'l.name',
-  machine_serial_no:  'm.machine_serial_no',
-  model:              'm.model',
-  controller:         'm.controller',
-  spindle_rpm:        'm.spindle_rpm',
-  is_active:          'm.is_active'
-};
-
 import { StateComponent } from '../../shared/state/state.component';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { BLANK, TableState } from '../../shared/table/table-state';
+
+const YES_NO = [{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }, { value: BLANK, label: 'Not set' }];
 @Component({
   standalone: true,
   selector: 'app-machines',
   imports: [StoredImageDirective,
     CommonModule, FormsModule, MachineFormComponent,
-    MatTableModule, MatPaginatorModule, MatSortModule,
+    MatTableModule, MatPaginatorModule, ...MEXA_TABLE,
     MatButtonModule, MatIconModule, MatInputModule,
     MatSlideToggleModule, MatProgressSpinnerModule,
     MatTooltipModule, StateComponent
@@ -84,8 +77,23 @@ export class MachinesComponent implements OnInit, OnDestroy {
   loading  = false;
 
   /** By name, its numbers as numbers (VMC - 2 before VMC - 10), as every machine list the API gives (29 Oct 2026). */
-  sortBy  = 'm.machine_serial_no';
-  sortDir: 'asc' | 'desc' = 'asc';
+  /* The table's header (shared/table, 29 Oct 2026): sort any column, filter
+     or search it — the API pages the machines, so it does both. In name
+     order until a column is chosen. No Line filter: machines are picked by
+     name (21 Oct 2026). */
+  readonly machineTable = new TableState<any>([
+    { key: 'line' },
+    { key: 'machine' },
+    { key: 'model' },
+    { key: 'controller' },
+    { key: 'ip' },
+    { key: 'rpm' }, { key: 'x' }, { key: 'y' }, { key: 'z' }, { key: 'fourth' }, { key: 'fifth' },
+    { key: 'twin_spindle', filter: 'list', options: YES_NO },
+    { key: 'twin_table', filter: 'list', options: YES_NO },
+    { key: 'atc' },
+    { key: 'serial' },
+    { key: 'status', filter: 'list', options: [{ value: 'true', label: 'Active' }, { value: 'false', label: 'Inactive' }] }
+  ], { mode: 'server', onChange: () => { this.page = 1; this.load(); } });
 
   showForm   = false;
   editData: any = null;
@@ -135,8 +143,7 @@ export class MachinesComponent implements OnInit, OnDestroy {
       search:  this.search,
       page:    this.page,
       limit:   this.limit,
-      sortBy:  this.sortBy,
-      sortDir: this.sortDir
+      ...this.machineTable.params()
     }).pipe(takeUntil(this.destroy$)).subscribe({
       next: res => {
         this.rows    = res.data;
@@ -156,19 +163,6 @@ export class MachinesComponent implements OnInit, OnDestroy {
     this.searchSubject.next(this.search);
   }
 
-  sortedColumn: string = '';
-  onSort(e: any) {
-    this.sortedColumn = e.direction ? e.active : '';
-    if (!e.active) return;
-    // a column's sort cleared: back to the list's own order, by name
-    this.sortBy  = e.direction ? SORT_MAP[e.active] ?? 'm.machine_serial_no' : 'm.machine_serial_no';
-    this.sortDir = e.direction ? e.direction as 'asc' | 'desc' : 'asc';
-    this.load();
-  }
-  
-    isSorted(col: string) {
-      return this.sortedColumn === col;
-    }
 
   onPage(e: any) {
     this.page  = e.pageIndex + 1;

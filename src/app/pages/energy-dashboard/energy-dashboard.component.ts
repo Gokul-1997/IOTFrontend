@@ -23,6 +23,8 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { DashPart, DashTab, DashViewHooks, DashViews, viewInUrl, TileDrill } from '../../shared/dash-view/dash-view';
 import { DashViewTabsComponent } from '../../shared/dash-view/dash-view-tabs.component';
 import { SearchSelectDirective } from '../../shared/search-select.directive';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 
 /** Charts | Machine Detail | Energy Meter, under the tiles all three share. The meter
  *  panel fetches its own readings, so its tab needs nothing more from this page. */
@@ -49,7 +51,7 @@ const TABS: DashTab[] = [
 @Component({
   selector: 'app-energy-dashboard',
   standalone: true,
-  imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MeterPanelComponent, SearchSelectDirective],
+  imports: [DashViewTabsComponent, MexaPagerComponent, MetricHelpComponent, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, CommonModule, RouterModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MeterPanelComponent, SearchSelectDirective, ...MEXA_TABLE],
   templateUrl: './energy-dashboard.component.html'
 })
 export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHooks {
@@ -69,6 +71,13 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
   f: any = this.blankFilters();
   page = 1;
   readonly limit = 20;
+
+  /** The Machine Detail table's header (shared/table, 29 Oct 2026): the API sorts and filters the machines. */
+  readonly machineTable = new TableState<any>([
+    { key: 'machine' }, { key: 'model' },
+    { key: 'energy' }, { key: 'run' }, { key: 'produced' }, { key: 'kwh_per_part' }, { key: 'cost' }, { key: 'peak' },
+    { key: 'status', filter: 'list', options: [{ value: 'overload', label: 'Overload' }, { value: 'normal', label: 'No overload' }] }
+  ], { mode: 'server', onChange: () => { this.page = 1; this.load(); } });
 
   /** The page's data, each part merged in as it arrives. */
   data: any = null;
@@ -179,11 +188,11 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
      machine search narrows the totals too); the table on those and its page. */
   partKeys(): Record<DashPart, string> {
     const shared = JSON.stringify(this.f);
-    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.drill.kind, this.page, this.limit]) };
+    return { kpis: shared, charts: shared, table: JSON.stringify([shared, this.drill.kind, this.machineTable.params(), this.page, this.limit]) };
   }
 
   fetchParts(parts: DashPart[]) {
-    const paging = parts.includes('table') ? { show: this.drill.kind || null, page: this.page, limit: this.limit } : {};
+    const paging = parts.includes('table') ? { ...this.machineTable.params(), show: this.drill.kind || null, page: this.page, limit: this.limit } : {};
     return this.svc.getEnergy({ ...this.f, ...paging, part: parts.join(',') }).pipe(takeUntil(this.destroy$));
   }
 
@@ -252,7 +261,7 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
   export(format: 'xlsx' | 'csv'): void {
     this.exporting = format;
     this.cdr.markForCheck();
-    this.svc.exportAs(format, { ...this.f, show: this.drill.kind || null })
+    this.svc.exportAs(format, { ...this.f, ...this.machineTable.params(), show: this.drill.kind || null })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: blob => {

@@ -6,15 +6,23 @@ import { AdminService } from './admin.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AdminTabsComponent } from './admin-tabs.component';
 import { ConfirmService } from '../../shared/confirm/confirm.service';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 
 @Component({
   selector: 'app-role-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, AdminTabsComponent],
+  imports: [CommonModule, FormsModule, RouterModule, AdminTabsComponent, ...MEXA_TABLE],
   templateUrl: './role-management.component.html',
   changeDetection: ChangeDetectionStrategy.Default
 })
 export class RoleManagementComponent implements OnInit {
+  /** The table's header (shared/table, 29 Oct 2026): sort by role or by how many pages it opens. */
+  readonly roleTable = new TableState<any>([
+    { key: 'role_name' },
+    { key: 'access', value: r => (this.isCompanyAdminRole(r) ? Number.MAX_SAFE_INTEGER : this.getPageCount(r)), type: 'number' }
+  ]);
+
   /** "Are you sure?" in the app's own dialog, not the browser's confirm() box. */
   private readonly confirm = inject(ConfirmService);
 

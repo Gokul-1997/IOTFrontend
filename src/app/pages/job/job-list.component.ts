@@ -8,7 +8,8 @@ import { MatPaginator, PageEvent } from '@angular/material/paginator';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSortModule } from '@angular/material/sort';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { JobService } from './job.service';
@@ -21,7 +22,7 @@ import { StateComponent } from '../../shared/state/state.component';
   selector: 'app-job-list',
   imports: [
     CommonModule,
-    MatTableModule, MatPaginatorModule, MatSortModule,
+    MatTableModule, MatPaginatorModule, ...MEXA_TABLE,
     MatButtonModule, MatIconModule,
     JobCreateModalComponent, StateComponent
   ],
@@ -34,6 +35,21 @@ export class JobListComponent implements OnInit {
 
   activeSource  = new MatTableDataSource<any>();
   historySource = new MatTableDataSource<any>();
+
+  /* The tables' headers (shared/table, 29 Oct 2026). Running jobs are all
+     here, so they sort and filter here; the history is paged by the API. */
+  private activeRows: any[] = [];
+  readonly activeTable = new TableState<any>([
+    { key: 'machine', value: r => r.machine_serial_no, filter: 'list' },
+    { key: 'part', value: r => r.part_name },
+    { key: 'target', value: r => r.target_qty, type: 'number' },
+    { key: 'started_at', type: 'date' }
+  ], { onChange: () => { this.activeSource.data = this.activeTable.view(this.activeRows); this.cdr.markForCheck(); } });
+  readonly historyTable = new TableState<any>([
+    { key: 'machine' }, { key: 'part' }, { key: 'target' },
+    { key: 'started_at' }, { key: 'ended_at' },
+    { key: 'status', filter: 'list', options: [{ value: 'true', label: 'Running' }, { value: 'false', label: 'Completed' }] }
+  ], { mode: 'server', onChange: () => { this.historyPage = 1; this.loadHistory(); } });
 
   /* A failed request is not an empty list: "No jobs running" after a network
      error told the floor every machine was free. */
@@ -109,8 +125,12 @@ setProfileTab(tab: 'account' | 'password' | 'security'): void {
     this.activeRequest?.unsubscribe();
     this.activeState = 'loading'; this.cdr.markForCheck();
     this.activeRequest = this.service.getJobs().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (res: any) => { this.activeSource.data = res.data || []; this.activeState = 'ready'; this.cdr.markForCheck(); },
-      error: () => { this.activeSource.data = []; this.activeState = 'error'; this.cdr.markForCheck(); }
+      next: (res: any) => {
+        this.activeRows = res.data || [];
+        this.activeSource.data = this.activeTable.view(this.activeRows);
+        this.activeState = 'ready'; this.cdr.markForCheck();
+      },
+      error: () => { this.activeRows = []; this.activeSource.data = []; this.activeState = 'error'; this.cdr.markForCheck(); }
     });
   }
 
@@ -119,7 +139,7 @@ setProfileTab(tab: 'account' | 'password' | 'security'): void {
     this.historyRequest?.unsubscribe();
     this.historyDirty = true;
     this.historyState = 'loading'; this.cdr.markForCheck();
-    this.historyRequest = this.service.getJobHistory(this.historyPage, this.historyLimit).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.historyRequest = this.service.getJobHistory(this.historyPage, this.historyLimit, this.historyTable.params()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res: any) => {
         this.historySource.data = res.data || []; this.historyTotal = res.total ?? this.historySource.data.length;
         this.historyPage = res.page ?? this.historyPage;

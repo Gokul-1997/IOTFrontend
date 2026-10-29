@@ -14,6 +14,8 @@ import { MexaPagerComponent } from '../../shared/mexa-pager/mexa-pager';
 import { takeLinkedRecord } from '../../shared/linked-record';
 import { controllerTypeLabel } from '../machines/controller-types';
 import { SearchSelectDirective } from '../../shared/search-select.directive';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { BLANK, TableState } from '../../shared/table/table-state';
 
 /** The server's limit (PROGRAM_MAX_MB); said before sending, so a big file is not uploaded for nothing. */
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -54,7 +56,7 @@ const STATUS: Record<PtMachineStatus, { label: string; badge: string }> = {
 @Component({
   selector: 'app-programs',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, StateComponent, SkeletonRowsComponent, MexaPagerComponent, SearchSelectDirective],
+  imports: [CommonModule, FormsModule, RouterLink, StateComponent, SkeletonRowsComponent, MexaPagerComponent, SearchSelectDirective, ...MEXA_TABLE],
   templateUrl: './programs.component.html',
   styleUrl: './programs.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -84,6 +86,18 @@ export class ProgramsComponent implements OnInit, OnDestroy {
 
   files: PtFile[] = [];
   filter: PtFilter = '';
+
+  /** The files table's header (shared/table): the API sorts and filters the files, a page at a time. */
+  readonly fileTable = new TableState<PtFile>([
+    { key: 'program' },
+    { key: 'type' },
+    { key: 'delivery', filter: 'list', options: [
+      { value: BLANK, label: 'Waiting to send' }, { value: 'DONE', label: 'On the machine' },
+      { value: 'FAILED', label: 'Refused by machine' }, { value: 'SKIPPED', label: 'Not sent' }] },
+    { key: 'size' },
+    { key: 'saved' },
+    { key: 'by' }
+  ], { mode: 'server', onChange: () => { this.page = 1; this.loadFiles(); } });
   page = 1;
   limit = 20;
   pagination: PtPage = { page: 1, limit: 20, total: 0, totalPages: 1 };
@@ -234,7 +248,7 @@ export class ProgramsComponent implements OnInit, OnDestroy {
     if (!machine) { this.files = []; this.loadingFiles = false; return; }
     this.loadingFiles = true;
     this.filesError = '';
-    this.filesRequest = this.programs.getFiles(machine.id, this.filter, this.page, this.limit)
+    this.filesRequest = this.programs.getFiles(machine.id, this.filter, this.page, this.limit, this.fileTable.params())
       .pipe(takeUntil(this.destroy$)).subscribe({
         next: res => {
           this.files = res.data || [];

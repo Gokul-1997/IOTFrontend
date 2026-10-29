@@ -251,18 +251,13 @@
     </p>
 
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="tbl">
         <caption class="sr-only">Operators, sorted by {{ sort }}</caption>
         <thead>
           <tr>
             <th scope="col">#</th>
-            <th scope="col" *ngFor="let c of columns" [class]="$any(c).cls || ''" [attr.aria-sort]="ariaSort(c.key)">
-              <button type="button" class="mexa-sort" (click)="sortBy(c.key)" [attr.aria-current]="sort === c.key">
-                {{ c.label }}
-                <span class="mexa-sort-arrow" aria-hidden="true">{{ sort === c.key ? (dir === 'asc' ? '▲' : '▼') : '⇅' }}</span>
-              </button>
-            </th>
-            <th scope="col">Status</th>
+            <th scope="col" *ngFor="let c of columns" [ngClass]="$any(c).cls || ''" [mexaCol]="c.key">{{ c.label }}</th>
+            <th scope="col" mexaCol="band">Status</th>
           </tr>
         </thead>
         <tbody>

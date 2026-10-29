@@ -84,16 +84,16 @@
     </div>
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Tickets">
       <div class="table-wrap">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="ticketTable">
         <thead>
           <tr>
-            <th scope="col">Machine</th>
-            <th scope="col">Title</th>
-            <th class="col-lg" scope="col">Issue</th>
-            <th class="col-md" scope="col">Priority</th>
-            <th class="col-md" scope="col">Assigned to</th>
-            <th scope="col">Status</th>
-            <th class="col-lg" scope="col">Created</th>
+            <th scope="col" mexaCol="machine">Machine</th>
+            <th scope="col" mexaCol="title">Title</th>
+            <th class="col-lg" scope="col" mexaCol="issue">Issue</th>
+            <th class="col-md" scope="col" mexaCol="priority">Priority</th>
+            <th class="col-md" scope="col" mexaCol="assigned">Assigned to</th>
+            <th scope="col" mexaCol="status">Status</th>
+            <th class="col-lg" scope="col" mexaCol="created">Created</th>
           </tr>
         </thead>
         <tbody>
@@ -109,10 +109,10 @@
             </tr>
           </ng-container>
           <ng-template #noTickets>
-            <tr><td colspan="7">
-              <div class="mexa-empty">
-              {{ ticketFilter === 'open' ? 'No open tickets' : 'No tickets' }}
-              </div>
+            <tr><td colspan="7" class="mexa-empty">
+              <app-state *ngIf="ticketTable.anyFilter; else noTicketsAtAll" title="No tickets match these filters"
+                         action="Clear filters" (act)="ticketTable.reset()"></app-state>
+              <ng-template #noTicketsAtAll>{{ ticketFilter === 'open' ? 'No open tickets' : 'No tickets' }}</ng-template>
             </td></tr>
           </ng-template>
         </tbody>
@@ -208,21 +208,22 @@
   <div class="mexa-card mexa-card-flush">
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Schedules">
       <div class="table-wrap">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="scheduleTable">
         <thead>
           <tr>
-            <th scope="col">Machine</th>
-            <th scope="col">Title</th>
-            <th class="col-lg" scope="col">Type</th>
-            <th scope="col">Scheduled</th>
-            <th class="col-md" scope="col">Assigned to</th>
-            <th scope="col">Status</th>
+            <th scope="col" mexaCol="machine_serial_no">Machine</th>
+            <th scope="col" mexaCol="title">Title</th>
+            <th class="col-lg" scope="col" mexaCol="maintenance_type">Type</th>
+            <th scope="col" mexaCol="scheduled_at">Scheduled</th>
+            <th class="col-md" scope="col" mexaCol="assigned_to">Assigned to</th>
+            <th scope="col" mexaCol="status">Status</th>
             <th class="actions" scope="col">Action</th>
           </tr>
         </thead>
         <tbody>
-          <ng-container *ngIf="schedules.length > 0; else noSchedules">
-            <tr *ngFor="let s of schedules">
+          @let shownSchedules = schedules | tableView:scheduleTable:scheduleTable.version;
+          <ng-container *ngIf="shownSchedules.length > 0; else noSchedules">
+            <tr *ngFor="let s of shownSchedules">
               <td class="strong">{{ s.machine_serial_no }}</td>
               <td class="wrap">{{ s.title }}</td>
               <td class="col-lg">{{ s.maintenance_type | enumLabel }}</td>
@@ -234,10 +235,10 @@
             </tr>
           </ng-container>
           <ng-template #noSchedules>
-            <tr><td colspan="7">
-              <div class="mexa-empty">
-              No schedules
-              </div>
+            <tr><td colspan="7" class="mexa-empty">
+              <app-state *ngIf="schedules.length; else noSchedulesAtAll" title="No schedules match these filters"
+                         action="Clear filters" (act)="scheduleTable.reset()"></app-state>
+              <ng-template #noSchedulesAtAll>No schedules</ng-template>
             </td></tr>
           </ng-template>
         </tbody>
@@ -252,20 +253,21 @@
   <div class="mexa-card mexa-card-flush">
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Maintenance logs">
       <div class="table-wrap">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="logTable">
         <thead>
           <tr>
-            <th scope="col">Machine</th>
-            <th scope="col">Title</th>
-            <th class="col-lg" scope="col">Type</th>
-            <th scope="col">Started</th>
-            <th class="col-md" scope="col">Technician</th>
-            <th scope="col">Status</th>
+            <th scope="col" mexaCol="machine_serial_no">Machine</th>
+            <th scope="col" mexaCol="title">Title</th>
+            <th class="col-lg" scope="col" mexaCol="maintenance_type">Type</th>
+            <th scope="col" mexaCol="started_at">Started</th>
+            <th class="col-md" scope="col" mexaCol="technician_name">Technician</th>
+            <th scope="col" mexaCol="status">Status</th>
           </tr>
         </thead>
         <tbody>
-          <ng-container *ngIf="logs.length > 0; else noLogs">
-            <tr *ngFor="let l of logs">
+          @let shownLogs = logs | tableView:logTable:logTable.version;
+          <ng-container *ngIf="shownLogs.length > 0; else noLogs">
+            <tr *ngFor="let l of shownLogs">
               <td class="strong">{{ l.machine_serial_no }}</td>
               <td class="wrap">{{ l.title }}</td>
               <td class="col-lg">{{ l.maintenance_type | enumLabel }}</td>
@@ -275,10 +277,10 @@
             </tr>
           </ng-container>
           <ng-template #noLogs>
-            <tr><td colspan="6" >
-              <div class="mexa-empty">
-              No maintenance logs
-              </div>
+            <tr><td colspan="6" class="mexa-empty">
+              <app-state *ngIf="logs.length; else noLogsAtAll" title="No logs match these filters"
+                         action="Clear filters" (act)="logTable.reset()"></app-state>
+              <ng-template #noLogsAtAll>No maintenance logs</ng-template>
             </td></tr>
           </ng-template>
         </tbody>
@@ -292,18 +294,19 @@
 <div *ngIf="activeTab === 'mttr'" class="mexa-card mexa-card-flush" role="tabpanel">
   <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="MTTR by machine">
     <div class="table-wrap">
-    <table class="mexa-table">
+    <table class="mexa-table" [mexaTable]="mttrTable">
       <thead>
         <tr>
-          <th scope="col">Machine</th>
-          <th scope="col" class="qty">Total events</th>
-          <th scope="col" class="qty">Avg repair time</th>
-          <th scope="col" class="qty">Total downtime</th>
+          <th scope="col" mexaCol="machine_serial_no">Machine</th>
+          <th scope="col" class="qty" mexaCol="total_events">Total events</th>
+          <th scope="col" class="qty" mexaCol="avg_repair_minutes">Avg repair time</th>
+          <th scope="col" class="qty" mexaCol="total_downtime_minutes">Total downtime</th>
         </tr>
       </thead>
       <tbody>
-        <ng-container *ngIf="mttr.length > 0; else noMttr">
-          <tr *ngFor="let m of mttr">
+        @let shownMttr = mttr | tableView:mttrTable:mttrTable.version;
+        <ng-container *ngIf="shownMttr.length > 0; else noMttr">
+          <tr *ngFor="let m of shownMttr">
             <td class="strong">{{ m.machine_serial_no }}</td>
             <td class="num qty">{{ m.total_events }}</td>
             <td class="num qty">{{ m.avg_repair_minutes | number:'1.1-1' }} min</td>
@@ -311,10 +314,10 @@
           </tr>
         </ng-container>
         <ng-template #noMttr>
-          <tr><td colspan="4">
-            <div  class="mexa-empty">
-            No data
-            </div>
+          <tr><td colspan="4" class="mexa-empty">
+            <app-state *ngIf="mttr.length; else noMttrAtAll" title="No machines match this search"
+                       action="Clear filters" (act)="mttrTable.reset()"></app-state>
+            <ng-template #noMttrAtAll>No data</ng-template>
           </td></tr>
         </ng-template>
       </tbody>

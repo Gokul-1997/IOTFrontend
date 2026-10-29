@@ -18,6 +18,8 @@ import { LineFormComponent } from './line-form.component';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 @Component({
   standalone: true,
   selector: 'app-lines',
@@ -25,7 +27,7 @@ import { AuthService } from '../../core/services/auth.service';
   styleUrl: './lines.component.scss',
   imports: [
     CommonModule, FormsModule,
-    MatTableModule, MatPaginatorModule,
+    MatTableModule, MatPaginatorModule, ...MEXA_TABLE,
     MatButtonModule, MatIconModule, MatInputModule,
     MatSlideToggleModule, MatProgressSpinnerModule, MatTooltipModule,
     LineFormComponent,
@@ -35,6 +37,15 @@ export class LinesComponent implements OnInit, OnDestroy {
 
   rows: any[] = [];
   displayedColumns = ['index', 'name', 'is_active', 'actions'];
+
+  /* The table's header (shared/table, 29 Oct 2026): every line is here, so it
+     sorts and filters here; the search box above narrows by name too. */
+  readonly lineTable = new TableState<any>([
+    { key: 'name' },
+    { key: 'is_active', filter: 'list', label: v => (v === 'true' ? 'Active' : 'Inactive') }
+  ]);
+  /** Every line as loaded; `rows` is what the search leaves. */
+  private allRows: any[] = [];
 
   search = '';
   loading = false;
@@ -75,7 +86,7 @@ export class LinesComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.service.getLines().subscribe({
       next: (res: any) => {
-        this.rows = res.data || res || [];
+        this.allRows = res.data || res || [];
         this.filterRows();
         this.loading = false;
         this.cdr.markForCheck();
@@ -87,14 +98,11 @@ export class LinesComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** The search box: by name. It filtered the loaded rows away for good, so clearing it brought nothing back. */
   filterRows() {
-    if (!this.search) {
-      // No filtering needed
-      return;
-    }
-    // Simple filter by name
-    const search = this.search.toLowerCase();
-    this.rows = this.rows.filter(r => (r.name || '').toLowerCase().includes(search));
+    const search = this.search.trim().toLowerCase();
+    this.rows = search ? this.allRows.filter(r => (r.name || '').toLowerCase().includes(search)) : this.allRows;
+    this.cdr.markForCheck();
   }
 
   onSearchInput() {

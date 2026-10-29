@@ -51,7 +51,7 @@
     </div>
 
     <div class="table-wrapper">
-      <table mat-table [dataSource]="rows" matSort (matSortChange)="onSort($event)" class="machines-table is-dense">
+      <table mat-table [dataSource]="rows" [mexaTable]="machineTable" class="machines-table is-dense">
 
         <!-- # -->
         <ng-container matColumnDef="index">
@@ -61,7 +61,7 @@
 
         <!-- Line -->
         <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="thead-custm col-md">Line</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="line" class="thead-custm col-md">Line</th>
           <td mat-cell *matCellDef="let r" class="col-md">
             {{ r.name || '—' }}
           </td>
@@ -78,7 +78,7 @@
 
         <!-- Serial No -->
         <ng-container matColumnDef="machine_serial_no">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class=" thead-custm">Machine No</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="machine" class=" thead-custm">Machine No</th>
           <td mat-cell *matCellDef="let r">
             <span class="serial-no strong">{{ r.machine_serial_no }}</span>
           </td>
@@ -86,62 +86,62 @@
 
         <!-- Model -->
         <ng-container matColumnDef="model">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="thead-custm col-md">Model</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="model" class="thead-custm col-md">Model</th>
           <td mat-cell *matCellDef="let r" class="col-md">{{ r.model || '—' }}</td>
         </ng-container>
 
         <!-- Controller -->
         <ng-container matColumnDef="controller">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="thead-custm col-md">Controller</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="controller" class="thead-custm col-md">Controller</th>
           <td mat-cell *matCellDef="let r" class="col-md">{{ controllerText(r) }}</td>
         </ng-container>
 
         <!-- IP: the machine's own report, else the one typed on the form -->
         <ng-container matColumnDef="ip">
-          <th mat-header-cell *matHeaderCellDef class="thead-custm col-lg">IP</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="ip" class="thead-custm col-lg">IP</th>
           <td mat-cell *matCellDef="let r" class="col-lg num"
               [attr.title]="r.controller_ip ? 'Reported by the machine' : r.ip_address ? 'Typed on the machine form' : null">{{ ipOf(r) }}</td>
         </ng-container>
 
         <!-- Spindle RPM -->
         <ng-container matColumnDef="spindle_rpm">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="thead-custm qty col-md">RPM</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="rpm" class="thead-custm qty col-md">RPM</th>
           <td mat-cell *matCellDef="let r" class="qty col-md">{{ r.spindle_rpm || '—' }}</td>
         </ng-container>
 
         <!-- X Axis -->
         <ng-container matColumnDef="x_axis">
-          <th mat-header-cell *matHeaderCellDef class="thead-custm qty col-lg">X</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="x" class="thead-custm qty col-lg">X</th>
           <td mat-cell *matCellDef="let r" class="qty col-lg">{{ r.x_axis ?? '—' }}</td>
         </ng-container>
 
         <!-- Y Axis -->
         <ng-container matColumnDef="y_axis">
-          <th mat-header-cell *matHeaderCellDef class="thead-custm qty col-lg">Y</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="y" class="thead-custm qty col-lg">Y</th>
           <td mat-cell *matCellDef="let r" class="qty col-lg">{{ r.y_axis ?? '—' }}</td>
         </ng-container>
 
         <!-- Z Axis -->
         <ng-container matColumnDef="z_axis">
-          <th mat-header-cell *matHeaderCellDef class="thead-custm qty col-lg">Z</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="z" class="thead-custm qty col-lg">Z</th>
           <td mat-cell *matCellDef="let r" class="qty col-lg">{{ r.z_axis ?? '—' }}</td>
         </ng-container>
 
         <!-- 4th Axis -->
         <ng-container matColumnDef="fourth_axis" class=" thead-custm">
-          <th mat-header-cell *matHeaderCellDef class="qty col-lg">4th</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="fourth" class="qty col-lg">4th</th>
           <td mat-cell *matCellDef="let r" class="qty col-lg">{{ r.fourth_axis ?? '—' }}</td>
         </ng-container>
 
         <!-- 5th Axis -->
         <ng-container matColumnDef="fifth_axis" class=" thead-custm">
-          <th mat-header-cell *matHeaderCellDef class="qty col-lg">5th</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="fifth" class="qty col-lg">5th</th>
           <td mat-cell *matCellDef="let r" class="qty col-lg">{{ r.fifth_axis ?? '—' }}</td>
         </ng-container>
 
         <!-- Twin Spindle -->
         <ng-container matColumnDef="twin_spindle" class=" thead-custm">
-          <th mat-header-cell *matHeaderCellDef class="col-lg">Twin Spindle</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="twin_spindle" class="col-lg">Twin Spindle</th>
           <td mat-cell *matCellDef="let r" class="col-lg">
             <span [class.muted]="!r.twin_spindle">{{ r.twin_spindle ? 'Yes' : 'No' }}</span>
           </td>
@@ -149,7 +149,7 @@
 
         <!-- Twin Table -->
         <ng-container matColumnDef="twin_table" class=" thead-custm">
-          <th mat-header-cell *matHeaderCellDef class="col-lg">Twin Table</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="twin_table" class="col-lg">Twin Table</th>
           <td mat-cell *matCellDef="let r" class="col-lg">
             <span [class.muted]="!r.twin_table">{{ r.twin_table ? 'Yes' : 'No' }}</span>
           </td>
@@ -157,13 +157,13 @@
 
         <!-- ATC -->
         <ng-container matColumnDef="atc_tool_capacity" class=" thead-custm">
-          <th mat-header-cell *matHeaderCellDef class="qty col-lg">ATC Cap.</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="atc" class="qty col-lg">ATC Cap.</th>
           <td mat-cell *matCellDef="let r" class="qty col-lg">{{ r.atc_tool_capacity || '—' }}</td>
         </ng-container>
 
         <!-- MMC -->
         <ng-container matColumnDef="mmc_no" class=" thead-custm">
-          <th mat-header-cell *matHeaderCellDef class="col-lg">Serial No</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="serial" class="col-lg">Serial No</th>
           <td mat-cell *matCellDef="let r" class="col-lg">{{ r.mmc_no || '—' }}</td>
         </ng-container>
 
@@ -186,7 +186,7 @@
 
         <!-- Status -->
         <ng-container matColumnDef="is_active" class=" thead-custm">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+          <th mat-header-cell *matHeaderCellDef mexaCol="status">Status</th>
           <td mat-cell *matCellDef="let r">
             <mat-slide-toggle [aria-label]="(r.machine_serial_no) + ' – ' + (r.is_active ? 'Active' : 'Inactive')"
               color="primary"

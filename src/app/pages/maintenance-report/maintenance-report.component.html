@@ -189,19 +189,19 @@
   <section class="mexa-card mb-4">
     <h2 class="mexa-card-title mexa-card-title-left">Machine Summary</h2>
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="machineTable">
         <caption class="sr-only">Machines ranked by recorded stopped time, worst first</caption>
         <thead>
           <tr>
-            <th scope="col">Machine</th>
-            <th class="qty" scope="col">Tickets</th>
-            <th class="qty" scope="col">Breakdowns</th>
-            <th class="qty" scope="col">Downtime</th>
-            <th class="qty" scope="col">MTTR</th>
+            <th scope="col" mexaCol="machine_serial_no">Machine</th>
+            <th class="qty" scope="col" mexaCol="tickets">Tickets</th>
+            <th class="qty" scope="col" mexaCol="breakdowns">Breakdowns</th>
+            <th class="qty" scope="col" mexaCol="downtime_minutes">Downtime</th>
+            <th class="qty" scope="col" mexaCol="mttr_hours">MTTR</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let r of data.by_machine">
+          <tr *ngFor="let r of data.by_machine | tableView:machineTable:machineTable.version">
             <td class="strong">{{ r.machine_serial_no }}</td>
             <td class="num qty">{{ r.tickets }}</td>
             <td class="num qty">{{ r.breakdowns }}</td>
@@ -246,20 +246,20 @@
     </p>
 
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="ticketTable">
         <caption class="sr-only">Maintenance tickets, most recently raised first</caption>
         <thead>
           <tr>
             <th class="col-lg" scope="col">#</th>
-            <th scope="col">Machine</th>
-            <th scope="col">Title</th>
-            <th class="col-lg" scope="col">Type</th>
-            <th scope="col">Priority</th>
-            <th class="col-md" scope="col">Raised</th>
-            <th class="qty col-lg" scope="col">Repair</th>
-            <th class="qty" scope="col">Downtime</th>
-            <th class="col-md" scope="col">Assigned To</th>
-            <th scope="col">Status</th>
+            <th scope="col" mexaCol="machine">Machine</th>
+            <th scope="col" mexaCol="title">Title</th>
+            <th class="col-lg" scope="col" mexaCol="type">Type</th>
+            <th scope="col" mexaCol="priority">Priority</th>
+            <th class="col-md" scope="col" mexaCol="raised">Raised</th>
+            <th class="qty col-lg" scope="col" mexaCol="repair">Repair</th>
+            <th class="qty" scope="col" mexaCol="downtime">Downtime</th>
+            <th class="col-md" scope="col" mexaCol="assigned">Assigned To</th>
+            <th scope="col" mexaCol="status">Status</th>
           </tr>
         </thead>
         <tbody>

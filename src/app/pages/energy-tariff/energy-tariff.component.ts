@@ -11,6 +11,8 @@ import { StateComponent } from '../../shared/state/state.component';
 import { SkeletonRowsComponent } from '../../shared/skeleton-rows.component';
 import { qty } from '../../shared/format-number';
 import { SearchSelectDirective } from '../../shared/search-select.directive';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 
 /** One machine's row in the hour-rate table: what is saved, and what is typed. */
 interface RateRow { id: number; name: string; model: string | null; saved: number | null; value: number | null; }
@@ -38,7 +40,7 @@ const toRate = (v: any): number | null =>
 @Component({
   selector: 'app-energy-tariff',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, StateComponent, SkeletonRowsComponent, SearchSelectDirective],
+  imports: [CommonModule, FormsModule, RouterModule, StateComponent, SkeletonRowsComponent, SearchSelectDirective, ...MEXA_TABLE],
   template: `
   <div class="mexa-titlebar">
   <div class="titlebar w-fit flex items-center gap-2 text-white">
@@ -63,15 +65,16 @@ const toRate = (v: any): number | null =>
       </button>
     </div>
     <div class="mexa-tablewrap mt-2" tabindex="0" role="region" aria-label="Configured tariffs">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="tariffTable">
         <caption class="sr-only">Configured energy tariffs and limits</caption>
         <thead>
-          <tr><th scope="col">Scope</th><th scope="col" class="qty">Cost per kWh</th><th scope="col" class="col-md">Currency</th>
-              <th scope="col" class="qty">Overload above</th><th scope="col" class="actions"><span class="sr-only">Actions</span></th></tr>
+          <tr><th scope="col" mexaCol="scope">Scope</th><th scope="col" class="qty" mexaCol="cost_per_kwh">Cost per kWh</th>
+              <th scope="col" class="col-md" mexaCol="currency">Currency</th>
+              <th scope="col" class="qty" mexaCol="overload_kw">Overload above</th><th scope="col" class="actions"><span class="sr-only">Actions</span></th></tr>
         </thead>
         <tbody *ngIf="loading" appSkeletonRows [cols]="5" [rows]="3" label="Loading tariffs…"></tbody>
         <tbody *ngIf="!loading">
-          <tr *ngFor="let s of settings">
+          <tr *ngFor="let s of settings | tableView:tariffTable:tariffTable.version">
             <td class="strong">{{ s.machine_serial_no || 'Company default' }}</td>
             <td class="num qty">{{ s.cost_per_kwh ?? '--' }}</td>
             <td class="col-md">{{ s.currency }}</td>
@@ -105,14 +108,15 @@ const toRate = (v: any): number | null =>
       </button>
     </div>
     <div class="mexa-tablewrap mt-2" tabindex="0" role="region" aria-label="Machine hour rates">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="rateTable">
         <caption class="sr-only">Hour rate of each machine, in rupees per hour</caption>
         <thead>
-          <tr><th scope="col">Machine</th><th scope="col" class="col-md">Model</th><th scope="col" class="qty">₹ per hour</th></tr>
+          <tr><th scope="col" mexaCol="name">Machine</th><th scope="col" class="col-md" mexaCol="model">Model</th>
+              <th scope="col" class="qty" mexaCol="saved">₹ per hour</th></tr>
         </thead>
         <tbody *ngIf="ratesLoading" appSkeletonRows [cols]="3" [rows]="4" label="Loading hour rates…"></tbody>
         <tbody *ngIf="!ratesLoading">
-          <tr *ngFor="let r of rates; trackBy: rateKey">
+          <tr *ngFor="let r of rates | tableView:rateTable:rateTable.version; trackBy: rateKey">
             <th scope="row" class="strong hr-name">{{ r.name }}</th>
             <td class="col-md">{{ r.model || '--' }}</td>
             <td class="num qty">{{ qty(r.saved, 2) }}</td>
@@ -261,6 +265,15 @@ const toRate = (v: any): number | null =>
 export class EnergyTariffComponent implements OnInit, OnDestroy {
   machines: any[] = [];
   settings: any[] = [];
+
+  /* The tables' headers (shared/table, 29 Oct 2026): sort any column, filter or search it. */
+  readonly tariffTable = new TableState<any>([
+    { key: 'scope', value: s => s.machine_serial_no || 'Company default' },
+    { key: 'cost_per_kwh', type: 'number' }, { key: 'currency', filter: 'list' }, { key: 'overload_kw', type: 'number' }
+  ]);
+  readonly rateTable = new TableState<any>([
+    { key: 'name' }, { key: 'model', filter: 'list' }, { key: 'saved', type: 'number' }
+  ]);
   form: any = this.blank();
   /* Add / Edit tariff and Edit hour rates open in the same dialog as every
      other form in the app; the tariff form and the rate inputs used to sit

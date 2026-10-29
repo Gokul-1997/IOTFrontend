@@ -6,7 +6,8 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSortModule } from '@angular/material/sort';
+import { MEXA_TABLE } from '../../shared/table/mexa-table';
+import { TableState } from '../../shared/table/table-state';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -26,7 +27,7 @@ import { AuthService } from '../../core/services/auth.service';
   styleUrl: './operators.component.scss',
   imports: [
     CommonModule, FormsModule,
-    MatTableModule, MatPaginatorModule, MatSortModule,
+    MatTableModule, MatPaginatorModule, ...MEXA_TABLE,
     MatButtonModule, MatIconModule, MatSlideToggleModule,
     MatInputModule, MatTooltipModule, MatProgressSpinnerModule,
     OperatorFormComponent
@@ -78,13 +79,20 @@ export class OperatorsComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  /* The table's header (shared/table, 29 Oct 2026): the API pages the
+     operators, so it sorts and filters them. */
+  readonly operatorTable = new TableState<any>([
+    { key: 'code' }, { key: 'name' }, { key: 'shift' }, { key: 'machines' }
+  ], { mode: 'server', onChange: () => { this.page = 1; this.load(); } });
+
   load() {
     this.loadRequest?.unsubscribe();
     this.loading = true;
     this.loadRequest = this.service.getAll({
       page:   this.page,
       limit:  this.limit,
-      search: this.search
+      search: this.search,
+      ...this.operatorTable.params()
     }).pipe(takeUntil(this.destroy$)).subscribe({
       next: (res: any) => {
         this.rows    = res.data || res;

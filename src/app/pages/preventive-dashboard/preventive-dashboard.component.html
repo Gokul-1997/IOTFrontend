@@ -242,19 +242,19 @@
     </p>
 
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="ticketTable">
         <caption class="sr-only">Preventive maintenance tickets raised from alarms</caption>
         <thead>
           <tr>
             <th class="col-lg" scope="col">#</th>
-            <th class="col-md" scope="col">Ticket No</th>
-            <th scope="col">Machine</th>
-            <th scope="col">Alarm Name</th>
-            <th scope="col">Priority</th>
-            <th class="col-md" scope="col">Triggered On</th>
-            <th scope="col">Due Date</th>
-            <th scope="col">Status</th>
-            <th class="qty col-lg" scope="col">Age</th>
+            <th class="col-md" scope="col" mexaCol="ticket">Ticket No</th>
+            <th scope="col" mexaCol="machine">Machine</th>
+            <th scope="col" mexaCol="alarm">Alarm Name</th>
+            <th scope="col" mexaCol="priority">Priority</th>
+            <th class="col-md" scope="col" mexaCol="triggered">Triggered On</th>
+            <th scope="col" mexaCol="due">Due Date</th>
+            <th scope="col" mexaCol="status">Status</th>
+            <th class="qty col-lg" scope="col" mexaCol="age">Age</th>
           </tr>
         </thead>
         <tbody>
@@ -361,22 +361,22 @@
     </form>
 
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
-      <table class="mexa-table">
+      <table class="mexa-table" [mexaTable]="ruleTable">
         <caption class="sr-only">Configured alarm rules</caption>
         <thead>
           <tr>
-            <th scope="col">Scope</th>
-            <th scope="col">Alarm Type</th>
-            <th class="qty" scope="col">Occurrences</th>
-            <th class="qty col-lg" scope="col">Window</th>
-            <th class="qty col-md" scope="col">Due In</th>
-            <th scope="col">Priority</th>
-            <th class="qty col-lg" scope="col">Tickets Raised</th>
-            <th scope="col">Active</th>
+            <th scope="col" mexaCol="scope">Scope</th>
+            <th scope="col" mexaCol="alarm_type">Alarm Type</th>
+            <th class="qty" scope="col" mexaCol="threshold_count">Occurrences</th>
+            <th class="qty col-lg" scope="col" mexaCol="window_hours">Window</th>
+            <th class="qty col-md" scope="col" mexaCol="due_hours">Due In</th>
+            <th scope="col" mexaCol="priority">Priority</th>
+            <th class="qty col-lg" scope="col" mexaCol="tickets_created">Tickets Raised</th>
+            <th scope="col" mexaCol="active">Active</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let r of thresholds">
+          <tr *ngFor="let r of thresholds | tableView:ruleTable:ruleTable.version">
             <td class="strong">{{ r.machine_serial_no || r.scope_machine || 'All machines' }}</td>
             <td>{{ r.alarm_type || 'Any' }}</td>
             <td class="num qty">{{ r.threshold_count }}</td>
