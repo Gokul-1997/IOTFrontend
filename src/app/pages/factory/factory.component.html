@@ -165,6 +165,7 @@
         </span>
       </div>
       <p class="mexa-kpi-value"><button *ngIf="can('energy'); else powerPlain" type="button" class="mexa-kpi-open" (click)="open('energy')" aria-labelledby="fk6-name fk6-value fk6-act"><span id="fk6-value">{{ qty(data.energy.kwh, 2) }}<small *ngIf="data.energy.kwh !== null">kWh</small></span></button><ng-template #powerPlain>{{ qty(data.energy.kwh, 2) }}<small *ngIf="data.energy.kwh !== null">kWh</small></ng-template></p><span hidden id="fk6-name">Power consumption:</span><span hidden id="fk6-act">open the Energy Dashboard for this day</span>
+      <p class="mexa-kpi-sub" *ngIf="data.energy.energy_complete === false">{{ data.energy.kwh == null ? 'No measured consumption' : 'Partial readings' }}</p>
     </div>
   </div>
 
@@ -300,6 +301,7 @@
 
     <section class="mexa-card">
       <h2 class="mexa-card-title">Energy Cost Analysis</h2>
+      <p class="mexa-card-hint" *ngIf="data.energy.energy_complete === false || data.energy.month_energy_complete === false">Some readings are missing. Costs appear when coverage is complete.</p>
 
       <div class="grid grid-cols-2 gap-2 mb-3">
         <div class="rounded-xl p-2 text-white" style="background:#204181">

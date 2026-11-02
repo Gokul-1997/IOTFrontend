@@ -463,7 +463,7 @@ export class Reports implements OnInit, OnDestroy {
     if (tab === 'production') return [
       { label: 'Total Parts',  value: qty(s.total_parts ?? 0, 0), unit: 'pcs', icon: 'inventory_2', color: 'blue',   help: 'produced' },
       { label: 'Run Hours',    value: s.run_hours       ?? '0', unit: 'hrs', icon: 'play_arrow',  color: 'green',  help: 'run_hours' },
-      { label: 'Total Energy', value: qty(s.total_energy ?? 0, 2), unit: 'kWh', icon: 'bolt',        color: 'yellow', help: 'energy_total' },
+      { label: 'Total Energy', value: qty(s.total_energy, 2), unit: 'kWh', icon: 'bolt',        color: 'yellow', help: 'energy_total' },
       { label: 'Efficiency',   value: s.efficiency_pct  ?? '0', unit: '%',   icon: 'speed',       color: 'purple', help: 'efficiency' },
     ];
     return [

@@ -222,8 +222,8 @@ export class FactoryComponent implements OnInit, OnDestroy {
       { name: 'Actual', data: trend.map((t: any) => this.hasProductionTarget ? (t.actual ?? null) : t.produced) },
       ...(hasTarget ? [{ name: 'Target', data: trend.map((t: any) => t.target) }] : [])
     ] : [];
-    this.energySeries = trend.some((t: any) => t.kwh > 0)
-      ? [{ name: 'Energy (kWh)', data: trend.map((t: any) => t.kwh) }] : [];
+    this.energySeries = trend.some((t: any) => t.kwh != null && Number.isFinite(Number(t.kwh)))
+      ? [{ name: 'Energy (kWh)', data: trend.map((t: any) => t.kwh == null ? null : Number(t.kwh)) }] : [];
 
     /* downtime split by reason */
     const reasons = d.downtime?.by_reason || [];

@@ -246,6 +246,7 @@
        KPI CARDS
   ══════════════════════════════════════════════ -->
   <!-- KPI CARDS — controlled by widget:kpi -->
+  <p *ngIf="!loading && summary.energy_coverage?.energy_complete === false" class="text-sm mb-3" role="status">Energy readings are incomplete. Totals include measured consumption only.</p>
   <div *ngIf="auth.hasWidget('reports', 'kpi')" class="reports-kpis mexa-kpis rep-kpis">
     <div *ngFor="let kpi of kpis" class="mexa-kpi repcard flex items-center">
       <div class="bg-white/20 rounded-lg p-2 mr-2 grid place-items-center" aria-hidden="true"><span class="material-icons text-[22px]">{{ kpi.icon }}</span></div>
