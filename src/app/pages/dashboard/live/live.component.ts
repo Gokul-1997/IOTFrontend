@@ -79,6 +79,23 @@ export class LiveComponent implements OnInit, OnDestroy {
   liveAlarm        = false;
   /** Open alarms on this machine (code, text, since when), from the API. */
   activeAlarms: any[] = [];
+  private controllerDowntimeValue: number | null = null;
+  private controllerDowntimeAt = 0;
+  /** Raw controller signal only; a reason requires the PLC's configured mapping. */
+  get controllerDowntimeSignal(): number | null {
+    const age = Date.now() - this.controllerDowntimeAt;
+    return this.liveStatus === 'OFFLINE' || this.liveStatus === 'UNKNOWN' ||
+      !this.controllerDowntimeAt || age < 0 || age > 60_000 ? null : this.controllerDowntimeValue;
+  }
+
+  private setControllerDowntime(value: unknown, observedAt: unknown): void {
+    this.controllerDowntimeValue = typeof value === 'number' && Number.isFinite(value) && value !== 0 ? value : null;
+    // Socket timestamps are event seconds; the API may provide the same
+    // epoch clock or a database ISO timestamp. Invalid clocks remain unknown.
+    const at = typeof observedAt === 'number' ? observedAt * 1000 :
+      typeof observedAt === 'string' ? Date.parse(observedAt) : NaN;
+    this.controllerDowntimeAt = Number.isFinite(at) ? at : 0;
+  }
   /** When the socket last delivered for this machine (ms). While that is
    *  under a minute old the socket owns status, mode, spindle, feed and the
    *  alarm; after a minute's silence the 30 s poll takes them back — the
@@ -197,6 +214,7 @@ export class LiveComponent implements OnInit, OnDestroy {
     this.shift = {}; this.quality = {}; this.power = {}; this.production = {};
     this.runTime = '00:00:00'; this.idleTime = '00:00:00'; this.utilization = 0;
     this.liveStatus = 'UNKNOWN'; this.liveMode = ''; this.liveAlarm = false; this.activeAlarms = [];
+    this.controllerDowntimeValue = null; this.controllerDowntimeAt = 0;
     this.lastSocketMs = 0; this.liveSpindleLoad = 0; this.liveFeed = 0; this.liveAt = 0; this.livePartCount = 0;
     this.utilSeries = [0]; this.oeeSeries = [0]; this.timePieSeries = [0, 0];
     this.refreshError = '';
@@ -214,6 +232,7 @@ export class LiveComponent implements OnInit, OnDestroy {
 
     const d = res?.data;
     if (!d) return;
+    if (d.machine?.id != null && Number(d.machine.id) !== this.machineId) return;
 
     this.machine    = d.machine    || this.machine;
     this.operator   = d.operator  || this.operator;
@@ -250,6 +269,8 @@ export class LiveComponent implements OnInit, OnDestroy {
         this.liveMode        = d.live.mode           || '';
         this.liveSpindleLoad = Number(d.live.spindle_load || 0);
         this.liveFeed        = Number(d.live.feed_rate    || 0);
+        this.setControllerDowntime(d.live.controller_downtime_value,
+          d.live.controller_downtime_observed_at);
       }
 
       // Always update from API — adjusted for mid-shift counter resets
@@ -310,6 +331,8 @@ export class LiveComponent implements OnInit, OnDestroy {
       if (data.mode !== undefined) {
         this.liveMode = data.mode || '';
       }
+      this.setControllerDowntime(data.controller_downtime_value,
+        data.controller_downtime_observed_at);
 
       /* ── Alarm flag — the same test the list applies to the same message ── */
       if (data.alarm !== undefined) {
