@@ -212,3 +212,30 @@ describe('sparse meter timestamps', () => {
     expect(panel.asOf).toBe('Some readings are older');
   });
 });
+
+describe('meter harmonic distortion', () => {
+  it('hides THD when a meter has no measured distortion channels', () => {
+    const panel = new MeterPanelComponent({} as any, { markForCheck() {} } as any);
+    expect(panel.thdGroups).toEqual([]);
+    panel.data = { latest: { at: Date.now(), thd_v1n: null, thd_i1: undefined, thd_v12: NaN, thd_i3: Infinity } };
+    expect(panel.thdGroups).toEqual([]);
+  });
+
+  it('keeps zero THD and reports missing phases as unknown in each group', () => {
+    const panel = new MeterPanelComponent({} as any, { markForCheck() {} } as any);
+    panel.data = { latest: { at: Date.now(), thd_v1n: 0, thd_v23: 2.35, thd_i3: 7.12 } };
+    expect(panel.thdGroups).toEqual([
+      { label: 'Voltage · phase to neutral', phases: [
+        { label: 'R–N', value: 0 }, { label: 'Y–N', value: null }, { label: 'B–N', value: null }
+      ] },
+      { label: 'Voltage · phase to phase', phases: [
+        { label: 'R–Y', value: null }, { label: 'Y–B', value: 2.35 }, { label: 'B–R', value: null }
+      ] },
+      { label: 'Current', phases: [
+        { label: 'R', value: null }, { label: 'Y', value: null }, { label: 'B', value: 7.12 }
+      ] }
+    ]);
+    expect(fmt(panel.thdGroups[0].phases[0].value, 2)).toBe('0.00');
+    expect(fmt(panel.thdGroups[0].phases[1].value, 2)).toBe('--');
+  });
+});

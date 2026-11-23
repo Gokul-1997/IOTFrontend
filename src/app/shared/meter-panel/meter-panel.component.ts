@@ -54,6 +54,17 @@ const METRICS: { key: Metric; label: string; unit: string }[] = [
   { key: 'pf', label: 'Power factor', unit: '' },
   { key: 'kwh', label: 'Energy used', unit: 'kWh' }
 ];
+const THD_GROUPS = [
+  { label: 'Voltage · phase to neutral', phases: [
+    { label: 'R–N', key: 'thd_v1n' }, { label: 'Y–N', key: 'thd_v2n' }, { label: 'B–N', key: 'thd_v3n' }
+  ] },
+  { label: 'Voltage · phase to phase', phases: [
+    { label: 'R–Y', key: 'thd_v12' }, { label: 'Y–B', key: 'thd_v23' }, { label: 'B–R', key: 'thd_v31' }
+  ] },
+  { label: 'Current', phases: [
+    { label: 'R', key: 'thd_i1' }, { label: 'Y', key: 'thd_i2' }, { label: 'B', key: 'thd_i3' }
+  ] }
+];
 
 const nf = [0, 1, 2, 3].map(d => new Intl.NumberFormat('en-IN', { minimumFractionDigits: d, maximumFractionDigits: d }));
 const clock = new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
@@ -406,6 +417,21 @@ let uidSeq = 0;
 
 </div>
 
+          <section *ngIf="thdGroups.length" [attr.aria-labelledby]="ids.thd">
+            <h3 class="mp-section" [id]="ids.thd">Total harmonic distortion (THD)</h3>
+            <p class="mp-sub">Meter readings in percent.</p>
+            <div class="mp-cards">
+              <article class="mp-card" *ngFor="let group of thdGroups" [attr.aria-label]="group.label + ' THD'">
+                <p class="mp-label">{{ group.label }}</p>
+                <div class="mp-phases" role="list" [attr.aria-label]="group.label + ' THD by phase'">
+                  <span class="mp-phase" *ngFor="let phase of group.phases; let i = index" role="listitem"
+                    [class.mp-phase-r]="i === 0" [class.mp-phase-y]="i === 1" [class.mp-phase-b]="i === 2">
+                    <b>{{ phase.label }}</b><span>{{ fmt(phase.value, 2) }}{{ phase.value === null ? '' : ' %' }}</span>
+                  </span>
+                </div>
+              </article>
+            </div>
+          </section>
 
 
           <!-- the meter's own running totals -->
@@ -545,7 +571,7 @@ export class MeterPanelComponent implements OnInit, OnChanges, OnDestroy {
   readonly fmt = fmt;
   readonly fmtAuto = fmtAuto;
   readonly ids = (() => { const n = ++uidSeq; return { title: `mpTitle${n}`, machine: `mpMachine${n}`, power: `mpPower${n}`,
-    volt: `mpVolt${n}`, amp: `mpAmp${n}`, pf: `mpPf${n}` }; })();
+    volt: `mpVolt${n}`, amp: `mpAmp${n}`, pf: `mpPf${n}`, thd: `mpThd${n}` }; })();
 
   range: RangeKey = '24h';
   metric: Metric = 'kw';
@@ -619,6 +645,16 @@ export class MeterPanelComponent implements OnInit, OnChanges, OnDestroy {
     return { ...reading, stale: reading.stale || now - reading.at > 120_000 };
   }
   get limits(): MeterLimits { return this.data?.limits; }
+
+  get thdGroups(): { label: string; phases: { label: string; value: number | null }[] }[] {
+    const latest = this.latest;
+    if (!latest) return [];
+    const groups = THD_GROUPS.map(group => ({ label: group.label, phases: group.phases.map(phase => ({
+      label: phase.label,
+      value: Number.isFinite(latest[phase.key]) ? latest[phase.key] as number : null
+    })) }));
+    return groups.some(group => group.phases.some(phase => phase.value !== null)) ? groups : [];
+  }
 
   private beginLoad(): void {
     this.data = null;
