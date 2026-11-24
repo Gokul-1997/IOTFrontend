@@ -77,8 +77,8 @@
             <td><span class="clip" [title]="e.reason_name || ''">{{ e.reason_name || '--' }}</span></td>
             <td class="col-md"><span class="mexa-badge" [ngClass]="categoryClass(e.category)">{{ categoryLabel(e.category) }}</span></td>
             <td class="num">{{ e.started_at | date:'d MMM y, h:mm a' }}</td>
-            <td class="num qty">{{ e.duration_seconds ? ((e.duration_seconds / 60) | number:'1.0-0') + ' min' : '--' }}</td>
-            <td class="col-lg">{{ e.entered_by_name || '--' }}</td>
+            <td class="num qty">{{ eventDuration(e.duration_seconds) }}</td>
+            <td class="col-lg">{{ e.source === 'controller' ? 'Machine' : (e.entered_by_name || '--') }}</td>
           </tr>
           <tr *ngIf="!events.length">
             <td colspan="6" class="mexa-empty">

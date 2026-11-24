@@ -72,3 +72,15 @@ test('the API accepts the source ISO clock, clears a missing signal and respects
   (c as any).applyApiData(api(4));
   expect(c.controllerDowntimeSignal).toBe(5);
 });
+
+test('configured reason names follow the current code and never borrow the separate alarm message', () => {
+  const c = make();
+  (c as any).applyApiData(api(4, { controller_downtime_reason: { id: 25, code: '4', name: 'TEA' } }));
+  expect(c.controllerDowntimeReason).toBe('TEA');
+  c.handleSocket(event(6));
+  expect(c.controllerDowntimeReason).toBeNull();
+  (c as any).applyApiData(api(6, { controller_downtime_reason: { id: 27, code: '6', name: 'Inspection' } }));
+  expect(c.controllerDowntimeReason).toBe('Inspection');
+  c.handleSocket(event(0));
+  expect(c.controllerDowntimeReason).toBeNull();
+});

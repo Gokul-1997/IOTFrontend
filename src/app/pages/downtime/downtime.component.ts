@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DowntimeService } from '../../core/services/downtime.service';
@@ -19,7 +19,8 @@ import { TableState } from '../../shared/table/table-state';
     .num-col { text-align: right; }
   `]
 })
-export class DowntimeComponent implements OnInit {
+export class DowntimeComponent implements OnInit, OnDestroy {
+  private refreshTimer?: ReturnType<typeof setInterval>;
   activeTab: 'events' | 'reasons' | 'summary' = 'events';
   reasons: any[] = [];
   events: any[] = [];
@@ -75,7 +76,21 @@ export class DowntimeComponent implements OnInit {
   constructor(private svc: DowntimeService, public auth: AuthService, private toast: ToastService,
               private cdr: ChangeDetectorRef) {}
 
-  ngOnInit() { this.loadReasons(); this.loadEvents(); }
+  ngOnInit() {
+    this.loadReasons(); this.loadEvents();
+    this.refreshTimer = setInterval(() => {
+      if (document.hidden) return;
+      if (this.activeTab === 'events' && !this.loading) this.loadEvents();
+      else if (this.activeTab === 'summary' && this.summaryState !== 'loading') this.loadSummary();
+    }, 15000);
+  }
+  ngOnDestroy() { clearInterval(this.refreshTimer); }
+
+  eventDuration(value: unknown): string {
+    if (value === null || value === undefined || !Number.isFinite(Number(value))) return '--';
+    const seconds = Math.max(0, Math.floor(Number(value)));
+    return seconds < 60 ? `${seconds} sec` : `${Math.floor(seconds / 60)} min ${seconds % 60} sec`;
+  }
 
   loadReasons() {
     this.reasonsState = 'loading';

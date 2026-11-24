@@ -81,6 +81,11 @@ export class LiveComponent implements OnInit, OnDestroy {
   activeAlarms: any[] = [];
   private controllerDowntimeValue: number | null = null;
   private controllerDowntimeAt = 0;
+  private controllerReasonNames = new Map<number, string>();
+  get controllerDowntimeReason(): string | null {
+    const signal = this.controllerDowntimeSignal;
+    return signal === null ? null : this.controllerReasonNames.get(signal) || null;
+  }
   /** Raw controller signal only; a reason requires the PLC's configured mapping. */
   get controllerDowntimeSignal(): number | null {
     const age = Date.now() - this.controllerDowntimeAt;
@@ -215,6 +220,7 @@ export class LiveComponent implements OnInit, OnDestroy {
     this.runTime = '00:00:00'; this.idleTime = '00:00:00'; this.utilization = 0;
     this.liveStatus = 'UNKNOWN'; this.liveMode = ''; this.liveAlarm = false; this.activeAlarms = [];
     this.controllerDowntimeValue = null; this.controllerDowntimeAt = 0;
+    this.controllerReasonNames.clear();
     this.lastSocketMs = 0; this.liveSpindleLoad = 0; this.liveFeed = 0; this.liveAt = 0; this.livePartCount = 0;
     this.utilSeries = [0]; this.oeeSeries = [0]; this.timePieSeries = [0, 0];
     this.refreshError = '';
@@ -233,6 +239,10 @@ export class LiveComponent implements OnInit, OnDestroy {
     const d = res?.data;
     if (!d) return;
     if (d.machine?.id != null && Number(d.machine.id) !== this.machineId) return;
+    const reason = d.live?.controller_downtime_reason;
+    if (reason && Number.isSafeInteger(Number(reason.code)) && Number(reason.code) > 0 && typeof reason.name === 'string' && reason.name.trim()) {
+      this.controllerReasonNames.set(Number(reason.code), reason.name.trim());
+    }
 
     this.machine    = d.machine    || this.machine;
     this.operator   = d.operator  || this.operator;
