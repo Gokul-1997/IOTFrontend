@@ -240,6 +240,17 @@
     </section>
   </div>
 
+  <section class="mexa-card" aria-labelledby="alParetoTitle">
+    <h2 id="alParetoTitle" class="mexa-card-title mexa-card-title-left">Alarm-wise Pareto</h2>
+    <p class="text-sm text-slate-500 mb-3">Occurrences ranked by alarm type and code. The line shows the cumulative share of all matching alarms; codes beyond the top 20 are grouped as Other alarms.</p>
+    <apx-chart *ngIf="paretoCategories.length; else noPareto"
+      [series]="paretoSeries" [chart]="paretoChart.chart" [stroke]="paretoChart.stroke"
+      [plotOptions]="paretoChart.plotOptions" [colors]="paretoChart.colors" [dataLabels]="paretoChart.dataLabels"
+      [xaxis]="paretoChart.xaxis" [yaxis]="paretoChart.yaxis" [grid]="paretoChart.grid"
+      [legend]="paretoChart.legend" [tooltip]="paretoChart.tooltip" [noData]="paretoChart.noData"></apx-chart>
+    <ng-template #noPareto><div class="mexa-empty">No alarm occurrences in this period.</div></ng-template>
+  </section>
+
   <div class="mexa-grid lg:grid-cols-2">
 
     <section class="mexa-card" aria-labelledby="alMachineTitle">
@@ -295,6 +306,9 @@
           </button>
           <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('csv')" [disabled]="exporting">
             <mat-icon aria-hidden="true">download</mat-icon>{{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
+          </button>
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('pdf')" [disabled]="exporting">
+            <mat-icon aria-hidden="true">picture_as_pdf</mat-icon>{{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
           </button>
         </span>
         <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()">

@@ -95,7 +95,7 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
 
   loading = false;
   loadingMeta = false;
-  exporting: '' | 'csv' | 'xlsx' = '';
+  exporting: '' | 'csv' | 'xlsx' | 'pdf' = '';
   error = '';
 
   constructor(private service: OeeReportsService, private cdr: ChangeDetectorRef,
@@ -209,7 +209,7 @@ export class OeeReportsComponent implements OnInit, OnDestroy {
    * table's columns and order. A large export is not downloaded — it is
    * emailed, and the message saying so is all that is shown.
    */
-  export(format: 'csv' | 'xlsx'): void {
+  export(format: 'csv' | 'xlsx' | 'pdf'): void {
     if (this.exporting) return;
     this.exporting = format;
     this.cdr.markForCheck();

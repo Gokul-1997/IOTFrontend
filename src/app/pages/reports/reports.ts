@@ -136,7 +136,7 @@ export class Reports implements OnInit, OnDestroy {
   /** OEE Records' record count (it pages on the server): nothing to export at 0. */
   oeeRecordsTotal = 0;
   /** A built report's file on its way. */
-  exporting: '' | 'csv' | 'xlsx' = '';
+  exporting: '' | 'csv' | 'xlsx' | 'pdf' = '';
 
   /** Nothing to export yet: no rows (or no columns) for these filters, or a file already coming. */
   get exportDisabled(): boolean {
@@ -149,8 +149,9 @@ export class Reports implements OnInit, OnDestroy {
 
   toolbarCsv(): void { this.exportTab('csv'); }
   toolbarExcel(): void { this.exportTab('xlsx'); }
+  toolbarPdf(): void { this.exportTab('pdf'); }
 
-  private exportTab(format: 'csv' | 'xlsx'): void {
+  private exportTab(format: 'csv' | 'xlsx' | 'pdf'): void {
     if (this.isBuilt) this.exportBuilt(format);
     else if (this.activeTab === 'oee-records') this.oeeRecords?.export(format);
     else this.machineOee?.export(format);
@@ -437,7 +438,7 @@ export class Reports implements OnInit, OnDestroy {
      columns and order — so the two files are the same report, and the whole
      range, not one day (the Excel was the first day only). A large one is
      emailed instead; the message says so. */
-  private exportBuilt(format: 'csv' | 'xlsx'): void {
+  private exportBuilt(format: 'csv' | 'xlsx' | 'pdf'): void {
     if (this.exporting) return;
     this.exporting = format;
     this.cdr.markForCheck();

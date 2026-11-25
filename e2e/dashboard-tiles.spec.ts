@@ -41,11 +41,11 @@ const cases: Case[] = [
     narrow: [[/^Still open:/, 'open', /tickets still open/], [/^Resolved or closed:/, 'settled', /resolved and closed tickets/],
              [/^Mean time to repair:/, 'repaired', /repaired tickets/], [/^Recorded downtime:/, 'downtime', /tickets with downtime entered/]],
     whole: [/^Total tickets:/] },
-  { path: '/preventive-maintenance', api: /\/api\/dashboard\/preventive\?/, details: 'PM Ticket Details', heading: 'Preventive maintenance tickets', param: 'show',
-    narrow: [[/^Open PM tickets:/, 'open', /open PM tickets/], [/^Completed PM tickets:/, 'completed', /completed PM tickets/],
+  { path: '/preventive-maintenance', api: /\/api\/dashboard\/preventive\?/, details: 'Breakdown Ticket Details', heading: 'Breakdown tickets', param: 'show',
+    narrow: [[/^Open Breakdown tickets:/, 'open', /open PM tickets/], [/^Completed Breakdown tickets:/, 'completed', /completed PM tickets/],
              [/^Average resolution time:/, 'resolved', /resolved PM tickets/], [/^Compliance:/, 'raised', /every PM ticket/]],
     whole: [] },
-  { path: '/periodic-maintenance', api: /\/api\/dashboard\/periodic\?/, details: 'Maintenance Details', heading: 'Periodic Maintenance Tickets', param: 'due',
+  { path: '/periodic-maintenance', api: /\/api\/dashboard\/periodic\?/, details: 'Maintenance Details', heading: 'Schedule Tickets', param: 'due',
     narrow: [[/^Due today:/, 'today', /tickets due today/], [/^Overdue:/, 'overdue', /overdue tickets/], [/^Completed:/, 'completed', /completed tickets/]],
     whole: [/^Scheduled tickets:/, /^Compliance:/] },
   { path: '/operator-performance', api: /\/api\/dashboard\/operators\?/, details: 'Operator Performance Details', heading: 'Operator Performance Details', param: 'show',
@@ -146,7 +146,7 @@ test('Preventive: without the Alarm Report, Total Critical Alarms is a plain num
   await seedAuth(page, { roles: ['SUPERVISOR'], permissions: ['page:analytics-preventive:view'], company_permissions: [] });
   await open(page, '/preventive-maintenance', /\/api\/dashboard\/preventive\?/);
   await expect(page.getByRole('button', { name: /^Total critical alarms:/ })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /^Open PM tickets:/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Open Breakdown tickets:/ })).toBeVisible();
 });
 
 test('OEE Dashboard: a tile opens Reports → Machine OEE on the same dates, ranked by its figure', async ({ authedPage: page }) => {
@@ -175,10 +175,10 @@ test('OEE Dashboard: a tile opens Reports → Machine OEE on the same dates, ran
   await expect(table.locator('tbody tr').first()).toContainText('CNC-01');
 });
 
-/* No PDF anywhere: every table that downloads offers Excel and CSV only (14 Oct 2026). */
+/* Every exportable table offers Excel, CSV and PDF. */
 const withAlarms = [...cases, { path: '/alarm-report', api: /\/api\/dashboard\/alarms\?/, details: 'Alarms Details' } as Case];
 for (const c of withAlarms) {
-  test(`${c.path}: the details table downloads Excel and CSV — no PDF`, async ({ authedPage: page }) => {
+  test(`${c.path}: the details table downloads Excel, CSV and PDF`, async ({ authedPage: page }) => {
     await open(page, `${c.path}?view=details`, c.api);
     await expect(page.getByRole('tab', { name: c.details })).toHaveAttribute('aria-selected', 'true');
     const downloads = page.getByRole('group', { name: 'Download the filtered list' });
@@ -186,7 +186,7 @@ for (const c of withAlarms) {
       await expect(downloads.getByRole('button', { name: /excel/i })).toBeVisible();
       await expect(downloads.getByRole('button', { name: /csv/i })).toBeVisible();
     }
-    await expect(page.getByRole('button', { name: /pdf/i })).toHaveCount(0);
+    if (await downloads.count()) await expect(downloads.getByRole('button', { name: /pdf/i })).toBeVisible();
     await expect(page.locator('img[alt="PDF"]')).toHaveCount(0);
   });
 }

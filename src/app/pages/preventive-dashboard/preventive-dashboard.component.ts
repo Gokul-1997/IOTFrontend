@@ -24,10 +24,10 @@ import { SearchSelectDirective } from '../../shared/search-select.directive';
 import { MEXA_TABLE } from '../../shared/table/mexa-table';
 import { TableState, codes } from '../../shared/table/table-state';
 
-/** Charts | PM Ticket Details (the tickets and the alarm rules), under the tiles both share. */
+/** Charts | Breakdown Ticket Details (the tickets and the alarm rules), under the tiles both share. */
 const TABS: DashTab[] = [
   { key: 'charts',  label: 'Charts',            icon: 'bar_chart',  parts: ['kpis', 'charts'] },
-  { key: 'details', label: 'PM Ticket Details', icon: 'table_rows', parts: ['kpis', 'table'] }
+  { key: 'details', label: 'Breakdown Ticket Details', icon: 'table_rows', parts: ['kpis', 'table'] }
 ];
 
 /* ─────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
   private readonly confirm = inject(ConfirmService);
 
 
-  /* ── Charts | PM Ticket Details ──
+  /* ── Charts | Breakdown Ticket Details ──
      Each part of the page is asked for only while it is on screen and out
      of date (shared/dash-view). */
   private url = viewInUrl(TABS);
@@ -90,7 +90,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
   /* ── threshold rules ── */
   thresholds: any[] = [];
 
-  /* The tables' headers (shared/table, 29 Oct 2026): the PM tickets are paged
+  /* The tables' headers (shared/table, 29 Oct 2026): the Breakdown tickets are paged
      by the API, which sorts and filters them; the alarm rules are all here. */
   readonly ticketTable = new TableState<any>([
     { key: 'ticket' },
@@ -140,13 +140,13 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
   /* ── KPI tile → the records behind its number (shared/dash-view TileDrill) ── */
   readonly drill = new TileDrill<'open' | 'completed' | 'resolved' | 'raised'>('pvTickets', 'pvTicketsTitle');
   readonly drillLabels: Record<string, string> = {
-    open:      'open PM tickets',
-    completed: 'completed PM tickets',
-    resolved:  'resolved PM tickets — what the average resolution time is taken over',
+    open:      'open Breakdown tickets',
+    completed: 'completed Breakdown tickets',
+    resolved:  'resolved Breakdown tickets — what the average resolution time is taken over',
     raised:    'every PM ticket'
   };
 
-  /** A ticket tile: PM Ticket Details, narrowed to the tickets behind its number. */
+  /** A ticket tile: Breakdown Ticket Details, narrowed to the tickets behind its number. */
   openTile(kind: '' | 'open' | 'completed' | 'resolved' | 'raised'): void {
     this.drill.pick(kind);
     this.page = 1;
@@ -273,7 +273,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
 
   applyParts(parts: DashPart[], res: any, err?: any): boolean {
     if (!res || res.status !== 'success' || !res.data) {
-      this.errorMsg = err?.error?.message || (err ? 'Unable to load preventive maintenance data.' : 'No preventive maintenance data available.');
+      this.errorMsg = err?.error?.message || (err ? 'Unable to load breakdown data.' : 'No breakdown data available.');
       this.cdr.markForCheck();
       return false;
     }
@@ -344,7 +344,7 @@ export class PreventiveDashboardComponent implements OnInit, OnDestroy, DashView
 
   /* ── threshold rules ── */
 
-  /** The setup note's link: PM Ticket Details with the alarm rules open, brought into view. */
+  /** The setup note's link: Breakdown Ticket Details with the alarm rules open, brought into view. */
   openRules(): void {
     if (this.views.tab !== 'details') this.setView('details');
     if (!this.showRules) this.toggleRules();

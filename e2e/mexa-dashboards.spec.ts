@@ -341,8 +341,8 @@ async function mockApi(page: any) {
 const screens: { path: string; title: string; kpis: number; file: string }[] = [
   // the design's Maintenance screen has no KPI row: machine card, gauges, fans
   { path: '/maintenance-dashboard',  title: 'Maintenance Dashboard',             kpis: 0, file: 'mexa-02-maintenance.png' },
-  { path: '/preventive-maintenance', title: 'Preventive Maintenance Dashboard',  kpis: 5, file: 'mexa-03-preventive.png' },
-  { path: '/periodic-maintenance',   title: 'Periodic Maintenance Dashboard',    kpis: 5, file: 'mexa-04-periodic.png' },
+  { path: '/preventive-maintenance', title: 'Breakdown Dashboard',  kpis: 5, file: 'mexa-03-preventive.png' },
+  { path: '/periodic-maintenance',   title: 'Schedule Dashboard',    kpis: 5, file: 'mexa-04-periodic.png' },
   { path: '/alarm-report',           title: 'Alarm Report Dashboard',            kpis: 5, file: 'mexa-05-alarms.png' },
   { path: '/downtime-analysis',      title: 'Downtime Reason Analysis',          kpis: 6, file: 'mexa-06-downtime.png' },
   { path: '/operator-performance',   title: 'Operator Performance Dashboard',    kpis: 5, file: 'mexa-07-operator.png' },
@@ -411,7 +411,7 @@ test('OEE dashboard has no Report tab; the machine table lives in Reports', asyn
   await expect(page.getByRole('searchbox', { name: 'Search machines' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Export CSV: Machine OEE' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Excel: Machine OEE' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^PDF/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Export PDF/ })).toBeVisible();
 });
 
 test('Reports holds every report as a tab, and Analytics has one Reports entry', async ({ authedPage: page }) => {

@@ -93,20 +93,10 @@ test('gauge captions stay legible in dark mode', async ({ authedPage: page }) =>
   expect(report!.ratio).toBeGreaterThanOrEqual(4.5);
 });
 
-/* Cycle Time is back on this screen (2026-09-29), as the client's design
-   draws it: run time per part, hour by hour, from production_hourly. Only
-   hours that finished a part are plotted — an idle hour has no cycle time. */
-test('cycle time shows hour by hour, with the latest as the current cycle', async ({ authedPage: page }) => {
+test('maintenance replaces cycle time with the selected machine health score', async ({ authedPage: page }) => {
   await mockApi(page);
-  await page.setViewportSize({ width: 1500, height: 1200 });
   await page.goto('/maintenance-dashboard');
-  await expect(page.locator('.mt-machine')).toBeVisible();
-
-  const card = page.locator('.mexa-card').filter({ has: page.getByRole('heading', { name: 'Cycle Time (Sec)' }) });
-  await expect(card).toContainText('Current Cycle Time: 48.6 Sec');
-  // two hours with parts are drawn; the idle hour is not a point at zero
-  await expect(card.locator('.apexcharts-series path.apexcharts-line')).toHaveCount(1);
-  await expect(card.locator('.apexcharts-xaxis-label')).toHaveCount(2);
-  // the screen still shows what it is for
-  await expect(page.getByText('Alarm Summary')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Machine Health Score' })).toBeVisible();
+  await expect(page.getByText('Health score unavailable.', { exact: false })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Cycle Time/ })).toHaveCount(0);
 });

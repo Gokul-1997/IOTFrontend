@@ -28,6 +28,7 @@ export interface AssistantStatus {
 }
 export interface AssistantSource {
   report: string;
+  checked_at?: string;
   period: { from: string; to: string } | null;
   filters: { machine?: string | null; shift?: string | null };
   view: string | null;

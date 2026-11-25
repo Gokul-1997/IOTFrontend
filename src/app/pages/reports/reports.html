@@ -98,6 +98,10 @@
         <img src="../images/icons/FileXls.svg" alt="Excel" class="w-5 h-5"/>
         Excel
       </button>
+      <button *ngIf="canExportTab" type="button" (click)="toolbarPdf()"
+        [attr.aria-label]="'Export PDF: ' + tabLabel" [disabled]="exportDisabled" class="ui-btn ui-btn-ghost">
+        <span class="material-icons" aria-hidden="true">picture_as_pdf</span> PDF
+      </button>
 
     </div>
     </div>
@@ -208,7 +212,7 @@
     ══════════════════════════════════════════════ -->
     <p *ngIf="rangeTooLong" class="mexa-note mexa-note-warn mt-3" role="status">
       This range covers {{ rangeDays }} days — more than the {{ maxDirectDays }} shown on screen.
-      Press Excel or Export CSV and the report will be emailed to you.
+      Choose Excel, CSV or PDF and the report will be emailed to you.
     </p>
     <p *ngIf="loadErr" class="mexa-note mexa-note-bad mt-3" role="alert">{{ loadErr }}</p>
 

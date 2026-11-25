@@ -37,10 +37,10 @@ const screens: Screen[] = [
     details: 'Ticket Details',               tabs: [/Charts/, /Ticket Details/] },
   { path: '/operator-performance',   title: 'Operator Performance Dashboard',   api: /\/api\/dashboard\/operators\?/,          machine: '#opMachine',
     details: 'Operator Performance Details', tabs: [/Charts/, /Operator Performance Details/] },
-  { path: '/periodic-maintenance',   title: 'Periodic Maintenance Dashboard',   api: /\/api\/dashboard\/periodic\?/,           machine: '#peMachine',
+  { path: '/periodic-maintenance',   title: 'Schedule Dashboard',   api: /\/api\/dashboard\/periodic\?/,           machine: '#peMachine',
     details: 'Maintenance Details',          tabs: [/Charts/, /Maintenance Details/] },
-  { path: '/preventive-maintenance', title: 'Preventive Maintenance Dashboard', api: /\/api\/dashboard\/preventive\?/,         machine: '#pvMachine',
-    details: 'PM Ticket Details',            tabs: [/Charts/, /PM Ticket Details/] }
+  { path: '/preventive-maintenance', title: 'Breakdown Dashboard', api: /\/api\/dashboard\/preventive\?/,         machine: '#pvMachine',
+    details: 'Breakdown Ticket Details',            tabs: [/Charts/, /Breakdown Ticket Details/] }
 ];
 
 const partOf = (url: string) => new URL(url).searchParams.get('part');
@@ -300,6 +300,6 @@ test('the setup note stands still and says what to do; its link opens the alarm 
   expect((await note.getByText('No alarm rules yet').boundingBox())!.x).toBe(at.x);   // not moving
 
   await note.getByRole('button', { name: 'Add an alarm rule' }).click();
-  await expect(page.getByRole('tab', { name: 'PM Ticket Details' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tab', { name: 'Breakdown Ticket Details' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('heading', { name: 'Alarm Rules' })).toBeInViewport();
 });

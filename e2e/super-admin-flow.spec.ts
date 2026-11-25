@@ -661,8 +661,8 @@ test('Manage Access: if the current grants cannot be loaded, nothing is editable
 const analytics = [
   ['factory', 'Factory Overall', ['view']],
   ['maintenance', 'Maintenance Dashboard', ['view']],
-  ['preventive', 'Preventive Maintenance', ['view']],
-  ['periodic', 'Periodic Maintenance', ['view', 'export']],
+  ['preventive', 'Breakdown', ['view']],
+  ['periodic', 'Schedule', ['view', 'export']],
   ['alarms', 'Alarm Report', ['view', 'export']],
   ['downtime', 'Downtime Analysis', ['view', 'export']],
   ['operators', 'Operator Performance', ['view', 'export']],

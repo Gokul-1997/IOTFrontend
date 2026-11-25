@@ -244,6 +244,20 @@
       </div>
     </div>
 
+    <section *ngIf="dashboardData && auth.hasWidget('quality', 'production-cards')" class="bg-common" aria-labelledby="qualityReasonsTitle">
+      <h2 id="qualityReasonsTitle" class="mexa-card-title mexa-card-title-left mb-2">Rejection / Rework Reasons</h2>
+      <p class="ui-hint">For the selected machine, shift and day. Use Edit on the quantity cards to record a reason.</p>
+      <div class="mexa-table-wrap">
+        <table class="mexa-table">
+          <thead><tr><th scope="col">Type</th><th scope="col">Quantity</th><th scope="col">Reason</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Rejection</th><td>{{ rejectedValue }}</td><td>{{ dashboardData.quality_reasons?.rejection || '—' }}</td></tr>
+            <tr><th scope="row">Rework</th><td>{{ reworkValue }}</td><td>{{ dashboardData.quality_reasons?.rework || '—' }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- CHART — controlled by widget:hourly-chart -->
     <div *ngIf="auth.hasWidget('quality', 'hourly-chart')" class="bg-common">
       <h2 class="mexa-card-title mexa-card-title-left mb-2">OEE hour by hour</h2>
@@ -299,12 +313,29 @@
         </div>
 
         <div class="ui-field">
+          <label class="ui-label" for="qe-reject-reason">Rejection reason</label>
+          <textarea id="qe-reject-reason" name="rejectionReason" rows="2" maxlength="500" class="ui-input"
+                    [(ngModel)]="qualityForm.rejectionReason" [class.is-invalid]="qualityInvalid.rejectionReason"
+                    [attr.aria-invalid]="qualityInvalid.rejectionReason ? true : null"
+                    [attr.aria-describedby]="qualityInvalid.rejectionReason ? 'qeRejectReasonErr' : null"></textarea>
+          <p *ngIf="qualityInvalid.rejectionReason" id="qeRejectReasonErr" class="ui-error" role="alert">Use 500 characters or fewer.</p>
+        </div>
+
+        <div class="ui-field">
           <label class="ui-label" for="qe-rework">Rework parts</label>
           <input id="qe-rework" name="rework" type="number" min="0" step="1" inputmode="numeric" class="ui-input"
                  [(ngModel)]="qualityForm.rework"
                  [class.is-invalid]="qualityInvalid.rework" [attr.aria-invalid]="qualityInvalid.rework ? true : null"
                  [attr.aria-describedby]="qualityInvalid.rework ? 'qeReworkErr' : null" />
           <p *ngIf="qualityInvalid.rework" id="qeReworkErr" class="ui-error" role="alert">Enter a whole number, 0 or more.</p>
+        </div>
+        <div class="ui-field">
+          <label class="ui-label" for="qe-rework-reason">Rework reason</label>
+          <textarea id="qe-rework-reason" name="reworkReason" rows="2" maxlength="500" class="ui-input"
+                    [(ngModel)]="qualityForm.reworkReason" [class.is-invalid]="qualityInvalid.reworkReason"
+                    [attr.aria-invalid]="qualityInvalid.reworkReason ? true : null"
+                    [attr.aria-describedby]="qualityInvalid.reworkReason ? 'qeReworkReasonErr' : null"></textarea>
+          <p *ngIf="qualityInvalid.reworkReason" id="qeReworkReasonErr" class="ui-error" role="alert">Use 500 characters or fewer.</p>
         </div>
       </div>
 

@@ -79,6 +79,7 @@
 <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
 <ng-container *ngIf="loading && !views.has('kpis')">
   <app-skeleton kind="kpis" [count]="5" label="Loading dashboard"></app-skeleton>
+
 </ng-container>
 
 <ng-container *ngIf="views.has('kpis')">
@@ -141,6 +142,13 @@
     </div>
   </div>
 
+  <div class="mexa-card mt-4" *ngIf="data.kpis">
+    <h3 class="mexa-card-title">Estimated Production</h3>
+    <p class="mexa-kpi-value">{{ data.kpis.estimated_production == null ? '—' : (data.kpis.estimated_production | number:'1.0-1') }}</p>
+    <p class="ui-hint">Measured running time: {{ data.kpis.continuous_running_hours == null ? '—' : (data.kpis.continuous_running_hours | number:'1.0-1') }} h</p>
+    <p class="ui-hint">Running hours ÷ component cycle time in hours. Calculated for each machine using measured running time in the selected period and its current component cycle time, then added once per machine.</p>
+    <p class="ui-hint" *ngIf="data.kpis.missing_cycle_machines">Unavailable: {{ data.kpis.missing_cycle_machines }} running machine(s) have no valid component cycle time.</p>
+  </div>
 
 </ng-container>
 
@@ -239,6 +247,9 @@
           <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('csv')" [disabled]="exporting">
               <img src="../images/icons/FileCsv.svg" alt="CSV" class="w-5 h-5"/> {{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
             </button>
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('pdf')" [disabled]="exporting">
+            <span class="material-icons" aria-hidden="true">picture_as_pdf</span>{{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
+          </button>
         </span>
         <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="reset()"><span class="material-icons" aria-hidden="true">restart_alt</span>Reset filters</button>
       </span>
@@ -273,6 +284,7 @@
             <td class="wrap">{{ r.machine_names || '--' }}</td>
             <td class="num strong qty">{{ pct(r.score) }}</td>
             <td class="num whitespace-nowrap qty">{{ hms(r.run_seconds) }}</td>
+            <td class="num qty" [title]="r.missing_cycle_machines ? 'Component cycle time is unavailable for a running machine' : 'Measured running time ÷ current component cycle time, calculated per machine'">{{ r.estimated_production == null ? '—' : (r.estimated_production | number:'1.0-1') }}</td>
             <td class="num whitespace-nowrap qty">{{ hms(r.downtime_seconds) }}</td>
             <td class="num qty">{{ pct(r.utilization_pct) }}</td>
             <td class="num qty">{{ r.produced }}</td>

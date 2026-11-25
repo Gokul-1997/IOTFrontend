@@ -365,51 +365,30 @@
        are apart. A phase outside the supply's tolerance is red. -->
   <app-supply-voltage [supply]="supply" [fresh]="freshAlerts.has('supply')"></app-supply-voltage>
 
-  <!-- ══════════ ROW 2 — cycle time · condition trend · alarm summary ══════════ -->
+  <!-- ══════════ ROW 2 — machine health · condition trend · alarm summary ══════════ -->
   <div class="mt-row2">
 
-    <section class="mexa-card mt-cycle mexa-card-cht" aria-labelledby="mtCycle">
-      <div class="mexa-card-head">
-        <h2 id="mtCycle" class="mexa-card-title mexa-card-title-left">Cycle Time ({{ cycleUnit }})</h2>
-        <span class="mt-current">Current Cycle Time: <strong>{{ currentCycle != null ? currentCycle + ' ' + cycleUnit : '--' }}</strong></span>
-      </div>
-      <div style="height: 260px;">
-      <apx-chart *ngIf="cycleSeries.length; else noCycle"
-        [series]="cycleSeries" [chart]="cycleChart.chart" [stroke]="cycleChart.stroke" [markers]="cycleChart.markers"
-        [colors]="cycleChart.colors" [dataLabels]="cycleChart.dataLabels" [legend]="cycleChart.legend"
-        [xaxis]="cycleChart.xaxis" [yaxis]="cycleChart.yaxis" [grid]="cycleChart.grid"
-        [tooltip]="cycleChart.tooltip" [noData]="cycleChart.noData"></apx-chart>
-       </div>
-      <ng-template #noCycle>
-        <div class="mexa-empty">
-          <div class="downtime-empty">
-          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-            stroke="currentColor"
-            stroke-width="2"
-          />
-          <path
-            d="M12 7.5V13"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-          <circle
-            cx="12"
-            cy="16.5"
-            r="1"
-            fill="currentColor"
-          />
-        </svg>
-
-          <p class="empty-title">No parts made in this window.</p>
-          <p class="empty-text">No parts made in this window, so no cycle time yet.</p>
-        </div>
-        </div>
-      </ng-template>
+    <section class="mexa-card" aria-labelledby="mtHealth">
+      <h2 id="mtHealth" class="mexa-card-title mexa-card-title-left">Machine Health Score</h2>
+      <p class="mexa-card-hint">{{ focusName }}</p>
+      @if (data.machine_health; as health) {
+        <app-condition-gauge [value]="health.score" [max]="100" [zones]="HEALTH_ZONES" unit="%"
+          [ariaLabel]="focusName + ' health score ' + health.score + ' percent, ' + health.status"></app-condition-gauge>
+        <p class="mt-word mt-center" [class.text-green-700]="health.status === 'Good'" [class.text-red-700]="health.status === 'Bad'">
+          {{ health.stale ? 'Last recorded: ' : '' }}{{ health.status }}
+        </p>
+        <p class="mexa-card-hint mt-center">Good: 70–100% · Bad: below 70%</p>
+        <p class="mexa-card-hint mt-center">{{ health.reported_checks }} reported checks · {{ health.observed_at | date:'d MMM, h:mm a' }}</p>
+        <details class="mt-2 text-sm">
+          <summary>How this score is calculated</summary>
+          <p class="mexa-card-hint">{{ health.basis }}</p>
+          <ul class="mt-2 space-y-1">
+            <li *ngFor="let check of health.checks">{{ check.label }}: {{ check.band }}</li>
+          </ul>
+        </details>
+      } @else {
+        <p class="mexa-empty">Health score unavailable. No usable condition readings were reported in this window.</p>
+      }
     </section>
 
     <section class="mexa-card mt-trend mexa-card-cht" aria-labelledby="mtTrend">

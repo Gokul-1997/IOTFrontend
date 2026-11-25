@@ -3,7 +3,7 @@
   <div class="flex gap-2">
     <div class="titlebar w-fit flex items-center gap-2 text-white">
         <span class="material-icons" aria-hidden="true">event_available</span>
-  <h1 class="mexa-title">Preventive Maintenance Dashboard</h1></div>
+  <h1 class="mexa-title">Breakdown Dashboard</h1></div>
   <!-- <p class="mexa-updated" *ngIf="updatedAt || loading">
   <mat-icon class="!w-4 !h-4 !text-base" [class.mexa-spin]="loading" aria-hidden="true">refresh</mat-icon>
   
@@ -71,13 +71,13 @@
        empty result, so it is said in words with the fix attached. -->
   <!-- still, in one line, with its fix: it scrolled by as a marquee, and between passes the bar stood empty (26 Oct 2026) -->
   <p *ngIf="isUnconfigured" class="mexa-note mexa-note-warn" role="status">
-    <strong>No alarm rules yet</strong> — PM tickets are raised from repeated critical alarms.
+    <strong>No alarm rules yet</strong> — Breakdown tickets are raised from repeated critical alarms.
     <button type="button" class="mexa-note-action" (click)="openRules()">Add an alarm rule</button>
   </p>
 
   <!-- ══════════ KPI TILES ══════════
-       Each tile opens the records behind its number: the PM tickets raised
-       in this period, narrowed as the tile counts them, in PM Ticket
+       Each tile opens the records behind its number: the Breakdown tickets raised
+       in this period, narrowed as the tile counts them, in Breakdown Ticket
        Details; Total Critical Alarms in the Alarm Report. Same tile again
        shows the whole backlog. -->
   <div class="mexa-kpis">
@@ -94,23 +94,23 @@
 
     <div class="mexa-kpi sky mexa-kpi-drill" [class.is-on]="drill.kind === 'open'">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Open PM Tickets</span>
+        <span class="mexa-kpi-label">Open Breakdown Tickets</span>
         <span class="mexa-kpi-icon sky"  aria-hidden="true">
           <mat-icon>notifications_active</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('open')" [attr.aria-pressed]="drill.kind === 'open'" aria-labelledby="pvk2-name pvk2-value pvk2-act"><span id="pvk2-value">{{ data.kpis.pm_open }}</span></button></p><span hidden id="pvk2-name">Open PM tickets:</span><span hidden id="pvk2-act">show these tickets</span>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('open')" [attr.aria-pressed]="drill.kind === 'open'" aria-labelledby="pvk2-name pvk2-value pvk2-act"><span id="pvk2-value">{{ data.kpis.pm_open }}</span></button></p><span hidden id="pvk2-name">Open Breakdown tickets:</span><span hidden id="pvk2-act">show these tickets</span>
       <p class="mexa-kpi-sub">of {{ data.kpis.pm_generated }} raised</p>
     </div>
 
     <div class="mexa-kpi purple mexa-kpi-drill" [class.is-on]="drill.kind === 'completed'">
       <div class="mexa-kpi-head">
-        <span class="mexa-kpi-label">Completed PM Tickets</span>
+        <span class="mexa-kpi-label">Completed Breakdown Tickets</span>
         <span class="mexa-kpi-icon purple"  aria-hidden="true">
           <mat-icon>task_alt</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('completed')" [attr.aria-pressed]="drill.kind === 'completed'" aria-labelledby="pvk3-name pvk3-value pvk3-act"><span id="pvk3-value">{{ data.kpis.pm_completed }}</span></button></p><span hidden id="pvk3-name">Completed PM tickets:</span><span hidden id="pvk3-act">show these tickets</span>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('completed')" [attr.aria-pressed]="drill.kind === 'completed'" aria-labelledby="pvk3-name pvk3-value pvk3-act"><span id="pvk3-value">{{ data.kpis.pm_completed }}</span></button></p><span hidden id="pvk3-name">Completed Breakdown tickets:</span><span hidden id="pvk3-act">show these tickets</span>
       <p class="mexa-kpi-sub">{{ data.kpis.pm_overdue }} overdue</p>
     </div>
 
@@ -143,7 +143,7 @@
      The charts, and the ticket list and alarm rules, on two tabs under the
      tiles. Each tab asks the API for its own part, and only when it is open (shared/dash-view). -->
 <app-dash-view-tabs [tabs]="views.tabs" [active]="views.tab" (activeChange)="setView($event)"
-                    label="Preventive Maintenance views"></app-dash-view-tabs>
+                    label="Breakdown views"></app-dash-view-tabs>
 
 <div class="ui-tab-content">
   <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="mexa-card pv-chart-panel">
@@ -213,13 +213,13 @@
   </div>
   <div *ngIf="views.tab === 'details'" id="dashPanel-details" role="tabpanel" aria-labelledby="dashTab-details" class="mexa-card">
   <section *ngIf="loading && !views.has('table')" class="mexa-card">
-    <app-skeleton kind="table" [count]="8" label="Loading the PM tickets"></app-skeleton>
+    <app-skeleton kind="table" [count]="8" label="Loading the Breakdown tickets"></app-skeleton>
   </section>
   <ng-container *ngIf="views.has('table')">
   <!-- ══════════ PM TICKETS ══════════ -->
   <section class="mexa-card mexa-scroll-target" id="pvTickets" aria-labelledby="pvTicketsTitle">
     <div class="mexa-tablebar mb-3">
-      <h2 id="pvTicketsTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left" style="margin:0">Preventive maintenance tickets (raised by alarms)</h2>
+      <h2 id="pvTicketsTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left" style="margin:0">Breakdown tickets (raised by alarms)</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="pvSearch">Search tickets</label>
         <span class="mexa-searchbox">
@@ -243,7 +243,7 @@
 
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table" [mexaTable]="ticketTable">
-        <caption class="sr-only">Preventive maintenance tickets raised from alarms</caption>
+        <caption class="sr-only">Breakdown tickets raised from alarms</caption>
         <thead>
           <tr>
             <th class="col-lg" scope="col">#</th>

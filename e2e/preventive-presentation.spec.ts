@@ -51,7 +51,7 @@ for (const dark of [false, true]) {
     await expect(page.locator('#dashPanel-charts')).toHaveCSS('background-color', dark ? 'rgb(3, 23, 53)' : 'rgb(255, 255, 255)');
     await expect(page.getByText('Maintenance planning', {exact:true})).toHaveCount(0);
     await expect(page.getByText('Track critical alarms, preventive work and resolution performance.', {exact:true})).toHaveCount(0);
-    await expect(page.locator('.mexa-titlebar .titlebar .mexa-title')).toHaveText('Preventive Maintenance Dashboard');
+    await expect(page.locator('.mexa-titlebar .titlebar .mexa-title')).toHaveText('Breakdown Dashboard');
     await expect(page.locator('.last-updated-vertical .updated-time')).toContainText('Updated');
     await expect(page.locator('.mexa-kpis .mexa-kpi')).toHaveCount(5);
     // share and count, as the Energy and Alarm Report keys read (28 Oct 2026)
@@ -80,11 +80,11 @@ for (const dark of [false, true]) {
 test('filters, detail tabs and ticket drill-down retain their existing request flow',async({authedPage:page})=>{
   const f=await mock(page);await page.goto('/preventive-maintenance');
   await expect(page.locator('apx-chart')).toHaveCount(4);expect(f.requests[0].searchParams.get('part')).toBe('kpis,charts');
-  await page.getByRole('tab',{name:'PM Ticket Details',exact:true}).click();
+  await page.getByRole('tab',{name:'Breakdown Ticket Details',exact:true}).click();
   await expect(page.locator('#pvTickets')).toContainText('PM-2026-041');expect(f.requests.at(-1)?.searchParams.get('part')).toBe('table');
   const count=f.requests.length;await page.getByRole('tab',{name:'Charts',exact:true}).click();await expect(page.locator('apx-chart')).toHaveCount(4);expect(f.requests.length).toBe(count);
   await page.locator('#pvMachine').selectOption({label:'CNC-02'});await expect.poll(()=>f.requests.at(-1)?.searchParams.get('machine_id')).toBe('2');
-  await page.getByRole('button',{name:/Open PM tickets: 5/}).click();await expect(page.locator('#pvTickets')).toBeVisible();
+  await page.getByRole('button',{name:/Open Breakdown tickets: 5/}).click();await expect(page.locator('#pvTickets')).toBeVisible();
   expect(f.requests.at(-1)?.searchParams.get('show')).toBe('open');
   await page.getByRole('button',{name:'Alarm rules',exact:true}).click();await expect(page.locator('#pvRules')).toBeVisible();
   expect(f.errors).toEqual([]);

@@ -51,6 +51,7 @@
       </ng-container>
       <div *ngFor="let s of m.sources" class="as-source">
         <p class="as-source-line"><span class="material-icons" aria-hidden="true">description</span><span>Source: {{ sourceLine(s) }}</span></p>
+        <p *ngIf="s.checked_at" class="as-source-line">Read from database: {{ s.checked_at | date:'d MMM, h:mm a' }}</p>
         <span *ngIf="s.view || s.download" class="as-source-actions">
           <button *ngIf="s.view" type="button" class="as-link" (click)="view(s)">
             <span class="material-icons" aria-hidden="true">open_in_new</span>View report

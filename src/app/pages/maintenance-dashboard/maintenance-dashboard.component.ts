@@ -117,11 +117,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   tempTrendSeries: any[] = [];
   irTrendSeries:   any[] = [];
 
-  /* Cycle time, hour by hour (the design's bottom-left chart) */
-  cycleSeries: any[] = [];
-  cycleCategories: string[] = [];
-  cycleUnit: 'Sec' | 'Min' = 'Sec';
-  currentCycle: number | null = null;
+  readonly HEALTH_ZONES: ConditionZone[] = [{ to: 70, color: '#e03131' }, { to: 100, color: '#22c55e' }];
 
   /* Fan tiles: the controller's own list when it sends one, else the six
      positions the design names, each marked "Not reported". */
@@ -336,22 +332,6 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     this.apcVolts = typeof volts === 'number' && Number.isFinite(volts) && volts >= 0 ? `${volts.toFixed(2)} V reported` : '';
     this.supply = supplyView(d.supply);
     this.noteAlerts(this.focusRow);
-
-    /* Cycle time: run time per part in each hour. Hours with no part are
-       left as gaps. Long-cycle machines (an HMC part can take an hour) read
-       in minutes; the design's seconds would put 4,000 on the axis. */
-    const cyc = (d.cycle_trend || []) as { hour_start: string; cycle_seconds: number | null }[];
-    const withParts = cyc.filter(c => c.cycle_seconds != null);
-    const maxSec = withParts.reduce((m, c) => Math.max(m, Number(c.cycle_seconds)), 0);
-    this.cycleUnit = maxSec > 600 ? 'Min' : 'Sec';
-    const k = this.cycleUnit === 'Min' ? 60 : 1;
-    // only hours that finished a part: a gap per idle hour broke the line into dots
-    this.cycleCategories = withParts.map(c => this.clockLabel(c.hour_start));
-    this.cycleSeries = this.charts.keep('cycleSeries', withParts.length
-      ? [{ name: 'Cycle Time', data: withParts.map(c => Math.round((Number(c.cycle_seconds) / k) * 10) / 10) }]
-      : []);
-    const last = withParts[withParts.length - 1];
-    this.currentCycle = last ? Math.round((Number(last.cycle_seconds) / k) * 10) / 10 : null;
 
     /* Condition trend exists only when one machine is selected — averaging
        servo temperatures across a fleet describes no motor. A series is
@@ -657,44 +637,6 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   alarmShare(n: number): string {
     const total = Number(this.data?.alarms?.total) || 0;
     return total ? `${n} (${Math.round((n / total) * 100)}%)` : String(n);
-  }
-
-  /** "9:00 AM", as the design labels its hour axis. */
-  private clockLabel(iso: string): string {
-    const d = new Date(iso);
-    return Number.isNaN(d.getTime())
-      ? ''
-      : d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
-  }
-
-  get cycleChart(): any {
-    return this.charts.memo('cycleChart', () => ({
-      chart: { type: 'line', height: 270, toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false }, animations: { enabled: false } },
-      stroke: { width: 3, curve: 'smooth' },
-      markers: { size: 4, strokeWidth: 2, colors: ['#fff'], strokeColors: '#2f2d8f' },
-      colors: ['#2f2d8f'],
-      dataLabels: { enabled: false },
-      legend: { show: true, position: 'bottom' },
-      // always slanted: level, a narrow card's "10:00 AM" ran into the next hour's (1024px)
-      xaxis: { categories: this.cycleCategories,
-      title: { text: 'Hour', offsetY: -15}, labels: { rotate: -45, rotateAlways: true, hideOverlappingLabels: true } },
-      yaxis: { min: 0, title: { text: this.cycleUnit }, labels: { formatter: (v: number) => v == null ? '' : String(Math.round(v)) } },
-      grid: { borderColor: 'rgba(148,163,184,.25)' },
-      tooltip: { theme: 'light', y: { formatter: (v: number | null) => v == null ? 'no part this hour' : `${v} ${this.cycleUnit.toLowerCase()}` } },
-      noData: { text: 'No parts made in this window' },
-//       responsive: [
-//   {
-//     breakpoint: 1200,
-//     options: {
-//       chart: {
-//         height: 600
-//       },
-//       title: { text: 'test',offsetY: -5}
-//     }
-
-//   }
-// ]
-    }), this.charts.sig('cycleSeries') + JSON.stringify([this.cycleCategories, this.cycleUnit]));
   }
 
   /** The design's middle chart: insulation resistance when a controller

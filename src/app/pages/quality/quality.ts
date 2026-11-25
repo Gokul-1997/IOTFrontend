@@ -47,8 +47,10 @@ export class Quality implements OnInit, OnDestroy {
   rejectedValue: number = 0;
   reworkValue: number = 0;
   editingQuality = false;
-  qualityForm: { reject: any; rework: any } = { reject: 0, rework: 0 };
-  qualityInvalid = { reject: false, rework: false };
+  qualityForm: { reject: any; rework: any; rejectionReason: string; reworkReason: string } = {
+    reject: 0, rework: 0, rejectionReason: '', reworkReason: ''
+  };
+  qualityInvalid = { reject: false, rework: false, rejectionReason: false, reworkReason: false };
 
   /** The last load: an empty shift is an answer, a failed request is not. */
   loadState: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
@@ -143,8 +145,10 @@ export class Quality implements OnInit, OnDestroy {
 
   openQualityEdit() {
     if (!this.auth.hasAction('quality', 'edit') || !this.dashboardData) return;
-    this.qualityForm = { reject: this.rejectedValue, rework: this.reworkValue };
-    this.qualityInvalid = { reject: false, rework: false };
+    this.qualityForm = { reject: this.rejectedValue, rework: this.reworkValue,
+      rejectionReason: this.dashboardData.quality_reasons?.rejection || '',
+      reworkReason: this.dashboardData.quality_reasons?.rework || '' };
+    this.qualityInvalid = { reject: false, rework: false, rejectionReason: false, reworkReason: false };
     this.qualitySaveError = '';
     this.editingQuality = true;
   }
@@ -166,9 +170,13 @@ export class Quality implements OnInit, OnDestroy {
 
   saveQualityEdit() {
     const whole = (v: any) => v !== null && v !== '' && Number.isInteger(Number(v)) && Number(v) >= 0;
-    this.qualityInvalid = { reject: !whole(this.qualityForm.reject), rework: !whole(this.qualityForm.rework) };
-    if (this.qualityInvalid.reject || this.qualityInvalid.rework) {
-      document.getElementById(this.qualityInvalid.reject ? 'qe-reject' : 'qe-rework')?.focus();
+    this.qualityInvalid = { reject: !whole(this.qualityForm.reject), rework: !whole(this.qualityForm.rework),
+      rejectionReason: this.qualityForm.rejectionReason.length > 500,
+      reworkReason: this.qualityForm.reworkReason.length > 500 };
+    if (Object.values(this.qualityInvalid).some(Boolean)) {
+      const field = this.qualityInvalid.reject ? 'qe-reject' : this.qualityInvalid.rework ? 'qe-rework'
+        : this.qualityInvalid.rejectionReason ? 'qe-reject-reason' : 'qe-rework-reason';
+      document.getElementById(field)?.focus();
       return;
     }
     this.saveQuality(Number(this.qualityForm.reject), Number(this.qualityForm.rework));
@@ -179,7 +187,8 @@ export class Quality implements OnInit, OnDestroy {
     const machine = this.selectedMachine, shift = this.selectedShift, date = this.selectedDate;
     this.savingQuality = true; this.qualitySaveError = '';
     this.saveSub = this.service.saveQuality({ machine_id: machine, shift_id: shift, date,
-      reject_qty: reject, rework_qty: rework }).subscribe({
+      reject_qty: reject, rework_qty: rework,
+      rejection_reason: this.qualityForm.rejectionReason.trim(), rework_reason: this.qualityForm.reworkReason.trim() }).subscribe({
       next: res => {
         this.savingQuality = false;
         if (res?.success) {

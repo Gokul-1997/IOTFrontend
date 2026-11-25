@@ -191,8 +191,8 @@ export class MachineOeeReportComponent implements OnInit, OnDestroy {
   get pageRows(): any[] { return this.filtered.slice((this.page - 1) * this.limit, this.page * this.limit); }
 
 
-  /** Called by the Reports toolbar: Excel or CSV (no PDF). */
-  export(format: 'xlsx' | 'csv'): void {
+  /** Called by the Reports toolbar: Excel, CSV or PDF. */
+  export(format: 'xlsx' | 'csv' | 'pdf'): void {
     this.exporting = format; this.cdr.markForCheck();
     this.svc.exportAs(format, this.f).pipe(takeUntil(this.destroy$)).subscribe({
       next: blob => {

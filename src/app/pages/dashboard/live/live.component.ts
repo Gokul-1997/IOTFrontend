@@ -26,6 +26,7 @@ import { SpindlePanelComponent } from './spindle-panel.component';
 import { ShiftTimelineComponent } from './shift-timeline.component';
 import { MetricHelpComponent } from '../../../shared/metric-help/metric-help.component';
 import { MachineSwitcherComponent } from './machine-switcher.component';
+import { CycleTimePanelComponent } from './cycle-time-panel.component';
 
 /* ─────────────────────────────────────────
    SOCKET  → machine_status, rpm, feed_rate ONLY
@@ -42,7 +43,7 @@ const POLL_MS = 30_000;
 @Component({
   standalone: true,
   selector: 'app-live',
-  imports: [StoredImageDirective, MetricHelpComponent, NgApexchartsModule, CommonModule, RouterModule, SpindlePanelComponent, ShiftTimelineComponent, MachineSwitcherComponent],
+  imports: [StoredImageDirective, MetricHelpComponent, NgApexchartsModule, CommonModule, RouterModule, SpindlePanelComponent, ShiftTimelineComponent, MachineSwitcherComponent, CycleTimePanelComponent],
   templateUrl: './live.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

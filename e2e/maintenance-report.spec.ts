@@ -121,12 +121,12 @@ test('export is its own grant — view alone hides the buttons', async ({ page }
   await expect(page.getByRole('group', { name: 'Download the filtered list' })).toHaveCount(0);
 });
 
-test('with the export grant, Excel and CSV are offered — no PDF', async ({ page }) => {
+test('with the export grant, Excel, CSV and PDF are offered', async ({ page }) => {
   await open(page, GRANTS, undefined, 'details');
   const group = page.getByRole('group', { name: 'Download the filtered list' });
   await expect(group.getByRole('button', { name: 'Excel' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'CSV' })).toBeVisible();
-  await expect(group.getByRole('button', { name: /PDF/ })).toHaveCount(0);
+  await expect(group.getByRole('button', { name: /PDF/ })).toBeVisible();
 });
 
 test('a company without the page cannot reach it by URL', async ({ page }) => {

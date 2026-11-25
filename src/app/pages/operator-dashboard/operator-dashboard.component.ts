@@ -112,7 +112,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
     { key: 'operator_code' }, { key: 'operator_name' },
     { key: 'shift_name', filter: 'list', options: () => this.shiftOptions },
     { key: 'machine_names' }, { key: 'score' }, { key: 'run_seconds' }, { key: 'downtime_seconds' },
-    { key: 'utilization_pct' }, { key: 'produced' }, { key: 'good' }, { key: 'rejected' }, { key: 'quality_rate_pct' },
+    { key: 'utilization_pct' }, { key: 'estimated_production' }, { key: 'produced' }, { key: 'good' }, { key: 'rejected' }, { key: 'quality_rate_pct' },
     { key: 'alarm_count' }, { key: 'oee_pct' }, { key: 'efficiency_pct' },
     { key: 'band', sort: false, filter: 'list', options: () => Object.entries(this.bandText).map(([value, label]) => ({ value, label })) }
   ], { mode: 'server', sort: { key: 'score', dir: 'desc' }, onChange: () => this.tableChanged() });
@@ -129,6 +129,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
     { key: 'machine_names',      label: 'Machines', cls: 'wrap' },
     { key: 'score',              label: 'Performance', cls: 'qty' },
     { key: 'run_seconds',        label: 'Run time', cls: 'qty' },
+    { key: 'estimated_production', label: 'Estimated production', cls: 'qty' },
     { key: 'downtime_seconds',   label: 'Downtime', cls: 'qty' },
     { key: 'utilization_pct',    label: 'Utilization (%)', cls: 'qty' },
     { key: 'produced',           label: 'Produced', cls: 'qty' },
@@ -306,7 +307,7 @@ export class OperatorDashboardComponent implements OnInit, OnDestroy, DashViewHo
     return true;
   }
 
-  export(format: 'xlsx' | 'csv'): void {
+  export(format: 'xlsx' | 'csv' | 'pdf'): void {
     this.exporting = format;
     this.cdr.markForCheck();
     this.svc.exportAs(format, { ...this.f, ...this.tableFilters(), show: this.drill.kind || null, sort: this.sort, dir: this.dir })

@@ -37,7 +37,7 @@ export class AlarmDashboardService {
 
   /** responseType 'blob' matters: the default JSON parse would corrupt an
    *  xlsx body before it reached the browser's save dialog. */
-  exportAs(format: 'xlsx' | 'csv', filters: any): Observable<Blob> {
+  exportAs(format: 'xlsx' | 'csv' | 'pdf', filters: any): Observable<Blob> {
     const { page, limit, part, ...rest } = this.toQuery(filters);
     return this.http.get(`${this.api}/dashboard/alarms/export/${format}`,
       { params: rest, responseType: 'blob' });

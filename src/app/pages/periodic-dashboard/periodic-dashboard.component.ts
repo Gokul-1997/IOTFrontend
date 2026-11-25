@@ -271,7 +271,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
 
   applyParts(parts: DashPart[], res: any, err?: any): boolean {
     if (!res || res.status !== 'success' || !res.data) {
-      this.errorMsg = err?.error?.message || (err ? 'Unable to load periodic maintenance data.' : 'No periodic maintenance data available.');
+      this.errorMsg = err?.error?.message || (err ? 'Unable to load schedule data.' : 'No schedule data available.');
       this.cdr.markForCheck();
       return false;
     }
@@ -438,7 +438,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
 
   /* ── export ── */
 
-  export(format: 'xlsx' | 'csv'): void {
+  export(format: 'xlsx' | 'csv' | 'pdf'): void {
     this.exporting = format;
     this.cdr.markForCheck();
 
@@ -453,7 +453,7 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `periodic_maintenance_${this.todayStr()}.${format}`;
+          a.download = `schedule_${this.todayStr()}.${format}`;
           a.click();
           // revoke on the next tick, not immediately — Safari has not
           // started reading the blob when click() returns

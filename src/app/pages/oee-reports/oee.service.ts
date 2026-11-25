@@ -32,7 +32,7 @@ export class OeeReportsService {
    * export is the file (200); a large one is emailed (202 and a message):
    * see shared/report-file.ts.
    */
-  export(format: 'csv' | 'xlsx', filters: any): Observable<HttpResponse<Blob>> {
+  export(format: 'csv' | 'xlsx' | 'pdf', filters: any): Observable<HttpResponse<Blob>> {
     return this.http.get(`${this.baseUrl}/export`, {
       params: this.params({ ...filters, format }), observe: 'response', responseType: 'blob'
     });

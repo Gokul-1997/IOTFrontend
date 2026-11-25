@@ -27,3 +27,36 @@ it('lists every machine in one list, with no line filter or line groups, and ope
   expect(service.getDashboard).toHaveBeenCalledWith({ machine_id: 3, shift_id: 5, date: '2026-10-21' });
   page.ngOnDestroy();
 });
+
+it('edits and saves rejection and rework reasons independently for the chosen machine, shift and day', () => {
+  const service = {
+    saveQuality: vi.fn().mockReturnValue(of({ success: true })),
+    getDashboard: vi.fn().mockReturnValue(of({ success: true, data: { production: { reject: 2, rework: 1 },
+      quality_reasons: { rejection: 'Diameter', rework: 'Deburr' }, hourly: [] } }))
+  };
+  const page = new Quality(service as any, cdr as any, auth as any);
+  page.selectedMachine = 23; page.selectedShift = 5; page.selectedDate = '2026-11-24';
+  page.dashboardData = { quality_reasons: { rejection: 'Old reason', rework: 'Deburr' } };
+  page.rejectedValue = 2; page.reworkValue = 1;
+  page.openQualityEdit();
+  expect(page.qualityForm.rejectionReason).toBe('Old reason');
+  expect(page.qualityForm.reworkReason).toBe('Deburr');
+  page.qualityForm.rejectionReason = '  Diameter  ';
+  page.saveQualityEdit();
+  expect(service.saveQuality).toHaveBeenCalledWith({ machine_id: 23, shift_id: 5, date: '2026-11-24',
+    reject_qty: 2, rework_qty: 1, rejection_reason: 'Diameter', rework_reason: 'Deburr' });
+  expect(page.dashboardData.quality_reasons.rejection).toBe('Diameter');
+  page.ngOnDestroy();
+});
+
+it('keeps an overlong reason in the dialog and does not save it', () => {
+  const service = { saveQuality: vi.fn() };
+  const page = new Quality(service as any, cdr as any, auth as any);
+  page.dashboardData = {};
+  page.openQualityEdit();
+  page.qualityForm.rejectionReason = 'x'.repeat(501);
+  page.saveQualityEdit();
+  expect(page.qualityInvalid.rejectionReason).toBe(true);
+  expect(service.saveQuality).not.toHaveBeenCalled();
+  expect(page.editingQuality).toBe(true);
+});

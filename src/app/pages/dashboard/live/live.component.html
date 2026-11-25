@@ -437,6 +437,7 @@
        This panel and the spindle one start again for each machine the name at the top opens. -->
   @for (id of [machineId]; track id) {
   <app-shift-timeline [machineId]="id"></app-shift-timeline>
+  <app-cycle-time-panel [machineId]="id"></app-cycle-time-panel>
   }
 
   <!-- BOTTOM GRID — OEE, and spindle and feed -->

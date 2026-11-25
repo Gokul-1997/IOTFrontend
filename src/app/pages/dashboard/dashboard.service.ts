@@ -25,6 +25,11 @@ export class DashboardService {
     return this.http.get(`${this.api}/live/${machineId}`);
   }
 
+  /** Actual running time per completed part, hour by hour for this plant day. */
+  getCycleTime(machineId: number, date: string): Observable<any> {
+    return this.http.get(`${this.api}/live/${machineId}/cycle-time`, { params: { date } });
+  }
+
   /** The current shift as Running / Idle / Alarm / Off periods, with its breaks. */
   getTimeline(machineId: number): Observable<any> {
     return this.http.get(`${this.api}/live/${machineId}/timeline`);

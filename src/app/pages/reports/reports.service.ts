@@ -66,7 +66,7 @@ export class ReportsService {
    * are the same report. A small one is the file (200); a large one is
    * emailed instead (202 and a message): see shared/report-file.ts.
    */
-  exportFile(type: ReportType, format: 'csv' | 'xlsx', f: ReportFilters,
+  exportFile(type: ReportType, format: 'csv' | 'xlsx' | 'pdf', f: ReportFilters,
              columns: string[], sort?: string, dir?: 'asc' | 'desc'): Observable<HttpResponse<Blob>> {
     const params: Record<string, string> = { ...this.toParams(f), format, columns: columns.join(',') };
     if (sort) { params['sort'] = sort; params['dir'] = dir || 'asc'; }

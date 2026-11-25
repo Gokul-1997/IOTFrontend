@@ -45,8 +45,8 @@ test('menu offers only the dashboards the company was granted', async ({ page })
   await expect(menu.getByRole('link', { name: 'Alarms' })).toBeVisible();
 
   // every other dashboard is gone — including Live, which is a different grant
-  for (const label of ['Live Dashboard', 'Factory Overall', 'Maintenance', 'Preventive',
-                       'Periodic', 'Downtime', 'Operators', 'Energy']) {
+  for (const label of ['Live Dashboard', 'Factory Overall', 'Maintenance', 'Breakdown',
+                       'Schedule', 'Downtime', 'Operators', 'Energy']) {
     await expect(menu.getByRole('link', { name: label, exact: true }), `${label} must be hidden`).toHaveCount(0);
   }
   await page.screenshot({ path: 'mexa-dashboard-menu-restricted.png' });

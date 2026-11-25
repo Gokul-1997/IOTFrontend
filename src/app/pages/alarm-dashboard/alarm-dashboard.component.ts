@@ -162,6 +162,8 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
      denominator makes the key disagree with the slice it labels. */
   shiftTotal = 0;
   severitySeries: number[] = [];
+  paretoSeries: any[] = [];
+  paretoCategories: string[] = [];
 
   private destroy$ = new Subject<void>();
   private search$ = new RxSubject<string>();
@@ -325,6 +327,12 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
     this.shiftTotal = this.shiftDonutSeries.reduce((a, b) => a + b, 0);
     this.shiftSeries = [{ name: 'Alarms', data: this.shiftDonutSeries }];
     this.severitySeries = [Number(d.by_severity.critical) || 0, Number(d.by_severity.normal) || 0];
+    this.paretoCategories = (d.pareto || []).map((r: any) => r.is_other ? 'Other alarms' :
+      [r.alarm_type, r.alarm_code || r.message || 'Without code'].filter(Boolean).join(' · '));
+    this.paretoSeries = [
+      { name: 'Occurrences', type: 'column', data: (d.pareto || []).map((r: any) => Number(r.total) || 0) },
+      { name: 'Cumulative %', type: 'line', data: (d.pareto || []).map((r: any) => Number(r.cumulative_pct) || 0) }
+    ];
   }
 
   /** After a card click: bring the table into view and move focus to its
@@ -344,6 +352,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
   private normalise(d: any): any {
     return {
       by_machine:  d?.by_machine  ?? [],
+      pareto:      d?.pareto      ?? [],
       by_shift:    d?.by_shift    ?? [],
       by_severity: { critical: 0, normal: 0, ...(d?.by_severity ?? {}) },
       trend:       d?.trend       ?? [],
@@ -351,7 +360,7 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
     };
   }
 
-  export(format: 'xlsx' | 'csv'): void {
+  export(format: 'xlsx' | 'csv' | 'pdf'): void {
     this.exporting = format;
     this.cdr.markForCheck();
 
@@ -513,5 +522,27 @@ export class AlarmDashboardComponent implements OnInit, OnDestroy, DashViewHooks
       noData: { text: 'No alarms in this period' }
     };
   });
+  }
+
+  get paretoChart(): any {
+    return this.charts.memo('paretoChart', () => ({
+      chart: { type: 'line', height: 360, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
+      colors: ['#073B9D', '#B2580C'],
+      stroke: { width: [0, 3], curve: 'straight' },
+      plotOptions: { bar: { columnWidth: '55%', borderRadius: 3 } },
+      dataLabels: { enabled: false },
+      xaxis: { categories: this.paretoCategories, labels: { rotate: -40, trim: true, maxHeight: 100 } },
+      yaxis: [
+        { seriesName: 'Occurrences', min: 0, forceNiceScale: true, decimalsInFloat: 0, title: { text: 'Alarm occurrences' } },
+        { seriesName: 'Cumulative %', opposite: true, min: 0, max: 100, tickAmount: 5, title: { text: 'Cumulative %' }, labels: { formatter: (v: number) => `${Math.round(v)}%` } }
+      ],
+      grid: { borderColor: 'rgba(148,163,184,.25)' },
+      legend: { position: 'top' },
+      tooltip: { shared: true, intersect: false, y: [
+        { formatter: (v: number) => `${v} occurrence${v === 1 ? '' : 's'}` },
+        { formatter: (v: number) => `${v}%` }
+      ] },
+      noData: { text: 'No alarms in this period' }
+    }));
   }
 }

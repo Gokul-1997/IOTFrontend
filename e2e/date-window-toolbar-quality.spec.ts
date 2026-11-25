@@ -85,7 +85,7 @@ test.describe('one Reports toolbar for every tab', () => {
     await page.goto('/reports?tab=oee-records');
     await expect(bar.getByRole('button', { name: 'Export CSV: OEE Records' })).toBeVisible();
     await expect(bar.getByRole('button', { name: 'Excel: OEE Records' })).toBeVisible();
-    for (const gone of [/Columns/, /Email/, /^PDF/]) {
+    for (const gone of [/Columns/, /Email/]) {
       await expect(bar.getByRole('button', { name: gone })).toHaveCount(0);
     }
     await expect(page.locator('app-oee-reports .search-box')).toHaveCount(0);
@@ -94,8 +94,8 @@ test.describe('one Reports toolbar for every tab', () => {
     await page.goto('/reports?tab=machine-oee');
     await expect(bar.getByRole('button', { name: 'Export CSV: Machine OEE' })).toBeVisible();
     await expect(bar.getByRole('button', { name: 'Excel: Machine OEE' })).toBeVisible();
-    // Machine OEE exports Excel and CSV only — no PDF
-    await expect(bar.getByRole('button', { name: /^PDF/ })).toHaveCount(0);
+    // Machine OEE exports all three formats
+    await expect(bar.getByRole('button', { name: /Export PDF/ })).toBeVisible();
     await expect(bar.getByRole('button', { name: 'Email' })).toHaveCount(0);
   });
 

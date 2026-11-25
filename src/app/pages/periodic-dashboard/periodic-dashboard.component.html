@@ -1,4 +1,4 @@
-<!-- Phase 2 · Screen 4 — Periodic Maintenance Dashboard, MEXA design. -->
+<!-- Phase 2 · Screen 4 — Schedule Dashboard, MEXA design. -->
 
 <!-- <p class="mexa-updated" *ngIf="updatedAt">
   <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">refresh</mat-icon>
@@ -10,7 +10,7 @@
 <div class="flex gap-2">
   <div class="titlebar w-fit flex items-center gap-2 text-white">
         <span class="material-icons" aria-hidden="true">update</span>
-  <h1 class="mexa-title">Periodic Maintenance Dashboard</h1></div>
+  <h1 class="mexa-title">Schedule Dashboard</h1></div>
   <!-- <p class="mexa-updated" *ngIf="updatedAt || loading">
   <mat-icon class="!w-4 !h-4 !text-base" [class.mexa-spin]="loading" aria-hidden="true">refresh</mat-icon>
   
@@ -146,7 +146,7 @@
      The charts, and the tables and the plan, on two tabs under the tiles.
      Each tab asks the API for its own part, and only when it is open (shared/dash-view). -->
 <app-dash-view-tabs [tabs]="views.tabs" [active]="views.tab" (activeChange)="setView($event)"
-                    label="Periodic Maintenance views"></app-dash-view-tabs>
+                    label="Schedule views"></app-dash-view-tabs>
 
 <div class="ui-tab-content">
   <div *ngIf="views.tab === 'charts'" id="dashPanel-charts" role="tabpanel" aria-labelledby="dashTab-charts" class="mexa-card">
@@ -414,7 +414,7 @@
   <!-- ══════════ TICKETS ══════════ -->
   <section class="mexa-card mexa-scroll-target" id="peTickets" aria-labelledby="peTicketsTitle">
     <div class="mexa-tablebar">
-      <h2 id="peTicketsTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left" style="margin:0">Periodic Maintenance Tickets</h2>
+      <h2 id="peTicketsTitle" tabindex="-1" class="mexa-card-title mexa-card-title-left" style="margin:0">Schedule Tickets</h2>
       <span class="inline-flex items-center gap-2 flex-wrap">
         <label class="sr-only" for="peStatus">Status</label>
         <select id="peStatus" class="mexa-search" [(ngModel)]="statusFilter" name="status"
@@ -435,6 +435,9 @@
           <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('csv')" [disabled]="exporting">
               <img src="/images/icons/FileCsv.svg" alt="CSV" class="w-5 h-5" /> {{ exporting === 'csv' ? 'Preparing…' : 'CSV' }}
             </button>
+          <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="export('pdf')" [disabled]="exporting">
+            <span class="material-icons" aria-hidden="true">picture_as_pdf</span>{{ exporting === 'pdf' ? 'Preparing…' : 'PDF' }}
+          </button>
         </span>
         <button type="button" class="ui-btn ui-btn-ghost ui-btn-sm" (click)="runEngine()" [disabled]="running">
           <span class="material-icons" aria-hidden="true">playlist_add_check</span>{{ running ? 'Generating…' : 'Generate due tickets' }}
@@ -451,7 +454,7 @@
 
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Table — scroll sideways to see every column">
       <table class="mexa-table" [mexaTable]="ticketTable">
-        <caption class="sr-only">Periodic maintenance tickets, newest due first</caption>
+        <caption class="sr-only">Schedule tickets, newest due first</caption>
         <thead>
           <tr>
             <th class="col-lg" scope="col">#</th>
