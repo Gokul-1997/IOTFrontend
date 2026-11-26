@@ -25,7 +25,7 @@ export function cycleChartData(points: any[]) {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`:host { display:block; min-width:0; } .ct-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:.75rem; } apx-chart { display:block; min-width:0; }`],
   template: `
-    <section class="mexa-lift rounded-xl p-4" aria-labelledby="cycleTimeTitle">
+    <section class="mexa-lift rounded-xl p-4 mt-2" aria-labelledby="cycleTimeTitle">
       <div class="ct-head">
         <h2 id="cycleTimeTitle" class="mexa-card-title mexa-card-title-left">Cycle Time ({{ unit }})</h2>
         <label class="mexa-filter-set">Date

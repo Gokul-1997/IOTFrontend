@@ -226,8 +226,8 @@
 
 .dark .ui-input {
   color: #f1f5f9;
-    background-color: #051630;
-    border-color: #253246;
+    background-color: transparent;
+    border-color: #414160;
 }
 .dark .ui-input::placeholder { color: #9ca3af; }
 .dark .ui-input:hover:not(:disabled) { border-color: #565656; }
@@ -641,9 +641,9 @@ select.ui-input {
   padding-bottom: 0.625rem;   /* covers the panel border underneath */
 }
 
-.dark .ui-tab { background: rgb(29 54 92); color: #cbd5e1; }
+.dark .ui-tab { background:rgb(77 42 87); color: #cbd5e1; }
 .dark .ui-tab:hover:not(.is-active) { background:rgb(41 79 137); color: #f1f5f9; }
-.dark .ui-tab.is-active { background: #1769E8; border-color: #012151; color: #f1f5f9; }
+.dark .ui-tab.is-active { background: #25245a; border-color: #193054; color: #f1f5f9; }
 
 .ui-tab-icon { font-size: 0.9375rem; line-height: 1; }
 
@@ -667,8 +667,8 @@ select.ui-input {
   padding: 1rem;
 }
 .dark .ui-tabpanel {
-    background: #031735;
-    border-color: #012252;
+    background: #25245a;
+    border-color: #1a1842;
 }
 
 @media (prefers-reduced-motion: reduce) {

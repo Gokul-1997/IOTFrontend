@@ -142,7 +142,7 @@
     </div>
   </div>
 
-  <div class="mexa-card mt-4" *ngIf="data.kpis">
+  <div class="mexa-card mt-4 mb-4" *ngIf="data.kpis">
     <h3 class="mexa-card-title">Estimated Production</h3>
     <p class="mexa-kpi-value">{{ data.kpis.estimated_production == null ? '—' : (data.kpis.estimated_production | number:'1.0-1') }}</p>
     <p class="ui-hint">Measured running time: {{ data.kpis.continuous_running_hours == null ? '—' : (data.kpis.continuous_running_hours | number:'1.0-1') }} h</p>

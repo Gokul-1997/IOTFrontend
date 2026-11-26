@@ -196,7 +196,7 @@ h4 {
 }
 
 .dark .nav-btn {
-  background: #01245B;
+  background: #305389;
   color: #AEAEAE;
   // border: 1px solid #2D2D2D;
 }
@@ -211,7 +211,7 @@ h4 {
 }
 
 .dark .nav-btn:hover {
-  background: #021C44;
+  background: #1d3a66;
 }
 
 .dark .nav-btn:hover {
@@ -443,7 +443,7 @@ h4 {
   background-color: #EAEDFF
 }
 .dark .menu-default {
-    background-color:#0e264b;
+    background-color:#1b3968;
 }
 /* Machine card (Live Dashboard, machine page): a white card lifted off the
    STM field, its state shown by a coloured stripe along the top — the same
@@ -460,6 +460,11 @@ h4 {
   &.yellow-full { --card-status: #f5a623; }
   &.red-full    { --card-status: #e03131; }
   &.gray-full   { --card-status: #94a3b8; }
+}
+
+
+.dark .border-big {
+  background-color: #0e264b !important;
 }
 
 /* Overlay */
@@ -673,7 +678,7 @@ $radius: 10px;
 }
 
 .dark .mat-mdc-select {
-    background: #111 !important;
+    background: transparent!important;
     color: #acaeb1!important;;
 }
 
@@ -722,10 +727,10 @@ $radius: 10px;
 }
 
 .dark .table-wrap tr:nth-child(odd) {
-    background: #031735;
+    background: #202a54;
 }
 .dark .table-wrap tr:nth-child(even) {
-    background-color: #081d3c !important;
+    background-color: #283364 !important;
 }
 
 .bg-common{
@@ -734,7 +739,7 @@ $radius: 10px;
   padding: 1rem;
 }
 .dark .bg-common{
-  background: #031735;
+  background: #272663;
   border-radius: 12px;
   padding: 1rem;
   border:1px solid #012252;
@@ -2060,7 +2065,10 @@ a:focus-visible img {
 .sp-stat.five, .phase.five
 {background: #caefeb;}
 .sp-stat.six, .phase.is-avg
-{background: #cdd3e0;}
+{background: #aab2c3;}
+
+.dark .sp-stat.six, .dark .phase.is-avg
+{background: #636b7c;}
 
 .mexa-kpi:hover .mexa-kpi-icon .mat-icon {
   animation: kpiIconLoop 1s ease-in-out infinite;
@@ -2446,30 +2454,30 @@ transition: transform 0.3s ease;
     background: rgb(35 61 118) !important;
 }
 .txt-card {
-    border: 1px solid rgb(38 48 64);
+    border: 1px solid rgb(63 62 126);
 }
 .prof-icon {
     background: rgb(27 32 86);
     color: rgb(151 155 189);
 }
 .mexa-table thead th {
-  background: #232a48;
+  background: #23306c;
 }
 }
-.stm-auth-field {
-  background:
-    radial-gradient(
-      ellipse at 20% 20%,
-      rgba(79, 127, 217, 0.20),
-      transparent 45%
-    ),
-    radial-gradient(
-      ellipse at 80% 80%,
-      rgba(0, 214, 172, 0.10),
-      transparent 40%
-    ),
-    #112b4e;
-}
+// .stm-auth-field {
+//   background:
+//     radial-gradient(
+//       ellipse at 20% 20%,
+//       rgba(79, 127, 217, 0.20),
+//       transparent 45%
+//     ),
+//     radial-gradient(
+//       ellipse at 80% 80%,
+//       rgba(0, 214, 172, 0.10),
+//       transparent 40%
+//     ),
+//     #112b4e;
+// }
 
 /* The Maintenance Dashboard's page rules, last, keyed to the page (styles/_maintenance.scss) */
 @include meta.load-css('styles/maintenance');

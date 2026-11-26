@@ -518,20 +518,34 @@ export class LiveComponent implements OnInit, OnDestroy {
     
     /* ── Time Pie ── */
     this.timePieChart = {
-  chart: { type: 'pie', height: 120 },
+  chart: {
+    type: 'pie',
+    height: 140
+  },
   labels: ['Running', 'Idle'],
   colors: ['#0CAD5D', '#dfb400'],
-  legend: { show: false },
-  stroke: { width: 1 },
+  legend: {
+    show: false
+  },
+  stroke: {
+    width: 1
+  },
+  plotOptions: {
+    pie: {
+      customScale: 0.60, // Shrink pie to create space around it
+      dataLabels: {
+        offset:20
+      }
+    }
+  },
   dataLabels: {
-    minAngleToShowLabel: 15,
+    minAngleToShowLabel: 1,
     formatter: (v: any) => `${v.toFixed(1)}%`,
-    offset: -25,
+    offset:20,
     style: {
-      fontSize: '14px',
+      fontSize: '12px',
       fontWeight: 600,
-      colors: ['#fff'],
-
+      colors: ['#fff']
     }
   }
 };

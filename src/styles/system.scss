@@ -122,17 +122,18 @@
 }
 :root[data-theme="dark"], .dark {
   --tbl-accent: #8ea2ff;
-  --tbl-head-bg: #1b2036;
+  --tbl-head-bg: #1f284e;
   --tbl-head-ink: #c9d0e6;
   --tbl-head-rule: #34406a;
   --tbl-col-rule: #2a3150;
   --tbl-row-alt: #1a1f34;
   --tbl-row-hover: #232a46;
   --tbl-row-selected: #2a3160;
-  --tbl-rule: #262c45;
+  --tbl-rule: #3a4262;
   --tbl-bad: #f59aa6;
   --tbl-warn: #f7c667;
   --tbl-good: #6fdba0;
+  --tbl-row: #27315e;
 }
 
 html, body { font-family: var(--font-ui); }
@@ -263,6 +264,9 @@ html, body { font-family: var(--font-ui); }
   border-bottom: 1px solid var(--tbl-rule);
   vertical-align: middle;
   overflow-wrap: break-word;
+}
+.dark .mexa-table tbody td {
+  border-bottom: 1px solid #3c466e;
 }
 /* Many columns of figures (the reports): shorter rows */
 .mexa-table.is-dense tbody td { padding-top: var(--tbl-dense-pad-y); padding-bottom: var(--tbl-dense-pad-y); }

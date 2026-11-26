@@ -80,15 +80,15 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
 :root[data-theme="dark"], .dark {
   /* the same field, deepened: still recognisably STM, dark enough that a
      dark card reads as a card on it */
-  --stm-field:    linear-gradient(to top right, #0e1233 0%, #171a45 38%, #2a1840 68%, #461a2e 100%);
+  --stm-field:    linear-gradient(to top right, #2b3990 0%, #3f3a8c 20%, #6e3b78 50%, #b8404f 100%);
   --mexa-bar:     linear-gradient(90deg, rgba(30, 36, 100, .85) 0%, rgba(30, 30, 80, .6) 60%, rgba(40, 24, 60, .4) 100%);
   --mexa-card-shadow: 0 10px 28px rgba(0, 0, 0, .35), 0 1px 3px rgba(0, 0, 0, .3);
   --mexa-ground:  #0d0f15;
-  --mexa-card:    #031735;
+  --mexa-card:    #272664;
   --mexa-ink:     #e8ebf2;
   --mexa-ink-2:   #a8b0c2;
   --mexa-ink-3:   #949eb2;   /* 5.3:1 or better on the dark surfaces */
-  --mexa-rule:    #252b39;
+  --mexa-rule:    #3c4f7a;
   --mexa-thead:   #262a3a;
   --mexa-row-alt: #0a1e3f;
 }
@@ -800,6 +800,13 @@ a.mexa-pill { text-decoration: none; }
     border-bottom: 1px solid #ccc;
 }
 .mexa-oeecard-name { font-size: .98rem; font-weight: 700; color: #000; }
+
+.dark{
+  .mexa-oeecard-head {
+    background: #172d4e;
+}
+.mexa-oeecard-name { color: #fff; }
+}
 .mexa-oeecard-grade {
   display: inline-flex; align-items: center; gap: .35rem;
   font-size: .72rem; font-weight: 600; color: var(--mexa-ink-3);

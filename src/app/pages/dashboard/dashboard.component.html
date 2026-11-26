@@ -124,7 +124,7 @@
 
         <div>
           <!-- the card opens on a click anywhere; the name is the link a keyboard reaches -->
-           <div class="flex gap-2 justify-between">
+           <div class="flex gap-2 justify-center">
           <a [routerLink]="['/dashboard/live', m.machine_id]" (click)="$event.stopPropagation()"
              class="block text-md font-bold text-[var(--color-primary-500)] dark:text-white text-center machine_title_lrg"
              [attr.aria-label]="'Open ' + m.machine_serial_no + ', ' + statusText(m)">{{ m.machine_serial_no }}</a>

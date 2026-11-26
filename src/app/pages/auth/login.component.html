@@ -59,7 +59,24 @@ hover:scale-105 transition">
   <div class="flex flex-1 items-center justify-center px-6">
     <div class="w-full max-w-md">
       <!-- Logo -->
+       <!-- <div class="flex justify-center">
       <img src="/images/logo/STM_Mexa_logo.svg" alt="STM Mexa" class="mb-8" />
+      </div> -->
+
+      <div class="flex justify-center">
+        <img
+          src="/images/logo/STM_Mexa_logo.svg"
+          alt="STM Mexa"
+          class="mb-8 block dark:hidden"
+        />
+
+        <img
+          src="/images/logo/STM_Mexa_logo_white.png"
+          alt="STM Mexa"
+          class="mb-8 hidden dark:block"
+        />
+      </div>
+      <div class="border p-8 rounded-xl">
       <h1 class="text-2xl font-semibold text-gray-800 dark:text-white mb-2"> Sign In </h1>
       <p class="text-gray-500 dark:text-gray-400 mb-6"> Enter your email and password to sign in </p>
       <!-- FORM -->
@@ -140,6 +157,7 @@ hover:scale-105 transition">
           {{ loading ? 'Signing in...' : 'Sign In' }}
         </button>
       </form>
+      </div>
     </div>
   </div>
 </div>

@@ -75,7 +75,7 @@ a.nav-btn { text-decoration: none; }
   display: grid; gap: 2px; min-width: 15rem; padding: .35rem; border-radius: 12px;
   background: #fff; box-shadow: 0 16px 40px rgba(18, 14, 64, .2), 0 0 0 1px rgba(18, 14, 64, .06);
 }
-.dark .nav-dropdown { background: #161a23; box-shadow: 0 16px 40px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .08); }
+.dark .nav-dropdown { background: #19184a; box-shadow: 0 16px 40px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .08); }
 .nav-dd-item {
   display: flex; align-items: center; gap: .65rem; min-height: 40px; padding: .45rem .7rem; border-radius: 8px;
   font-size: .9rem; font-weight: 500; color: #1f2430; text-decoration: none; white-space: nowrap;
@@ -87,7 +87,7 @@ a.nav-btn { text-decoration: none; }
 .nav-dd-item:focus-visible { outline: 2px solid #2b3990; outline-offset: -2px; }
 .dark .nav-dd-item { color: #e8ebf2; }
 .dark .nav-dd-item .material-icons, .dark .nav-dd-item mat-icon { color: #9fb3ff; }
-.dark .nav-dd-item:hover { background: #1d2133; }
+.dark .nav-dd-item:hover { background: #40486a; }
 .dark .nav-dd-item.active { background: #863567; }
 
 /* round icon buttons in the header: theme, menu */
