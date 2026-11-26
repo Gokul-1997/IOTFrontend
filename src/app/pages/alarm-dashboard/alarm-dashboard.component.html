@@ -105,7 +105,7 @@
        Each card opens the alarms behind its number in Alarms Details, on its
        tab (Max Duration sorts it longest first). Same card again shows all. -->
   <div class="mexa-kpis">
-    <button type="button" class="mexa-kpi navy" (click)="drill('all')">
+    <button type="button" class="mexa-kpi kpi1" (click)="drill('all')">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Alarms</span>
         <span class="mexa-kpi-icon navy"  aria-hidden="true">
@@ -117,7 +117,7 @@
       <!-- <span class="mexa-kpi-go">View all <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
-    <button type="button" class="mexa-kpi red" (click)="drill('critical')"
+    <button type="button" class="mexa-kpi kpi1" (click)="drill('critical')"
             [attr.aria-pressed]="drillKind === 'critical'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Critical Alarms</span>
@@ -130,7 +130,7 @@
       <!-- <span class="mexa-kpi-go">{{ drillKind === 'critical' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
-    <button type="button" class="mexa-kpi sky" (click)="drill('normal')"
+    <button type="button" class="mexa-kpi kpi2" (click)="drill('normal')"
             [attr.aria-pressed]="drillKind === 'normal'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Non-critical Alarms</span>
@@ -143,7 +143,7 @@
       <!-- <span class="mexa-kpi-go">{{ drillKind === 'normal' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
-    <button type="button" class="mexa-kpi blue" (click)="drill('open')"
+    <button type="button" class="mexa-kpi kpi2" (click)="drill('open')"
             [attr.aria-pressed]="drillKind === 'open'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Open Alarms</span>
@@ -156,7 +156,7 @@
       <!-- <span class="mexa-kpi-go">{{ drillKind === 'open' ? 'Showing' : 'View' }} <mat-icon class="!w-4 !h-4 !text-base" aria-hidden="true">chevron_right</mat-icon></span> -->
     </button>
 
-    <button type="button" class="mexa-kpi purple" (click)="drill('longest')"
+    <button type="button" class="mexa-kpi kpi3" (click)="drill('longest')"
             [attr.aria-pressed]="drillKind === 'longest'">
       <span class="mexa-kpi-head">
         <span class="mexa-kpi-label">Max Duration</span>

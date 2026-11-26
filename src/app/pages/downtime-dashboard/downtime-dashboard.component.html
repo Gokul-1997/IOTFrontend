@@ -89,7 +89,7 @@
        Each tile opens Downtime Details: the declared downtime and its events
        at the event list; the measured times at the reason summary. -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi red mexa-kpi-drill">
+    <div class="mexa-kpi kpi1 mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Downtime <app-metric-help topic="declared_downtime"></app-metric-help></span>
         <span class="mexa-kpi-icon red"  aria-hidden="true">
@@ -100,7 +100,7 @@
       <p class="mexa-kpi-sub">{{ data.kpis.open_events }} still open</p>
     </div>
 
-    <div class="mexa-kpi green mexa-kpi-drill">
+    <div class="mexa-kpi kpi1 mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Availability <app-metric-help topic="onoff_availability"></app-metric-help></span>
         <span class="mexa-kpi-icon green"  aria-hidden="true">
@@ -111,7 +111,7 @@
       <p class="mexa-kpi-sub">Run time ÷ switched-on time</p>
     </div>
 
-    <div class="mexa-kpi sky mexa-kpi-drill">
+    <div class="mexa-kpi kpi2 mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Downtime Events <app-metric-help topic="downtime_reasons"></app-metric-help></span>
         <span class="mexa-kpi-icon sky"  aria-hidden="true">
@@ -122,7 +122,7 @@
       <p class="mexa-kpi-sub">{{ pct(data.kpis.reason_coverage_pct) }} have a reason</p>
     </div>
 
-    <div class="mexa-kpi purple mexa-kpi-drill">
+    <div class="mexa-kpi kpi2 mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Running Time <app-metric-help topic="run_time"></app-metric-help></span>
         <span class="mexa-kpi-icon purple"  aria-hidden="true">
@@ -132,7 +132,7 @@
       <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openReasons('')" aria-labelledby="dtk4-name dtk4-value dtk4-act"><span id="dtk4-value">{{ hours(data.kpis.run_seconds) }}</span></button></p><span hidden id="dtk4-name">Running time:</span><span hidden id="dtk4-act">show the downtime tables</span>
     </div>
 
-    <div class="mexa-kpi yellow mexa-kpi-drill">
+    <div class="mexa-kpi kpi3 mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Idle Time <app-metric-help topic="idle_time"></app-metric-help></span>
         <span class="mexa-kpi-icon yellow"  aria-hidden="true">
@@ -144,7 +144,7 @@
       <p class="mexa-kpi-sub mexa-kpi-cost" *ngIf="idleCostLine" [title]="costHint">{{ idleCostLine }}</p>
     </div>
 
-    <div class="mexa-kpi blue mexa-kpi-drill">
+    <div class="mexa-kpi kpi3 mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Alarm Time <app-metric-help topic="alarm_time"></app-metric-help></span>
         <span class="mexa-kpi-icon blue"  aria-hidden="true">

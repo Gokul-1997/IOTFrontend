@@ -81,7 +81,7 @@
        Details; Total Critical Alarms in the Alarm Report. Same tile again
        shows the whole backlog. -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi red" [class.mexa-kpi-drill]="canSeeAlarms">
+    <div class="mexa-kpi kpi1" [class.mexa-kpi-drill]="canSeeAlarms">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Critical Alarms</span>
         <span class="mexa-kpi-icon red" aria-hidden="true">
@@ -92,7 +92,7 @@
       <p class="mexa-kpi-sub">{{ data.kpis.critical_alarms_open }} still open</p>
     </div>
 
-    <div class="mexa-kpi sky mexa-kpi-drill" [class.is-on]="drill.kind === 'open'">
+    <div class="mexa-kpi kpi1 mexa-kpi-drill" [class.is-on]="drill.kind === 'open'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Open Breakdown Tickets</span>
         <span class="mexa-kpi-icon sky"  aria-hidden="true">
@@ -103,7 +103,7 @@
       <p class="mexa-kpi-sub">of {{ data.kpis.pm_generated }} raised</p>
     </div>
 
-    <div class="mexa-kpi purple mexa-kpi-drill" [class.is-on]="drill.kind === 'completed'">
+    <div class="mexa-kpi kpi2 mexa-kpi-drill" [class.is-on]="drill.kind === 'completed'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Completed Breakdown Tickets</span>
         <span class="mexa-kpi-icon purple"  aria-hidden="true">
@@ -114,7 +114,7 @@
       <p class="mexa-kpi-sub">{{ data.kpis.pm_overdue }} overdue</p>
     </div>
 
-    <div class="mexa-kpi blue mexa-kpi-drill" [class.is-on]="drill.kind === 'raised'">
+    <div class="mexa-kpi kpi2 mexa-kpi-drill" [class.is-on]="drill.kind === 'raised'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Compliance</span>
         <span class="mexa-kpi-icon blue"  aria-hidden="true">
@@ -125,7 +125,7 @@
       <p class="mexa-kpi-sub">Completed over raised</p>
     </div>
 
-    <div class="mexa-kpi navy mexa-kpi-drill" [class.is-on]="drill.kind === 'resolved'">
+    <div class="mexa-kpi kpi3 mexa-kpi-drill" [class.is-on]="drill.kind === 'resolved'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Avg. Resolution Time</span>
         <span class="mexa-kpi-icon navy" aria-hidden="true">

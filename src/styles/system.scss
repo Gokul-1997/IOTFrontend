@@ -497,7 +497,7 @@ html, body { font-family: var(--font-ui); }
 /* A card on a card — each dashboard's tab panel holds its chart and table
    cards: drawn flat, a hairline apart, not a second shadow (26 Oct 2026, the
    user: the Preventive page "not professional"). */
-.mexa-card .mexa-card { box-shadow: none; border: 1px solid var(--mexa-rule); }
+.mexa-card .mexa-card { box-shadow: none; border: 1px solid var(--mexa-rule); box-shadow: var(--mexa-card-shadow); }
 
 /* a note's fix, beside it: a link or a button that reads as one */
 .mexa-note-action { margin-left: .35rem; padding: 0; border: 0; background: none; font: inherit; cursor: pointer; text-underline-offset: 2px; }

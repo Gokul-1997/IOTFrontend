@@ -94,7 +94,7 @@
        opens the machine-wise table behind it (Reports → Machine OEE, same
        dates and shift, ranked by that figure) for anyone who may open it. -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi navy" [class.mexa-kpi-drill]="canOpenMachineOee">
+    <div class="mexa-kpi kpi1" [class.mexa-kpi-drill]="canOpenMachineOee">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>OEE <app-metric-help topic="oee"></app-metric-help></span>
         <span class="mexa-kpi-icon navy" aria-hidden="true">
@@ -118,7 +118,7 @@
       </p>
     </div>
 
-    <div class="mexa-kpi green" [class.mexa-kpi-drill]="canOpenMachineOee">
+    <div class="mexa-kpi kpi1" [class.mexa-kpi-drill]="canOpenMachineOee">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>Availability <app-metric-help topic="availability"></app-metric-help></span>
         <span class="mexa-kpi-icon green" aria-hidden="true">
@@ -132,7 +132,7 @@
       </p>
     </div>
 
-    <div class="mexa-kpi sky" [class.mexa-kpi-drill]="canOpenMachineOee">
+    <div class="mexa-kpi kpi2" [class.mexa-kpi-drill]="canOpenMachineOee">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>Performance <app-metric-help topic="performance"></app-metric-help></span>
         <span class="mexa-kpi-icon sky" aria-hidden="true">
@@ -146,7 +146,7 @@
       </p>
     </div>
 
-    <div class="mexa-kpi purple" [class.mexa-kpi-drill]="canOpenMachineOee">
+    <div class="mexa-kpi kpi2" [class.mexa-kpi-drill]="canOpenMachineOee">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>Quality <app-metric-help topic="quality"></app-metric-help></span>
         <span class="mexa-kpi-icon purple" aria-hidden="true">
@@ -160,7 +160,7 @@
       </p>
     </div>
 
-    <div class="mexa-kpi blue" [class.mexa-kpi-drill]="canOpenMachineOee">
+    <div class="mexa-kpi kpi3" [class.mexa-kpi-drill]="canOpenMachineOee">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total<br>Production <app-metric-help topic="produced"></app-metric-help></span>
         <span class="mexa-kpi-icon blue " aria-hidden="true">
@@ -171,7 +171,7 @@
       <p class="mexa-kpi-sub">{{ data.kpis.good | number }} good · {{ data.kpis.rejected | number }} rejected</p>
     </div>
 
-    <div class="mexa-kpi yellow" [class.mexa-kpi-drill]="canOpenMachineOee">
+    <div class="mexa-kpi kpi3" [class.mexa-kpi-drill]="canOpenMachineOee">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total<br>Downtime <app-metric-help topic="idle_time"></app-metric-help></span>
         <span class="mexa-kpi-icon yellow" aria-hidden="true">

@@ -65,7 +65,7 @@
        (Mean Time to Repair: the repaired ones; Recorded Downtime: those with
        minutes entered). Same tile again shows all. -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi navy mexa-kpi-drill">
+    <div class="mexa-kpi kpi1 mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Tickets</span>
         <span class="mexa-kpi-icon" aria-hidden="true">
@@ -76,7 +76,7 @@
       <p class="mexa-kpi-sub">{{ data.kpis.breakdowns }} breakdown(s)</p>
     </div>
 
-    <div class="mexa-kpi red mexa-kpi-drill" [class.is-on]="drill.kind === 'open'">
+    <div class="mexa-kpi kpi1 mexa-kpi-drill" [class.is-on]="drill.kind === 'open'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Still Open</span>
         <span class="mexa-kpi-icon" aria-hidden="true">
@@ -87,7 +87,7 @@
       <p class="mexa-kpi-sub">{{ data.kpis.critical }} critical</p>
     </div>
 
-    <div class="mexa-kpi green mexa-kpi-drill" [class.is-on]="drill.kind === 'settled'">
+    <div class="mexa-kpi kpi2 mexa-kpi-drill" [class.is-on]="drill.kind === 'settled'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Resolved / Closed</span>
         <span class="mexa-kpi-icon" aria-hidden="true">
@@ -98,7 +98,7 @@
       <p class="mexa-kpi-sub">of {{ data.kpis.tickets }} raised</p>
     </div>
 
-    <div class="mexa-kpi blue mexa-kpi-drill" [class.is-on]="drill.kind === 'repaired'">
+    <div class="mexa-kpi kpi2 mexa-kpi-drill" [class.is-on]="drill.kind === 'repaired'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Mean Time to Repair <app-metric-help topic="mttr"></app-metric-help></span>
         <span class="mexa-kpi-icon" aria-hidden="true">
@@ -110,7 +110,7 @@
       <p class="mexa-kpi-sub">{{ data.kpis.mttr_basis_note }}</p>
     </div>
 
-    <div class="mexa-kpi yellow mexa-kpi-drill" [class.is-on]="drill.kind === 'downtime'">
+    <div class="mexa-kpi kpi3 mexa-kpi-drill" [class.is-on]="drill.kind === 'downtime'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Recorded Downtime <app-metric-help topic="declared_downtime"></app-metric-help></span>
         <span class="mexa-kpi-icon" aria-hidden="true">

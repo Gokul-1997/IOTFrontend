@@ -516,11 +516,11 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
     return this.charts.memo('workloadDonut', () => {
     const total = this.workloadSeries.reduce((a, b) => a + b, 0);
     return {
-      chart: { type: 'donut', height: 250, fontFamily: 'inherit' },
+      chart: { type: 'donut', height: 180, fontFamily: 'inherit' },
       labels: (this.data?.technician_workload || []).map((w: any) => w.technician),
       colors: this.palette,
       plotOptions: {
-        pie: { donut: { size: '64%', labels: {
+        pie: { donut: { size: '60%', labels: {
           show: true,
           total: { show: true, label: 'Total', fontSize: '.8rem', formatter: () => String(total) }
         } } }

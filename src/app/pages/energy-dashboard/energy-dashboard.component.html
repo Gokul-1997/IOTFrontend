@@ -87,7 +87,7 @@
        Each tile opens Machine Detail — every machine, whose figures the
        tile adds up or averages; Overload Alerts, the overloaded ones. -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi navy mexa-kpi-drill">
+    <div class="mexa-kpi kpi1 mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Energy<br>Consumed <app-metric-help topic="energy_consumed"></app-metric-help></span>
         <span class="mexa-kpi-icon navy" aria-hidden="true">
@@ -109,7 +109,7 @@
       </p>
     </div>
 
-    <div class="mexa-kpi sky mexa-kpi-drill">
+    <div class="mexa-kpi kpi1 mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Total Energy<br>Cost <app-metric-help topic="energy_cost"></app-metric-help></span>
         <span class="mexa-kpi-icon blue" aria-hidden="true">
@@ -126,7 +126,7 @@
       </p>
     </div>
 
-    <div class="mexa-kpi purple mexa-kpi-drill">
+    <div class="mexa-kpi kpi2 mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Energy<br>per Part <app-metric-help topic="energy_per_part"></app-metric-help></span>
         <span class="mexa-kpi-icon purple" aria-hidden="true">
@@ -137,7 +137,7 @@
       <p class="mexa-kpi-sub">{{ data.kpis.total_produced | number }} parts</p>
     </div>
 
-    <div class="mexa-kpi blue mexa-kpi-drill">
+    <div class="mexa-kpi kpi2 mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>Voltage <app-metric-help topic="avg_voltage"></app-metric-help></span>
         <span class="mexa-kpi-icon blue" aria-hidden="true"><mat-icon>electrical_services</mat-icon></span>
@@ -147,7 +147,7 @@
       <p class="mexa-kpi-sub" *ngIf="data.kpis.avg_voltage == null">Not reported</p>
     </div>
 
-    <div class="mexa-kpi green mexa-kpi-drill">
+    <div class="mexa-kpi kpi3 mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Average<br>Current <app-metric-help topic="avg_current"></app-metric-help></span>
         <span class="mexa-kpi-icon green" aria-hidden="true"><mat-icon>power</mat-icon></span>
@@ -156,7 +156,7 @@
       <p class="mexa-kpi-sub" *ngIf="data.kpis.avg_current == null">Not reported</p>
     </div>
 
-    <div class="mexa-kpi grey mexa-kpi-drill" [class.is-on]="drill.kind === 'overload'">
+    <div class="mexa-kpi kpi3 mexa-kpi-drill" [class.is-on]="drill.kind === 'overload'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overload<br>Alerts <app-metric-help topic="overload"></app-metric-help></span>
         <span class="mexa-kpi-icon grey" [style.background]="data.kpis.overload_alerts > 0 ? '#dc2626' : '#6b7280'"

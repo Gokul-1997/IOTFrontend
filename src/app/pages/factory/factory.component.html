@@ -88,7 +88,7 @@
   <div class="mexa-kpis">
     <!-- Each tile's number opens the page with the records behind it, on this
          day, shift and machine (only pages this person may open). -->
-    <div class="mexa-kpi green" [class.mexa-kpi-drill]="can('live')">
+    <div class="mexa-kpi kpi1" [class.mexa-kpi-drill]="can('live')">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Machines<br>Running <app-metric-help topic="machine_status"></app-metric-help></span>
         <span class="mexa-kpi-icon green" aria-hidden="true">
@@ -101,7 +101,7 @@
       <p class="mexa-kpi-sub">of {{ data.machines.total }} machines</p>
     </div>
 
-    <div class="mexa-kpi yellow" [class.mexa-kpi-drill]="can('live')">
+    <div class="mexa-kpi kpi1" [class.mexa-kpi-drill]="can('live')">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Machines<br>Idle</span>
         <span class="mexa-kpi-icon yellow" style="background:#f5a623" aria-hidden="true">
@@ -114,7 +114,7 @@
       </p>
     </div>
 
-    <div class="mexa-kpi navy" [class.mexa-kpi-drill]="can('oee')">
+    <div class="mexa-kpi kpi2" [class.mexa-kpi-drill]="can('oee')">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overall<br>OEE <app-metric-help topic="oee"></app-metric-help></span>
         <span class="mexa-kpi-icon navy" style="background:#2b3a8f" aria-hidden="true">
@@ -133,7 +133,7 @@
       </p>
     </div>
 
-    <div class="mexa-kpi sky" [class.mexa-kpi-drill]="can('downtime')">
+    <div class="mexa-kpi kpi2" [class.mexa-kpi-drill]="can('downtime')">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overall<br>Utilisation <app-metric-help topic="running_share"></app-metric-help></span>
         <span class="mexa-kpi-icon sky" style="background:#3b9ae1" aria-hidden="true">
@@ -144,7 +144,7 @@
       <p class="mexa-kpi-value"><button *ngIf="can('downtime'); else utilPlain" type="button" class="mexa-kpi-open" (click)="open('downtime')" aria-labelledby="fk4-name fk4-value fk4-act"><span id="fk4-value">{{ utilisation === null ? '--' : utilisation + '%' }}</span></button><ng-template #utilPlain>{{ utilisation === null ? '--' : utilisation + '%' }}</ng-template></p><span hidden id="fk4-name">Overall utilisation:</span><span hidden id="fk4-act">see run and idle time in Downtime Analysis</span>
     </div>
 
-    <div class="mexa-kpi purple" [class.mexa-kpi-drill]="can('production')">
+    <div class="mexa-kpi kpi3" [class.mexa-kpi-drill]="can('production')">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overall<br>Production <app-metric-help topic="production_vs_target"></app-metric-help></span>
         <span class="mexa-kpi-icon purple" style="background:#9b7ec8" aria-hidden="true">
@@ -157,7 +157,7 @@
       <ng-template #rawCount><p class="mexa-kpi-sub">pieces · no job target set</p></ng-template>
     </div>
 
-    <div class="mexa-kpi blue" [class.mexa-kpi-drill]="can('energy')">
+    <div class="mexa-kpi kpi3" [class.mexa-kpi-drill]="can('energy')">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Power<br>Consumption</span>
         <span class="mexa-kpi-icon blue" style="background:#3b63b0" aria-hidden="true">

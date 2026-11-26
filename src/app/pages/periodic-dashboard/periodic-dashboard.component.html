@@ -79,7 +79,7 @@
        Each tile opens the tickets behind its number in Maintenance Details
        (Scheduled and Compliance: every ticket). Same tile again shows all. -->
   <div class="mexa-kpis">
-    <div class="mexa-kpi navy mexa-kpi-drill">
+    <div class="mexa-kpi kpi1 mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Scheduled Ticket</span>
         <span class="mexa-kpi-icon navy"  aria-hidden="true">
@@ -90,7 +90,7 @@
       <p class="mexa-kpi-sub">{{ data.kpis.due_this_week }} due this week</p>
     </div>
 
-    <div class="mexa-kpi green mexa-kpi-drill" [class.is-on]="drill.kind === 'today'">
+    <div class="mexa-kpi kpi1 mexa-kpi-drill" [class.is-on]="drill.kind === 'today'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Due Today</span>
         <span class="mexa-kpi-icon green"  aria-hidden="true">
@@ -100,7 +100,7 @@
       <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('today')" [attr.aria-pressed]="drill.kind === 'today'" aria-labelledby="pek2-name pek2-value pek2-act"><span id="pek2-value">{{ data.kpis.due_today }}</span></button></p><span hidden id="pek2-name">Due today:</span><span hidden id="pek2-act">show these tickets</span>
     </div>
 
-    <div class="mexa-kpi red mexa-kpi-drill" [class.is-on]="drill.kind === 'overdue'">
+    <div class="mexa-kpi kpi2 mexa-kpi-drill" [class.is-on]="drill.kind === 'overdue'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Overdue</span>
         <span class="mexa-kpi-icon red"  aria-hidden="true">
@@ -113,7 +113,7 @@
       </p>
     </div>
 
-    <div class="mexa-kpi purple mexa-kpi-drill" [class.is-on]="drill.kind === 'completed'">
+    <div class="mexa-kpi kpi2 mexa-kpi-drill" [class.is-on]="drill.kind === 'completed'">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Completed</span>
         <span class="mexa-kpi-icon purple"  aria-hidden="true">
@@ -124,7 +124,7 @@
       <p class="mexa-kpi-sub">Scheduled {{ data.kpis.scheduled }}</p>
     </div>
 
-    <div class="mexa-kpi blue mexa-kpi-drill">
+    <div class="mexa-kpi kpi3 mexa-kpi-drill">
       <div class="mexa-kpi-head">
         <span class="mexa-kpi-label">Compliance</span>
         <span class="mexa-kpi-icon blue"  aria-hidden="true">

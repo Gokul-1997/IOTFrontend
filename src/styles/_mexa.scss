@@ -45,7 +45,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   --mexa-ink:        #1f2430;
   --mexa-ink-2:      #4b5262;
   --mexa-ink-3:      #5d6679;   /* 4.6:1 or better on every MEXA surface (WCAG AA); #8992a5 was 2.7–3.1:1 */
-  --mexa-rule:       #e3e6ef;
+  --mexa-rule:       #b4b8c5;
   --mexa-thead:      #e6e5f6;
   --mexa-row-alt:    #f5f4fc;
 
@@ -665,7 +665,10 @@ button.mexa-kpi[aria-pressed="true"] {
 }
 .mexa-rank li:last-child { border-bottom: 0; }
 .mexa-rank-n { color: var(--mexa-ink-3); font-size: .8rem; margin-right: .35rem; }
-.mexa-rank-name { font-size: .9rem; color: var(--mexa-ink); font-weight: 600; min-width: 0; }
+.mexa-rank-name { font-size: .9rem; color: var(--mexa-ink); font-weight: 600; min-width: 0; 
+    display: flex;
+    gap: 5px;
+    align-items: center;}
 .mexa-rank-sub { 
   display: flex; font-size: .78rem; color: var(--mexa-ink-3); font-weight: 400; gap:5px; 
   align-items: center; 
@@ -857,6 +860,7 @@ a.mexa-pill { text-decoration: none; }
   background: #fff;
   border: 1px solid color-mix(in srgb, var(--band) 60%, transparent);
   gap: .6rem;
+  box-shadow: var(--mexa-card-shadow);
 }
 .mexa-oeecard-status {
   display: inline-flex; align-items: center; gap: .3rem;
@@ -1212,13 +1216,14 @@ a.mexa-pill { text-decoration: none; }
 
 
 .mexa-kpi {
-    border: 0;
+    // border: 0;
     border-radius: 16px;
     padding: 0.5rem .5rem;
     box-shadow: var(--mexa-card-shadow) 0 10px 28px rgba(18, 14, 64, .18), 0 1px 3px rgba(18, 14, 64, .08);
     min-width: 0;
     color: #202652;
     background: #fff;
+    border:2px solid #979797;
 }
 
 .mexa-kpi-icon{
@@ -1260,38 +1265,56 @@ a.mexa-pill { text-decoration: none; }
 // }
 
 .mexa-kpi.green{
-  background:#009688!important;
+  background:#2B3991!important;
   color: #fff;
+  
 }
 .mexa-kpi.yellow{
-  background:#b47405!important;
+  background:#2B3991!important;
   color: #fff;
 }
 
 .mexa-kpi.navy{
-  background: #4b62ff!important;
+  background: #883D66!important;
   color: #fff;
 }
 .mexa-kpi.sky{
-  background:#0EA5E9!important;
+  background:#883D66!important;
   color: #fff;
 }
 .mexa-kpi.purple{
-  background:#9365B0!important;
+  background:#A53E53!important;
   color: #fff;
 }
 .mexa-kpi.blue{
-  background :#857cff !important;
+  background :#A53E53 !important;
   color: #fff;
 }
 .mexa-kpi.red{
-  background: #d74e44!important;
+  background: #A53E53!important;
   color: #fff;
 }
 .mexa-kpi.grey{
-  background:#ad4972 !important;
+  background:#A53E53 !important;
   color: #fff;
 }
+
+
+.mexa-kpi.kpi1{
+  background:#2B3991!important;
+  color: #fff;  
+}
+.mexa-kpi.kpi2{
+  background:#883D66!important;
+  color: #fff;  
+}
+.mexa-kpi.kpi3{
+  background:#A53E53!important;
+  color: #fff;  
+}
+
+
+
 .dark{
 
 .mexa-kpi.green{
