@@ -60,6 +60,12 @@ describe('metricHelp', () => {
     expect(e.example).toContain('(60 + 50 + 70) ÷ 3 = 60 %');
   });
 
+  it('defines a Unit without changing the energy or cost calculation', () => {
+    expect(metricHelp('energy_consumed').what).toContain('1 Unit = 1 kWh');
+    expect(metricHelp('energy_cost').formula?.[0]).toBe('Energy cost = Units used × ₹ per Unit');
+    expect(metricHelp('energy_per_part').formula?.[0]).toBe('Energy per part = Units used ÷ parts made');
+  });
+
   it('falls back to the topic name for an unknown topic', () => {
     expect(metricHelp('nope')).toEqual({ title: 'nope', what: '' });
   });

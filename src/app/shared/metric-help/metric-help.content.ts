@@ -233,33 +233,33 @@ export function metricHelp(topic: string, basis: HelpBasis = 'period'): MetricHe
     case 'energy_total':
       return {
         title: 'Total energy',
-        what: 'The energy figures of every row in the table added together, in kilowatt-hours (kWh).',
+        what: 'The energy figures of every row in the table added together, in Units (1 Unit = 1 kWh).',
         formula: ['Total energy = sum of each hour\'s energy'],
-        example: 'Three hours at 4.2, 3.9 and 4.5 kWh: 12.6 kWh.',
+        example: 'Three hours at 4.2, 3.9 and 4.5 Units: 12.6 Units.',
         why: 'Compare it with parts made to see the energy each part costs. It stays at 0 when the machines send no energy readings.'
       };
     case 'energy_consumed':
       return {
         title: 'Energy consumed',
-        what: 'Electricity the machines used in the period, in kilowatt-hours (kWh), from each machine\'s own energy counter.',
+        what: 'Electricity the machines used in the period, in Units (1 Unit = 1 kWh), from each machine\'s own energy counter.',
         formula: ['Energy used = sum of accepted changes between consecutive counter readings'],
-        example: 'A counter at 1,200.0 kWh in the morning and 1,262.5 kWh at night: 62.5 kWh used that day.',
+        example: 'A counter at 1,200.0 Units in the morning and 1,262.5 Units at night: 62.5 Units used that day.',
         why: 'A machine whose device sends no energy counter shows "not reporting", never 0 — it is left out of the total, not counted as using nothing.'
       };
     case 'energy_cost':
       return {
         title: 'Total energy cost',
         what: 'Estimated energy cost at the tariffs currently set on Master → Tariff & Rates. Historical bills may use different rates.',
-        formula: ['Energy cost = kWh used × ₹ per kWh'],
-        example: '1,248.6 kWh at ₹10.95 per kWh: ₹13,672.',
+        formula: ['Energy cost = Units used × ₹ per Unit'],
+        example: '1,248.6 Units at ₹10.95 per Unit: ₹13,672.',
         why: 'Each machine uses its own tariff or the company default. Missing readings, rejected intervals, missing tariffs or different currencies leave the full selection cost unavailable.'
       };
     case 'energy_per_part':
       return {
         title: 'Energy per part',
         what: 'How much energy each part took, on average, over the period.',
-        formula: ['Energy per part = kWh used ÷ parts made'],
-        example: '1,248.6 kWh for 12,560 parts: 0.099 kWh per part.',
+        formula: ['Energy per part = Units used ÷ parts made'],
+        example: '1,248.6 Units for 12,560 parts: 0.099 Units per part.',
         why: 'Lower is better. A rise means the machines used more energy for the same output — idle running, heavier cuts or a fault.'
       };
     case 'avg_voltage':
@@ -295,8 +295,8 @@ export function metricHelp(topic: string, basis: HelpBasis = 'period'): MetricHe
     case 'energy_cost_trend':
       return {
         title: 'Energy cost trend',
-        what: 'Energy used each day, week or month, estimated at each machine\'s configured tariff. Incomplete pricing shows kWh instead.',
-        formula: ['Cost of a bar = sum of each machine\'s measured kWh × its configured tariff'],
+        what: 'Energy used each day, week or month, estimated at each machine\'s configured tariff. Incomplete pricing shows Units instead.',
+        formula: ['Cost of a bar = sum of each machine\'s measured Units × its configured tariff'],
         why: 'Missing days stay gaps. A week containing a missing day is unavailable. Switching Day, Week or Month regroups the loaded data.'
       };
     case 'oee_loss':

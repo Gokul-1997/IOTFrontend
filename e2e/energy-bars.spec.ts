@@ -28,7 +28,7 @@ async function openChart(page: any, body: any = ENERGY) {
   await page.route(/\/api\/dashboard\/energy(\?|$)/, (r: any) => r.fulfill(ok(body)));
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/energy-dashboard');
-  const card = page.locator('section', { has: page.getByRole('heading', { name: 'High Energy Consumption by Machine (kWh)' }) });
+  const card = page.locator('section', { has: page.getByRole('heading', { name: 'High Energy Consumption by Machine (Units)' }) });
   await card.scrollIntoViewIfNeeded();
   await expect(card.locator('.apexcharts-bar-area')).toHaveCount(5);
   return card;
@@ -49,14 +49,14 @@ test('a figure sits in the middle of a bar that can hold it; a tiny bar shows no
   expect(label.x + label.width).toBeLessThan(bar.x + bar.width);
 });
 
-test('a hover anywhere along a row shows that machine, with its kWh — the tiny bar too', async ({ page }) => {
+test('a hover anywhere along a row shows that machine, with its Units — the tiny bar too', async ({ page }) => {
   const card = await openChart(page);
   const tiny = (await card.locator('.apexcharts-bar-area').nth(4).boundingBox())!;
   expect(tiny.width).toBeLessThan(10);
   await page.mouse.move(tiny.x + tiny.width + 80, tiny.y + tiny.height / 2);  // beside the bar, on its row
   const tip = card.locator('.apexcharts-tooltip.apexcharts-active');
   await expect(tip).toContainText('HMC - 7 - F');
-  await expect(tip).toContainText('1.84 kWh');
+  await expect(tip).toContainText('1.84 Units');
   const box = (await tip.boundingBox())!, chart = (await card.boundingBox())!;
   expect(box.y).toBeGreaterThanOrEqual(chart.y);                               // inside the card, not cut off at its top
   // the row under the pointer is shaded, as a hovered column's band is (26 Oct 2026)
@@ -71,7 +71,7 @@ test('a hover anywhere along a row shows that machine, with its kWh — the tiny
   const big = (await card.locator('.apexcharts-bar-area').first().boundingBox())!;
   await page.mouse.move(big.x + big.width / 2, big.y + big.height / 2);
   await expect(tip).toContainText('VMC - 2 - F');
-  await expect(tip).toContainText('233.13 kWh');
+  await expect(tip).toContainText('233.13 Units');
 });
 
 /* "This hover on every chart" (26 Oct 2026): a column chart answers a hover
@@ -98,5 +98,5 @@ test('Energy Cost Trend: figures in the columns that hold them; a hover above a 
   await page.mouse.move(short.x + short.width / 2, short.y - 60);             // in its column, well above it
   const tip = card.locator('.apexcharts-tooltip.apexcharts-active');
   await expect(tip).toContainText('25 Oct');
-  await expect(tip).toContainText('₹22');                                      // 2 kWh × ₹10.95
+  await expect(tip).toContainText('₹22');                                      // 2 Units × ₹10.95
 });

@@ -95,6 +95,16 @@ describe('meter panel polling', () => {
     expect(panel.visible).toBe(false);
   });
 
+  it('offers five days as its longest range and keeps the range when polling', () => {
+    answer = () => of(withMeter);
+    panel.ngOnInit();
+    expect(panel.ranges.at(-1)?.label).toBe('5 days');
+    panel.setRange('5d');
+    vi.advanceTimersByTime(30_000);
+    expect(requested.slice(-2).map(r => r.range)).toEqual(['5d', '5d']);
+    expect(panel.rangeLong).toBe('the last 5 days');
+  });
+
   it('a meter on show is asked again every 30 s', () => {
     answer = () => of(withMeter);
     panel.ngOnInit();
@@ -201,6 +211,9 @@ describe('meter panel polling', () => {
     expect(panel.stats[0].value).toBe('--');
     panel.data.summary.kwh_used = 0;
     expect(panel.stats[0].value).toBe('0.00');
+    expect(panel.stats[0].unit).toBe('Units');
+    expect(panel.stats[3].unit).toBe('kVArh');
+    expect(panel.stats[4].unit).toBe('kVAh');
   });
 });
 

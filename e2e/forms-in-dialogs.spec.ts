@@ -173,9 +173,9 @@ test('Tariff & Rates: Add tariff and Edit open the dialog; the page holds no for
   await page.getByRole('button', { name: 'Add tariff' }).click();
   const add = dialog(page, 'Add tariff');
   await add.getByRole('button', { name: 'Save tariff' }).click();
-  await expect(add.getByRole('alert')).toHaveText('Enter a cost per kWh, an overload limit, or both.');
+  await expect(add.getByRole('alert')).toHaveText('Enter a cost per Unit, an overload limit, or both.');
   await add.getByLabel('Applies to').selectOption({ label: 'HMC - 7 - F' });
-  await add.getByLabel('Cost per kWh').fill('12.5');
+  await add.getByLabel('Cost per Unit').fill('12.5');
   await add.getByRole('button', { name: 'Save tariff' }).click();
   await expect(add).toHaveCount(0);
   expect(saved[0]).toMatchObject({ machine_id: 25, cost_per_kwh: 12.5, currency: 'INR' });
@@ -183,7 +183,7 @@ test('Tariff & Rates: Add tariff and Edit open the dialog; the page holds no for
   await page.getByRole('button', { name: 'Edit tariff for company default' }).click();
   const edit = dialog(page, 'Edit tariff');
   await expect(edit.getByLabel('Applies to')).toBeDisabled();
-  await expect(edit.getByLabel('Cost per kWh')).toHaveValue('10.95');
+  await expect(edit.getByLabel('Cost per Unit')).toHaveValue('10.95');
   await edit.getByRole('button', { name: 'Cancel' }).click();
   await expect(edit).toHaveCount(0);
 });

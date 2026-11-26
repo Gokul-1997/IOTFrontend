@@ -106,7 +106,7 @@ test.describe('energy meter — Energy screen', () => {
     await expect(pf).toContainText('49.96 Hz');
     await expect(pf).toContainText('Normal');
 
-    await expect(panel(page)).toContainText('Total energy110.8kWh');
+    await expect(panel(page)).toContainText('Total energy110.8Units');
     await expect(panel(page)).toContainText('Supply interruptions5');
   });
 
@@ -114,7 +114,7 @@ test.describe('energy meter — Energy screen', () => {
     await openEnergy(page, u => meterFor(u));
     await expect(panel(page).locator('.mexa-note-warn'))
       .toContainText('This can indicate reversed current transformers');
-    await expect(panel(page).locator('.mexa-note-warn')).toContainText('than Import (33.1 kWh)');
+    await expect(panel(page).locator('.mexa-note-warn')).toContainText('than Import (33.1 Units)');
     await expect(panel(page)).toContainText('Energy used is calculated from accepted changes');
     await expect(panel(page)).not.toContainText('Energy used is still right');
   });
@@ -134,15 +134,15 @@ test.describe('energy meter — Energy screen', () => {
     await openEnergy(page, u => meterFor(u), asked);
     const ranges = panel(page).getByRole('group', { name: 'Time range' });
     await expect(ranges.getByRole('button', { name: '24 hours' })).toHaveAttribute('aria-pressed', 'true');
-    await ranges.getByRole('button', { name: '7 days' }).click();
-    await expect.poll(() => asked.some(q => q.includes('range=7d'))).toBe(true);
+    await ranges.getByRole('button', { name: '5 days' }).click();
+    await expect.poll(() => asked.some(q => q.includes('range=5d'))).toBe(true);
 
     const metrics = panel(page).getByRole('group', { name: 'Show on the chart' });
     await metrics.getByRole('button', { name: 'Voltage' }).click();
-    await expect(panel(page).getByRole('group', { name: /^Voltage over the last 7 days/ })).toBeVisible();
+    await expect(panel(page).getByRole('group', { name: /^Voltage over the last 5 days/ })).toBeVisible();
     await expect(panel(page)).toContainText('Phase to neutral, average');
     await metrics.getByRole('button', { name: 'Energy used' }).click();
-    await expect(panel(page).locator('.mp-totals').last()).toContainText('Energy used0.03kWh');
+    await expect(panel(page).locator('.mp-totals').last()).toContainText('Energy used0.03Units');
   });
 
   /* Minimum on screen: a company with no meter gets no card saying so.
@@ -164,7 +164,7 @@ test.describe('energy meter — Energy screen', () => {
     await openEnergy(page, u => (fail ? 'fail' : meterFor(u)), asked);
     await expect(card(page, 'Voltage')).toContainText('416.7V');
     fail = true;
-    await panel(page).getByRole('group', { name: 'Time range' }).getByRole('button', { name: '7 days' }).click();
+    await panel(page).getByRole('group', { name: 'Time range' }).getByRole('button', { name: '5 days' }).click();
     await expect(panel(page)).toContainText('Could not load the energy meter');
     await expect(card(page, 'Voltage')).toHaveCount(0);
     fail = false;
@@ -189,7 +189,7 @@ test.describe('energy meter — Energy screen', () => {
       return response;
     });
     await panel(page).getByRole('group', { name: 'Show on the chart' }).getByRole('button', { name: 'Energy used' }).click();
-    await expect(panel(page).locator('.mp-totals').last()).toContainText('Energy used--kWh');
+    await expect(panel(page).locator('.mp-totals').last()).toContainText('Energy used--Units');
     await expect(panel(page).locator('.mp-unknown-energy')).toContainText('no valid change');
     await expect(panel(page).locator('.mp-incomplete')).toContainText('accepted intervals only');
   });

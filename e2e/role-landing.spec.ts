@@ -192,8 +192,8 @@ test('Tariff page: saving nothing says what to enter, and sends nothing', async 
   await page.getByRole('button', { name: 'Add tariff' }).click();
   const dialog = page.getByRole('dialog', { name: 'Add tariff' });
   await dialog.getByRole('button', { name: 'Save tariff' }).click();
-  await expect(dialog.getByRole('alert')).toHaveText('Enter a cost per kWh, an overload limit, or both.');
-  await expect(dialog.getByLabel('Cost per kWh')).toHaveAttribute('aria-invalid', 'true');
+  await expect(dialog.getByRole('alert')).toHaveText('Enter a cost per Unit, an overload limit, or both.');
+  await expect(dialog.getByLabel('Cost per Unit')).toHaveAttribute('aria-invalid', 'true');
   expect(posts).toEqual([]);
 });
 

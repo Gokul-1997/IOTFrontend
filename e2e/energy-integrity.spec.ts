@@ -5,7 +5,7 @@ const ok = (data: any) => ({ status: 200, contentType: 'application/json',
   body: JSON.stringify({ status: 'success', data }) });
 
 /** The API prices machines individually. Its cost deliberately differs from
- *  kWh multiplied by the company default, so a client-side guess cannot pass. */
+ *  Units multiplied by the company default, so a client-side guess cannot pass. */
 function energy(over: any = {}) {
   return {
     updated_at: '2026-10-27T06:30:00.000Z', currency: 'INR', rate_per_kwh: 10,
@@ -59,7 +59,7 @@ async function openEnergy(page: Page, respond: (url: URL) => any = () => energy(
 
 const costCard = (page: Page) => page.locator('section[aria-labelledby="enCostTitle"]');
 const consumptionCard = (page: Page) => page.locator('section', {
-  has: page.getByRole('heading', { name: 'Energy Consumption Over Time (kWh)', exact: true })
+  has: page.getByRole('heading', { name: 'Energy Consumption Over Time (Units)', exact: true })
 });
 const barValues = (card: Locator) => card.locator('.apexcharts-bar-area').evaluateAll(paths =>
   paths.map(path => path.getAttribute('val')).map(value => value === null ? null : Number(value)));
@@ -99,7 +99,7 @@ test('a missing day stays a gap while a measured zero remains zero and incomplet
   await expect(page.locator('#enk3-value')).toHaveText('--');
   await expect(page.getByText('Partial readings', { exact: true })).toBeVisible();
   await expect(page.getByText('Cost unavailable for the full selection', { exact: true })).toBeVisible();
-  await expect(costCard(page).getByRole('heading', { name: /^Energy Trend \(kWh\)/ })).toBeVisible();
+  await expect(costCard(page).getByRole('heading', { name: /^Energy Trend \(Units\)/ })).toBeVisible();
   await expect(costCard(page).locator('.apexcharts-bar-area[j="0"]')).toHaveAttribute('val', '10');
   // Apex marks an unknown point with no fill; the genuinely measured zero has
   // its own numeric value. They must never become two zero-consumption claims.
@@ -127,7 +127,7 @@ test('unknown readings show no invented charts, but measured zero is rendered as
 
   measured = true;
   await chooseMachine(page, 'VMC - 1 - F');
-  await expect(page.locator('#enk1-value')).toHaveText('0kWh');
+  await expect(page.locator('#enk1-value')).toHaveText('0Units');
   await expect(page.locator('#enk2-value')).toHaveText('₹0');
   await expect(consumptionCard(page).locator('apx-chart')).toHaveCount(1);
   await expect.poll(() => barValues(costCard(page))).toEqual([0]);
@@ -140,7 +140,7 @@ test.describe('plant calendar dates with a browser in California', () => {
   test('plant midnight selects the new plant day and does not move chart dates to yesterday', async ({ page }) => {
     const asked: URL[] = [];
     await openEnergy(page, () => energy(), { time: '2026-10-27T00:15:00+05:30', asked });
-    await expect(page.locator('#enFrom')).toHaveValue('2026-10-21');
+    await expect(page.locator('#enFrom')).toHaveValue('2026-10-23');
     await expect(page.locator('#enTo')).toHaveValue('2026-10-27');
     await expect.poll(() => asked[0]?.searchParams.get('to')).toBe('2026-10-27');
     await expect(costCard(page).locator('.apexcharts-xaxis-texts-g')).toContainText('25 Oct');
@@ -154,7 +154,7 @@ test.describe('plant calendar dates with a browser in California', () => {
 
 test('failed machine and date changes hide the values belonging to the previous selection', async ({ page }) => {
   await openEnergy(page, url => url.searchParams.has('machine_id') ? 'fail' : energy());
-  await expect(page.locator('#enk1-value')).toHaveText('30kWh');
+  await expect(page.locator('#enk1-value')).toHaveText('30Units');
   await expect(costCard(page).locator('apx-chart')).toHaveCount(1);
   await chooseMachine(page, 'VMC - 13 - M');
   await expect(page.getByRole('alert')).toContainText('Energy temporarily unavailable.');
@@ -186,16 +186,49 @@ test('an older delayed machine response cannot replace the currently selected ma
     }
     return energy({ kpis: { ...energy().kpis, total_kwh: url.searchParams.get('machine_id') === '34' ? 222 : 30 } });
   }, { asked, completed });
-  await expect(page.locator('#enk1-value')).toHaveText('30kWh');
+  await expect(page.locator('#enk1-value')).toHaveText('30Units');
   await chooseMachine(page, 'VMC - 1 - F');
   await expect.poll(() => !!release).toBe(true);
   await chooseMachine(page, 'VMC - 13 - M');
-  await expect(page.locator('#enk1-value')).toHaveText('222kWh');
+  await expect(page.locator('#enk1-value')).toHaveText('222Units');
   release!();
   // Ensure the cancelled request has completed at the fixture boundary before
   // checking that the visible selection and value still agree.
   await expect.poll(() => completed.some(url => url.searchParams.get('machine_id') === '15')).toBe(true);
   expect(asked.filter(url => url.searchParams.has('machine_id'))).toHaveLength(2);
   await expect(page.locator('#enMachine option:checked')).toHaveText('VMC - 13 - M');
-  await expect(page.locator('#enk1-value')).toHaveText('222kWh');
+  await expect(page.locator('#enk1-value')).toHaveText('222Units');
+});
+
+
+test('the first load requests five calendar dates and displays the same consumption in Units', async ({ page }) => {
+  const asked: URL[] = [];
+  await openEnergy(page, () => energy(), { asked });
+  await expect(page.locator('#enk1-value')).toHaveText('30Units');
+  await expect(page.getByText('Energy consumption is shown in Units. 1 Unit = 1 kWh.', { exact: true })).toBeVisible();
+  expect(asked).toHaveLength(1);
+  expect(asked[0].searchParams.get('from')).toBe('2026-10-23');
+  expect(asked[0].searchParams.get('to')).toBe('2026-10-27');
+  expect(asked[0].searchParams.get('part')).toBe('kpis,charts');
+  await page.getByRole('tab', { name: 'Machine Detail' }).click();
+  await expect(page.locator('#dashPanel-details tbody')).toContainText('VMC - 1 - F');
+  expect(asked.at(-1)?.searchParams.get('part')).toBe('table');
+  const requests = asked.length;
+  await page.getByRole('tab', { name: 'Charts', exact: true }).click();
+  await expect(consumptionCard(page)).toBeVisible();
+  expect(asked).toHaveLength(requests);
+});
+
+test('corrupt electrical figures show unavailable without reporting a false zero overload count', async ({ page }) => {
+  await openEnergy(page, () => energy({ kpis: { ...energy().kpis,
+    avg_voltage: 150465043430566.6, avg_current: 2.524346910149707e27,
+    overload_alerts: 1, overload_limit_set: true,
+    overload_top: { machine_serial_no: 'VMC - 9 - M', exceeded_kw: 3.042361198762586e31 }
+  } }));
+  await expect(page.locator('#enk4-value')).toHaveText('--');
+  await expect(page.locator('#enk5-value')).toHaveText('--');
+  await expect(page.locator('#enk7-value')).toHaveText('--');
+  await expect(page.getByText('Valid readings unavailable', { exact: true })).toBeVisible();
+  await expect(page.locator('#enk6-value')).toHaveCount(0);
+  await expect(page.locator('#enk1-value')).toHaveText('30Units');
 });

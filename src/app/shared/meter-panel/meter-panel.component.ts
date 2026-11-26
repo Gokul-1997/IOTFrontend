@@ -15,9 +15,9 @@ import { SearchSelectDirective } from '../search-select.directive';
  *     each phase), current (each phase), power factor and frequency — each
  *     with its unit, coloured against plain guidance (415 V ±10 %, power
  *     factor 0.9, 49.5–50.5 Hz) and with when it was read;
- *   - the meter's own running totals (import / export / total kWh, kVArh,
+ *   - the meter's own running totals (import / export / total Units, kVArh,
  *     kVAh, hours, supply interruptions);
- *   - a trend over 1 hour to 7 days for the quantity chosen, and what the
+ *   - a trend over 1 hour to 5 days for the quantity chosen, and what the
  *     range adds up to — energy used, highs and lows.
  *
  * Values are shown as the meter sends them. When its readings say the
@@ -30,7 +30,7 @@ import { SearchSelectDirective } from '../search-select.directive';
  * 6 Oct 2026.)
  */
 
-type RangeKey = '1h' | '4h' | '12h' | '24h' | '7d';
+type RangeKey = '1h' | '4h' | '12h' | '24h' | '5d';
 type Metric = 'kw' | 'i' | 'v' | 'pf' | 'kwh';
 type Band = { label: string; badge: string; icon: string } | null;
 
@@ -45,14 +45,14 @@ const RANGES: { key: RangeKey; label: string; long: string }[] = [
   { key: '4h', label: '4 hours', long: 'the last 4 hours' },
   { key: '12h', label: '12 hours', long: 'the last 12 hours' },
   { key: '24h', label: '24 hours', long: 'the last 24 hours' },
-  { key: '7d', label: '7 days', long: 'the last 7 days' }
+  { key: '5d', label: '5 days', long: 'the last 5 days' }
 ];
 const METRICS: { key: Metric; label: string; unit: string }[] = [
   { key: 'kw', label: 'Power', unit: 'kW' },
   { key: 'i', label: 'Current', unit: 'A' },
   { key: 'v', label: 'Voltage', unit: 'V' },
   { key: 'pf', label: 'Power factor', unit: '' },
-  { key: 'kwh', label: 'Energy used', unit: 'kWh' }
+  { key: 'kwh', label: 'Energy used', unit: 'Units' }
 ];
 const THD_GROUPS = [
   { label: 'Voltage · phase to neutral', phases: [
@@ -212,13 +212,13 @@ let uidSeq = 0;
 
       <ng-container *ngIf="state === 'ready' && data?.machine">
         <p *ngIf="data.checks?.ct_reversed" class="mexa-note mexa-note-warn">
-          This meter reports negative power and more cumulative Export ({{ fmt(latest?.kwh_export, 1) }} kWh)
-          than Import ({{ fmt(latest?.kwh_import, 1) }} kWh). This can indicate reversed current transformers.
+          This meter reports negative power and more cumulative Export ({{ fmt(latest?.kwh_export, 1) }} Units)
+          than Import ({{ fmt(latest?.kwh_import, 1) }} Units). This can indicate reversed current transformers.
           Ask an electrician to check the wiring and CT configuration.
           Energy used is calculated from accepted changes in the meter's total register.
         </p>
 
-        <app-state *ngIf="!latest" kind="empty" icon="sensors_off" title="No meter reading from this machine in the last 30 days"
+        <app-state *ngIf="!latest" kind="empty" icon="sensors_off" title="No meter reading from this machine in the last 5 days"
           text="Check that the machine and its meter are switched on and connected."></app-state>
 
         <ng-container *ngIf="latest">
@@ -454,7 +454,7 @@ let uidSeq = 0;
       </div>
       <div class="mp-total-content">
         <dt>Total energy</dt>
-        <dd>{{ fmt(latest.kwh_total, 1) }}<small>kWh</small></dd>
+        <dd>{{ fmt(latest.kwh_total, 1) }}<small>Units</small></dd>
       </div>
     </div>
 
@@ -464,7 +464,7 @@ let uidSeq = 0;
       </div>
       <div class="mp-total-content">
         <dt>Import energy</dt>
-        <dd>{{ fmt(latest.kwh_import, 1) }}<small>kWh</small></dd>
+        <dd>{{ fmt(latest.kwh_import, 1) }}<small>Units</small></dd>
       </div>
     </div>
 
@@ -474,7 +474,7 @@ let uidSeq = 0;
       </div>
       <div class="mp-total-content">
         <dt>Export energy</dt>
-        <dd>{{ fmt(latest.kwh_export, 1) }}<small>kWh</small></dd>
+        <dd>{{ fmt(latest.kwh_export, 1) }}<small>Units</small></dd>
       </div>
     </div>
 
@@ -554,8 +554,8 @@ let uidSeq = 0;
         </ng-container>
         <app-state *ngIf="latest && !data.summary?.readings" kind="empty" icon="sensors_off"
           [title]="'No meter reading in ' + rangeLong"
-          [text]="range === '7d' ? 'The latest reading above is older than this range.' : 'Look at a longer range.'"
-          [action]="range === '7d' ? '' : 'Show the last 7 days'" (act)="setRange('7d')"></app-state>
+          [text]="range === '5d' ? 'The latest reading above is older than this range.' : 'Look at a longer range.'"
+          [action]="range === '5d' ? '' : 'Show the last 5 days'" (act)="setRange('5d')"></app-state>
       </ng-container>
     </section>
   `
@@ -684,7 +684,7 @@ export class MeterPanelComponent implements OnInit, OnChanges, OnDestroy {
   get asOf(): string {
     if (this.state === 'error') return 'Readings could not be updated';
     const l = this.latest;
-    if (!l) return this.state === 'loading' ? 'Waiting for the first reading…' : 'No reading in the last 30 days';
+    if (!l) return this.state === 'loading' ? 'Waiting for the first reading…' : 'No reading in the last 5 days';
     const fields = Object.values(l.field_stale || {});
     if (fields.includes(true) && fields.includes(false)) return 'Some readings are older';
     return l.stale ? `No reading since ${dayClock.format(l.at)}` : `As of ${clock.format(l.at)}`;
@@ -748,9 +748,9 @@ export class MeterPanelComponent implements OnInit, OnChanges, OnDestroy {
         { label: 'Lowest', value: fmt(s.pf.min, 2), unit: '' },
         { label: 'Frequency', value: `${fmt(s.hz.min, 2)} – ${fmt(s.hz.max, 2)}`, unit: 'Hz' }];
       case 'kwh': return [
-        { label: 'Energy used', value: fmt(s.kwh_used, 2), unit: 'kWh' },
-        { label: 'Import', value: fmt(s.kwh_import, 2), unit: 'kWh' },
-        { label: 'Export', value: fmt(s.kwh_export, 2), unit: 'kWh' },
+        { label: 'Energy used', value: fmt(s.kwh_used, 2), unit: 'Units' },
+        { label: 'Import', value: fmt(s.kwh_import, 2), unit: 'Units' },
+        { label: 'Export', value: fmt(s.kwh_export, 2), unit: 'Units' },
         { label: 'Reactive', value: fmt(s.kvarh, 2), unit: 'kVArh' },
         { label: 'Apparent', value: fmt(s.kvah, 2), unit: 'kVAh' }];
     }

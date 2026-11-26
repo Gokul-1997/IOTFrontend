@@ -33,13 +33,15 @@
       <input id="enTo" type="date" appReportDate [rdAfter]="f.from" class="mexa-date" [(ngModel)]="f.to" name="to"
              aria-label="To date">
     </span>
-    <!-- Where the cost per kWh is set. Up here so it can be found; it used
+    <!-- Where the cost per Unit is set. Up here so it can be found; it used
          to sit in the machine table's toolbar at the bottom of the page. -->
     <a *ngIf="canEditSettings" routerLink="/energy-tariff" class="mexa-submit">
       <span class="ui-tab-icon material-icons" aria-hidden="true">list_alt</span>
       Tariff &amp; rates</a>
   </div>
 </form>
+
+<p class="mexa-note">Energy consumption is shown in Units. 1 Unit = 1 kWh.</p>
 
 <div class="last-updated-vertical">
   <svg
@@ -95,7 +97,7 @@
         </span>
       </div>
       <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('')" aria-labelledby="enk1-name enk1-value enk1-act"><span id="enk1-value">
-        {{ num(data.kpis.total_kwh) }}<small *ngIf="data.kpis.total_kwh !== null">kWh</small>
+        {{ num(data.kpis.total_kwh) }}<small *ngIf="data.kpis.total_kwh !== null">Units</small>
       </span></button></p><span hidden id="enk1-name">Total energy consumed:</span><span hidden id="enk1-act">show each machine</span>
       <!-- more energy than the day before is the bad direction, so it is red -->
       <p class="mexa-kpi-sub" *ngIf="data.kpis.kwh_vs_yesterday_pct != null">
@@ -119,7 +121,7 @@
       <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('')" aria-labelledby="enk2-name enk2-value enk2-act"><span id="enk2-value">{{ money(data.kpis.total_cost) }}</span></button></p><span hidden id="enk2-name">Total energy cost:</span><span hidden id="enk2-act">show each machine</span>
       <p class="mexa-kpi-sub" *ngIf="data.cost_basis && data.kpis.total_cost != null">Estimate at configured tariffs</p>
       <p class="mexa-kpi-sub" *ngIf="data.coverage.cost_complete === false && data.coverage.reporting > 0">Cost unavailable for the full selection</p>
-      <p class="mexa-kpi-sub" *ngIf="!data.cost_basis && data.rate_per_kwh != null">{{ money(data.rate_per_kwh, 2) }} per kWh</p>
+      <p class="mexa-kpi-sub" *ngIf="!data.cost_basis && data.rate_per_kwh != null">{{ money(data.rate_per_kwh, 2) }} per Unit</p>
       <!-- no tariff: said on the tile it empties, with the way to set one -->
       <p class="mexa-kpi-sub" *ngIf="data.rate_per_kwh == null && !data.coverage.tariff_configured">
         No tariff set<ng-container *ngIf="canEditSettings"> · <a routerLink="/energy-tariff" class="mexa-kpi-link">Set tariff</a></ng-container>
@@ -133,7 +135,7 @@
           <mat-icon>bolt</mat-icon>
         </span>
       </div>
-      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('')" aria-labelledby="enk3-name enk3-value enk3-act"><span id="enk3-value">{{ num(data.kpis.kwh_per_part) }}<small *ngIf="data.kpis.kwh_per_part != null">kWh</small></span></button></p><span hidden id="enk3-name">Energy per part:</span><span hidden id="enk3-act">show each machine</span>
+      <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('')" aria-labelledby="enk3-name enk3-value enk3-act"><span id="enk3-value">{{ num(data.kpis.kwh_per_part) }}<small *ngIf="data.kpis.kwh_per_part != null">Units</small></span></button></p><span hidden id="enk3-name">Energy per part:</span><span hidden id="enk3-act">show each machine</span>
       <p class="mexa-kpi-sub">{{ data.kpis.total_produced | number }} parts</p>
     </div>
 
@@ -171,9 +173,10 @@
           *ngIf="data.kpis.overload_alerts > 1"> · {{ data.kpis.overload_alerts }} machines</span></p>
       </ng-container>
       <ng-template #noOverload>
-        <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('overload')" [attr.aria-pressed]="drill.kind === 'overload'" aria-labelledby="enk7-name enk7-value enk7-act"><span id="enk7-value">0</span></button></p><span hidden id="enk7-name">Overload alerts:</span><span hidden id="enk7-act">show the overloaded machines</span>
+        <p class="mexa-kpi-value"><button type="button" class="mexa-kpi-open" (click)="openTile('overload')" [attr.aria-pressed]="drill.kind === 'overload'" aria-labelledby="enk7-name enk7-value enk7-act"><span id="enk7-value">{{ data.kpis.overload_alerts == null ? '--' : '0' }}</span></button></p><span hidden id="enk7-name">Overload alerts:</span><span hidden id="enk7-act">show the overloaded machines</span>
         <!-- 0 with no limit set is not a clean bill of health -->
-        <p class="mexa-kpi-sub" *ngIf="!overloadLimitSet">No limit set</p>
+        <p class="mexa-kpi-sub" *ngIf="data.kpis.overload_alerts == null">Valid readings unavailable</p>
+        <p class="mexa-kpi-sub" *ngIf="data.kpis.overload_alerts != null && !overloadLimitSet">No limit set</p>
       </ng-template>
     </div>
   </div>
@@ -203,7 +206,7 @@
   <div class="mexa-grid lg:grid-cols-3">
 
     <section class="mexa-card lg:col-span-2">
-      <h2 class="mexa-card-title mexa-card-title-left">Energy Consumption Over Time (kWh)</h2>
+      <h2 class="mexa-card-title mexa-card-title-left">Energy Consumption Over Time (Units)</h2>
       <apx-chart *ngIf="trendSeries.length"
         [series]="trendSeries" [chart]="trendChart.chart" [stroke]="trendChart.stroke"
         [fill]="trendChart.fill" [colors]="trendChart.colors" [dataLabels]="trendChart.dataLabels"
@@ -226,7 +229,7 @@
             <span class="mexa-key-swatch" [style.--swatch]="donutColour(i)" aria-hidden="true"></span>
             <span>
               <span class="mexa-key-label">{{ s.shift_name }}</span>
-              <span class="mexa-key-value">{{ sharePct(s.kwh, shiftTotal) }} ({{ num(s.kwh) }} kWh)</span>
+              <span class="mexa-key-value">{{ sharePct(s.kwh, shiftTotal) }} ({{ num(s.kwh) }} Units)</span>
             </span>
           </li>
         </ul>
@@ -242,7 +245,7 @@
   <div class="mexa-grid lg:grid-cols-2">
 
     <section class="mexa-card" aria-labelledby="enMachTitle">
-      <h2 id="enMachTitle" class="mexa-card-title mexa-card-title-left">High Energy Consumption by Machine (kWh)</h2>
+      <h2 id="enMachTitle" class="mexa-card-title mexa-card-title-left">High Energy Consumption by Machine (Units)</h2>
       <apx-chart *ngIf="machineSeries.length"
         [series]="machineSeries" [chart]="machineChart.chart" [plotOptions]="machineChart.plotOptions"
         [colors]="machineChart.colors" [dataLabels]="machineChart.dataLabels"
@@ -255,7 +258,7 @@
     <section class="mexa-card" aria-labelledby="enCostTitle">
       <div class="mexa-card-head">
         <h2 id="enCostTitle" class="mexa-card-title mexa-card-title-left">
-          {{ costTrendIsCost ? 'Energy Cost Trend' : 'Energy Trend (kWh)' }}
+          {{ costTrendIsCost ? 'Energy Cost Trend' : 'Energy Trend (Units)' }}
           <app-metric-help topic="energy_cost_trend"></app-metric-help>
         </h2>
         <span class="mexa-seg" role="group" aria-label="Energy trend: group by">
@@ -325,7 +328,7 @@
             <th class="qty" scope="col" mexaCol="energy">Energy</th>
             <th class="qty col-lg" scope="col" mexaCol="run">Operating Time</th>
             <th class="qty" scope="col" mexaCol="produced">Production</th>
-            <th class="qty col-md" scope="col" mexaCol="kwh_per_part">kWh / Part</th>
+            <th class="qty col-md" scope="col" mexaCol="kwh_per_part">Units / Part</th>
             <th class="qty" scope="col" mexaCol="cost">Cost ({{ data.currency }})</th>
             <th class="qty col-md" scope="col" mexaCol="peak">Peak kW</th>
             <th scope="col" mexaCol="status">Status</th>

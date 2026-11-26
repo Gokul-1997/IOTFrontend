@@ -182,7 +182,7 @@ test.describe('Energy: read at a glance', () => {
     await openEnergy(page, energy());
     const tile = (name: RegExp) => page.locator('.mexa-kpi').filter({ hasText: name });
     await expect(tile(/Total Energy\s*Cost/).locator('.mexa-kpi-value')).toHaveText('₹13,672');
-    await expect(tile(/Total Energy\s*Cost/)).toContainText('₹10.95 per kWh');
+    await expect(tile(/Total Energy\s*Cost/)).toContainText('₹10.95 per Unit');
     await expect(tile(/Energy\s*per Part/)).toContainText('12,560 parts');
     await expect(tile(/Average\s*Voltage/)).toContainText('Not reported');
     await expect(tile(/Overload/)).toContainText('No limit set');
@@ -217,7 +217,7 @@ test.describe('Energy: read at a glance', () => {
     const cost = page.locator('.mexa-kpi').filter({ hasText: /Total Energy\s*Cost/ });
     await expect(cost.locator('.mexa-kpi-value')).toHaveText('--');
     await expect(cost.getByRole('link', { name: 'Set tariff' })).toHaveAttribute('href', '/energy-tariff');
-    await expect(page.getByRole('heading', { name: 'Energy Trend (kWh)' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Energy Trend (Units)' })).toBeVisible();
     await expect(page.locator('.mexa-note')).toHaveCount(0);
   });
 

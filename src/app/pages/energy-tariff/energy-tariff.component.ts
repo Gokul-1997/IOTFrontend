@@ -23,7 +23,7 @@ const toRate = (v: any): number | null =>
 /**
  * Tariff & Rates — every cost the platform prices with, on one page:
  *
- *   - the electricity tariff: ₹ per unit (kWh), company-wide or per machine,
+ *   - the electricity tariff: ₹ per Unit, company-wide or per machine,
  *     and the overload threshold;
  *   - each machine's hour rate: ₹ per hour, which prices idle and alarm time
  *     on the Downtime and OEE screens (machines.hour_rate).
@@ -54,7 +54,7 @@ const toRate = (v: any): number | null =>
   <section class="mexa-card p-4" aria-labelledby="tfListTitle">
     <div class="tf-head">
       <div>
-        <h2 id="tfListTitle" class="mexa-card-title mexa-card-title-left">Electricity tariff — ₹ per unit (kWh)</h2>
+        <h2 id="tfListTitle" class="mexa-card-title mexa-card-title-left">Electricity tariff — ₹ per Unit</h2>
         <p class="mexa-card-hint">
           The EB rate. The <strong>Company default</strong> prices every machine; a row for one machine overrides it.
           Cost appears on the Energy and Factory dashboards once a price is set.
@@ -68,7 +68,7 @@ const toRate = (v: any): number | null =>
       <table class="mexa-table" [mexaTable]="tariffTable">
         <caption class="sr-only">Configured energy tariffs and limits</caption>
         <thead>
-          <tr><th scope="col" mexaCol="scope">Scope</th><th scope="col" class="qty" mexaCol="cost_per_kwh">Cost per kWh</th>
+          <tr><th scope="col" mexaCol="scope">Scope</th><th scope="col" class="qty" mexaCol="cost_per_kwh">Cost per Unit</th>
               <th scope="col" class="col-md" mexaCol="currency">Currency</th>
               <th scope="col" class="qty" mexaCol="overload_kw">Overload above</th><th scope="col" class="actions"><span class="sr-only">Actions</span></th></tr>
         </thead>
@@ -85,7 +85,7 @@ const toRate = (v: any): number | null =>
           </tr>
           <tr *ngIf="!settings.length">
             <td colspan="5" class="mexa-empty">
-              <app-state title="No tariff set yet" text="Energy shows in kWh until one is. Add one with “Add tariff”."></app-state>
+              <app-state title="No tariff set yet" text="Energy shows in Units until one is. Add one with “Add tariff”."></app-state>
             </td>
           </tr>
         </tbody>
@@ -139,7 +139,7 @@ const toRate = (v: any): number | null =>
       <div class="ui-dialog-header">
         <div>
           <h2 id="tfFormTitle" class="ui-dialog-title">{{ editing ? 'Edit tariff' : 'Add tariff' }}</h2>
-          <p class="ui-dialog-subtitle">₹ per unit (kWh). The company default prices every machine; a machine's own tariff overrides it.</p>
+          <p class="ui-dialog-subtitle">₹ per Unit. The company default prices every machine; a machine's own tariff overrides it.</p>
         </div>
         <button type="button" class="ui-close" (click)="closeTariff()" aria-label="Close without saving">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5" aria-hidden="true">
@@ -162,7 +162,7 @@ const toRate = (v: any): number | null =>
               <p *ngIf="editing" id="tfMachineHint" class="ui-hint">To price another machine, add a tariff for it.</p>
             </div>
             <div>
-              <label for="tfCost" class="ui-label">Cost per kWh</label>
+              <label for="tfCost" class="ui-label">Cost per Unit</label>
               <input id="tfCost" type="number" min="0" step="0.01" class="ui-input" [(ngModel)]="form.cost_per_kwh" name="tfCost"
                      [class.is-invalid]="costError" [attr.aria-invalid]="costError ? true : null"
                      [attr.aria-describedby]="error ? 'tfError' : null">
@@ -181,7 +181,7 @@ const toRate = (v: any): number | null =>
         </div>
 
         <div class="ui-dialog-footer is-split">
-          <p class="ui-hint !mt-0">A cost per kWh, an overload limit, or both.</p>
+          <p class="ui-hint !mt-0">A cost per Unit, an overload limit, or both.</p>
           <div class="flex items-center gap-2">
             <button type="button" class="ui-btn ui-btn-ghost" (click)="closeTariff()" [disabled]="saving">Cancel</button>
             <button type="submit" class="ui-btn ui-btn-primary" [disabled]="saving">
@@ -428,7 +428,7 @@ export class EnergyTariffComponent implements OnInit, OnDestroy {
     this.costError = cost !== null && cost !== '' && Number(cost) < 0;
     this.overloadError = over !== null && over !== '' && Number(over) < 0;
     if ((cost === null || cost === '') && (over === null || over === '')) {
-      this.error = 'Enter a cost per kWh, an overload limit, or both.';
+      this.error = 'Enter a cost per Unit, an overload limit, or both.';
       this.costError = true;
       return false;
     }
