@@ -196,7 +196,7 @@ h4 {
 }
 
 .dark .nav-btn {
-  background: #305389;
+  background: #3b4893;
   color: #AEAEAE;
   // border: 1px solid #2D2D2D;
 }
@@ -211,7 +211,7 @@ h4 {
 }
 
 .dark .nav-btn:hover {
-  background: #1d3a66;
+  background: #4151b1;
 }
 
 .dark .nav-btn:hover {
@@ -443,7 +443,7 @@ h4 {
   background-color: #EAEDFF
 }
 .dark .menu-default {
-    background-color:#1b3968;
+    background-color:rgb(50 49 116);
 }
 /* Machine card (Live Dashboard, machine page): a white card lifted off the
    STM field, its state shown by a coloured stripe along the top — the same
@@ -464,7 +464,7 @@ h4 {
 
 
 .dark .border-big {
-  background-color: #0e264b !important;
+  background-color: rgb(39 38 100) !important ;
 }
 
 /* Overlay */
@@ -2507,4 +2507,7 @@ transition: transform 0.3s ease;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s, box-shadow 0.2s;
+}
+.dark .mexa-tablewrap {
+    border: 1px solid #4c4b8b;
 }
