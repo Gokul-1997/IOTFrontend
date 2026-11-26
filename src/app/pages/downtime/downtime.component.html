@@ -123,12 +123,13 @@
           <th scope="col" mexaCol="name">Name</th>
           <th scope="col" mexaCol="category">Category</th>
           <th scope="col" class="col-md" mexaCol="source">Source</th>
+          <th *ngIf="showReasonActions" scope="col">Actions</th>
         </tr>
       </thead>
-      <tbody *ngIf="reasonsState === 'loading'" appSkeletonRows [cols]="4" [rows]="6" label="Loading reason codes…"></tbody>
+      <tbody *ngIf="reasonsState === 'loading'" appSkeletonRows [cols]="reasonColumnCount" [rows]="6" label="Loading reason codes…"></tbody>
       <tbody *ngIf="reasonsState !== 'loading'">
         <tr *ngIf="reasonsState === 'error'">
-          <td colspan="4" class="mexa-empty">
+          <td [attr.colspan]="reasonColumnCount" class="mexa-empty">
             <app-state kind="error" title="Could not load the reason codes" text="Check the connection, then try again."
                        action="Try again" (act)="loadReasons()"></app-state>
           </td>
@@ -139,14 +140,27 @@
             <td><span class="clip" [title]="r.name">{{ r.name }}</span></td>
             <td><span class="mexa-badge" [ngClass]="categoryClass(r.category)">{{ categoryLabel(r.category) }}</span></td>
             <td class="col-md muted">{{ r.company_id ? 'Your company' : 'Built-in' }}</td>
+            <td *ngIf="showReasonActions" class="whitespace-nowrap">
+              <div class="inline-flex items-center gap-1">
+                <button *ngIf="canManageReason(r, 'edit')" type="button" class="ux-icon-btn" (click)="openReasonForm(r)"
+                  [attr.aria-label]="'Edit reason code ' + r.code" title="Edit reason code">
+                  <span class="material-icons" aria-hidden="true">edit</span>
+                </button>
+                <button *ngIf="canManageReason(r, 'delete')" type="button" class="ux-icon-btn text-red-700" (click)="confirmDeleteReason(r)"
+                  [attr.aria-label]="'Delete reason code ' + r.code" title="Delete reason code">
+                  <span class="material-icons" aria-hidden="true">delete</span>
+                </button>
+                <span *ngIf="r.company_id == null" class="muted text-sm">Read-only</span>
+              </div>
+            </td>
           </tr>
           <tr *ngIf="!reasons.length">
-            <td colspan="4" class="mexa-empty">
+            <td [attr.colspan]="reasonColumnCount" class="mexa-empty">
               <app-state kind="empty" title="No reason codes yet" text="Add one with “Add reason code” to classify downtime."></app-state>
             </td>
           </tr>
           <tr *ngIf="reasons.length && !shownReasons.length">
-            <td colspan="4" class="mexa-empty">
+            <td [attr.colspan]="reasonColumnCount" class="mexa-empty">
               <app-state kind="empty" icon="search_off" [title]="reasonSearch ? 'No reason code matches “' + reasonSearch + '”' : 'No reason codes match these filters'"
                          text="Search by code or name." action="Clear search and filters" (act)="reasonSearch = ''; reasonTable.reset()"></app-state>
             </td>
@@ -207,10 +221,10 @@
 
     <div class="ui-dialog-header">
       <div>
-        <h2 id="rcTitle" class="ui-dialog-title">Add reason code</h2>
+        <h2 id="rcTitle" class="ui-dialog-title">{{ editingReasonId === null ? 'Add reason code' : 'Edit reason code' }}</h2>
         <p class="ui-dialog-subtitle">A reason people pick when they record why a machine stopped.</p>
       </div>
-      <button type="button" class="ui-close" (click)="closeReasonForm()" aria-label="Close without saving">
+      <button type="button" class="ui-close" (click)="closeReasonForm()" [disabled]="reasonSaving" aria-label="Close without saving">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
              class="w-5 h-5" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -225,18 +239,19 @@
         <div class="ui-field">
           <label class="ui-label" for="rc-code">Code<span class="ui-req" aria-hidden="true">*</span></label>
           <input id="rc-code" name="code" [(ngModel)]="reasonForm.code" placeholder="e.g. BRK" class="ui-input"
-                 maxlength="20" autocomplete="off" aria-required="true"
+                 maxlength="20" autocomplete="off" aria-required="true" [disabled]="reasonSaving"
                  [class.is-invalid]="reasonMissing.code"
                  [attr.aria-invalid]="reasonMissing.code ? true : null"
                  [attr.aria-describedby]="reasonMissing.code ? 'rcCodeErr' : 'rcCodeHint'" />
           <p *ngIf="!reasonMissing.code" id="rcCodeHint" class="ui-hint">Saved in capitals, up to 20 characters.</p>
+          <p *ngIf="editingReasonId !== null" class="ui-hint">If you change the code, update the machine's reason code to match.</p>
           <p *ngIf="reasonMissing.code" id="rcCodeErr" class="ui-error" role="alert">Enter a code.</p>
         </div>
 
         <div class="ui-field">
           <label class="ui-label" for="rc-name">Name<span class="ui-req" aria-hidden="true">*</span></label>
           <input id="rc-name" name="name" [(ngModel)]="reasonForm.name" placeholder="e.g. Breakdown" class="ui-input"
-                 maxlength="100" autocomplete="off" aria-required="true"
+                 maxlength="100" autocomplete="off" aria-required="true" [disabled]="reasonSaving"
                  [class.is-invalid]="reasonMissing.name"
                  [attr.aria-invalid]="reasonMissing.name ? true : null"
                  [attr.aria-describedby]="reasonMissing.name ? 'rcNameErr' : null" />
@@ -245,7 +260,7 @@
 
         <div class="ui-field">
           <label class="ui-label" for="rc-cat">Category</label>
-          <select id="rc-cat" name="category" [(ngModel)]="reasonForm.category" class="ui-input">
+          <select id="rc-cat" name="category" [(ngModel)]="reasonForm.category" class="ui-input" [disabled]="reasonSaving">
             <option *ngFor="let cat of categories" [value]="cat">{{ categoryLabel(cat) }}</option>
           </select>
         </div>
@@ -257,10 +272,31 @@
           <button type="button" class="ui-btn ui-btn-ghost" (click)="closeReasonForm()" [disabled]="reasonSaving">Cancel</button>
           <button type="submit" class="ui-btn ui-btn-primary" [disabled]="reasonSaving">
             <span *ngIf="reasonSaving" class="ui-spinner" aria-hidden="true"></span>
-            {{ reasonSaving ? 'Saving…' : 'Add reason code' }}
+            {{ reasonSaving ? 'Saving…' : (editingReasonId === null ? 'Add reason code' : 'Save changes') }}
           </button>
         </div>
       </div>
     </form>
+  </div>
+</div>
+
+<div *ngIf="deleteTarget" class="ui-overlay">
+  <div class="ui-dialog ui-dialog-sm" role="alertdialog" aria-modal="true" aria-labelledby="rcDeleteTitle" aria-describedby="rcDeleteBody">
+    <div class="ui-dialog-header">
+      <div>
+        <h2 id="rcDeleteTitle" class="ui-dialog-title">Delete reason code {{ deleteTarget.code }}?</h2>
+        <p id="rcDeleteBody" class="ui-dialog-subtitle">{{ deleteTarget.name }}</p>
+      </div>
+    </div>
+    <div class="ui-dialog-body">
+      <p>This removes your company's reason from new downtime selections and machine-code matches. Existing downtime history is kept.</p>
+      <div *ngIf="deleteError" class="ui-alert ui-alert-error mt-3" role="alert">{{ deleteError }}</div>
+    </div>
+    <div class="ui-dialog-footer">
+      <button type="button" class="ui-btn ui-btn-ghost" (click)="cancelDeleteReason()" [disabled]="deletingReason">Cancel</button>
+      <button type="button" class="ui-btn ui-btn-danger" (click)="deleteReason()" [disabled]="deletingReason">
+        {{ deletingReason ? 'Deleting…' : 'Delete reason code' }}
+      </button>
+    </div>
   </div>
 </div>

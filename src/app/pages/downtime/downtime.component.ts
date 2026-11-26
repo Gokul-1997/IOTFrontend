@@ -59,10 +59,14 @@ export class DowntimeComponent implements OnInit, OnDestroy {
   ]);
   /* Add reason code: a dialog, like every other form in the app (it used to open in the page) */
   showReasonForm = false;
+  editingReasonId: number | null = null;
   reasonForm: any = { code: '', name: '', category: 'UNPLANNED' };
   reasonMissing = { code: false, name: false };
   reasonSaving = false;
   reasonError = '';
+  deleteTarget: any = null;
+  deletingReason = false;
+  deleteError = '';
   filter: any = { from_date: '', to_date: '', page: 1, limit: 20 };
 
   readonly categories = ['UNPLANNED', 'PLANNED', 'QUALITY', 'CHANGEOVER'];
@@ -148,20 +152,39 @@ export class DowntimeComponent implements OnInit, OnDestroy {
     if (tab === 'summary') this.loadSummary();
   }
 
-  openReasonForm() {
-    this.reasonForm = { code: '', name: '', category: 'UNPLANNED' };
+  get showReasonActions(): boolean {
+    return this.auth.hasAction('downtime', 'edit') || this.auth.hasAction('downtime', 'delete');
+  }
+  get reasonColumnCount(): number { return this.showReasonActions ? 5 : 4; }
+
+  canManageReason(reason: any, action: 'edit' | 'delete'): boolean {
+    const companyId = this.auth.getCompanyId();
+    return companyId != null && Number(companyId) > 0 && reason?.company_id != null && Number(reason.company_id) === Number(companyId) &&
+      this.auth.hasAction('downtime', action);
+  }
+
+  openReasonForm(reason?: any) {
+    if (this.reasonSaving || this.deletingReason) return;
+    if (reason ? !this.canManageReason(reason, 'edit') : !this.auth.hasAction('downtime', 'create')) return;
+    this.editingReasonId = reason ? reason.id : null;
+    this.reasonForm = reason ? { code: reason.code, name: reason.name, category: reason.category } :
+      { code: '', name: '', category: 'UNPLANNED' };
     this.reasonMissing = { code: false, name: false };
     this.reasonError = '';
     this.showReasonForm = true;
   }
 
   closeReasonForm() {
+    if (this.reasonSaving) return;
     this.showReasonForm = false;
+    this.editingReasonId = null;
     this.reasonError = '';
   }
 
   saveReason() {
     if (this.reasonSaving) return;
+    const id = this.editingReasonId;
+    if (!this.auth.hasAction('downtime', id === null ? 'create' : 'edit')) return;
     const code = String(this.reasonForm.code || '').trim();
     const name = String(this.reasonForm.name || '').trim();
     this.reasonMissing = { code: !code, name: !name };
@@ -169,18 +192,54 @@ export class DowntimeComponent implements OnInit, OnDestroy {
 
     this.reasonSaving = true;
     this.reasonError = '';
-    this.svc.createReason({ ...this.reasonForm, code, name }).subscribe({
+    const payload = { code, name, category: this.reasonForm.category };
+    const save = id === null ? this.svc.createReason(payload) : this.svc.updateReason(id, payload);
+    save.subscribe({
       next: () => {
         this.reasonSaving = false;
         this.showReasonForm = false;
-        this.toast.success(`Reason code ${code.toUpperCase()} added`);
+        this.editingReasonId = null;
+        this.toast.success(`Reason code ${code.toUpperCase()} ${id === null ? 'added' : 'updated'}`);
         this.loadReasons();
+        if (id !== null) { this.loadEvents(); this.summaryState = 'loading'; }
       },
       /* Leaving the dialog open with the typed values intact is the honest
          outcome of a failed save; closing it would imply success. */
       error: err => {
         this.reasonSaving = false;
-        this.reasonError = err?.error?.message || 'Could not add the reason code. Try again.';
+        this.reasonError = err?.error?.message || `Could not ${id === null ? 'add' : 'update'} the reason code. Try again.`;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  confirmDeleteReason(reason: any) {
+    if (!this.canManageReason(reason, 'delete') || this.reasonSaving || this.deletingReason) return;
+    this.deleteTarget = reason;
+    this.deleteError = '';
+  }
+
+  cancelDeleteReason() {
+    if (this.deletingReason) return;
+    this.deleteTarget = null;
+    this.deleteError = '';
+  }
+
+  deleteReason() {
+    if (!this.deleteTarget || this.deletingReason || !this.canManageReason(this.deleteTarget, 'delete')) return;
+    const target = this.deleteTarget;
+    this.deletingReason = true;
+    this.deleteError = '';
+    this.svc.deleteReason(target.id).subscribe({
+      next: () => {
+        this.deletingReason = false;
+        this.deleteTarget = null;
+        this.toast.success(`Reason code ${target.code} deleted`);
+        this.loadReasons();
+      },
+      error: err => {
+        this.deletingReason = false;
+        this.deleteError = err?.error?.message || 'Could not delete this reason code. Try again.';
         this.cdr.markForCheck();
       }
     });
