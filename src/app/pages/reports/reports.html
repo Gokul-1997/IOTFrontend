@@ -291,7 +291,7 @@
       text="Nothing was recorded for this date range, machine, operator or shift. Choose other filters."></app-state>
 
     <!-- Data table -->
-    <div *ngIf="!loading && rows.length > 0 && selectedCount > 0" class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Report table — scroll to see every row and column">
+    <div *ngIf="!loading && rows.length > 0 && selectedCount > 0" class="is-scroll" tabindex="0" role="region" aria-label="Report table — scroll to see every row and column">
      <div class="table-wrap">
       <table class="mexa-table is-dense is-striped" [mexaTable]="tbl">
         <thead>

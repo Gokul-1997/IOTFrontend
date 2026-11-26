@@ -147,6 +147,7 @@
         <button type="button" [attr.aria-pressed]="filter === 'backups'" (click)="setFilter('backups')">Backups</button>
       </div>
     </div>
+    <div class="p-4">
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Program files">
       <table class="mexa-table" [mexaTable]="fileTable">
         <caption class="sr-only">Files of {{ m.machine_serial_no }}, newest first</caption>
@@ -214,6 +215,7 @@
           </ng-container>
         </tbody>
       </table>
+    </div>
     </div>
     <app-mexa-pager *ngIf="!loadingFiles && !filesError && pagination.total > 0" [page]="pagination.page" [totalPages]="pagination.totalPages"
                     [total]="pagination.total" [shown]="files.length" [limit]="limit" [sizes]="[20, 50, 100]"

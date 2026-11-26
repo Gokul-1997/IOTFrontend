@@ -42,7 +42,7 @@
 <p *ngIf="error" class="mexa-note mexa-note-bad" role="alert">{{ error }}</p>
 
 <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="OEE records table — scroll sideways to see every column">
-  <div class="table-wrap">
+
     <table class="mexa-table is-dense is-striped" [mexaTable]="tbl">
       <caption class="sr-only">OEE records by machine and shift</caption>
       <thead>
@@ -62,7 +62,7 @@
         </tr>
       </tbody>
     </table>
-  </div>
+
 </div>
 
 <!-- The same footer as every table; the API pages it -->

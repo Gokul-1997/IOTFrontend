@@ -76,14 +76,15 @@
 <!-- Tickets -->
 <div *ngIf="activeTab === 'tickets'" role="tabpanel" class="">
   <div class="mexa-card mexa-card-flush">
-    <div class="mexa-cardbar justify-end">
+    <div class="flex justify-end p-4">
       <div class="mexa-seg" role="group" aria-label="Which tickets">
         <button type="button" [attr.aria-pressed]="ticketFilter === 'open'" (click)="setTicketFilter('open')">Open</button>
         <button type="button" [attr.aria-pressed]="ticketFilter === 'all'" (click)="setTicketFilter('all')">All</button>
       </div>
     </div>
+    <div class="px-4 pb-4">
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Tickets">
-      <div class="table-wrap">
+      
       <table class="mexa-table" [mexaTable]="ticketTable">
         <thead>
           <tr>
@@ -117,7 +118,8 @@
           </ng-template>
         </tbody>
       </table>
-      </div>
+      
+    </div>
     </div>
     <app-mexa-pager *ngIf="ticketPagination.total > ticketLimit || ticketPage > 1" [page]="ticketPage" [totalPages]="ticketPagination.totalPages || 1"
                     [total]="ticketPagination.total || tickets.length" [shown]="tickets.length" [limit]="ticketLimit" [sizes]="[20, 50, 100]"
@@ -238,8 +240,9 @@
   <!-- Schedules -->
 <div *ngIf="activeTab === 'schedules'" role="tabpanel">
   <div class="mexa-card mexa-card-flush">
+    <div class="p-4">
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Schedules">
-      <div class="table-wrap">
+      
       <table class="mexa-table" [mexaTable]="scheduleTable">
         <thead>
           <tr>
@@ -275,7 +278,8 @@
           </ng-template>
         </tbody>
       </table>
-      </div>
+      
+    </div>
     </div>
   </div>
 </div>
@@ -283,8 +287,9 @@
 <!-- Logs -->
 <div *ngIf="activeTab === 'logs'" role="tabpanel">
   <div class="mexa-card mexa-card-flush">
+    <div class="p-4">
     <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Maintenance logs">
-      <div class="table-wrap">
+      
       <table class="mexa-table" [mexaTable]="logTable">
         <thead>
           <tr>
@@ -317,15 +322,17 @@
           </ng-template>
         </tbody>
       </table>
-      </div>
+     
+    </div>
     </div>
   </div>
 </div>
 
 <!-- MTTR -->
 <div *ngIf="activeTab === 'mttr'" class="mexa-card mexa-card-flush" role="tabpanel">
+  <div class="p-4">
   <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="MTTR by machine">
-    <div class="table-wrap">
+    
     <table class="mexa-table" [mexaTable]="mttrTable">
       <thead>
         <tr>
@@ -354,7 +361,8 @@
         </ng-template>
       </tbody>
     </table>
-    </div>
+ 
+  </div>
   </div>
 </div>
 

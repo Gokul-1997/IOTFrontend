@@ -244,7 +244,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   color: #fff;
   border: 0;
   border-radius: 9px;
-  padding:0.45rem 1.4rem;
+  padding:0.3rem 0.6rem;
   font: inherit;
   font-size: .92rem;
   font-weight: 700;
@@ -279,6 +279,7 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   background: #384BCA!important;
   color: #ffffff;
   padding: 1.5rem;
+  border: 0;
 }
 // .mexa-kpi.oee .mexa-kpi-icon,
 // .mexa-kpi.avail .mexa-kpi-icon,
@@ -293,19 +294,23 @@ body { background: #2b3990 var(--stm-field) no-repeat; background-size: 100% 100
   background: #e56a5a!important;
   color: #ffffff;
   padding: 1.5rem;
+  border: 0;
 }
 .mexa-kpi.perf{
   background: #e1a93d!important;
   color: #ffffff;
   padding: 1.5rem;
+  border: 0;
 }
 .mexa-kpi.qual{
   background: #26A0FC!important;
   color: #ffffff;
   padding: 1.5rem;
+  border: 0;
 }
 .rep-kpis .mexa-kpi.repcard {
   color: #fff;
+  border: 0;
   &:nth-child(1) { background: #1e3a8a !important; }
   &:nth-child(2) { background: #0B7CAF !important; }
   &:nth-child(3) { background: #9162AE !important; }

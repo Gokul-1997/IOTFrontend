@@ -20,8 +20,7 @@ app-alarms {
   }
 
   .al-seg {
-    display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px;
-    border: 1px solid var(--mexa-rule); border-radius: 10px; background: var(--mexa-row-alt);
+    display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 10px; background: var(--mexa-row-alt);
   }
   .al-seg button {
     display: inline-flex; align-items: center; gap: .4rem;

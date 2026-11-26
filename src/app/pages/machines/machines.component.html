@@ -31,7 +31,7 @@
         </button>
       </div>
       <!-- New Machine — only if user has create permission -->
-      <button *ngIf="auth.hasAction('machines', 'create')" class="btn-primary" (click)="openCreate()">
+      <button *ngIf="auth.hasAction('machines', 'create')" class="mexa-submit" (click)="openCreate()">
         <mat-icon>add</mat-icon>
         New Machine
       </button>

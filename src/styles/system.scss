@@ -189,6 +189,10 @@ html, body { font-family: var(--font-ui); }
   -webkit-overflow-scrolling: touch;
   border-radius: 10px;
 }
+
+.mexa-tablewrap{
+  border: 1px solid #d3d3d3;
+}
 :is(.mexa-tablewrap, .table-wrapper)[data-scroll-x="right"] {
   -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
   mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);

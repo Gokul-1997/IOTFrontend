@@ -49,6 +49,7 @@
     </p>
   </div>
 
+  <div class="p-4">
   <div class="mexa-tablewrap is-scroll" tabindex="0" role="region" aria-label="Alarms">
     <table class="mexa-table al-table" [mexaTable]="tbl">
       <caption class="sr-only">Machine alarms, those still on first, then newest</caption>
@@ -148,7 +149,7 @@
       </tbody>
     </table>
   </div>
-
+</div>
   <app-mexa-pager *ngIf="pagination.total > filter.limit || filter.page > 1" [page]="filter.page" [totalPages]="pagination.totalPages || 1"
                   [total]="pagination.total || alarms.length" [shown]="alarms.length" [limit]="filter.limit" [sizes]="[20, 50, 100]"
                   (pageChange)="filter.page = $event; load()" (limitChange)="filter.limit = $event; filter.page = 1; load()"></app-mexa-pager>

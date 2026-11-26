@@ -59,7 +59,7 @@ import { TableState } from '../../shared/table/table-state';
   <p *ngIf="errorMsg" class="mexa-note mexa-note-bad" role="alert">{{ errorMsg }}</p>
 
   <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Machine OEE table — scroll sideways to see every column">
-  <div class="table-wrap">
+
     <table class="mexa-table is-dense is-striped" [mexaTable]="tbl">
       <caption class="sr-only">OEE by machine</caption>
       <thead>
@@ -91,7 +91,7 @@ import { TableState } from '../../shared/table/table-state';
         </tr>
       </tbody>
     </table>
-    </div>
+  
   </div>
   <app-mexa-pager [page]="page" [totalPages]="totalPages" [total]="filtered.length" [shown]="pageRows.length"
                   [limit]="limit" (pageChange)="page = $event" (limitChange)="limit = $event; page = 1"></app-mexa-pager>

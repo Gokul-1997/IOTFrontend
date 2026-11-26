@@ -16,7 +16,7 @@
       <h1 class="text-xl font-bold">Jobs</h1>
     </div>
     <div class="toolbar-right flex gap-2 items-center">
-      <button class="btn-primary" (click)="openCreate()" *ngIf="auth.hasAction('job', 'create')">
+      <button class="mexa-submit" (click)="openCreate()" *ngIf="auth.hasAction('job', 'create')">
         <mat-icon>add</mat-icon>
         Create Job
       </button>
@@ -73,7 +73,7 @@
          : 'Jobs that have already finished, newest first.' }}
     </p>
   <!-- ACTIVE JOBS TABLE -->
-  <div *ngIf="tab === 'active'" class="table-card mat-elevation-z4">
+  <div *ngIf="tab === 'active'" class="mat-elevation-z4">
 
     <app-state *ngIf="activeState === 'loading'" kind="loading" title="Loading the running jobs…"></app-state>
     <app-state *ngIf="activeState === 'error'" kind="error" title="Could not load the running jobs"
@@ -81,7 +81,7 @@
     <app-state *ngIf="activeState === 'ready' && activeSource.data.length === 0 && !activeTable.anyFilter" icon="work_outline"
                title="No jobs running" text="Start a job to assign a part to a machine."></app-state>
 
-    <div *ngIf="activeState === 'ready' && (activeSource.data.length > 0 || activeTable.anyFilter)" class="table-wrapper" tabindex="0" role="region" aria-label="Running jobs">
+    <div *ngIf="activeState === 'ready' && (activeSource.data.length > 0 || activeTable.anyFilter)" class="mexa-tablewrap" tabindex="0" role="region" aria-label="Running jobs">
     <table mat-table [dataSource]="activeSource" class="w-full" [mexaTable]="activeTable">
 
       <ng-container matColumnDef="machine">
@@ -132,7 +132,7 @@
   </div>
 
   <!-- HISTORY TABLE -->
-  <div *ngIf="tab === 'history'" class="table-card mat-elevation-z4">
+  <div *ngIf="tab === 'history'" class="mat-elevation-z4">
 
     <app-state *ngIf="historyState === 'loading'" kind="loading" title="Loading the job history…"></app-state>
     <app-state *ngIf="historyState === 'error'" kind="error" title="Could not load the job history"
@@ -140,7 +140,7 @@
     <app-state *ngIf="historyState === 'ready' && historySource.data.length === 0 && !historyTable.anyFilter" icon="history"
                title="No finished jobs yet" text="Jobs appear here once they are stopped."></app-state>
 
-    <div *ngIf="historyState === 'ready' && (historySource.data.length > 0 || historyTable.anyFilter)" class="table-wrapper" tabindex="0" role="region" aria-label="Job history">
+    <div *ngIf="historyState === 'ready' && (historySource.data.length > 0 || historyTable.anyFilter)" class="mexa-tablewrap" tabindex="0" role="region" aria-label="Job history">
     <table mat-table [dataSource]="historySource" class="w-full" [mexaTable]="historyTable">
 
       <ng-container matColumnDef="machine">

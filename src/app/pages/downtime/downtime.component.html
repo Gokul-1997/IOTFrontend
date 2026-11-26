@@ -49,8 +49,10 @@
 
 <!-- Events -->
 <div *ngIf="activeTab === 'events'" class="mexa-card mexa-card-flush" role="tabpanel">
+  <div class="p-4">
   <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Downtime events">
-    <div class="table-wrap">
+    
+
     <table class="mexa-table" [mexaTable]="eventTable">
       <caption class="sr-only">Downtime events, newest first</caption>
       <thead>
@@ -92,6 +94,7 @@
         </ng-container>
       </tbody>
     </table>
+
     </div>
   </div>
   <app-mexa-pager *ngIf="!loading && !eventsError" [page]="filter.page" [totalPages]="pagination.totalPages || 1"
@@ -109,9 +112,9 @@
     </label>
     <span class="tbl-count" aria-live="polite">{{ shownReasons.length }} of {{ reasons.length }} reason codes</span>
   </div>
-
+<div class="px-4 pb-4 pt-1">
   <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Reason codes">
-    <div class="table-wrap">
+    
     <table class="mexa-table is-compact" [mexaTable]="reasonTable">
       <caption class="sr-only">Downtime reason codes</caption>
       <thead>
@@ -157,8 +160,9 @@
 
 <!-- Summary -->
 <div *ngIf="activeTab === 'summary'" class="mexa-card mexa-card-flush" role="tabpanel">
+  <div class="p-4">
   <div class="mexa-tablewrap" tabindex="0" role="region" aria-label="Downtime summary">
-    <div class="table-wrap">
+    
     <table class="mexa-table is-compact" [mexaTable]="summaryTable">
       <caption class="sr-only">Downtime by reason, last 7 days, longest first</caption>
       <thead>
