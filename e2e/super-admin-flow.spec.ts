@@ -729,3 +729,32 @@ test('Manage Access: the nine dashboards are separate modules under Analytics, e
   expect(sent).toContain(idOf('page:analytics-oee:view'));
   expect(sent.length).toBe(4);
 });
+
+/* 27 Nov 2026: Gmail refused the server's login, the new admin's welcome email
+   (their only copy of the password) was not sent — and S&T saw "Company created". */
+for (const [welcome, says] of [
+  ['failed', /welcome email with the admin's password was not sent\. Set a password for them on the Company Admins page/],
+  ['sent', /Company created with admin user/]
+] as const) {
+  test(`Companies: creating a company says whether the admin's welcome email went out (${welcome})`, async ({ sntSuperPage: page }) => {
+    await mockAdminApi(page);
+    let posted: any = null;
+    await page.route('**/api/companies', (route: any) => {
+      if (route.request().method() !== 'POST') return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(companies) });
+      posted = route.request().postDataJSON();
+      return route.fulfill({ status: 201, contentType: 'application/json',
+        body: JSON.stringify({ id: 9, company_code: 'NC', company_name: 'NEWCO', admin_user: { id: 77 }, welcome_email: welcome }) });
+    });
+    await page.goto('/admin/companies');
+    await page.getByRole('button', { name: 'New Company' }).click();
+    await page.locator('#cm-company-code').fill('NC');
+    await page.locator('#cm-company-name').fill('NEWCO');
+    await page.locator('#cm-admin-username').fill('newadmin');
+    await page.locator('#cm-admin-email').fill('admin@newco.example');
+    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(page.getByText(says)).toBeVisible();
+    if (welcome === 'sent') await expect(page.getByText(/was not sent/)).toHaveCount(0);
+    expect(posted).toMatchObject({ company_code: 'NC', admin_email: 'admin@newco.example' });
+  });
+}
+

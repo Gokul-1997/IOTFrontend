@@ -309,8 +309,15 @@ export class CompanyManagementComponent implements OnInit {
       : this.companyService.createCompany(this.form);
 
     obs.subscribe({
-      next: () => {
-        this.toast.success(this.isEditing ? 'Company updated' : 'Company created with admin user');
+      next: (res: any) => {
+        /* the welcome email is the admin's only copy of the password (27 Nov
+           2026: Gmail refused the server's login and nobody knew) */
+        if (this.isEditing) this.toast.success('Company updated');
+        else if (res?.welcome_email === 'failed') {
+          this.toast.error('Company created, but the welcome email with the admin\'s password was not sent. Set a password for them on the Company Admins page.');
+        } else if (res?.welcome_email === 'unknown') {
+          this.toast.error('Company created, but the welcome email is slow to send. If the admin does not get it, set a password for them on the Company Admins page.');
+        } else this.toast.success('Company created with admin user');
         this.closeModal();
         this.loadCompanies();
       },
