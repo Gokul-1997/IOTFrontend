@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { Router, RouterLink } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { Subject, takeUntil, catchError, of } from 'rxjs';
+import { Subject, takeUntil, catchError, of, timeout, TimeoutError } from 'rxjs';
 import { FactoryService } from './factory.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
@@ -30,6 +30,8 @@ import { SearchSelectDirective } from '../../shared/search-select.directive';
 ───────────────────────────────────────────────────────────── */
 
 const POLL_MS = 60_000;
+/** Longer than the server's own proxy limit (65 s), so its 504 usually answers first. */
+const SLOW_MS = 70_000;
 
 /*
  * Where each tile and card leads — the page with the records behind the
@@ -177,18 +179,29 @@ export class FactoryComponent implements OnInit, OnDestroy {
     if (key !== this.requestedFilters) {
       this.data = null;
       this.updatedAt = '';
+      this.errorMsg = '';
       this.shiftSeries = this.trendSeries = this.energySeries = [];
       this.requestedFilters = key;
     }
+    // a failed refresh keeps its message until an answer replaces it
     this.loading = true;
-    this.errorMsg = '';
     this.cdr.markForCheck();
     return this.svc.getFactory(filters).pipe(
+      timeout({ first: SLOW_MS }),
       catchError(err => {
-        this.errorMsg = err?.error?.message || 'Unable to load factory dashboard.';
+        this.errorMsg = this.failure(err);
         return of(null);
       })
     );
+  }
+
+  /** What went wrong, in words: too slow, no connection, or the server's own sentence. */
+  private failure(err: any): string {
+    if (err instanceof TimeoutError || err?.status === 504) {
+      return 'The factory dashboard is taking too long to load. It tries again every minute.';
+    }
+    if (err?.status === 0) return 'Cannot reach the server. Check the connection — the dashboard tries again every minute.';
+    return err?.error?.message || 'Unable to load factory dashboard.';
   }
 
   private apply(res: any): void {
@@ -202,6 +215,7 @@ export class FactoryComponent implements OnInit, OnDestroy {
     }
 
     const d = res.data;
+    this.errorMsg = '';
     this.data = d;
     this.updatedAt = updatedLabel(d.updated_at);
 
