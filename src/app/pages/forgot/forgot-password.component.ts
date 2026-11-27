@@ -156,6 +156,9 @@ export class ForgotPasswordComponent
     ////////////////////////////////////////////
 
 submit() {
+  if (this.loading) return;
+  this.form.controls.email.setValue(this.form.controls.email.value?.trim() || '');
+  this.form.markAllAsTouched();
   if (this.form.invalid) return;
 
   this.loading = true;
@@ -165,9 +168,7 @@ submit() {
   this.auth.forgotPassword(this.form.value.email!)
     .subscribe({
       next: (res: any) => {
-        console.log("API response:", res);
-
-        this.message = res.message;   // ✅ direct use
+        this.message = res.message || 'If the account exists, a reset link has been sent.';
         this.error = '';
         this.loading = false;
                 this.cdr.detectChanges();

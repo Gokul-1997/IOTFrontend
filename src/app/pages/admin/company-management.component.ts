@@ -310,14 +310,13 @@ export class CompanyManagementComponent implements OnInit {
 
     obs.subscribe({
       next: (res: any) => {
-        /* the welcome email is the admin's only copy of the password (27 Nov
-           2026: Gmail refused the server's login and nobody knew) */
+        /* Report mail delivery so an administrator can help if SMTP fails. */
         if (this.isEditing) this.toast.success('Company updated');
         else if (res?.welcome_email === 'failed') {
-          this.toast.error('Company created, but the welcome email with the admin\'s password was not sent. Set a password for them on the Company Admins page.');
+          this.toast.error('Company created, but the password setup email was not sent. Check the mail service, then ask the admin to request a new link using Forgot password.');
         } else if (res?.welcome_email === 'unknown') {
-          this.toast.error('Company created, but the welcome email is slow to send. If the admin does not get it, set a password for them on the Company Admins page.');
-        } else this.toast.success('Company created with admin user');
+          this.toast.error('Company created, but the password setup email is slow to send. If it does not arrive, the admin can request a new link using Forgot password.');
+        } else this.toast.success('Company created. A password setup link has been emailed to the admin.');
         this.closeModal();
         this.loadCompanies();
       },

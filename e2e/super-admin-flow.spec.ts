@@ -730,11 +730,11 @@ test('Manage Access: the nine dashboards are separate modules under Analytics, e
   expect(sent.length).toBe(4);
 });
 
-/* 27 Nov 2026: Gmail refused the server's login, the new admin's welcome email
-   (their only copy of the password) was not sent — and S&T saw "Company created". */
+/* Company creation reports whether the password setup invitation was sent. */
 for (const [welcome, says] of [
-  ['failed', /welcome email with the admin's password was not sent\. Set a password for them on the Company Admins page/],
-  ['sent', /Company created with admin user/]
+  ['failed', /password setup email was not sent\. Check the mail service/],
+  ['unknown', /password setup email is slow to send/],
+  ['sent', /A password setup link has been emailed to the admin/]
 ] as const) {
   test(`Companies: creating a company says whether the admin's welcome email went out (${welcome})`, async ({ sntSuperPage: page }) => {
     await mockAdminApi(page);
@@ -751,6 +751,7 @@ for (const [welcome, says] of [
     await page.locator('#cm-company-name').fill('NEWCO');
     await page.locator('#cm-admin-username').fill('newadmin');
     await page.locator('#cm-admin-email').fill('admin@newco.example');
+    await expect(page.getByText(/secure email link to set and confirm their own password/)).toBeVisible();
     await page.getByRole('button', { name: 'Create', exact: true }).click();
     await expect(page.getByText(says)).toBeVisible();
     if (welcome === 'sent') await expect(page.getByText(/was not sent/)).toHaveCount(0);
