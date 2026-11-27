@@ -404,14 +404,17 @@ export class EnergyDashboardComponent implements OnInit, OnDestroy, DashViewHook
       plotOptions: {
         pie: { donut: { size: '66%', labels: {
           show: true,
+          // the figure in the middle, rounded: unrounded, a hovered shift's
+          // 751.2939999999998 ran out of the ring (27 Nov 2026)
+          value: { formatter: (v: string) => qty(v, 1) },
           total: { show: true, label: 'Units', fontSize: '.8rem',
-                   formatter: () => this.shiftTotal.toFixed(0) }
+                   formatter: () => qty(this.shiftTotal, 1) }
         } } }
       },
       dataLabels: { enabled: false },
       // the key list beside the donut already names every shift
       legend: { show: false },
-      tooltip: { theme: 'light', y: { formatter: (v: number) => `${v} Units` } },
+      tooltip: { theme: 'light', y: { formatter: (v: number) => `${this.num(v)} Units` } },
       noData: { text: 'Nothing recorded by shift' }
     };
   }, JSON.stringify(this.data?.by_shift ?? []));
