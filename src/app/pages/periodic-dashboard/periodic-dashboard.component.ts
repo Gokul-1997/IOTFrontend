@@ -386,10 +386,12 @@ export class PeriodicDashboardComponent implements OnInit, OnDestroy, DashViewHo
     this.svc.saveSchedule({ ...f, grace_days: Number(f.grace_days) || 0 })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => {
+        next: res => {
           this.savingSchedule = false;
           this.scheduleForm = this.blankSchedule();
-          this.toast.success('Schedule saved');
+          // a first occurrence already due is raised as the schedule is saved
+          const raised = Number(res?.data?.raised) || 0;
+          this.toast.success(raised ? `Schedule saved · ${raised} ticket${raised === 1 ? '' : 's'} raised` : 'Schedule saved');
           this.reloadSchedules();
           this.reloadAll();
         },

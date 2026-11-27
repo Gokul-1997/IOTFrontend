@@ -12,6 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DashboardService } from './dashboard.service';
+import { LiveViewState } from './live-view-state';
 import { takeLinkedFilters } from '../../shared/linked-filters';
 import { SocketService } from '../../core/services/socket.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -110,12 +111,19 @@ duration = 8;
      INIT
   ════════════════════════════════════════ */
   private readonly route = inject(ActivatedRoute);
+  private readonly view = inject(LiveViewState);
+  /** Who is looking: the list is left and found again per person. */
+  private readonly viewer = JSON.parse(localStorage.getItem('user') || '{}')?.id ?? null;
 
   async ngOnInit(): Promise<void> {
 
+    // back from a machine: Pause, the page and the filter as they were left
+    const kept = this.view.restore(this.viewer);
+    if (kept) { this.autoPaused = kept.paused; this.currentPage = kept.page; this.statusFilter = kept.filter; }
+
     // the Factory Overall's Running / Idle tiles open this list on that status
     const { status } = takeLinkedFilters(this.route, this.router);
-    if (status === 'running' || status === 'idle' || status === 'alarm') this.statusFilter = status;
+    if (status === 'running' || status === 'idle' || status === 'alarm') { this.statusFilter = status; this.currentPage = 1; }
 
     const user    = JSON.parse(localStorage.getItem('user') || '{}');
     const plantId = user?.plant_id;
@@ -590,6 +598,7 @@ duration = 8;
      DESTROY
   ════════════════════════════════════════ */
   ngOnDestroy(): void {
+    this.view.keep(this.viewer, this.autoPaused, this.currentPage, this.statusFilter);
     this.destroy$.next();
     this.destroy$.complete();
     document.removeEventListener('visibilitychange', this.visibilityHandler);
