@@ -47,8 +47,7 @@ export class DowntimeComponent implements OnInit, OnDestroy {
   readonly reasonTable = new TableState<any>([
     { key: 'code' },
     { key: 'name' },
-    { key: 'category', filter: 'list', label: c => this.categoryLabel(c) },
-    { key: 'source', value: r => (r.company_id ? 'Your company' : 'Built-in'), filter: 'list' }
+    { key: 'category', filter: 'list', label: c => this.categoryLabel(c) }
   ], { sort: { key: 'code', dir: 'asc' } });
 
   readonly summaryTable = new TableState<any>([
@@ -155,7 +154,7 @@ export class DowntimeComponent implements OnInit, OnDestroy {
   get showReasonActions(): boolean {
     return this.auth.hasAction('downtime', 'edit') || this.auth.hasAction('downtime', 'delete');
   }
-  get reasonColumnCount(): number { return this.showReasonActions ? 5 : 4; }
+  get reasonColumnCount(): number { return this.showReasonActions ? 4 : 3; }
 
   canManageReason(reason: any, action: 'edit' | 'delete'): boolean {
     const companyId = this.auth.getCompanyId();

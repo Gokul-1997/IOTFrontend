@@ -122,7 +122,6 @@
           <th scope="col" mexaCol="code">Code</th>
           <th scope="col" mexaCol="name">Name</th>
           <th scope="col" mexaCol="category">Category</th>
-          <th scope="col" class="col-md" mexaCol="source">Source</th>
           <th *ngIf="showReasonActions" scope="col">Actions</th>
         </tr>
       </thead>
@@ -139,7 +138,6 @@
             <td class="code strong">{{ r.code }}</td>
             <td><span class="clip" [title]="r.name">{{ r.name }}</span></td>
             <td><span class="mexa-badge" [ngClass]="categoryClass(r.category)">{{ categoryLabel(r.category) }}</span></td>
-            <td class="col-md muted">{{ r.company_id ? 'Your company' : 'Built-in' }}</td>
             <td *ngIf="showReasonActions" class="whitespace-nowrap">
               <div class="inline-flex items-center gap-1">
                 <button *ngIf="canManageReason(r, 'edit')" type="button" class="ux-icon-btn" (click)="openReasonForm(r)"
@@ -150,7 +148,6 @@
                   [attr.aria-label]="'Delete reason code ' + r.code" title="Delete reason code">
                   <span class="material-icons" aria-hidden="true">delete</span>
                 </button>
-                <span *ngIf="r.company_id == null" class="muted text-sm">Read-only</span>
               </div>
             </td>
           </tr>

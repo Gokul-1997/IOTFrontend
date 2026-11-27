@@ -1,18 +1,20 @@
 import { test, expect, seedAuth } from './fixtures/auth';
 
 /*
- * Downtime → Reason codes is a table: code, name, category, where the code
- * comes from. It sorts, it searches, and it says so when it is loading,
- * empty, finds nothing, or could not load. The Summary tab says when it
- * could not load, instead of "No downtime" (it covered a server error).
+ * Downtime → Reason codes is a table: code, name, category. It sorts, it
+ * searches, and it says so when it is loading, empty, finds nothing, or could
+ * not load. The Summary tab says when it could not load, instead of "No
+ * downtime" (it covered a server error). Only the company's own codes are
+ * listed: the built-in defaults were retired on 27 Nov 2026 (the user: "each
+ * company creates the codes it needs").
  */
 
 const json = (status: number, body: any) => ({ status, contentType: 'application/json', body: JSON.stringify(body) });
 const reasons = [
-  { id: 1,  company_id: null, code: 'BRK', name: 'Machine Breakdown', category: 'UNPLANNED' },
-  { id: 5,  company_id: null, code: 'CHG', name: 'Tool/Die Changeover', category: 'CHANGEOVER' },
-  { id: 9,  company_id: null, code: 'LNC', name: 'Lunch/Break', category: 'PLANNED' },
-  { id: 40, company_id: 4,    code: 'ZMT', name: 'Waiting for material', category: 'UNPLANNED' }
+  { id: 41, company_id: 4, code: 'BRK', name: 'Machine Breakdown', category: 'UNPLANNED' },
+  { id: 45, company_id: 4, code: 'CHG', name: 'Tool/Die Changeover', category: 'CHANGEOVER' },
+  { id: 49, company_id: 4, code: 'LNC', name: 'Lunch/Break', category: 'PLANNED' },
+  { id: 40, company_id: 4, code: 'ZMT', name: 'Waiting for material', category: 'UNPLANNED' }
 ];
 
 async function open(page: any, reasonsReply: () => any, user: any = {}) {
@@ -26,11 +28,12 @@ async function open(page: any, reasonsReply: () => any, user: any = {}) {
   return page.getByRole('region', { name: 'Reason codes' }).locator('table');
 }
 
-test('reason codes: a table that sorts and searches, built-in and own codes told apart', async ({ page }) => {
+test('reason codes: a table of the company\'s own codes that sorts and searches', async ({ page }) => {
   const table = await open(page, () => json(200, { success: true, data: reasons }));
   const rows = table.locator('tbody tr');
   await expect(rows).toHaveCount(4);
-  await expect(table.locator('thead th')).toHaveText([/Code/, /Name/, /Category/, 'Source', 'Actions']);
+  await expect(table.locator('thead th')).toHaveText([/Code/, /Name/, /Category/, 'Actions']);
+  await expect(table).not.toContainText('Built-in');
   await expect(page.getByText('4 of 4 reason codes')).toBeVisible();
 
   // sorted by code to start with; Name sorts by name, again reverses it
@@ -43,11 +46,10 @@ test('reason codes: a table that sorts and searches, built-in and own codes told
   await expect(table.locator('thead th').nth(1)).toHaveAttribute('aria-sort', 'descending');
   await expect(rows.first()).toContainText('Waiting for material');
 
-  // the category reads as a word; where the code comes from is said
+  // the category reads as a word; every code is the company's, to edit or delete
   const own = rows.filter({ hasText: 'ZMT' });
   await expect(own.locator('.mexa-badge')).toHaveText('Unplanned');
-  await expect(own).toContainText('Your company');
-  await expect(rows.filter({ hasText: 'BRK' })).toContainText('Built-in');
+  await expect(table.getByRole('button', { name: /^Edit reason code / })).toHaveCount(4);
 
   // search by code or name
   const search = page.getByRole('searchbox', { name: 'Search reason codes' });
@@ -74,7 +76,6 @@ test('company reason codes can be edited and deleted while recorded events remai
   await page.route('**/api/downtime/events*', r => r.fulfill(json(200, { success: true,
     data: [{ id: 10, machine_serial_no: 'VMC19', reason_name: 'Waiting for material', category: 'UNPLANNED', duration_seconds: 300 }],
     pagination: { page: 1, total: 1, totalPages: 1 } })));
-  await expect(table.locator('tbody tr').filter({ hasText: 'BRK' }).getByRole('button', { name: /Edit|Delete/ })).toHaveCount(0);
   await table.getByRole('button', { name: 'Edit reason code ZMT', exact: true }).click();
   const edit = page.getByRole('dialog', { name: 'Edit reason code', exact: true });
   await expect(edit.getByLabel('Name', { exact: false })).toHaveValue('Waiting for material');
@@ -136,3 +137,12 @@ test('summary: a server error is an error, not "no downtime"; figures read in ho
   await expect(row).toContainText('Machine Breakdown');
   await expect(row).toContainText('1.5 hrs');
 });
+
+test('a company with no reason codes of its own is told how to add the first', async ({ page }) => {
+  const table = await open(page, () => json(200, { success: true, data: [] }));
+  await expect(page.getByText('No reason codes yet')).toBeVisible();
+  await expect(page.getByText('Add one with “Add reason code” to classify downtime.')).toBeVisible();
+  await expect(page.getByRole('button', { name: '+ Add reason code' })).toBeVisible();
+  await expect(table.locator('thead th')).toHaveText([/Code/, /Name/, /Category/, 'Actions']);
+});
+
