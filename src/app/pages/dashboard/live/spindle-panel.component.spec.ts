@@ -1,4 +1,15 @@
-import { niceScale } from './spindle-panel.component';
+import { niceScale, SpindlePanelComponent } from './spindle-panel.component';
+
+test('Spindle and feed timestamps show hours and minutes without seconds', () => {
+  const panel = new SpindlePanelComponent(null!, null!);
+  const at = Date.now();
+  panel.liveAt = at;
+  const expected = new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).format(at);
+  panel.data = { latest: { at, stale: false } } as any;
+  expect(panel.asOf).toBe('As of ' + expected);
+  expect(panel.speedAsOf).toBe('As of ' + expected);
+  expect(panel.asOf).not.toMatch(/\d+:\d+:\d+/);
+});
 
 describe('niceScale', () => {
   it('rounds the top of an axis up to a round step', () => {

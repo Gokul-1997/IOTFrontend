@@ -8,6 +8,7 @@ import { Subject, interval, startWith, switchMap, takeUntil, catchError, of } fr
 import { MaintenanceDashboardService } from './maintenance-dashboard.service';
 import { ChartMemo } from '../../shared/chart-memo';
 import { BAR_HOVER, barAxisMax } from '../../shared/bar-figures';
+import { MachineHealthCardComponent } from './machine-health-card.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton';
 import { ReportDateDirective } from '../../shared/report-date.directive';
 import { ConditionGaugeComponent, ConditionZone } from './condition-gauge.component';
@@ -72,7 +73,7 @@ const SIGNAL_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-maintenance-dashboard',
   standalone: true,
-  imports: [StoredImageDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, PauseOffscreenDirective, SupplyVoltageComponent, AxisBatteriesComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, ConditionGaugeComponent, SearchSelectDirective],
+  imports: [StoredImageDirective, AutoApplyDirective, FilterPanelDirective, ReportDateDirective, PauseOffscreenDirective, SupplyVoltageComponent, AxisBatteriesComponent, CommonModule, FormsModule, MatIconModule, NgApexchartsModule, SkeletonComponent, MachineHealthCardComponent, ConditionGaugeComponent, SearchSelectDirective],
   templateUrl: './maintenance-dashboard.component.html',
   styleUrl: './maintenance-dashboard.component.scss'
 })
@@ -116,8 +117,6 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   axisRows: { axis: string; load: number | null; temp: number | null; encoder: number | null }[] = [];
   tempTrendSeries: any[] = [];
   irTrendSeries:   any[] = [];
-
-  readonly HEALTH_ZONES: ConditionZone[] = [{ to: 70, color: '#e03131' }, { to: 100, color: '#22c55e' }];
 
   /* Fan tiles: the controller's own list when it sends one, else the six
      positions the design names, each marked "Not reported". */
@@ -453,11 +452,11 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
 
   /* ── gauges and bands, as the design draws them ──
 
-     Healthy / Stable / Critical, the legend in the title bar. Load is a
+     Healthy / Normal / Critical for the displayed sensor bands. Load is a
      percentage of rated load; temperatures are motor and encoder
      temperatures in °C. A reading the machine did not send gets no gauge —
      a needle at 0 would read as a cold, idle motor. */
-  readonly LOAD_BANDS = { stable: 60, critical: 85 };
+  readonly LOAD_BANDS = { stable: 60, critical: 80 };
   readonly TEMP_BANDS = { stable: 60, critical: 80 };
   /* Lower insulation resistance needs attention. Battery warnings are
      supplied explicitly by the controller and do not use voltage bands. */
@@ -465,9 +464,9 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
 
   /* The gauges' three colours, in order of value */
   readonly LOAD_ZONES: ConditionZone[] = [
-    { to: 60, color: '#22c55e' }, { to: 85, color: '#f5a623' }, { to: 150, color: '#e03131' }];
+    { to: 60, color: '#22c55e' }, { to: 80, color: '#f5a623' }, { to: 100, color: '#e03131' }];
   readonly TEMP_ZONES: ConditionZone[] = [
-    { to: 60, color: '#22c55e' }, { to: 80, color: '#f5a623' }, { to: 120, color: '#e03131' }];
+    { to: 60, color: '#22c55e' }, { to: 80, color: '#f5a623' }, { to: 100, color: '#e03131' }];
   readonly IR_ZONES: ConditionZone[] = [
     { to: 10, color: '#e03131' }, { to: 100, color: '#f5a623' }, { to: 200, color: '#22c55e' }];
 
@@ -568,7 +567,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     this.freshAlerts = new Set(fresh.map(w => w.key));
     this.freshAxes = new Set(fresh.filter(w => w.key.startsWith('battery:apc:')).map(w => w.key.slice('battery:apc:'.length)));
     this.alertNote = fresh.length
-      ? 'Now ' + fresh.map(w => `${w.band.toLowerCase()}: ${w.label}${w.value ? ' ' + w.value : ''}`).join('; ')
+      ? 'Now ' + fresh.map(w => `${this.conditionWord(w.band).toLowerCase()}: ${w.label}${w.value ? ' ' + w.value : ''}`).join('; ')
       : '';
     this.lastBands = new Map(watched.map(w => [w.key, w.band]));
     this.lastMachine = r?.machine_id ?? null;
@@ -578,14 +577,14 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
   get attentionTail(): string {
     const [first] = this.attention;
     if (!first) return '';
-    const band = first.key === 'machine' ? '' : ` · ${first.band}`;
+    const band = first.key === 'machine' ? '' : ` · ${this.conditionWord(first.band)}`;
     const more = this.attention.length > 1 ? ` · +${this.attention.length - 1} more` : '';
     return band + more;
   }
 
   /** The attention line's full list, for its tooltip and for a screen reader. */
   get attentionText(): string {
-    return this.attention.map(w => `${w.label}${w.value ? ' ' + w.value : ''} (${w.band.toLowerCase()})`).join(', ');
+    return this.attention.map(w => `${w.label}${w.value ? ' ' + w.value : ''} (${this.conditionWord(w.band).toLowerCase()})`).join(', ');
   }
 
   /** Fan tiles keep their element from one refresh to the next, so a turning
@@ -648,6 +647,7 @@ export class MaintenanceDashboardComponent implements OnInit, OnDestroy {
     const n = Number(v);
     return n >= b.critical ? 'Critical' : n >= b.stable ? 'Stable' : 'Healthy';
   }
+  conditionWord(word: string): string { return word === 'Stable' ? 'Normal' : word || 'Not reported'; }
   bandColour(word: string): string {
     return word === 'Critical' ? '#e03131' : word === 'Stable' ? '#f5a623' : word === 'Healthy' ? '#22c55e' : '#94a3b8';
   }

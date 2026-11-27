@@ -164,23 +164,23 @@
       <div class="mt-gauges">
         <div class="mt-gauge" [class.is-new-alert]="freshAlerts.has('spindle_load')">
           <p class="mt-gauge-label">Spindle Load</p>
-          <app-condition-gauge class="mobile-gauge" [value]="r.spindle_load" [max]="150" [zones]="LOAD_ZONES" unit="%"
+          <app-condition-gauge class="mobile-gauge" [value]="r.spindle_load" [max]="100" [zones]="LOAD_ZONES" unit="%"
             [ariaLabel]="'Spindle load ' + reading(r.spindle_load, '%', 0)">
 
           </app-condition-gauge>
-          <p class="mt-word" [ngClass]="bandText(band(r.spindle_load, LOAD_BANDS))">{{ band(r.spindle_load, LOAD_BANDS) || 'Not reported' }}</p>
+          <p class="mt-word" [ngClass]="bandText(band(r.spindle_load, LOAD_BANDS))">{{ conditionWord(band(r.spindle_load, LOAD_BANDS)) }}</p>
         </div>
         <div class="mt-gauge" [class.is-new-alert]="freshAlerts.has('spindle_temp')">
           <p class="mt-gauge-label">Spindle Temp</p>
-          <app-condition-gauge class="mobile-gauge" [value]="r.spindle_motor_temp" [max]="120" [zones]="TEMP_ZONES" unit="°C"
+          <app-condition-gauge class="mobile-gauge" [value]="r.spindle_motor_temp" [max]="100" [zones]="TEMP_ZONES" unit="°C"
             [ariaLabel]="'Spindle temperature ' + reading(r.spindle_motor_temp, '°C', 0)"></app-condition-gauge>
-          <p class="mt-word" [ngClass]="bandText(band(r.spindle_motor_temp, TEMP_BANDS))">{{ band(r.spindle_motor_temp, TEMP_BANDS) || 'Not reported' }}</p>
+          <p class="mt-word" [ngClass]="bandText(band(r.spindle_motor_temp, TEMP_BANDS))">{{ conditionWord(band(r.spindle_motor_temp, TEMP_BANDS)) }}</p>
         </div>
         <div class="mt-gauge" [class.is-new-alert]="freshAlerts.has('spindle_ir')">
           <p class="mt-gauge-label">Spindle IR</p>
           <app-condition-gauge class="mobile-gauge" [value]="r.spindle_insulation_res" [max]="200" [zones]="IR_ZONES" unit=" MΩ"
             [ariaLabel]="'Spindle insulation resistance ' + reading(r.spindle_insulation_res, 'megohm', 0)"></app-condition-gauge>
-          <p class="mt-word" [ngClass]="bandText(bandLow(r.spindle_insulation_res, IR_BANDS))">{{ bandLow(r.spindle_insulation_res, IR_BANDS) || 'Not reported' }}</p>
+          <p class="mt-word" [ngClass]="bandText(bandLow(r.spindle_insulation_res, IR_BANDS))">{{ conditionWord(bandLow(r.spindle_insulation_res, IR_BANDS)) }}</p>
         </div>
       </div>
       <div class="bar-cht">
@@ -228,9 +228,9 @@
       <div class="mt-gauges">
         <div class="mt-gauge" *ngFor="let a of ['x','y','z']" [class.is-new-alert]="freshAlerts.has('servo_load_' + a)">
           <p class="mt-gauge-label">Servo Load {{ a.toUpperCase() }}</p>
-          <app-condition-gauge [value]="r['servo_load_' + a]" [max]="150" [zones]="LOAD_ZONES" unit="%"
+          <app-condition-gauge [value]="r['servo_load_' + a]" [max]="100" [zones]="LOAD_ZONES" unit="%"
             [ariaLabel]="'Servo load ' + a.toUpperCase() + ' ' + reading(r['servo_load_' + a], '%', 0)"></app-condition-gauge>
-          <p class="mt-word" [ngClass]="bandText(band(r['servo_load_' + a], LOAD_BANDS))">{{ band(r['servo_load_' + a], LOAD_BANDS) || 'Not reported' }}</p>
+          <p class="mt-word" [ngClass]="bandText(band(r['servo_load_' + a], LOAD_BANDS))">{{ conditionWord(band(r['servo_load_' + a], LOAD_BANDS)) }}</p>
         </div>
       </div>
       <div class="bar-cht">
@@ -369,26 +369,7 @@
   <div class="mt-row2">
 
     <section class="mexa-card" aria-labelledby="mtHealth">
-      <h2 id="mtHealth" class="mexa-card-title mexa-card-title-left">Machine Health Score</h2>
-      <p class="mexa-card-hint">{{ focusName }}</p>
-      @if (data.machine_health; as health) {
-        <app-condition-gauge [value]="health.score" [max]="100" [zones]="HEALTH_ZONES" unit="%"
-          [ariaLabel]="focusName + ' health score ' + health.score + ' percent, ' + health.status"></app-condition-gauge>
-        <p class="mt-word mt-center" [class.text-green-700]="health.status === 'Good'" [class.text-red-700]="health.status === 'Bad'">
-          {{ health.stale ? 'Last recorded: ' : '' }}{{ health.status }}
-        </p>
-        <p class="mexa-card-hint mt-center">Good: 70–100% · Bad: below 70%</p>
-        <p class="mexa-card-hint mt-center">{{ health.reported_checks }} reported checks · {{ health.observed_at | date:'d MMM, h:mm a' }}</p>
-        <details class="mt-2 text-sm">
-          <summary>How this score is calculated</summary>
-          <p class="mexa-card-hint">{{ health.basis }}</p>
-          <ul class="mt-2 space-y-1">
-            <li *ngFor="let check of health.checks">{{ check.label }}: {{ check.band }}</li>
-          </ul>
-        </details>
-      } @else {
-        <p class="mexa-empty">Health score unavailable. No usable condition readings were reported in this window.</p>
-      }
+      <app-machine-health-card [machineName]="focusName" [health]="data.machine_health"></app-machine-health-card>
     </section>
 
     <section class="mexa-card mt-trend mexa-card-cht" aria-labelledby="mtTrend">

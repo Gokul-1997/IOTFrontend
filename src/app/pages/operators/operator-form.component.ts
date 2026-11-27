@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
 
@@ -7,6 +7,15 @@ import { OperatorService } from './operator.service';
 import { DialogFormBase } from '../../shared/dialog-form.base';
 import { ToastService } from '../../core/services/toast.service';
 import { MatIconModule } from '@angular/material/icon';
+
+function optionalBirthDate(control: AbstractControl): ValidationErrors | null {
+  if (!control.value) return null;
+  const value = String(control.value);
+  const date = new Date(value + 'T00:00:00Z');
+  const today = new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !value.startsWith('0000-') && Number.isFinite(date.getTime()) &&
+    date.toISOString().slice(0, 10) === value && value <= today ? null : { birthDate: true };
+}
 
 @Component({
   standalone: true,
@@ -24,6 +33,7 @@ export class OperatorFormComponent extends DialogFormBase implements OnInit {
   shifts: any[] = [];
   machines: any[] = [];
   saving = false;
+  readonly today = new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);
 
   constructor(
     private fb: FormBuilder,
@@ -39,6 +49,8 @@ export class OperatorFormComponent extends DialogFormBase implements OnInit {
       operator_code: ['', Validators.required],
       operator_name: ['', Validators.required],
       skill_level:   [''],
+      phone_number: ['', [Validators.maxLength(30), Validators.pattern(/^\+?[0-9][0-9 ()-]{5,29}$/)]],
+      date_of_birth: ['', optionalBirthDate],
       shift_id:      [null, Validators.required],
       machine_ids:   [[]],
       is_active:     [true]
@@ -60,6 +72,8 @@ export class OperatorFormComponent extends DialogFormBase implements OnInit {
           operator_code: this.data.operator_code,
           operator_name: this.data.operator_name,
           skill_level:   this.data.skill_level,
+          phone_number: this.data.phone_number || '',
+          date_of_birth: this.data.date_of_birth?.slice(0, 10) || '',
           shift_id:      Number(this.data.shift_id),
           machine_ids:   (this.data.machine_ids || []).map(Number),
           is_active:     this.data.is_active
@@ -84,7 +98,7 @@ export class OperatorFormComponent extends DialogFormBase implements OnInit {
 
   submit() {
     this.form.markAllAsTouched();
-    if (this.form.invalid) return;
+    if (this.form.invalid || this.saving) return;
 
     this.saving = true;
 

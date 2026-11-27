@@ -70,7 +70,7 @@ const METRICS: { key: Metric; label: string; unit: string }[] = [
 
 const n0 = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
 const n1 = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 1 });
-const clock = new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+const clock = new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
 const dayClock = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
 
 /** A round top for an axis and how many ticks reach it: 182 → 200 in 5 steps of 40. */

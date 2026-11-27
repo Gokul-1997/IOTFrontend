@@ -81,7 +81,7 @@ test('the machine card says what needs a look, worst first — or that nothing d
   await expect(attention(page)).toContainText('Servo load Z 121% · Critical');
   await expect(attention(page)).toContainText('+1 more');
   // the full list for a screen reader and the tooltip
-  await expect(attention(page)).toHaveAttribute('title', /Servo load Z 121% \(critical\), Spindle temp 64 °C \(stable\)/);
+  await expect(attention(page)).toHaveAttribute('title', /Servo load Z 121% \(critical\), Spindle temp 64 °C \(normal\)/);
 });
 
 test('all readings within limits: one calm line, no list', async ({ authedPage: page }) => {

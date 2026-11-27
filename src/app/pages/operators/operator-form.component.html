@@ -52,6 +52,26 @@
             </div>
 
             <div>
+              <label class="ui-label" for="opPhone">Phone number <span class="text-gray-400 font-normal">(optional)</span></label>
+              <input id="opPhone" class="ui-input" type="tel" autocomplete="tel" maxlength="30"
+                     formControlName="phone_number" placeholder="e.g. +91 98765 43210"
+                     [class.is-invalid]="invalid('phone_number')"
+                     [attr.aria-invalid]="invalid('phone_number')"
+                     [attr.aria-describedby]="invalid('phone_number') ? 'opPhoneErr' : null" />
+              <p *ngIf="invalid('phone_number')" id="opPhoneErr" class="ui-error" role="alert">Enter a valid phone number, or leave it blank.</p>
+            </div>
+
+            <div>
+              <label class="ui-label" for="opDob">Date of birth <span class="text-gray-400 font-normal">(optional)</span></label>
+              <input id="opDob" class="ui-input" type="date" autocomplete="bday" [max]="today"
+                     formControlName="date_of_birth"
+                     [class.is-invalid]="invalid('date_of_birth')"
+                     [attr.aria-invalid]="invalid('date_of_birth')"
+                     [attr.aria-describedby]="invalid('date_of_birth') ? 'opDobErr' : null" />
+              <p *ngIf="invalid('date_of_birth')" id="opDobErr" class="ui-error" role="alert">Enter a valid birth date that is not in the future, or leave it blank.</p>
+            </div>
+
+            <div>
               <label class="ui-label" for="opSkill">Skill level</label>
               <input id="opSkill" class="ui-input" formControlName="skill_level"
                      placeholder="e.g. Senior" autocomplete="off" />

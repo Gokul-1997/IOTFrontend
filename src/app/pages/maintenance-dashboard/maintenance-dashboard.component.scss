@@ -1,9 +1,21 @@
 /* Maintenance Dashboard — the grid of MEXA_DS_dashboard_UI_02.pdf, page 2:
-   machine · spindle · servo · fans & batteries across the top, then cycle
-   time · condition trend · alarm summary. Colours come from the MEXA tokens
+   machine · spindle · servo · fans & batteries across the top, then machine
+   health · condition trend · alarm summary. Colours come from the MEXA tokens
    so both themes work. */
 
 :host { display: block; }
+
+/* Keep the update time above the cards on phones; a fixed side tab can
+   cover the health score and sensor readings as the page scrolls. */
+@media (max-width: 767px) {
+  .last-updated-vertical {
+    position: static; transform: none; flex-direction: row; z-index: auto;
+    width: fit-content; max-width: 100%; gap: .4rem;
+    margin: .5rem 0 .75rem auto; padding: .4rem .6rem;
+    border: 0; border-radius: .5rem; box-shadow: none;
+  }
+  .updated-time { writing-mode: horizontal-tb; transform: none; font-size: .7rem; color: var(--mexa-ink-3); }
+}
 
 /* ── the two rows ── */
 .mt-row1, .mt-row2 { display: grid; gap: 1rem; margin-bottom: 1rem; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
