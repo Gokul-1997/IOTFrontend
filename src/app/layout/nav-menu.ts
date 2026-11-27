@@ -43,23 +43,23 @@ export const NAV_MENUS: NavItem[] = [
       // one Reports page holds every report, the OEE ones included
       { label: 'Reports', path: '/reports', icon: 'summarize', permission: ['page:reports', 'page:oee-reports'], hint: 'Download production and OEE reports' },
       { label: 'Charts', path: '/charts', icon: 'bar_chart', permission: 'page:charts', hint: 'Parts and run time by hour' },
-      { label: 'Quality', path: '/quality', icon: 'verified', permission: 'page:quality', hint: 'Enter rejected and rework parts' },
+      { label: 'Alarms', path: '/alarms', icon: 'warning_amber', permission: 'page:alarms', hint: 'Active alarms to resolve' },
+      { label: 'Maintenance', path: '/maintenance', icon: 'handyman', permission: 'page:maintenance', hint: 'Tickets, schedules and logs' },
       { label: 'Maintenance Report', path: '/maintenance-report', icon: 'assignment', permission: 'page:maintenance-report', hint: 'Repairs, tickets and repair time' }
     ]
   },
-  { label: 'Alarms', path: '/alarms', icon: 'warning_amber', permission: 'page:alarms', hint: 'Active alarms to resolve' },
+  { label: 'Quality', path: '/quality', icon: 'verified', permission: 'page:quality', hint: 'Enter rejected and rework parts' },
   { label: 'Downtime', path: '/downtime', icon: 'pause_circle', permission: 'page:downtime', hint: 'Record why a machine stopped' },
-  { label: 'Maintenance', path: '/maintenance', icon: 'handyman', permission: 'page:maintenance', hint: 'Tickets, schedules and logs' },
+  { label: 'Program Transfer', path: '/programs', icon: 'swap_horiz', permission: 'page:programs', hint: 'Upload and transfer machine programs' },
   {
     /* "Master", as the design names it: the company's setup data. It was
        labelled "Settings", the same word as a person's own Settings page. */
     label: 'Master', icon: 'tune',
     children: [
       { label: 'Machines', path: '/machines', icon: 'precision_manufacturing', permission: 'page:machines' },
-      { label: 'Program Transfer', path: '/programs', icon: 'swap_horiz', permission: 'page:programs' },
-      { label: 'Component', path: '/component', icon: 'category', permission: 'page:component' },
+      { label: 'Components', path: '/component', icon: 'category', permission: 'page:component' },
       { label: 'Job', path: '/job', icon: 'work_outline', permission: 'page:job' },
-      { label: 'Lines', path: '/lines', icon: 'linear_scale', permission: 'page:lines' },
+      { label: 'Production Lines', path: '/lines', icon: 'linear_scale', permission: 'page:lines' },
       { label: 'Shifts', path: '/shifts', icon: 'schedule', permission: 'page:shifts' },
       { label: 'Operators', path: '/operators', icon: 'badge', permission: 'page:operators' },
       // every rate in one place: the electricity tariff and each machine's hour rate

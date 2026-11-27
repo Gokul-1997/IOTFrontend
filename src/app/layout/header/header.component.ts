@@ -31,7 +31,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   menus: NavItem[] = [];
   /** The phone menu in the desktop bar's order: each group under its own
-   *  heading, the single pages (Alarms, Downtime, Maintenance) together as
+   *  heading, the single pages (Quality, Downtime, Program Transfer) together as
    *  "Shop floor" where the first of them sits, Admin with the account. */
   phoneSections: { label: string; icon: string; items: NavItem[] }[] = [];
   adminItem: NavItem | null = null;
