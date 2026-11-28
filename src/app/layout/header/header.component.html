@@ -63,6 +63,15 @@
     <!-- RIGHT -->
     <div class="flex items-center gap-1 shrink-0">
 
+      <!-- Light or dark in one tap, on every page and every width (28 Nov 2026, the user:
+           "dark mode button on the header top, easy to switch"). The same choice as
+           Settings → Appearance, remembered on this device. -->
+      <button type="button" class="hdr-icon-btn hdr-theme-btn" (click)="theme.toggle()"
+              aria-label="Dark theme" [attr.aria-pressed]="theme.isDark()"
+              [title]="theme.isDark() ? 'Switch to light theme' : 'Switch to dark theme'">
+        <span class="material-icons" aria-hidden="true">{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</span>
+      </button>
+
       <!-- S&T belongs to no company and is sent no notifications -->
       <app-notification-bell *ngIf="!isSntSuper"></app-notification-bell>
 

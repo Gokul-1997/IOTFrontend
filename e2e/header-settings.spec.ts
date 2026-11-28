@@ -2,7 +2,10 @@ import { test, expect, seedAuth } from './fixtures/auth';
 
 /*
  * 6 Oct 2026, the client's requests:
- *   1. no light/dark button in the header — the switch is in Settings;
+ *   1. no light/dark button in the header — the switch is in Settings
+ *      (reversed 28 Nov 2026, the user: "dark mode button on the header top,
+ *      easy to switch" — the bar has the button again; Settings keeps its
+ *      switch, and the two are one choice);
  *   2. a company admin's Admin (Users, Roles & Permissions) moves from the
  *      header bar into Settings;
  *   3. two-step sign-in is removed entirely.
@@ -25,18 +28,45 @@ async function mockCommon(page: any) {
 
 const header = (page: any) => page.locator('header');
 
-test('the header has no light/dark button, at any width', async ({ authedPage: page }) => {
+test('the header\'s light/dark button, at every width: one tap switches, it is remembered, and Settings agrees', async ({ authedPage: page }) => {
   await mockCommon(page);
+  await page.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('theme', 'light'); sessionStorage.setItem('seeded', '1'); } });
+  const html = page.locator('html');
+  const button = header(page).getByRole('button', { name: 'Dark theme' });
   for (const width of [1500, 390, 360]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/settings');
-    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
-    await expect(header(page).getByRole('button', { name: /theme/i })).toHaveCount(0);
-    await expect(header(page).locator('.material-icons', { hasText: /^(dark_mode|light_mode)$/ })).toHaveCount(0);
+    await expect(button).toBeVisible();
+    await expect(button).toHaveAttribute('aria-pressed', String(await html.evaluate(el => el.classList.contains('dark'))));
   }
+
+  await page.setViewportSize({ width: 1500, height: 900 });
+  await page.evaluate(() => localStorage.setItem('theme', 'light'));
+  await page.reload();
+  const settingsSwitch = page.getByRole('switch', { name: 'Dark mode' });
+  await expect(html).not.toHaveClass(/dark/);
+  await expect(button).toHaveAttribute('aria-pressed', 'false');
+  await expect(button).toHaveAttribute('title', 'Switch to dark theme');
+  await expect(button.locator('.material-icons')).toHaveText('dark_mode');
+
+  await button.click();                                            // dark, at once
+  await expect(html).toHaveClass(/dark/);
+  await expect(button).toHaveAttribute('aria-pressed', 'true');
+  await expect(button).toHaveAttribute('title', 'Switch to light theme');
+  await expect(button.locator('.material-icons')).toHaveText('light_mode');
+  await expect(settingsSwitch).toHaveAttribute('aria-checked', 'true');
+  expect(await page.evaluate(() => localStorage.getItem('theme'))).toBe('dark');
+
+  await page.reload();                                             // remembered
+  await expect(html).toHaveClass(/dark/);
+  await expect(button).toHaveAttribute('aria-pressed', 'true');
+
+  await settingsSwitch.click();                                    // Settings switches the same choice
+  await expect(html).not.toHaveClass(/dark/);
+  await expect(button).toHaveAttribute('aria-pressed', 'false');
 });
 
-test('a saved dark theme applies on the first page, with no header button to start it', async ({ authedPage: page }) => {
+test('a saved dark theme applies on the first page — the app applies it, not the header button', async ({ authedPage: page }) => {
   await mockCommon(page);
   await page.addInitScript(() => localStorage.setItem('theme', 'dark'));
   await page.setViewportSize({ width: 1500, height: 900 });
@@ -107,6 +137,7 @@ test('S&T keeps Admin in its bar and opens Settings for light/dark alone', async
   await expect(page.locator('app-settings .mexa-subtitle')).toHaveCount(0);
   expect(prefsCalls).toBe(0);
   await expect(header(page).getByRole('link', { name: /Admin/ })).toHaveAttribute('href', '/admin/companies');
+  await expect(header(page).getByRole('button', { name: 'Dark theme' })).toBeVisible();   // its bar has the light/dark button too
 });
 
 test('two-step sign-in is gone: no page, no link, no Security tab', async ({ authedPage: page }) => {

@@ -107,7 +107,7 @@ test('dark mode, switched in Settings, survives a reload and applies on other pa
   await expect(darkMode).toHaveAttribute('aria-checked', 'false');
   await expect(themeIcon).toHaveText('light_mode');
 
-  // the switch lives in Settings only since 6 Oct 2026 — the header has no theme button
+  // Settings keeps its switch; since 28 Nov 2026 the header has a button for the same choice
   await darkMode.click();
   await expect(html).toHaveClass(/dark/);
   await expect(darkMode).toHaveAttribute('aria-checked', 'true');

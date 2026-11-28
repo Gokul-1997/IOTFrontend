@@ -4,6 +4,7 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { Subscription, filter } from 'rxjs';
 import { NAV_MENUS, NavItem, pathMatches } from '../nav-menu';
 import { AuthService } from '../../core/services/auth.service';
+import { ThemeService } from '../../core/services/theme.service';
 import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 
 @Component({
@@ -40,7 +41,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private auth: AuthService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    /** light/dark: the bar's button and Settings → Appearance are the one choice */
+    public  theme: ThemeService
   ) {}
 
   /*
