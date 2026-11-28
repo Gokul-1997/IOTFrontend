@@ -2491,6 +2491,9 @@ transition: transform 0.3s ease;
 /* The MEXA table header: sort and filter in every column (styles/_table.scss) */
 @include meta.load-css('styles/table');
 
+/* A field that takes several values, e.g. the machines of one part (shared/multi-select; after the table's tick list it reuses) */
+@include meta.load-css('styles/multi-select');
+
 /* One maintenance ticket in its dialog (styles/_ticket.scss) */
 @include meta.load-css('styles/ticket');
 .btn-primary{

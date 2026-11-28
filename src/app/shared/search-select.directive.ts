@@ -19,7 +19,9 @@ import { DOCUMENT } from '@angular/common';
  * The list's look is global (styles/system.scss, .ss-panel): it is placed on
  * <body>, so it is never cut off by a card or a dialog.
  */
-const plain = (s: unknown): string => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+/** What a search compares: no case, spaces or dashes — "vmc2" finds "VMC - 2 - F". Shared with shared/multi-select. */
+export const searchKey = (s: unknown): string => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const plain = searchKey;
 let uid = 0;
 
 interface Item { index: number; text: string; key: string; disabled: boolean; }

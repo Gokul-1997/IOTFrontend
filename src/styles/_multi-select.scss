@@ -1,0 +1,105 @@
+/* A field that takes several values from one list — the machines one part
+   runs on (shared/multi-select, 28 Nov 2026). The field is a select's twin
+   (.ui-input, the same chevron); what is picked shows as chips. The list it
+   opens is the machine dropdown's search box (.ss-search) over the table
+   filter's tick list (.mt-panel, .mt-option…); it sits on <body>, so these
+   rules are global, and it takes the page's tokens, so it follows the theme. */
+
+.ms { display: block; min-width: 0; }
+
+.ms-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  min-width: 0;
+  padding-right: 2.25rem;              /* room for the chevron, as select.ui-input */
+  text-align: left;
+  line-height: inherit;
+  cursor: pointer;
+}
+.ms-trigger:disabled { cursor: not-allowed; }
+.ms-trigger.is-open { border-color: #2b3990; }
+
+.ms-caret {
+  position: absolute;
+  right: .625rem;
+  top: 50%;
+  width: 1.05rem;
+  height: 1.05rem;
+  transform: translateY(-50%);
+  color: #64748b;
+  pointer-events: none;
+}
+.ms-trigger.is-open .ms-caret { transform: translateY(-50%) rotate(180deg); }
+
+.ms-placeholder {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: #64748b;                      /* as .ui-input::placeholder: 4.5:1 on white */
+}
+
+/* Two whole names when the field has room, else one and a count — never two
+   names cut to "VMC -…" (a third of a dialog is about 13rem). */
+.ms-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  container-type: inline-size;
+}
+.ms-chips {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  min-width: 0;
+  overflow: hidden;
+}
+.ms-narrow { display: none; }
+@container (max-width: 14rem) {
+  .ms-wide { display: none; }
+  .ms-narrow { display: flex; }
+}
+.ms-chip {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0 .5rem;
+  border-radius: 999px;
+  background: #eef0fa;
+  color: #2b3990;
+  font-size: .78rem;
+  font-weight: 600;
+  line-height: 1.45rem;
+}
+.ms-more { flex: none; }
+
+.mt-panel.ms-panel {
+  min-width: 15rem;
+  max-width: min(26rem, calc(100vw - 16px));
+  outline: none;
+}
+.ms-bar {
+  display: flex;
+  align-items: center;
+  gap: .15rem;
+  padding: .3rem .45rem;
+  border-bottom: 1px solid var(--mexa-rule);
+}
+.ms-bar .mt-picked { margin-left: auto; padding-right: .15rem; white-space: nowrap; }
+.mt-options.ms-options { max-height: min(16rem, 42vh); }
+
+:is(.dark, :root[data-theme="dark"]) {
+  .ms-trigger.is-open { border-color: #60a5fa; }
+  .ms-caret, .ms-placeholder { color: #9ca3af; }
+  .ms-chip { background: rgba(165, 180, 252, .16); color: #c7d2fe; }
+}
+
+@media (pointer: coarse) {
+  .ms-bar .mt-clear { padding: .45rem .5rem; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ms-caret { transition: transform .15s; }
+}

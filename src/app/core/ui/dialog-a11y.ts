@@ -17,6 +17,9 @@
  * traps Tab itself, works the same with both in place.
  */
 const DIALOGS = '.ui-overlay .ui-dialog';
+/** Lists that open over a dialog and keep their own keys (Esc closes the list, not the dialog):
+ *  a dropdown's search list (shared/search-select), a multi-select's list (shared/multi-select). */
+const OWN_KEYS = '.ss-panel, .ms-panel';
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 let nextId = 0;
@@ -59,8 +62,9 @@ export function startDialogA11y(doc: Document = document): () => void {
     open.push({ el: d, back: doc.activeElement });
     // after the component has had its turn (some focus a field themselves)
     setTimeout(() => {
-      if (!d.isConnected || d.contains(doc.activeElement) || doc.activeElement?.closest('.ss-panel')) return;
-      const field = Array.from(d.querySelectorAll<HTMLElement>('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])')).find(visible);
+      if (!d.isConnected || d.contains(doc.activeElement) || doc.activeElement?.closest(OWN_KEYS)) return;
+      // a multi-select's field (shared/multi-select) is a button, but a field all the same
+      const field = Array.from(d.querySelectorAll<HTMLElement>('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button.ms-trigger:not([disabled])')).find(visible);
       (field || focusablesIn(d)[0] || d).focus();
     }, 30);
   };
@@ -82,8 +86,8 @@ export function startDialogA11y(doc: Document = document): () => void {
   const onKey = (e: KeyboardEvent) => {
     const top = open[open.length - 1]?.el;
     if (!top || !top.isConnected) return;
-    // a dropdown's search list (shared/search-select) handles its own Escape and Tab
-    if ((e.target as Element | null)?.closest?.('.ss-panel')) return;
+    // a list open over the dialog handles its own Escape and Tab
+    if ((e.target as Element | null)?.closest?.(OWN_KEYS)) return;
     if (e.key === 'Escape') {
       const c = closeControlOf(top);
       if (c) { e.preventDefault(); c.click(); }
