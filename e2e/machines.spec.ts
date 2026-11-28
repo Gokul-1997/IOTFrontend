@@ -56,6 +56,26 @@ test.describe('Machines page', () => {
     await expect(page).toHaveURL(/\/machines$/);
   });
 
+  /* 28 Nov 2026, the user: "Machine serial no → Machine No, MMC no → Serial
+     No; Model: STM, not Mazak". The form names its fields as the Machines
+     table does (the stored fields stay machine_serial_no and mmc_no). */
+  test('TC-M-03b the form says Machine No and Serial No, as the table does, with an STM model as the example', async ({ authedPage: page }) => {
+    await page.route('**/api/**', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) }));
+    await stubMachines(page);
+    await page.goto('/machines');
+    await expect(page.getByRole('columnheader', { name: /Machine No/ })).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: 'New Machine' }).click();
+
+    const form = page.getByRole('dialog', { name: 'Create Machine' });
+    await expect(form.getByLabel('Machine No')).toHaveAttribute('placeholder', 'e.g. VMC-102-F');
+    await expect(form.getByLabel('Serial No')).toHaveAttribute('placeholder', 'From nameplate');
+    await expect(form.getByLabel('Model', { exact: true })).toHaveAttribute('placeholder', 'e.g. STM VL850');
+    await expect(form).not.toContainText(/MMC|Mazak|serial number/i);
+
+    await form.getByRole('button', { name: 'Create Machine' }).click();
+    await expect(form.getByText('Machine No is required — it identifies the machine everywhere else.')).toBeVisible();
+  });
+
   test('TC-M-04 shows 500 error gracefully', async ({ authedPage: page }) => {
     await page.route('**/api/machines**', r =>
       r.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ message: 'Server Error' }) })
@@ -89,7 +109,7 @@ test.describe('Machines page', () => {
       return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(machineList) });
     });
     await page.goto('/machines?search=VMC-1-F');
-    await expect(page.getByPlaceholder('Search serial, model, line…')).toHaveValue('VMC-1-F');
+    await expect(page.getByPlaceholder('Search machine no, model, line…')).toHaveValue('VMC-1-F');
     await expect.poll(() => searched[0]).toBe('VMC-1-F');
   });
 

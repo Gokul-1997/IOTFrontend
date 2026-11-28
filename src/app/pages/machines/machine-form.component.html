@@ -111,7 +111,7 @@
 
               <div>
                 <label class="ui-label" for="mfSerial">
-                  Machine serial no<span class="ui-req" aria-hidden="true">*</span>
+                  Machine No<span class="ui-req" aria-hidden="true">*</span>
                 </label>
                 <input id="mfSerial" class="ui-input" formControlName="machine_serial_no"
                        placeholder="e.g. VMC-102-F" autocomplete="off"
@@ -120,14 +120,14 @@
                        [attr.aria-invalid]="invalid('machine_serial_no')"
                        [attr.aria-describedby]="invalid('machine_serial_no') ? 'mfSerialErr' : null" />
                 <p *ngIf="invalid('machine_serial_no')" id="mfSerialErr" class="ui-error" role="alert">
-                  Serial number is required — it identifies the machine everywhere else.
+                  Machine No is required — it identifies the machine everywhere else.
                 </p>
               </div>
 
               <div>
                 <label class="ui-label" for="mfModel">Model</label>
                 <input id="mfModel" class="ui-input" formControlName="model"
-                       placeholder="e.g. Mazak VCN-530C" autocomplete="off" />
+                       placeholder="e.g. STM VL850" autocomplete="off" />
               </div>
 
               <!-- the controller's make, then its model: the company's gateway gets the make for this machine (Program Transfer) -->
@@ -183,9 +183,10 @@
             </div>
 
             <div>
-              <label class="ui-label" for="mfMmc">MMC no</label>
+              <!-- stored as mmc_no; called Serial No since 28 Nov 2026 (the user), as in the Machines table -->
+              <label class="ui-label" for="mfMmc">Serial No</label>
               <input id="mfMmc" class="ui-input" formControlName="mmc_no"
-                     placeholder="e.g. MMC-04" autocomplete="off" />
+                     placeholder="From nameplate" autocomplete="off" />
             </div>
 
             <div class="flex items-end">
