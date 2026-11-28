@@ -78,7 +78,7 @@
             <span class="block text-sm font-medium dark:text-white leading-none">{{ userName }}</span>
             <span class="block text-xs text-gray-600 dark:text-gray-400 leading-none mt-0.5">{{ userRole }}</span>
           </span>
-          <span class="material-icons nav-chevron hdr-chevron" [style.transform]="showUserMenu ? 'rotate(180deg)' : null" aria-hidden="true">expand_more</span>
+          <span class="material-icons nav-chevron text-gray-500" [style.transform]="showUserMenu ? 'rotate(180deg)' : null" aria-hidden="true">expand_more</span>
         </button>
 
         <div *ngIf="showUserMenu" id="account-menu" (keydown.escape)="closeUserMenu(); acctBtn.focus()"

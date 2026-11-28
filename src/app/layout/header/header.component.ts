@@ -11,13 +11,6 @@ import { NotificationBellComponent } from '../../shared/notification-bell/notifi
   selector: 'app-header',
   imports: [CommonModule, RouterModule, NotificationBellComponent],
   templateUrl: './header.component.html',
-  /* The top bar is the dark theme's in both themes (28 Nov 2026, the user:
-     the dark theme's header "is perfect, please set" it). `dark` on the host
-     gives the header, its menus and the notifications list the dark styles
-     — Tailwind's dark: variants, the .dark rules and the dark tokens — while
-     the page below follows the chosen theme. Charts and the theme setting
-     read <html>, never this class. */
-  host: { class: 'dark app-header' }
 })
 export class HeaderComponent implements OnInit, OnDestroy {
 

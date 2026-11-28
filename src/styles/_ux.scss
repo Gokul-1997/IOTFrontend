@@ -90,13 +90,6 @@ a.nav-btn { text-decoration: none; }
 .dark .nav-dd-item:hover { background: #3b4893; }
 .dark .nav-dd-item.active { background: #863567; }
 
-/* The header is the dark theme's in both themes (layout/header: `dark` on
-   <app-header>, 28 Nov 2026): native parts — the menu's scrollbar — dark too,
-   and the account chevron the dark theme's grey (a text-gray-* class would be
-   re-greyed for white pages by the light-theme contrast rules in styles.scss). */
-app-header.app-header { color-scheme: dark; }
-.hdr-chevron { color: #9ca3af; }
-
 /* round icon buttons in the header: theme, menu */
 .hdr-icon-btn {
   display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 999px;

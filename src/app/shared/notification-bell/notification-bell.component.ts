@@ -49,27 +49,27 @@ import { Subscription, auditTime, pairwise } from 'rxjs';
   (click)="onRead(n)"
 >
               <span class="material-icons text-[20px] flex-shrink-0 mt-0.5" aria-hidden="true"
-                [ngClass]="n.type === 'ALARM' ? 'text-red-600 dark:text-red-400' : n.type === 'WARNING' ? 'text-amber-700 dark:text-amber-400' : 'text-blue-700 dark:text-blue-300'">
+                [ngClass]="n.type === 'ALARM' ? 'text-red-600' : n.type === 'WARNING' ? 'text-amber-700' : 'text-blue-700'">
                 {{ n.type === 'ALARM' ? 'error' : n.type === 'WARNING' ? 'warning_amber' : 'info' }}
               </span>
               <span class="flex-1 min-w-0">
                 <span class="sr-only">{{ n.type === 'ALARM' ? 'Alarm' : n.type === 'WARNING' ? 'Warning' : 'Information' }}{{ n.is_read ? '' : ', unread' }}: </span>
                 <span class="block text-sm font-medium text-gray-800 dark:text-white truncate">{{ n.title }}</span>
-                <span class="block text-xs text-gray-600 dark:text-gray-400 mt-0.5">{{ n.message }}</span>
-                <span class="block text-xs text-gray-600 dark:text-gray-400 mt-1">{{ n.created_at | date:'d MMM, h:mm a' }}</span>
+                <span class="block text-xs text-gray-600 dark:text-gray-500 mt-0.5">{{ n.message }}</span>
+                <span class="block text-xs text-gray-600 dark:text-gray-500 mt-1">{{ n.created_at | date:'d MMM, h:mm a' }}</span>
               </span>
               <span *ngIf="!n.is_read" class="w-2 h-2 mt-2 rounded-full bg-blue-600 flex-shrink-0" aria-hidden="true"></span>
             </button>
           </ng-container>
           <ng-template #noNotifs>
-            <div class="p-6 text-center text-gray-600 dark:text-gray-300 text-sm">
-              <span class="material-icons block text-[28px] text-[#6b7280] dark:text-gray-400 mb-1" aria-hidden="true">notifications_none</span>
+            <div class="p-6 text-center text-gray-600 text-sm">
+              <span class="material-icons block text-[28px] text-gray-400 mb-1" aria-hidden="true">notifications_none</span>
               No notifications yet.
             </div>
           </ng-template>
         </div>
         <div class="p-3 border-t border-gray-100 dark:border-[#22405e] text-center">
-          <a routerLink="/notifications" class="text-sm font-medium text-blue-700 dark:text-blue-300 hover:underline" (click)="open=false">View all notifications</a>
+          <a routerLink="/notifications" class="text-sm font-medium text-blue-700 hover:underline" (click)="open=false">View all notifications</a>
         </div>
       </div>
     </div>
